@@ -26,11 +26,16 @@ use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/clock
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/give
+use ui/internal/keyboard
 use ui/internal/layout
+use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
+use ui/internal/tables
+use ui/internal/trees
 
 # The longest the system's loop runs in one turn, in milliseconds, so a
 # very long wait still reads the clock now and then.
@@ -105,7 +110,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => app.answers @ app.answers.push(a.answer)
         .pick_files p => app.choices @ app.choices.push(.chosen(paths: p.paths))
         .cancel_files => app.choices @ app.choices.push(.cancelled)
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -155,23 +160,62 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         app.events @ app.events.push(.toggled(widget: w, checked: taken[2] == 1))
     else if kind == hero_ui.HERO_UI_EVENT_VALUE
         n.value @ taken[2]
+
+        # The person's divider lays its panes out anew.
+        if model.is_split(n.kind)
+            n.divided @ true
         model.put(@app.table, n: n)
+
+        if model.is_split(n.kind)
+            model.marks_dirty(@app.table, window: n.window)
         app.events @ app.events.push(.value_changed(widget: w, value: taken[2]))
     else if kind == hero_ui.HERO_UI_EVENT_MENU
+        menus.told(@app, id: id, value: taken[2])
         app.events @ app.events.push(.menu_chosen(item: w))
     else if kind == hero_ui.HERO_UI_EVENT_CLOSE
         app.events @ app.events.push(.close_asked(window: w))
     else if kind == hero_ui.HERO_UI_EVENT_RESIZE
+        was_w = n.w
+        was_h = n.h
         n.width @ taken[2]
         n.height @ taken[3]
         n.dirty @ true
         model.put(@app.table, n: n)
         settle(@app)?
         laid = model.node_of(app.table, id: id)?
-        app.events @ app.events.push(.resized(window: w, width: laid.w, height: laid.h))
+
+        # A frame the program changed around a content of the same size
+        # (`ui.set_framed`) is told by the system as a resize; the content
+        # took no new size, so nothing is answered.
+        if laid.w != was_w || laid.h != was_h
+            app.events @ app.events.push(.resized(window: w, width: laid.w, height: laid.h))
+    else if kind == hero_ui.HERO_UI_EVENT_SUBMIT
+        app.events @ app.events.push(.submitted(widget: w))
+    else if kind == hero_ui.HERO_UI_EVENT_UNFOLD
+        for event in trees.told(@app, id: id, item: taken[2], on: taken[3] == 1)
+            app.events @ app.events.push(event)
+    else if kind == hero_ui.HERO_UI_EVENT_SORT
+        app.events @ app.events.push(tables.sorted(@app, id: id, column: taken[2], ascending: taken[3] == 1))
+    else if kind == hero_ui.HERO_UI_EVENT_ACTIVATE
+        app.events @ app.events.push(.activated(widget: w, index: taken[2]))
+    else if kind == hero_ui.HERO_UI_EVENT_MOVE || kind == hero_ui.HERO_UI_EVENT_STATE || kind == hero_ui.HERO_UI_EVENT_SCREEN
+        for event in desk.read(@app, taken: taken)
+            app.events @ app.events.push(event)
     else if kind == hero_ui.HERO_UI_EVENT_MESSAGE
         app.events @ app.events.push(.message(widget: w, text: native.event_text(app)?))
     return ok()
+
+# Reads at once every event the native side has queued, as `wait` reads
+# them, each joining the app's events in order: what a call of the
+# program's set off in the system, a new size after a state among them,
+# reaches the table before anything is laid out again.
+function drained(@app: ui.App) -> ()?
+    while true
+        taken = native.take(app)?
+
+        if taken.len() == 0
+            return ok()
+        read(@app, taken: taken)?
 
 # Lays out every window marked for it, places its widgets on the native
 # side, and shows each window not shown yet and not hidden by the program.
@@ -192,6 +236,12 @@ function settle(@app: ui.App) -> ()?
             if app.native && hero_ui.set_visible(app.handle, id: window, on: 1) < 0
                 return failure.last(f"showing window {window}")
             laid.shown @ true
+
+            # A window shown the first time gives its first widget that
+            # takes the keys them, as every system does; the native side's
+            # system does it itself.
+            if !app.native && laid.focus == 0
+                laid.focus @ keyboard.first_taking(app, window: window)
             model.put(@app.table, n: laid)
 
     return ok()
@@ -238,6 +288,13 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .close_asked c       => c.window.id
         .timer_fired t       => t.timer.id
         .resized r           => r.window.id
+        .moved m             => m.window.id
+        .state_changed s     => s.window.id
+        .screen_changed s    => s.window.id
+        .activated a         => a.widget.id
+        .sort_asked s        => s.widget.id
+        .unfolded u          => u.widget.id
+        .submitted s         => s.widget.id
         .message m           => m.widget.id
 
     return !model.node_of(app.table, id: id).is_err()

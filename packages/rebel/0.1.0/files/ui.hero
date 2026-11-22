@@ -73,31 +73,32 @@
 #
 # Not written yet, each a `pending` block of its ledger: a thread's message to
 # the user interface, through feature 2647's mailbox; a box drawn with a title
-# and a frame around it; a text field whose text is masked; a combo box the
-# person may type into; a progress bar that moves with no value; a number
-# typed, or stepped up and down; a line between the widgets of a box; a menu
-# inside a menu; the system's dialog to choose a folder; pages chosen by tabs;
-# rows of cells in columns; a tree of items folded and unfolded; a box whose
-# content scrolls; two panes whose border the person drags; an area the
-# program draws into, with its keys and its mouse; the widget that has the
-# keys, set and asked; a tip shown over a widget; the system's clipboard; a
-# date, a colour or a font chosen in the system's own picker; an icon in the
-# system's tray or menu bar, and its notifications; a file dragged onto a
-# window.
+# and a frame around it; a combo box the person may type into; a number
+# typed, or stepped up and down; a line between the widgets of a box; an area
+# the program draws into, with its keys and its mouse; a tip shown over a
+# widget; a date, a colour or a font chosen in the system's own picker; an
+# icon in the system's tray or menu bar, and its notifications; a file
+# dragged onto a window.
 
 use bytes
 use image
 use time
 use ui/hero_ui
-use ui/internal/check
+use ui/internal/clips
+use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/frames
+use ui/internal/keyboard
 use ui/internal/loop
 use ui/internal/makers
+use ui/internal/menus
 use ui/internal/model
 use ui/internal/render as drawing
 use ui/internal/state
+use ui/internal/tables
+use ui/internal/trees
 
 ## Codes
 
@@ -174,6 +175,11 @@ record App
     native: bool
     # The widgets as data. Only this package reads it.
     table: model.Model
+    # The icon the program gave the app, kept on both sides.
+    icon: desk.Icon
+    # What the program last put on the clipboard, kept on both sides: the
+    # headless side's clipboard, which a read answers from.
+    clipboard: Clip
     # The inputs `inject` queued and `wait` has not given yet, in order.
     inputs: [Input]
     # The events made and not yet answered by `wait`, in order.
@@ -270,6 +276,22 @@ variant Kind
     timer
     # The system's web view, made by `ui/webview`'s `webview`.
     webview
+    # Pages chosen by tabs.
+    tabs
+    # A page of tabs.
+    page
+    # A box whose content scrolls.
+    scrolled
+    # Two panes and the divider between them.
+    split
+    # A pane of a split.
+    pane
+    # Rows of cells in columns.
+    table
+    # Items under items, folded and unfolded.
+    tree
+    # A menu shown where the person right-clicks a widget.
+    context_menu
 
 # What `widget` is.
 #
@@ -293,8 +315,8 @@ function kind_of(app: App, widget: Widget) -> Kind?
 function destroy(@app: App, widget: Widget) -> ()?
     return makers.destroy(@app, widget: widget)
 
-# A rectangle in a window's content, in points from its top-left corner,
-# the y axis down.
+# A rectangle in a window's content, or a page's, a scrolled box's or a
+# pane's, in points from its top-left corner, the y axis down.
 record Rect
     # The left edge.
     x: i64
@@ -305,8 +327,10 @@ record Rect
     # The height, 0 or more.
     height: i64
 
-# Where `widget` stands in its window's content, laid out first where
-# anything changed; for a window, its content's size at 0, 0.
+# Where `widget` stands in its window's content, or in the content of the
+# page, scrolled box or pane it stands in, laid out first where anything
+# changed; for a window, its content's size at 0, 0; for a page or a pane,
+# where its tabs or its split shows it.
 #
 # - `app`: the app holding it; its windows are laid out where needed.
 # - `widget`: a window, or a widget or a box a window holds.
@@ -354,13 +378,231 @@ function set_size(@app: App, widget: Widget, width: i64, height: i64) -> ()?
 function set_resizable(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_resizable(@app, window: widget, on: on)
 
+## Windows on the screen
+
+# A screen of the system: its whole area and its work area, the whole less
+# the menu bar, the Dock or the task bar, in the desktop's points, whose
+# origin is the top-left corner of the system's main screen and whose y axis
+# goes down; and its scale.
+record Screen
+    # Its whole area.
+    area: Rect
+    # The part of it a window is given room in.
+    work: Rect
+    # The pixels a point takes on each axis, times 100: 100 on an ordinary
+    # screen, 200 on a Retina one.
+    scale: i64
+
+# Where a window stands: the screen it stands on most, and its frame on that
+# screen, its title bar and its border included.
+record Frame
+    # The screen, from 0, the system's main one.
+    screen: i64
+    # The frame's left edge from the screen's left edge, in points.
+    x: i64
+    # The frame's top edge from the screen's top edge, in points, the y axis
+    # down.
+    y: i64
+    # The frame's width, in points.
+    width: i64
+    # The frame's height, in points, its title bar included.
+    height: i64
+
+# The state a window stands in.
+variant WindowState
+    # Shown at the size the program or the person gave it.
+    normal
+    # Minimized into the Dock or the task bar.
+    minimized
+    # Maximized over its screen's work area; zoomed, on macOS.
+    maximized
+    # Filling its screen with no frame; on macOS in a space of its own.
+    full_screen
+
+# What stands behind a window's widgets.
+variant Backdrop
+    # The system's plain window background.
+    plain
+    # The system's translucent material, which blurs what stands behind the
+    # window: the under-window material on macOS, Mica on Windows 11.
+    translucent
+
+# Every screen of the system, the main one first (on macOS the one holding
+# the menu bar, on Windows the primary monitor), in the order the system
+# lists them.
+#
+# - `app`: the app asking.
+#
+# The headless side has one screen of `ui/internal/desk`'s size, 1920 by
+# 1080 points at scale 100, its work area all of it but a task bar 40
+# points high along its bottom. Fails `closed`, `failed`. On Windows and
+# Linux the native side is pending: `unsupported`.
+function screens(app: App) -> [Screen]?
+    return desk.screens(app)
+
+# Where window `widget` stands: the screen it stands on most and its frame
+# there, laid out and shown first as `wait` would.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# A window the program never placed stands where the system first put it;
+# the headless side puts it in the middle of its screen's work area. Fails
+# `closed`, `invalid` for a widget no window, `failed`; `unsupported` where
+# the system offers no position, as Wayland's compositors do not.
+function frame_of(@app: App, widget: Widget) -> Frame?
+    return desk.frame_of(@app, window: widget)
+
+# Moves window `widget` so its frame's top-left corner stands at `x`, `y` on
+# screen `screen`. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: the window, shown or not; a window placed before it is first
+#   shown appears there.
+# - `screen`: a screen of `screens`, from 0.
+# - `x`: points from the screen's left edge, `-MOST_SIZE` to `MOST_SIZE`.
+# - `y`: points from the screen's top edge, the same range.
+#
+# The system may keep part of the frame on a screen: macOS keeps a title bar
+# below the menu bar. Fails `closed`, `invalid` for no such screen or a
+# position out of its range, `failed`; `unsupported` where the system lets
+# no program place its windows, as Wayland's compositors do not. See also
+# `frame_of`, `center`.
+function set_position(@app: App, widget: Widget, screen: i64, x: i64, y: i64) -> ()?
+    return desk.set_position(@app, window: widget, screen: screen, x: x, y: y)
+
+# Centres window `widget` in the work area of the screen it stands on. No
+# event comes of it.
+#
+# - `app`: the app holding it; its windows are laid out first.
+# - `widget`: the window.
+#
+# A window larger than the work area stands at its top-left corner. Fails
+# `closed`, `invalid`, `failed`, `unsupported` as `set_position` does. See
+# also `center_over`.
+function center(@app: App, widget: Widget) -> ()?
+    return desk.centered(@app, window: widget, over: 0)
+
+# Centres window `widget` over window `over`'s frame, kept within the work
+# area of the screen `over` stands on: a dialog over its document. No event
+# comes of it.
+#
+# - `app`: the app holding them; its windows are laid out first.
+# - `widget`: the window moved.
+# - `over`: another window of the app.
+#
+# Fails `closed`, `invalid` where `over` is `widget` or no window, `failed`,
+# `unsupported` as `set_position` does. See also `center`.
+function center_over(@app: App, widget: Widget, over: Widget) -> ()?
+    return desk.centered_over(@app, window: widget, over: over)
+
+# Brings window `widget` to `state`, leaving the one it stands in first, and
+# returns once the system has made it. The content's new size it takes comes
+# as `.resized`, as any resize does; the state itself gives no event.
+#
+# - `app`: the app holding it; its windows are laid out and shown first.
+# - `widget`: the window.
+# - `to`: the state; `.normal` gives back the size and the place it had
+#   before it was maximized or put in full screen.
+#
+# Fails `closed`, `invalid`, `failed` where the system did not make it within
+# five seconds; `unsupported` where the system cannot, as a Wayland
+# compositor cannot restore a minimized window. See also `state_of`.
+function set_state(@app: App, widget: Widget, to: WindowState) -> ()?
+    return desk.set_state(@app, window: widget, state: to)
+
+# The state window `widget` stands in now, as the system holds it, the
+# person's last act included.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system will
+# not tell, as Wayland does not tell a minimized window. See also
+# `set_state`.
+function state_of(app: App, widget: Widget) -> WindowState?
+    return desk.state_of(app, window: widget)
+
+# Keeps window `widget` above every other application's windows, or lets it
+# stand among them, as a new window does.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `on`: true to keep it on top.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system has no
+# such level, as Wayland has none.
+function set_on_top(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_on_top(@app, window: widget, on: on)
+
+# Gives window `widget` its frame, a title bar with its buttons and a
+# border, as a new window has, or takes them away, its content keeping its
+# size; a window with no frame is moved by a drag on its background.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `on`: true for a frame.
+#
+# Fails `closed`, `invalid`, `failed` for a window in full screen, which
+# keeps its frame until it leaves.
+function set_framed(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_framed(@app, window: widget, on: on)
+
+# Sets how opaque window `widget` is, its widgets with it.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `opacity`: from 0, wholly see-through, to 255, wholly opaque, as a new
+#   window is.
+#
+# Fails `closed`, `invalid` for an opacity out of its range, `failed`.
+function set_opacity(@app: App, widget: Widget, opacity: i64) -> ()?
+    return desk.set_opacity(@app, window: widget, opacity: opacity)
+
+# Puts `backdrop` behind window `widget`'s widgets.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `backdrop`: the backdrop; `.plain` as a new window has.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system has no
+# translucent material.
+function set_backdrop(@app: App, widget: Widget, backdrop: Backdrop) -> ()?
+    return desk.set_backdrop(@app, window: widget, backdrop: backdrop)
+
+# Gives the app its icon: the one the Dock shows on macOS, and every window's
+# and the task bar's on Windows.
+#
+# - `app`: the app.
+# - `img`: the image, of any format, at most 1024 by 1024 pixels.
+#
+# Fails `closed`, `invalid` for an image that is not valid or too large,
+# `failed`; `unsupported` where the system takes an icon only from the
+# program's files, as GTK 4 does.
+function set_icon(@app: App, img: image.Image) -> ()?
+    return desk.set_icon(@app, img: img)
+
+# Makes window `widget` modal: until the program ends it or destroys the
+# window, the person acts on it alone and the app's other windows take no
+# input, as a dialog of the program's own needs. The program goes on asking
+# `wait`; the window is brought to the front. One window at a time.
+#
+# - `app`: the app holding it; its windows are laid out and shown first.
+# - `widget`: the window.
+# - `on`: true to make it modal, false to end it.
+#
+# Fails `closed`, `invalid`, `failed` where another window is modal already.
+function set_modal(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_modal(@app, window: widget, on: on)
+
 ## Layout
 
 # A new box in `into` that lays its children out side by side, from the
 # left, `model.SPACING` points between two.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 #
 # Fails `closed`, `invalid` where `into` holds no widgets.
 function row(@app: App, into: Widget) -> Widget?
@@ -370,7 +612,8 @@ function row(@app: App, into: Widget) -> Widget?
 # the top, `model.SPACING` points between two.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 #
 # Fails `closed`, `invalid` where `into` holds no widgets.
 function column(@app: App, into: Widget) -> Widget?
@@ -381,12 +624,86 @@ function column(@app: App, into: Widget) -> Widget?
 # high as its highest.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `columns`: the cells of a row, 1 to `MOST_STRETCH`.
 #
 # Fails `closed`, `invalid`. See also `set_grid_stretch`.
 function grid(@app: App, into: Widget, columns: i64) -> Widget?
     return makers.grid(@app, into: into, columns: columns)
+
+# New tabs in `into`: pages one at a time, each chosen by its tab, as a
+# settings window shows them, wxWidgets' `wxNotebook`. They need the most
+# any page needs and the room their tabs and border take; every page is laid
+# out in the same room, the one chosen shown. `set_selection` and
+# `selection_of` choose and read the page shown by its index, in the order
+# made; the person choosing a tab is `.selection_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`. See also `page`.
+function tabs(@app: App, into: Widget) -> Widget?
+    return frames.tabs(@app, into: into)
+
+# A new page of tabs `into`, at the end, whose tab reads `title`: a box that
+# lays its children out one under another, as a column does, with a
+# window's padding. The first page made is the one shown; a widget of a page
+# not shown is out of the person's reach.
+#
+# - `app`: the app it is made in.
+# - `into`: tabs.
+# - `title`: its tab's text, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `failed`. See also `tabs`.
+function page(@app: App, into: Widget, title: str) -> Widget?
+    return frames.page(@app, into: into, title: title)
+
+# A new box in `into` whose content scrolls up and down, as a settings
+# panel longer than its window, wxWidgets' `wxScrolledWindow`: it lays its
+# children out one under another, as a column does, as wide as its inside
+# and as high as they need, and the person scrolls it where they need more
+# than it has. It needs its content's width, and its content's height up to
+# 100 points; `set_fit`'s least height asks for more, `stretch` gives it the
+# room left.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`.
+function scrolled(@app: App, into: Widget) -> Widget?
+    return frames.scrolled(@app, into: into)
+
+# A new split in `into`: two panes and the divider between them, which the
+# person drags, as a file manager's sidebar beside its files, wxWidgets'
+# `wxSplitterWindow`. It needs its panes' needs and the divider's thickness
+# along its line. The divider stands in the middle until the program
+# (`set_value`) or the person moves it, always where neither pane gets less
+# than it needs; `value_of` reads the first pane's width, or height, and the
+# person dragging it is `.value_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+# - `side_by_side`: true for panes side by side, false for one over the
+#   other.
+#
+# Fails `closed`, `invalid`, `failed`. See also `pane`.
+function split(@app: App, into: Widget, side_by_side: bool) -> Widget?
+    return frames.split(@app, into: into, side_by_side: side_by_side)
+
+# A new pane of split `into`, the first made the left or the top one: a box
+# that lays its children out one under another, as a column does.
+#
+# - `app`: the app it is made in.
+# - `into`: a split.
+#
+# Fails `closed`, `invalid` where the split holds two panes already,
+# `failed`. See also `split`.
+function pane(@app: App, into: Widget) -> Widget?
+    return frames.pane(@app, into: into)
 
 # Where a widget stands across its box's line when it does not fill it.
 variant Align
@@ -461,7 +778,8 @@ function set_grid_stretch(@app: App, widget: Widget, columns: [i64], rows: [i64]
 # A new label in `into` showing `text`, a line feed starting a new line.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows, without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -471,29 +789,70 @@ function label(@app: App, into: Widget, text: str) -> Widget?
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows, one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function button(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_BUTTON, text: text, items: [])
 
+# The key that presses a button wherever its window has the keys.
+variant ButtonKey
+    # None, as a button is made.
+    none
+    # Return, the button drawn as its window's default, as a dialog's OK is.
+    enter
+    # Escape, as a dialog's Cancel is.
+    escape
+
+# Lets `key` press `widget` wherever its window has the keys, as wxWidgets'
+# `wxButton::SetDefault` and a dialog's Cancel do; the button of its window
+# that had that key loses it. Pressed so, it is `.clicked`. A window's
+# button for Return takes Return before any of its text fields, as the
+# systems' dialogs do.
+#
+# - `app`: the app holding it.
+# - `widget`: the button.
+# - `key`: the key; `.none` takes it away.
+#
+# Fails `closed`, `invalid` for a widget no button, `failed`. See also
+# `press_key`, `Event.submitted`.
+function set_button_key(@app: App, widget: Widget, key: ButtonKey) -> ()?
+    return state.set_button_key(@app, button: widget, key: key)
+
 # A new text field in `into` holding `text`, one line the person types;
 # each change is `.text_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it holds first, one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function text_field(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_TEXT_FIELD, text: text, items: [])
 
+# A new text field in `into` whose text the system masks as it is typed, a
+# password's, as wxWidgets' `wxTE_PASSWORD`; it is a text field in every
+# other way, read by `text_of` and told by `.text_changed` and
+# `.submitted`. `render` draws one mark a character and never the text.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+# - `text`: what it holds first, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function password_field(@app: App, into: Widget, text: str) -> Widget?
+    return makers.password_field(@app, into: into, text: text)
+
 # A new text area in `into` holding `text`, lines the person types; each
 # change is `.text_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it holds first, without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -504,7 +863,8 @@ function text_area(@app: App, into: Widget, text: str) -> Widget?
 # `.toggled`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows beside its box, one line without a zero byte.
 # - `checked`: whether it starts checked.
 #
@@ -516,7 +876,8 @@ function checkbox(@app: App, into: Widget, text: str, checked: bool) -> Widget?
 # chosen; each choice is `.selection_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte; none makes a
 #   group with nothing chosen.
 #
@@ -525,10 +886,12 @@ function radio_group(@app: App, into: Widget, items: [str]) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_RADIO_GROUP, text: "", items: items)
 
 # A new list in `into` holding `items`, nothing chosen; each change of what
-# is chosen is `.selection_changed`.
+# is chosen is `.selection_changed`, and a row opened by a double click or
+# the Return key `.activated`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte.
 # - `multiple`: whether the person may choose several.
 #
@@ -546,7 +909,8 @@ function list(@app: App, into: Widget, items: [str], multiple: bool) -> Widget?
 # `.selection_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -557,18 +921,31 @@ function combo(@app: App, into: Widget, items: [str]) -> Widget?
 # `most`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `most`: the value that fills it, 1 or more.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`. See also `set_value`.
 function progress(@app: App, into: Widget, most: i64) -> Widget?
     return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_PROGRESS, least: 0, most: most, value: 0)
 
+# Lets progress bar `widget` move with no value while the work's end is
+# unknown, as wxWidgets' `wxGauge::Pulse`, or shows its value again.
+#
+# - `app`: the app holding it.
+# - `widget`: the progress bar.
+# - `on`: true to let it move; false, as a bar is made, to show its value.
+#
+# Fails `closed`, `invalid` for a widget no progress bar, `failed`.
+function set_moving(@app: App, widget: Widget, on: bool) -> ()?
+    return state.set_moving(@app, widget: widget, on: on)
+
 # A new slider in `into`, its knob at `value` between `least` and `most`;
 # each move by the person is `.value_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `least`: the value at its start, below `most`.
 # - `most`: the value at its end.
 # - `value`: where the knob starts, from `least` to `most`.
@@ -580,7 +957,8 @@ function slider(@app: App, into: Widget, least: i64, most: i64, value: i64) -> W
 # A new picture in `into` showing `img` at one point a pixel.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `img`: the image, of any format, shown as 8-bit RGBA; its sides 0 to
 #   `MOST_SIZE`.
 #
@@ -635,40 +1013,48 @@ function set_enabled(@app: App, widget: Widget, on: bool) -> ()?
 function set_visible(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_visible(@app, widget: widget, on: on)
 
-# Checks or unchecks checkbox `widget`. No event comes of it.
+# Checks or unchecks checkbox `widget`, or a check or radio item of a menu;
+# a radio item checked unchecks the others of its group. No event comes of
+# it.
 #
 # - `app`: the app holding it.
-# - `widget`: the checkbox.
+# - `widget`: the checkbox, or the menu's check or radio item.
 # - `checked`: whether it is checked.
 #
-# Fails `closed`, `invalid`, `failed`.
+# Fails `closed`, `invalid` for a widget of another kind or a plain menu
+# item, `failed`. See also `check_item`, `radio_item`.
 function set_checked(@app: App, widget: Widget, checked: bool) -> ()?
-    return state.set_value(@app, widget: widget, value: check.number_of(checked), kind: hero_ui.HERO_UI_CHECKBOX)
+    return state.set_checked(@app, widget: widget, checked: checked)
 
-# Whether checkbox `widget` is checked now.
+# Whether checkbox `widget`, or a check or radio item of a menu, is checked
+# now, the person's last choice included.
 #
 # - `app`: the app holding it.
-# - `widget`: the checkbox.
+# - `widget`: the checkbox, or the menu's check or radio item.
 #
-# Fails `closed`, `invalid`, `failed`.
+# Fails `closed`, `invalid` for a widget of another kind or a plain menu
+# item, `failed`.
 function is_checked(app: App, widget: Widget) -> bool?
-    return ok(state.value_of(app, widget: widget, kind: hero_ui.HERO_UI_CHECKBOX)? == 1)
+    return state.is_checked(app, widget: widget)
 
-# Moves a slider's knob, or fills a progress bar, to `value`. No event comes
-# of it.
+# Moves a slider's knob, or fills a progress bar, to `value`, or puts a
+# split's divider `value` points from its start, kept where neither pane
+# gets less than it needs. No event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
-# - `value`: from its lowest value to its highest.
+# - `widget`: a slider, a progress bar or a split.
+# - `value`: from its lowest value to its highest; for a split 0 to
+#   `MOST_SIZE`.
 #
 # Fails `closed`, `invalid`, `failed`. See also `set_range`.
 function set_value(@app: App, widget: Widget, value: i64) -> ()?
     return state.set_value(@app, widget: widget, value: value, kind: hero_ui.HERO_UI_SLIDER)
 
-# The value a slider's knob or a progress bar stands at now.
+# The value a slider's knob or a progress bar stands at now, or the place a
+# split's divider stands at, the first pane's width or height.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
+# - `widget`: a slider, a progress bar or a split.
 #
 # Fails `closed`, `invalid`, `failed`.
 function value_of(app: App, widget: Widget) -> i64?
@@ -698,13 +1084,16 @@ function set_range(@app: App, widget: Widget, least: i64, most: i64) -> ()?
 function set_items(@app: App, widget: Widget, items: [str]) -> ()?
     return state.set_items(@app, widget: widget, items: items)
 
-# Chooses the items at `indices` of a list, a combo box or a radio group. No
+# Chooses the items at `indices` of a list, a combo box or a radio group,
+# or the rows of a table, or shows the page of tabs at its one index, or
+# chooses a tree's item by its number, the items over it unfolded. No
 # event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box or a radio group.
-# - `indices`: item indices, ascending and each once, at most one but for a
-#   list of several choices; none chooses nothing.
+# - `widget`: a list, a combo box, a radio group, tabs, a table or a tree.
+# - `indices`: item or row indices, ascending and each once, at most one
+#   but for a list of several choices and a table; none chooses nothing;
+#   exactly one for tabs; a tree's item number, or none.
 #
 # Fails `closed`, `invalid` where an index is past the items or the indices
 # are out of order, `failed`.
@@ -712,10 +1101,11 @@ function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
     return state.set_selection(@app, widget: widget, indices: indices)
 
 # The indices of the items a list, a combo box or a radio group has chosen
-# now, ascending; empty where none is.
+# now, or the rows of a table, ascending, empty where none is; the index of
+# the page tabs show; the number of the item a tree has chosen.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box or a radio group.
+# - `widget`: a list, a combo box, a radio group, tabs, a table or a tree.
 #
 # Fails `closed`, `invalid`, `failed`.
 function selection_of(app: App, widget: Widget) -> [i64]?
@@ -733,23 +1123,40 @@ function set_picture(@app: App, widget: Widget, img: image.Image) -> ()?
 
 ## Menus
 
-# A new menu titled `title` at the end of window `into`'s menu bar. On
-# macOS the menu bar at the top of the screen shows the menus of the window
-# in front, after the application's own menu.
+# A new menu titled `title` at the end of window `into`'s menu bar, or at
+# the end of menu or context menu `into`, a menu inside a menu (Open
+# Recent, Format > Font). On macOS the menu bar at the top of the screen
+# shows the menus of the window in front, after the application's own menu.
 #
 # - `app`: the app it is made in.
-# - `into`: the window.
+# - `into`: the window, the menu or the context menu.
 # - `title`: one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function menu(@app: App, into: Widget, title: str) -> Widget?
     return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU, text: title)
 
-# A new item at the end of menu `into`, showing `text`; choosing it, by the
-# mouse or its shortcut, is `.menu_chosen`.
+# A new context menu of `widget`: the menu the system shows where the
+# person right-clicks the widget, or Control-clicks it on macOS, as a
+# file's Open, Rename and Delete, wxWidgets' `wxWindow::PopupMenu`. Its
+# items are made by `menu_item`, `menu_separator`, `check_item`,
+# `radio_item` and `menu` into it, and choosing one is `.menu_chosen`; a
+# shortcut set on one of its items is shown and takes no key. One a widget;
+# `destroy` takes it away.
 #
 # - `app`: the app it is made in.
-# - `into`: the menu.
+# - `widget`: a widget the person clicks, or a window for its content.
+#
+# Fails `closed`, `invalid` for a menu, a menu's item, a timer, a page or a
+# pane, or a widget with a context menu already, `failed`.
+function context_menu(@app: App, widget: Widget) -> Widget?
+    return makers.context_menu(@app, widget: widget)
+
+# A new item at the end of menu or context menu `into`, showing `text`;
+# choosing it, by the mouse or its shortcut, is `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu or the context menu.
 # - `text`: one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`. See also `set_shortcut`.
@@ -764,6 +1171,37 @@ function menu_item(@app: App, into: Widget, text: str) -> Widget?
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function menu_separator(@app: App, into: Widget) -> Widget?
     return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU_SEPARATOR, text: "")
+
+# A new item at the end of menu or context menu `into` that the person
+# checks and unchecks by choosing it (View > Show Sidebar), as wxWidgets'
+# `wxITEM_CHECK`; each choice turns it over before its `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu or the context menu.
+# - `text`: one line without a zero byte.
+# - `checked`: whether it starts checked.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `is_checked`,
+# `set_checked`.
+function check_item(@app: App, into: Widget, text: str, checked: bool) -> Widget?
+    return menus.checkable(@app, into: into, text: text, mode: hero_ui.HERO_UI_CHECK_BOX, checked: checked)
+
+# A new item at the end of menu or context menu `into` of a group of which
+# one is checked (View > as Icons, as List), as wxWidgets' `wxITEM_RADIO`:
+# the radio items of a menu no other item or separator stands between are
+# one group, and choosing one checks it and unchecks the others before its
+# `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu or the context menu.
+# - `text`: one line without a zero byte.
+# - `checked`: whether it starts checked, the others of its group then
+#   unchecked.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `is_checked`,
+# `set_checked`.
+function radio_item(@app: App, into: Widget, text: str, checked: bool) -> Widget?
+    return menus.checkable(@app, into: into, text: text, mode: hero_ui.HERO_UI_CHECK_RADIO, checked: checked)
 
 # A key and the keys held with it, which choose a menu item.
 record Shortcut
@@ -790,6 +1228,268 @@ record Shortcut
 # Fails `closed`, `invalid` for a key the record does not name, `failed`.
 function set_shortcut(@app: App, item: Widget, shortcut: Shortcut) -> ()?
     return state.set_shortcut(@app, item: item, shortcut: shortcut)
+
+# What a menu item stands for among what every program of the system has,
+# in the manner of wxWidgets' `wxID_ABOUT`, `wxID_PREFERENCES` and
+# `wxID_EXIT`.
+variant MenuRole
+    # Nothing but itself, as a new item.
+    plain
+    # The program's About box.
+    about
+    # The program's settings.
+    settings
+    # Quitting the program.
+    quit
+
+# Gives menu item `item` the role `role`. On macOS an item with a role stands
+# in the application's menu, in the place every Mac program has it (About
+# first, Settings with Command+, where it has no shortcut of its own, Quit
+# last), and is hidden in the menu it was made in; elsewhere it stays where
+# it was made. Choosing it is `.menu_chosen` naming it on every system. The
+# application's menu of macOS holds the system's Services, Hide, Hide Others
+# and Show All whatever the program gives; without an item of the role
+# `about` it shows the system's own About panel, and without one of `quit`
+# its Quit asks every window to close.
+#
+# - `app`: the app holding it.
+# - `item`: the menu item.
+# - `role`: its role; `.plain` takes one away.
+#
+# Fails `closed`, `invalid` for a widget no menu item, `failed`. See also
+# `menu_item`, `set_shortcut`.
+function set_role(@app: App, item: Widget, role: MenuRole) -> ()?
+    return state.set_role(@app, item: item, role: role)
+
+## Tables
+
+# How a table shows itself sorted.
+variant Sort
+    # By no column.
+    unsorted
+    # By one column.
+    by
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
+
+# A new table in `into`: rows of cells under the headers `columns`, which
+# the person drags to widen and clicks to ask for the rows sorted, several
+# rows chosen at once, as a file manager's details or a mail client's
+# messages, wxWidgets' `wxDataViewListCtrl`. It holds no row until
+# `set_rows`; `set_selection` and `selection_of` choose and read rows; the
+# person choosing rows is `.selection_changed`, opening one by a double
+# click or Return `.activated`, clicking a header `.sort_asked`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+# - `columns`: the headers' titles, 1 to 64, each one line without a zero
+#   byte.
+#
+# Fails `closed`, `invalid`, `failed`. See also `set_rows`, `set_sort`.
+function table(@app: App, into: Widget, columns: [str]) -> Widget?
+    return tables.table(@app, into: into, columns: columns)
+
+# Gives table `widget` the rows `rows`, in the order they are shown, none
+# chosen. No event comes of it. A program sorting its rows on
+# `.sort_asked` gives them here again in their new order.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+# - `rows`: each a cell for every column, one line without a zero byte.
+#
+# Fails `closed`, `invalid` for a row of another count of cells or a cell
+# of two lines, `failed`. See also `rows_of`.
+function set_rows(@app: App, widget: Widget, rows: [[str]]) -> ()?
+    return tables.set_rows(@app, widget: widget, rows: rows)
+
+# The rows table `widget` holds, in the order shown.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+#
+# Fails `closed`, `invalid`.
+function rows_of(app: App, widget: Widget) -> [[str]]?
+    return tables.rows_of(app, widget: widget)
+
+# Shows table `widget` sorted as `order` says, its column's header showing
+# the arrow. No event comes of it, and the rows stand as they are.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+# - `order`: `.unsorted`, or `.by` one of its columns.
+#
+# Fails `closed`, `invalid`, `failed`. See also `.sort_asked`.
+function set_sort(@app: App, widget: Widget, order: Sort) -> ()?
+    return tables.set_sort(@app, widget: widget, order: order)
+
+# How table `widget` shows itself sorted: as the program set it or the
+# person's click left it.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+#
+# Fails `closed`, `invalid`.
+function sort_of(app: App, widget: Widget) -> Sort?
+    return tables.sort_of(app, widget: widget)
+
+## Trees
+
+# A new tree in `into`: items under items, each folded and unfolded by the
+# person, one chosen, as a disk's folders or a mail client's mailboxes,
+# wxWidgets' `wxTreeCtrl`. It holds no item until `add_item`;
+# `set_selection` and `selection_of` choose and read the item chosen by its
+# number; the person choosing one is `.selection_changed`, opening one by a
+# double click or Return `.activated` with its number, unfolding or folding
+# one `.unfolded`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`. See also `add_item`.
+function tree(@app: App, into: Widget) -> Widget?
+    return trees.tree(@app, into: into)
+
+# Adds an item showing `text` at the end of the items under item `under`
+# of tree `widget`, and answers its number, the tree's next from 1. A
+# foldable item shows its triangle before it holds an item, so the program
+# adds what is under it on `.unfolded`, as a disk's folders load.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `under`: the item it stands under; 0 for the top.
+# - `text`: one line without a zero byte.
+# - `foldable`: true where the person may unfold it before it holds an
+#   item.
+#
+# Fails `closed`, `invalid`, `failed`. See also `remove_item`.
+function add_item(@app: App, widget: Widget, under: i64, text: str, foldable: bool) -> i64?
+    return trees.add(@app, widget: widget, under: under, text: text, foldable: foldable)
+
+# Takes item `item` out of tree `widget`, with every item under it; the
+# choice of one of them goes with it. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`, `failed`.
+function remove_item(@app: App, widget: Widget, item: i64) -> ()?
+    return trees.remove(@app, widget: widget, item: item)
+
+# The numbers of the items right under item `item` of tree `widget`, in
+# order.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number; 0 for the top.
+#
+# Fails `closed`, `invalid`.
+function items_under(app: App, widget: Widget, item: i64) -> [i64]?
+    return trees.under_of(app, widget: widget, item: item)
+
+# The text item `item` of tree `widget` shows.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`.
+function item_text(app: App, widget: Widget, item: i64) -> str?
+    return trees.text_of(app, widget: widget, item: item)
+
+# Unfolds or folds item `item` of tree `widget`. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: a foldable item, or one holding items.
+# - `on`: true to unfold it, false to fold it.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_unfolded(@app: App, widget: Widget, item: i64, on: bool) -> ()?
+    return trees.set_unfolded(@app, widget: widget, item: item, on: on)
+
+# Whether item `item` of tree `widget` is unfolded.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`.
+function is_unfolded(app: App, widget: Widget, item: i64) -> bool?
+    return trees.is_unfolded(app, widget: widget, item: item)
+
+## The clipboard
+
+# What the system's clipboard holds of one kind, or takes in place of all
+# it held, as wxWidgets' `wxTextDataObject`, `wxFileDataObject` and
+# `wxBitmapDataObject`.
+variant Clip
+    # Nothing: a read found nothing of the kind it asked for, and a write
+    # empties the clipboard.
+    nothing
+    # Text.
+    text
+        # The text, holding no zero byte.
+        text: str
+    # Files and folders, as a file manager copies them.
+    files
+        # Their absolute paths, at least one.
+        paths: [str]
+    # An image, as a screenshot is copied.
+    picture
+        # The image; a read answers 8-bit RGBA.
+        img: image.Image
+
+# The kind a read of the clipboard asks for.
+variant ClipKind
+    # Text.
+    text
+    # Files and folders.
+    files
+    # An image.
+    picture
+
+# The most bytes the clipboard takes or answers: an image of 8192 by 8192
+# pixels, at 4 bytes a pixel.
+constant CLIPBOARD_MOST: i64
+    hero_ui.HERO_UI_CLIP_MOST
+
+# Puts `clip` on the clipboard in place of all it held, as a program's Copy
+# does: a list's paths copied as text, a file manager's files, a picture.
+# `.nothing` empties it, as a password manager does once the password is
+# pasted. On the native side it is the system's clipboard, which every
+# program pastes from; on the headless side the app's own, which only the
+# program writes. A text field's Cut, Copy and Paste need none of this:
+# the Edit menu reaches the clipboard for them.
+#
+# - `app`: the app.
+# - `clip`: what it holds next: text holding no zero byte; paths each
+#   absolute, none empty or holding a zero byte; or a valid image of at
+#   least one pixel, at most `CLIPBOARD_MOST` bytes in 8-bit RGBA.
+#
+# Fails `closed`, `invalid`, `limit` past `CLIPBOARD_MOST` bytes, `failed`.
+# See also `clipboard`.
+function set_clipboard(@app: App, clip: Clip) -> ()?
+    return clips.put(@app, clip: clip)
+
+# What the clipboard holds as `kind`, as a program's Paste reads it, or
+# `.nothing` where it holds nothing of that kind. On the native side another
+# program may have written it, offering several kinds at once, and a read
+# finds the kind asked where that program offered it; on the headless side
+# a read answers only what `set_clipboard` put. On both, what the program
+# puts is found as its own kind alone.
+#
+# - `app`: the app.
+# - `kind`: the kind asked for.
+#
+# Fails `closed`, `limit` where it holds past `CLIPBOARD_MOST` bytes,
+# `failed`. See also `set_clipboard`.
+function clipboard(app: App, kind: ClipKind) -> Clip?
+    return clips.read(app, kind: kind)
 
 ## Timers
 
@@ -861,6 +1561,68 @@ variant Event
         width: i64
         # Its content's height now, in points.
         height: i64
+    # The person moved a window, by its title bar or a key of the system's.
+    moved
+        # The window.
+        window: Widget
+        # The screen it stands on now, from 0.
+        screen: i64
+        # Its frame's left edge from that screen's left edge, in points.
+        x: i64
+        # Its frame's top edge from that screen's top edge, in points.
+        y: i64
+    # The person brought a window to another state, by its buttons, the
+    # Dock or the task bar, or a key of the system's; the size its content
+    # took comes as `.resized`.
+    state_changed
+        # The window.
+        window: Widget
+        # Its state now.
+        state: WindowState
+    # A window stands on another screen, moved there by the person or left
+    # there by a screen that changed; its `.moved` comes after.
+    screen_changed
+        # The window.
+        window: Widget
+        # The screen, from 0.
+        screen: i64
+    # The person pressed Return in a text field: a search field searches, a
+    # chat field sends; its text is the field's (`text_of`). A window whose
+    # button Return presses (`set_button_key`) gives that button's
+    # `.clicked` instead.
+    submitted
+        # The text field.
+        widget: Widget
+    # The person opened a row of a list, by a double click on it or by the
+    # Return key while the list had the keys: a file manager enters the
+    # folder, a mail client opens the message. A first click's choice comes
+    # before it as `.selection_changed`.
+    activated
+        # The list or the table.
+        widget: Widget
+        # The row opened, from 0; for the Return key, the first row chosen.
+        index: i64
+    # The person clicked a table's column header, asking for its rows
+    # sorted by that column: the column sorted by already turns over,
+    # another starts ascending, and its arrow shows it at once
+    # (`set_sort`). The program sorts its rows and gives them again.
+    sort_asked
+        # The table.
+        widget: Widget
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
+    # The person unfolded or folded an item of a tree: an item unfolded the
+    # first time while it holds none is the program's moment to add what is
+    # under it (`add_item`).
+    unfolded
+        # The tree.
+        widget: Widget
+        # The item's number.
+        item: i64
+        # True for unfolded, false for folded.
+        open: bool
     # A web view's page sent a text by its bridge, `heroes.send` (the
     # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
@@ -934,6 +1696,51 @@ variant Input
         width: i64
         # The height asked, 0 to `MOST_SIZE`.
         height: i64
+    # Drags a window by its title bar to a position on a screen.
+    drag_window
+        # The window.
+        window: Widget
+        # The screen, a screen of `screens`.
+        screen: i64
+        # Its frame's left edge from that screen's left edge, in points,
+        # `-MOST_SIZE` to `MOST_SIZE`.
+        x: i64
+        # Its frame's top edge from that screen's top edge, the same range.
+        y: i64
+    # Brings a window to a state, as its buttons or the system's keys would.
+    change_state
+        # The window.
+        window: Widget
+        # The state.
+        state: WindowState
+    # Presses Return in a text field.
+    submit
+        # The text field.
+        widget: Widget
+    # Opens a row of a list or a table as a double click on it does,
+    # choosing it first where it is not chosen.
+    activate
+        # The list or the table.
+        widget: Widget
+        # The row, an index of its items or rows.
+        index: i64
+    # Clicks a table's column header until the table stands sorted by it in
+    # the order asked.
+    sort
+        # The table.
+        widget: Widget
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
+    # Unfolds or folds an item of a tree the person sees, by its triangle.
+    unfold
+        # The tree.
+        widget: Widget
+        # The item's number.
+        item: i64
+        # True to unfold, false to fold.
+        open: bool
     # Presses a button of the next message box `message` shows.
     answer
         # The button.
@@ -970,6 +1777,58 @@ variant Input
 function inject(@app: App, input: Input) -> ()?
     return loop.inject(@app, input: input)
 
+# Presses a key now, as the person's keyboard would, with `widget` holding
+# the keys, given them first as the person's click would; the events it
+# makes come at the next `wait`s. On the native side the key goes through
+# the system's own path, so the menu item whose shortcut it is, the
+# system's Edit menu (undo, redo, cut, copy, paste and select all in a text
+# widget) and the widget take it as the person's; on the headless side,
+# whose widgets no system edits, Return and Escape press the window's button
+# for them (`set_button_key`), a key chooses the first item of the window's
+# menus whose shortcut it is, the item and its menu enabled, as
+# `.menu_chosen`, and Return in a text field is `.submitted`; nothing else.
+# A widget greyed out or hidden takes no key, as a person could not give it
+# one.
+#
+# - `app`: the app it is pressed in; a native one's windows are laid out and
+#   shown first.
+# - `widget`: a window, or a text field, a text area or a list of one.
+# - `shortcut`: the key and the keys held with it, as a menu item's
+#   shortcut names them; not an empty key.
+#
+# Fails `closed`, `invalid` for an empty key, one no shortcut names or a
+# widget of another kind; `failed` where the system keeps another
+# application in front, so no window of this app can take a key. See also
+# `set_shortcut`, `inject`.
+function press_key(@app: App, widget: Widget, shortcut: Shortcut) -> ()?
+    return keyboard.press(@app, widget: widget, shortcut: shortcut)
+
+# Gives `widget` the keys in its window, as wxWidgets' `wxWindow::SetFocus`:
+# what the person types goes to it once its window is in front. Tab and
+# Shift+Tab move the keys through the widgets in the order they stand, left
+# to right and top to bottom, as the layout reads them.
+#
+# - `app`: the app holding it.
+# - `widget`: a text field, a text area or a list of a window, shown and not
+#   greyed out.
+#
+# Fails `closed`, `invalid` for a widget of another kind, hidden or greyed
+# out, `failed`. See also `focus_of`, `press_key`.
+function set_focus(@app: App, widget: Widget) -> ()?
+    return keyboard.set_focus(@app, widget: widget)
+
+# The widget of window `widget` that has the keys: what the person types
+# goes to it while the window is in front; the window itself where none of
+# its widgets has them.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# Fails `closed`, `invalid` for a widget no window, `failed`. See also
+# `set_focus`.
+function focus_of(app: App, widget: Widget) -> Widget?
+    return keyboard.focus_of(app, window: widget)
+
 ## Dialogs
 
 # The tone of a message box, which its icon shows.
@@ -1002,6 +1861,10 @@ variant Answer
     yes
     # No.
     no
+    # A button of a box of the program's words (`ask`).
+    button
+        # Its index among the box's buttons, from 0.
+        index: i64
 
 # Files a file dialog offers, by their extensions.
 record Filter
@@ -1068,6 +1931,43 @@ function open_files(@app: App, over: Widget, title: str, filters: [Filter], mult
 function save_file(@app: App, over: Widget, title: str, name: str, filters: [Filter]) -> Choice?
     return dialogs.files(@app, over: over, title: title, name: name, filters: filters, save: true, multiple: false)
 
+# Shows the system's dialog to choose a folder over window `over` and waits
+# for the person, as wxWidgets' `wxDirDialog`; a choice `inject` queued is
+# taken instead, and no dialog is shown.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `multiple`: whether the person may choose several folders.
+#
+# The paths are the folders'. Fails `closed`, and `closed` on a headless app
+# where no choice was injected; `invalid` where an injected choice holds
+# several paths and `multiple` is false; `failed`. See also `open_files`.
+function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Choice?
+    return dialogs.folders(@app, over: over, title: title, multiple: multiple)
+
+# Shows a message box over window `over` whose buttons say the program's
+# own words, as "Save", "Don't Save" and "Cancel" before a document closes,
+# and waits for the person to press one; answers its index. An answer
+# `inject` queued is taken instead and no box is shown: `.button(index:)`,
+# or `.cancel` for the button Escape presses.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `text`: what it says, without a zero byte.
+# - `tone`: its tone.
+# - `buttons`: the buttons' labels in the order the person reads them, 1
+#   to 16, each one line, not empty, without a zero byte; the first is
+#   pressed by Return.
+# - `cancel`: the index of the button Escape presses, or -1 for none.
+#
+# Fails `closed`; `invalid` for a label or a `cancel` out of its range, or
+# an injected answer that is no button of the box; `closed` on a headless
+# app where no answer was injected; `failed`. See also `message`.
+function ask(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: [str], cancel: i64) -> i64?
+    return dialogs.ask(@app, over: over, title: title, text: text, tone: tone, buttons: buttons, cancel: cancel)
+
 ## Drawing as text
 
 # Every window of `app` as text, laid out first where anything changed: a
@@ -1076,7 +1976,10 @@ function save_file(@app: App, over: Widget, title: str, name: str, filters: [Fil
 # the number, then what it shows and its state, then `at X,Y WxH`
 # where the layout placed it; a window says its title and its content's
 # size, a hidden widget `hidden` and no place, a greyed-out one `disabled`.
-# Texts are quoted, a quote, a backslash, a line feed and a tab escaped. The
+# A window that stands otherwise than a new one says so after its size:
+# `on screen S at X,Y` once the program or the person placed it, then
+# `minimized`, `maximized` or `full_screen`, `on_top`, `frameless`,
+# `opacity N`, `translucent` and `modal`. Texts are quoted, a quote, a backslash, a line feed and a tab escaped. The
 # same app draws the same lines on every machine and on both sides.
 #
 # On the headless side each widget takes the size `ui/internal/sizes` gives
@@ -1315,7 +2218,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -1803,6 +2706,71 @@ test "set_shortcut: the primary key and o"
     assert render(@app).must()[2] == "    menu_item #3 \"Open\" primary+o"
     close(@app).must()
 
+# The About item of a Help menu, which macOS shows in the application's menu.
+test "set_role: About in the Help menu"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    help = menu(@app, into: w, title: "Help").must()
+    about = menu_item(@app, into: help, text: "About Notes").must()
+    set_role(@app, item: about, role: .about).must()
+    assert render(@app).must()[2] == "    menu_item #3 \"About Notes\" role about"
+    inject(@app, input: .choose_menu(item: about)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: about)
+    close(@app).must()
+
+# A menu inside the File menu.
+test "menu: Open Recent inside File"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    file = menu(@app, into: w, title: "File").must()
+    recent = menu(@app, into: file, title: "Open Recent").must()
+    item = menu_item(@app, into: recent, text: "notes.txt").must()
+    inject(@app, input: .choose_menu(item: item)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
+    close(@app).must()
+
+# View > Show Sidebar, turned off by the person.
+test "check_item: Show Sidebar"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    view = menu(@app, into: w, title: "View").must()
+    sidebar = check_item(@app, into: view, text: "Show Sidebar", checked: true).must()
+    inject(@app, input: .choose_menu(item: sidebar)).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert !is_checked(app, widget: sidebar).must()
+    close(@app).must()
+
+# View > as Icons or as List, the second chosen.
+test "radio_item: as Icons, as List"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    view = menu(@app, into: w, title: "View").must()
+    icons = radio_item(@app, into: view, text: "as Icons", checked: true).must()
+    as_list = radio_item(@app, into: view, text: "as List", checked: false).must()
+    inject(@app, input: .choose_menu(item: as_list)).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert is_checked(app, widget: as_list).must() && !is_checked(app, widget: icons).must()
+    close(@app).must()
+
+# A password typed into a field that masks it.
+test "password_field: typed into"
+    app @= open(.headless).must()
+    w = window(@app, title: "Sign in", width: 200, height: 60).must()
+    secret = password_field(@app, into: w, text: "").must()
+    inject(@app, input: .type_text(widget: secret, text: "hunter2")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert text_of(app, widget: secret).must() == "hunter2"
+    close(@app).must()
+
+# A copy whose end is unknown.
+test "set_moving: a copy of unknown length"
+    app @= open(.headless).must()
+    w = window(@app, title: "Copy", width: 200, height: 60).must()
+    bar = progress(@app, into: w, most: 100).must()
+    set_moving(@app, widget: bar, on: true).must()
+    assert render(@app).must()[1] == "  progress #2 value 0 in 0..100 moving at 12,12 160x16"
+    close(@app).must()
+
 # A timer firing on a headless app's clock.
 test "timer: every second"
     app @= open(.headless).must()
@@ -1838,6 +2806,376 @@ test "inject: the close button"
     inject(@app, input: .ask_close(window: w)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: w)
     destroy(@app, widget: w).must()
+    close(@app).must()
+
+# A menu item chosen by its shortcut, the program pressing its keys.
+test "press_key: the primary key and o"
+    app @= open(.headless).must()
+    w = window(@app, title: "Keys", width: 100, height: 60).must()
+    file = menu(@app, into: w, title: "File").must()
+    item = menu_item(@app, into: file, text: "Open").must()
+    o = Shortcut(key: "o", primary: true, shift: false, alt: false)
+    set_shortcut(@app, item: item, shortcut: o).must()
+    press_key(@app, widget: w, shortcut: o).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
+    close(@app).must()
+
+# The screens a headless app reports: its one, the same on every machine.
+test "screens: the headless side's one"
+    app @= open(.headless).must()
+    assert screens(app).must().len() == 1
+    assert screens(app).must()[0].scale == 100
+    close(@app).must()
+
+# Where a new window stands on the headless side: the middle of the work
+# area, its title bar above its content.
+test "frame_of: a new window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    assert frame_of(@app, widget: w).must() == Frame(screen: 0, x: 910, y: 476, width: 100, height: 88)
+    close(@app).must()
+
+# A window put at the top-left corner of the main screen.
+test "set_position: the corner of the screen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    set_position(@app, widget: w, screen: 0, x: 0, y: 0).must()
+    assert frame_of(@app, widget: w).must().x == 0
+    close(@app).must()
+
+# A window moved away, then centred again.
+test "center: back in the middle"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    set_position(@app, widget: w, screen: 0, x: 0, y: 0).must()
+    center(@app, widget: w).must()
+    assert frame_of(@app, widget: w).must().x == 910
+    close(@app).must()
+
+# A dialog centred over its document.
+test "center_over: a dialog over its document"
+    app @= open(.headless).must()
+    document = window(@app, title: "Notes", width: 400, height: 300).must()
+    set_position(@app, widget: document, screen: 0, x: 100, y: 100).must()
+    dialog = window(@app, title: "Find", width: 200, height: 100).must()
+    center_over(@app, widget: dialog, over: document).must()
+    assert frame_of(@app, widget: dialog).must().x == 200
+    close(@app).must()
+
+# A window maximized over the work area.
+test "set_state: maximized"
+    app @= open(.headless).must()
+    w = window(@app, title: "Big", width: 100, height: 60).must()
+    set_state(@app, widget: w, to: .maximized).must()
+    assert state_of(app, widget: w).must() == .maximized
+    close(@app).must()
+
+# A new window stands in the normal state.
+test "state_of: as made"
+    app @= open(.headless).must()
+    w = window(@app, title: "New", width: 100, height: 60).must()
+    assert state_of(app, widget: w).must() == .normal
+    close(@app).must()
+
+# A timer's window kept above the others.
+test "set_on_top: a timer that floats"
+    app @= open(.headless).must()
+    w = window(@app, title: "Timer", width: 100, height: 60).must()
+    set_on_top(@app, widget: w, on: true).must()
+    assert render(@app).must()[0] == "window #1 \"Timer\" 100x60 on_top"
+    close(@app).must()
+
+# A panel with no title bar.
+test "set_framed: a panel with no frame"
+    app @= open(.headless).must()
+    w = window(@app, title: "Panel", width: 100, height: 60).must()
+    set_framed(@app, widget: w, on: false).must()
+    assert frame_of(@app, widget: w).must().height == 60
+    close(@app).must()
+
+# An overlay half see-through.
+test "set_opacity: half see-through"
+    app @= open(.headless).must()
+    w = window(@app, title: "Overlay", width: 100, height: 60).must()
+    set_opacity(@app, widget: w, opacity: 128).must()
+    assert render(@app).must()[0] == "window #1 \"Overlay\" 100x60 opacity 128"
+    close(@app).must()
+
+# A sidebar on the system's translucent material.
+test "set_backdrop: translucent"
+    app @= open(.headless).must()
+    w = window(@app, title: "Sidebar", width: 100, height: 60).must()
+    set_backdrop(@app, widget: w, backdrop: .translucent).must()
+    assert render(@app).must()[0] == "window #1 \"Sidebar\" 100x60 translucent"
+    close(@app).must()
+
+# A settings window of two pages, the second chosen by its tab.
+test "tabs: two pages of settings"
+    app @= open(.headless).must()
+    w = window(@app, title: "Settings", width: 320, height: 200).must()
+    pages = tabs(@app, into: w).must()
+    _ = page(@app, into: pages, title: "General").must()
+    _ = page(@app, into: pages, title: "Advanced").must()
+    inject(@app, input: .choose(widget: pages, indices: [1])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: pages, indices: [1])
+    close(@app).must()
+
+# A page's own widgets, laid out from its top-left corner.
+test "page: a field on a page"
+    app @= open(.headless).must()
+    w = window(@app, title: "Settings", width: 320, height: 200).must()
+    general = page(@app, into: tabs(@app, into: w).must(), title: "General").must()
+    name = text_field(@app, into: general, text: "Ada").must()
+    assert rect_of(@app, widget: name).must().x == 12
+    close(@app).must()
+
+# Thirty lines in a box of a hundred points, which scrolls.
+test "scrolled: thirty lines"
+    app @= open(.headless).must()
+    w = window(@app, title: "Log", width: 200, height: 100).must()
+    log = scrolled(@app, into: w).must()
+
+    for i in range(from: 0, to: 30)
+        _ = label(@app, into: log, text: f"line {i}").must()
+
+    assert rect_of(@app, widget: log).must().height == 100
+    close(@app).must()
+
+# A sidebar beside the files, its divider dragged by the person.
+test "split: a sidebar"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 400, height: 200).must()
+    sides = split(@app, into: w, side_by_side: true).must()
+    set_fit(
+        @app,
+        widget: sides,
+        fit: Fit(stretch: 1, fill: true, align: .start, min_width: 0, min_height: 0, margin: 0)
+    ).must()
+    _ = pane(@app, into: sides).must()
+    _ = pane(@app, into: sides).must()
+    inject(@app, input: .slide(widget: sides, value: 120)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: sides, value: 120)
+    close(@app).must()
+
+# A list in the left pane.
+test "pane: a list on the left"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 400, height: 200).must()
+    sides = split(@app, into: w, side_by_side: true).must()
+    places = list(@app, into: pane(@app, into: sides).must(), items: ["Home", "Desktop"], multiple: false).must()
+    _ = pane(@app, into: sides).must()
+    assert rect_of(@app, widget: places).must().x == 0
+    close(@app).must()
+
+# A file manager's details, sorted by size where the person asks.
+test "table: name and size"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name", "Size"]).must()
+    set_rows(@app, widget: files, rows: [["notes.txt", "12"], ["plan.md", "3"]]).must()
+    inject(@app, input: .sort(widget: files, column: 1, ascending: true)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .sort_asked(widget: files, column: 1, ascending: true)
+    set_rows(@app, widget: files, rows: [["plan.md", "3"], ["notes.txt", "12"]]).must()
+    close(@app).must()
+
+# Rows given, then read back.
+test "set_rows: two files"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    set_rows(@app, widget: files, rows: [["a.txt"], ["b.txt"]]).must()
+    assert rows_of(app, widget: files).must() == [["a.txt"], ["b.txt"]]
+    close(@app).must()
+
+# The rows of a table as the program holds them.
+test "rows_of: none yet"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    assert rows_of(app, widget: files).must() == []
+    close(@app).must()
+
+# A table shown sorted by its first column, descending.
+test "set_sort: by name, descending"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name", "Size"]).must()
+    set_sort(@app, widget: files, order: .by(column: 0, ascending: false)).must()
+    assert sort_of(app, widget: files).must() == .by(column: 0, ascending: false)
+    close(@app).must()
+
+# A table no one sorted.
+test "sort_of: unsorted"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    assert sort_of(app, widget: files).must() == .unsorted
+    close(@app).must()
+
+# A file's Open and Delete, shown where the person right-clicks the list.
+test "context_menu: a file's actions"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 200, height: 120).must()
+    files = list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    actions = context_menu(@app, widget: files).must()
+    open_file = menu_item(@app, into: actions, text: "Open").must()
+    _ = menu_item(@app, into: actions, text: "Delete").must()
+    inject(@app, input: .choose_menu(item: open_file)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: open_file)
+    close(@app).must()
+
+# A disk's folders, loaded as the person unfolds them.
+test "tree: folders loaded when unfolded"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    inject(@app, input: .unfold(widget: folders, item: home, open: true)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .unfolded(widget: folders, item: home, open: true)
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: true).must()
+    close(@app).must()
+
+# Two folders under a third.
+test "add_item: two under one"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Music", foldable: false).must()
+    assert items_under(app, widget: folders, item: home).must().len() == 2
+    close(@app).must()
+
+# A folder deleted with what it held.
+test "remove_item: a folder and its own"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: false).must()
+    remove_item(@app, widget: folders, item: home).must()
+    assert items_under(app, widget: folders, item: 0).must() == []
+    close(@app).must()
+
+# The top of a tree.
+test "items_under: the top"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    assert items_under(app, widget: folders, item: 0).must() == [home]
+    close(@app).must()
+
+# An item's text read back.
+test "item_text: Home"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    assert item_text(app, widget: folders, item: home).must() == "Home"
+    close(@app).must()
+
+# A folder unfolded by the program.
+test "set_unfolded: Home opened"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    set_unfolded(@app, widget: folders, item: home, on: true).must()
+    assert is_unfolded(app, widget: folders, item: home).must()
+    close(@app).must()
+
+# A folder folded as it was made.
+test "is_unfolded: folded at first"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    assert !is_unfolded(app, widget: folders, item: home).must()
+    close(@app).must()
+
+# Paths copied as a file manager copies them, and read back by a Paste.
+test "set_clipboard: two files copied"
+    app @= open(.headless).must()
+    set_clipboard(@app, clip: .files(paths: ["/Users/ada/notes.txt", "/Users/ada/plan.md"])).must()
+    assert clipboard(app, kind: .files).must() == .files(paths: ["/Users/ada/notes.txt", "/Users/ada/plan.md"])
+    close(@app).must()
+
+# A Paste of text where the clipboard holds an image finds nothing.
+test "clipboard: text asked, an image held"
+    app @= open(.headless).must()
+    set_clipboard(@app, clip: .picture(img: image.blank(width: 2, height: 2, format: .rgba).must())).must()
+    assert clipboard(app, kind: .text).must() == .nothing
+    close(@app).must()
+
+# The app's icon, a blank square.
+test "set_icon: a blank square"
+    app @= open(.headless).must()
+    set_icon(@app, img: image.blank(width: 32, height: 32, format: .rgba).must()).must()
+    close(@app).must()
+
+# A dialog the person answers before any other window.
+test "set_modal: a dialog"
+    app @= open(.headless).must()
+    document = window(@app, title: "Notes", width: 200, height: 100).must()
+    dialog = window(@app, title: "Save?", width: 120, height: 60).must()
+    set_modal(@app, widget: dialog, on: true).must()
+    inject(@app, input: .ask_close(window: document)).must()
+    inject(@app, input: .ask_close(window: dialog)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: dialog)
+    close(@app).must()
+
+# The caret put in a search field.
+test "set_focus: the search field"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 200, height: 80).must()
+    field = text_field(@app, into: w, text: "").must()
+    set_focus(@app, widget: field).must()
+    assert focus_of(app, widget: w).must() == field
+    close(@app).must()
+
+# A new window's widgets hold no keys until one is given them.
+test "focus_of: a new window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 200, height: 80).must()
+    _ = text_field(@app, into: w, text: "").must()
+    assert focus_of(app, widget: w).must() == w
+    close(@app).must()
+
+# A dialog's OK pressed by Return wherever its window has the keys.
+test "set_button_key: OK by Return"
+    app @= open(.headless).must()
+    w = window(@app, title: "Ask", width: 160, height: 80).must()
+    ok_button = button(@app, into: w, text: "OK").must()
+    set_button_key(@app, widget: ok_button, key: .enter).must()
+    press_key(@app, widget: w, shortcut: Shortcut(key: "Enter", primary: false, shift: false, alt: false)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
+    close(@app).must()
+
+# A folder chosen for a project.
+test "open_folders: one chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Project", width: 100, height: 60).must()
+    inject(@app, input: .pick_files(paths: ["/tmp/project"])).must()
+    assert open_folders(@app, over: w, title: "Choose the project's folder", multiple: false).must() == .chosen(paths: ["/tmp/project"])
+    close(@app).must()
+
+# Save, Don't Save or Cancel before a document closes, the person choosing
+# the second.
+test "ask: Save, Don't Save, Cancel"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 100, height: 60).must()
+    inject(@app, input: .answer(answer: .button(index: 1))).must()
+    pressed = ask(
+        @app,
+        over: w,
+        title: "Save the changes?",
+        text: "They are lost otherwise.",
+        tone: .warning,
+        buttons: ["Save", "Don't Save", "Cancel"],
+        cancel: 2
+    ).must()
+    assert pressed == 1
     close(@app).must()
 
 # A question answered Yes by an injected answer.

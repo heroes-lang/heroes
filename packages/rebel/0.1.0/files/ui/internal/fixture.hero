@@ -19,3 +19,16 @@ function code_of<T>(r: T?) -> str
     match r
         .ok _  => return ""
         .err e => return e.code
+
+# The words `r` failed with where it failed `unsupported`, this system's
+# native side offering no such call, or "" where it did not fail so: a
+# native case skips by them, naming what the system lacks, where any other
+# failure is its own to tell.
+function unsupported_words<T>(r: T?) -> str
+    match r
+        .ok _ => return ""
+        .err e =>
+            if e.code == ui.UNSUPPORTED
+                return e.msg
+
+            return ""

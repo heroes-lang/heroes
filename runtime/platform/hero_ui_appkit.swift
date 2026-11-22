@@ -94,6 +94,8 @@ private let eventMenu: Int64 = 6
 private let eventClose: Int64 = 7
 private let eventResize: Int64 = 8
 private let eventMessage: Int64 = 9
+private let eventActivate: Int64 = 13
+private let eventSubmit: Int64 = 14
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -162,6 +164,36 @@ public typealias HeroUiAsk = @convention(c) (Int64, Int64, UnsafePointer<UInt8>?
 /// That a web view is gone: `hero_ui_web_gone_fn`.
 public typealias HeroUiGone = @convention(c) (Int64) -> Void
 
+// A window of the program's: AppKit gives the keys to a window with no
+// title bar only where it says it can take them, and a window the program
+// takes its frame from (`hero_ui_set_framed`) must keep its text fields.
+private final class KeyedWindow: NSWindow {
+    override var canBecomeKey: Bool {
+        return true
+    }
+
+    override var canBecomeMain: Bool {
+        return true
+    }
+}
+
+// A list's table, which tells the Return key pressed while it has the keys
+// and a row chosen as that row opened, as a double click on it is: AppKit's
+// table sends its `doubleAction` for the click alone.
+private final class ActivatingTable: NSTableView {
+    var returned: ((Int) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // The Return key and the keypad's Enter, HIToolbox's `kVK_Return`
+        // and `kVK_ANSI_KeypadEnter`.
+        if (event.keyCode == 0x24 || event.keyCode == 0x4C), let first = selectedRowIndexes.first, let returned = returned {
+            returned(first)
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
 // A window's content: its y axis down, as `hero_ui.h` places widgets.
 private final class FlippedView: NSView {
     override var isFlipped: Bool {
@@ -189,6 +221,10 @@ private final class Native {
     var items: [String] = []
     // A window's menus, in order.
     var menus: [Int64] = []
+    // A menu item's role, `hero_ui.h`'s `HERO_UI_ROLE_*`: 0 for none.
+    var role: Int64 = 0
+    // A menu item's check, `hero_ui.h`'s `HERO_UI_CHECK_*`: 0 for none.
+    var check: Int64 = 0
     // A web view's page and what it keeps.
     var page: WebPage?
 
@@ -251,8 +287,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         let made = Native(id: id, kind: kind, parent: parent)
         if kind == kindWindow {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            let window = KeyedWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
+            // Tab and Shift+Tab go through the widgets in the order they
+            // stand, left to right and top to bottom, which is the order the
+            // layout reads them in, so a keyboard reaches each in turn.
+            window.autorecalculatesKeyViewLoop = true
             window.contentView = FlippedView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
             window.delegate = self
             made.window = window
@@ -260,8 +300,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerOk
         }
         if kind == kindMenuItem || kind == kindMenuSeparator {
-            guard let owner = widgets[parent], owner.kind == kindMenu, let menu = owner.menu else {
+            // `hero_ui.h`'s two answers: no widget of that number is
+            // `NOT_FOUND`, a parent of a kind that holds no item `INVALID`.
+            guard let owner = widgets[parent] else {
                 return answerNotFound
+            }
+            guard owner.kind == kindMenu || owner.kind == kindContextMenu, let menu = owner.menu else {
+                return answerInvalid
             }
             let item: NSMenuItem
             if kind == kindMenuSeparator {
@@ -274,10 +319,34 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             menu.addItem(item)
             made.item = item
             widgets[id] = made
+            // A menu the bar left out, every item of it standing in the
+            // application's menu by its role, has an item to show again.
+            if owner.item?.isHidden == true {
+                refreshMenuBar()
+            }
             return answerOk
         }
-        guard let owner = widgets[parent], owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
+        guard let owner = widgets[parent] else {
             return answerNotFound
+        }
+        // A menu inside a menu: its item holds it among the outer menu's
+        // items, in the order made.
+        if kind == kindMenu && (owner.kind == kindMenu || owner.kind == kindContextMenu), let outer = owner.menu {
+            let menu = NSMenu(title: "")
+            menu.autoenablesItems = false
+            let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            item.submenu = menu
+            outer.addItem(item)
+            made.menu = menu
+            made.item = item
+            widgets[id] = made
+            return answerOk
+        }
+        if let answer = createBox(id, kind, owner, made) {
+            return answer
+        }
+        guard let content = contentOf(owner) else {
+            return answerInvalid
         }
         if kind == kindWebView {
             guard let page = WebPage.made(id: id, backend: self) else {
@@ -331,6 +400,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             field.usesSingleLineMode = true
             field.delegate = self
             field.tag = Int(widget.id)
+            // A text field sends its action when the person presses Return
+            // in it (`HERO_UI_EVENT_SUBMIT`), and not when its editing ends
+            // another way: AppKit's own default sends it too when the field
+            // leaves the window while it is edited, its page hidden by a
+            // tab chosen, as measured on this Mac.
+            field.cell?.sendsActionOnEndEditing = false
+            field.target = self
+            field.action = #selector(submitted(_:))
             return field
         case kindTextArea:
             let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
@@ -338,6 +415,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             scroll.borderType = .bezelBorder
             let text = NSTextView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
             text.isRichText = false
+            // An `NSTextView` made in code keeps no undo of its own until
+            // asked, where a text field's field editor keeps one: the Edit
+            // menu's Undo and Redo then reach both alike.
+            text.allowsUndo = true
             text.autoresizingMask = [.width]
             text.delegate = self
             scroll.documentView = text
@@ -353,7 +434,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
             scroll.hasVerticalScroller = true
             scroll.borderType = .bezelBorder
-            let table = NSTableView(frame: scroll.bounds)
+            let table = ActivatingTable(frame: scroll.bounds)
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("items"))
             column.resizingMask = .autoresizingMask
             table.addTableColumn(column)
@@ -362,6 +443,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             table.allowsEmptySelection = true
             table.dataSource = self
             table.delegate = self
+            table.target = self
+            table.doubleAction = #selector(rowDoubleClicked(_:))
+            table.returned = { [weak self, weak table] row in
+                if let table = table {
+                    self?.activated(table, row)
+                }
+            }
             scroll.documentView = table
             widget.table = table
             tables[ObjectIdentifier(table)] = widget.id
@@ -415,6 +503,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widget.page = nil
             gone(id)
         }
+        if widget.kind == kindPage {
+            removePage(widget)
+        }
+        if widget.kind == kindTree {
+            forests[id] = nil
+        }
+        if widget.kind == kindContextMenu, let owner = widgets[widget.parent], let target = contextTarget(owner), target.menu === widget.menu {
+            target.menu = nil
+        }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
             item.menu?.removeItem(item)
@@ -441,21 +538,127 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
 
     // MARK: the menu bar
 
-    // The application's menu bar: its own menu, then `menus`' items.
-    func appMenuBar(menus: [NSMenuItem]) -> NSMenu {
+    // The application's menu bar: its own menu, then `menus`' items, the
+    // standard Edit menu after the first of them (the place Apple's order of
+    // a menu bar gives File) or after the application's own where there is
+    // none. AppKit hands a key held with Command to the main menu's key
+    // equivalents before any widget sees it, so without this menu Command+X,
+    // Command+C, Command+V, Command+A and Command+Z reach no text field and
+    // no text area, and do nothing.
+    func appMenuBar(menus: [NSMenuItem], roles: [Int64: Native] = [:]) -> NSMenu {
         let bar = NSMenu(title: "")
         let appItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        let appMenu = NSMenu(title: ProcessInfo.processInfo.processName)
-        let quit = NSMenuItem(title: "Quit " + ProcessInfo.processInfo.processName, action: #selector(quitAsked(_:)), keyEquivalent: "q")
-        quit.target = self
-        appMenu.addItem(quit)
-        appItem.submenu = appMenu
+        appItem.submenu = appMenu(roles)
         bar.addItem(appItem)
         for item in menus {
             item.menu?.removeItem(item)
+            // A menu whose every item a role took to the application's menu
+            // stands empty; it is left out of the bar.
+            if let menu = item.submenu {
+                item.isHidden = !menu.items.isEmpty && menu.items.allSatisfy { $0.isHidden }
+            }
             bar.addItem(item)
         }
+        bar.insertItem(editMenuItem(), at: menus.isEmpty ? 1 : 2)
         return bar
+    }
+
+    // The application's menu, as every Mac program has it: About, Settings
+    // where the program gave an item that role, Services, Hide, Hide Others,
+    // Show All and Quit (Apple's Human Interface Guidelines, The menu bar,
+    // the app menu). An item of the program's own with a role
+    // (`HERO_UI_ROLE_*`) stands here in the place of the system's, its
+    // choosing told as the item's `HERO_UI_EVENT_MENU`, and is hidden in the
+    // menu the program put it in; without one, About shows the system's own
+    // panel and Quit asks every window to close. Hide, Hide Others, Show All
+    // and Services are the system's, and tell the program nothing.
+    func appMenu(_ roles: [Int64: Native]) -> NSMenu {
+        let name = ProcessInfo.processInfo.processName
+        let menu = NSMenu(title: name)
+        menu.autoenablesItems = false
+        if let about = roles[roleAbout], let item = about.item {
+            menu.addItem(proxy(item, about.id, item.keyEquivalent))
+        } else {
+            menu.addItem(withTitle: "About " + name, action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "").target = NSApp
+        }
+        if let settings = roles[roleSettings], let item = settings.item {
+            menu.addItem(NSMenuItem.separator())
+            // Command+, is every Mac program's key for its settings, given
+            // where the program gave the item none of its own.
+            let made = proxy(item, settings.id, item.keyEquivalent.isEmpty ? "," : item.keyEquivalent)
+            if item.keyEquivalent.isEmpty {
+                made.keyEquivalentModifierMask = [.command]
+            }
+            menu.addItem(made)
+        }
+        menu.addItem(NSMenuItem.separator())
+        let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+        let servicesMenu = NSMenu(title: "Services")
+        services.submenu = servicesMenu
+        NSApp.servicesMenu = servicesMenu
+        menu.addItem(services)
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: "Hide " + name, action: #selector(NSApplication.hide(_:)), keyEquivalent: "h").target = NSApp
+        let others = menu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
+        others.keyEquivalentModifierMask = [.command, .option]
+        others.target = NSApp
+        menu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "").target = NSApp
+        menu.addItem(NSMenuItem.separator())
+        if let quit = roles[roleQuit], let item = quit.item {
+            menu.addItem(proxy(item, quit.id, item.keyEquivalent.isEmpty ? "q" : item.keyEquivalent))
+        } else {
+            let made = NSMenuItem(title: "Quit " + name, action: #selector(quitAsked(_:)), keyEquivalent: "q")
+            made.target = self
+            menu.addItem(made)
+        }
+        return menu
+    }
+
+    // An item of the application's menu standing for the program's `item`,
+    // widget `id`: its title, its key, its state; choosing it is choosing
+    // the program's item.
+    func proxy(_ item: NSMenuItem, _ id: Int64, _ key: String) -> NSMenuItem {
+        let made = NSMenuItem(title: item.title, action: #selector(menuChosen(_:)), keyEquivalent: key)
+        made.keyEquivalentModifierMask = item.keyEquivalentModifierMask
+        made.target = self
+        made.tag = Int(id)
+        made.isEnabled = item.isEnabled
+        return made
+    }
+
+    // The standard Edit menu, as the item that holds it in the bar. Each
+    // item sends AppKit's own action with no target, so it goes to the first
+    // responder: the field editor of the text field with the keys, or the
+    // text area's `NSTextView`, which cut, copy and paste through the
+    // general pasteboard and undo through their window's undo manager. The
+    // menu enables its items itself (`autoenablesItems`), so an item no
+    // responder takes is greyed, as a person expects.
+    func editMenuItem() -> NSMenuItem {
+        let edit = NSMenu(title: "Edit")
+        // Each item's title, its action (none for a separator), its key and
+        // the keys held with it, in the order of every Mac program's menu.
+        let entries: [(String, Selector?, String, NSEvent.ModifierFlags)] = [
+            ("Undo", Selector(("undo:")), "z", [.command]),
+            ("Redo", Selector(("redo:")), "z", [.command, .shift]),
+            ("", nil, "", []),
+            ("Cut", #selector(NSText.cut(_:)), "x", [.command]),
+            ("Copy", #selector(NSText.copy(_:)), "c", [.command]),
+            ("Paste", #selector(NSText.paste(_:)), "v", [.command]),
+            ("Delete", #selector(NSText.delete(_:)), "", []),
+            ("Select All", #selector(NSText.selectAll(_:)), "a", [.command]),
+        ]
+        for (title, action, key, held) in entries {
+            guard let action = action else {
+                edit.addItem(NSMenuItem.separator())
+                continue
+            }
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.keyEquivalentModifierMask = held
+            edit.addItem(item)
+        }
+        let holder = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        holder.submenu = edit
+        return holder
     }
 
     // Puts the menus of the window in front into the application's bar.
@@ -467,20 +670,32 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
         }
         var items: [NSMenuItem] = []
+        var roles: [Int64: Native] = [:]
         if let window = front {
             for id in window.menus {
                 if let item = widgets[id]?.item {
                     items.append(item)
                 }
             }
+            // The first item of each role, by its number, in the window's
+            // menus.
+            for widget in widgets.values.sorted(by: { $0.id < $1.id }) where widget.role != 0 && roles[widget.role] == nil {
+                if let menu = widgets[widget.parent], window.menus.contains(menu.id) {
+                    roles[widget.role] = widget
+                }
+            }
         }
-        NSApp.mainMenu = appMenuBar(menus: items)
+        NSApp.mainMenu = appMenuBar(menus: items, roles: roles)
     }
 
     // MARK: what the person does
 
     @objc func clicked(_ sender: NSButton) {
         queue(eventClick, Int64(sender.tag), 0, 0)
+    }
+
+    @objc func submitted(_ sender: NSTextField) {
+        queue(eventSubmit, Int64(sender.tag), 0, 0)
     }
 
     @objc func toggled(_ sender: NSButton) {
@@ -505,8 +720,35 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
     }
 
+    // A row double-clicked: the row under the click, nothing where the
+    // click fell past the last row.
+    @objc func rowDoubleClicked(_ sender: NSTableView) {
+        if sender.clickedRow >= 0 {
+            activated(sender, sender.clickedRow)
+        }
+    }
+
+    // Row `row` of `table` opened by the person (`HERO_UI_EVENT_ACTIVATE`).
+    func activated(_ table: NSTableView, _ row: Int) {
+        if let id = tables[ObjectIdentifier(table)], table.isEnabled {
+            queue(eventActivate, id, Int64(row), 0)
+        }
+    }
+
+    // A menu item chosen: a check item turns over, a radio item is checked
+    // and the other radio items of its group unchecked, before its event,
+    // whose value is the item's state after it.
     @objc func menuChosen(_ sender: NSMenuItem) {
-        queue(eventMenu, Int64(sender.tag), 0, 0)
+        let id = Int64(sender.tag)
+        guard let widget = widgets[id] else {
+            return
+        }
+        if widget.check == checkBox, let item = widget.item {
+            item.state = item.state == .on ? .off : .on
+        } else if widget.check == checkRadio {
+            radioChecked(widget)
+        }
+        queue(eventMenu, id, widget.item?.state == .on ? 1 : 0, 0)
     }
 
     @objc func quitAsked(_ sender: NSMenuItem) {
@@ -554,14 +796,18 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id] else {
             return 0
         }
-        return widget.items.count
+        return rowsOf(widget)
     }
 
     func tableView(_ table: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
-        guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id], row >= 0, row < widget.items.count else {
+        guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id], row >= 0, row < rowsOf(widget) else {
             return nil
         }
-        let cell = NSTextField(labelWithString: widget.items[row])
+        let at = cellAt(widget, table, column, row)
+        guard at >= 0, at < widget.items.count else {
+            return nil
+        }
+        let cell = NSTextField(labelWithString: widget.items[at])
         cell.lineBreakMode = .byTruncatingTail
         return cell
     }
@@ -581,6 +827,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         switch widget.kind {
         case kindWindow:
             widget.window?.title = text
+        case kindPage:
+            if let tabs = widgets[widget.parent]?.view as? NSTabView {
+                for item in tabs.tabViewItems where item.view === widget.view {
+                    item.label = text
+                }
+            }
         case kindLabel, kindTextField:
             (widget.view as? NSTextField)?.stringValue = text
         case kindButton, kindCheckbox:
@@ -592,6 +844,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widget.item?.title = text
         case kindMenuItem:
             widget.item?.title = text
+            if widget.role != roleNone {
+                refreshMenuBar()
+            }
         default:
             return answerInvalid
         }
@@ -602,9 +857,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindTable, let table = widget.table, items.count % max(table.tableColumns.count, 1) != 0 {
+            return answerInvalid
+        }
         widget.items = items
         switch widget.kind {
-        case kindList, kindListMultiple:
+        case kindList, kindListMultiple, kindTable:
             muted = true
             widget.table?.reloadData()
             widget.table?.deselectAll(nil)
@@ -638,6 +896,20 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func setValue(_ id: Int64, _ value: Int64) -> Int64 {
         guard let widget = widgets[id] else {
             return answerNotFound
+        }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return setDivider(widget, value)
+        }
+        if widget.kind == kindMenuItem {
+            guard widget.check != checkNone, value == 0 || value == 1, let item = widget.item else {
+                return answerInvalid
+            }
+            if widget.check == checkRadio && value == 1 {
+                radioChecked(widget)
+            } else {
+                item.state = value == 1 ? .on : .off
+            }
+            return answerOk
         }
         switch widget.kind {
         case kindCheckbox:
@@ -677,6 +949,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return setDividerRange(widget, least, most)
+        }
         if let slider = widget.view as? NSSlider {
             slider.minValue = Double(least)
             slider.maxValue = Double(most)
@@ -694,15 +969,21 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindTabs {
+            return setPage(widget, indices)
+        }
+        if widget.kind == kindTree {
+            return treeChoose(widget, indices, true)
+        }
         guard let table = widget.table else {
             return answerInvalid
         }
-        if indices.count > 1 && widget.kind != kindListMultiple {
+        if indices.count > 1 && widget.kind != kindListMultiple && widget.kind != kindTable {
             return answerInvalid
         }
         var chosen = IndexSet()
         for index in indices {
-            guard index >= 0, index < Int64(widget.items.count) else {
+            guard index >= 0, index < Int64(rowsOf(widget)) else {
                 return answerInvalid
             }
             chosen.insert(Int(index))
@@ -746,6 +1027,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if which == flagEnabled {
             if let item = widget.item {
                 item.isEnabled = on
+                if widget.role != roleNone {
+                    refreshMenuBar()
+                }
             } else if let table = widget.table {
                 table.isEnabled = on
             } else if let text = widget.textView {
@@ -757,6 +1041,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
             } else if let control = widget.view as? NSControl {
                 control.isEnabled = on
+            } else if widget.view is NSProgressIndicator {
+                // AppKit's progress indicator takes no input and has no
+                // greyed state to draw, so there is nothing to change; the
+                // call is done, as on every other arm, and the face keeps
+                // what the program set.
             } else {
                 return answerInvalid
             }
@@ -784,6 +1073,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         item.keyEquivalent = equivalent
         item.keyEquivalentModifierMask = mask
+        if widget.role != roleNone {
+            refreshMenuBar()
+        }
         return answerOk
     }
 
@@ -829,6 +1121,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     }
 
     func setSize(_ id: Int64, _ which: Int64, _ width: Int64, _ height: Int64) -> Int64 {
+        // A scrolled box's size is its content's.
+        if let widget = widgets[id], widget.kind == kindScroll {
+            guard which != sizeLeast, let document = (widget.view as? NSScrollView)?.documentView else {
+                return answerInvalid
+            }
+            document.setFrameSize(NSSize(width: CGFloat(width), height: CGFloat(height)))
+            return answerOk
+        }
         guard let widget = widgets[id], let window = widget.window else {
             return widgets[id] == nil ? answerNotFound : answerInvalid
         }
@@ -838,8 +1138,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerOk
         }
         if window.contentLayoutRect.size != size {
+            // AppKit keeps a window's bottom-left corner where its size
+            // changes; `hero_ui.h` places a window by its top-left corner,
+            // so that corner is kept, and a window the program placed stays
+            // where it was put when its layout grows it.
+            let top = window.frame.maxY
             muted = true
             window.setContentSize(size)
+            window.setFrameTopLeftPoint(NSPoint(x: window.frame.minX, y: top))
             muted = false
         }
         return answerOk
@@ -848,6 +1154,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func place(_ id: Int64, _ index: Int64, _ frame: NSRect) -> Int64 {
         guard let widget = widgets[id] else {
             return answerNotFound
+        }
+        // The system sizes a page and a pane itself.
+        if widget.kind == kindPage || widget.kind == kindPane {
+            return answerInvalid
         }
         if index < 0 {
             guard let view = widget.view else {
@@ -869,6 +1179,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func preferred(_ id: Int64) -> NSSize? {
         guard let widget = widgets[id] else {
             return nil
+        }
+        if let size = boxPreferred(widget) ?? tablePreferred(widget) {
+            return size
+        }
+        if widget.kind == kindTree {
+            return NSSize(width: fieldWidth, height: areaHeight)
         }
         switch widget.kind {
         case kindTextField:
@@ -913,6 +1229,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return nil
         }
+        if let split = widget.view as? NSSplitView, widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return dividerAt(split)
+        }
+        if widget.kind == kindMenuItem && widget.check != checkNone {
+            return widget.item?.state == .on ? 1 : 0
+        }
         switch widget.kind {
         case kindCheckbox:
             return (widget.view as? NSButton)?.state == .on ? 1 : 0
@@ -932,6 +1254,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func selection(_ id: Int64) -> [Int64]? {
         guard let widget = widgets[id] else {
             return nil
+        }
+        if widget.kind == kindTabs {
+            return pageShown(widget)
+        }
+        if widget.kind == kindTree {
+            return treeChosen(widget)
         }
         if let table = widget.table {
             return table.selectedRowIndexes.map { Int64($0) }
@@ -961,6 +1289,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if let answer = injectBox(kind, widget, value) {
+            return answer
+        }
+        if kind == eventSort {
+            return widget.kind == kindTable ? injectSort(widget, value, second == 1) : answerInvalid
+        }
+        if let answer = injectTree(kind, widget, value, second) {
+            return answer
+        }
         switch kind {
         case eventClick, eventToggle:
             guard let button = widget.view as? NSButton else {
@@ -986,7 +1323,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
                 if value < 0 {
                     table.deselectAll(nil)
-                } else if value < Int64(widget.items.count) {
+                } else if value < Int64(rowsOf(widget)) {
                     table.selectRowIndexes(IndexSet(integer: Int(value)), byExtendingSelection: second == 1)
                 } else {
                     return answerInvalid
@@ -1034,6 +1371,30 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             if window.styleMask.contains(.resizable) {
                 window.setContentSize(NSSize(width: CGFloat(value), height: CGFloat(second)))
+            }
+        case eventSubmit:
+            guard widget.kind == kindTextField, let field = widget.view as? NSTextField else {
+                return answerInvalid
+            }
+            // Return goes to the window's default button before the field,
+            // as AppKit gives the person's Return.
+            if field.isEnabled {
+                if let button = field.window?.defaultButtonCell?.controlView as? NSButton, button.isEnabled, !button.isHiddenOrHasHiddenAncestor {
+                    button.performClick(nil)
+                } else {
+                    field.sendAction(field.action, to: field.target)
+                }
+            }
+        case eventActivate:
+            guard let table = widget.table, value >= 0, value < Int64(rowsOf(widget)) else {
+                return answerInvalid
+            }
+            if table.isEnabled {
+                // The first click chooses the row, as the person's does.
+                if !table.selectedRowIndexes.contains(Int(value)) {
+                    table.selectRowIndexes(IndexSet(integer: Int(value)), byExtendingSelection: false)
+                }
+                activated(table, Int(value))
             }
         case eventMessage:
             guard let page = widget.page else {
@@ -1494,6 +1855,404 @@ public func hero_ui_appkit_words(_ words: UnsafeMutablePointer<CChar>?, _ count:
     return Int64(length)
 }
 
+// The keys a button may be pressed by, `hero_ui.h`'s `HERO_UI_BUTTON_KEY_*`,
+// and the key equivalent AppKit gives each.
+private let buttonKeyNone: Int64 = 0
+private let buttonKeyEnter: Int64 = 1
+private let buttonKeyEscape: Int64 = 2
+private let enterEquivalent = "\r"
+private let escapeEquivalent = "\u{1b}"
+
+extension Backend {
+    // Lets `key` press button `id` wherever its window has the keys: Return
+    // as the window's default button, which AppKit draws as such, or Escape
+    // as its Cancel. A window has one button of each; the one that had the
+    // key before loses it.
+    func setButtonKey(_ id: Int64, _ key: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindButton, let button = widget.view as? NSButton, key >= buttonKeyNone, key <= buttonKeyEscape else {
+            return answerInvalid
+        }
+        let window = windowOf(widget)?.window
+        let equivalent = key == buttonKeyEnter ? enterEquivalent : (key == buttonKeyEscape ? escapeEquivalent : "")
+        if !equivalent.isEmpty {
+            for other in widgets.values where other.kind == kindButton && other.id != id && windowOf(other)?.id == windowOf(widget)?.id {
+                if let held = other.view as? NSButton, held.keyEquivalent == equivalent {
+                    held.keyEquivalent = ""
+                }
+            }
+        }
+        if button.keyEquivalent == enterEquivalent && window?.defaultButtonCell === button.cell {
+            window?.defaultButtonCell = nil
+        }
+        button.keyEquivalent = equivalent
+        button.keyEquivalentModifierMask = []
+        if key == buttonKeyEnter, let cell = button.cell as? NSButtonCell {
+            window?.defaultButtonCell = cell
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_button_key(_ id: Int64, _ key: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setButtonKey(id, key) ?? answerNotFound
+    }
+}
+
+extension Backend {
+    // Gives widget `id` the keys in its window: the view the person types
+    // into or chooses in. AppKit gives it the keys when its window is key.
+    func setFocus(_ id: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        let typed: NSView? = widget.textView ?? widget.table ?? (widget.kind == kindTree ? outlineOf(widget) : nil) ?? widget.view
+        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable, kindTree].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
+            return answerInvalid
+        }
+        return window.makeFirstResponder(view) ? answerOk : answerInvalid
+    }
+
+    // The widget of window `id` that has the keys, `id` itself where none
+    // of its widgets has them: a text field's keys are its window's field
+    // editor's, whose delegate is the field.
+    func focus(_ id: Int64) -> Int64? {
+        guard let widget = widgets[id], let window = widget.window else {
+            return nil
+        }
+        guard let responder = window.firstResponder else {
+            return id
+        }
+        let field = (responder as? NSTextView)?.delegate as? NSTextField
+        for other in widgets.values where other.kind != kindWindow && windowOf(other)?.id == id {
+            if other.view === responder || other.textView === responder || other.table === responder || (other.kind == kindTree && outlineOf(other) === responder) || (field != nil && other.view === field) {
+                return other.id
+            }
+        }
+        return id
+    }
+}
+
+@c
+public func hero_ui_appkit_set_focus(_ id: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setFocus(id) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_focus(_ id: Int64, _ focus: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let focus = focus else {
+        return answerInvalid
+    }
+    let (held, found) = MainActor.assumeIsolated { () -> (Bool, Int64?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.focus(id))
+    }
+    guard held else {
+        return answerNotFound
+    }
+    guard let answer = found else {
+        return answerInvalid
+    }
+    focus.pointee = answer
+    return answerOk
+}
+
+extension Backend {
+    // Shows the system's dialog to choose folders, one or, where
+    // `multiple`, several, and keeps the paths chosen, each followed by one
+    // zero byte, for `dialog_paths`; answers their bytes, 0 where the person
+    // cancelled. It waits for the person, as the file dialogs do.
+    func folderDialog(_ multiple: Bool, _ title: String) -> Int64 {
+        let panel = NSOpenPanel()
+        panel.title = title
+        panel.message = title
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = multiple
+        guard panel.runModal() == .OK else {
+            paths = []
+            return 0
+        }
+        var joined: [UInt8] = []
+        for url in panel.urls {
+            let path = Array(url.path.utf8)
+            if path.contains(0) {
+                continue
+            }
+            joined.append(contentsOf: path)
+            joined.append(0)
+        }
+        paths = joined
+        return Int64(joined.count)
+    }
+
+    // Shows a message box of `tone` whose buttons are `buttons`, in order,
+    // the first its default (Return) and the one at `cancel` pressed by
+    // Escape where it is 0 or more, and waits for the person: answers the
+    // index of the button pressed.
+    func ask(_ tone: Int64, _ title: String, _ text: String, _ buttons: [String], _ cancel: Int64) -> Int64 {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = text
+        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
+        for label in buttons {
+            alert.addButton(withTitle: label)
+        }
+        if cancel >= 0 && cancel < Int64(alert.buttons.count) && cancel != 0 {
+            alert.buttons[Int(cancel)].keyEquivalent = "\u{1b}"
+        }
+        let pressed = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+        if pressed >= 0 && pressed < buttons.count {
+            return Int64(pressed)
+        }
+        return cancel >= 0 ? cancel : 0
+    }
+}
+
+@c
+public func hero_ui_appkit_folder_dialog(_ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let bytes = bytes else {
+        return answerInvalid
+    }
+    let heading = text(title, titleCount)
+    let got = MainActor.assumeIsolated { () -> Int64? in
+        return backend()?.folderDialog(multiple == 1, heading)
+    }
+    guard let length = got else {
+        return answerNotFound
+    }
+    bytes.pointee = length
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ said: UnsafePointer<UInt8>?, _ saidCount: Int64, _ buttons: UnsafePointer<UInt8>?, _ buttonsCount: Int64, _ cancel: Int64, _ pressed: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let pressed = pressed else {
+        return answerInvalid
+    }
+    let heading = text(title, titleCount)
+    let words = text(said, saidCount)
+    let labels = texts(buttons, buttonsCount)
+    let got = MainActor.assumeIsolated { () -> Int64? in
+        return backend()?.ask(tone, heading, words, labels, cancel)
+    }
+    guard let index = got else {
+        return answerNotFound
+    }
+    pressed.pointee = index
+    return answerOk
+}
+
+extension Backend {
+    // Masks text field `id`'s text, `on`, or shows it: AppKit masks a field
+    // of its own class, `NSSecureTextField`, so the field's view is
+    // replaced by one of the other class in its place, with its text, its
+    // frame, its state and the program's hooks kept.
+    func setMasked(_ id: Int64, _ on: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTextField, let old = widget.view as? NSTextField, let parent = old.superview else {
+            return answerInvalid
+        }
+        if (old is NSSecureTextField) == on {
+            return answerOk
+        }
+        let made: NSTextField = on ? NSSecureTextField(string: old.stringValue) : NSTextField(string: old.stringValue)
+        made.usesSingleLineMode = true
+        made.frame = old.frame
+        made.isEnabled = old.isEnabled
+        made.isHidden = old.isHidden
+        made.delegate = self
+        made.tag = old.tag
+        made.cell?.sendsActionOnEndEditing = false
+        made.target = self
+        made.action = #selector(submitted(_:))
+        parent.replaceSubview(old, with: made)
+        widget.view = made
+        return answerOk
+    }
+
+    // Lets progress bar `id` move with no value, `on`, while the work's end
+    // is unknown, or shows its value again.
+    func setMoving(_ id: Int64, _ on: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindProgress, let bar = widget.view as? NSProgressIndicator else {
+            return answerInvalid
+        }
+        bar.isIndeterminate = on
+        if on {
+            bar.startAnimation(nil)
+        } else {
+            bar.stopAnimation(nil)
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_masked(_ id: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setMasked(id, on == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_set_moving(_ id: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setMoving(id, on == 1) ?? answerNotFound
+    }
+}
+
+// A menu item's checks, `hero_ui.h`'s `HERO_UI_CHECK_*`.
+private let checkNone: Int64 = 0
+private let checkBox: Int64 = 1
+private let checkRadio: Int64 = 2
+
+extension Backend {
+    // Makes menu item `id` a check item, a radio item or neither, unchecked.
+    func setCheck(_ id: Int64, _ mode: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindMenuItem, let item = widget.item, mode >= checkNone, mode <= checkRadio else {
+            return answerInvalid
+        }
+        widget.check = mode
+        item.state = .off
+        return answerOk
+    }
+
+    // Checks radio item `widget` and unchecks every other radio item of its
+    // group: the radio items of its menu that no separator and no other item
+    // stands between, as a menu shows a group.
+    func radioChecked(_ widget: Native) {
+        guard let item = widget.item, let menu = item.menu else {
+            return
+        }
+        let at = menu.index(of: item)
+        var first = at
+        while first > 0, let other = native(menu.item(at: first - 1)), other.check == checkRadio {
+            first -= 1
+        }
+        var last = at
+        while last + 1 < menu.numberOfItems, let other = native(menu.item(at: last + 1)), other.check == checkRadio {
+            last += 1
+        }
+        for index in first...last {
+            menu.item(at: index)?.state = index == at ? .on : .off
+        }
+    }
+
+    // The widget whose menu item `item` is.
+    func native(_ item: NSMenuItem?) -> Native? {
+        guard let item = item, !item.isSeparatorItem, let widget = widgets[Int64(item.tag)], widget.item === item else {
+            return nil
+        }
+        return widget
+    }
+}
+
+@c
+public func hero_ui_appkit_set_check(_ id: Int64, _ mode: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setCheck(id, mode) ?? answerNotFound
+    }
+}
+
+// A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.
+private let roleNone: Int64 = 0
+private let roleAbout: Int64 = 1
+private let roleSettings: Int64 = 2
+private let roleQuit: Int64 = 3
+
+extension Backend {
+    // Gives menu item `id` the role `role`: it stands in the application's
+    // menu in the system's place and is hidden in its own (`appMenu`).
+    func setRole(_ id: Int64, _ role: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindMenuItem, let item = widget.item, role >= roleNone, role <= roleQuit else {
+            return answerInvalid
+        }
+        widget.role = role
+        item.isHidden = role != roleNone
+        refreshMenuBar()
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_role(_ id: Int64, _ role: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setRole(id, role) ?? answerNotFound
+    }
+}
+
+// `hero_ui_appkit.h`'s `HERO_UI_APPKIT_OBJECT_*`: which object of a widget
+// `hero_ui_appkit_object` answers.
+private let objectWindow: Int64 = 1
+private let objectView: Int64 = 2
+private let objectTyped: Int64 = 3
+private let objectMenu: Int64 = 4
+private let objectItem: Int64 = 5
+private let objectOwnWindow: Int64 = 6
+
+// The AppKit object widget `id` stands on, `hero_ui_appkit.h`'s
+// `HERO_UI_APPKIT_OBJECT_*`, unretained: what the arm's other Swift
+// members act on, each compiled as a module of its own and so unable to
+// read `Backend`, which `hero_ui.c` asks here and hands them within one
+// call on the main thread. The object lives while `widgets` holds the
+// widget, which no call between the asking and the handing changes; nil
+// where the widget is none, or holds no such object.
+@c
+public func hero_ui_appkit_object(_ id: Int64, _ which: Int64) -> UnsafeMutableRawPointer? {
+    let found = MainActor.assumeIsolated { () -> AnyObject? in
+        guard let widgets = backend()?.widgets, let widget = widgets[id] else {
+            return nil
+        }
+        switch which {
+        case objectWindow:
+            var at: Native? = widget
+            while let each = at {
+                if let window = each.window ?? each.view?.window {
+                    return window
+                }
+                at = widgets[each.parent]
+            }
+            return nil
+        case objectView:
+            return widget.view
+        case objectTyped:
+            return widget.textView ?? widget.table ?? widget.view
+        case objectMenu:
+            return widget.menu
+        case objectItem:
+            return widget.item
+        case objectOwnWindow:
+            return widget.window
+        default:
+            return nil
+        }
+    }
+    guard let object = found else {
+        return nil
+    }
+    return Unmanaged.passUnretained(object).toOpaque()
+}
+
 @c
 public func hero_ui_appkit_create(_ id: Int64, _ kind: Int64, _ parent: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
@@ -1608,14 +2367,19 @@ public func hero_ui_appkit_text(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt
     guard let length = length else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> [UInt8]? in
-        guard let said = backend()?.text(id) else {
-            return nil
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, [UInt8]?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
         }
-        return Array(said.utf8)
+        return (true, backend.text(id).map { Array($0.utf8) })
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that holds no text `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let bytes = read else {
-        return answerNotFound
+        return answerInvalid
     }
     length.pointee = Int64(bytes.count)
     if let buffer = buffer, bytes.count <= Int(count) {
@@ -1631,8 +2395,16 @@ public func hero_ui_appkit_value(_ id: Int64, _ value: UnsafeMutablePointer<Int6
     guard let value = value else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.value(id)
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, Int64?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.value(id))
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that holds no value `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let found = read else {
         return answerInvalid
@@ -1646,8 +2418,16 @@ public func hero_ui_appkit_selection(_ id: Int64, _ indices: UnsafeMutablePointe
     guard let chosen = chosen else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> [Int64]? in
-        return backend()?.selection(id)
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, [Int64]?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.selection(id))
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that chooses nothing `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let found = read else {
         return answerInvalid
@@ -1747,5 +2527,834 @@ public func hero_ui_appkit_web_post(_ id: Int64, _ bytes: UnsafePointer<UInt8>?,
     let posted = text(bytes, count)
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.webPost(id, posted) ?? answerNotFound
+    }
+}
+
+// MARK: boxes the system draws: pages, a scrolled box, two panes
+
+// The kinds of `hero_ui.h`'s BOXES THE SYSTEM DRAWS.
+private let kindTabs: Int64 = 22
+private let kindPage: Int64 = 23
+private let kindScroll: Int64 = 24
+private let kindSplitRow: Int64 = 25
+private let kindSplitColumn: Int64 = 26
+private let kindPane: Int64 = 27
+
+// The key AppKit's notification of a divider dragged by the person carries,
+// and a resize of the split's own place does not.
+private let dividerDragged = "NSSplitViewDividerIndex"
+
+// A split view whose divider the person drags within the range the program
+// set, its panes' least sizes.
+private final class BoundedSplitView: NSSplitView {
+    var least: CGFloat = 0
+    var most: CGFloat = .greatestFiniteMagnitude
+}
+
+extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
+    // The view a widget whose parent is `owner` stands in: a window's
+    // content, a page's view, a scrolled box's content, a pane's view; nil
+    // for any other parent.
+    func contentOf(_ owner: Native) -> NSView? {
+        switch owner.kind {
+        case kindWindow:
+            return owner.window?.contentView
+        case kindPage, kindPane:
+            return owner.view
+        case kindScroll:
+            return (owner.view as? NSScrollView)?.documentView
+        default:
+            return nil
+        }
+    }
+
+    // The window `widget` stands in, its parents walked up to it.
+    func windowOf(_ widget: Native) -> Native? {
+        var at: Native? = widget
+        while let each = at {
+            if each.kind == kindWindow {
+                return each
+            }
+            at = widgets[each.parent]
+        }
+        return nil
+    }
+
+    // Makes `made`, of a kind of BOXES THE SYSTEM DRAWS, in `owner`; nil
+    // for every other kind, which `create` makes itself.
+    func createBox(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        switch kind {
+        case kindPage:
+            guard owner.kind == kindTabs, let tabs = owner.view as? NSTabView else {
+                return answerInvalid
+            }
+            let page = FlippedView(frame: tabs.contentRect)
+            page.clipsToBounds = true
+            let item = NSTabViewItem(identifier: NSNumber(value: id))
+            item.view = page
+            muted = true
+            tabs.addTabViewItem(item)
+            muted = false
+            made.view = page
+        case kindPane:
+            guard owner.kind == kindSplitRow || owner.kind == kindSplitColumn, let split = owner.view as? NSSplitView else {
+                return answerInvalid
+            }
+            if split.arrangedSubviews.count >= 2 {
+                return answerInvalid
+            }
+            let pane = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            pane.clipsToBounds = true
+            split.addArrangedSubview(pane)
+            made.view = pane
+        case kindContextMenu:
+            guard let target = contextTarget(owner), !widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) else {
+                return answerInvalid
+            }
+            let menu = NSMenu(title: "")
+            menu.autoenablesItems = false
+            target.menu = menu
+            made.menu = menu
+        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable, kindTree:
+            guard let content = contentOf(owner) else {
+                return answerInvalid
+            }
+            let view: NSView
+            if kind == kindTree {
+                view = makeTree(made)
+            } else if kind == kindTable {
+                view = makeTable(made)
+            } else if kind == kindTabs {
+                let tabs = NSTabView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                tabs.delegate = self
+                view = tabs
+            } else if kind == kindScroll {
+                let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                let document = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+                scroll.documentView = document
+                scroll.hasVerticalScroller = true
+                scroll.hasHorizontalScroller = false
+                scroll.autohidesScrollers = true
+                scroll.drawsBackground = false
+                view = scroll
+            } else {
+                let split = BoundedSplitView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                split.isVertical = kind == kindSplitRow
+                split.dividerStyle = .thin
+                split.delegate = self
+                view = split
+            }
+            content.addSubview(view)
+            made.view = view
+        default:
+            return nil
+        }
+        widgets[id] = made
+        return answerOk
+    }
+
+    // The room tabs or a scrolled box draws around its content.
+    func insets(_ id: Int64) -> (Int64, Int64, Int64, Int64)? {
+        guard let widget = widgets[id] else {
+            return nil
+        }
+        if let tabs = widget.view as? NSTabView, widget.kind == kindTabs {
+            let saved = tabs.frame
+            tabs.frame = NSRect(x: saved.minX, y: saved.minY, width: 400, height: 300)
+            let inner = tabs.contentRect
+            tabs.frame = saved
+            let left = Int64(inner.minX.rounded(.up))
+            let right = Int64((400 - inner.maxX).rounded(.up))
+            let top = tabs.isFlipped ? Int64(inner.minY.rounded(.up)) : Int64((300 - inner.maxY).rounded(.up))
+            let bottom = tabs.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
+            return (left, top, right, bottom)
+        }
+        if let scroll = widget.view as? NSScrollView, widget.kind == kindScroll {
+            let frame = NSSize(width: 400, height: 300)
+            let inner = NSScrollView.contentSize(forFrameSize: frame, horizontalScrollerClass: nil, verticalScrollerClass: NSScroller.self, borderType: scroll.borderType, controlSize: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
+            return (0, 0, Int64((400 - inner.width).rounded(.up)), Int64((300 - inner.height).rounded(.up)))
+        }
+        return (-1, -1, -1, -1)
+    }
+
+    // What `preferred` answers for a kind of BOXES THE SYSTEM DRAWS: the
+    // divider's thickness on both axes for a split, nothing for the others,
+    // whose room the layout finds from what they hold.
+    func boxPreferred(_ widget: Native) -> NSSize? {
+        switch widget.kind {
+        case kindSplitRow, kindSplitColumn:
+            let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
+            return NSSize(width: thickness, height: thickness)
+        case kindTabs, kindPage, kindScroll, kindPane:
+            return NSSize(width: 0, height: 0)
+        default:
+            return nil
+        }
+    }
+
+    // The divider's place: the first pane's width or height.
+    func dividerAt(_ split: NSSplitView) -> Int64 {
+        guard let first = split.arrangedSubviews.first else {
+            return 0
+        }
+        return Int64((split.isVertical ? first.frame.width : first.frame.height).rounded())
+    }
+
+    // Sets the divider of split `widget` at `value` points, its panes laid
+    // out at once; nothing is queued.
+    func setDivider(_ widget: Native, _ value: Int64) -> Int64 {
+        guard let split = widget.view as? NSSplitView, value >= 0 else {
+            return answerInvalid
+        }
+        if split.arrangedSubviews.count == 2 {
+            muted = true
+            split.setPosition(CGFloat(value), ofDividerAt: 0)
+            split.adjustSubviews()
+            split.setPosition(CGFloat(value), ofDividerAt: 0)
+            muted = false
+        }
+        return answerOk
+    }
+
+    // Sets the range the person may drag split `widget`'s divider within.
+    func setDividerRange(_ widget: Native, _ least: Int64, _ most: Int64) -> Int64 {
+        guard let split = widget.view as? BoundedSplitView, least >= 0, least <= most else {
+            return answerInvalid
+        }
+        split.least = CGFloat(least)
+        split.most = CGFloat(most)
+        return answerOk
+    }
+
+    // Shows page `index` of tabs `widget`; nothing is queued.
+    func setPage(_ widget: Native, _ indices: [Int64]) -> Int64 {
+        guard let tabs = widget.view as? NSTabView, indices.count == 1, indices[0] >= 0, indices[0] < Int64(tabs.numberOfTabViewItems) else {
+            return answerInvalid
+        }
+        muted = true
+        tabs.selectTabViewItem(at: Int(indices[0]))
+        muted = false
+        return answerOk
+    }
+
+    // The index of the page tabs `widget` shows, as a selection; none where
+    // it holds no page.
+    func pageShown(_ widget: Native) -> [Int64] {
+        guard let tabs = widget.view as? NSTabView, let item = tabs.selectedTabViewItem else {
+            return []
+        }
+        return [Int64(tabs.indexOfTabViewItem(item))]
+    }
+
+    // Takes page `widget` out of its tabs.
+    func removePage(_ widget: Native) {
+        guard let tabs = widgets[widget.parent]?.view as? NSTabView else {
+            return
+        }
+        for item in tabs.tabViewItems where item.view === widget.view {
+            muted = true
+            tabs.removeTabViewItem(item)
+            muted = false
+        }
+    }
+
+    // What the person does to tabs and a split, through the system's own
+    // path: a tab chosen, a divider dragged to `value`. Nil for every other
+    // widget.
+    func injectBox(_ kind: Int64, _ widget: Native, _ value: Int64) -> Int64? {
+        if widget.kind == kindTabs {
+            guard kind == eventSelect, let tabs = widget.view as? NSTabView else {
+                return answerInvalid
+            }
+            guard value >= 0, value < Int64(tabs.numberOfTabViewItems) else {
+                return answerInvalid
+            }
+            tabs.selectTabViewItem(at: Int(value))
+            return answerOk
+        }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            guard kind == eventValue, let split = widget.view as? BoundedSplitView, split.arrangedSubviews.count == 2 else {
+                return answerInvalid
+            }
+            let at = min(max(CGFloat(value), split.least), split.most)
+            split.setPosition(at, ofDividerAt: 0)
+            queue(eventValue, widget.id, dividerAt(split), 0)
+            return answerOk
+        }
+        return nil
+    }
+
+    // The person chose a tab.
+    func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        guard let item = tabViewItem, let id = widgets.values.first(where: { $0.view === tabView })?.id else {
+            return
+        }
+        queue(eventSelect, id, Int64(tabView.indexOfTabViewItem(item)), 0)
+    }
+
+    // The person dragged a divider: queued with its place. AppKit names the
+    // divider in its notification for its own adjustments too, made while
+    // the window is laid out, so the person's drag is the one made with the
+    // mouse's button held; a resize of the split's place names none.
+    func splitViewDidResizeSubviews(_ notification: Notification) {
+        guard notification.userInfo?[dividerDragged] != nil, NSEvent.pressedMouseButtons & 1 == 1, let split = notification.object as? NSSplitView, let id = widgets.values.first(where: { $0.view === split })?.id else {
+            return
+        }
+        queue(eventValue, id, dividerAt(split), 0)
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMinimumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        return max(proposedMinimumPosition, (splitView as? BoundedSplitView)?.least ?? 0)
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMaxCoordinate proposedMaximumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        return min(proposedMaximumPosition, (splitView as? BoundedSplitView)?.most ?? proposedMaximumPosition)
+    }
+}
+
+@c
+public func hero_ui_appkit_insets(_ id: Int64, _ left: UnsafeMutablePointer<Int64>?, _ top: UnsafeMutablePointer<Int64>?, _ right: UnsafeMutablePointer<Int64>?, _ bottom: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let left = left, let top = top, let right = right, let bottom = bottom else {
+        return answerInvalid
+    }
+    let found = MainActor.assumeIsolated { () -> (Int64, Int64, Int64, Int64)? in
+        return backend()?.insets(id)
+    }
+    guard let (l, t, r, b) = found else {
+        return answerNotFound
+    }
+    if l < 0 {
+        return answerInvalid
+    }
+    left.pointee = l
+    top.pointee = t
+    right.pointee = r
+    bottom.pointee = b
+    return answerOk
+}
+
+// MARK: a table: rows of cells in columns
+
+// `hero_ui.h`'s `HERO_UI_TABLE` and `HERO_UI_EVENT_SORT`.
+private let kindTable: Int64 = 28
+private let eventSort: Int64 = 15
+
+// The width a table's column takes where nothing else decides it.
+private let columnWidth: CGFloat = 100
+
+extension Backend {
+    // The rows list or table `widget` holds: a list's items, a table's
+    // cells over its columns.
+    func rowsOf(_ widget: Native) -> Int {
+        guard widget.kind == kindTable, let table = widget.table else {
+            return widget.items.count
+        }
+        return widget.items.count / max(table.tableColumns.count, 1)
+    }
+
+    // The index among `widget`'s items of the cell at `row` in `column` of
+    // `table`: a list's one column holds its items, a table's cells run
+    // row after row.
+    func cellAt(_ widget: Native, _ table: NSTableView, _ column: NSTableColumn?, _ row: Int) -> Int {
+        guard widget.kind == kindTable else {
+            return row
+        }
+        guard let column = column, let at = table.tableColumns.firstIndex(of: column) else {
+            return -1
+        }
+        return row * table.tableColumns.count + at
+    }
+
+    // A table's view: a list's, with headers the person clicks to sort by
+    // and drags to widen, and several rows chosen.
+    func makeTable(_ widget: Native) -> NSView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
+        scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.borderType = .bezelBorder
+        let table = ActivatingTable(frame: scroll.bounds)
+        table.allowsMultipleSelection = true
+        table.allowsEmptySelection = true
+        table.allowsColumnResizing = true
+        table.allowsColumnReordering = false
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        table.usesAlternatingRowBackgroundColors = true
+        table.dataSource = self
+        table.delegate = self
+        table.target = self
+        table.doubleAction = #selector(rowDoubleClicked(_:))
+        table.returned = { [weak self, weak table] row in
+            if let table = table {
+                self?.activated(table, row)
+            }
+        }
+        scroll.documentView = table
+        widget.table = table
+        tables[ObjectIdentifier(table)] = widget.id
+        return scroll
+    }
+
+    // Gives table `id` the columns `titles`, its cells and its sort gone.
+    func setColumns(_ id: Int64, _ titles: [String]) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTable, let table = widget.table, !titles.isEmpty else {
+            return answerInvalid
+        }
+        muted = true
+        table.sortDescriptors = []
+        for column in table.tableColumns {
+            table.removeTableColumn(column)
+        }
+        for (at, title) in titles.enumerated() {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("column\(at)"))
+            column.title = title
+            column.width = columnWidth
+            column.minWidth = 24
+            column.resizingMask = .userResizingMask
+            column.sortDescriptorPrototype = NSSortDescriptor(key: "\(at)", ascending: true)
+            table.addTableColumn(column)
+        }
+        widget.items = []
+        table.reloadData()
+        muted = false
+        return answerOk
+    }
+
+    // Shows table `id` sorted by `column`, by none where it is -1; nothing is
+    // queued.
+    func setSort(_ id: Int64, _ column: Int64, _ ascending: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTable, let table = widget.table, column < Int64(table.tableColumns.count) else {
+            return answerInvalid
+        }
+        muted = true
+        table.sortDescriptors = column < 0 ? [] : [NSSortDescriptor(key: "\(column)", ascending: ascending)]
+        muted = false
+        return answerOk
+    }
+
+    // What the person clicking a header of table `widget` does, through the
+    // system's own path: the table's sort set as a click sets it, the
+    // column's header showing its arrow, and the system's call told.
+    func injectSort(_ widget: Native, _ column: Int64, _ ascending: Bool) -> Int64 {
+        guard let table = widget.table, column >= 0, column < Int64(table.tableColumns.count) else {
+            return answerInvalid
+        }
+        table.sortDescriptors = [NSSortDescriptor(key: "\(column)", ascending: ascending)]
+        return answerOk
+    }
+
+    // The person clicked a header: the column its first descriptor names,
+    // and its order.
+    func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
+        guard let id = tables[ObjectIdentifier(tableView)], let first = tableView.sortDescriptors.first, let key = first.key, let column = Int64(key) else {
+            return
+        }
+        queue(eventSort, id, column, first.ascending ? 1 : 0)
+    }
+
+    // A table's size where nothing else decides it: its columns at their
+    // width, and a list's height with its header.
+    func tablePreferred(_ widget: Native) -> NSSize? {
+        guard widget.kind == kindTable, let table = widget.table else {
+            return nil
+        }
+        let header = table.headerView?.frame.height ?? 0
+        let wide = table.tableColumns.reduce(CGFloat(0)) { $0 + $1.width + table.intercellSpacing.width }
+        return NSSize(width: max(fieldWidth, wide), height: areaHeight + header)
+    }
+}
+
+@c
+public func hero_ui_appkit_set_columns(_ id: Int64, _ titles: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let bytes: [UInt8] = titles.map { Array(UnsafeBufferPointer(start: $0, count: Int(count))) } ?? []
+    var names: [String] = []
+    var start = 0
+    for at in 0..<bytes.count where bytes[at] == 0 {
+        names.append(String(decoding: bytes[start..<at], as: UTF8.self))
+        start = at + 1
+    }
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setColumns(id, names) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_set_sort(_ id: Int64, _ column: Int64, _ ascending: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setSort(id, column, ascending == 1) ?? answerNotFound
+    }
+}
+
+// MARK: a tree: items folded and unfolded
+
+// `hero_ui.h`'s `HERO_UI_TREE` and `HERO_UI_EVENT_UNFOLD`.
+private let kindTree: Int64 = 29
+private let eventUnfold: Int64 = 16
+
+// One item of a tree: the object the outline view holds for it, its number
+// the program's.
+private final class TreeItem: NSObject {
+    let number: Int64
+    let under: Int64
+    var text: String
+    var foldable: Bool
+    var children: [Int64] = []
+
+    init(number: Int64, under: Int64, text: String, foldable: Bool) {
+        self.number = number
+        self.under = under
+        self.text = text
+        self.foldable = foldable
+    }
+}
+
+// The items of one tree, by number, and the numbers of its top items.
+private final class Forest {
+    var items: [Int64: TreeItem] = [:]
+    var top: [Int64] = []
+}
+
+// Each tree's items, by the tree's widget number.
+@MainActor
+private var forests: [Int64: Forest] = [:]
+
+// An outline view whose Return and keypad Enter open the row chosen, as a
+// list's do.
+private final class ReturningOutline: NSOutlineView {
+    var returned: ((Int) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if (event.keyCode == 0x24 || event.keyCode == 0x4C), selectedRow >= 0, let returned = returned {
+            returned(selectedRow)
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
+extension Backend: NSOutlineViewDataSource, NSOutlineViewDelegate {
+    // A tree's view: an outline view of one column with no header, in a
+    // scroll view, one item chosen at most.
+    func makeTree(_ widget: Native) -> NSView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        let outline = ReturningOutline(frame: scroll.bounds)
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("items"))
+        column.resizingMask = .autoresizingMask
+        outline.addTableColumn(column)
+        outline.outlineTableColumn = column
+        outline.headerView = nil
+        outline.allowsMultipleSelection = false
+        outline.allowsEmptySelection = true
+        outline.dataSource = self
+        outline.delegate = self
+        outline.target = self
+        outline.doubleAction = #selector(treeDoubleClicked(_:))
+        outline.returned = { [weak self, weak outline] row in
+            if let outline = outline {
+                self?.treeOpened(outline, row)
+            }
+        }
+        scroll.documentView = outline
+        forests[widget.id] = Forest()
+        return scroll
+    }
+
+    // The outline view of tree `widget`.
+    func outlineOf(_ widget: Native) -> NSOutlineView? {
+        return (widget.view as? NSScrollView)?.documentView as? NSOutlineView
+    }
+
+    // The tree's widget number an outline view stands for.
+    func treeId(_ outline: NSOutlineView) -> Int64? {
+        return widgets.values.first(where: { $0.kind == kindTree && outlineOf($0) === outline })?.id
+    }
+
+    // Adds item `item` under `under` of tree `id`, at the end.
+    func treeAdd(_ id: Int64, _ item: Int64, _ under: Int64, _ text: String, _ foldable: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        if forest.items[item] != nil || (under != 0 && forest.items[under] == nil) {
+            return answerNotFound
+        }
+        forest.items[item] = TreeItem(number: item, under: under, text: text, foldable: foldable)
+        muted = true
+        if under == 0 {
+            forest.top.append(item)
+            outline.reloadItem(nil, reloadChildren: true)
+        } else if let parent = forest.items[under] {
+            parent.children.append(item)
+            outline.reloadItem(parent, reloadChildren: true)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // Takes item `item` and every item under it out of tree `id`.
+    func treeRemove(_ id: Int64, _ item: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        guard let gone = forest.items[item] else {
+            return answerNotFound
+        }
+        var held: [Int64] = [item]
+        var at = 0
+        while at < held.count {
+            held.append(contentsOf: forest.items[held[at]]?.children ?? [])
+            at += 1
+        }
+        muted = true
+        for each in held {
+            forest.items[each] = nil
+        }
+        if gone.under == 0 {
+            forest.top.removeAll { $0 == item }
+            outline.reloadItem(nil, reloadChildren: true)
+        } else if let parent = forest.items[gone.under] {
+            parent.children.removeAll { $0 == item }
+            outline.reloadItem(parent, reloadChildren: true)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // Unfolds or folds item `item` of tree `id`; nothing is queued where
+    // `quiet`, the person's event where not.
+    func treeUnfold(_ id: Int64, _ item: Int64, _ on: Bool, _ quiet: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        guard let node = forest.items[item] else {
+            return answerNotFound
+        }
+        if !node.foldable && node.children.isEmpty {
+            return answerInvalid
+        }
+        muted = quiet
+        if on {
+            outline.expandItem(node)
+        } else {
+            outline.collapseItem(node)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // The item chosen in tree `widget`, as a selection.
+    func treeChosen(_ widget: Native) -> [Int64] {
+        guard let outline = outlineOf(widget), outline.selectedRow >= 0, let node = outline.item(atRow: outline.selectedRow) as? TreeItem else {
+            return []
+        }
+        return [node.number]
+    }
+
+    // Chooses item `numbers`' one in tree `widget`, or none; the items over
+    // it unfolded so it shows. Nothing is queued where `quiet`.
+    func treeChoose(_ widget: Native, _ numbers: [Int64], _ quiet: Bool) -> Int64 {
+        guard let outline = outlineOf(widget), let forest = forests[widget.id], numbers.count <= 1 else {
+            return answerInvalid
+        }
+        muted = quiet
+        defer {
+            muted = false
+        }
+        guard let number = numbers.first else {
+            outline.deselectAll(nil)
+            return answerOk
+        }
+        guard let node = forest.items[number] else {
+            return answerInvalid
+        }
+        // The person chooses only an item they see; the program's choice
+        // unfolds the items over it.
+        if !quiet && outline.row(forItem: node) < 0 {
+            return answerInvalid
+        }
+        var over: [TreeItem] = []
+        var at = node.under
+        while at != 0, let parent = forest.items[at] {
+            over.insert(parent, at: 0)
+            at = parent.under
+        }
+        for parent in over {
+            outline.expandItem(parent)
+        }
+        let row = outline.row(forItem: node)
+        if row < 0 {
+            return answerInvalid
+        }
+        outline.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        return answerOk
+    }
+
+    // What the person does to tree `widget` through the system's own path:
+    // an item chosen, opened, unfolded or folded. Nil for every other
+    // widget.
+    func injectTree(_ kind: Int64, _ widget: Native, _ value: Int64, _ second: Int64) -> Int64? {
+        guard widget.kind == kindTree else {
+            return nil
+        }
+        guard let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        switch kind {
+        case eventSelect:
+            return treeChoose(widget, value < 0 ? [] : [value], false)
+        case eventActivate:
+            guard let node = forests[widget.id]?.items[value] else {
+                return answerInvalid
+            }
+            if outline.row(forItem: node) < 0 {
+                return answerInvalid
+            }
+            if treeChosen(widget) != [value] {
+                let chose = treeChoose(widget, [value], false)
+                if chose != answerOk {
+                    return chose
+                }
+            }
+            treeOpened(outline, outline.row(forItem: node))
+            return answerOk
+        case eventUnfold:
+            return treeUnfold(widget.id, value, second == 1, false)
+        default:
+            return answerInvalid
+        }
+    }
+
+    // Row `row` of `outline` opened by the person.
+    func treeOpened(_ outline: NSOutlineView, _ row: Int) {
+        guard outline.isEnabled, let node = outline.item(atRow: row) as? TreeItem, let id = treeId(outline) else {
+            return
+        }
+        queue(eventActivate, id, node.number, 0)
+    }
+
+    @objc func treeDoubleClicked(_ sender: NSOutlineView) {
+        if sender.clickedRow >= 0 {
+            treeOpened(sender, sender.clickedRow)
+        }
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
+        guard let id = treeId(outlineView), let forest = forests[id] else {
+            return 0
+        }
+        if let node = item as? TreeItem {
+            return node.children.count
+        }
+        return forest.top.count
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
+        guard let id = treeId(outlineView), let forest = forests[id] else {
+            return NSNull()
+        }
+        let numbers = (item as? TreeItem)?.children ?? forest.top
+        guard index >= 0, index < numbers.count, let node = forest.items[numbers[index]] else {
+            return NSNull()
+        }
+        return node
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
+        guard let node = item as? TreeItem else {
+            return false
+        }
+        return node.foldable || !node.children.isEmpty
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+        guard let node = item as? TreeItem else {
+            return nil
+        }
+        let cell = NSTextField(labelWithString: node.text)
+        cell.lineBreakMode = .byTruncatingTail
+        return cell
+    }
+
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        if let outline = notification.object as? NSOutlineView, let id = treeId(outline) {
+            queue(eventSelect, id, 0, 0)
+        }
+    }
+
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        treeFolded(notification, 1)
+    }
+
+    func outlineViewItemDidCollapse(_ notification: Notification) {
+        treeFolded(notification, 0)
+    }
+
+    // An item unfolded, 1, or folded, 0, queued with its number.
+    func treeFolded(_ notification: Notification, _ state: Int64) {
+        guard let outline = notification.object as? NSOutlineView, let node = notification.userInfo?["NSObject"] as? TreeItem, let id = treeId(outline) else {
+            return
+        }
+        queue(eventUnfold, id, node.number, state)
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_add(_ id: Int64, _ item: Int64, _ under: Int64, _ text: UnsafePointer<UInt8>?, _ count: Int64, _ foldable: Int64) -> Int64 {
+    let words: String = text.map { String(decoding: UnsafeBufferPointer(start: $0, count: Int(count)), as: UTF8.self) } ?? ""
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeAdd(id, item, under, words, foldable == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_remove(_ id: Int64, _ item: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeRemove(id, item) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeUnfold(id, item, on == 1, true) ?? answerNotFound
+    }
+}
+
+// MARK: a context menu
+
+// `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
+private let kindContextMenu: Int64 = 30
+
+extension Backend {
+    // The view whose menu a context menu of `owner` is: the one the
+    // person's right click lands on, a list's or a table's rows, a tree's
+    // outline, a text area's text, a window's content.
+    func contextTarget(_ owner: Native) -> NSView? {
+        if owner.kind == kindWindow {
+            return owner.window?.contentView
+        }
+        if owner.kind == kindTree {
+            return outlineOf(owner)
+        }
+        if owner.kind == kindMenu || owner.kind == kindMenuItem || owner.kind == kindMenuSeparator || owner.kind == kindContextMenu || owner.kind == kindPage || owner.kind == kindPane {
+            return nil
+        }
+        return owner.table ?? owner.textView ?? owner.view
     }
 }

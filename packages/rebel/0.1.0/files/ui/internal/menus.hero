@@ -1,0 +1,312 @@
+# What a menu holds beyond plain items: menus inside menus, and items
+# checked and unchecked or of which one of a group is checked
+# (`ui.check_item`, `ui.radio_item`), as wxWidgets' `wxITEM_CHECK` and
+# `wxITEM_RADIO` items and its submenus. A radio item's group is the radio
+# items of its menu that no other item or separator stands between, as a
+# menu shows them. The person's choosing turns a check item over and checks a
+# radio item, its group's others unchecked, before `.menu_chosen`: the
+# headless side does it here, the native side's system does it, and the table
+# follows its event.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/give
+use ui/internal/makers
+use ui/internal/model
+
+# A new check or radio item, `mode` one of `HERO_UI_CHECK_BOX` and
+# `HERO_UI_CHECK_RADIO`, at the end of menu or context menu `into` (`ui.check_item`,
+# `ui.radio_item`): checked where `checked`, a radio item's group's others
+# then unchecked.
+function checkable(@app: ui.App, into: ui.Widget, text: str, mode: i64, checked: bool) -> ui.Widget?
+    menu = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU, hero_ui.HERO_UI_CONTEXT_MENU], what: "a menu or a context menu")?
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_MENU_ITEM,
+        parent: menu.id,
+        window: menu.window
+    )
+    n.text @ text
+    n.check @ mode
+    n.value @ check.number_of(checked)
+    made = makers.added(@app, n: n)?
+
+    if checked && mode == hero_ui.HERO_UI_CHECK_RADIO
+        alone(@app, id: made.id)
+    return ok(made)
+
+# The items of `id`'s radio group, `id` among them, in their menu's order:
+# the radio items of its menu no other item or separator stands between.
+function group_of(m: model.Model, id: i64) -> [i64]
+    n = m.nodes[id].must()
+    items = m.nodes[n.parent].must().children
+    at @= 0
+
+    for i in range(from: 0, to: items.len())
+        if items[i] == id
+            at @ i
+
+    first @= at
+
+    while first > 0 && is_radio(m, id: items[first - 1])
+        first @ first - 1
+
+    last @= at
+
+    while last + 1 < items.len() && is_radio(m, id: items[last + 1])
+        last @ last + 1
+
+    return items.slice(from: first, to: last + 1)
+
+# Whether node `id` is a radio item.
+function is_radio(m: model.Model, id: i64) -> bool
+    n = m.nodes[id].must()
+    return n.kind == hero_ui.HERO_UI_MENU_ITEM && n.check == hero_ui.HERO_UI_CHECK_RADIO
+
+# Checks radio item `id` in the table and unchecks the others of its group.
+function alone(@app: ui.App, id: i64)
+    for each in group_of(app.table, id: id)
+        n @= app.table.nodes[each].must()
+        n.value @ check.number_of(each == id)
+        model.put(@app.table, n: n)
+
+# What choosing item `id` does to the table, as the system does it to the
+# item: a check item turns over, a radio item is checked alone in its group.
+function chosen(@app: ui.App, id: i64)
+    n @= app.table.nodes[id].must()
+
+    if n.check == hero_ui.HERO_UI_CHECK_BOX
+        n.value @ 1 - n.value
+        model.put(@app.table, n: n)
+    else if n.check == hero_ui.HERO_UI_CHECK_RADIO
+        alone(@app, id: id)
+
+# What the system's event of choosing item `id` tells the table: the item's
+# state after it, `value`, and for a radio item checked, its group's others
+# unchecked.
+function told(@app: ui.App, id: i64, value: i64)
+    n @= app.table.nodes[id].must()
+
+    if n.check == hero_ui.HERO_UI_CHECK_RADIO && value == 1
+        alone(@app, id: id)
+    else if n.check != hero_ui.HERO_UI_CHECK_NONE
+        n.value @ value
+        model.put(@app.table, n: n)
+
+# Whether the person can choose item `id`: it, and every menu up to its
+# window, enabled.
+function open_item(m: model.Model, id: i64) -> bool
+    at @= id
+
+    while true
+        n = m.nodes[at].must()
+
+        if n.kind == hero_ui.HERO_UI_WINDOW
+            return true
+
+        if !n.enabled
+            return false
+        at @ n.parent
+
+# The items of window `window`'s menus and the menus inside them, in the
+# order they stand: where a key's shortcut is looked for.
+function items_of(m: model.Model, window: i64) -> [i64]
+    out: [i64] @= []
+
+    for menu in m.nodes[window].must().menus
+        if m.nodes[menu].must().kind == hero_ui.HERO_UI_MENU
+            walked(m, id: menu, @out)
+
+    return out
+
+# Appends to `out` the items of menu `id` and of the menus inside it, in
+# order.
+function walked(m: model.Model, id: i64, @out: [i64])
+    for child in m.nodes[id].must().children
+        n = m.nodes[child].must()
+
+        if n.kind == hero_ui.HERO_UI_MENU
+            walked(m, id: child, @out)
+        else if n.kind == hero_ui.HERO_UI_MENU_ITEM
+            out @ out.push(child)
+
+# Sets a check or radio item's state (`ui.set_checked` on a menu item): a
+# radio item checked unchecks its group's others.
+function set_checked(@app: ui.App, n: model.Node, checked: bool) -> ()?
+    if n.check == hero_ui.HERO_UI_CHECK_NONE
+        return fail(code: failure.INVALID, msg: f"menu item {n.id} is neither a check item nor a radio item")
+
+    if app.native && hero_ui.set_value(app.handle, id: n.id, value: check.number_of(checked)) < 0
+        return failure.last(f"checking menu item {n.id}")
+
+    if checked && n.check == hero_ui.HERO_UI_CHECK_RADIO
+        alone(@app, id: n.id)
+        return ok()
+    item @= n
+    item.value @ check.number_of(checked)
+    model.put(@app.table, n: item)
+    return ok()
+
+## Tests
+
+test "menus inside menus: drawn nested in the order made, an item deep inside chosen and its shortcut taken, none past a menu greyed out (catalogue MN02)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    file = ui.menu(@app, into: w, title: "File").must()
+    _ = ui.menu_item(@app, into: file, text: "Open").must()
+    recent = ui.menu(@app, into: file, title: "Open Recent").must()
+    deeper = ui.menu(@app, into: recent, title: "Older").must()
+    notes = ui.menu_item(@app, into: deeper, text: "notes.txt").must()
+    _ = ui.menu_item(@app, into: file, text: "Quit").must()
+    ui.set_shortcut(@app, item: notes, shortcut: ui.Shortcut(key: "n", primary: true, shift: false, alt: false)).must()
+    lines = ui.render(@app).must()
+    assert lines.slice(from: 1, to: 7) == ["  menu #2 \"File\"", "    menu_item #3 \"Open\"", "    menu #4 \"Open Recent\"", "      menu #5 \"Older\"", "        menu_item #6 \"notes.txt\" primary+n", "    menu_item #7 \"Quit\""]
+    ui.inject(@app, input: .choose_menu(item: notes)).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "n", primary: true, shift: false, alt: false)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: notes)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: notes)
+    ui.set_enabled(@app, widget: recent, on: false).must()
+    ui.inject(@app, input: .choose_menu(item: notes)).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "n", primary: true, shift: false, alt: false)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.destroy(@app, widget: recent).must()
+    assert fixture.code_of(ui.inject(@app, input: .choose_menu(item: notes))) == ui.CLOSED
+    assert ui.render(@app).must().len() == 4
+
+    ui.close(@app).must()
+
+test "check_item and radio_item: turned over and checked alone by the person's choice, a separator parting two groups, set and read, a plain item refused (catalogue MN03, MN04)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    view = ui.menu(@app, into: w, title: "View").must()
+    bar = ui.check_item(@app, into: view, text: "Show Bar", checked: false).must()
+    icons = ui.radio_item(@app, into: view, text: "Icons", checked: true).must()
+    rows = ui.radio_item(@app, into: view, text: "List", checked: true).must()
+    _ = ui.menu_separator(@app, into: view).must()
+    small = ui.radio_item(@app, into: view, text: "Small", checked: true).must()
+    plain = ui.menu_item(@app, into: view, text: "Plain").must()
+    assert !ui.is_checked(app, widget: icons).must() && ui.is_checked(app, widget: rows).must() && ui.is_checked(app, widget: small).must()
+    ui.inject(@app, input: .choose_menu(item: bar)).must()
+    ui.inject(@app, input: .choose_menu(item: icons)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: bar)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: icons)
+    assert ui.is_checked(app, widget: bar).must()
+    assert ui.is_checked(app, widget: icons).must() && !ui.is_checked(app, widget: rows).must() && ui.is_checked(app, widget: small).must()
+    assert ui.render(@app).must()[3] == "    menu_item #4 (x) \"Icons\""
+    ui.set_checked(@app, widget: rows, checked: true).must()
+    assert !ui.is_checked(app, widget: icons).must()
+    ui.set_checked(@app, widget: bar, checked: false).must()
+    assert !ui.is_checked(app, widget: bar).must()
+    assert fixture.code_of(ui.is_checked(app, widget: plain)) == ui.INVALID
+    assert fixture.code_of(ui.set_checked(@app, widget: plain, checked: true)) == ui.INVALID
+    assert fixture.code_of(ui.check_item(@app, into: w, text: "x", checked: false)) == ui.INVALID
+    ui.close(@app).must()
+
+test "menus inside menus, check and radio items: on the native side made, chosen through the system's own path, and the states read back as the system turned them (catalogue MN02, MN03, MN04)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Menus", width: 200, height: 100).must()
+    view = ui.menu(@app, into: w, title: "View").must()
+    offered = ui.menu(@app, into: view, title: "Sort By")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    order = offered.must()
+    by_name = ui.radio_item(@app, into: order, text: "Name", checked: true).must()
+    by_date = ui.radio_item(@app, into: order, text: "Date", checked: false).must()
+    bar = ui.check_item(@app, into: view, text: "Show Bar", checked: true).must()
+    ui.inject(@app, input: .choose_menu(item: by_date)).must()
+    ui.inject(@app, input: .choose_menu(item: bar)).must()
+    first = ui.wait(@app, within: time.seconds(2).must()).must()
+    second = ui.wait(@app, within: time.seconds(2).must()).must()
+    assert first == .menu_chosen(item: by_date) && second == .menu_chosen(item: bar)
+    assert ui.is_checked(app, widget: by_date).must() && !ui.is_checked(app, widget: by_name).must()
+    assert !ui.is_checked(app, widget: bar).must()
+    ui.set_checked(@app, widget: by_name, checked: true).must()
+    assert ui.is_checked(app, widget: by_name).must() && !ui.is_checked(app, widget: by_date).must()
+    ui.destroy(@app, widget: order).must()
+    ui.close(@app).must()
+
+test "context_menu: refused on a menu, a menu's item, a timer, a page and a widget with one already; items, a separator, a check item and a menu inside it chosen, its shortcut taking no key, none chosen where its widget is greyed out, and drawn beside its widget out of the layout (catalogue MN07)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    bar = ui.menu(@app, into: w, title: "File").must()
+    files = ui.list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    before = ui.rect_of(@app, widget: files).must()
+    actions = ui.context_menu(@app, widget: files).must()
+    assert fixture.code_of(ui.context_menu(@app, widget: files)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: bar)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: actions)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: ui.timer(@app, every: time.seconds(1).must()).must())) == ui.INVALID
+    open_file = ui.menu_item(@app, into: actions, text: "Open").must()
+    _ = ui.menu_separator(@app, into: actions).must()
+    hidden = ui.check_item(@app, into: actions, text: "Show Hidden", checked: false).must()
+    more = ui.menu(@app, into: actions, title: "Open With").must()
+    editor = ui.menu_item(@app, into: more, text: "Editor").must()
+    ui.set_shortcut(
+        @app,
+        item: open_file,
+        shortcut: ui.Shortcut(key: "o", primary: true, shift: false, alt: false)
+    ).must()
+    assert ui.rect_of(@app, widget: files).must() == before
+    lines = ui.render(@app).must()
+    assert lines[3] == "    context_menu #4" && lines[4] == "      menu_item #6 \"Open\" primary+o"
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "o", primary: true, shift: false, alt: false)).must()
+    ui.inject(@app, input: .choose_menu(item: hidden)).must()
+    ui.inject(@app, input: .choose_menu(item: editor)).must()
+    assert give.events_of(@app, within: time.nanoseconds(0)) == [.menu_chosen(item: hidden), .menu_chosen(item: editor)]
+    assert ui.is_checked(app, widget: hidden).must()
+    ui.set_enabled(@app, widget: files, on: false).must()
+    ui.inject(@app, input: .choose_menu(item: open_file)).must()
+    assert give.events_of(@app, within: time.nanoseconds(0)) == []
+    ui.destroy(@app, widget: actions).must()
+    assert fixture.code_of(ui.inject(@app, input: .choose_menu(item: open_file))) == ui.CLOSED
+    _ = ui.context_menu(@app, widget: files).must()
+    ui.close(@app).must()
+
+test "context_menu: on the native side made on a list, a text area and a window, its items chosen through the system's own path, taken away and made again (catalogue MN07)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Files", width: 240, height: 200).must()
+    files = ui.list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    notes = ui.text_area(@app, into: w, text: "").must()
+    offered = ui.context_menu(@app, widget: files)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    actions = offered.must()
+    open_file = ui.menu_item(@app, into: actions, text: "Open").must()
+    more = ui.menu(@app, into: actions, title: "Open With").must()
+    editor = ui.menu_item(@app, into: more, text: "Editor").must()
+    words = ui.context_menu(@app, widget: notes).must()
+    clear = ui.menu_item(@app, into: words, text: "Clear").must()
+    everywhere = ui.context_menu(@app, widget: w).must()
+    refresh = ui.menu_item(@app, into: everywhere, text: "Refresh").must()
+    _ = ui.rect_of(@app, widget: files).must()
+    ui.inject(@app, input: .choose_menu(item: open_file)).must()
+    ui.inject(@app, input: .choose_menu(item: editor)).must()
+    ui.inject(@app, input: .choose_menu(item: clear)).must()
+    ui.inject(@app, input: .choose_menu(item: refresh)).must()
+    came = give.events_of(@app, within: time.milliseconds(300).must())
+    assert came == [.menu_chosen(item: open_file), .menu_chosen(item: editor), .menu_chosen(item: clear), .menu_chosen(item: refresh)]
+    ui.destroy(@app, widget: actions).must()
+    again = ui.context_menu(@app, widget: files).must()
+    _ = ui.menu_item(@app, into: again, text: "Open").must()
+    ui.close(@app).must()

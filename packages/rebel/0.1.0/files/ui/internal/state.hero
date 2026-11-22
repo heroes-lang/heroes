@@ -7,15 +7,20 @@
 # event: only what the person does is one.
 
 use image
+use time
 use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/frames
 use ui/internal/loop
 use ui/internal/makers
+use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
 use ui/internal/sizes
+use ui/internal/trees
 
 # What `widget` is (`ui.kind_of`).
 function kind_of(app: ui.App, widget: ui.Widget) -> ui.Kind?
@@ -80,6 +85,30 @@ function of_code(code: i64) -> ui.Kind
 
     if code == hero_ui.HERO_UI_TIMER
         return .timer
+
+    if code == hero_ui.HERO_UI_TABS
+        return .tabs
+
+    if code == hero_ui.HERO_UI_PAGE
+        return .page
+
+    if code == hero_ui.HERO_UI_SCROLL
+        return .scrolled
+
+    if model.is_split(code)
+        return .split
+
+    if code == hero_ui.HERO_UI_TABLE
+        return .table
+
+    if code == hero_ui.HERO_UI_TREE
+        return .tree
+
+    if code == hero_ui.HERO_UI_CONTEXT_MENU
+        return .context_menu
+
+    if code == hero_ui.HERO_UI_PANE
+        return .pane
     return .webview
 
 # Where `widget` stands (`ui.rect_of`).
@@ -227,8 +256,12 @@ function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
 function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
     n @= valued(app, widget: widget, kind: kind)?
 
-    if kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
+    if kind == hero_ui.HERO_UI_SLIDER && n.kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
         return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
+
+    if model.is_split(n.kind)
+        frames.divider_ok(value)?
+        n.divided @ true
     n.value @ value
 
     if app.native
@@ -246,15 +279,15 @@ function value_of(app: ui.App, widget: ui.Widget, kind: i64) -> i64?
     return ok(n.value)
 
 # The node of `widget`: a checkbox where `kind` is `HERO_UI_CHECKBOX`, a
-# slider or a progress bar where it is `HERO_UI_SLIDER`.
+# slider, a progress bar or a split where it is `HERO_UI_SLIDER`.
 function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     if kind == hero_ui.HERO_UI_CHECKBOX
         return check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS],
-        what: "a slider or a progress bar"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN],
+        what: "a slider, a progress bar or a split"
     )
 
 # Sets a slider's or a progress bar's range (`ui.set_range`).
@@ -300,7 +333,14 @@ function set_items(@app: ui.App, widget: ui.Widget, items: [str]) -> ()?
 # Chooses items (`ui.set_selection`).
 function set_selection(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
     n @= chooser(app, widget: widget)?
-    check.indices_ok(n, indices: indices)?
+
+    if n.kind == hero_ui.HERO_UI_TABS
+        frames.page_ok(n, indices: indices)?
+    else if n.kind == hero_ui.HERO_UI_TREE
+        trees.chosen_ok(n, indices: indices)?
+        trees.chose(@n, indices: indices)
+    else
+        check.indices_ok(n, indices: indices)?
     n.chosen @ indices
 
     if app.native
@@ -315,13 +355,13 @@ function selection_of(app: ui.App, widget: ui.Widget) -> [i64]?
         return native.read_selection(app, id: n.id)
     return ok(n.chosen)
 
-# The node of `widget`, a list, a combo box or a radio group.
+# The node of `widget`, a list, a combo box, a radio group or tabs.
 function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP],
-        what: "a list, a combo box or a radio group"
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE],
+        what: "a list, a combo box, a radio group, tabs, a table or a tree"
     )
 
 # Shows an image in a picture (`ui.set_picture`).
@@ -396,6 +436,79 @@ function set_shortcut(@app: ui.App, item: ui.Widget, shortcut: ui.Shortcut) -> (
         native.push_shortcut(app, n: n)?
     return stored(@app, n: n, measured: false)
 
+# Checks or unchecks a checkbox, or a menu's check or radio item
+# (`ui.set_checked`).
+function set_checked(@app: ui.App, widget: ui.Widget, checked: bool) -> ()?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CHECKBOX, hero_ui.HERO_UI_MENU_ITEM], what: "a checkbox or a menu's check or radio item")?
+
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM
+        return menus.set_checked(@app, n: n, checked: checked)
+    return set_value(@app, widget: widget, value: check.number_of(checked), kind: hero_ui.HERO_UI_CHECKBOX)
+
+# Whether a checkbox, or a menu's check or radio item, is checked
+# (`ui.is_checked`): on the native side as the person left it.
+function is_checked(app: ui.App, widget: ui.Widget) -> bool?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CHECKBOX, hero_ui.HERO_UI_MENU_ITEM], what: "a checkbox or a menu's check or radio item")?
+
+    if n.kind == hero_ui.HERO_UI_CHECKBOX
+        return ok(value_of(app, widget: widget, kind: hero_ui.HERO_UI_CHECKBOX)? == 1)
+
+    if n.check == hero_ui.HERO_UI_CHECK_NONE
+        return fail(code: failure.INVALID, msg: f"menu item {n.id} is neither a check item nor a radio item")
+
+    if app.native
+        return ok(native.read_value(app, id: n.id)? == 1)
+    return ok(n.value == 1)
+
+# Lets a progress bar move with no value, or shows its value
+# (`ui.set_moving`).
+function set_moving(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_PROGRESS], what: "a progress bar")?
+
+    if app.native && hero_ui.set_moving(app.handle, id: n.id, on: check.number_of(on)) < 0
+        return failure.last(f"letting progress bar {n.id} move")
+    n.moving @ on
+    return stored(@app, n: n, measured: false)
+
+# Gives a menu item its role (`ui.set_role`).
+function set_role(@app: ui.App, item: ui.Widget, role: ui.MenuRole) -> ()?
+    n @= check.node_kind(app, widget: item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
+
+    code = match role
+        .plain    => hero_ui.HERO_UI_ROLE_NONE
+        .about    => hero_ui.HERO_UI_ROLE_ABOUT
+        .settings => hero_ui.HERO_UI_ROLE_SETTINGS
+        .quit     => hero_ui.HERO_UI_ROLE_QUIT
+
+    if app.native && hero_ui.set_role(app.handle, id: n.id, role: code) < 0
+        return failure.last(f"giving menu item {n.id} its role")
+    n.role @ code
+    return stored(@app, n: n, measured: false)
+
+# Gives a button the key that presses it (`ui.set_button_key`): the
+# button of its window that had that key loses it, on both sides.
+function set_button_key(@app: ui.App, button: ui.Widget, key: ui.ButtonKey) -> ()?
+    n @= check.node_kind(app, widget: button, kinds: [hero_ui.HERO_UI_BUTTON], what: "a button")?
+
+    code = match key
+        .none   => hero_ui.HERO_UI_BUTTON_KEY_NONE
+        .enter  => hero_ui.HERO_UI_BUTTON_KEY_ENTER
+        .escape => hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+
+    if app.native && hero_ui.set_button_key(app.handle, id: n.id, key: code) < 0
+        return failure.last(f"giving button {n.id} its key")
+
+    if code != hero_ui.HERO_UI_BUTTON_KEY_NONE
+        for id in keys(app.table.nodes)
+            other @= app.table.nodes[id].must()
+
+            if other.id != n.id && other.window == n.window && other.button_key == code
+                other.button_key @ hero_ui.HERO_UI_BUTTON_KEY_NONE
+                model.put(@app.table, n: other)
+
+    n.button_key @ code
+    return stored(@app, n: n, measured: false)
+
 # Puts `n` back in the table, measured again where `measured` (its text,
 # items or pixels moved), and marks its window for a layout.
 function stored(@app: ui.App, n: model.Node, measured: bool) -> ()?
@@ -431,3 +544,124 @@ test "of_code: every kind of the layer is a kind of ui"
     assert of_code(hero_ui.HERO_UI_IMAGE) == .picture
     assert of_code(hero_ui.HERO_UI_WEBVIEW) == .webview
     assert of_code(hero_ui.HERO_UI_TIMER) == .timer
+
+test "set_role: each role drawn and taken away, a widget no menu item invalid, an item destroyed closed"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    file = ui.menu(@app, into: w, title: "File").must()
+    item = ui.menu_item(@app, into: file, text: "Settings").must()
+    button = ui.button(@app, into: w, text: "Go").must()
+    ui.set_role(@app, item: item, role: .settings).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\" role settings"
+    ui.set_role(@app, item: item, role: .quit).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\" role quit"
+    ui.set_role(@app, item: item, role: .plain).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\""
+    assert fixture.code_of(ui.set_role(@app, item: button, role: .about)) == ui.INVALID
+    assert fixture.code_of(ui.set_role(@app, item: file, role: .about)) == ui.INVALID
+    ui.destroy(@app, widget: item).must()
+    assert fixture.code_of(ui.set_role(@app, item: item, role: .about)) == ui.CLOSED
+    ui.close(@app).must()
+
+test "set_role: on the native side the About, Settings and Quit items take their places in the application's menu, each still chosen as itself"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Roles", width: 200, height: 100).must()
+    help = ui.menu(@app, into: w, title: "Help").must()
+    about = ui.menu_item(@app, into: help, text: "About Roles").must()
+    file = ui.menu(@app, into: w, title: "File").must()
+    settings = ui.menu_item(@app, into: file, text: "Settings...").must()
+    quit = ui.menu_item(@app, into: file, text: "Quit Roles").must()
+    offered = ui.set_role(@app, item: about, role: .about)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    offered.must()
+    ui.set_role(@app, item: settings, role: .settings).must()
+    ui.set_role(@app, item: quit, role: .quit).must()
+    ui.set_enabled(@app, widget: settings, on: false).must()
+    ui.set_enabled(@app, widget: settings, on: true).must()
+    ui.inject(@app, input: .choose_menu(item: about)).must()
+    ui.inject(@app, input: .choose_menu(item: quit)).must()
+    first = ui.wait(@app, within: time.seconds(2).must()).must()
+    second = ui.wait(@app, within: time.seconds(2).must()).must()
+    assert first == .menu_chosen(item: about)
+    assert second == .menu_chosen(item: quit)
+    ui.set_role(@app, item: about, role: .plain).must()
+    ui.close(@app).must()
+
+test "set_button_key: Return and Escape each press one button of a window, the one before losing its key, drawn; taken away; a widget no button invalid"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ok_button = ui.button(@app, into: w, text: "OK").must()
+    other = ui.button(@app, into: w, text: "Apply").must()
+    cancel = ui.button(@app, into: w, text: "Cancel").must()
+    label = ui.label(@app, into: w, text: "x").must()
+    ui.set_button_key(@app, widget: ok_button, key: .enter).must()
+    ui.set_button_key(@app, widget: other, key: .enter).must()
+    ui.set_button_key(@app, widget: cancel, key: .escape).must()
+    lines = ui.render(@app).must()
+    assert lines[1] == "  button #2 \"OK\" at 12,12 40x24"
+    assert lines[2] == "  button #3 \"Apply\" default at 12,42 64x24"
+    assert lines[3] == "  button #4 \"Cancel\" cancel at 12,72 72x24"
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Enter", primary: false, shift: false, alt: false)).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Escape", primary: false, shift: false, alt: false)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: other)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: cancel)
+    ui.set_button_key(@app, widget: cancel, key: .none).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Escape", primary: false, shift: false, alt: false)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    assert fixture.code_of(ui.set_button_key(@app, widget: label, key: .enter)) == ui.INVALID
+    ui.close(@app).must()
+
+test "password_field and set_moving: a masked field drawn as one mark a character, its text kept and read, a bar moving and stopped, other kinds refused (catalogue CT11, CT25)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    secret = ui.password_field(@app, into: w, text: "päss").must()
+    bar = ui.progress(@app, into: w, most: 10).must()
+    slider = ui.slider(@app, into: w, least: 0, most: 5, value: 0).must()
+    lines = ui.render(@app).must()
+    assert lines[1] == "  text_field #2 masked \"****\" at 12,12 160x24"
+    assert ui.text_of(app, widget: secret).must() == "päss"
+    ui.set_moving(@app, widget: bar, on: true).must()
+    assert ui.render(@app).must()[2] == "  progress #3 value 0 in 0..10 moving at 12,42 160x16"
+    ui.set_moving(@app, widget: bar, on: false).must()
+    assert ui.render(@app).must()[2] == "  progress #3 value 0 in 0..10 at 12,42 160x16"
+    assert fixture.code_of(ui.set_moving(@app, widget: slider, on: true)) == ui.INVALID
+    assert fixture.code_of(ui.password_field(@app, into: w, text: "a\nb")) == ui.INVALID
+    ui.close(@app).must()
+
+test "password_field and set_moving: on the native side a masked field set, typed into and read back, its events told, and a bar moving and stopped (catalogue CT11, CT25)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Sign in", width: 240, height: 120).must()
+    offered = ui.password_field(@app, into: w, text: "first")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    secret = offered.must()
+    bar = ui.progress(@app, into: w, most: 10).must()
+    assert ui.text_of(app, widget: secret).must() == "first"
+    ui.inject(@app, input: .type_text(widget: secret, text: "second")).must()
+    ui.inject(@app, input: .submit(widget: secret)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: secret, text: "second")
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .submitted(widget: secret)
+    assert ui.text_of(app, widget: secret).must() == "second"
+    ui.set_moving(@app, widget: bar, on: true).must()
+    _ = ui.wait(@app, within: time.milliseconds(100).must()).is_err()
+    ui.set_moving(@app, widget: bar, on: false).must()
+    ui.set_value(@app, widget: bar, value: 5).must()
+    assert ui.value_of(app, widget: bar).must() == 5
+    ui.close(@app).must()

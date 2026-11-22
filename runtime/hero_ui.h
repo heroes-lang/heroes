@@ -123,7 +123,8 @@ typedef struct hero_ui_app hero_ui_app;
  * window is a top-level window, its `parent` 0; a widget's parent is the
  * window it stands in; a menu's parent is the window whose menu bar holds
  * it (on macOS the application's menu bar shows the menus of the window in
- * front); a menu item's and a separator's parent is its menu. */
+ * front), or a menu, inside which it stands as a submenu after the items
+ * made before it; a menu item's and a separator's parent is its menu. */
 #define HERO_UI_WINDOW 1
 #define HERO_UI_LABEL 2
 #define HERO_UI_BUTTON 3
@@ -228,8 +229,10 @@ int64_t hero_ui_close(hero_ui_app *app);
 int64_t hero_ui_number(hero_ui_app *app);
 
 /* Makes the native widget `id` of `kind` in `parent` (the kinds above say
- * which parent each takes), hidden, empty and at no place until set and
- * placed; a window is made hidden and shown by `set_visible`. 0, or -1:
+ * which parent each takes, a container standing for a window where a
+ * window is named: BOXES THE SYSTEM DRAWS, below), hidden, empty and at
+ * no place until set and placed; a window is made hidden and shown by
+ * `set_visible`. 0, or -1:
  * `INVALID`, `NOT_FOUND` (no parent of that number, or `id` taken),
  * `UNSUPPORTED`, `LIMIT`, `OTHER`. */
 int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t parent);
@@ -291,8 +294,8 @@ int64_t hero_ui_set_size(hero_ui_app *app, int64_t id, int64_t width, int64_t he
 /* Sets the least size the person may give window `id`'s content. 0, or -1. */
 int64_t hero_ui_set_min_size(hero_ui_app *app, int64_t id, int64_t width, int64_t height);
 
-/* Places widget `id` at `x`, `y` in its window's content, `width` by
- * `height` points. 0, or -1. */
+/* Places widget `id` at `x`, `y` in its window's content, or its
+ * container's, `width` by `height` points. 0, or -1. */
 int64_t hero_ui_place(hero_ui_app *app, int64_t id, int64_t x, int64_t y, int64_t width, int64_t height);
 
 /* Places the item `index` of radio group `id` at `x`, `y` in its window's
@@ -346,16 +349,23 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * event comes as the person's would: `HERO_UI_EVENT_CLICK` presses button
  * `id`; `TEXT` replaces a text field's or a text area's text by `text` as
  * an edit; `SELECT` chooses the item `value` of a list, a combo box or a
- * radio group (-1 for none); `TOGGLE` clicks a checkbox; `VALUE` moves a
- * slider to `value`; `MENU` chooses menu item `id`; `CLOSE` presses window
+ * radio group (-1 for none), the row of a table, or the page of tabs;
+ * `TOGGLE` clicks a checkbox; `VALUE` moves a slider to `value`, or a
+ * split's divider; `MENU` chooses menu item `id`; `CLOSE` presses window
  * `id`'s close button; `RESIZE` gives window `id`'s content the size
  * `value` by `second`; `MESSAGE` has the page web view `id` shows send
  * `text` by its bridge, as the page's own script would, at once or once a
  * page of the app's own origin has loaded, so the message is checked and
  * queued as the page's is (THE WEB VIEW, below; `LIMIT` where
- * `HERO_UI_QUEUE_MOST` wait for the page already). Its event is
- * queued as the person's would be. 0, or -1, `UNSUPPORTED` where the system
- * offers no such path. */
+ * `HERO_UI_QUEUE_MOST` wait for the page already); `ACTIVATE` opens row
+ * `value` of list or table `id`, choosing it first where it is not chosen,
+ * as a double click does; `SUBMIT` presses Return in text field `id`;
+ * `SORT` clicks the header of column `value` of table `id` until the table
+ * stands sorted by it in the order `second` names; `UNFOLD` unfolds item
+ * `value` of tree `id`, `second` 1, or folds it, 0; `SELECT` and
+ * `ACTIVATE` take a tree's item by its number. Its event
+ * is queued as the person's would be. 0, or -1, `UNSUPPORTED` where the
+ * system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
 
 /* Shows a message box over window `window` (0 for none), with `title` and
@@ -531,5 +541,479 @@ int64_t hero_ui_last_error(void);
  * `count`; answers the bytes written, 0 after a call that did not fail. -1
  * with `INVALID` where `buffer` is NULL or `count` is 0. */
 int64_t hero_ui_last_message(void *buffer, uint64_t count);
+
+/* -- KEYS PRESSED BY THE PROGRAM ----------------------------------------------
+ *
+ * A key pressed as the person's keyboard presses it, through the system's
+ * own path, as wxWidgets' `wxUIActionSimulator` presses one: a menu item's
+ * shortcut, the Edit menu's commands and the widget with the keys take it as
+ * they take the person's. What a test of a native app drives the keys with;
+ * a headless app holds no system to press them in. */
+
+/* Presses the key `key`, `count` bytes naming a key as `hero_ui_set_shortcut`
+ * names one (not empty), with the keys `modifiers` adds up held, in window
+ * `id`, or with widget `id` holding the keys, given them first as the
+ * person's click would. The system hands a key to the key window of the
+ * active application alone, so the window is first made that (on macOS the
+ * app is activated and the window brought to the front); the key goes down
+ * and up. Its events are queued as the person's would be. 0, or -1:
+ * `INVALID` (a key no shortcut names, held keys past the three, or a widget
+ * that takes no keys), `NOT_FOUND`, `OTHER` where the window is hidden or
+ * the system keeps another application in front, `UNSUPPORTED`. */
+int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_t count, int64_t modifiers);
+
+/* -- WINDOWS ON THE SCREEN ----------------------------------------------------
+ *
+ * Where a window stands among the screens, the state it stands in, how the
+ * system draws it, the app's icon, and the window the person must answer
+ * before any other, as wxWidgets' `wxTopLevelWindow`, `wxDisplay` and
+ * `wxDialog::ShowModal` offer them.
+ *
+ * THE SCREENS are numbered from 0, the system's main one first (on macOS
+ * the screen holding the menu bar, on Windows the primary monitor), then in
+ * the order the system lists them. Each is given by `HERO_UI_SCREEN_FIELDS`
+ * numbers: its whole area's left, top, width and height, then its work
+ * area's (the whole less the menu bar, the Dock or the task bar), in the
+ * desktop's points, whose origin is screen 0's top-left corner and whose y
+ * axis goes down; and its scale in hundredths, the pixels a point takes on
+ * each axis times 100 (100 on an ordinary screen, 200 on a Retina one).
+ *
+ * A WINDOW'S POSITION is its frame's top-left corner, its title bar and its
+ * border included, in points from the top-left corner of the screen it is
+ * given on, or that it stands on most when it is read; the system may keep
+ * part of a frame on a screen (macOS keeps a title bar below the menu bar).
+ *
+ * WHAT THE PERSON DOES to a window among the screens is queued as the events
+ * below, each naming the window; what the program sets is not, but for the
+ * new size a change of state gives the content, queued as
+ * `HERO_UI_EVENT_RESIZE` as any resize is. Each of these calls answers
+ * `UNSUPPORTED` on a headless app, and on a system whose arm does not offer
+ * it. */
+
+/* How many numbers give one screen, and the place of each. */
+#define HERO_UI_SCREEN_FIELDS 9
+#define HERO_UI_SCREEN_LEFT 0
+#define HERO_UI_SCREEN_TOP 1
+#define HERO_UI_SCREEN_WIDTH 2
+#define HERO_UI_SCREEN_HEIGHT 3
+#define HERO_UI_SCREEN_WORK_LEFT 4
+#define HERO_UI_SCREEN_WORK_TOP 5
+#define HERO_UI_SCREEN_WORK_WIDTH 6
+#define HERO_UI_SCREEN_WORK_HEIGHT 7
+#define HERO_UI_SCREEN_SCALE 8
+
+/* The states a window stands in: shown at the size the program or the
+ * person gave it, minimized into the Dock or the task bar, maximized over
+ * its screen's work area (zoomed, on macOS), or filling its screen with no
+ * frame (on macOS in a space of its own). */
+#define HERO_UI_STATE_NORMAL 1
+#define HERO_UI_STATE_MINIMIZED 2
+#define HERO_UI_STATE_MAXIMIZED 3
+#define HERO_UI_STATE_FULL_SCREEN 4
+
+/* What stands behind a window's widgets: the system's plain background, or
+ * its translucent material, which blurs what stands behind the window
+ * (`NSVisualEffectView` on macOS, Mica on Windows 11). */
+#define HERO_UI_BACKDROP_NONE 0
+#define HERO_UI_BACKDROP_TRANSLUCENT 1
+
+/* The person moved window `id`: `value` and `second` its new position on
+ * the screen it stands on, which `hero_ui_frame_of` names. */
+#define HERO_UI_EVENT_MOVE 10
+/* Window `id` stands in a new state, `value`, by the person's act (its
+ * buttons, the Dock, a key of the system's). */
+#define HERO_UI_EVENT_STATE 11
+/* Window `id` stands on another screen, `value`, moved there or left there
+ * by a screen that changed. */
+#define HERO_UI_EVENT_SCREEN 12
+
+/* Writes the screens through `values`, `HERO_UI_SCREEN_FIELDS` numbers
+ * each, and answers how many there are; where they take more than `count`
+ * numbers, nothing is written and the number of screens is answered all the
+ * same. -1 on failure. */
+int64_t hero_ui_screens(hero_ui_app *app, int64_t *values, uint64_t count);
+
+/* Writes window `id`'s frame through the five places: the screen it stands
+ * on most, its position on that screen, and its frame's width and height in
+ * points, its title bar and border included. 0, or -1: `INVALID` for a
+ * widget no window, `NOT_FOUND`. */
+int64_t hero_ui_frame_of(hero_ui_app *app, int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height);
+
+/* Moves window `id` to position `x`, `y` on screen `screen`. No event is
+ * queued. 0, or -1: `INVALID` (no such screen, a position past
+ * `HERO_UI_POSITION_MOST` either way, a widget no window), `NOT_FOUND`. */
+int64_t hero_ui_set_position(hero_ui_app *app, int64_t id, int64_t screen, int64_t x, int64_t y);
+
+/* The farthest a position goes from its screen's corner either way, in
+ * points: a million, past every desktop. */
+#define HERO_UI_POSITION_MOST 1000000
+
+/* Centres window `id`'s frame in the work area of the screen it stands on,
+ * `over` 0, or over window `over`'s frame, keeping it within that screen's
+ * work area as far as its size allows. No event is queued. 0, or -1. */
+int64_t hero_ui_center(hero_ui_app *app, int64_t id, int64_t over);
+
+/* Brings window `id` to `state`, leaving the one it stands in first, and
+ * waits for the system to finish it (each step is animated, and a full
+ * screen moves the window to a space of its own on macOS): 0, or -1:
+ * `INVALID` (a state these four do not name, a widget no window), `NOT_FOUND`,
+ * `OTHER` where the system did not bring it there within five seconds, or
+ * would not (a window with no frame is never minimized on macOS). No state
+ * event is queued; the size its content takes is, as `HERO_UI_EVENT_RESIZE`. */
+int64_t hero_ui_set_state(hero_ui_app *app, int64_t id, int64_t state);
+
+/* Writes the state window `id` stands in through `state`. 0, or -1. */
+int64_t hero_ui_state(hero_ui_app *app, int64_t id, int64_t *state);
+
+/* Keeps window `id` above every other application's windows, 1, or at the
+ * level of an ordinary window, 0. 0, or -1. */
+int64_t hero_ui_set_on_top(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Gives window `id` its frame, a title bar with its buttons and a border,
+ * 1, as a window is made, or takes them away, 0, its content keeping its
+ * size; a window with no frame is moved by a drag on its background. 0, or
+ * -1: `OTHER` for a window in full screen. */
+int64_t hero_ui_set_framed(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Sets window `id`'s opacity, `alpha` from 0, wholly see-through, to 255,
+ * wholly opaque, as a window is made. 0, or -1. */
+int64_t hero_ui_set_opacity(hero_ui_app *app, int64_t id, int64_t alpha);
+
+/* Puts `backdrop`, a `HERO_UI_BACKDROP_*`, behind window `id`'s widgets.
+ * 0, or -1: `UNSUPPORTED` where the system offers no translucent material. */
+int64_t hero_ui_set_backdrop(hero_ui_app *app, int64_t id, int64_t backdrop);
+
+/* Gives the app the icon of `width` by `height` pixels of 8-bit RGBA,
+ * alpha straight, row after row from the top, `count` bytes: the Dock's on
+ * macOS, every window's and the task bar's on Windows; a size of 0 by 0
+ * gives the system's own back. 0, or -1 `INVALID` where `count` is not
+ * `width * height * 4`. */
+int64_t hero_ui_set_icon(hero_ui_app *app, const void *rgba, uint64_t count, int64_t width, int64_t height);
+
+/* Makes window `id` modal, 1: until the program ends it, 0, or destroys the
+ * window, it takes the person's every act and the app's other windows take
+ * none, as `wxDialog::ShowModal` holds them; the program goes on asking
+ * `wait` as before, and the window is brought to the front. One window at a
+ * time. 0, or -1: `OTHER` where another window is modal already. */
+int64_t hero_ui_set_modal(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Does what the person does to window `id` among the screens, through the
+ * system's own path, so its event comes as theirs would:
+ * `HERO_UI_EVENT_MOVE` drags it to position `second`, `third` on screen
+ * `value`; `HERO_UI_EVENT_STATE` brings it to state `value` as its buttons
+ * would. 0, or -1, as `set_position` and `set_state` answer. */
+int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, int64_t third);
+
+/* -- A LIST'S ROW OPENED -------------------------------------------------- */
+
+/* The person opened a row of list `id`, by a double click on it or by the
+ * Return key while the list had the keys: `value` the row, for the Return
+ * key the first row chosen. A first click's choice comes before it as
+ * `HERO_UI_EVENT_SELECT`, as the person's click gave it; `inject` gives it
+ * with `HERO_UI_EVENT_ACTIVATE`. A file manager enters the folder, a mail
+ * client opens the message. */
+#define HERO_UI_EVENT_ACTIVATE 13
+
+/* -- A MENU ITEM'S ROLE ----------------------------------------------------
+ *
+ * An item of the program's own that stands for something every program of
+ * the system has, as wxWidgets' `wxID_ABOUT`, `wxID_PREFERENCES` and
+ * `wxID_EXIT` and Qt's `QAction::MenuRole` mark it. On macOS such an item
+ * stands in the application's menu, in the place Apple's guidelines give
+ * it, and is hidden in the menu the program put it in; its choosing is
+ * still `HERO_UI_EVENT_MENU` naming it. Elsewhere it stays where the
+ * program put it, the system having no such menu, and the call is done. */
+#define HERO_UI_ROLE_NONE 0
+#define HERO_UI_ROLE_ABOUT 1
+/* The program's settings; macOS gives it Command+, where the item has no
+ * shortcut of its own. */
+#define HERO_UI_ROLE_SETTINGS 2
+/* Quit: on macOS the application menu's Quit, which without such an item
+ * asks every window to close (`HERO_UI_EVENT_CLOSE` for each). */
+#define HERO_UI_ROLE_QUIT 3
+
+/* Gives menu item `id` the role `role`, `HERO_UI_ROLE_NONE` taking it
+ * away. 0, or -1: `INVALID` (a role these do not name, a widget no menu
+ * item), `NOT_FOUND`. */
+int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role);
+
+/* -- RETURN AND ESCAPE -----------------------------------------------------
+ *
+ * Return pressed in a text field, and the buttons Return and Escape press
+ * wherever their window has the keys, as wxWidgets' `wxEVT_TEXT_ENTER`,
+ * `wxButton::SetDefault` and a dialog's `wxID_CANCEL` give them: a search
+ * field searches, a dialog's OK and Cancel answer the keys every dialog
+ * answers. A window's button for Return takes Return before any field of
+ * it, as the systems' dialogs do. */
+
+/* The person pressed Return in text field `id`; its text is asked of the
+ * field. */
+#define HERO_UI_EVENT_SUBMIT 14
+
+/* The key that presses a button: none, as a button is made; Return, the
+ * button then drawn as its window's default; Escape. */
+#define HERO_UI_BUTTON_KEY_NONE 0
+#define HERO_UI_BUTTON_KEY_ENTER 1
+#define HERO_UI_BUTTON_KEY_ESCAPE 2
+
+/* Lets `key` press button `id` wherever its window has the keys, the one
+ * of its window that had that key losing it, or takes the key away,
+ * `HERO_UI_BUTTON_KEY_NONE`. Pressed so, the button's
+ * `HERO_UI_EVENT_CLICK` is queued as a click's. 0, or -1: `INVALID` (a key
+ * these do not name, a widget no button), `NOT_FOUND`. */
+int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key);
+
+/* -- THE WIDGET WITH THE KEYS ---------------------------------------------
+ *
+ * Which widget of a window takes what the person types, set and asked, as
+ * wxWidgets' `wxWindow::SetFocus` and `FindFocus`; Tab and Shift+Tab move
+ * it through the widgets in the order they stand, left to right and top to
+ * bottom, the order the layout reads them in. The widgets that take the
+ * keys on every system are text fields, text areas and lists. */
+
+/* Gives widget `id`, a text field, a text area or a list, the keys in its
+ * window; the person types into it once the window is in front. 0, or -1:
+ * `INVALID` (a widget of another kind, or one the system will not give the
+ * keys, as a hidden one), `NOT_FOUND`. */
+int64_t hero_ui_set_focus(hero_ui_app *app, int64_t id);
+
+/* Writes through `focus` the widget of window `id` that has the keys, `id`
+ * itself where none of its widgets has them. 0, or -1: `INVALID` (a widget
+ * no window), `NOT_FOUND`. */
+int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus);
+
+/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS ---------------
+ *
+ * wxWidgets' `wxDirDialog`, and `wxMessageDialog` with labels of the
+ * program's (`SetYesNoCancelLabels`) or Electron's `showMessageBox` with
+ * its `buttons`: "Save", "Don't Save", "Cancel" before a document closes.
+ * Each waits for the person, as `hero_ui_message` and the file dialogs do. */
+
+/* The most buttons a message box of the program's words holds. */
+#define HERO_UI_ASK_BUTTONS_MOST 16
+
+/* Shows the system's dialog to choose a folder, or several where `multiple`
+ * is 1, over window `window` (0 for none), titled `title`, and waits for
+ * the person. Answers the bytes the chosen paths take, each followed by one
+ * zero byte, which `hero_ui_dialog_paths` then writes; 0 where the person
+ * cancelled; -1 on failure. */
+int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple, const void *title, uint64_t title_count);
+
+/* Shows a message box over window `window` (0 for none) of `tone`, with
+ * `title` and `text`, whose buttons are `buttons`, each label one line of
+ * UTF-8 followed by one zero byte, `buttons_count` bytes in all, 1 to
+ * `HERO_UI_ASK_BUTTONS_MOST` of them, in the order the person reads them:
+ * the first is pressed by Return, and the one at index `cancel` by Escape
+ * (-1 for none). Waits for the person and answers the index of the button
+ * pressed, or -1. */
+int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
+
+/* -- CHECK AND RADIO MENU ITEMS ----------------------------------------------
+ *
+ * A menu item checked and unchecked (View > Show Sidebar), or one of a
+ * group of which one is checked (View > as Icons, as List), as wxWidgets'
+ * `wxITEM_CHECK` and `wxITEM_RADIO` items: the person's choosing turns a
+ * check item over, and checks a radio item and unchecks the other radio
+ * items of its group, the radio items of its menu no other item or
+ * separator stands between, before the item's `HERO_UI_EVENT_MENU`, whose
+ * `value` is its state after. `hero_ui_set_value` and `hero_ui_value` set
+ * and read the state, 1 checked, 0 not, no event queued for a set. */
+#define HERO_UI_CHECK_NONE 0
+#define HERO_UI_CHECK_BOX 1
+#define HERO_UI_CHECK_RADIO 2
+
+/* Makes menu item `id` a check item, a radio item, or neither,
+ * `HERO_UI_CHECK_NONE`; unchecked. 0, or -1: `INVALID` (a mode these do not
+ * name, a widget no menu item), `NOT_FOUND`. */
+int64_t hero_ui_set_check(hero_ui_app *app, int64_t id, int64_t mode);
+
+/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE -------------------------
+ *
+ * A text field whose text the system masks as it is typed, a password's,
+ * as wxWidgets' `wxTE_PASSWORD`; and a progress bar that moves with no
+ * value while the work's end is unknown, as `wxGauge::Pulse`. */
+
+/* Masks text field `id`'s text, 1, or shows it, 0, as a field is made; its
+ * text, its place and its events are kept. 0, or -1: `INVALID` (a widget
+ * no text field), `NOT_FOUND`. */
+int64_t hero_ui_set_masked(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Lets progress bar `id` move with no value, 1, or shows its value, 0, as
+ * a bar is made. 0, or -1: `INVALID` (a widget no progress bar),
+ * `NOT_FOUND`. */
+int64_t hero_ui_set_moving(hero_ui_app *app, int64_t id, int64_t on);
+
+
+/* -- THE CLIPBOARD -----------------------------------------------------------
+ *
+ * The system's clipboard, the one every program copies to and pastes from,
+ * as wxWidgets' `wxClipboard` with `wxTextDataObject`, `wxFileDataObject`
+ * and `wxBitmapDataObject`, or Electron's `clipboard`: the program's own
+ * copying and pasting, a list's path copied, a file manager's files, a
+ * picture. A text field's Cut, Copy and Paste reach it through the Edit
+ * menu without these. A write puts one kind in place of everything the
+ * clipboard held, or empties it; a read asks for one kind and finds it where
+ * the program that copied offered it, a program offering several at once.
+ * What a write puts is found as its own kind alone. */
+#define HERO_UI_CLIP_NOTHING 0
+#define HERO_UI_CLIP_TEXT 1
+#define HERO_UI_CLIP_FILES 2
+#define HERO_UI_CLIP_IMAGE 3
+
+/* The most bytes a write puts on the clipboard or a read takes from it: an
+ * image of 8192 by 8192 pixels. */
+#define HERO_UI_CLIP_MOST 268435456
+
+/* Puts `count` bytes at `bytes` on the system's clipboard as `kind`, in
+ * place of what it held: nothing, which empties it, with no bytes; UTF-8
+ * text; absolute paths of UTF-8, each followed by one zero byte, at least
+ * one; or `width` by `height` pixels of 8-bit RGBA, alpha straight, 4 bytes
+ * a pixel, rows from the top. `width` and `height` are 0 for all but an
+ * image. 0, or -1: `INVALID` (a kind these do not name, bytes not as the
+ * kind takes them), `LIMIT` (past `HERO_UI_CLIP_MOST`), `OTHER` (the
+ * system's refusal). */
+int64_t hero_ui_clipboard_write(hero_ui_app *app, int64_t kind, const void *bytes, uint64_t count, int64_t width, int64_t height);
+
+/* Reads the system's clipboard for `kind` and answers the bytes what it
+ * holds of that kind takes, in the form `hero_ui_clipboard_write` takes,
+ * an image's size written to `width` and `height` (0 for text and paths);
+ * `hero_ui_clipboard_bytes` then writes them. -1: `NOT_FOUND` (the
+ * clipboard holds nothing of that kind), `INVALID`, `LIMIT` (what it holds
+ * takes past `HERO_UI_CLIP_MOST`). `HERO_UI_CLIP_NOTHING` is no kind a read
+ * asks for. */
+int64_t hero_ui_clipboard_read(hero_ui_app *app, int64_t kind, int64_t *width, int64_t *height);
+
+/* Writes what the last `hero_ui_clipboard_read` found into `buffer` where
+ * its `count` bytes hold it, and answers the bytes it takes all the same;
+ * -1 where no read has found anything. */
+int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count);
+
+/* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
+ *
+ * Pages chosen by tabs (wxWidgets' `wxNotebook`), a box whose content
+ * scrolls (`wxScrolledWindow`) and two panes whose border the person drags
+ * (`wxSplitterWindow`). A page, a scrolled box and a pane are CONTAINERS:
+ * a widget whose parent is one stands in the container's own content, and
+ * `hero_ui_place` gives its place from that content's top-left corner, as
+ * a window's widgets are placed from its content's; every kind a window
+ * holds, these included, may have a container for its parent instead. The
+ * system sizes a page and a pane itself, and `hero_ui_place` refuses them. */
+
+/* Tabs above pages, one page shown at a time; its parent a window or a
+ * container. Holds pages alone. `hero_ui_set_selection` and
+ * `hero_ui_selection` set and read the page shown, by its index in the
+ * order the pages were made; the person choosing a tab queues
+ * `HERO_UI_EVENT_SELECT`. */
+#define HERO_UI_TABS 22
+/* A page of tabs, a container; `hero_ui_set_text` sets its tab's title. */
+#define HERO_UI_PAGE 23
+/* A box whose content scrolls up and down within it, a container;
+ * `hero_ui_set_size` sets its content's size. */
+#define HERO_UI_SCROLL 24
+/* Two panes side by side, or one over the other, and the divider between
+ * them that the person drags; its parent a window or a container. Holds two
+ * panes at most. `hero_ui_set_value` and `hero_ui_value` set and read the
+ * divider's place, the first pane's width or height in points;
+ * `hero_ui_set_range` bounds where the person may drag it; the person
+ * dragging it queues `HERO_UI_EVENT_VALUE` with its place. Its
+ * `hero_ui_preferred` is the divider's thickness on both axes. */
+#define HERO_UI_SPLIT_ROW 25
+#define HERO_UI_SPLIT_COLUMN 26
+/* A pane of a split, a container, the first made the left or the top one. */
+#define HERO_UI_PANE 27
+
+/* Writes the room tabs' or a scrolled box's own drawing takes inside its
+ * place around its content, in points, through `left`, `top`, `right` and
+ * `bottom`: the tabs and the border around a page, the scroll bar where
+ * the system draws it beside the content rather than over it. 0, or -1:
+ * `INVALID` (a widget of another kind), `NOT_FOUND`. */
+int64_t hero_ui_insets(hero_ui_app *app, int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom);
+
+/* -- A TABLE: ROWS OF CELLS IN COLUMNS --------------------------------------
+ *
+ * Rows of cells under column headers whose widths the person drags, several
+ * rows chosen, as wxWidgets' `wxDataViewListCtrl` or a report-mode
+ * `wxListCtrl`: a file manager's details, a mail client's messages. A
+ * table's parent is a window or a container. `hero_ui_set_items` gives its
+ * cells, row after row, a whole number of rows of `hero_ui_set_columns`'
+ * count; `hero_ui_set_selection` and `hero_ui_selection` set and read the
+ * rows chosen, any number of them, and the person choosing queues
+ * `HERO_UI_EVENT_SELECT`; a row opened queues `HERO_UI_EVENT_ACTIVATE`, as
+ * a list's does. The person clicking a column's header asks for the rows
+ * sorted by it, `HERO_UI_EVENT_SORT`; the program sorts its rows, gives
+ * them again, and shows the column it sorted by with
+ * `hero_ui_set_sort`. */
+#define HERO_UI_TABLE 28
+
+/* The person clicked the header of column `value` of table `id`, asking for
+ * the rows sorted by it, ascending where `second` is 1 and descending where
+ * it is 0: the column already sorted by turns over, another starts
+ * ascending. The arrow is shown at once. */
+#define HERO_UI_EVENT_SORT 15
+
+/* The most columns a table holds. */
+#define HERO_UI_COLUMNS_MOST 64
+
+/* Gives table `id` its columns, each header's title one line of UTF-8
+ * followed by one zero byte, `count` bytes in all, 1 to
+ * `HERO_UI_COLUMNS_MOST` of them, in place of the columns and the cells it
+ * held. 0, or -1: `INVALID` (a widget no table, titles not so),
+ * `NOT_FOUND`. */
+int64_t hero_ui_set_columns(hero_ui_app *app, int64_t id, const void *titles, uint64_t count);
+
+/* Shows table `id` sorted by column `column`, ascending where `ascending`
+ * is 1, descending where it is 0, its header's arrow showing it; by none
+ * where `column` is -1. No event is queued. 0, or -1: `INVALID` (a widget
+ * no table, a column past its columns), `NOT_FOUND`. */
+int64_t hero_ui_set_sort(hero_ui_app *app, int64_t id, int64_t column, int64_t ascending);
+
+/* -- A TREE: ITEMS FOLDED AND UNFOLDED ---------------------------------------
+ *
+ * Items under items, each folded or unfolded by the person, one chosen, as
+ * wxWidgets' `wxTreeCtrl`: a disk's folders, a mail client's mailboxes. A
+ * tree's parent is a window or a container. Its items are numbered by the
+ * program, 1 or more, 0 naming the tree's top. An item may be FOLDABLE
+ * before it holds any item, so a program loads what is under it only when
+ * the person unfolds it, as a disk's folders cannot all load at once.
+ * `hero_ui_set_selection` and `hero_ui_selection` set and read the item
+ * chosen, by its number, one at most; the person choosing queues
+ * `HERO_UI_EVENT_SELECT`, opening an item by a double click or Return
+ * `HERO_UI_EVENT_ACTIVATE` with its number, and unfolding or folding one
+ * `HERO_UI_EVENT_UNFOLD`. */
+#define HERO_UI_TREE 29
+
+/* The person unfolded item `value` of tree `id`, `second` 1, or folded it,
+ * 0. An item unfolded the first time while it holds none is the program's
+ * moment to add what is under it. */
+#define HERO_UI_EVENT_UNFOLD 16
+
+/* Adds item `item` to tree `id`, at the end of the items under item
+ * `under` (0 for the top), showing `text`, one line of UTF-8, `count`
+ * bytes; foldable where `foldable` is 1 though it holds no item yet. 0, or
+ * -1: `INVALID` (a widget no tree, an item below 1, a text not so),
+ * `NOT_FOUND` (no item `under`, or `item` taken). */
+int64_t hero_ui_tree_add(hero_ui_app *app, int64_t id, int64_t item, int64_t under, const void *text, uint64_t count, int64_t foldable);
+
+/* Takes item `item` out of tree `id`, with every item under it; nothing is
+ * queued, the choice of one of them gone with it. 0, or -1: `INVALID`,
+ * `NOT_FOUND`. */
+int64_t hero_ui_tree_remove(hero_ui_app *app, int64_t id, int64_t item);
+
+/* Unfolds item `item` of tree `id`, 1, or folds it, 0, as the person
+ * would, but with no event queued. 0, or -1: `INVALID` (an item that is not
+ * foldable), `NOT_FOUND`. */
+int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t on);
+
+/* -- A CONTEXT MENU ----------------------------------------------------------
+ *
+ * A menu shown where the person right-clicks a widget, or Control-clicks
+ * it on macOS, as wxWidgets' `wxWindow::PopupMenu` on `wxEVT_CONTEXT_MENU`:
+ * a file's Open, Rename and Delete. Its parent is the widget, or a window
+ * for its content; one a widget. Its items are made as a menu's are,
+ * `HERO_UI_MENU_ITEM`, `HERO_UI_MENU_SEPARATOR` and `HERO_UI_MENU` with it
+ * for parent, and choosing one queues `HERO_UI_EVENT_MENU` as any item's
+ * does; a shortcut of its items is shown and takes no key. Destroying it
+ * takes it from the widget. */
+#define HERO_UI_CONTEXT_MENU 30
 
 #endif

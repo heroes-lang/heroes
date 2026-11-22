@@ -61,11 +61,49 @@ constant VIEW_WIDTH: i64
 constant VIEW_HEIGHT: i64
     240
 
+# The room the headless side's tabs take beside and below a page, on each
+# side, in points.
+constant TAB_SIDE: i64
+    8
+
+# The room its tabs and the border above a page take, high.
+constant TAB_TOP: i64
+    32
+
+# The width of a table's column on the headless side; a table is as wide
+# as its columns, a text field's width at least, and a list's height with a
+# control's for its headers.
+constant TABLE_COLUMN: i64
+    100
+
+# The thickness of the headless side's divider between two panes.
+constant DIVIDER: i64
+    1
+
+# The room the headless side's tabs or scrolled box of `kind` takes around
+# its content, `[left, top, right, bottom]`: its scroll bar stands over the
+# content, as the system's does by default on macOS, and takes none.
+function insets_of(kind: i64) -> [i64]
+    if kind == hero_ui.HERO_UI_TABS
+        return [TAB_SIDE, TAB_TOP, TAB_SIDE, TAB_SIDE]
+    return [0, 0, 0, 0]
+
 # The size `n` is drawn at by the headless side, as `[width, height]` in
-# points: what a native side's `preferred` answers for it. A window, a box, a
-# menu and a timer have none, `[0, 0]`.
+# points: what a native side's `preferred` answers for it. A split's is its
+# divider's thickness on both axes. A window, a box, a menu and a timer
+# have none, `[0, 0]`.
 function of(n: model.Node) -> [i64]
     k = n.kind
+
+    if model.is_split(k)
+        return [DIVIDER, DIVIDER]
+
+    if k == hero_ui.HERO_UI_TABLE
+        wide = TABLE_COLUMN * n.titles.len()
+
+        if wide < FIELD
+            return [FIELD, AREA_HEIGHT + CONTROL]
+        return [wide, AREA_HEIGHT + CONTROL]
 
     if k == hero_ui.HERO_UI_LABEL
         lines = lines_of(n.text)
@@ -88,7 +126,7 @@ function of(n: model.Node) -> [i64]
             return [0, 0]
         return [widest(n.items) * COLUMN + AROUND, n.items.len() * MARK]
 
-    if k == hero_ui.HERO_UI_LIST || k == hero_ui.HERO_UI_LIST_MULTIPLE
+    if k == hero_ui.HERO_UI_LIST || k == hero_ui.HERO_UI_LIST_MULTIPLE || k == hero_ui.HERO_UI_TREE
         return [FIELD, AREA_HEIGHT]
 
     if k == hero_ui.HERO_UI_COMBO

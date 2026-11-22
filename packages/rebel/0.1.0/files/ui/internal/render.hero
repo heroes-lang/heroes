@@ -8,6 +8,7 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/loop
 use ui/internal/model
+use ui/internal/trees
 
 # Every window of `app` as lines, laid out first (`ui.render`).
 function lines(@app: ui.App) -> [str]?
@@ -28,6 +29,9 @@ function drawn(m: model.Model, id: i64, depth: i64, shown: bool, @out: [str])
     visible = shown && n.visible
     out @ out.push(repeat("  ", to_u64(depth).must()) + line_of(n, visible: visible))
 
+    if n.kind == hero_ui.HERO_UI_TREE
+        trees.drawn_items(n, under: 0, depth: depth + 1, @out)
+
     for menu in n.menus
         drawn(m, id: menu, depth: depth + 1, shown: visible, @out)
 
@@ -45,6 +49,9 @@ function line_of(n: model.Node, visible: bool) -> str
 
         if !n.resizable
             parts @ parts.push("fixed")
+
+        for word in standing_words(n.standing)
+            parts @ parts.push(word)
     else if k == hero_ui.HERO_UI_CHECKBOX
         mark = if n.value == 1
             "[x]"
@@ -52,16 +59,57 @@ function line_of(n: model.Node, visible: bool) -> str
             "[ ]"
 
         parts @ parts.push(mark).push(quoted(n.text))
+    else if k == hero_ui.HERO_UI_MENU_ITEM && n.check != hero_ui.HERO_UI_CHECK_NONE
+        mark = if n.check == hero_ui.HERO_UI_CHECK_RADIO && n.value == 1
+            "(x)"
+        else if n.check == hero_ui.HERO_UI_CHECK_RADIO
+            "( )"
+        else if n.value == 1
+            "[x]"
+        else
+            "[ ]"
+
+        parts @ parts.push(mark).push(quoted(n.text))
+    else if k == hero_ui.HERO_UI_TEXT_FIELD && n.masked
+        # A masked field shows one mark a character, as the system shows
+        # it, and never its text.
+        parts @ parts.push("masked").push(quoted(repeat("*", to_u64(n.text.chars().len()).must())))
     else if model.has_text(k)
         parts @ parts.push(quoted(n.text))
+
+        if n.button_key == hero_ui.HERO_UI_BUTTON_KEY_ENTER
+            parts @ parts.push("default")
+        else if n.button_key == hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+            parts @ parts.push("cancel")
     else if model.has_items(k)
         if k == hero_ui.HERO_UI_LIST_MULTIPLE
             parts @ parts.push("multiple")
         parts @ parts.push(quoted_all(n.items)).push("chosen " + numbers(n.chosen))
     else if model.has_range(k)
         parts @ parts.push(f"value {n.value} in {n.least}..{n.most}")
+
+        if n.moving
+            parts @ parts.push("moving")
     else if k == hero_ui.HERO_UI_GRID
         parts @ parts.push(f"{n.columns} columns")
+    else if k == hero_ui.HERO_UI_TABS
+        parts @ parts.push("chosen " + numbers(n.chosen))
+    else if k == hero_ui.HERO_UI_SCROLL
+        parts @ parts.push(f"content {n.width}x{n.height}")
+    else if model.is_split(k)
+        parts @ parts.push(f"divider {n.value} in {n.least}..{n.most}")
+    else if k == hero_ui.HERO_UI_TREE
+        parts @ parts.push(f"{n.branches.len()} items").push("chosen " + numbers(n.chosen))
+    else if k == hero_ui.HERO_UI_TABLE
+        parts @ parts.push(quoted_all(n.titles)).push(f"{model.rows_of(n)} rows").push("chosen " + numbers(n.chosen))
+
+        if n.sorted_by >= 0
+            order = if n.ascending
+                "ascending"
+            else
+                "descending"
+
+            parts @ parts.push(f"sorted by {n.sorted_by} {order}")
     else if k == hero_ui.HERO_UI_WEBVIEW
         page = if n.web.page.len() > 0
             "page " + quoted(n.web.page)
@@ -73,6 +121,13 @@ function line_of(n: model.Node, visible: bool) -> str
     if k == hero_ui.HERO_UI_MENU_ITEM && n.key.len() > 0
         parts @ parts.push(shortcut_of(n))
 
+    if n.role == hero_ui.HERO_UI_ROLE_ABOUT
+        parts @ parts.push("role about")
+    else if n.role == hero_ui.HERO_UI_ROLE_SETTINGS
+        parts @ parts.push("role settings")
+    else if n.role == hero_ui.HERO_UI_ROLE_QUIT
+        parts @ parts.push("role quit")
+
     if !n.enabled
         parts @ parts.push("disabled")
 
@@ -82,6 +137,39 @@ function line_of(n: model.Node, visible: bool) -> str
     if visible && model.is_placed(k)
         parts @ parts.push(f"at {n.x},{n.y} {n.w}x{n.h}")
     return parts.join(" ")
+
+# What a window's line says of how it stands among the screens, where it
+# stands otherwise than a new window: the position the program or the
+# person gave it, its state, on top, with no frame, its opacity, its
+# backdrop, modal.
+function standing_words(s: model.Standing) -> [str]
+    out: [str] @= []
+
+    if s.placed
+        out @ out.push(f"on screen {s.screen} at {s.x},{s.y}")
+
+    if s.state == hero_ui.HERO_UI_STATE_MINIMIZED
+        out @ out.push("minimized")
+    else if s.state == hero_ui.HERO_UI_STATE_MAXIMIZED
+        out @ out.push("maximized")
+    else if s.state == hero_ui.HERO_UI_STATE_FULL_SCREEN
+        out @ out.push("full_screen")
+
+    if s.on_top
+        out @ out.push("on_top")
+
+    if !s.framed
+        out @ out.push("frameless")
+
+    if s.opacity != 255
+        out @ out.push(f"opacity {s.opacity}")
+
+    if s.backdrop == hero_ui.HERO_UI_BACKDROP_TRANSLUCENT
+        out @ out.push("translucent")
+
+    if s.modal
+        out @ out.push("modal")
+    return out
 
 # A menu item's shortcut as text: the keys held, then the key, joined by
 # `+`.

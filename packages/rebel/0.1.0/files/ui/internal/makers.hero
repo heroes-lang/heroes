@@ -10,6 +10,7 @@ use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/clock
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/model
 use ui/internal/native
@@ -49,7 +50,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).
@@ -94,6 +95,20 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
 
     if (kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP) && items.len() > 0
         n.chosen @ [0]
+    return added(@app, n: n)
+
+# A new text field whose text is masked (`ui.password_field`).
+function password_field(@app: ui.App, into: ui.Widget, text: str) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_TEXT_FIELD,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.text @ text
+    n.masked @ true
     return added(@app, n: n)
 
 # A new grid of `columns` in `into` (`ui.grid`).
@@ -172,14 +187,37 @@ function with_pixels(@n: model.Node, img: image.Image) -> ()?
 # A new menu, menu item or separator of `kind` in `into`, showing `text`.
 function menu_part(@app: ui.App, into: ui.Widget, kind: i64, text: str) -> ui.Widget?
     parent = if kind == hero_ui.HERO_UI_MENU
-        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_MENU, hero_ui.HERO_UI_CONTEXT_MENU], what: "a window, a menu or a context menu")?
     else
-        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU], what: "a menu")?
+        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU, hero_ui.HERO_UI_CONTEXT_MENU], what: "a menu or a context menu")?
 
     check.text_ok(text: text, one_line: true, what: "the text")?
     n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
     n.text @ text
     return added(@app, n: n)
+
+# A new context menu of `widget` (`ui.context_menu`): one a widget, on a
+# widget the person clicks or a window's content.
+function context_menu(@app: ui.App, widget: ui.Widget) -> ui.Widget?
+    n = check.node_of(app, widget: widget)?
+
+    if n.kind == hero_ui.HERO_UI_MENU || n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_CONTEXT_MENU || n.kind == hero_ui.HERO_UI_TIMER || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE || !model.is_native(n.kind)
+        return fail(
+            code: failure.INVALID,
+            msg: f"a {model.kind_name(n.kind)} takes no context menu: a widget the person clicks or a window does"
+        )
+
+    for each in n.menus
+        if app.table.nodes[each].must().kind == hero_ui.HERO_UI_CONTEXT_MENU
+            return fail(code: failure.INVALID, msg: f"widget {n.id} has a context menu already, menu {each}")
+
+    made = model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_CONTEXT_MENU,
+        parent: n.id,
+        window: n.window
+    )
+    return added(@app, n: made)
 
 # A new timer of `every` (`ui.timer`).
 function timer(@app: ui.App, every: time.Duration) -> ui.Widget?
@@ -218,8 +256,8 @@ function boxed(app: ui.App, into: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: into,
-        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID],
-        what: "a window, a row, a column or a grid"
+        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE],
+        what: "a window, a row, a column, a grid, a page, a scrolled box or a pane"
     )
 
 # Adds `n`, a node of a new number, to `app`: on the native side its widget

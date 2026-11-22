@@ -10,6 +10,7 @@ use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
+use ui/internal/fixture
 use ui/internal/loop
 
 # The button the person pressed in a message box (`ui.message`).
@@ -91,10 +92,11 @@ function answer_of(pressed: i64) -> ui.Answer
 # The name an answer is told by in a message.
 function answer_name(answer: ui.Answer) -> str
     return match answer
-        .ok     => "OK"
-        .cancel => "Cancel"
-        .yes    => "Yes"
-        .no     => "No"
+        .ok       => "OK"
+        .cancel   => "Cancel"
+        .yes      => "Yes"
+        .no       => "No"
+        .button b => f"button {b.index}"
 
 # What the person did in a file dialog (`ui.open_files`, `ui.save_file`).
 function files(@app: ui.App, over: ui.Widget, title: str, name: str, filters: [ui.Filter], save: bool, multiple: bool) -> ui.Choice?
@@ -189,6 +191,131 @@ function split_zeros(joined: [u8]) -> [str]?
 
     return ok(out)
 
+# The folders the person chose (`ui.open_folders`).
+function folders(@app: ui.App, over: ui.Widget, title: str, multiple: bool) -> ui.Choice?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+
+    if app.choices.len() > 0
+        choice = app.choices[0]
+        app.choices @ app.choices.slice(from: 1, to: app.choices.len())
+
+        match choice
+            .cancelled => return ok(choice)
+            .chosen c =>
+                if c.paths.len() > 1 && !multiple
+                    return fail(
+                        code: failure.INVALID,
+                        msg: f"{c.paths.len()} paths were injected for the dialog \"{title}\", which takes one"
+                    )
+                return ok(choice)
+
+    if !app.native
+        return fail(
+            code: failure.CLOSED,
+            msg: f"no choice was injected for the folder dialog \"{title}\", and a headless app has no person to choose"
+        )
+    loop.settle(@app)?
+    title_bytes @= bytes.from_text(title)
+    got = hero_ui.folder_dialog(
+        app.handle,
+        window: w.id,
+        multiple: check.number_of(multiple),
+        title: @title_bytes,
+        title_count: to_u64(title_bytes.len()).must()
+    )
+
+    if got < 0
+        return failure.last(f"showing the folder dialog \"{title}\"")
+
+    if got == 0
+        return ok(.cancelled)
+    buffer: [u8] @= []
+
+    if hero_ui.dialog_paths(app.handle, @buffer, count: to_u64(got).must()) != got
+        return failure.last(f"reading the paths of the folder dialog \"{title}\"")
+    return ok(.chosen(paths: split_zeros(buffer.slice(from: 0, to: got))?))
+
+# The index of the button the person pressed in a message box of the
+# program's words (`ui.ask`): an injected `.button(index:)`, or `.cancel`
+# for the button Escape presses, is taken first.
+function ask(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: [str], cancel: i64) -> i64?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: text, one_line: false, what: "the text")?
+
+    if buttons.len() < 1 || buttons.len() > hero_ui.HERO_UI_ASK_BUTTONS_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"a message box of {buttons.len()} buttons; it holds 1 to {hero_ui.HERO_UI_ASK_BUTTONS_MOST}"
+        )
+
+    for i in range(from: 0, to: buttons.len())
+        if buttons[i].len() == 0
+            return fail(code: failure.INVALID, msg: f"button {i}'s label is empty, and a person reads none")
+
+    check.items_ok(buttons)?
+
+    if cancel < -1 || cancel >= buttons.len()
+        return fail(
+            code: failure.INVALID,
+            msg: f"the cancel button {cancel} is neither -1 nor one of the {buttons.len()} buttons"
+        )
+
+    if app.answers.len() > 0
+        answer = app.answers[0]
+        app.answers @ app.answers.slice(from: 1, to: app.answers.len())
+
+        match answer
+            .button b =>
+                if b.index >= 0 && b.index < buttons.len()
+                    return ok(b.index)
+            .cancel =>
+                if cancel >= 0
+                    return ok(cancel)
+            .ok | .yes | .no => _ = 0
+
+        return fail(
+            code: failure.INVALID,
+            msg: f"the answer injected, {answer_name(answer)}, is no button of the message box \"{title}\""
+        )
+
+    if !app.native
+        return fail(
+            code: failure.CLOSED,
+            msg: f"no answer was injected for the message box \"{title}\", and a headless app has no person to answer it"
+        )
+    loop.settle(@app)?
+    title_bytes @= bytes.from_text(title)
+    text_bytes @= bytes.from_text(text)
+    labels: [u8] @= []
+
+    for label in buttons
+        bytes.push_text(@labels, s: label)
+        labels @ labels.push(0)
+
+    tone_code = match tone
+        .info    => hero_ui.HERO_UI_TONE_INFO
+        .warning => hero_ui.HERO_UI_TONE_WARNING
+        .error   => hero_ui.HERO_UI_TONE_ERROR
+
+    pressed = hero_ui.ask(
+        app.handle,
+        window: w.id,
+        tone: tone_code,
+        title: @title_bytes,
+        title_count: to_u64(title_bytes.len()).must(),
+        text: @text_bytes,
+        text_count: to_u64(text_bytes.len()).must(),
+        buttons: @labels,
+        buttons_count: to_u64(labels.len()).must(),
+        cancel: cancel
+    )
+
+    if pressed < 0
+        return failure.last(f"showing the message box \"{title}\"")
+    return ok(pressed)
+
 ## Tests
 
 test "filters_of: none, two filters, and an extension written with its dot"
@@ -209,3 +336,50 @@ test "offered_by and answer_of: every set of buttons, and an unknown number take
     assert answer_of(hero_ui.HERO_UI_ANSWER_YES) == .yes
     assert answer_of(99) == .cancel
     assert answer_name(.no) == "No"
+
+test "ask: an injected button and Cancel taken, the box's edges, and what is no button refused (catalogue DG02)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    words = ["Save", "Don't Save", "Cancel"]
+    ui.inject(@app, input: .answer(answer: .button(index: 0))).must()
+    ui.inject(@app, input: .answer(answer: .button(index: 2))).must()
+    ui.inject(@app, input: .answer(answer: .cancel)).must()
+    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 0
+    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 2
+    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 2
+    ui.inject(@app, input: .answer(answer: .cancel)).must()
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Go?", text: "", tone: .info, buttons: ["Go"], cancel: -1)) == ui.INVALID
+    ui.inject(@app, input: .answer(answer: .button(index: 3))).must()
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: words, cancel: 2)) == ui.INVALID
+    ui.inject(@app, input: .answer(answer: .yes)).must()
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: words, cancel: 2)) == ui.INVALID
+    empty: [str] = []
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: empty, cancel: -1)) == ui.INVALID
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: ["Save", ""], cancel: -1)) == ui.INVALID
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: ["a\nb"], cancel: -1)) == ui.INVALID
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: ["Save"], cancel: 1)) == ui.INVALID
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: ["Save"], cancel: -2)) == ui.INVALID
+    sixteen: [str] @= []
+
+    for i in range(from: 0, to: 16)
+        sixteen @ sixteen.push(f"Button {i}")
+
+    ui.inject(@app, input: .answer(answer: .button(index: 15))).must()
+    assert ui.ask(@app, over: w, title: "Many", text: "", tone: .info, buttons: sixteen, cancel: -1).must() == 15
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Many", text: "", tone: .info, buttons: sixteen.push("one more"), cancel: -1)) == ui.INVALID
+    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: words, cancel: 2)) == ui.CLOSED
+    ui.close(@app).must()
+
+test "open_folders: one chosen, several where several are asked, cancelled, several where one is asked refused, none injected closed (catalogue DG07)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.inject(@app, input: .pick_files(paths: ["/a"])).must()
+    ui.inject(@app, input: .pick_files(paths: ["/a", "/b c"])).must()
+    ui.inject(@app, input: .cancel_files).must()
+    ui.inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
+    assert ui.open_folders(@app, over: w, title: "Folder", multiple: false).must() == .chosen(paths: ["/a"])
+    assert ui.open_folders(@app, over: w, title: "Folders", multiple: true).must() == .chosen(paths: ["/a", "/b c"])
+    assert ui.open_folders(@app, over: w, title: "Folder", multiple: false).must() == .cancelled
+    assert fixture.code_of(ui.open_folders(@app, over: w, title: "Folder", multiple: false)) == ui.INVALID
+    assert fixture.code_of(ui.open_folders(@app, over: w, title: "Folder", multiple: false)) == ui.CLOSED
+    ui.close(@app).must()

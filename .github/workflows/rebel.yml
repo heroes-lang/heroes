@@ -487,7 +487,7 @@ jobs:
       # `libsqliteodbc`, which registers itself as `SQLite3`, the name
       # `sql/odbc`'s live tests look for
       # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
-      # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui.c`'s Linux arm,
+      # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui_gtk.c`, the Linux arm,
       # and Xvfb, an X server with no screen, which the drivers' step runs
       # them under so `ui`'s native tests run here rather than skip. Each
       # asked for by the name the code asks, after the install.

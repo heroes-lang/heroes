@@ -1,0 +1,280 @@
+# The system's clipboard (`ui.set_clipboard`, `ui.clipboard`), as wxWidgets'
+# `wxClipboard` with its text, file and bitmap data objects. The native side
+# writes and reads the system's own, which every program copies to and
+# pastes from, through the floor; the headless side keeps the app's own,
+# `ui.App.clipboard`, which only the program writes and a read answers only
+# for the kind written, the same on every machine.
+
+use bytes
+use image
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+
+# Puts `clip` on the clipboard in place of what it held (`ui.set_clipboard`).
+function put(@app: ui.App, clip: ui.Clip) -> ()?
+    check.opened(app)?
+    kind @= hero_ui.HERO_UI_CLIP_NOTHING
+    given: [u8] @= []
+    width @= 0
+    height @= 0
+
+    match clip
+        .nothing => kind @ hero_ui.HERO_UI_CLIP_NOTHING
+        .text t =>
+            text = t.text
+
+            if text.len() > hero_ui.HERO_UI_CLIP_MOST
+                return fail(
+                    code: failure.LIMIT,
+                    msg: f"the clipboard's text takes {text.len()} bytes, past the {hero_ui.HERO_UI_CLIP_MOST} it takes"
+                )
+
+            for at in range(from: 0, to: text.len())
+                if text[at] == 0
+                    return fail(
+                        code: failure.INVALID,
+                        msg: f"the clipboard's text holds a zero byte at byte {at}, which the programs pasting it would end it at"
+                    )
+
+            kind @ hero_ui.HERO_UI_CLIP_TEXT
+            given @ bytes.from_text(text)
+        .files f =>
+            given @ joined(f.paths)?
+            kind @ hero_ui.HERO_UI_CLIP_FILES
+        .picture p =>
+            rgba = pixels_of(p.img)?
+            kind @ hero_ui.HERO_UI_CLIP_IMAGE
+            given @ rgba.pixels
+            width @ rgba.width
+            height @ rgba.height
+
+    if app.native && hero_ui.clipboard_write(app.handle, kind: kind, @given, count: to_u64(given.len()).must(), width: width, height: height) < 0
+        return failure.last("writing the clipboard")
+    app.clipboard @ clip
+    return ok()
+
+# What the clipboard holds as `kind` (`ui.clipboard`): `.nothing` where it
+# holds nothing of that kind.
+function read(app: ui.App, kind: ui.ClipKind) -> ui.Clip?
+    check.opened(app)?
+
+    if !app.native
+        return ok(headless(app.clipboard, kind: kind))
+    asked = code_of(kind)
+    width @= 0
+    height @= 0
+    got = hero_ui.clipboard_read(app.handle, kind: asked, width: @width, height: @height)
+
+    if got < 0
+        if hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+            return ok(.nothing)
+        return failure.last("reading the clipboard")
+    buffer: [u8] @= []
+
+    if hero_ui.clipboard_bytes(app.handle, @buffer, count: to_u64(got).must()) != got
+        return failure.last("reading the clipboard's bytes")
+    found = buffer.slice(from: 0, to: got)
+
+    match kind
+        .text    => return ok(.text(text: bytes.to_text_lossy(found)))
+        .files   => return ok(.files(paths: split(found)?))
+        .picture => return ok(.picture(img: image.Image(width: width, height: height, format: .rgba, pixels: found)))
+
+# The layer's number for clipboard kind `kind`.
+function code_of(kind: ui.ClipKind) -> i64
+    match kind
+        .text    => return hero_ui.HERO_UI_CLIP_TEXT
+        .files   => return hero_ui.HERO_UI_CLIP_FILES
+        .picture => return hero_ui.HERO_UI_CLIP_IMAGE
+
+# What the headless side's clipboard, holding `held`, answers a read of
+# `kind`: `held` where it is of that kind, `.nothing` where it is not.
+function headless(held: ui.Clip, kind: ui.ClipKind) -> ui.Clip
+    match held
+        .nothing => return .nothing
+        .text _ =>
+            if kind == .text
+                return held
+        .files _ =>
+            if kind == .files
+                return held
+        .picture p =>
+            if kind == .picture
+                return .picture(img: image.convert(p.img, to: .rgba))
+
+    return .nothing
+
+# `paths` as the layer takes them, each followed by one zero byte. Fails
+# `invalid` where there is none, or a path is empty, holds a zero byte or is
+# not absolute; `limit` where they take past `HERO_UI_CLIP_MOST` bytes.
+function joined(paths: [str]) -> [u8]?
+    if paths.len() == 0
+        return fail(code: failure.INVALID, msg: "the clipboard's paths: none was given")
+    out: [u8] @= []
+
+    for i in range(from: 0, to: paths.len())
+        p = paths[i]
+
+        if p.len() == 0
+            return fail(code: failure.INVALID, msg: f"the clipboard's path {i} is empty")
+
+        for at in range(from: 0, to: p.len())
+            if p[at] == 0
+                return fail(code: failure.INVALID, msg: f"the clipboard's path {i} holds a zero byte at byte {at}")
+
+        if !absolute(p)
+            return fail(
+                code: failure.INVALID,
+                msg: f"the clipboard's path {i}, \"{p}\", is not absolute, and the programs that read the clipboard work in folders of their own"
+            )
+
+        if out.len() + p.len() + 1 > hero_ui.HERO_UI_CLIP_MOST
+            return fail(
+                code: failure.LIMIT,
+                msg: f"the clipboard's paths take past the {hero_ui.HERO_UI_CLIP_MOST} bytes it takes"
+            )
+
+        for b in bytes.from_text(p)
+            out @ out.push(b)
+
+        out @ out.push(0)
+
+    return ok(out)
+
+# Whether `path` is absolute as POSIX writes it, `/` first, or as Windows
+# does, a drive's letter, a colon and a slash first, or two backslashes.
+function absolute(path: str) -> bool
+    if path.len() >= 1 && path[0] == '/'
+        return true
+
+    if path.len() >= 2 && path[0] == '\\' && path[1] == '\\'
+        return true
+
+    if path.len() < 3
+        return false
+    letter = path[0] >= 'A' && path[0] <= 'Z' || path[0] >= 'a' && path[0] <= 'z'
+    return letter && path[1] == ':' && (path[2] == '\\' || path[2] == '/')
+
+# The paths `held` holds, each followed by one zero byte.
+function split(held: [u8]) -> [str]?
+    out: [str] @= []
+    start @= 0
+
+    for at in range(from: 0, to: held.len())
+        if held[at] == 0
+            out @ out.push(bytes.to_text(held.slice(from: start, to: at))?)
+            start @ at + 1
+
+    return ok(out)
+
+# `img` as 8-bit RGBA. Fails `invalid` where it holds no pixel or its
+# format does not fill it; `limit` where its RGBA would take past
+# `HERO_UI_CLIP_MOST` bytes, judged by its size before its pixels.
+function pixels_of(img: image.Image) -> image.Image?
+    if img.width <= 0 || img.height <= 0
+        return fail(code: failure.INVALID, msg: f"the clipboard's image of {img.width} by {img.height} holds no pixel")
+
+    if img.width > hero_ui.HERO_UI_CLIP_MOST / 4 / img.height
+        return fail(
+            code: failure.LIMIT,
+            msg: f"the clipboard's image of {img.width} by {img.height} pixels takes past the {hero_ui.HERO_UI_CLIP_MOST} bytes it takes"
+        )
+
+    if !image.is_valid(img)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the clipboard's image of {img.width} by {img.height} holds {img.pixels.len()} bytes, which its format does not fill"
+        )
+    return ok(image.convert(img, to: .rgba))
+
+## Tests
+
+test "set_clipboard: refused for text holding a zero byte, no path, a path empty, relative or holding a zero byte, an image of no pixel, not filled or past CLIPBOARD_MOST, and on a closed app; what it held kept after each"
+    app @= fixture.test_app()
+    ui.set_clipboard(@app, clip: .text(text: "kept")).must()
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .text(text: bytes.to_text([97, 0, 98]).must()))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .files(paths: []))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .files(paths: ["/a", ""]))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .files(paths: ["notes.txt"]))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .files(paths: ["C:notes.txt"]))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .files(paths: [bytes.to_text([47, 97, 0, 98]).must()]))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .picture(img: image.Image(width: 0, height: 1, format: .rgba, pixels: [])))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .picture(img: image.Image(width: 2, height: 1, format: .rgba, pixels: [1, 2, 3, 4])))) == ui.INVALID
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .picture(img: image.Image(width: 8193, height: 8192, format: .rgba, pixels: [])))) == ui.LIMIT
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .picture(img: image.Image(width: 8192, height: 8193, format: .gray, pixels: [])))) == ui.LIMIT
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .picture(img: image.Image(width: 8192, height: 8192, format: .gray, pixels: [])))) == ui.INVALID
+    assert ui.clipboard(app, kind: .text).must() == .text(text: "kept")
+    ui.close(@app).must()
+    assert fixture.code_of(ui.set_clipboard(@app, clip: .nothing)) == ui.CLOSED
+    assert fixture.code_of(ui.clipboard(app, kind: .text)) == ui.CLOSED
+
+test "set_clipboard and clipboard: on the headless side each kind read back only as the kind put, an image of another format read as RGBA, Windows' absolute paths taken, `.nothing` emptying it (catalogue CB01, CB02, CB03)"
+    app @= fixture.test_app()
+    assert ui.clipboard(app, kind: .text).must() == .nothing
+    ui.set_clipboard(@app, clip: .text(text: "héllo\nworld")).must()
+    assert ui.clipboard(app, kind: .text).must() == .text(text: "héllo\nworld")
+    assert ui.clipboard(app, kind: .files).must() == .nothing && ui.clipboard(app, kind: .picture).must() == .nothing
+    ui.set_clipboard(@app, clip: .text(text: "")).must()
+    assert ui.clipboard(app, kind: .text).must() == .text(text: "")
+    paths = ["/Users/ada/x y.txt", "C:\\Users\\ada", "d:/notes", "\\\\server\\share"]
+    ui.set_clipboard(@app, clip: .files(paths: paths)).must()
+    assert ui.clipboard(app, kind: .files).must() == .files(paths: paths)
+    assert ui.clipboard(app, kind: .text).must() == .nothing
+    gray = image.Image(width: 2, height: 1, format: .gray, pixels: [0, 255])
+    ui.set_clipboard(@app, clip: .picture(img: gray)).must()
+    assert ui.clipboard(app, kind: .picture).must() == .picture(img: image.Image(width: 2, height: 1, format: .rgba, pixels: [0, 0, 0, 255, 255, 255, 255, 255]))
+    assert ui.clipboard(app, kind: .files).must() == .nothing
+    ui.set_clipboard(@app, clip: .nothing).must()
+    assert ui.clipboard(app, kind: .picture).must() == .nothing
+    ui.close(@app).must()
+
+test "set_clipboard and clipboard: on the native side text, paths and an image put on the system's clipboard and read back as put, each found only as its own kind, emptied; the clipboard this machine held put back after (catalogue CB01, CB02, CB03)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    held = held_now(app)
+    offered = ui.set_clipboard(@app, clip: .text(text: "héllo\nworld"))
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    offered.must()
+    text = ui.clipboard(app, kind: .text).must()
+    text_as_files = ui.clipboard(app, kind: .files).must()
+    text_as_picture = ui.clipboard(app, kind: .picture).must()
+    paths = ["/tmp", "/Users/nobody/x y.txt"]
+    ui.set_clipboard(@app, clip: .files(paths: paths)).must()
+    files = ui.clipboard(app, kind: .files).must()
+    files_as_text = ui.clipboard(app, kind: .text).must()
+    img = image.Image(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 128])
+    ui.set_clipboard(@app, clip: .picture(img: img)).must()
+    picture = ui.clipboard(app, kind: .picture).must()
+    picture_as_text = ui.clipboard(app, kind: .text).must()
+    ui.set_clipboard(@app, clip: .nothing).must()
+    emptied = ui.clipboard(app, kind: .text).must()
+    ui.set_clipboard(@app, clip: held).must()
+    ui.close(@app).must()
+    assert text == .text(text: "héllo\nworld") && text_as_files == .nothing && text_as_picture == .nothing
+    assert files == .files(paths: paths) && files_as_text == .nothing
+    assert picture == .picture(img: img) && picture_as_text == .nothing
+    assert emptied == .nothing
+
+# What the system's clipboard holds now, as files, else as text, else as an
+# image, so that a test writing it can put it back.
+function held_now(app: ui.App) -> ui.Clip
+    kinds: [ui.ClipKind] = [.files, .text, .picture]
+
+    for kind in kinds
+        found = ui.clipboard(app, kind: kind).default(.nothing)
+
+        if found != .nothing
+            return found
+
+    return .nothing

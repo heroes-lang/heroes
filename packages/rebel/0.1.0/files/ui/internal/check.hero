@@ -98,8 +98,8 @@ function indices_ok(n: model.Node, indices: [i64]) -> ()?
     for i in range(from: 0, to: indices.len())
         at = indices[i]
 
-        if at < 0 || at >= n.items.len()
-            return fail(code: failure.INVALID, msg: f"index {at} is past the {n.items.len()} items of widget {n.id}")
+        if at < 0 || at >= model.rows_of(n)
+            return fail(code: failure.INVALID, msg: f"index {at} is past the {model.rows_of(n)} items of widget {n.id}")
 
         if i > 0 && at <= indices[i - 1]
             return fail(
@@ -107,7 +107,7 @@ function indices_ok(n: model.Node, indices: [i64]) -> ()?
                 msg: f"the indices are not ascending, each once: {at} comes after {indices[i - 1]}"
             )
 
-    if indices.len() > 1 && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE
+    if indices.len() > 1 && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE && n.kind != hero_ui.HERO_UI_TABLE
         return fail(
             code: failure.INVALID,
             msg: f"widget {n.id}, a {model.kind_name(n.kind)} of one choice, is given {indices.len()} items"

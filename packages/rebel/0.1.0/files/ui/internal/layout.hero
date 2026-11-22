@@ -28,6 +28,7 @@
 # spacing.
 
 use ui/hero_ui
+use ui/internal/frames
 use ui/internal/model
 
 # Lays out window `window` of `nodes`: every node under it measured and
@@ -61,7 +62,7 @@ function measure(@nodes: {i64: model.Node}, id: i64) -> [i64]
         for child in shown(nodes, ids: n.children)
             sizes @ sizes.push(measure(@nodes, id: child))
 
-        inner @ box_need(n, sizes: sizes)
+        inner @ frames.need(n, needs: sizes, column: box_need(n, sizes: sizes))
     width = most(a: inner[0], b: n.min_width) + 2 * n.margin
     height = most(a: inner[1], b: n.min_height) + 2 * n.margin
     n @ nodes[id].must()
@@ -109,10 +110,45 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
 
     if kids.len() == 0
         return
-    ix = n.x + n.padding
-    iy = n.y + n.padding
-    iw = most(a: n.w - 2 * n.padding, b: 0)
-    ih = most(a: n.h - 2 * n.padding, b: 0)
+
+    if n.kind == hero_ui.HERO_UI_TABS
+        frames.arrange_tabs(@nodes, id: id, kids: kids)
+        return
+
+    if model.is_split(n.kind)
+        frames.arrange_split(@nodes, id: id, kids: kids)
+        return
+
+    # A frame's children stand in its own content, from its top-left
+    # corner; a scrolled box's content takes the size `scroll_content`
+    # gives it, written into the box's `width` and `height`.
+    left @= n.x
+    top @= n.y
+    room_w @= n.w
+    room_h @= n.h
+
+    if model.is_frame(n.kind) && n.kind != hero_ui.HERO_UI_WINDOW
+        left @ 0
+        top @ 0
+
+    if n.kind == hero_ui.HERO_UI_SCROLL
+        sizes: [[i64]] @= []
+
+        for kid in kids
+            k = nodes[kid].must()
+            sizes @ sizes.push([k.need_width, k.need_height])
+
+        content = frames.scroll_content(n, column: box_need(n, sizes: sizes))
+        scroll @= nodes[id].must()
+        scroll.width @ content[0]
+        scroll.height @ content[1]
+        nodes[id] @ scroll
+        room_w @ content[0]
+        room_h @ content[1]
+    ix = left + n.padding
+    iy = top + n.padding
+    iw = most(a: room_w - 2 * n.padding, b: 0)
+    ih = most(a: room_h - 2 * n.padding, b: 0)
 
     if n.kind == hero_ui.HERO_UI_GRID
         arrange_grid(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih])

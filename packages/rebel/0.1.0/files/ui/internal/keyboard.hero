@@ -1,0 +1,409 @@
+# A key pressed by the program as the person's keyboard presses it
+# (`ui.press_key`), as wxWidgets' `wxUIActionSimulator` presses one. On the
+# native side the key goes through the system's own path, so the menu item
+# whose shortcut it is, the system's Edit menu (on macOS the one that makes
+# Command+C, Command+V and the rest reach a text widget) and the widget with
+# the keys take it as the person's, and their events come at the next
+# `wait`s. The headless side holds no system that edits a text, so there a
+# key presses the window's button for Return or Escape, chooses the menu
+# item whose shortcut it is, or submits a text field on Return, and does
+# nothing else.
+
+use bytes
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/give
+use ui/internal/loop
+use ui/internal/menus
+use ui/internal/model
+use ui/internal/state
+
+# Presses `shortcut` with `widget` holding the keys (`ui.press_key`).
+function press(@app: ui.App, widget: ui.Widget, shortcut: ui.Shortcut) -> ()?
+    n = check.node_kind(app, widget: widget, kinds: keyed_kinds(), what: "a window, a text field, a text area or a list")?
+
+    if shortcut.key.len() == 0 || !state.is_key(shortcut.key)
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{shortcut.key}\" names no key a person presses here: a letter a to z, a digit, or one of {state.named_keys().join(", ")}"
+        )
+    held = modifiers_of(shortcut)
+
+    if app.native
+        # A window is shown at its first layout, and the system gives keys
+        # to a window it shows alone.
+        loop.settle(@app)?
+        key @= bytes.from_text(shortcut.key)
+
+        if hero_ui.press_key(app.handle, id: n.id, @key, count: to_u64(key.len()).must(), modifiers: held) < 0
+            return failure.last(f"pressing {shortcut.key} in widget {n.id}")
+        return ok()
+
+    if !give.reachable(app, id: n.id)
+        return ok()
+
+    # A key pressed with a widget holding the keys gives it them first, as
+    # the person's click would.
+    if n.kind != hero_ui.HERO_UI_WINDOW
+        focused(@app, window: n.window, id: n.id)
+
+    # Tab and Shift+Tab move the keys through the window's widgets in
+    # reading order, past the last back to the first.
+    if shortcut.key == "Tab" && (held == 0 || held == hero_ui.HERO_UI_SHIFT)
+        moved(@app, window: n.window, back: held == hero_ui.HERO_UI_SHIFT)
+        return ok()
+
+    # As the systems take a key: the window's button for Return or Escape
+    # first, then a menu item's shortcut, then the widget with the keys.
+    if held == 0 && (shortcut.key == "Enter" || shortcut.key == "Escape")
+        pressed = if shortcut.key == "Enter"
+            hero_ui.HERO_UI_BUTTON_KEY_ENTER
+        else
+            hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+
+        button = give.key_button(app, window: n.window, key: pressed)
+
+        if button != 0
+            app.events @ app.events.push(.clicked(widget: check.widget_of(app, id: button)))
+            return ok()
+    item = item_for(app.table, window: n.window, key: shortcut.key, modifiers: held)
+
+    if item != 0
+        menus.chosen(@app, id: item)
+        app.events @ app.events.push(.menu_chosen(item: check.widget_of(app, id: item)))
+    else if held == 0 && shortcut.key == "Enter" && n.kind == hero_ui.HERO_UI_TEXT_FIELD
+        app.events @ app.events.push(.submitted(widget: widget))
+    return ok()
+
+# Gives `widget` the keys in its window (`ui.set_focus`).
+function set_focus(@app: ui.App, widget: ui.Widget) -> ()?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD, hero_ui.HERO_UI_TEXT_AREA, hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE], what: "a text field, a text area or a list")?
+
+    if !give.reachable(app, id: n.id)
+        return fail(code: failure.INVALID, msg: f"widget {n.id} is hidden or greyed out, and takes no keys")
+
+    if app.native
+        loop.settle(@app)?
+
+        if hero_ui.set_focus(app.handle, id: n.id) < 0
+            return failure.last(f"giving widget {n.id} the keys")
+    focused(@app, window: n.window, id: n.id)
+    return ok()
+
+# The widget of window `window` that has the keys (`ui.focus_of`): on the
+# native side as the system holds it, the person's Tab and clicks included.
+function focus_of(app: ui.App, window: ui.Widget) -> ui.Widget?
+    w = check.node_kind(app, widget: window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+
+    if app.native
+        held @= 0
+
+        if hero_ui.focus_of(app.handle, id: w.id, focus: @held) < 0
+            return failure.last(f"asking which widget of window {w.id} has the keys")
+
+        if model.node_of(app.table, id: held).is_err()
+            return ok(window)
+        return ok(check.widget_of(app, id: held))
+
+    # The widget that had the keys may have been destroyed since.
+    if w.focus == 0 || model.node_of(app.table, id: w.focus).is_err() || !give.reachable(app, id: w.focus)
+        return ok(window)
+    return ok(check.widget_of(app, id: w.focus))
+
+# Writes `id` as the widget of window `window` that has the keys.
+function focused(@app: ui.App, window: i64, id: i64)
+    w @= app.table.nodes[window].must()
+    w.focus @ id
+    model.put(@app.table, n: w)
+
+# The first widget of window `window` that takes the keys and the person
+# reaches, in reading order; 0, the number no widget takes, where none does:
+# what a window shown the first time gives the keys, as every system does.
+function first_taking(app: ui.App, window: i64) -> i64
+    order: [i64] @= []
+    taking(app, id: window, @order)
+
+    if order.len() == 0
+        return 0
+    return order[0]
+
+# Moves the keys of headless window `window` to its next widget that takes
+# them, in reading order, or its previous where `back`; the first, or the
+# last, where none had them.
+function moved(@app: ui.App, window: i64, back: bool)
+    order: [i64] @= []
+    taking(app, id: window, @order)
+
+    if order.len() == 0
+        return
+    now = app.table.nodes[window].must().focus
+    at @= -1
+
+    for i in range(from: 0, to: order.len())
+        if order[i] == now
+            at @ i
+
+    next = if at < 0 && back
+        order.len() - 1
+    else if at < 0
+        0
+    else if back
+        (at + order.len() - 1) % order.len()
+    else
+        (at + 1) % order.len()
+
+    focused(@app, window: window, id: order[next])
+
+# Appends to `order` the widgets under `id` that take the keys and the person
+# reaches, in reading order: a box's children in the order they stand.
+function taking(app: ui.App, id: i64, @order: [i64])
+    n = app.table.nodes[id].must()
+
+    if n.kind == hero_ui.HERO_UI_TEXT_FIELD || n.kind == hero_ui.HERO_UI_TEXT_AREA || n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE
+        if give.reachable(app, id: id)
+            order @ order.push(id)
+
+    for child in n.children
+        taking(app, id: child, @order)
+
+# The kinds a key is pressed in: a window, and the widgets every system
+# gives the keys to when the person clicks them.
+function keyed_kinds() -> [i64]
+    return [
+        hero_ui.HERO_UI_WINDOW
+        hero_ui.HERO_UI_TEXT_FIELD
+        hero_ui.HERO_UI_TEXT_AREA
+        hero_ui.HERO_UI_LIST
+        hero_ui.HERO_UI_LIST_MULTIPLE
+        hero_ui.HERO_UI_TABLE
+        hero_ui.HERO_UI_TREE
+    ]
+
+# The keys `shortcut` holds, as the layer adds them up.
+function modifiers_of(shortcut: ui.Shortcut) -> i64
+    return check.number_of(shortcut.primary) * hero_ui.HERO_UI_PRIMARY + check.number_of(shortcut.shift) * hero_ui.HERO_UI_SHIFT + check.number_of(shortcut.alt) * hero_ui.HERO_UI_ALT
+
+# The first item of window `window`'s menus, in the order they stand, whose
+# shortcut is `key` with `modifiers` held, and which the person can choose:
+# it and its menu enabled. 0, the number no widget takes, where none is.
+function item_for(m: model.Model, window: i64, key: str, modifiers: i64) -> i64
+    for id in menus.items_of(m, window: window)
+        item = m.nodes[id].must()
+
+        if item.key == key && item.modifiers == modifiers && menus.open_item(m, id: id)
+            return id
+
+    return 0
+
+## Tests
+
+# The shortcut of `key` with Command, or Control elsewhere, held when
+# `primary`, and Shift when `shift`.
+function keyed(key: str, primary: bool, shift: bool) -> ui.Shortcut
+    return ui.Shortcut(key: key, primary: primary, shift: shift, alt: false)
+
+test "press: on the headless side a key chooses the first enabled item whose shortcut it is, and nothing where none is"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 200, height: 100).must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    file = ui.menu(@app, into: w, title: "File").must()
+    open_item = ui.menu_item(@app, into: file, text: "Open").must()
+    save = ui.menu_item(@app, into: file, text: "Save").must()
+    again = ui.menu_item(@app, into: file, text: "Save again").must()
+    ui.set_shortcut(@app, item: open_item, shortcut: keyed("o", primary: true, shift: false)).must()
+    ui.set_shortcut(@app, item: save, shortcut: keyed("s", primary: true, shift: false)).must()
+    ui.set_shortcut(@app, item: again, shortcut: keyed("s", primary: true, shift: false)).must()
+    ui.press_key(@app, widget: field, shortcut: keyed("o", primary: true, shift: false)).must()
+    ui.press_key(@app, widget: w, shortcut: keyed("s", primary: true, shift: false)).must()
+    ui.press_key(@app, widget: w, shortcut: keyed("s", primary: true, shift: true)).must()
+    ui.press_key(@app, widget: w, shortcut: keyed("o", primary: false, shift: false)).must()
+    ui.set_enabled(@app, widget: save, on: false).must()
+    ui.press_key(@app, widget: w, shortcut: keyed("s", primary: true, shift: false)).must()
+    told: [str] @= []
+
+    while true
+        match ui.wait(@app, within: time.nanoseconds(0))
+            .ok event =>
+                match event
+                    .menu_chosen m => told @ told.push(f"menu_chosen {m.item.id}")
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+                        told @ told.push("another event")
+            .err _ => break
+
+    assert told == [f"menu_chosen {open_item.id}", f"menu_chosen {save.id}", f"menu_chosen {again.id}"]
+    ui.close(@app).must()
+
+test "press: a widget hidden or greyed out takes no key, and a menu greyed out gives no item"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 200, height: 100).must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    file = ui.menu(@app, into: w, title: "File").must()
+    item = ui.menu_item(@app, into: file, text: "Open").must()
+    ui.set_shortcut(@app, item: item, shortcut: keyed("o", primary: true, shift: false)).must()
+    ui.set_enabled(@app, widget: field, on: false).must()
+    ui.press_key(@app, widget: field, shortcut: keyed("o", primary: true, shift: false)).must()
+    ui.set_enabled(@app, widget: field, on: true).must()
+    ui.set_enabled(@app, widget: file, on: false).must()
+    ui.press_key(@app, widget: field, shortcut: keyed("o", primary: true, shift: false)).must()
+    ui.set_visible(@app, widget: w, on: false).must()
+    ui.set_enabled(@app, widget: file, on: true).must()
+    ui.press_key(@app, widget: w, shortcut: keyed("o", primary: true, shift: false)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "press: an empty key, a key no shortcut names, and a widget that takes no keys are invalid; a destroyed one closed"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 200, height: 100).must()
+    label = ui.label(@app, into: w, text: "Name").must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    assert fixture.code_of(ui.press_key(@app, widget: field, shortcut: keyed("", primary: true, shift: false))) == ui.INVALID
+    assert fixture.code_of(ui.press_key(@app, widget: field, shortcut: keyed("O", primary: false, shift: false))) == ui.INVALID
+    assert fixture.code_of(ui.press_key(@app, widget: field, shortcut: keyed("ctrl+o", primary: false, shift: false))) == ui.INVALID
+    assert fixture.code_of(ui.press_key(@app, widget: label, shortcut: keyed("a", primary: false, shift: false))) == ui.INVALID
+    ui.destroy(@app, widget: field).must()
+    assert fixture.code_of(ui.press_key(@app, widget: field, shortcut: keyed("a", primary: false, shift: false))) == ui.CLOSED
+    ui.close(@app).must()
+
+# The events of `app`, each come within 300 milliseconds of the last, that
+# are a text changed in `widget`, counted.
+function changes(@app: ui.App, widget: ui.Widget) -> i64
+    found @= 0
+
+    while true
+        match ui.wait(@app, within: time.milliseconds(300).must())
+            .ok event =>
+                match event
+                    .text_changed t =>
+                        if t.widget == widget
+                            found @ found + 1
+                    .clicked _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+                        _ = 0
+            .err _ => break
+
+    return found
+
+test "press: on the native side the system's Edit menu takes Command+Z, Shift+Command+Z and Command+A in a text field and a text area, each change told"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Keys", width: 320, height: 200).must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    area = ui.text_area(@app, into: w, text: "").must()
+
+    match ui.press_key(@app, widget: field, shortcut: keyed("a", primary: false, shift: false))
+        .ok _ => _ = 0
+        .err e =>
+            assert e.code == ui.FAILED || e.code == ui.UNSUPPORTED
+            ui.close(@app).must()
+            skip_test(reason: e.msg)
+
+    for widget in [field, area]
+        if widget == area
+            ui.press_key(@app, widget: widget, shortcut: keyed("a", primary: false, shift: false)).must()
+        ui.press_key(@app, widget: widget, shortcut: keyed("b", primary: false, shift: false)).must()
+        assert ui.text_of(app, widget: widget).must() == "ab"
+        assert changes(@app, widget: widget) >= 1
+
+        # Command+Z undoes the typing and Shift+Command+Z does it again: the
+        # Edit menu's keys reach the widget that has the keys.
+        ui.press_key(@app, widget: widget, shortcut: keyed("z", primary: true, shift: false)).must()
+        assert ui.text_of(app, widget: widget).must() == ""
+        assert changes(@app, widget: widget) >= 1
+        ui.press_key(@app, widget: widget, shortcut: keyed("z", primary: true, shift: true)).must()
+        assert ui.text_of(app, widget: widget).must() == "ab"
+
+        # Command+A chooses the whole text, which the next key replaces.
+        ui.press_key(@app, widget: widget, shortcut: keyed("a", primary: true, shift: false)).must()
+        ui.press_key(@app, widget: widget, shortcut: keyed("c", primary: false, shift: false)).must()
+        assert ui.text_of(app, widget: widget).must() == "c"
+        assert changes(@app, widget: widget) >= 1
+
+    ui.close(@app).must()
+
+test "set_focus and focus_of: given and asked, the window where none has them or the one that had them is gone, a label and a hidden field invalid (catalogue KB01)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 300, height: 200).must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    area = ui.text_area(@app, into: w, text: "").must()
+    label = ui.label(@app, into: w, text: "Name").must()
+    assert ui.focus_of(app, widget: w).must() == w
+    ui.set_focus(@app, widget: area).must()
+    assert ui.focus_of(app, widget: w).must() == area
+    ui.press_key(@app, widget: field, shortcut: keyed("a", primary: false, shift: false)).must()
+    assert ui.focus_of(app, widget: w).must() == field
+    assert fixture.code_of(ui.set_focus(@app, widget: label)) == ui.INVALID
+    ui.set_visible(@app, widget: area, on: false).must()
+    assert fixture.code_of(ui.set_focus(@app, widget: area)) == ui.INVALID
+    assert fixture.code_of(ui.focus_of(app, widget: field)) == ui.INVALID
+    ui.destroy(@app, widget: field).must()
+    assert ui.focus_of(app, widget: w).must() == w
+    ui.close(@app).must()
+
+test "focus_of: a window shown gives its first widget that takes the keys them, as every system does"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 300, height: 200).must()
+    _ = ui.label(@app, into: w, text: "Name").must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    assert ui.focus_of(app, widget: w).must() == w
+    _ = ui.render(@app).must()
+    assert ui.focus_of(app, widget: w).must() == field
+    ui.close(@app).must()
+
+test "press_key: Tab and Shift+Tab move the keys through the widgets in reading order, past hidden and greyed-out ones, round from the last to the first (catalogue KB02)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Keys", width: 300, height: 200).must()
+    top = ui.row(@app, into: w).must()
+    first = ui.text_field(@app, into: top, text: "").must()
+    second = ui.text_field(@app, into: top, text: "").must()
+    hidden = ui.text_field(@app, into: w, text: "").must()
+    grey = ui.text_area(@app, into: w, text: "").must()
+    last = ui.list(@app, into: w, items: ["a"], multiple: false).must()
+    ui.set_visible(@app, widget: hidden, on: false).must()
+    ui.set_enabled(@app, widget: grey, on: false).must()
+    tab = keyed("Tab", primary: false, shift: false)
+    back = keyed("Tab", primary: false, shift: true)
+    ui.press_key(@app, widget: w, shortcut: tab).must()
+    assert ui.focus_of(app, widget: w).must() == first
+    ui.press_key(@app, widget: w, shortcut: tab).must()
+    assert ui.focus_of(app, widget: w).must() == second
+    ui.press_key(@app, widget: w, shortcut: tab).must()
+    assert ui.focus_of(app, widget: w).must() == last
+    ui.press_key(@app, widget: w, shortcut: tab).must()
+    assert ui.focus_of(app, widget: w).must() == first
+    ui.press_key(@app, widget: w, shortcut: back).must()
+    assert ui.focus_of(app, widget: w).must() == last
+    ui.close(@app).must()
+
+test "set_focus and focus_of: on the native side a text field, a text area and a list each given the keys and read back, the window answered before any (catalogue KB01)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Keys", width: 300, height: 240).must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    area = ui.text_area(@app, into: w, text: "").must()
+    files = ui.list(@app, into: w, items: ["a", "b"], multiple: false).must()
+    label = ui.label(@app, into: w, text: "Name").must()
+    refusal = fixture.unsupported_words(ui.set_focus(@app, widget: field))
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    for widget in [field, area, files, field]
+        ui.set_focus(@app, widget: widget).must()
+        assert ui.focus_of(app, widget: w).must() == widget
+
+    assert fixture.code_of(ui.set_focus(@app, widget: label)) == ui.INVALID
+    other = ui.window(@app, title: "Other", width: 100, height: 60).must()
+    first = ui.text_field(@app, into: other, text: "").must()
+    _ = ui.wait(@app, within: time.milliseconds(100).must()).is_err()
+    assert ui.focus_of(app, widget: other).must() == first
+    ui.close(@app).must()

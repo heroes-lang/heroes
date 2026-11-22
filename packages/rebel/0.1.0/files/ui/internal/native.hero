@@ -8,6 +8,7 @@
 use bytes
 use ui
 use ui/hero_ui
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/model
 
@@ -20,6 +21,13 @@ constant TEXT_ROOM: i64
 function made(app: ui.App, n: model.Node) -> ()?
     if hero_ui.create(app.handle, id: n.id, kind: n.kind, parent: native_parent(app, n: n)) < 0
         return failure.last(f"making the {model.kind_name(n.kind)} {n.id}")
+
+    # A table's columns stand before its cells, which fill them.
+    if n.kind == hero_ui.HERO_UI_TABLE
+        push_columns(app, n: n)?
+
+        if n.items.len() > 0
+            push_items(app, n: n)?
 
     if model.has_text(n.kind) && n.text.len() > 0
         push_text(app, n: n)?
@@ -36,21 +44,42 @@ function made(app: ui.App, n: model.Node) -> ()?
     if n.kind == hero_ui.HERO_UI_IMAGE
         push_image(app, n: n)?
 
+    if n.masked && hero_ui.set_masked(app.handle, id: n.id, on: 1) < 0
+        return failure.last(f"masking text field {n.id}")
+
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM && n.check != hero_ui.HERO_UI_CHECK_NONE
+        if hero_ui.set_check(app.handle, id: n.id, mode: n.check) < 0
+            return failure.last(f"making menu item {n.id} checkable")
+
+        if hero_ui.set_value(app.handle, id: n.id, value: n.value) < 0
+            return failure.last(f"checking menu item {n.id}")
+
     if n.kind == hero_ui.HERO_UI_WINDOW
         if hero_ui.set_size(app.handle, id: n.id, width: n.width, height: n.height) < 0
             return failure.last(f"sizing window {n.id}")
     return ok()
 
-# The native parent of `n`: none for a window, the window for a widget or a
-# menu, the menu for a menu's item.
+# The native parent of `n`: none for a window; the menu for a menu's item
+# and a menu inside a menu; the tabs for a page and the split for a pane;
+# the widget for its context menu;
+# for every other widget the frame it stands in, the nearest window, page,
+# scrolled box or pane over it.
 function native_parent(app: ui.App, n: model.Node) -> i64
     if n.kind == hero_ui.HERO_UI_WINDOW
         return 0
 
-    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE || n.kind == hero_ui.HERO_UI_CONTEXT_MENU
         return n.parent
-    _ = app
-    return n.window
+
+    # A menu inside a menu, or a context menu, stands in that menu.
+    if n.kind == hero_ui.HERO_UI_MENU && (app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_MENU || app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_CONTEXT_MENU)
+        return n.parent
+    at @= n.parent
+
+    while !model.is_frame(app.table.nodes[at].must().kind)
+        at @ app.table.nodes[at].must().parent
+
+    return at
 
 # Pushes `n`'s text.
 function push_text(app: ui.App, n: model.Node) -> ()?
@@ -72,9 +101,25 @@ function push_items(app: ui.App, n: model.Node) -> ()?
         return failure.last(f"setting the items of widget {n.id}")
     return push_chosen(app, n: n)
 
-# Pushes what `n`, a list, a combo box or a radio group, has chosen.
+# Pushes table `n`'s columns, and the column it is sorted by.
+function push_columns(app: ui.App, n: model.Node) -> ()?
+    titles: [u8] @= []
+
+    for title in n.titles
+        bytes.push_text(@titles, s: title)
+        titles @ titles.push(0)
+
+    if hero_ui.set_columns(app.handle, id: n.id, @titles, count: to_u64(titles.len()).must()) < 0
+        return failure.last(f"giving table {n.id} its columns")
+
+    if hero_ui.set_sort(app.handle, id: n.id, column: n.sorted_by, ascending: number_of(n.ascending)) < 0
+        return failure.last(f"showing the sort of table {n.id}")
+    return ok()
+
+# Pushes what `n`, a list, a combo box, a radio group, tabs, a table or a
+# tree, has chosen.
 function push_chosen(app: ui.App, n: model.Node) -> ()?
-    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE
+    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS || n.kind == hero_ui.HERO_UI_TABLE || n.kind == hero_ui.HERO_UI_TREE
         chosen @= n.chosen
 
         if hero_ui.set_selection(app.handle, id: n.id, @chosen, count: to_u64(chosen.len()).must()) < 0
@@ -156,11 +201,31 @@ function placed(app: ui.App, nodes: {i64: model.Node}, window: i64) -> ()?
     for id in model.subtree(model.Model(nodes: nodes, next_id: 0, windows: [], timers: []), id: window)
         n = nodes[id].must()
 
-        if !model.is_native(n.kind) || !model.is_placed(n.kind)
+        # The system sizes a page and a pane itself.
+        if !model.is_native(n.kind) || !model.is_placed(n.kind) || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE
             continue
 
         if hero_ui.place(app.handle, id: id, x: n.x, y: n.y, width: n.w, height: n.h) < 0
             return failure.last(f"placing widget {id}")
+
+        if n.kind == hero_ui.HERO_UI_SCROLL && hero_ui.set_size(app.handle, id: id, width: n.width, height: n.height) < 0
+            return failure.last(f"sizing the content of scrolled box {id}")
+
+        # A split's divider is placed after the split, which lays its panes
+        # out anew as it is placed; the person drags it from the first
+        # pane's need to the room less the second's, a range of one point
+        # where the two meet.
+        if model.is_split(n.kind) && n.children.len() == 2
+            top = if n.most > n.least
+                n.most
+            else
+                n.least + 1
+
+            if hero_ui.set_range(app.handle, id: id, least: n.least, most: top) < 0
+                return failure.last(f"bounding the divider of split {id}")
+
+            if hero_ui.set_value(app.handle, id: id, value: n.value) < 0
+                return failure.last(f"placing the divider of split {id}")
 
         if n.kind == hero_ui.HERO_UI_RADIO_GROUP
             count = n.items.len()
@@ -374,7 +439,60 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: 0,
                 text: s.text
             )
+        .drag_window d =>
+            return window_act(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_MOVE,
+                id: d.window.id,
+                value: d.screen,
+                second: d.x,
+                third: d.y
+            )
+        .change_state c =>
+            return window_act(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_STATE,
+                id: c.window.id,
+                value: desk.state_code(c.state),
+                second: 0,
+                third: 0
+            )
+        .activate a =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_ACTIVATE,
+                id: a.widget.id,
+                value: a.index,
+                second: 0,
+                text: ""
+            )
+        .submit s =>
+            return injected(app, kind: hero_ui.HERO_UI_EVENT_SUBMIT, id: s.widget.id, value: 0, second: 0, text: "")
+        .unfold u =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_UNFOLD,
+                id: u.widget.id,
+                value: u.item,
+                second: number_of(u.open),
+                text: ""
+            )
+        .sort s =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_SORT,
+                id: s.widget.id,
+                value: s.column,
+                second: number_of(s.ascending),
+                text: ""
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
+
+# One act on window `id` among the screens, injected through the floor.
+function window_act(app: ui.App, kind: i64, id: i64, value: i64, second: i64, third: i64) -> ()?
+    if hero_ui.inject_window(app.handle, kind: kind, id: id, value: value, second: second, third: third) < 0
+        return failure.last(f"acting on window {id}")
+    return ok()
 
 # One act injected through the floor.
 function injected(app: ui.App, kind: i64, id: i64, value: i64, second: i64, text: str) -> ()?
