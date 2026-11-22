@@ -5380,6 +5380,7 @@ int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t co
         if (block == NULL) {
             return answer;
         }
+        answer = HERO_UI_OK;
     }
     if (!hero_ui_win_open_clipboard(&answer)) {
         if (block != NULL) {
