@@ -352,3 +352,13 @@ and the critic found (`p256-comment-2695.md`).
 ## Author's verdict
 
 Pending.
+
+**Ratified by the author's reading, 2026-11-23, at about 00:15**, in conversation (the answer *1a* to the
+coordinator's recommendation, meant as: *ratify R1 to R12 now, R5 staying queued and not adopted; the two
+implementation lanes, `lane-p256-check` (R1 to R4) and `lane-p256-wait` (R6 to R10, R12), merge only once the
+blind seat's scoring shows no row read wrong by two of five readers, and a row it reopens comes back alone*).
+The blind seat's run was still being scored when this was written, so what the scoring finds is appended
+beneath, with its date, and the merge of the two lanes waits for it. Beside it, the same hour, the author's
+*2a* and *3c* (the dialogs of the user interface answering through the event queue, and the gaps of the
+catalogue entering the round: the four `must` areas Rebel lacked and every `should`) are recorded on
+`docs/roadmap/milestones/M-rebel-library.md`, not here.
