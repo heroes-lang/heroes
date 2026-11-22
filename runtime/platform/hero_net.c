@@ -133,6 +133,8 @@
  * its reply (round 4, 2026-11-17): up to 65,507 bytes of data each way, too
  * many for a thread's stack. */
 #include "hero_layer_alloc.h"
+/* The runtime's word for the stop, so a mailbox's receive answers it too. */
+#include "hero_layer_stop.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -4471,6 +4473,10 @@ int64_t hero_net_ping(const char *address, int64_t sequence, const void *data, u
 static void (*hero_net_hearers[HERO_NET_HEARERS])(void);
 
 static void hero_net_tell_hearers(void) {
+    /* The language's mailboxes first, which every program links (feature
+     * 2647): a receive waiting on one answers `stopped`, as a call of this
+     * layer does. It takes no lock a caller of this layer holds. */
+    hero_layer_stop_heard();
     for (int i = 0; i < HERO_NET_HEARERS; i += 1) {
         if (hero_net_hearers[i] != NULL) {
             hero_net_hearers[i]();

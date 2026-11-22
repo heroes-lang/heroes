@@ -277,6 +277,13 @@
  * map's buckets, so it comes after all four. */
 #include "parts/show.c"
 
+/* Threads that exchange any value while they run (feature 2647): the
+ * language's `spawn` on `spawn.c`'s table, and the mailbox. After the map, whose
+ * entries a copy walks, and the platform layer's word for the stop, declared
+ * by the header the layer's members include, so clang checks the definition. */
+#include "platform/hero_layer_stop.h"
+#include "parts/mailbox.c"
+
 /* The code page a narrow name is read in on Windows, and the manifest that makes
  * it UTF-8 (panel 191, defect 238). Before `os.c`, whose `hero_args_set` asks it
  * first; empty elsewhere. */

@@ -990,6 +990,55 @@ const void *hero_map_find_at(const HeroMapHeader *m, const void *key, const Hero
  * 022 ranked first among the things a cheap implementation gets silently wrong. */
 bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b);
 
+/* -- threads and mailboxes: values crossing whole (spec § 3, § 11, § 13) ------
+ *
+ * `parts/mailbox.c` says the model. A thread's and a mailbox's value is an
+ * `int64_t`, the runtime's slot and the generation of its life, never an
+ * address. Every value crosses as a copy the sender makes, by a `HeroDeepFn`
+ * the compiler writes for the value's type: it writes into `dst` a value equal
+ * to `*src` whose every block is new, so no block is held by two threads; NULL
+ * where the value's bytes are the whole of it. Added beside the declarations
+ * above and changing none of them, so `HERO_RUNTIME_ABI` stands: a runtime
+ * without them is a compile error at the first unit that names one. */
+typedef void (*HeroDeepFn)(void *dst, const void *src);
+
+extern const HeroDesc hero_desc_thread;
+extern const HeroDesc hero_desc_mailbox;
+
+void hero_deep_str(void *dst, const void *src);
+void hero_deep_failure(void *dst, const void *src);
+void hero_deep_array(void *dst, const void *src, HeroDeepFn each);
+void hero_deep_map(void *dst, const void *src, HeroDeepFn key, HeroDeepFn value);
+
+/* A mailbox's life, begun for values of `size` bytes; a send copies `*value`
+ * whole with `copy`; a receive moves the oldest into `*out` and answers 0, or
+ * 1 `timeout`, 2 `stopped`, 3 `closed`; a close ends the life for every copy. */
+int64_t hero_mailbox_begin(int64_t size, const HeroPlace *where);
+void hero_mailbox_send(int64_t mailbox, const void *value, int64_t size, HeroDeepFn copy, const HeroPlace *where);
+int64_t hero_mailbox_receive(int64_t mailbox, void *out, int64_t size, int64_t within_ms, const HeroPlace *where);
+void hero_mailbox_close(int64_t mailbox, int64_t size, const HeroPlace *where);
+HeroFailure hero_failure_timeout(void);
+HeroFailure hero_failure_stopped(void);
+HeroFailure hero_failure_closed(void);
+HeroFailure hero_failure_refused(void);
+
+/* The head of the box a thread's start fills and its wait reads: the program's
+ * C lays its function, its argument and room for its answer after it, and
+ * `run` is the program's own, called on the new thread with the box. `body`
+ * is the function the program handed `spawn`, kept to name the thread. */
+typedef struct HeroThreadBox HeroThreadBox;
+struct HeroThreadBox {
+    void (*run)(HeroThreadBox *box);
+    void (*body)(void);
+};
+
+void *hero_thread_box_new(int64_t size);
+void hero_thread_box_free(HeroThreadBox *box);
+/* The thread's number, or -1 where the system or the runtime's bound of 256
+ * running refused it: the box is then still the caller's. */
+int64_t hero_thread_begin(HeroThreadBox *box, int64_t bytes, const HeroPlace *where);
+HeroThreadBox *hero_thread_end(int64_t thread, const HeroPlace *where);
+
 /* -- the leak check ASan cannot do on this platform ------------------------
  * MEASURED (panel 021): AddressSanitizer on Darwin arm64 has NO
  * LeakSanitizer. `ASAN_OPTIONS=detect_leaks=1` aborts with "not supported on

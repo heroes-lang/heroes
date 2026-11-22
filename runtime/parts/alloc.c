@@ -306,12 +306,18 @@ static int64_t hero_run_folders_held_at_exit(void);
 static int64_t hero_dir_names_held_at_exit(void);
 static int64_t hero_dir_blocks_held_at_exit(void);
 
+/* `parts/mailbox.c`, later in this translation unit. */
+static void hero_mailbox_check_closed(void);
+
 void hero_runtime_check_leaks(void) {
     /* THE THREADS FIRST (panel 251's R2): no balance below is read while a
      * thread the program started runs or waits unjoined, since what it holds
      * is no missing decref; one such thread is the program's mistake, told by
      * `parts/spawn.c` with how many, and the program aborts there. */
     hero_spawn_check_joined();
+    /* Then the mailboxes (feature 2647): one still open, or closed with a
+     * value nobody received, is the program's mistake as a lease is. */
+    hero_mailbox_check_closed();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {

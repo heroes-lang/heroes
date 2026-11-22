@@ -203,6 +203,10 @@ typedef int64_t (*HeroThreadBody)(int64_t);
  * number a program chose is read as an address. */
 #define HERO_SPAWN_I64 0
 #define HERO_SPAWN_STR 1
+/* A thread of the language's own `spawn` (spec § 11; feature 2647): its value
+ * crosses in a box the program's C fills and reads (`parts/mailbox.c`), and
+ * the program's handle names the slot and the start's generation together. */
+#define HERO_SPAWN_LANG 2
 
 typedef struct {
 #if defined(_WIN32)
@@ -228,6 +232,13 @@ typedef struct {
      * (panel 251's R2). Neither is ever called through or read as data. */
     uintptr_t runs;
     uintptr_t from;
+    /* How many starts this slot has seen, under the table's lock: a thread of
+     * the language is handed out as this number and the slot together, so a
+     * copy kept past its wait names a start that is over, never the slot's next
+     * thread (`hero_thread_lang_handle`, `parts/mailbox.c`). */
+    uint64_t generation;
+    /* Where the language's `spawn` stood, for the end of `main` to name. */
+    const HeroPlace *place;
 #if !defined(_WIN32)
     /* The signal mask of the thread that started this one, as it was before
      * the start held the signals off (defect 2496): what POSIX says a new
@@ -519,6 +530,16 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
 
     if (at < 0) {
         HERO_SPAWN_DROP();
+        /* The language's `spawn` answers this as it answers the system's own
+         * refusal, a failure the program can read (feature 2647); the doors of
+         * `hero_os.h` keep their abort. */
+        if (kind == HERO_SPAWN_LANG && why != NULL) {
+#if !defined(_WIN32)
+            pthread_sigmask(SIG_SETMASK, &before, NULL);
+#endif
+            *why = HERO_SPAWN_SLOTS;
+            return -1;
+        }
         hero_panic("too many threads running at once — this runtime holds 256, "
                    "and a thread's slot comes back when it is joined");
     }
@@ -529,6 +550,8 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     hero_spawn_slots[at].state = 1;
     hero_spawn_slots[at].runs = runs;
     hero_spawn_slots[at].from = from;
+    hero_spawn_slots[at].generation += 1;
+    hero_spawn_slots[at].place = NULL;
     hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
     int refused = 0;
 #if defined(_WIN32)
@@ -741,6 +764,7 @@ static void hero_spawn_check_joined(void) {
     int state[HERO_SPAWN_NAMED];
     uintptr_t runs[HERO_SPAWN_NAMED];
     uintptr_t from[HERO_SPAWN_NAMED];
+    const HeroPlace *place[HERO_SPAWN_NAMED];
     int64_t left = 0;
     int64_t running = 0;
 
@@ -754,6 +778,7 @@ static void hero_spawn_check_joined(void) {
             state[left] = slot->state;
             runs[left] = slot->runs;
             from[left] = slot->from;
+            place[left] = slot->place;
         }
         left += 1;
         if (slot->state == 1) running += 1;
@@ -763,11 +788,18 @@ static void hero_spawn_check_joined(void) {
 
     hero_report_begin();
     hero_report_printf(
-            "panic: %lld thread(s) never joined when `main` returned, %lld of them still running — every thread a "
-            "program starts is joined before `main` returns, and this program is missing that many\n",
+            "panic: %lld thread(s) never waited for when `main` returned, %lld of them still running — every thread a "
+            "program starts is waited for before `main` returns, and this program is missing that many\n",
             (long long)left, (long long)running);
     for (int64_t k = 0; k < left && k < HERO_SPAWN_NAMED; k += 1) {
         hero_report_printf("  thread %lld, %s", (long long)handle[k], state[k] == 1 ? "still running" : "finished");
+        /* The language's `spawn` names its own line, which every platform
+         * has; a door's thread is named by the stack walk below. */
+        if (place[k] != NULL) {
+            hero_report_printf(", started at %s:%lld:%lld, in %s\n", place[k]->path, (long long)place[k]->line,
+                               (long long)place[k]->column, place[k]->name);
+            continue;
+        }
 #if !defined(_WIN32)
         hero_spawn_say_function(" ", runs[k]);
         /* A return address names the instruction after the call; one byte

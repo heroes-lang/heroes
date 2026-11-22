@@ -205,3 +205,13 @@ static uint64_t hero_hash_func(const void *elem) {
 
 const HeroDesc hero_desc_func = {sizeof(HeroFn), hero_copy_func, hero_drop_nothing,
                                  hero_eq_func, hero_hash_func};
+
+/* -- a thread's and a mailbox's number (feature 2647) -----------------------
+ *
+ * One word each, the runtime's slot and generation (`parts/mailbox.c`):
+ * copied as a number, owning nothing, equal where it names the same life, and
+ * hashed as its bytes. Their own objects and never `hero_desc_int`, because
+ * `sort.c` picks a comparison by a descriptor's identity and the checker
+ * refuses ordering either. */
+const HeroDesc hero_desc_thread = {sizeof(int64_t), hero_copy_int, hero_drop_nothing, hero_eq_int, hero_hash_int};
+const HeroDesc hero_desc_mailbox = {sizeof(int64_t), hero_copy_int, hero_drop_nothing, hero_eq_int, hero_hash_int};
