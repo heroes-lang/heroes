@@ -96,29 +96,54 @@ function made_folder() -> str?
 function in_folder(folder: str) -> i64
     print("== the stand-ins, on loopback")
     running: [(thread str)] @= []
+
+    # Each stand-in tells its connections on a mailbox of its own, which
+    # the demo reads before it asks the stop.
+    sessions: [(mailbox ready.Session)] @= []
     mysql_told: (mailbox ready.Ready) = mailbox()
+    mysql_sessions: (mailbox ready.Session) = mailbox()
     mysql_port @= 0
-    mysql_start = mysql_standin.Start(user: MYSQL_USER, password: MYSQL_PASSWORD, database: DATABASE, ready: mysql_told)
+    mysql_start = mysql_standin.Start(
+        user: MYSQL_USER,
+        password: MYSQL_PASSWORD,
+        database: DATABASE,
+        ready: mysql_told,
+        sessions: mysql_sessions
+    )
 
     match spawn(mysql_standin.run, mysql_start)
         .err e => print("demo: mysql would not start: " + e.msg)
         .ok t =>
             running @ running.push(t)
+            sessions @ sessions.push(mysql_sessions)
             mysql_port @ port_said(service: "mysql", from: mysql_told)
 
     mongo_told: (mailbox ready.Ready) = mailbox()
+    mongo_sessions: (mailbox ready.Session) = mailbox()
     mongo_port @= 0
 
-    match spawn(mongo_standin.run, mongo_standin.Start(ready: mongo_told))
+    match spawn(mongo_standin.run, mongo_standin.Start(ready: mongo_told, sessions: mongo_sessions))
         .err e => print("demo: mongodb would not start: " + e.msg)
         .ok t =>
             running @ running.push(t)
+            sessions @ sessions.push(mongo_sessions)
             mongo_port @ port_said(service: "mongodb", from: mongo_told)
 
     code @= 1
 
     if mysql_port > 0 && mongo_port > 0
         code @ with_stand_ins(folder, mysql_port: mysql_port, mongo_port: mongo_port)
+
+    # Every store is closed by now; the stop is asked only once each
+    # stand-in has read and answered all its clients sent, so no account
+    # depends on whether the stop or a client's last request came first.
+    for from in sessions
+        match ready.await_idle(from, within_ms: ready.NOTICE_MS)
+            .ok _ => _ = 0
+            .err e =>
+                print("demo: a stand-in did not end its connections: " + e.msg)
+                code @ 1
+
     os.ask_stop()
     print("== the stand-ins, stopped")
 

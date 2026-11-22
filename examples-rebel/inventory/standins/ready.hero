@@ -5,6 +5,14 @@
 # a service's state, and closes it on every path, so a stand-in that could
 # not listen is told at once as one that ended without saying so. The demo
 # starts no store against a stand-in before its notice has come.
+#
+# A stand-in also tells, on a second mailbox, each connection it begins and
+# ends, and the demo asks the program's stop only once every connection a
+# stand-in began has ended (`await_idle`). The stop ends every wait at
+# once, a read of a connection's last request among them, so a stop asked
+# while a stand-in still reads would make its account count that request
+# or not by timing; asked once the stand-in is idle, it ends only the wait
+# for the next connection, and the account is the same on every run.
 
 ## Bounds
 
@@ -49,6 +57,48 @@ function await_ready(from: (mailbox Ready)) -> Ready?
                 return fail(code: e.code, msg: "it ended without saying it is ready")
             return fail(code: e.code, msg: e.msg)
 
+## Sessions
+
+# What a stand-in tells of its connections as it serves them.
+variant Session
+    # A connection accepted, told before anything is written on it.
+    began
+    # A connection's conversation over: its client left, and every request
+    # it sent was read and answered.
+    ended
+
+# Waits until the stand-in that tells on `from` has ended every connection
+# it began. Every connection the demo made was accepted before the demo
+# could use it, and a stand-in tells `began` before it writes its greeting,
+# so once the demo has closed its own connections every `began` is already
+# in `from`: the stand-in is idle when as many `ended` as `began` have come
+# and nothing more is waiting.
+#
+# - `from`: the mailbox the stand-in tells its connections on.
+# - `within_ms`: how long a connection still open may take to end, in
+#   milliseconds.
+#
+# Fails `timeout` where a connection is still open after `within_ms` with
+# nothing told; a closed mailbox, the stand-in having ended, is idle.
+function await_idle(from: (mailbox Session), within_ms: i64) -> ()?
+    open @= 0
+
+    while true
+        wait = if open > 0
+            within_ms
+        else
+            0
+
+        match from.receive(within_ms: wait)
+            .ok told =>
+                match told
+                    .began => open @ open + 1
+                    .ended => open @ open - 1
+            .err e =>
+                if e.code == "closed" || open == 0 && e.code == "timeout"
+                    return ok()
+                return fail(code: e.code, msg: f"{open} connections still open: {e.msg}")
+
 test "tell and await_ready: the notice crosses whole, and a closed mailbox is told at once"
     m: (mailbox Ready) = mailbox()
     tell(m, service: "mysql", port: 3306).must()
@@ -57,3 +107,18 @@ test "tell and await_ready: the notice crosses whole, and a closed mailbox is to
     silent: (mailbox Ready) = mailbox()
     silent.close()
     assert await_ready(silent).is_err()
+
+test "await_idle: idle once every connection begun has ended, a connection left open told"
+    m: (mailbox Session) = mailbox()
+    m.send(.began).must()
+    m.send(.ended).must()
+    m.send(.began).must()
+    m.send(.ended).must()
+    await_idle(m, within_ms: 10).must()
+    still: (mailbox Session) = mailbox()
+    still.send(.began).must()
+    assert await_idle(still, within_ms: 10).is_err()
+    gone: (mailbox Session) = mailbox()
+    gone.send(.began).must()
+    gone.close()
+    await_idle(gone, within_ms: 10).must()

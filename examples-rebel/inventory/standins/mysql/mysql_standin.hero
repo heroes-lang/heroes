@@ -52,13 +52,15 @@ record Start
     database: str
     # Where the demo waits to hear the stand-in is ready.
     ready: (mailbox ready.Ready)
+    # Where the stand-in tells each connection it begins and ends.
+    sessions: (mailbox ready.Session)
 
 # The stand-in's thread: listens on 127.0.0.1 at a port the system
 # chooses, tells the demo, and serves until the program is asked to stop.
-# The readiness mailbox is closed on every path, so a stand-in that could
-# not listen is told to the demo at once.
+# Both its mailboxes are closed on every path, so a stand-in that could not
+# listen is told to the demo at once.
 #
-# - `start`: who may log in, the database, and the readiness mailbox.
+# - `start`: who may log in, the database, and the two mailboxes.
 function run(start: Start) -> str
     account = Account(
         user: start.user,
@@ -66,8 +68,9 @@ function run(start: Start) -> str
         empty_password: start.password == "",
         database: start.database
     )
-    outcome = served(start.ready, account: account)
+    outcome = served(start.ready, sessions: start.sessions, account: account)
     start.ready.close()
+    start.sessions.close()
 
     match outcome
         .ok said => return said
@@ -76,8 +79,9 @@ function run(start: Start) -> str
 # Every connection served, then what was served.
 #
 # - `told`: where the demo waits to hear the stand-in is ready.
+# - `sessions`: where it tells each connection it begins and ends.
 # - `account`: who may log in.
-function served(told: (mailbox ready.Ready), account: Account) -> str?
+function served(told: (mailbox ready.Ready), sessions: (mailbox ready.Session), account: Account) -> str?
     db @= sqlite.open_memory()?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
@@ -97,8 +101,10 @@ function served(told: (mailbox ready.Ready), account: Account) -> str?
             .ok made =>
                 conn @= made
                 connections @ connections + 1
+                _ = sessions.send(.began).is_err()
                 requests @ requests + session(@db, stream: conn.stream, account: account, id: connections)
                 _ = io.close(@conn.stream).is_err()
+                _ = sessions.send(.ended).is_err()
 
     _ = net.close_listener(@listener).is_err()
     _ = sqlite.close(@db).is_err()

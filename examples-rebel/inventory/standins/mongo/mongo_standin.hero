@@ -31,14 +31,17 @@ use standins/ready
 record Start
     # Where the demo waits to hear the stand-in is ready.
     ready: (mailbox ready.Ready)
+    # Where the stand-in tells each connection it begins and ends.
+    sessions: (mailbox ready.Session)
 
-# The stand-in's thread. The readiness mailbox is closed on every path, so
-# a stand-in that could not listen is told to the demo at once.
+# The stand-in's thread. Both its mailboxes are closed on every path, so a
+# stand-in that could not listen is told to the demo at once.
 #
-# - `start`: the readiness mailbox.
+# - `start`: the two mailboxes.
 function run(start: Start) -> str
-    outcome = served(start.ready)
+    outcome = served(start.ready, sessions: start.sessions)
     start.ready.close()
+    start.sessions.close()
 
     match outcome
         .ok said => return said
@@ -47,7 +50,8 @@ function run(start: Start) -> str
 # Every connection served, then what was served.
 #
 # - `told`: where the demo waits to hear the stand-in is ready.
-function served(told: (mailbox ready.Ready)) -> str?
+# - `sessions`: where it tells each connection it begins and ends.
+function served(told: (mailbox ready.Ready), sessions: (mailbox ready.Session)) -> str?
     data @= collections.empty()?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
@@ -66,8 +70,10 @@ function served(told: (mailbox ready.Ready)) -> str?
             .ok made =>
                 conn @= made
                 connections @ connections + 1
+                _ = sessions.send(.began).is_err()
                 commands @ commands + session(@data, stream: conn.stream, id: connections)
                 _ = io.close(@conn.stream).is_err()
+                _ = sessions.send(.ended).is_err()
 
     _ = net.close_listener(@listener).is_err()
     return ok(f"mongodb stand-in: {connections} connections served, {commands} commands answered")
