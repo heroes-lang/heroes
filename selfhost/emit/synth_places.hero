@@ -1,0 +1,156 @@
+# Where each declared type stands in a rendering: the half of a synthetic
+# name's key that says which declaration every name of the rendering means,
+# in the rendering's order (design.md §3.1; panel 093 R6; defect 2650).
+#
+# `emit/synth.hero`'s set of the declared types a type names, sorted, does
+# not say where each stands. `(function(main.Value) -> other.Value)` and
+# `(function(other.Value) -> main.Value)` render alike, `(function(Value) ->
+# Value)`, and name one set, so both were one C typedef and `map` at each
+# was one C function; and a case, `Token.num`, puts its variant in no set at
+# all, so a generic at two modules' `Token.num` was one instance. Which
+# declaration each name stands for, taken in order, tells all of them apart.
+
+use ast
+use check/render
+use check/state
+use check/table
+use checker
+use emit/worklist
+use parse
+use resolve
+use source
+
+# One name a rendering writes, and the declaration it stands for: a record's
+# or a variant's, or for a case, `Token.num`, its variant's.
+record Placed
+    # The declaration, `<component>.<Name>`, as `synth.declared_in` spells
+    # it.
+    qualified: str
+    # The declaration's own name, all the rendering writes of it.
+    written: str
+
+# Every name the rendering of `roots` writes, one per mention and in the
+# rendering's order: the roots in turn, a function type's parameters and then
+# its result, a map's key and then its value, the element of an array, of a
+# fixed-size array and of a `T?`. A stack and not a recursion (defect 140):
+# each node's inner types are put on it last first, so the first is taken
+# first.
+#
+# - `c`: the checked program.
+# - `s`: the program's source.
+# - `decls`: its declarations.
+# - `roots`: the types, in the order the rendering writes them.
+function placed_in(c: state.Checked, s: source.Source, decls: [ast.Decl], roots: [i64]) -> [Placed]
+    out: [Placed] @= []
+    stack: [i64] @= []
+    size: i64 @= 0
+    put_last_first(stack: @stack, size: @size, ids: roots)
+
+    while size > 0
+        id = worklist.take(stack, size: @size)
+        decl = declaration_of(c, id: id)
+
+        if !decl.is_err()
+            name = decls[decl.must()].name
+            written = source.span_text(s, name)
+            out @ out.push(Placed(qualified: source.component_at(s, name.start) + "." + written, written: written))
+        put_last_first(stack: @stack, size: @size, ids: written_inside(c, id: id))
+
+    return out
+
+# Whether the set alone tells which declaration each name of a rendering
+# stands for: every one placed is in the set, and no two of them share the
+# name the rendering writes. The set holds every declaration placed outside a
+# fixed-size array and not as a case, so asking each placed one asks the
+# whole set.
+#
+# - `named`: `synth.declared_in`'s set.
+# - `placed`: `placed_in`'s list.
+function tells_each(named: [str], placed: [Placed]) -> bool
+    held: {str: bool} @= {}
+
+    for one in named
+        held[one] @ true
+
+    meant: {str: str} @= {}
+
+    for one in placed
+        if held[one.qualified].is_err()
+            return false
+        before = meant[one.written]
+
+        if !before.is_err() && before.must() != one.qualified
+            return false
+        meant[one.written] @ one.qualified
+
+    return true
+
+# `ids` put on the stack from the last to the first.
+#
+# - `stack`: the stack, its live part its first `size` elements.
+# - `size`: how many are live.
+# - `ids`: what to put.
+function put_last_first(@stack: [i64], @size: i64, ids: [i64])
+    at: i64 @= ids.len()
+
+    while at > 0
+        at @ at - 1
+        worklist.put(@stack, size: @size, value: ids[at])
+
+# The declaration a type's rendering names where it stands: a record's or a
+# variant's own, or a case's variant; absent for every other type.
+#
+# - `c`: the checked program.
+# - `id`: the type.
+function declaration_of(c: state.Checked, id: i64) -> i64?
+    return match table.get(c.types, id)
+        .named n                                                  => ok(n.decl)
+        .case_ty vc                                               => ok(vc.decl)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => fail(code: "absent", msg: "names no declaration")
+        .array | .fixed | .map | .fallible | .function_ty         => fail(code: "absent", msg: "names no declaration")
+        .failure | .generic | .error                              => fail(code: "absent", msg: "names no declaration")
+
+# The types a type's rendering writes inside it, in its order:
+# `table.contained`'s, and a fixed-size array's element, which that walk
+# leaves out.
+#
+# - `c`: the checked program.
+# - `id`: the type.
+function written_inside(c: state.Checked, id: i64) -> [i64]
+    return match table.get(c.types, id)
+        .fixed x                                                  => [x.element]
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => table.contained(c.types, id)
+        .array | .map | .fallible | .function_ty | .named         => table.contained(c.types, id)
+        .case_ty | .failure | .generic | .error                   => table.contained(c.types, id)
+
+## Tests
+
+# The rendering is the oracle: the names `placed_in` lists are the ones the
+# rendering writes, in its order, a name written twice listed twice, each the
+# declaration of the module that declares it.
+test "placed_in: every name the rendering writes, in its order (defect 2650)"
+    text = "record A\n    n: i64\n\nrecord B\n    n: i64\n\nvariant C\n    one\n        v: i64\n\nfunction f(a: A, b: B) -> {A: [C?]}\n    m: {A: [C?]} @= {}\n\n    if b.n > 0\n        m[a] @ []\n\n    return m\n\nfunction main()\n    print(f(A(n: 1), B(n: 2)).len())\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    none: [str] = []
+    found: bool @= false
+    ty: i64 @= 0
+
+    while ty < table.len_of(c.types)
+        if render.render_ty(c.types, s, p.decls, ty, none) == "(function(A, B) -> {A: [C?]})"
+            placed = placed_in(c, s, p.decls, roots: [ty])
+            written: [str] @= []
+
+            for one in placed
+                written @ written.push(one.written)
+
+            assert written == ["A", "B", "A", "C"]
+            assert placed[0].qualified == "t.A"
+            assert placed[3].qualified == "t.C"
+            found @ true
+        ty @ ty + 1
+
+    assert found

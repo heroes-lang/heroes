@@ -18,32 +18,68 @@
 # modules' `Held` was two C definitions of `h_one_failure_9c07dcd`, and
 # clang refused a correct program at exit 2. What panel 093 learned for the
 # types had never been asked of the functions instantiated at them.
+#
+# **A set does not say where each type stands** (defect 2650): where it
+# does not tell which declaration each name of the rendering stands for, the
+# key also carries those declarations in the rendering's order (`keyed`,
+# `emit/synth_places.hero`).
 
 use ast
 use check/render
 use check/state
 use check/table
+use emit/synth_places
 use emit/worklist
 use source
 
 function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     no_generics: [str] = []
     rendered = render.render_ty(c.types, s, decls, ty, no_generics)
-    return keyed(rendered: rendered, named: declared_in(c, s, decls, roots: [ty]))
+    return keyed(
+        rendered: rendered,
+        named: declared_in(c, s, decls, roots: [ty]),
+        placed: synth_places.placed_in(c, s, decls, roots: [ty])
+    )
 
 # What a monomorphised instance's name is hashed from: the rendering of its
 # type arguments, `signature.render_instance`'s, plus every declared type
 # they contain, as `content_key` is for one type.
 function instance_key(c: state.Checked, s: source.Source, decls: [ast.Decl], bound: [i64], rendered: str) -> str
-    return keyed(rendered: rendered, named: declared_in(c, s, decls, roots: bound))
+    return keyed(
+        rendered: rendered,
+        named: declared_in(c, s, decls, roots: bound),
+        placed: synth_places.placed_in(c, s, decls, roots: bound)
+    )
 
+# The key of a rendering, given the set of declared types it names and the
+# declaration each of its names stands for.
+#
 # A key with no declared parts is the rendering itself, already canonical,
 # which keeps `i64?`'s hash, and an instance's at `i64`, what every pinned
-# test spells.
-function keyed(rendered: str, named: [str]) -> str
-    if named.len() == 0
-        return rendered
-    return rendered + "|" + named.join(",")
+# test spells. Where the set tells which declaration each name stands for,
+# the key is the rendering and the set, the short form: a type that form
+# keeps apart from every other keeps the name it has always had. Elsewhere
+# the long form adds the declarations in the rendering's order, so two types
+# that differ only in where each module's `Value` stands differ in the key.
+#
+# A rendering holds no `|`, a component only letters and digits, and a
+# declared name only an identifier's characters, so the long form, with its
+# two `|`, never spells a short one, which has one at most.
+#
+# - `rendered`: the type's rendering, or an instance's type arguments'.
+# - `named`: `declared_in`'s set.
+# - `placed`: `synth_places.placed_in`'s list.
+function keyed(rendered: str, named: [str], placed: [synth_places.Placed]) -> str
+    if synth_places.tells_each(named: named, placed: placed)
+        if named.len() == 0
+            return rendered
+        return rendered + "|" + named.join(",")
+    in_order: [str] @= []
+
+    for one in placed
+        in_order @ in_order.push(one.qualified)
+
+    return rendered + "|" + named.join(",") + "|" + in_order.join(",")
 
 # Every declared type reachable from `roots`, each `<component>.<Name>`, in
 # ascending order: the key must not depend on the walk, and sorting is what
@@ -229,3 +265,27 @@ function wants_decl(w: Wanted, decl: i64) -> bool
     if w.every
         return true
     return !w.named[decl].is_err()
+
+## Tests
+
+# The two halves of `keyed`'s contract: two types that differ only in where
+# each module's `Value` stands are two keys, and so are two modules' cases of
+# one name; and a type the set alone tells apart keeps its key byte for byte,
+# so its C name is the one it always had.
+test "keyed: two modules' types of one name each way round are two keys, and a key the set tells is kept (defect 2650)"
+    mine = synth_places.Placed(qualified: "main.Value", written: "Value")
+    theirs = synth_places.Placed(qualified: "other.Value", written: "Value")
+    both = ["main.Value", "other.Value"]
+    there = keyed(rendered: "(function(Value) -> Value)", named: both, placed: [mine, theirs])
+    back = keyed(rendered: "(function(Value) -> Value)", named: both, placed: [theirs, mine])
+    assert there != back
+
+    no_set: [str] = []
+    my_num = synth_places.Placed(qualified: "main.Token", written: "Token")
+    their_num = synth_places.Placed(qualified: "other.Token", written: "Token")
+    assert keyed(rendered: "Token.num", named: no_set, placed: [my_num]) != keyed(rendered: "Token.num", named: no_set, placed: [their_num])
+
+    point = synth_places.Placed(qualified: "geom.Point", written: "Point")
+    assert keyed(rendered: "(function(Point) -> Point)", named: ["geom.Point"], placed: [point, point]) == "(function(Point) -> Point)|geom.Point"
+    nothing: [synth_places.Placed] = []
+    assert keyed(rendered: "i64?", named: no_set, placed: nothing) == "i64?"

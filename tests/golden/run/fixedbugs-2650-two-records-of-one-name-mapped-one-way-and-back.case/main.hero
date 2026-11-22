@@ -1,0 +1,29 @@
+# fixedbugs, defect 2650, 2026-11-21: a record `Value` here and one in
+# `other`, mapped one way and back. `(function(Value) -> other.Value)` and
+# `(function(other.Value) -> Value)` were one C typedef, and `map` at each
+# one C function, so clang refused at exit 2 a program `heroes check`
+# accepts.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use other
+
+record Value
+    n: i64
+
+function to_other(v: Value) -> other.Value
+    return other.Value(n: v.n + 10)
+
+function of_other(v: other.Value) -> Value
+    return Value(n: v.n * 2)
+
+function main()
+    there = [Value(n: 1), Value(n: 2)].map(to_other)
+    back = there.map(of_other)
+    print(there[0].n, " ", back[1].n)
+    f: (function(Value) -> other.Value) = to_other
+    g: (function(other.Value) -> Value) = of_other
+    print(g(f(Value(n: 3))).n)

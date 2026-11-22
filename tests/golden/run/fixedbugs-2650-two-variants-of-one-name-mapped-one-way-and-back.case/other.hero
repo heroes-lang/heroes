@@ -1,0 +1,5 @@
+variant Shape
+    circle
+        r: i64
+    square
+        side: i64
