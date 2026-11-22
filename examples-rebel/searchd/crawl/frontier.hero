@@ -1,0 +1,216 @@
+# Which URLs the crawler visits, and in what form: a link read from a page
+# is resolved against the page's base, put in one normal form, kept only
+# where it stands on the site being crawled, and queued once.
+#
+# The normal form is what makes "/recipes/kanelbullar#top" and
+# "/recipes/./kanelbullar?utm_source=newsletter" one page: the fragment is
+# dropped (a browser keeps it to itself), the dot segments are removed
+# (RFC 3986 § 5.2.4), an empty path is "/", a port the scheme takes by
+# default is dropped, and the query keys the settings name as trackers are
+# taken out. The scheme and the host are in lower case already, as `url`
+# reads them. The queue is breadth first, so a page is reached by the
+# fewest clicks from the start that any path offers.
+
+use <rebel>/strings
+use <rebel>/url
+
+# Where a crawl may go: the start's scheme, host and port.
+record Scope
+    # `http` or `https`.
+    scheme: str
+    # The host, in lower case.
+    host: str
+    # The port as written, "" where the scheme's own.
+    port: str
+
+# A URL waiting in the queue, and how many links from the start it stands.
+record Queued
+    # The URL in its normal form.
+    url: str
+    # Links followed from the start to reach it; the start is 0.
+    depth: i64
+
+# The queue of a crawl: the URLs to visit in order, and every URL ever
+# queued, so none is queued twice.
+record Frontier
+    # Every URL queued, visited or not, in the order queued.
+    queue: [Queued]
+    # The next to visit, an index into `queue`.
+    next: i64
+    # Every URL queued, for the question "seen?".
+    seen: {str: bool}
+
+# The scope of the crawl that starts at `start`.
+#
+# - `start`: the start, in its normal form.
+function scope_of(start: url.Url) -> Scope
+    return Scope(scheme: start.scheme, host: start.host, port: start.port)
+
+# Whether `u` stands inside `scope`.
+#
+# - `scope`: the crawl's scope.
+# - `u`: a URL in its normal form.
+function is_inside(scope: Scope, u: url.Url) -> bool
+    return u.scheme == scope.scheme && u.host == scope.host && u.port == scope.port
+
+# `u` in its normal form, its query keys named in `trackers` taken out.
+#
+# - `u`: an absolute URL.
+# - `trackers`: query keys that change nothing a page says, `utm_source`;
+#   compared byte for byte.
+function normal(u: url.Url, trackers: [str]) -> url.Url
+    out @= url.without_fragment(u)
+    out.path @ url.remove_dot_segments(out.path)
+
+    if out.path == ""
+        out.path @ "/"
+
+    match url.default_port(out.scheme)
+        .ok port =>
+            if out.port == to_str(port)
+                out.port @ ""
+        .err _ => _ = 0
+
+    if out.query != ""
+        out.query @ without_trackers(out.query, trackers: trackers)
+
+        if out.query == ""
+            out.empty_query @ false
+
+    return out
+
+# `query` without the pairs whose key `trackers` names; the query as it was
+# where it names none, or where it does not read.
+#
+# - `query`: a raw query.
+# - `trackers`: the keys taken out.
+function without_trackers(query: str, trackers: [str]) -> str
+    pairs = match url.parse_query(query)
+        .ok got => got
+        .err _  => return query
+
+    kept: [url.Pair] @= []
+
+    for p in pairs
+        if !is_named(trackers, key: p.key)
+            kept @ kept.push(p)
+
+    if kept.len() == pairs.len()
+        return query
+
+    return url.format_query(kept)
+
+# Whether `names` holds `key`.
+#
+# - `names`: the names.
+# - `key`: the name asked about.
+function is_named(names: [str], key: str) -> bool
+    for n in names
+        if n == key
+            return true
+
+    return false
+
+# The URL `href` names on the page `base`, in its normal form. Fails
+# `invalid` where `href` does not read as a URL, and `unsupported` where it
+# names a scheme a crawler does not fetch (`mailto:`, `javascript:`).
+#
+# - `base`: the page's base: its own URL, or its `base` element's.
+# - `href`: the link as the page writes it, white space around it allowed.
+# - `trackers`: the query keys taken out.
+function resolve(base: url.Url, href: str, trackers: [str]) -> url.Url?
+    reference = url.parse_loose(strings.trim(href))?
+    target = url.resolve(base: base, reference: reference)
+
+    if target.scheme != "http" && target.scheme != "https"
+        return fail(code: "unsupported", msg: f"a link of the scheme \"{target.scheme}\" is not fetched")
+
+    return ok(normal(target, trackers: trackers))
+
+# A frontier holding `start` alone, at depth 0.
+#
+# - `start`: the start, in its normal form.
+function starting(start: str) -> Frontier
+    return Frontier(queue: [Queued(url: start, depth: 0)], next: 0, seen: {start: true})
+
+# Queues `link` at `depth` unless it was queued before; whether it was new.
+#
+# - `frontier`: the queue, which gains the link.
+# - `link`: a URL in its normal form.
+# - `depth`: its links from the start.
+function offer(@frontier: Frontier, link: str, depth: i64) -> bool
+    if frontier.seen[link].default(false)
+        return false
+
+    mark_seen(@frontier.seen, link: link)
+    enqueue(@frontier.queue, q: Queued(url: link, depth: depth))
+    return true
+
+# Adds `q` to the end of `queue`, the caller's own list, so nothing is
+# copied however long the queue grows.
+#
+# - `queue`: the queue.
+# - `q`: the URL queued.
+function enqueue(@queue: [Queued], q: Queued)
+    queue @ queue.push(q)
+
+# Notes `link` as queued in `seen`, the caller's own map.
+#
+# - `seen`: the URLs queued.
+# - `link`: the URL.
+function mark_seen(@seen: {str: bool}, link: str)
+    seen[link] @ true
+
+# The next URL to visit, taken from the queue. Fails `not_found` once every
+# URL queued has been visited.
+#
+# - `frontier`: the queue, which moves past it.
+function take(@frontier: Frontier) -> Queued?
+    if frontier.next >= frontier.queue.len()
+        return fail(code: "not_found", msg: "every URL queued has been visited")
+
+    q = frontier.queue[frontier.next]
+    frontier.next @ frontier.next + 1
+    return ok(q)
+
+# The path and query of `address`, which is what a page of one site is
+# shown by; the whole URL where it does not read.
+#
+# - `address`: a URL in normal form.
+function path_of(address: str) -> str
+    return match url.parse(address)
+        .ok u  => url.request_target(u)
+        .err _ => address
+
+test "path_of: a page's path and query, the whole text where it is no URL"
+    assert path_of("http://h:8080/recipes/?page=2") == "/recipes/?page=2"
+    assert path_of("not a url") == "not a url"
+
+test "normal: a fragment, dot segments, an empty path, a default port and a tracker"
+    trackers = ["utm_source", "utm_medium"]
+    u = url.parse("HTTP://Example.ORG:80/a/./b/../c?utm_source=mail&page=2#top").must()
+    assert url.format(normal(u, trackers: trackers)) == "http://example.org/a/c?page=2"
+    assert url.format(normal(url.parse("https://h:443").must(), trackers: trackers)) == "https://h/"
+    assert url.format(normal(url.parse("http://h:8080/x?utm_medium=a").must(), trackers: trackers)) == "http://h:8080/x"
+
+test "resolve: relative links, a base, and schemes that are not fetched"
+    base = url.parse("http://h/recipes/kanelbullar").must()
+    assert url.format(resolve(base, href: "../techniques/pearl-sugar", trackers: []).must()) == "http://h/techniques/pearl-sugar"
+    assert url.format(resolve(base, href: " semlor ", trackers: []).must()) == "http://h/recipes/semlor"
+    assert url.format(resolve(base, href: "//other.example/x#y", trackers: []).must()) == "http://other.example/x"
+    assert resolve(base, href: "mailto:a@h", trackers: []).is_err()
+    assert resolve(base, href: "javascript:void(0)", trackers: []).is_err()
+
+test "is_inside: the same host and port, and not another"
+    scope = scope_of(url.parse("http://h:8080/").must())
+    assert is_inside(scope, u: url.parse("http://h:8080/a").must())
+    assert !is_inside(scope, u: url.parse("http://h/a").must())
+    assert !is_inside(scope, u: url.parse("https://h:8080/a").must())
+
+test "offer and take: each URL queued once, in order"
+    f @= starting("http://h/")
+    assert offer(@f, link: "http://h/a", depth: 1)
+    assert !offer(@f, link: "http://h/", depth: 1)
+    assert take(@f).must().url == "http://h/"
+    assert take(@f).must() == Queued(url: "http://h/a", depth: 1)
+    assert take(@f).is_err()

@@ -1,0 +1,235 @@
+# The JSON API: a query answered, suggestions for what is being typed, a
+# page with what the engine knows of it, every page in the site's order of
+# titles, the groups of near-duplicates, and the engine's counts. Every
+# answer is a JSON object; a parameter that does not read is answered 400
+# with `{"message": ...}`, as `web.error_response` writes one, and a page
+# number the engine does not hold 404.
+#
+# A page is named by its number and shown by its path, never by its whole
+# URL, so what a client prints does not change with the port a demo's site
+# happened to get.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/web
+
+use crawl/store
+use index/duplicates
+use index/engine
+use index/links
+use query/answer
+use query/ranker
+use query/suggest
+use server/params
+
+# The most results one query is answered with.
+constant MOST_RESULTS: i64
+    50
+
+# `GET /api/search?q=&mode=&limit=`: the query `q` answered in `mode`
+# (`hybrid` where left out) with at most `limit` results (10).
+#
+# - `e`: the engine.
+# - `r`: the request.
+function search(e: engine.Engine lent, r: http.Request) -> http.Response
+    pairs = match params.pairs_of(r)
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    mode = match ranker.mode_named(params.text_of(pairs, key: "mode", fallback: "hybrid"))
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    limit = match params.int_of(pairs, key: "limit", fallback: 10, lowest: 1, highest: MOST_RESULTS)
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    a = match answer.answer(e, text: params.text_of(pairs, key: "q", fallback: ""), mode: mode, limit: limit)
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    return answered(answer_json(e, a: a))
+
+# The JSON of the answer `a`.
+#
+# - `e`: the engine.
+# - `a`: the answer.
+function answer_json(e: engine.Engine lent, a: answer.Answer) -> json.Value
+    changes: [json.Value] @= []
+
+    for c in a.changes
+        members: {str: json.Value} = {"from": .text(v: c.from), "to": .text(v: c.to)}
+        changes @ changes.push(.object(members: members))
+
+    hits: [json.Value] @= []
+
+    for h in a.hits
+        d = e.docs[h.id]
+        members: {str: json.Value} = {
+            "id": store.number(d.id)
+            "path": .text(v: d.path)
+            "title": .text(v: d.title)
+            "score": .number(v: h.score)
+            "snippet": .text(v: answer.snippet_of(d, marking: a.marking))
+            "folded": .list(items: paths_of(e, ids: h.folded))
+        }
+        hits @ hits.push(.object(members: members))
+
+    members: {str: json.Value} = {
+        "query": .text(v: a.query)
+        "mode": .text(v: ranker.mode_name(a.mode))
+        "corrected": .list(items: changes)
+        "matched": store.number(a.matched)
+        "hits": .list(items: hits)
+    }
+
+    return .object(members: members)
+
+# `GET /api/suggest?q=&limit=`: what `q`, being typed, may become, at most
+# `limit` (5).
+#
+# - `e`: the engine.
+# - `r`: the request.
+function suggestions(e: engine.Engine lent, r: http.Request) -> http.Response
+    pairs = match params.pairs_of(r)
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    most = match params.int_of(pairs, key: "limit", fallback: 5, lowest: 1, highest: 20)
+        .ok got => got
+        .err x  => return refused(x.msg)
+
+    found: [json.Value] @= []
+
+    for s in suggest.suggestions(e, typed: params.text_of(pairs, key: "q", fallback: ""), most: most)
+        members: {str: json.Value} = {"text": .text(v: s.text), "pages": store.number(s.pages)}
+        found @ found.push(.object(members: members))
+
+    members: {str: json.Value} = {"suggestions": .list(items: found)}
+    return answered(.object(members: members))
+
+# `GET /api/pages`: every indexed page, by its title in the site's order.
+#
+# - `e`: the engine.
+function pages(e: engine.Engine lent) -> http.Response
+    found: [json.Value] @= []
+
+    for id in e.title_order
+        d = e.docs[id]
+        members: {str: json.Value} = {"id": store.number(d.id), "path": .text(v: d.path), "title": .text(v: d.title)}
+        found @ found.push(.object(members: members))
+
+    members: {str: json.Value} = {"language": .text(v: e.language), "pages": .list(items: found)}
+    return answered(.object(members: members))
+
+# `GET /api/pages/:id`: the page numbered `id`: its title, rank, depth, the
+# links to and from it, its click path from the start and its
+# near-duplicates.
+#
+# - `e`: the engine.
+# - `id`: the parameter as the path writes it.
+function page(e: engine.Engine lent, id: str) -> http.Response
+    number = match params.number_in(text: id, name: "page", lowest: 0, highest: e.docs.len() - 1)
+        .ok got => got
+        .err _  => return web.error_response(.json, status: 404, message: f"no page numbered \"{id}\"")
+
+    d = match engine.doc_of(e, id: number)
+        .ok got => got
+        .err x  => return web.error_response(.json, status: 404, message: x.msg)
+
+    route = links.path_to(engine.graph_of(e), start: e.start, to: d.id)
+    twins: [i64] @= []
+
+    for other in e.docs
+        if other.group == d.group && other.id != d.id
+            twins @ twins.push(other.id)
+
+    members: {str: json.Value} = {
+        "id": store.number(d.id)
+        "path": .text(v: d.path)
+        "title": .text(v: d.title)
+        "description": .text(v: d.description)
+        "language": .text(v: d.language)
+        "indexed": .boolean(v: d.indexed)
+        "rank": .number(v: d.rank)
+        "depth": store.number(d.depth)
+        "inbound": store.number(d.inbound)
+        "links": .list(items: paths_of(e, ids: d.links))
+        "path_from_start": .list(items: paths_of(e, ids: route))
+        "duplicates": .list(items: paths_of(e, ids: twins))
+    }
+
+    return answered(.object(members: members))
+
+# `GET /api/duplicates`: every group of near-duplicates of more than one
+# page, each its pages' paths in the order of their numbers.
+#
+# - `e`: the engine.
+function duplicate_groups(e: engine.Engine lent) -> http.Response
+    labels: [i64] @= []
+
+    for d in e.docs
+        labels @ labels.push(d.group)
+
+    groups: [json.Value] @= []
+
+    for g in duplicates.clusters(labels)
+        groups @ groups.push(.list(items: paths_of(e, ids: g)))
+
+    members: {str: json.Value} = {"groups": .list(items: groups)}
+    return answered(.object(members: members))
+
+# `GET /api/stats`: how many pages the engine knows and indexes, its terms
+# and vectors, the PageRank rounds, and the three pages ranked highest.
+#
+# - `e`: the engine.
+function stats(e: engine.Engine lent) -> http.Response
+    top: [json.Value] @= []
+
+    for id in engine.ranked_highest(e, most: 3)
+        d = e.docs[id]
+        members: {str: json.Value} = {"path": .text(v: d.path), "rank": .number(v: d.rank)}
+        top @ top.push(.object(members: members))
+
+    labels: [i64] @= []
+
+    for d in e.docs
+        labels @ labels.push(d.group)
+
+    members: {str: json.Value} = {
+        "pages": store.number(e.docs.len())
+        "indexed": store.number(engine.indexed_count(e))
+        "terms": store.number(engine.term_count(e))
+        "vectors": store.number(engine.vector_count(e))
+        "duplicate_groups": store.number(duplicates.clusters(labels).len())
+        "rank_rounds": store.number(e.rounds)
+        "top": .list(items: top)
+    }
+
+    return answered(.object(members: members))
+
+# The paths of the pages `ids`, in their order.
+#
+# - `e`: the engine.
+# - `ids`: page numbers the engine holds.
+function paths_of(e: engine.Engine lent, ids: [i64]) -> [json.Value]
+    found: [json.Value] @= []
+
+    for id in ids
+        found @ found.push(.text(v: e.docs[id].path))
+
+    return found
+
+# `v` answered 200; a value no JSON can say, a `nan`, answered 500.
+#
+# - `v`: the answer.
+function answered(v: json.Value) -> http.Response
+    return match http.respond_json(200, value: v)
+        .ok response => response
+        .err x       => web.error_response(.json, status: 500, message: x.msg)
+
+# A request refused 400, saying why.
+#
+# - `message`: why.
+function refused(message: str) -> http.Response
+    return web.error_response(.json, status: 400, message: message)

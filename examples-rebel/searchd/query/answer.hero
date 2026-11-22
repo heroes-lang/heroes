@@ -1,0 +1,148 @@
+# A query answered: read, its misspelt words put right, ordered by the
+# ranker in the mode asked, and its near-duplicates folded, so a result
+# list shows each text once. Of a group of near-duplicates the page shown
+# is the one the site's links rank highest (the recipe, not its print
+# version nor the old post that copied it), in the place of the group's
+# best match, the others named under it.
+
+use <rebel>/lists
+
+use index/engine
+use query/parse
+use query/ranker
+use query/spelling
+use text/snippet
+
+# How many words a snippet shows.
+constant SNIPPET_WORDS: i64
+    24
+
+# One result: a page, its score, and the near-duplicates folded under it.
+record Hit
+    # The page's number.
+    id: i64
+    # The score of the group's best match in the order.
+    score: f64
+    # The other pages of its group the query matched, in the order's order.
+    folded: [i64]
+
+# What a query is answered with.
+record Answer
+    # The query as searched, folded and put right, in `search`'s language.
+    query: str
+    # The words put right.
+    changes: [spelling.Change]
+    # The mode it was answered in.
+    mode: ranker.Mode
+    # How many results the query matched, each group of near-duplicates one.
+    matched: i64
+    # The results shown, the best first.
+    hits: [Hit]
+    # What a result's snippet marks.
+    marking: snippet.Marking
+
+# The answer to `text` in `mode`, at most `limit` results.
+#
+# - `e`: the engine.
+# - `text`: the query as typed.
+# - `mode`: by words alone, or hybrid.
+# - `limit`: the most results shown, 0 or more.
+#
+# Fails `invalid` where the query does not read, as `parse.parse` fails.
+function answer(e: engine.Engine lent, text: str, mode: ranker.Mode, limit: i64) -> Answer?
+    typed = parse.parse(text, marks: e.fold_marks)?
+    fixed = spelling.corrected(typed, words: e.words)
+    q = fixed.query
+    words = ranker.keyword_order(e, q: q)?
+
+    order = match mode
+        .keyword => words
+        .hybrid  => ranker.fused(words: words, nearest: ranker.vector_order(e, q: q, most: limit * 3 + 10)?)
+
+    grouped = fold_groups(e, order: order)
+    made = Answer(
+        query: parse.format(q),
+        changes: fixed.changes,
+        mode: mode,
+        matched: grouped.len(),
+        hits: lists.take(grouped, n: limit),
+        marking: marking_of(q, marks: e.fold_marks)
+    )
+    return ok(made)
+
+# The results of `order` with each group of near-duplicates made one, at the
+# place of its first member, shown by its member of the highest PageRank.
+#
+# - `e`: the engine.
+# - `order`: the pages matched, the best first.
+function fold_groups(e: engine.Engine lent, order: [ranker.Scored]) -> [Hit]
+    shown: {i64: i64} @= {}
+
+    for s in order
+        group = e.docs[s.id].group
+
+        match shown[group]
+            .ok held =>
+                if e.docs[s.id].rank > e.docs[held].rank
+                    shown[group] @ s.id
+            .err _ => shown[group] @ s.id
+
+    hits: [Hit] @= []
+    place: {i64: i64} @= {}
+
+    for s in order
+        group = e.docs[s.id].group
+        head = shown[group].must()
+
+        match place[group]
+            .ok at =>
+                if s.id != head
+                    add_folded(@hits, at: at, id: s.id)
+            .err _ =>
+                place[group] @ hits.len()
+
+                folded: [i64] = if s.id == head
+                    []
+                else
+                    [s.id]
+                hits @ hits.push(Hit(id: head, score: s.score, folded: folded))
+
+    return hits
+
+# Adds `id` to the pages folded under the result `at` of `hits`.
+#
+# - `hits`: the results, the caller's own.
+# - `at`: the result's place.
+# - `id`: the page folded under it.
+function add_folded(@hits: [Hit], at: i64, id: i64)
+    hits[at].folded @ hits[at].folded.push(id)
+
+# What a snippet marks for `q`: its wanted words, and the words of its
+# prefixes as prefixes.
+#
+# - `q`: the query.
+# - `marks`: whether folding drops marks.
+function marking_of(q: parse.Query, marks: bool) -> snippet.Marking
+    words: [str] @= []
+    prefixes: [str] @= []
+
+    for p in q.parts
+        if !parse.is_refused(p)
+            for w in p.words
+                if p.prefix
+                    prefixes @ prefixes.push(w)
+                else
+                    words @ words.push(w)
+
+    return snippet.Marking(words: words, prefixes: prefixes, marks: marks)
+
+# The snippet of the page `d` for a query, as HTML.
+#
+# - `d`: the page.
+# - `marking`: what the query marks.
+function snippet_of(d: engine.Doc, marking: snippet.Marking) -> str
+    return snippet.snippet(d.text, marking: marking, width: SNIPPET_WORDS)
+
+test "marking_of: words and prefixes, refused words left out"
+    q = parse.parse("pearl* sugar -chocolate", marks: true).must()
+    assert marking_of(q, marks: true) == snippet.Marking(words: ["sugar"], prefixes: ["pearl"], marks: true)

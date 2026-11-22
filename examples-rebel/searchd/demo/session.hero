@@ -1,0 +1,179 @@
+# The demo's queries: a scripted session against searchd's own server on
+# loopback, run on a thread of its own while the server runs on the main
+# one, through the same client `searchd query` uses. It asks what a person
+# at the search box would ask, a word, a phrase, a word refused, a word with
+# an accent left off, a word written with soft hyphens on the page, a
+# misspelling, a Swedish word in another form than the page's, a prefix
+# being typed, and then what the engine knows of a page, the site's order
+# of titles and its near-duplicates; it reads the web UI as a browser
+# would, a query holding a script among its words; and it asks what a
+# server must refuse. Every line it prints is a status and the fields that
+# matter, never a port, a score or a time. Its last act asks the process's
+# stop, as Ctrl-C would, which ends the server's serving.
+
+use <rebel>/html
+use <rebel>/http
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/url
+
+use app/reports
+use client/client
+
+# The most results a query of the session shows.
+constant SHOWN: i64
+    3
+
+# The session against the server at `base`; its answer is `ok`, or `failed`
+# after a line saying where. A thread's body, so it takes and gives one
+# text; whatever happened, it asks the stop last.
+#
+# - `base`: the server's root URL.
+function run(base: str) -> str
+    outcome = match session(client.new(base))
+        .ok _ => "ok"
+        .err e =>
+            print(f"client: failed: {e.code}: {e.msg}")
+            "failed"
+
+    os.ask_stop()
+    return outcome
+
+# Every step, in order; the first that fails ends the session.
+#
+# - `c`: the client.
+function session(c: client.Client) -> ()?
+    stats = client.stats(c)?
+    print(
+        f"GET /api/stats: {stats.indexed} of {stats.pages} pages indexed, {stats.terms} terms, {stats.vectors} vectors"
+    )
+    print("-- queries")
+    ask(c, query: "cardamom", mode: "keyword")?
+    ask(c, query: "\"pearl sugar\"", mode: "keyword")?
+    ask(c, query: "sugar -chocolate -cinnamon", mode: "keyword")?
+    ask(c, query: "cafe fika", mode: "keyword")?
+    ask(c, query: "kardemumma", mode: "keyword")?
+    ask(c, query: "cardamon buns", mode: "keyword")?
+    ask(c, query: "semla", mode: "keyword")?
+    ask(c, query: "semla", mode: "hybrid")?
+    print("-- suggestions as you type")
+    offer(c, typed: "ka")?
+    offer(c, typed: "pearl s")?
+    print("-- the site")
+    pages = client.pages(c)?
+    titles: [str] @= []
+
+    for p in pages
+        titles @ titles.push(p.title)
+
+    print(f"GET /api/pages: {pages.len()} pages, their titles in Swedish order:")
+    print("  " + titles.join("; "))
+
+    for group in client.duplicates(c)?
+        print(f"GET /api/duplicates: {group.join(", ")}")
+
+    for p in pages
+        if p.path == "/recipes/kanelbullar"
+            about(c, id: p.id)?
+
+    print("-- the web UI")
+    browse(c)?
+    print("-- refusals")
+    refusals(c)?
+    return ok()
+
+# Asks `query` in `mode` and prints its results.
+#
+# - `c`: the client.
+# - `query`: the query.
+# - `mode`: `keyword` or `hybrid`.
+function ask(c: client.Client, query: str, mode: str) -> ()?
+    print(f"search {query}")
+
+    for line in reports.results_lines(client.search(c, query: query, mode: mode, limit: SHOWN)?)
+        print(line)
+
+    return ok()
+
+# Asks what `typed` may become and prints the suggestions.
+#
+# - `c`: the client.
+# - `typed`: what has been typed.
+function offer(c: client.Client, typed: str) -> ()?
+    found: [str] @= []
+
+    for s in client.suggest(c, typed: typed, limit: 4)?
+        found @ found.push(f"{s.text} ({s.pages})")
+
+    print(f"suggest \"{typed}\": {found.join(", ")}")
+    return ok()
+
+# Prints what the engine knows of the page numbered `id`.
+#
+# - `c`: the client.
+# - `id`: the page's number.
+function about(c: client.Client, id: i64) -> ()?
+    p = client.page(c, id: id)?
+    print(
+        f"GET /api/pages/{id}: {p.title}, PageRank {numbers.format_float(p.rank, precision: 3)}, linked from {p.inbound} pages"
+    )
+    print(f"  {reports.plural(p.depth, one: "link", many: "links")} from the start: {p.path_from_start.join(" > ")}")
+    print(f"  near-duplicates: {p.duplicates.join(", ")}")
+    return ok()
+
+# Reads the web UI as a browser would: the start page, a results page, and
+# a results page for a query holding a script.
+#
+# - `c`: the client.
+function browse(c: client.Client) -> ()?
+    home = client.fetch(c, target: "/")?
+    home_doc = html.parse(http.text_of(home)?)
+    listed = html.select_all(home_doc, html.ROOT, "ul.titles li")?.len()
+    has_box = !html.select(home_doc, html.ROOT, "form[role=search] input[name=q]").is_err()
+    print(f"GET /: {home.status}, {listed} pages listed, a search box: {has_box}")
+    found = client.fetch(c, target: "/search?q=cardamom+buns&mode=hybrid")?
+    doc = html.parse(http.text_of(found)?)
+    marks = html.select_all(doc, html.ROOT, "li.result mark")?.len()
+    count = html.text_of(doc, html.select(doc, html.ROOT, "p.count")?)
+    print(
+        f"GET /search?q=cardamom+buns: {found.status}, \"{count}\", {html.select_all(doc, html.ROOT, "li.result")?.len()} shown, {marks} words marked"
+    )
+    print(f"  Content-Security-Policy: {http.value_of(found.headers, name: "Content-Security-Policy")?}")
+    hostile = "<script>alert(1)</script> buns"
+    attacked = client.fetch(c, target: "/search?" + url.format_query([url.Pair(key: "q", value: hostile)]))?
+    page = html.parse(http.text_of(attacked)?)
+    box = html.attribute(page, html.select(page, html.ROOT, "input[name=q]")?, "value")?
+    print(
+        f"GET /search?q=<script>...: {attacked.status}, {html.elements_named(page, html.ROOT, "script").len()} script elements, the box holds {box}"
+    )
+    return ok()
+
+# Asks what the server must refuse, and prints how it refused.
+#
+# - `c`: the client.
+function refusals(c: client.Client) -> ()?
+    match client.search(c, query: "\"pearl sugar", mode: "keyword", limit: SHOWN)
+        .ok _  => print("search \"pearl sugar: answered, which it should not be")
+        .err e => print(f"search \"pearl sugar: {e.code}, {e.msg}")
+
+    match client.page(c, id: 999)
+        .ok _  => print("GET /api/pages/999: answered, which it should not be")
+        .err e => print(f"GET /api/pages/999: {e.code}, {e.msg}")
+
+    match client.search(c, query: "buns", mode: "fuzzy", limit: SHOWN)
+        .ok _  => print("search buns in mode fuzzy: answered, which it should not be")
+        .err e => print(f"search buns in mode fuzzy: {e.code}, {e.msg}")
+
+    nowhere = client.fetch(c, target: "/nowhere")?
+    print(f"GET /nowhere: {nowhere.status}")
+    posted = http.send(c.http, r: http.request(method: "POST", target: c.base + "/api/search")?)?
+    print(f"POST /api/search: {posted.status}, Allow {http.value_of(posted.headers, name: "Allow")?}")
+    first = client.fetch(c, target: "/api/stats")?
+    tag = http.value_of(first.headers, name: "ETag")?
+    again @= http.request(method: "GET", target: c.base + "/api/stats")?
+    again.headers @ http.with_header(again.headers, name: "If-None-Match", value: tag)
+    print(f"GET /api/stats with its ETag: {http.send(c.http, r: again)?.status}")
+    health = client.fetch(c, target: "/healthz")?
+    print(f"GET /healthz: {health.status} {strings.trim(http.text_of(health)?)}")
+    return ok()

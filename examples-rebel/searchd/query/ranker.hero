@@ -1,0 +1,261 @@
+# The order of the pages a query matches, by its words alone or by its
+# words and its vector together.
+#
+# By the words: each page the full-text index matches scores its BM25,
+# plus `TITLE_WEIGHT` times the BM25 of its title and headings for the
+# query's wanted words, and the sum is raised by up to `RANK_WEIGHT` of
+# itself by the page's PageRank against the site's highest, so of two pages
+# that say as much the one the site links to more comes first.
+#
+# Hybrid: the vector index's nearest pages to the query's vector are a
+# second order, kept to the pages the query's required words admit and
+# its refused words do not refuse, and to those within `MOST_DISTANCE` of
+# it; the two orders are fused by reciprocal rank fusion (Cormack, Clarke
+# and Büttcher, SIGIR 2009): a page scores `1 / (K + rank)` in each order it
+# stands in, with `K` 60 as the paper sets it. Fusing ranks and not scores
+# needs no scale that makes BM25 and a cosine comparable, which none does.
+# Pages of one score come by PageRank, then by number.
+
+use <rebel>/lists
+use <rebel>/search
+use <rebel>/vectors
+
+use index/embedder
+use index/engine
+use query/parse
+
+# How much a title's score weighs beside the full text's.
+constant TITLE_WEIGHT: f64
+    0.5
+
+# How much the PageRank raises a keyword score at most: the highest-ranked
+# page's score is raised by half.
+constant RANK_WEIGHT: f64
+    0.5
+
+# Reciprocal rank fusion's constant, the paper's 60.
+constant FUSION_K: f64
+    60.0
+
+# The farthest cosine distance a page may stand from a query's vector to be
+# a neighbour: a similarity of 0.1 or more. Measured on the demo's site at
+# 1024 components: "semla" stands at 0.163 from the page on semlor and 0.146
+# from the menu that names them, and at 0.090 from the recipe index, where
+# "Semlor" is one word of many, and from a pancake made of semolina, whose
+# only shared piece is ` sem`; the floor keeps the first two. It cuts no page that shares a piece with the
+# query, however little the piece means: a query of nonsense letters stood
+# at 0.252 from a page whose word begins with its ` z`, as vector search
+# finds the nearest of whatever it is given.
+constant MOST_DISTANCE: f32
+    0.9
+
+# The candidates the vector index's walk keeps, at least.
+constant WALK: i64
+    64
+
+# How a query is answered.
+variant Mode
+    # By its words alone.
+    keyword
+    # By its words and its vector, fused.
+    hybrid
+
+# A page in an order, and what put it there.
+record Scored
+    # The page's number.
+    id: i64
+    # Its score in the order; larger is better.
+    score: f64
+    # Its PageRank, which breaks a tie of scores.
+    rank: f64
+
+# The pages the query's required and refused parts let in.
+record Admission
+    # Whether the query requires something, so only `only` is let in.
+    restricted: bool
+    # The pages every required part admits.
+    only: {i64: bool}
+    # The pages a refused part keeps out.
+    kept_out: {i64: bool}
+
+# The mode `text` names: `keyword` or `hybrid`.
+#
+# - `text`: the name, as a request writes it.
+#
+# Fails `invalid` for any other text.
+function mode_named(text: str) -> Mode?
+    if text == "keyword"
+        return ok(.keyword)
+
+    if text == "hybrid"
+        return ok(.hybrid)
+
+    return fail(code: "invalid", msg: f"no mode \"{text}\"; keyword or hybrid")
+
+# The name of `mode`.
+#
+# - `mode`: the mode.
+function mode_name(mode: Mode) -> str
+    return match mode
+        .keyword => "keyword"
+        .hybrid  => "hybrid"
+
+# The pages `q`'s words match, the best first.
+#
+# - `e`: the engine.
+# - `q`: the query, its words folded and put right.
+#
+# Fails as `search.search` does.
+function keyword_order(e: engine.Engine lent, q: parse.Query) -> [Scored]?
+    if q.parts.len() == 0
+        return ok([])
+
+    every = search.size(e.full)
+    titled: {i64: f64} @= {}
+    wanted = parse.wanted(q)
+
+    if wanted != ""
+        for h in search.search(e.titles, query: wanted, limit: every)?
+            titled[h.id] @ h.score
+
+    top = highest_rank(e)
+    scored: [Scored] @= []
+
+    for h in search.search(e.full, query: parse.format(q), limit: every)?
+        rank = e.docs[h.id].rank
+        base = h.score + TITLE_WEIGHT * titled[h.id].default(0.0)
+        scored @ scored.push(Scored(id: h.id, score: base * (1.0 + RANK_WEIGHT * rank / top), rank: rank))
+
+    return ok(lists.sort_by(scored, less: better))
+
+# The pages nearest `q`'s vector that `q` admits, the nearest first, at
+# most `most`; their score is their cosine similarity.
+#
+# - `e`: the engine.
+# - `q`: the query.
+# - `most`: the most neighbours asked of the index.
+#
+# Fails as `vectors.search` and `search.search` do.
+function vector_order(e: engine.Engine lent, q: parse.Query, most: i64) -> [Scored]?
+    v = embedder.embed_words(e.embedder, words: parse.wanted_words(q))
+
+    if embedder.is_zero(v) || vectors.size(e.semantic) == 0
+        return ok([])
+
+    let_in = admission(e, q: q)?
+
+    walk = if most > WALK
+        most
+    else
+        WALK
+    found: [Scored] @= []
+
+    for n in vectors.search(e.semantic, query: v, limit: most, ef: walk)?
+        if n.distance <= MOST_DISTANCE && admits(let_in, id: n.id)
+            found @ found.push(Scored(id: n.id, score: to_f64(1.0 - n.distance), rank: e.docs[n.id].rank))
+
+    return ok(found)
+
+# The pages `q`'s required and refused parts let in.
+#
+# - `e`: the engine.
+# - `q`: the query.
+function admission(e: engine.Engine lent, q: parse.Query) -> Admission?
+    every = search.size(e.full)
+    required = parse.requirements(q)
+    only: {i64: bool} @= {}
+
+    if required != ""
+        for h in search.search(e.full, query: required, limit: every)?
+            only[h.id] @ true
+
+    kept_out: {i64: bool} @= {}
+    refused = parse.refusals(q)
+
+    if refused != ""
+        for h in search.search(e.full, query: refused, limit: every)?
+            kept_out[h.id] @ true
+
+    return ok(Admission(restricted: required != "", only: only, kept_out: kept_out))
+
+# Whether `a` lets the page `id` in.
+#
+# - `a`: the admission.
+# - `id`: the page's number.
+function admits(a: Admission lent, id: i64) -> bool
+    if a.kept_out[id].default(false)
+        return false
+
+    return !a.restricted || a.only[id].default(false)
+
+# The orders `words` and `nearest` fused by their ranks, the best first.
+#
+# - `words`: the keyword order.
+# - `nearest`: the vector order.
+function fused(words: [Scored], nearest: [Scored]) -> [Scored]
+    totals: {i64: Scored} @= {}
+
+    for list in [words, nearest]
+        for i in range(from: 0, to: list.len())
+            s = list[i]
+            share = 1.0 / (FUSION_K + to_f64(i + 1))
+            before = totals[s.id].default(Scored(id: s.id, score: 0.0, rank: s.rank))
+            totals[s.id] @ Scored(id: s.id, score: before.score + share, rank: s.rank)
+
+    merged: [Scored] @= []
+
+    for id in keys(totals)
+        merged @ merged.push(totals[id].must())
+
+    return lists.sort_by(merged, less: better)
+
+# Whether `a` comes before `b`: a higher score, then a higher PageRank, then
+# a smaller number.
+#
+# - `a`: a scored page.
+# - `b`: another.
+function better(a: Scored, b: Scored) -> bool
+    if a.score != b.score
+        return a.score > b.score
+
+    if a.rank != b.rank
+        return a.rank > b.rank
+
+    return a.id < b.id
+
+# The highest PageRank of the engine's pages; 1 where it holds none, so
+# that a share of it is always defined.
+#
+# - `e`: the engine.
+function highest_rank(e: engine.Engine lent) -> f64
+    top @= 0.0
+
+    for d in e.docs
+        if d.rank > top
+            top @ d.rank
+
+    if top == 0.0
+        return 1.0
+
+    return top
+
+test "fused: a page in both orders before a page in one, ties by rank then number"
+    words = [Scored(id: 1, score: 9.0, rank: 0.1), Scored(id: 2, score: 5.0, rank: 0.1)]
+    nearest = [Scored(id: 2, score: 0.9, rank: 0.1), Scored(id: 3, score: 0.8, rank: 0.5)]
+    got = fused(words: words, nearest: nearest)
+    assert got.len() == 3 && got[0].id == 2 && got[1].id == 1 && got[2].id == 3
+
+test "better: score, then rank, then number"
+    assert better(a: Scored(id: 5, score: 2.0, rank: 0.0), b: Scored(id: 1, score: 1.0, rank: 0.9))
+    assert better(a: Scored(id: 5, score: 1.0, rank: 0.9), b: Scored(id: 1, score: 1.0, rank: 0.1))
+    assert better(a: Scored(id: 1, score: 1.0, rank: 0.1), b: Scored(id: 5, score: 1.0, rank: 0.1))
+
+test "admits: required, refused, and nothing asked"
+    open = Admission(restricted: false, only: {}, kept_out: {3: true})
+    assert admits(open, id: 1) && !admits(open, id: 3)
+    narrow = Admission(restricted: true, only: {2: true}, kept_out: {})
+    assert admits(narrow, id: 2) && !admits(narrow, id: 1)
+
+test "mode_named: the two modes and another"
+    assert mode_name(mode_named("hybrid").must()) == "hybrid"
+    assert mode_named("fuzzy").is_err()

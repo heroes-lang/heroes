@@ -1,0 +1,282 @@
+# A site's `robots.txt` read into the rules that bind this crawler, by RFC
+# 9309 (the Robots Exclusion Protocol, 2022): which paths it may fetch.
+#
+# The file is groups: one or more `user-agent` lines, then the `allow` and
+# `disallow` rules that bind those agents. The crawler obeys the groups that
+# name its product token, compared in any case, all of them combined
+# (§ 2.2.1); only where none does, the groups of `*`. A path is matched
+# against every rule of those groups, `*` standing for any run of characters
+# and a final `$` for the path's end, and the rule with the longest pattern
+# decides, an `allow` winning a tie (§ 2.2.2). No rule matching allows the
+# path, and `/robots.txt` itself is always allowed (§ 2.2.2).
+#
+# A file that could not be fetched decides by its status (§ 2.3.1): a 4xx
+# means the site set no rule and every path is allowed; a 5xx, or no answer
+# at all, means the site could not say, and every path is refused until it
+# can. Lines past the first 500 kibibytes are not read (§ 2.5 asks a crawler
+# to read at least that much).
+
+use <rebel>/strings
+
+# The most bytes of a file read: RFC 9309 § 2.5's 500 kibibytes.
+constant MOST_BYTES: i64
+    512_000
+
+# One rule of a group.
+record Rule
+    # Whether a match allows the path, else it refuses it.
+    allow: bool
+    # The pattern as written, `*` and `$` with their meaning.
+    pattern: str
+
+# The rules that bind one crawler, read from one site's file.
+record Robots
+    # The rules of the groups that name the crawler, or of `*` where none
+    # does, in the order the file writes them.
+    rules: [Rule]
+    # Whether every path is refused, because the file could not be read.
+    refuse_all: bool
+    # Which groups bound the crawler: its own token, `*`, or "" where the
+    # file names neither, which leaves every path allowed.
+    group: str
+    # How many groups the file holds, whoever they name.
+    groups: i64
+    # The `sitemap` lines, as written.
+    sitemaps: [str]
+
+# A group as the file is read: its agents and its rules.
+record Group
+    # The product tokens its `user-agent` lines name, in lower case.
+    agents: [str]
+    # Its rules, in order.
+    rules: [Rule]
+
+# The rules of a site that has no file: every path allowed.
+function allow_all() -> Robots
+    return Robots(rules: [], refuse_all: false, group: "", groups: 0, sitemaps: [])
+
+# The rules of a site whose file could not be read: every path refused.
+function refuse_all() -> Robots
+    return Robots(rules: [], refuse_all: true, group: "", groups: 0, sitemaps: [])
+
+# The rules `text` sets for the crawler whose product token is `token`.
+#
+# - `text`: the file's text, any text; lines that are not `key: value` are
+#   skipped, as § 2.2 asks of a line a crawler cannot read.
+# - `token`: the crawler's product token, `searchd`, compared in any case.
+function parse(text: str, token: str) -> Robots
+    groups: [Group] @= []
+    agents: [str] @= []
+    rules: [Rule] @= []
+    in_rules @= false
+    sitemaps: [str] @= []
+
+    read = if text.len() > MOST_BYTES
+        text.slice(from: 0, to: strings.floor_boundary(text, at: MOST_BYTES))
+    else
+        text
+
+    for raw in strings.lines(read)
+        line = strings.trim(without_comment(raw))
+
+        match strings.split_once(s: line, sep: ":")
+            .ok halves =>
+                key = strings.to_lower_ascii(strings.trim(halves.before))
+                value = strings.trim(halves.after)
+
+                if key == "user-agent"
+                    if in_rules
+                        groups @ groups.push(Group(agents: agents, rules: rules))
+                        agents @ []
+                        rules @ []
+                        in_rules @ false
+
+                    agents @ agents.push(product_token(value))
+                else if key == "allow" || key == "disallow"
+                    if agents.len() > 0 && value != ""
+                        rules @ rules.push(Rule(allow: key == "allow", pattern: value))
+
+                    if agents.len() > 0
+                        in_rules @ true
+                else if key == "sitemap"
+                    sitemaps @ sitemaps.push(value)
+            .err _ => _ = 0
+
+    if agents.len() > 0
+        groups @ groups.push(Group(agents: agents, rules: rules))
+
+    own = strings.to_lower_ascii(token)
+    mine = rules_for(groups, agent: own)
+
+    if mine.len() > 0 || names_agent(groups, agent: own)
+        return Robots(rules: mine, refuse_all: false, group: own, groups: groups.len(), sitemaps: sitemaps)
+
+    if names_agent(groups, agent: "*")
+        return Robots(
+            rules: rules_for(groups, agent: "*"),
+            refuse_all: false,
+            group: "*",
+            groups: groups.len(),
+            sitemaps: sitemaps
+        )
+
+    return Robots(rules: [], refuse_all: false, group: "", groups: groups.len(), sitemaps: sitemaps)
+
+# `line` without the comment a `#` opens.
+#
+# - `line`: one line of the file.
+function without_comment(line: str) -> str
+    return match strings.index_of(s: line, substr: "#")
+        .ok at => line.slice(from: 0, to: at)
+        .err _ => line
+
+# The product token of a `user-agent` value, in lower case: the name before
+# a `/` and its version, `searchd` of `searchd/0.1`.
+#
+# - `value`: the value as written.
+function product_token(value: str) -> str
+    name = match strings.index_of(s: value, substr: "/")
+        .ok at => value.slice(from: 0, to: at)
+        .err _ => value
+
+    return strings.to_lower_ascii(strings.trim(name))
+
+# Whether some group of `groups` names `agent`.
+#
+# - `groups`: the file's groups.
+# - `agent`: a product token in lower case, or `*`.
+function names_agent(groups: [Group], agent: str) -> bool
+    for g in groups
+        for a in g.agents
+            if a == agent
+                return true
+
+    return false
+
+# The rules of every group that names `agent`, combined in the file's order.
+#
+# - `groups`: the file's groups.
+# - `agent`: a product token in lower case, or `*`.
+function rules_for(groups: [Group], agent: str) -> [Rule]
+    found: [Rule] @= []
+
+    for g in groups
+        named @= false
+
+        for a in g.agents
+            if a == agent
+                named @ true
+
+        if named
+            for r in g.rules
+                found @ found.push(r)
+
+    return found
+
+# Whether `robots` lets the crawler fetch `target`.
+#
+# - `robots`: the rules.
+# - `target`: the path and the query, as a request's first line names them:
+#   `/recipes/?page=2`.
+function allows(robots: Robots, target: str) -> bool
+    if target == "/robots.txt"
+        return true
+
+    if robots.refuse_all
+        return false
+
+    best @= -1
+    allowed @= true
+
+    for r in robots.rules
+        if r.pattern.len() >= best && matches(pattern: r.pattern, path: target)
+            if r.pattern.len() > best || r.allow
+                allowed @ r.allow
+
+            best @ r.pattern.len()
+
+    return allowed
+
+# Whether `pattern` matches `path` as RFC 9309 § 2.2.3 reads a pattern: from
+# the path's first byte, `*` any run of bytes, a `$` at the end the path's
+# end, and otherwise any rest of the path.
+#
+# - `pattern`: the rule's pattern.
+# - `path`: the path and query.
+function matches(pattern: str, path: str) -> bool
+    if strings.has_suffix(s: pattern, suffix: "$")
+        return wildcard(pattern: pattern.slice(from: 0, to: pattern.len() - 1), text: path)
+
+    return wildcard(pattern: pattern + "*", text: path)
+
+# Whether `pattern`, where `*` is any run of bytes, matches the whole of
+# `text`. It walks both once, going back only to the last `*`, so it costs
+# at most the product of their lengths and never recurses.
+#
+# - `pattern`: the pattern.
+# - `text`: the text.
+function wildcard(pattern: str, text: str) -> bool
+    p @= 0
+    t @= 0
+    star @= -1
+    resume @= 0
+
+    while t < text.len()
+        if p < pattern.len() && pattern[p] == '*'
+            star @ p
+            resume @ t
+            p @ p + 1
+        else if p < pattern.len() && pattern[p] == text[t]
+            p @ p + 1
+            t @ t + 1
+        else if star >= 0
+            p @ star + 1
+            resume @ resume + 1
+            t @ resume
+        else
+            return false
+
+    while p < pattern.len() && pattern[p] == '*'
+        p @ p + 1
+
+    return p == pattern.len()
+
+test "parse: the crawler's own group wins over the group of every agent"
+    text = "User-agent: *\nDisallow: /\n\nUser-agent: Searchd/2.0\nUser-agent: other\nDisallow: /drafts/ # unfinished\nAllow: /drafts/menu\n\nSitemap: https://h/sitemap.xml\n"
+    r = parse(text: text, token: "searchd")
+    assert r.group == "searchd" && r.groups == 2 && r.rules.len() == 2
+    assert r.sitemaps == ["https://h/sitemap.xml"]
+    assert allows(r, target: "/recipes/") && !allows(r, target: "/drafts/old") && allows(r, target: "/drafts/menu")
+
+test "parse: no group names the crawler, so the group of every agent binds it"
+    r = parse(text: "user-agent: *\ndisallow: /search\n", token: "searchd")
+    assert r.group == "*" && !allows(r, target: "/search?q=buns") && allows(r, target: "/")
+
+test "parse: an empty file, a file of other agents, and an empty disallow allow everything"
+    assert allows(parse(text: "", token: "searchd"), target: "/a")
+    assert allows(parse(text: "User-agent: badbot\nDisallow: /\n", token: "searchd"), target: "/a")
+    assert allows(parse(text: "User-agent: *\nDisallow:\n", token: "searchd"), target: "/a")
+
+test "allows: the longest pattern decides, an allow winning a tie"
+    r = Robots(
+        rules: [Rule(allow: false, pattern: "/a"), Rule(allow: true, pattern: "/a/b"), Rule(allow: false, pattern: "/a/b/c"), Rule(allow: true, pattern: "/x"), Rule(allow: false, pattern: "/x")],
+        refuse_all: false,
+        group: "*",
+        groups: 1,
+        sitemaps: []
+    )
+    assert !allows(r, target: "/a/z") && allows(r, target: "/a/b/z") && !allows(r, target: "/a/b/c")
+    assert allows(r, target: "/x")
+
+test "allows: a file that could not be read refuses everything but itself"
+    assert !allows(refuse_all(), target: "/") && allows(refuse_all(), target: "/robots.txt")
+    assert allows(allow_all(), target: "/anything")
+
+test "matches: a star, an end, and a prefix"
+    assert matches(pattern: "/*.pdf$", path: "/files/menu.pdf")
+    assert !matches(pattern: "/*.pdf$", path: "/files/menu.pdf?x=1")
+    assert matches(pattern: "/files", path: "/files/menu.pdf")
+    assert matches(pattern: "/*/menu", path: "/files/menu.pdf")
+    assert !matches(pattern: "/menu", path: "/files/menu")
+    assert matches(pattern: "*", path: "")
+    assert !matches(pattern: "/a$", path: "/ab")

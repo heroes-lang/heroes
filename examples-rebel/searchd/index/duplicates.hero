@@ -1,0 +1,146 @@
+# Pages that say nearly the same thing, gathered so that a result list
+# shows one of them: a print version, a page copied into an old blog post,
+# the same text under two URLs.
+#
+# Each page gets a fingerprint of 64 bits by Charikar's SimHash: every run of
+# three words of its text is hashed to 64 bits, each bit adds one to its
+# component of a vector where it is set and takes one away where it is not,
+# and the fingerprint is the signs of the sums (`vectors.quantize_binary`).
+# Texts that share most of their runs share most of their bits, so two
+# pages are near-duplicates where their fingerprints differ in at most a
+# few bits; Manku, Jain and Das Sarma (WWW 2007) found 3 of 64 right for the
+# pages of a web crawl, the settings' default. Being a near-duplicate is
+# carried along chains, so the groups are the sets union-find
+# (`containers/disjoint`) makes of every such pair.
+
+use <rebel>/containers/disjoint
+use <rebel>/hash
+use <rebel>/search
+use <rebel>/vectors
+
+# How many words make one run.
+constant RUN: i64
+    3
+
+# The fingerprint of `text`: 8 bytes, the first bit the highest of the first
+# byte. A text of fewer than `RUN` words is fingerprinted by its words alone;
+# the empty text's is all zeros.
+#
+# - `text`: the text, in the folded form the indexes hold.
+function fingerprint(text: str) -> [u8]
+    words = search.terms(text, stop_words: [])
+    runs: [str] @= []
+
+    if words.len() < RUN
+        runs @ words
+    else
+        for at in range(from: 0, to: words.len() - RUN + 1)
+            runs @ runs.push(words.slice(from: at, to: at + RUN).join(" "))
+
+    sums: [f32] @= []
+
+    for _ in range(from: 0, to: 64)
+        sums @ sums.push(0.0)
+
+    if runs.len() == 0
+        return vectors.quantize_binary(sums)
+
+    for r in runs
+        # A hash of 32 bits always fits an `i64`, where the bits are read.
+        high = to_i64(hash.xxh32_text(r, seed: 0)).must()
+        low = to_i64(hash.xxh32_text(r, seed: 1)).must()
+
+        for bit in range(from: 0, to: 32)
+            sums[bit] @ sums[bit] + vote(h: high, bit: bit)
+            sums[32 + bit] @ sums[32 + bit] + vote(h: low, bit: bit)
+
+    return vectors.quantize_binary(sums)
+
+# One for a set bit of `h`, minus one for a clear one.
+#
+# - `h`: a hash of 32 bits.
+# - `bit`: the bit asked, 0 to 31 from the highest.
+function vote(h: i64, bit: i64) -> f32
+    if h >> 31 - bit & 1 == 1
+        return 1.0
+
+    return -1.0
+
+# For every page, the smallest number of the group of near-duplicates it
+# stands in: its own where it has none. A page whose canonical link names
+# another page joins that page's group whatever their fingerprints say,
+# since the site itself says the two are one.
+#
+# - `prints`: each page's fingerprint, by its number from 0; an empty one
+#   stands for a page left out, which joins no group by its fingerprint.
+# - `most_bits`: the most bits two fingerprints may differ in, 0 to 64.
+# - `canonical`: for each page, the number of the page its canonical link
+#   names, or -1 where it names none or a page not in the list.
+function groups(prints: [[u8]], most_bits: i64, canonical: [i64]) -> [i64]
+    sets @= disjoint.new(prints.len())
+
+    for at in range(from: 0, to: canonical.len())
+        named = canonical[at]
+
+        if named >= 0 && named < prints.len() && at < prints.len()
+            _ = disjoint.merge(@sets, a: at, b: named)
+
+    for a in range(from: 0, to: prints.len())
+        for b in range(from: a + 1, to: prints.len())
+            if prints[a].len() > 0 && prints[b].len() > 0
+                match vectors.hamming_distance(a: prints[a], b: prints[b])
+                    .ok bits =>
+                        if bits <= most_bits
+                            _ = disjoint.merge(@sets, a: a, b: b)
+                    .err _ => _ = 0
+
+    return disjoint.to_labels(sets)
+
+# The groups of `labels` that hold more than one page, each its pages'
+# numbers in increasing order, the groups in the order of their smallest.
+#
+# - `labels`: each page's group, as `groups` answers.
+function clusters(labels: [i64]) -> [[i64]]
+    members: {i64: [i64]} @= {}
+
+    for at in range(from: 0, to: labels.len())
+        label = labels[at]
+        held = members[label].default([])
+        members[label] @ held.push(at)
+
+    found: [[i64]] @= []
+
+    for label in sort(keys(members))
+        group = members[label].must()
+
+        if group.len() > 1
+            found @ found.push(group)
+
+    return found
+
+test "fingerprint: a text and its copy with one word changed are near, another text far"
+    recipe = "warm the milk with the butter, add the yeast, the sugar, the cardamom and the flour, knead the dough until smooth and let it rise for an hour under a cloth in a warm place"
+    copy = "warm the milk with the butter, add the yeast, the sugar, the cardamom and the flour, knead the dough until smooth and let it rise for two hours under a cloth in a warm place"
+    other = "melt the chocolate over water, stir in the eggs one at a time, fold in the flour and bake in a shallow tin until the middle is still soft"
+    near = vectors.hamming_distance(a: fingerprint(recipe), b: fingerprint(copy)).must()
+    far = vectors.hamming_distance(a: fingerprint(recipe), b: fingerprint(other)).must()
+    assert near < far && fingerprint(recipe).len() == 8
+
+test "fingerprint: short and empty texts"
+    assert fingerprint("") == [0, 0, 0, 0, 0, 0, 0, 0]
+    assert fingerprint("fika") == fingerprint("FIKA")
+
+test "groups: a chain of near pages is one group, a page left out is alone"
+    a: [u8] = [0, 0, 0, 0, 0, 0, 0, 0]
+    b: [u8] = [1, 0, 0, 0, 0, 0, 0, 0]
+    c: [u8] = [3, 0, 0, 0, 0, 0, 0, 0]
+    far: [u8] = [255, 255, 255, 255, 0, 0, 0, 0]
+    labels = groups([c, far, a, [], b], most_bits: 1, canonical: [-1, -1, -1, -1, -1])
+    assert labels == [0, 1, 0, 3, 0]
+    assert clusters(labels) == [[0, 2, 4]]
+
+test "groups: a canonical link joins two pages whatever their fingerprints"
+    a: [u8] = [0, 0, 0, 0, 0, 0, 0, 0]
+    far: [u8] = [255, 255, 255, 255, 255, 255, 255, 255]
+    assert groups([a, far, a], most_bits: 0, canonical: [-1, 0, -1]) == [0, 0, 0]
+    assert groups([a, far], most_bits: 0, canonical: [-1, 7]) == [0, 1]

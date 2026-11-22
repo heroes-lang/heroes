@@ -1,0 +1,318 @@
+# What a fetched page says, read as a browser reads it: its title, its
+# description, its language, the canonical URL it names, what its robots
+# meta tag allows, every link it holds, its headings and its text.
+#
+# The text is what a reader of the page reads, and nothing a reader does
+# not: the body is cleaned by an allow-list policy of `html/sanitize` that
+# keeps text and the elements that part it into blocks, and drops scripts,
+# styles, navigation, headers, footers and forms with what they hold. A
+# site's menu and its footer stand on every page, so left in they would make
+# every page match the words of the menu; a script's text is code, and its
+# words are not the page's. The blocks are kept so that two list items or
+# two paragraphs never run together into one word.
+
+use <rebel>/html
+use <rebel>/html/sanitize
+use <rebel>/strings
+use <rebel>/url
+
+use crawl/frontier
+
+# The elements whose ends part a text into blocks, kept by the cleaning so
+# that the words on either side of them stay apart.
+constant BLOCKS: [str]
+    [
+        "address"
+        "article"
+        "blockquote"
+        "br"
+        "dd"
+        "div"
+        "dl"
+        "dt"
+        "figcaption"
+        "figure"
+        "h1"
+        "h2"
+        "h3"
+        "h4"
+        "h5"
+        "h6"
+        "hr"
+        "li"
+        "main"
+        "ol"
+        "p"
+        "pre"
+        "section"
+        "table"
+        "tbody"
+        "td"
+        "th"
+        "thead"
+        "tr"
+        "ul"
+    ]
+
+# The elements a page repeats around its text, dropped with what they hold.
+constant BOILERPLATE: [str]
+    ["aside", "button", "footer", "form", "header", "nav", "select", "textarea"]
+
+# A link of a page.
+record Link
+    # The URL it names, in the frontier's normal form.
+    url: str
+    # Whether the page asks that it not be followed, `rel="nofollow"`.
+    nofollow: bool
+
+# What a page says.
+record Extracted
+    # The title, its white space collapsed: the `title` element's, else the
+    # first `h1`'s, else "".
+    title: str
+    # The `description` meta tag's content, "" where it has none.
+    description: str
+    # The `lang` of its `html` element, "" where it names none.
+    language: str
+    # The URL its `link rel="canonical"` names, in normal form; "" where none.
+    canonical: str
+    # Whether its robots meta tag lets it be indexed.
+    index: bool
+    # Whether its robots meta tag lets its links be followed.
+    follow: bool
+    # Its `http` and `https` links, each once, in the order the page writes
+    # them first.
+    links: [Link]
+    # The text of its `h1`, `h2` and `h3` headings, in order.
+    headings: [str]
+    # Its text, one block a line.
+    text: str
+
+# The policy the body's text is cleaned by: text and its blocks kept,
+# boilerplate dropped with what it holds, and every other element unwrapped,
+# its text kept.
+function reading_policy() -> sanitize.Policy
+    policy @= sanitize.strict_policy()
+    sanitize.allow_elements(@policy, BLOCKS)
+    sanitize.remove_elements(@policy, names: BOILERPLATE, how: .drop)
+    return policy
+
+# What the page at `page` says, its body `body`.
+#
+# - `page`: the page's own URL, in normal form; its links are read against
+#   it, or against its `base` element where it has one.
+# - `body`: the page's HTML, any text at all.
+# - `agent`: the crawler's product token, `searchd`; a meta tag named so
+#   binds it as one named `robots` does.
+# - `trackers`: the query keys a link loses.
+function extract(page: url.Url, body: str, agent: str, trackers: [str]) -> Extracted
+    doc = html.parse(body)
+    base = base_of(doc, page: page, trackers: trackers)
+    rules = robots_of(doc, agent: agent)
+    cleaned = cleaned_body(doc)
+    title = title_of(doc: doc, cleaned: cleaned)
+
+    language = match html.element_named(doc, html.ROOT, "html")
+        .ok node => html.attribute(doc, node, "lang").default("")
+        .err _   => ""
+
+    return Extracted(
+        title: title,
+        description: collapsed(meta_named(doc, name: "description")),
+        language: language,
+        canonical: canonical_of(doc, base: base, trackers: trackers),
+        index: !strings.contains(s: rules, substr: "noindex") && !strings.contains(s: rules, substr: "none"),
+        follow: !strings.contains(s: rules, substr: "nofollow") && !strings.contains(s: rules, substr: "none"),
+        links: links_of(doc, base: base, trackers: trackers),
+        headings: headings_of(cleaned),
+        text: html.stripped_texts_of(cleaned, html.ROOT).join("\n")
+    )
+
+# The body of `doc` cleaned by `reading_policy`, as a fragment.
+#
+# - `doc`: the page.
+function cleaned_body(doc: html.Document) -> html.Document
+    inner = match html.element_named(doc, html.ROOT, "body")
+        .ok node => html.format_inner(doc, node)
+        .err _   => ""
+
+    return sanitize.clean_fragment(reading_policy(), text: inner)
+
+# `s` with its runs of white space made one space and its ends trimmed.
+#
+# - `s`: any text.
+function collapsed(s: str) -> str
+    return strings.words(s).join(" ")
+
+# The page's title: its `title` element's text, else its first `h1`'s.
+#
+# - `doc`: the page.
+# - `cleaned`: its cleaned body, where the `h1` is looked for.
+function title_of(doc: html.Document, cleaned: html.Document) -> str
+    from_title = match html.element_named(doc, html.ROOT, "title")
+        .ok node => collapsed(html.text_of(doc, node))
+        .err _   => ""
+
+    if from_title != ""
+        return from_title
+
+    return match html.element_named(cleaned, html.ROOT, "h1")
+        .ok node => collapsed(html.text_of(cleaned, node))
+        .err _   => ""
+
+# The content of the first `meta` element named `name`, in any case; "" where
+# there is none.
+#
+# - `doc`: the page.
+# - `name`: the meta tag's name.
+function meta_named(doc: html.Document, name: str) -> str
+    for node in html.elements_named(doc, html.ROOT, "meta")
+        named = html.attribute(doc, node, "name").default("")
+
+        if strings.to_lower_ascii(strings.trim(named)) == name
+            return html.attribute(doc, node, "content").default("")
+
+    return ""
+
+# The words of the robots meta tags that bind this crawler, in lower case:
+# those named `robots` and those named for `agent`, joined.
+#
+# - `doc`: the page.
+# - `agent`: the crawler's product token.
+function robots_of(doc: html.Document, agent: str) -> str
+    general = meta_named(doc, name: "robots")
+    own = meta_named(doc, name: strings.to_lower_ascii(agent))
+    return strings.to_lower_ascii(general + "," + own)
+
+# The URL the page's links are read against: its `base` element's `href`,
+# read against the page, or the page itself.
+#
+# - `doc`: the page.
+# - `page`: the page's URL.
+# - `trackers`: the query keys a URL loses.
+function base_of(doc: html.Document, page: url.Url, trackers: [str]) -> url.Url
+    node = match html.element_named(doc, html.ROOT, "base")
+        .ok got => got
+        .err _  => return page
+
+    href = match html.attribute(doc, node, "href")
+        .ok got => got
+        .err _  => return page
+
+    return frontier.resolve(page, href: href, trackers: trackers).default(page)
+
+# The canonical URL a `link` element names, in normal form; "" where none
+# does or its URL does not read.
+#
+# - `doc`: the page.
+# - `base`: the URL links are read against.
+# - `trackers`: the query keys a URL loses.
+function canonical_of(doc: html.Document, base: url.Url, trackers: [str]) -> str
+    for node in html.elements_named(doc, html.ROOT, "link")
+        if has_token(list: html.attribute(doc, node, "rel").default(""), token: "canonical")
+            href = html.attribute(doc, node, "href").default("")
+
+            match frontier.resolve(base, href: href, trackers: trackers)
+                .ok u  => return url.format(u)
+                .err _ => return ""
+
+    return ""
+
+# Whether the white-space-separated list `list` holds `token`, in any ASCII
+# case, as HTML reads `rel`.
+#
+# - `list`: the attribute's value.
+# - `token`: the token asked about, in lower case.
+function has_token(list: str, token: str) -> bool
+    for word in strings.words(list)
+        if strings.to_lower_ascii(word) == token
+            return true
+
+    return false
+
+# Every `a` and `area` link of the page, read against `base`, each URL once
+# in the order first written; a link that does not read or is of another
+# scheme than `http` and `https` is left out.
+#
+# - `doc`: the page.
+# - `base`: the URL links are read against.
+# - `trackers`: the query keys a URL loses.
+function links_of(doc: html.Document, base: url.Url, trackers: [str]) -> [Link]
+    found: [Link] @= []
+    seen: {str: bool} @= {}
+
+    for node in html.descendants(doc, html.ROOT)
+        if html.is_named(doc, node, "a") || html.is_named(doc, node, "area")
+            match html.attribute(doc, node, "href")
+                .ok href =>
+                    match frontier.resolve(base, href: href, trackers: trackers)
+                        .ok u =>
+                            text = url.format(u)
+
+                            if !seen[text].default(false)
+                                seen[text] @ true
+                                nofollow = has_token(
+                                    list: html.attribute(doc, node, "rel").default(""),
+                                    token: "nofollow"
+                                )
+                                found @ found.push(Link(url: text, nofollow: nofollow))
+                        .err _ => _ = 0
+                .err _ => _ = 0
+
+    return found
+
+# The text of each `h1`, `h2` and `h3` of the cleaned body, in order, its
+# white space collapsed; an empty heading left out.
+#
+# - `cleaned`: the cleaned body.
+function headings_of(cleaned: html.Document) -> [str]
+    found: [str] @= []
+
+    for node in html.descendants(cleaned, html.ROOT)
+        if html.is_named(cleaned, node, "h1") || html.is_named(cleaned, node, "h2") || html.is_named(cleaned, node, "h3")
+            text = collapsed(html.text_of(cleaned, node))
+
+            if text != ""
+                found @ found.push(text)
+
+    return found
+
+test "extract: a page's title, meta tags, links and cleaned text"
+    page = url.parse("http://h/recipes/semlor").must()
+    body = [
+        "<!DOCTYPE html><html lang=\"en\"><head><title> Semlor \n</title>"
+        "<meta name=\"description\" content=\"Buns for  Fat Tuesday\">"
+        "<link rel=\"canonical stylesheet\" href=\"/recipes/semlor?utm_source=x\">"
+        "<script>var words = \"almond cream\";</script><style>p { color: red }</style></head>"
+        "<body><nav><a href=\"/\">Home</a></nav><h1>Semlor</h1><p>Cardamom <b>buns</b></p>"
+        "<ul><li>almond</li><li>cream</li></ul>"
+        "<a href=\"kladdkaka#top\">Next</a> <a rel=\"nofollow\" href=\"/login\">Sign in</a> <a href=\"mailto:a@h\">Mail</a>"
+        "<footer>Fika Notes</footer></body></html>"
+    ]
+    e = extract(page, body: body.join(""), agent: "searchd", trackers: ["utm_source"])
+    assert e.title == "Semlor" && e.description == "Buns for Fat Tuesday" && e.language == "en"
+    assert e.canonical == "http://h/recipes/semlor" && e.index && e.follow
+    assert e.links == [Link(url: "http://h/", nofollow: false), Link(url: "http://h/recipes/kladdkaka", nofollow: false), Link(url: "http://h/login", nofollow: true)]
+    assert e.headings == ["Semlor"]
+    assert e.text == "Semlor\nCardamom buns\nalmond\ncream\nNext Sign in Mail"
+
+test "extract: a robots meta tag for every crawler and one for this one"
+    page = url.parse("http://h/a").must()
+    noindex = extract(page, body: "<meta name=\"ROBOTS\" content=\"NoIndex\"><p>x", agent: "searchd", trackers: [])
+    assert !noindex.index && noindex.follow
+    none = extract(page, body: "<meta name=\"searchd\" content=\"none\"><p>x", agent: "searchd", trackers: [])
+    assert !none.index && !none.follow
+    other = extract(page, body: "<meta name=\"otherbot\" content=\"noindex\"><p>x", agent: "searchd", trackers: [])
+    assert other.index
+
+test "extract: a base element, a title from the first heading, and an empty page"
+    page = url.parse("http://h/a/b").must()
+    e = extract(
+        page,
+        body: "<base href=\"/c/\"><h1>  Proving  dough </h1><a href=\"d\">d</a>",
+        agent: "searchd",
+        trackers: []
+    )
+    assert e.title == "Proving dough" && e.links == [Link(url: "http://h/c/d", nofollow: false)]
+    empty = extract(page, body: "", agent: "searchd", trackers: [])
+    assert empty.title == "" && empty.text == "" && empty.links == [] && empty.canonical == ""

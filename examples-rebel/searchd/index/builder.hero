@@ -1,0 +1,197 @@
+# A crawl made into an engine: every page numbered in the crawl's order,
+# its links resolved into the site's graph, its PageRank and click depth
+# computed, its near-duplicates grouped, and every page whose robots meta
+# tag allows it put into the two full-text indexes and the vector index.
+#
+# Every text is folded by `text/folding` before an index sees it, as every
+# query is before it is searched, so the two always meet in one form. The
+# text that is kept for snippets is the page's own, never the folded one.
+
+use <rebel>/search
+use <rebel>/vectors
+
+use app/settings
+use crawl/frontier
+use crawl/store
+use index/duplicates
+use index/embedder
+use index/engine
+use index/links
+use index/pagerank
+use text/folding
+
+# The engine of `crawl`, made with `s`'s folding, vector length and
+# near-duplicate distance.
+#
+# - `crawl`: what a crawl found.
+# - `s`: the settings.
+#
+# Fails `invalid` where an index refuses a setting, as `search.new_index`
+# and `vectors.new_index` do.
+function build(crawl: store.Crawl, s: settings.Settings) -> engine.Engine?
+    pages = crawl.pages
+    urls: [str] @= []
+    out: [[str]] @= []
+
+    for p in pages
+        urls @ urls.push(p.url)
+        out @ out.push(p.links)
+
+    graph = links.of_pages(urls, links: out, moved: crawl.redirects)
+    ranked = pagerank.rank(graph.links)
+    start = number_of(urls, address: links.landing(crawl.start, moved: crawl.redirects)).default(0)
+    depths = links.depths(graph, start: start)
+    labels = duplicates.groups(
+        fingerprints(pages, marks: s.fold_marks),
+        most_bits: s.duplicate_bits,
+        canonical: canonical_numbers(pages, urls: urls)
+    )
+    docs: [engine.Doc] @= []
+
+    for i in range(from: 0, to: pages.len())
+        p = pages[i]
+        entry = engine.Doc(
+            id: i,
+            url: p.url,
+            path: frontier.path_of(p.url),
+            title: p.title,
+            description: p.description,
+            language: p.language,
+            canonical: p.canonical,
+            headings: p.headings,
+            text: p.text,
+            indexed: p.index,
+            links: graph.links[i],
+            inbound: graph.inbound[i],
+            rank: ranked.ranks[i],
+            depth: depths[i],
+            group: labels[i]
+        )
+        docs @ docs.push(entry)
+
+    full @= search.new_index(search.default_options())?
+    titles @= search.new_index(search.default_options())?
+    plain = embedder.new(s.dimension)
+    features: [{i64: f64}] @= []
+    counted: [{i64: f64}] @= []
+
+    for d in docs
+        if d.indexed
+            f = embedder.features_of(plain, words: folding.terms_of(d.title + "\n" + d.text, marks: s.fold_marks))
+            features @ features.push(f)
+            counted @ counted.push(f)
+        else
+            features @ features.push({})
+
+    maker = embedder.with_counts(plain, holding: embedder.pages_holding(counted), pages: counted.len())
+    semantic @= vectors.new_index(dimension: s.dimension, metric: .cosine, options: vectors.default_options())?
+
+    for d in docs
+        if d.indexed
+            search.insert(@full, id: d.id, text: folding.folded(full_text(d), marks: s.fold_marks))?
+            search.insert(@titles, id: d.id, text: folding.folded(title_text(d), marks: s.fold_marks))?
+            v = embedder.vector_of(maker, features: features[d.id])
+
+            if !embedder.is_zero(v)
+                vectors.insert(@semantic, id: d.id, vector: v)?
+
+    meta = engine.Meta(
+        fold_marks: s.fold_marks,
+        language: s.language,
+        start: start,
+        rounds: ranked.rounds,
+        holding: maker.holding,
+        counted: maker.pages
+    )
+    return ok(engine.assemble(docs, full: full, titles: titles, semantic: semantic, meta: meta))
+
+# What the full-text index holds of a page: its title, its description and
+# its text, one to a line.
+#
+# - `d`: the page.
+function full_text(d: engine.Doc) -> str
+    return [d.title, d.description, d.text].join("\n")
+
+# What the titles' index holds of a page: its title and its headings.
+#
+# - `d`: the page.
+function title_text(d: engine.Doc) -> str
+    parts: [str] @= [d.title]
+
+    for h in d.headings
+        parts @ parts.push(h)
+
+    return parts.join("\n")
+
+# The place of `address` in `urls`.
+#
+# - `urls`: the pages' URLs.
+# - `address`: the URL looked for.
+#
+# Fails `not_found` where `urls` does not hold it.
+function number_of(urls: [str], address: str) -> i64?
+    for i in range(from: 0, to: urls.len())
+        if urls[i] == address
+            return ok(i)
+
+    return fail(code: "not_found", msg: f"no page at {address}")
+
+# Each page's near-duplicate fingerprint; empty for a page the index does
+# not hold, which joins no group by its text.
+#
+# - `pages`: the pages.
+# - `marks`: whether marks are dropped from the folded text.
+function fingerprints(pages: [store.Page], marks: bool) -> [[u8]]
+    prints: [[u8]] @= []
+
+    for p in pages
+        if p.index
+            prints @ prints.push(duplicates.fingerprint(folding.folded(p.text, marks: marks)))
+        else
+            prints @ prints.push([])
+
+    return prints
+
+# For each page, the number of the page its canonical link names, -1 where
+# it names none, itself, or a page the crawl did not fetch.
+#
+# - `pages`: the pages.
+# - `urls`: their URLs, by number.
+function canonical_numbers(pages: [store.Page], urls: [str]) -> [i64]
+    found: [i64] @= []
+
+    for i in range(from: 0, to: pages.len())
+        named = number_of(urls, address: pages[i].canonical).default(-1)
+
+        if named == i
+            found @ found.push(-1)
+        else
+            found @ found.push(named)
+
+    return found
+
+test "canonical_numbers: a page naming another, itself, and nothing fetched"
+    p = store.Page(
+        url: "",
+        depth: 0,
+        title: "",
+        description: "",
+        language: "",
+        canonical: "",
+        index: true,
+        links: [],
+        headings: [],
+        text: ""
+    )
+    a @= p
+    a.url @ "/a"
+    b @= p
+    b.url @ "/b"
+    b.canonical @ "/a"
+    c @= p
+    c.url @ "/c"
+    c.canonical @ "/c"
+    d @= p
+    d.url @ "/d"
+    d.canonical @ "/elsewhere"
+    assert canonical_numbers([a, b, c, d], urls: ["/a", "/b", "/c", "/d"]) == [-1, 0, -1, -1]

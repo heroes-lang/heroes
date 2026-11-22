@@ -1,0 +1,133 @@
+# The stand-in of a website, Fika Notes, served on loopback so the demo has
+# a real site to crawl over real HTTP and nothing outside the machine: its
+# pages, its `robots.txt`, a redirect, an image, a PDF, and a 404 for a page
+# that is not there, answered as a web server answers them.
+#
+# It serves one connection at a time on its own loop, keeping what it was
+# asked: how many requests, and which `User-Agent` sent them, so the demo
+# can say the crawler named itself on every request as a polite crawler
+# must. It stops when the demo's driver posts to `STOP_PATH`, a path no page
+# links to, or where no connection comes for `QUIET_MS`, so a crawler that
+# died never leaves it waiting for ever.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+
+use standins/site_pages
+
+# The path whose `POST` stops the site.
+constant STOP_PATH: str
+    "/_standin/stop"
+
+# How long the site waits for a connection before it gives up, in
+# milliseconds.
+constant QUIET_MS: i64
+    30_000
+
+# How long one connection may take, in milliseconds.
+constant CONNECTION_MS: i64
+    10_000
+
+# What the site serves and what it was asked.
+record Site
+    # Every page by its path.
+    pages: {str: str}
+    # Whether the stop was asked.
+    stopping: bool
+    # The requests answered.
+    answered: i64
+    # How many requests each `User-Agent` sent; "" for none sent.
+    agents: {str: i64}
+
+# A site serving its pages, asked nothing yet.
+function new() -> Site
+    return Site(pages: site_pages.pages(), stopping: false, answered: 0, agents: {})
+
+# Serves every connection `l` accepts until the stop is posted.
+#
+# - `site`: the site, which counts what it answers.
+# - `l`: the listener; its owner closes it.
+#
+# Fails `timeout` where no connection comes for `QUIET_MS`, and as
+# `net.accept` fails otherwise.
+function serve(@site: Site, l: net.Listener) -> ()?
+    while !site.stopping
+        net.set_accept_deadline(l, deadline_ms: QUIET_MS)?
+        conn = net.accept(l, deadline_ms: CONNECTION_MS)?
+        reader @= io.reader(conn.stream)
+
+        while true
+            r = match http.next_request(@reader, limits: http.default_limits())
+                .ok got => got
+                .err _  => break
+
+            response = answer(@site, r: r)
+
+            if http.write_answer(reader.stream, r: r, response: response).is_err() || r.closing || response.closing || site.stopping
+                break
+
+        _ = io.close(@reader.stream).is_err()
+
+    return ok()
+
+# The answer to `r`, counted unless it is the stop, which is the demo's and
+# not a visitor's.
+#
+# - `site`: the site.
+# - `r`: the request.
+function answer(@site: Site, r: http.Request) -> http.Response
+    path = r.url.path
+
+    if path == STOP_PATH
+        if r.method != http.METHOD_POST
+            return http.respond_status(405)
+
+        site.stopping @ true
+        return http.respond_text(202, text: "stopping")
+
+    site.answered @ site.answered + 1
+    count(@site.agents, agent: http.value_of(r.headers, name: "User-Agent").default(""))
+
+    if r.method != http.METHOD_GET && r.method != http.METHOD_HEAD
+        return http.respond_status(405)
+
+    if path == "/robots.txt"
+        return http.respond_text(200, text: site_pages.robots_txt())
+
+    if path == "/old-recipes"
+        return http.respond_redirect(301, location: "/recipes/")
+
+    if path == "/images/logo.png"
+        return http.respond(200, content_type: "image/png", body: [137, 80, 78, 71, 13, 10, 26, 10])
+
+    if path == "/files/menu.pdf"
+        return http.respond(200, content_type: "application/pdf", body: bytes.from_text("%PDF-1.7\n"))
+
+    return match site.pages[path]
+        .ok page => http.respond(200, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
+        .err _ => http.respond(
+            404,
+            content_type: "text/html; charset=utf-8",
+            body: bytes.from_text("<!DOCTYPE html><title>Not found</title><p>No page here.</p>")
+        )
+
+# Counts one request of `agent` in `agents`, the caller's own map.
+#
+# - `agents`: the counts.
+# - `agent`: the `User-Agent`.
+function count(@agents: {str: i64}, agent: str)
+    agents[agent] @ agents[agent].default(0) + 1
+
+test "answer: a page, robots.txt, a redirect, a missing page, and the stop"
+    site @= new()
+    page = answer(@site, r: http.request(method: "GET", target: "/recipes/semlor").must())
+    assert page.status == 200 && http.value_of(page.headers, name: "Content-Type").must() == "text/html; charset=utf-8"
+    assert answer(@site, r: http.request(method: "GET", target: "/robots.txt").must()).status == 200
+    moved = answer(@site, r: http.request(method: "GET", target: "/old-recipes").must())
+    assert moved.status == 301 && http.value_of(moved.headers, name: "Location").must() == "/recipes/"
+    assert answer(@site, r: http.request(method: "GET", target: "/recipes/lussekatter").must()).status == 404
+    assert answer(@site, r: http.request(method: "GET", target: STOP_PATH).must()).status == 405 && !site.stopping
+    assert answer(@site, r: http.request(method: "POST", target: STOP_PATH).must()).status == 202 && site.stopping
+    assert site.answered == 4 && site.agents[""].must() == 4

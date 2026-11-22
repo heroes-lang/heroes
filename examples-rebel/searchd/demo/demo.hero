@@ -1,0 +1,153 @@
+# The demo: the whole of searchd in one process and on loopback, so it
+# needs no network and no service outside it, and prints the same
+# transcript on every run.
+#
+# It makes a fresh folder, serves the stand-in site Fika Notes on a port the
+# system chooses, and writes the settings `searchd init` writes with the
+# site's address, the folder's data and Swedish order. Then the three
+# commands' work, in order. The crawl runs on a thread, as `searchd crawl`
+# would in a process of its own, while the site serves on this one; it
+# writes the crawl store, prints its report, and asks the site to stop. The
+# index is made from the store and written, then read back from its files
+# as `searchd serve` reads it. searchd's server then serves on this thread
+# while the session's queries run on another through searchd's own client;
+# the session's last act asks the stop, which ends the serving. The folder
+# is removed last, whatever happened.
+
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/net
+use <rebel>/threads
+use <rebel>/time
+
+use app/reports
+use app/settings
+use crawl/crawler
+use crawl/store
+use demo/session
+use index/builder
+use index/persist
+use server/service
+use standins/site_server
+
+# The demo's work, its folder made fresh and removed at its end; the
+# program's exit code, 0 where every step went as written.
+#
+# - `folder`: the folder the demo works in.
+function run(folder: str) -> i64
+    outcome = steps(folder)
+    _ = fs.remove_all(folder).is_err()
+
+    match outcome
+        .ok code =>
+            print("the demo's folder removed")
+            return code
+        .err e =>
+            print(f"demo: failed: {e.code}: {e.msg}")
+            return 1
+
+# The demo's steps; the exit code, or the failure that ended them.
+#
+# - `folder`: the folder the demo works in.
+function steps(folder: str) -> i64?
+    _ = fs.remove_all(folder).is_err()
+    fs.make_dir_all(folder)?
+    l @= net.listen(host: "127.0.0.1", port: 0)?
+    config = folder + "/searchd.toml"
+    start = f"http://127.0.0.1:{l.address.port}/"
+    write_file(path: config, text: settings.sample(start: start, data: folder + "/data", language: "sv"))?
+    site @= site_server.new()
+    print(f"searchd demo: Fika Notes, a site of {site.pages.len()} pages, served on loopback")
+    print("-- crawl")
+    crawling @= threads.spawn_text(body: crawl_then_stop, arg: config)?
+    site_served = site_server.serve(@site, l: l)
+    crawled = threads.wait_text(@crawling)
+    net.close_listener(@l)?
+    site_served?
+    print(f"the site answered {site.answered} requests, {agents_of(site)}")
+
+    if crawled != "ok"
+        return ok(1)
+
+    print("-- index")
+    s = settings.read(config)?
+    made = builder.build(store.read(s.data)?, s: s)?
+    persist.write(s.data, e: made)?
+
+    for line in reports.index_lines(made)
+        print(line)
+
+    e = persist.read(s.data)?
+
+    print(f"the index written and read back: {e.docs.len()} pages, {e.title_order.len()} indexed")
+    svc = service.service(e)?
+    api @= net.listen(host: "127.0.0.1", port: 0)?
+    asking @= threads.spawn_text(body: session.run, arg: f"http://127.0.0.1:{api.address.port}")?
+    answered = http.serve_until_stopped(
+        http.default_server(),
+        l: api,
+        state: svc,
+        handler: service.answer,
+        grace: time.seconds(2)?
+    )
+    asked = threads.wait_text(@asking)
+    net.close_listener(@api)?
+    counts = answered?
+    print(f"the server stopped, asked as Ctrl-C asks: {counts.answered} requests answered, {counts.cut} cut")
+
+    if asked != "ok"
+        return ok(1)
+
+    return ok(0)
+
+# Which `User-Agent` the site's requests came from, said as the transcript
+# says it.
+#
+# - `site`: the site, after serving.
+function agents_of(site: site_server.Site lent) -> str
+    names = keys(site.agents)
+
+    if names.len() == 1
+        return f"every one from {names[0]}"
+
+    return f"from {names.len()} agents: {names.join(", ")}"
+
+# The crawl of the settings in `config`, written and reported, then the
+# site asked to stop whatever happened; `ok`, or `failed` after a line
+# saying why. A thread's body, so it takes and gives one text.
+#
+# - `config`: the settings file.
+function crawl_then_stop(config: str) -> str
+    outcome = match crawl_step(config)
+        .ok _ => "ok"
+        .err e =>
+            print(f"crawl: failed: {e.code}: {e.msg}")
+            "failed"
+
+    stop_site(config)
+    return outcome
+
+# The crawl of the settings in `config`, written and reported.
+#
+# - `config`: the settings file.
+function crawl_step(config: str) -> ()?
+    s = settings.read(config)?
+    c = crawler.crawl(s)?
+    store.write(s.data, crawl: c)?
+
+    for line in reports.crawl_lines(c)
+        print(line)
+
+    return ok()
+
+# Asks the stand-in site the settings in `config` name to stop; a site
+# that does not answer stops by itself once quiet.
+#
+# - `config`: the settings file.
+function stop_site(config: str)
+    match settings.read(config)
+        .ok s =>
+            match http.request(method: "POST", target: s.start + site_server.STOP_PATH.slice(from: 1, to: site_server.STOP_PATH.len()))
+                .ok r  => _ = http.send(http.default_client(), r: r).is_err()
+                .err _ => _ = 0
+        .err _ => _ = 0

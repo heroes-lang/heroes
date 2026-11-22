@@ -1,0 +1,202 @@
+# The web UI: a search box, the results of a query with their snippets, and
+# a page's view, written as HTML by hand. Every text that came from a crawled
+# page or a request is escaped for the place it stands, `html.escape_text`
+# in an element and `html.escape_attribute` in an attribute, and a snippet
+# is already escaped by `text/snippet`, so a page or a query holding markup
+# shows it as text and runs nothing. The pages carry no script at all, and
+# their content security policy forbids one.
+
+use <rebel>/bytes
+use <rebel>/html
+use <rebel>/http
+use <rebel>/url
+use <rebel>/web
+
+use index/engine
+use index/links
+use query/answer
+use query/ranker
+use server/params
+
+# The content security policy of every page: nothing loaded, no script,
+# the page's own inline style, forms sent only to this server.
+constant POLICY: str
+    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+
+# The style every page carries.
+constant STYLE: str
+    "body{font-family:sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem}mark{background:#fe6}cite{color:#666}.folded{color:#666;font-size:90%}"
+
+# `GET /`: the search box and every page of the site in its order of titles.
+#
+# - `e`: the engine.
+function home(e: engine.Engine lent) -> http.Response
+    items: [str] @= []
+
+    for id in e.title_order
+        d = e.docs[id]
+        items @ items.push(f"<li><a href=\"/pages/{d.id}\">{html.escape_text(d.title)}</a></li>")
+
+    body = [
+        "<h1>searchd</h1>"
+        f"<p>{engine.indexed_count(e)} pages of the site indexed.</p>"
+        search_form("", mode: .hybrid)
+        "<h2>Every page</h2>"
+        "<ul class=\"titles\">" + items.join("") + "</ul>"
+    ]
+
+    return shown(200, title: "searchd", body: body.join("\n"))
+
+# `GET /search?q=&mode=`: the results of a query, as a page.
+#
+# - `e`: the engine.
+# - `r`: the request.
+function results(e: engine.Engine lent, r: http.Request) -> http.Response
+    pairs = match params.pairs_of(r)
+        .ok got => got
+        .err x  => return shown(400, title: "searchd: a query that does not read", body: notice(x.msg))
+
+    typed = params.text_of(pairs, key: "q", fallback: "")
+    mode = ranker.mode_named(params.text_of(pairs, key: "mode", fallback: "hybrid")).default(.hybrid)
+
+    a = match answer.answer(e, text: typed, mode: mode, limit: 10)
+        .ok got => got
+        .err x => return shown(
+            400,
+            title: "searchd: a query that does not read",
+            body: search_form(typed, mode: mode) + notice(x.msg)
+        )
+
+    parts: [str] @= [search_form(typed, mode: mode)]
+
+    if a.changes.len() > 0
+        searched = url.format_query(
+            [url.Pair(key: "q", value: a.query), url.Pair(key: "mode", value: ranker.mode_name(mode))]
+        )
+        parts @ parts.push(
+            f"<p class=\"corrected\">Showing results for <a href=\"/search?{html.escape_attribute(searched)}\">{html.escape_text(a.query)}</a>.</p>"
+        )
+
+    if a.hits.len() == 0
+        parts @ parts.push("<p class=\"none\">No page matches.</p>")
+    else
+        parts @ parts.push(f"<p class=\"count\">{a.matched} results.</p>")
+        items: [str] @= []
+
+        for h in a.hits
+            items @ items.push(result_item(e, hit: h, a: a))
+
+        parts @ parts.push("<ol class=\"results\">" + items.join("\n") + "</ol>")
+
+    return shown(200, title: "searchd: " + typed, body: parts.join("\n"))
+
+# One result of a results page.
+#
+# - `e`: the engine.
+# - `hit`: the result.
+# - `a`: the answer it belongs to.
+function result_item(e: engine.Engine lent, hit: answer.Hit, a: answer.Answer lent) -> str
+    d = e.docs[hit.id]
+    item = [
+        "<li class=\"result\">"
+        f"<a href=\"{html.escape_attribute(d.url)}\">{html.escape_text(d.title)}</a> <cite>{html.escape_text(d.path)}</cite>"
+        f"<p class=\"snippet\">{answer.snippet_of(d, marking: a.marking)}</p>"
+    ]
+    lines: [str] @= item
+
+    if hit.folded.len() > 0
+        others: [str] @= []
+
+        for id in hit.folded
+            others @ others.push(html.escape_text(e.docs[id].path))
+
+        lines @ lines.push(f"<p class=\"folded\">Also at {others.join(", ")}.</p>")
+
+    lines @ lines.push(f"<p><a href=\"/pages/{d.id}\">About this page</a></p></li>")
+    return lines.join("")
+
+# `GET /pages/:id`: what the engine knows of a page.
+#
+# - `e`: the engine.
+# - `id`: the parameter as the path writes it.
+function page_view(e: engine.Engine lent, id: str) -> http.Response
+    number = match params.number_in(text: id, name: "page", lowest: 0, highest: e.docs.len() - 1)
+        .ok got => got
+        .err x  => return shown(404, title: "searchd: no such page", body: notice(x.msg))
+
+    d = e.docs[number]
+    route: [str] @= []
+
+    for step in links.path_to(engine.graph_of(e), start: e.start, to: d.id)
+        route @ route.push(html.escape_text(e.docs[step].path))
+
+    body = [
+        f"<h1>{html.escape_text(d.title)}</h1>"
+        f"<p><a href=\"{html.escape_attribute(d.url)}\">{html.escape_text(d.path)}</a></p>"
+        f"<p>{html.escape_text(d.description)}</p>"
+        "<dl>"
+        f"<dt>PageRank</dt><dd>{d.rank}</dd>"
+        f"<dt>Links from the start</dt><dd>{d.depth}</dd>"
+        f"<dt>Pages linking here</dt><dd>{d.inbound}</dd>"
+        f"<dt>Reached by</dt><dd>{route.join(" › ")}</dd>"
+        "</dl>"
+        "<p><a href=\"/\">Search again</a></p>"
+    ]
+
+    return shown(200, title: "searchd: " + d.title, body: body.join("\n"))
+
+# The search box, holding `typed` and `mode`.
+#
+# - `typed`: the query typed, "" for an empty box.
+# - `mode`: the mode chosen.
+function search_form(typed: str, mode: ranker.Mode) -> str
+    hybrid = match mode
+        .hybrid  => " selected"
+        .keyword => ""
+
+    keyword = match mode
+        .hybrid  => ""
+        .keyword => " selected"
+
+    parts = [
+        "<form action=\"/search\" method=\"get\" role=\"search\">"
+        f"<input type=\"search\" name=\"q\" value=\"{html.escape_attribute(typed)}\" autofocus>"
+        f"<select name=\"mode\"><option value=\"hybrid\"{hybrid}>words and meaning</option><option value=\"keyword\"{keyword}>words alone</option></select>"
+        "<button>Search</button></form>"
+    ]
+
+    return parts.join("")
+
+# A paragraph saying `message`, escaped.
+#
+# - `message`: what to say.
+function notice(message: str) -> str
+    return f"<p class=\"notice\">{html.escape_text(message)}</p>"
+
+# A whole page of `status`, titled `title`, holding `body`, with the
+# security headers every page carries. The site is served over plain HTTP on
+# its own port, so no HSTS is sent: it would ask a browser to come back over
+# HTTPS that this server does not speak.
+#
+# - `status`: the status.
+# - `title`: the title, escaped here.
+# - `body`: the body's HTML, already escaped.
+function shown(status: i64, title: str, body: str) -> http.Response
+    document = [
+        "<!DOCTYPE html>"
+        "<html lang=\"en\"><head><meta charset=\"utf-8\">"
+        f"<title>{html.escape_text(title)}</title>"
+        f"<style>{STYLE}</style></head>"
+        "<body>"
+        body
+        "</body></html>"
+    ]
+    response = http.respond(
+        status,
+        content_type: "text/html; charset=utf-8",
+        body: bytes.from_text(document.join("\n"))
+    )
+    headers @= web.default_security_headers()
+    headers.content_security_policy @ POLICY
+    headers.strict_transport_security @ ""
+    return web.with_security_headers(response, headers: headers)

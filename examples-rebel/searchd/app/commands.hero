@@ -1,0 +1,150 @@
+# searchd's commands, each answering the program's exit code: 0 where it
+# did its work, 1 where it failed, a line saying why.
+#
+# `init` writes a settings file; `crawl` crawls the site it names into the
+# data folder's crawl store; `index` makes the indexes from the store; `serve`
+# serves the web UI and the JSON API from the indexes until Ctrl-C or
+# SIGTERM; `query` and `suggest` ask a running server, as its API client.
+
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/net
+use <rebel>/os
+use <rebel>/time
+
+use app/reports
+use app/settings
+use client/client
+use crawl/crawler
+use crawl/store
+use index/builder
+use index/persist
+use server/service
+
+# How long a request whose bytes have come may still be answered once the
+# stop is asked.
+constant GRACE_SECONDS: i64
+    5
+
+# Writes the sample settings into `file`, never replacing a file there.
+#
+# - `file`: where the settings go.
+function init(file: str) -> i64
+    text = settings.sample(start: "https://www.example.org/", data: "searchd-data", language: "en")
+
+    match fs.write_new_text(path: file, text: text)
+        .ok _ =>
+            print(f"wrote {file}: set [site] start to the site to crawl")
+            return 0
+        .err e =>
+            print(f"searchd: {file}: {e.msg}")
+            return 1
+
+# Crawls the site the settings in `config` name into the data folder.
+#
+# - `config`: the settings file.
+function crawl(config: str) -> i64
+    return finished(crawled(config))
+
+# The work of `crawl`: the site crawled, its store written, its report printed.
+#
+# - `config`: the settings file.
+function crawled(config: str) -> ()?
+    s = settings.read(config)?
+    c = crawler.crawl(s)?
+    store.write(s.data, crawl: c)?
+
+    for line in reports.crawl_lines(c)
+        print(line)
+
+    return ok()
+
+# Makes the indexes of the data folder's crawl store.
+#
+# - `config`: the settings file.
+function index(config: str) -> i64
+    return finished(indexed(config))
+
+# The work of `index`.
+#
+# - `config`: the settings file.
+function indexed(config: str) -> ()?
+    s = settings.read(config)?
+    e = builder.build(store.read(s.data)?, s: s)?
+    persist.write(s.data, e: e)?
+
+    for line in reports.index_lines(e)
+        print(line)
+
+    return ok()
+
+# Serves the UI and the API from the data folder's indexes until Ctrl-C or
+# SIGTERM, then ends gracefully.
+#
+# - `config`: the settings file.
+function serve(config: str) -> i64
+    return finished(served(config))
+
+# The work of `serve`.
+#
+# - `config`: the settings file.
+function served(config: str) -> ()?
+    s = settings.read(config)?
+    e = persist.read(s.data)?
+    svc = service.service(e)?
+    os.catch_stop()?
+    l @= net.listen(host: s.host, port: s.port)?
+    print(f"searchd serves {e.docs.len()} pages at http://{net.format_address(l.address)}/ until Ctrl-C")
+    answered = http.serve_until_stopped(
+        http.default_server(),
+        l: l,
+        state: svc,
+        handler: service.answer,
+        grace: time.seconds(GRACE_SECONDS)?
+    )
+    net.close_listener(@l)?
+    counts = answered?
+    print(f"stopped: {counts.answered} requests answered, {counts.cut} cut by the stop")
+    return ok()
+
+# Asks the server at `server` for `words` and prints its results.
+#
+# - `server`: the server's root URL.
+# - `words`: the query.
+# - `mode`: `keyword` or `hybrid`.
+# - `limit`: the most results, 1 to 50.
+function query(server: str, words: str, mode: str, limit: i64) -> i64
+    match client.search(client.new(server), query: words, mode: mode, limit: limit)
+        .ok results =>
+            for line in reports.results_lines(results)
+                print(line)
+
+            return 0
+        .err e =>
+            print(f"searchd: {e.code}: {e.msg}")
+            return 1
+
+# Asks the server at `server` what `typed` may become and prints it.
+#
+# - `server`: the server's root URL.
+# - `typed`: what has been typed so far.
+function suggest(server: str, typed: str) -> i64
+    match client.suggest(client.new(server), typed: typed, limit: 5)
+        .ok found =>
+            for s in found
+                print(f"{s.text}  ({s.pages} pages)")
+
+            return 0
+        .err e =>
+            print(f"searchd: {e.code}: {e.msg}")
+            return 1
+
+# The exit code of a command's work: 0, or 1 after a line saying why.
+#
+# - `done`: the work's outcome.
+function finished(done: ()?) -> i64
+    return match done
+        .ok _ => 0
+        .err e =>
+            print(f"searchd: {e.code}: {e.msg}")
+            1

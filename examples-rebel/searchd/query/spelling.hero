@@ -1,0 +1,187 @@
+# A misspelt word put right: a word of a query that no page holds is
+# replaced by the term of the index nearest to it, where one is near enough,
+# and the answer says so ("showing results for cardamom").
+#
+# Near is the optimal string alignment distance over characters: the
+# fewest insertions, deletions, substitutions and swaps of two neighbours
+# that make one word the other. How many a word may take grows with it: no
+# edit below five characters, where a single edit reaches too many other
+# words to choose one, one from five, two from nine. The term chosen is the
+# one fewest edits away, then the one most pages hold, then the first in
+# the order of bytes. The terms that begin with the word's first character
+# are tried first, from the trie, since that character is seldom the one
+# mistyped; every term is tried only where none of those is near enough.
+
+use <rebel>/search
+
+use index/terms
+use query/parse
+
+# One word put right.
+record Change
+    # The word as the query wrote it, folded.
+    from: str
+    # The term it was replaced by.
+    to: str
+
+# A query with its misspelt words put right.
+record Corrected
+    # The query searched.
+    query: parse.Query
+    # The words replaced, in the order of the query.
+    changes: [Change]
+
+# How many edits a word of `word`'s length may take to reach a term.
+#
+# - `word`: a folded word.
+function edits_allowed(word: str) -> i64
+    n = word.chars().len()
+
+    if n < 5
+        return 0
+
+    if n < 9
+        return 1
+
+    return 2
+
+# The optimal string alignment distance between `a` and `b`, counted in
+# characters.
+#
+# - `a`: a word.
+# - `b`: another.
+function distance(a: str, b: str) -> i64
+    x = a.chars()
+    y = b.chars()
+    width = y.len() + 1
+    cells: [i64] @= []
+
+    for i in range(from: 0, to: x.len() + 1)
+        for j in range(from: 0, to: width)
+            if i == 0
+                cells @ cells.push(j)
+            else if j == 0
+                cells @ cells.push(i)
+            else
+                cost = if x[i - 1] == y[j - 1]
+                    0
+                else
+                    1
+                best @= least(a: cells[(i - 1) * width + j] + 1, b: cells[i * width + j - 1] + 1)
+                best @ least(a: best, b: cells[(i - 1) * width + j - 1] + cost)
+
+                if i > 1 && j > 1 && x[i - 1] == y[j - 2] && x[i - 2] == y[j - 1]
+                    best @ least(a: best, b: cells[(i - 2) * width + j - 2] + 1)
+
+                cells @ cells.push(best)
+
+    return cells[x.len() * width + y.len()]
+
+# The smaller of `a` and `b`.
+#
+# - `a`: a number.
+# - `b`: another.
+function least(a: i64, b: i64) -> i64
+    if a < b
+        return a
+
+    return b
+
+# The term `word` is a misspelling of. Fails `not_found` where no term is
+# near enough, or the word is long enough for no edit.
+#
+# - `words`: the index's terms.
+# - `word`: a folded word no page holds.
+function correction(words: terms.Terms lent, word: str) -> str?
+    allowed = edits_allowed(word)
+
+    if allowed > 0
+        first = nearest(words, candidates: terms.sharing_first(words, word: word), word: word, allowed: allowed)
+
+        if first != ""
+            return ok(first)
+
+        elsewhere = nearest(words, candidates: terms.every(words), word: word, allowed: allowed)
+
+        if elsewhere != ""
+            return ok(elsewhere)
+
+    return fail(code: "not_found", msg: f"no term within {allowed} edits of \"{word}\"")
+
+# The candidate nearest to `word` within `allowed` edits, by the module's
+# order; "" where none is.
+#
+# - `words`: the index's terms, for the pages holding each.
+# - `candidates`: the terms tried, in the order of their bytes.
+# - `word`: the misspelt word.
+# - `allowed`: the most edits.
+function nearest(words: terms.Terms lent, candidates: [str], word: str, allowed: i64) -> str
+    best @= ""
+    best_edits @= allowed + 1
+    best_pages @= 0
+    length = word.chars().len()
+
+    for c in candidates
+        gap = c.chars().len() - length
+
+        if gap <= allowed && -gap <= allowed
+            edits = distance(a: c, b: word)
+            pages = terms.pages_of(words, term: c)
+
+            if edits > 0 && edits <= allowed && (edits < best_edits || edits == best_edits && pages > best_pages)
+                best @ c
+                best_edits @ edits
+                best_pages @ pages
+
+    return best
+
+# `q` with every word of a part that is not refused, held by no page and
+# not a prefix, put right where a term is near enough.
+#
+# - `q`: the query.
+# - `words`: the index's terms.
+function corrected(q: parse.Query, words: terms.Terms lent) -> Corrected
+    parts: [parse.Part] @= []
+    changes: [Change] @= []
+
+    for p in q.parts
+        if parse.is_refused(p) || p.prefix
+            parts @ parts.push(p)
+        else
+            fixed @= p
+            fixed.words @ []
+
+            for w in p.words
+                if terms.pages_of(words, term: w) > 0
+                    fixed.words @ fixed.words.push(w)
+                else
+                    match correction(words, word: w)
+                        .ok to =>
+                            changes @ changes.push(Change(from: w, to: to))
+                            fixed.words @ fixed.words.push(to)
+                        .err _ => fixed.words @ fixed.words.push(w)
+
+            parts @ parts.push(fixed)
+
+    return Corrected(query: parse.Query(parts: parts), changes: changes)
+
+test "distance: an insertion, a substitution, a swap, and none"
+    assert distance(a: "cardamon", b: "cardamom") == 1
+    assert distance(a: "kanelbulle", b: "kanelbullar") == 2
+    assert distance(a: "fkia", b: "fika") == 1
+    assert distance(a: "semla", b: "semla") == 0
+    assert distance(a: "", b: "abc") == 3
+    assert distance(a: "åland", b: "aland") == 1
+
+test "correction: within the edits allowed, never one more"
+    index @= search.new_index(search.default_options()).must()
+    search.insert(@index, id: 1, text: "semlor cardamom cardigan").must()
+    words = terms.of_index(index)
+    assert correction(words, word: "cardamon").must() == "cardamom"
+    assert correction(words, word: "semla").is_err()
+    assert correction(words, word: "semlr").must() == "semlor"
+    assert correction(words, word: "fika").is_err()
+
+test "edits_allowed: none below five characters, one from five, two from nine"
+    assert edits_allowed("fika") == 0 && edits_allowed("semla") == 1 && edits_allowed("cardamon") == 1
+    assert edits_allowed("kanelbulle") == 2

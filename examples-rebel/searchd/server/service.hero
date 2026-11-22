@@ -1,0 +1,100 @@
+# searchd's server: its routes, and the handler `http.serve_until_stopped`
+# calls with the service for every request.
+#
+# The engine is only read while the server runs (a query changes nothing),
+# so the service is one value handed to every request, as `http`'s serving
+# with state hands one, and needs no loop of the program's own. The router
+# finds the route and the handler calls the page's or the API's function by
+# its name, as `web` asks of a program; a request no route takes is
+# answered by `web.not_routed` (404, or 405 with `Allow`), and every 200 to
+# a `GET` carries an entity tag, so a client asking again for a page it
+# holds is answered 304 with no body.
+
+use <rebel>/http
+use <rebel>/web
+
+use index/engine
+use server/api
+use server/ui
+
+# What the server serves with.
+record Service
+    # The routes.
+    router: web.Router
+    # The engine queries are answered from.
+    engine: engine.Engine
+
+# The routes, each named for the function that answers it.
+#
+# Fails `invalid` or `exists` as `web.add` does, which the routes written
+# here never meet; their test makes them.
+function routes() -> web.Router?
+    rt @= web.new_router()
+    rt.errors @ .json
+    web.add(@rt, method: http.METHOD_GET, pattern: "/", name: "home")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/search", name: "results")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/pages/:id", name: "page_view")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/search", name: "api_search")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/suggest", name: "api_suggest")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/pages", name: "api_pages")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/pages/:id", name: "api_page")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/duplicates", name: "api_duplicates")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/api/stats", name: "api_stats")?
+    web.add(@rt, method: http.METHOD_GET, pattern: "/healthz", name: "health")?
+    return ok(rt)
+
+# The service of the engine `e`.
+#
+# - `e`: the engine.
+#
+# Fails as `routes` does.
+function service(e: engine.Engine) -> Service?
+    return ok(Service(router: routes()?, engine: e))
+
+# The answer to `r`: the handler `http.serve_until_stopped` calls.
+#
+# - `s`: the service.
+# - `r`: the request.
+function answer(s: Service, r: http.Request) -> http.Response
+    found = match web.route(s.router, r)
+        .ok got => got
+        .err _  => return web.not_routed(s.router, r)
+
+    id = web.param_of(found, name: "id").default("")
+
+    response = match found.name
+        "home"           => ui.home(s.engine)
+        "results"        => ui.results(s.engine, r: r)
+        "page_view"      => ui.page_view(s.engine, id: id)
+        "api_search"     => api.search(s.engine, r: r)
+        "api_suggest"    => api.suggestions(s.engine, r: r)
+        "api_pages"      => api.pages(s.engine)
+        "api_page"       => api.page(s.engine, id: id)
+        "api_duplicates" => api.duplicate_groups(s.engine)
+        "api_stats"      => api.stats(s.engine)
+        "health"         => web.health_response(r, checks: health_checks(s.engine), detail: true)
+        _                => web.not_routed(s.router, r)
+
+    return web.with_etag(r, response: response)
+
+# The server's health: the index holds pages, and every page it holds has
+# its vector or holds no text.
+#
+# - `e`: the engine.
+function health_checks(e: engine.Engine lent) -> [web.Check]
+    held: ()? = if engine.indexed_count(e) > 0
+        ok()
+    else
+        fail(code: "failed", msg: "the index holds no page; run searchd index")
+
+    vectors: ()? = if engine.vector_count(e) <= engine.indexed_count(e)
+        ok()
+    else
+        fail(code: "failed", msg: "the vector index holds more pages than the full-text index")
+    return [web.Check(name: "index", outcome: held), web.Check(name: "vectors", outcome: vectors)]
+
+test "routes: every route made, and a route found by its path"
+    rt = routes().must()
+    assert rt.routes.len() == 10
+    found = web.route(rt, http.request(method: "GET", target: "/api/pages/3").must()).must()
+    assert found.name == "api_page" && web.param_of(found, name: "id").must() == "3"

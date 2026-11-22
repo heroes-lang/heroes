@@ -1,0 +1,89 @@
+# What a search box offers while a query is typed: the last word read as a
+# prefix and completed from the terms' trie, the words before it kept.
+#
+# A completion alone is ranked by how many pages hold it. After other
+# words, a completion is offered only where some page holds it together
+# with every word before it, and is ranked by how many do: "pearl s" offers
+# "pearl sugar" before "pearl semlor", because the pages that speak of
+# pearls speak of sugar. A query ending in white space has no word being
+# typed, and nothing is offered.
+
+use <rebel>/lists
+use <rebel>/search
+
+use index/engine
+use index/terms
+use text/folding
+
+# The candidates a prefix is completed to before they are ranked.
+constant CANDIDATES: i64
+    50
+
+# One suggestion: a whole query, and how many pages it matches.
+record Suggestion
+    # The query offered, its words folded.
+    text: str
+    # The pages holding every word of it.
+    pages: i64
+
+# The suggestions for `typed`, at most `most`.
+#
+# - `e`: the engine.
+# - `typed`: what has been typed so far.
+# - `most`: the most offered, 0 or more.
+function suggestions(e: engine.Engine lent, typed: str, most: i64) -> [Suggestion]
+    if typed == "" || is_space_at_end(typed)
+        return []
+
+    words = folding.terms_of(typed, marks: e.fold_marks)
+
+    if words.len() == 0
+        return []
+
+    before = words.slice(from: 0, to: words.len() - 1)
+    last = words[words.len() - 1]
+    found: [Suggestion] @= []
+
+    if before.len() == 0
+        for c in terms.completions(e.words, prefix: last, most: most)
+            found @ found.push(Suggestion(text: c.term, pages: c.pages))
+
+        return found
+
+    lead = before.join(" ")
+    every = search.size(e.full)
+
+    for c in terms.completions(e.words, prefix: last, most: CANDIDATES)
+        required: [str] @= []
+
+        for w in before
+            required @ required.push("+" + w)
+
+        required @ required.push("+" + c.term)
+
+        pages = match search.search(e.full, query: required.join(" "), limit: every)
+            .ok hits => hits.len()
+            .err _   => 0
+
+        if pages > 0
+            found @ found.push(Suggestion(text: lead + " " + c.term, pages: pages))
+
+    return lists.take(lists.sort_by(found, less: more_pages), n: most)
+
+# Whether `a` is matched by more pages than `b`; stable, so suggestions of
+# as many pages keep the terms' order.
+#
+# - `a`: a suggestion.
+# - `b`: another.
+function more_pages(a: Suggestion, b: Suggestion) -> bool
+    return a.pages > b.pages
+
+# Whether `s` ends in white space.
+#
+# - `s`: a text, not empty.
+function is_space_at_end(s: str) -> bool
+    last = s[s.len() - 1]
+    return last == ' ' || last == '\t' || last == '\n' || last == '\r'
+
+test "is_space_at_end: a word being typed, and one finished"
+    assert !is_space_at_end("pearl s") && is_space_at_end("pearl ")

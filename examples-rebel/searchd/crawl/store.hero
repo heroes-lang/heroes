@@ -1,0 +1,334 @@
+# The crawl store: what a crawl found, written as one JSON document in the
+# data folder, so that crawling and indexing are two commands and an index
+# can be rebuilt with other settings without fetching the site again.
+#
+# It holds every page fetched (what `extract` read of it), every URL visited
+# with how the visit ended, and the redirects met, which the indexer follows
+# so that a link to a moved page counts for the page it moved to. It is
+# written whole to a temporary file and renamed, so a crawl stopped midway
+# never leaves half a store behind.
+
+use <rebel>/fs
+use <rebel>/json
+
+## Codes
+
+# The code of a store that does not read: not JSON, or a member missing or
+# of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+## Outcomes
+
+# A page fetched and readable, its text kept for the index.
+constant PAGE: str
+    "page"
+
+# A page fetched whose robots meta tag refuses the index; its links count.
+constant NOINDEX: str
+    "noindex"
+
+# A URL answered by a redirect, followed as a link of its own.
+constant REDIRECT: str
+    "redirect"
+
+# A URL that answered something other than HTML.
+constant NOT_HTML: str
+    "not_html"
+
+# A URL answered 404 or 410.
+constant MISSING: str
+    "missing"
+
+# A URL the site's `robots.txt` refuses, never fetched.
+constant REFUSED: str
+    "refused"
+
+# A URL whose fetch failed: no answer, another status, a body too large or
+# not text.
+constant FAILED: str
+    "failed"
+
+## Records
+
+# A page fetched, as the indexer reads it.
+record Page
+    # Its URL, in the frontier's normal form.
+    url: str
+    # The fewest links from the start the crawl followed to reach it.
+    depth: i64
+    # Its title, "" where it has none.
+    title: str
+    # Its description meta tag, "" where it has none.
+    description: str
+    # The language its `html` element names, "" where none.
+    language: str
+    # The canonical URL it names, in normal form, "" where none.
+    canonical: str
+    # Whether its robots meta tag lets it be indexed.
+    index: bool
+    # The URLs of its links that the crawl may follow: inside the site, not
+    # `nofollow`, in normal form, each once.
+    links: [str]
+    # Its `h1` to `h3` headings.
+    headings: [str]
+    # Its text, one block a line.
+    text: str
+
+# A URL the crawl visited, and how the visit ended.
+record Visit
+    # The URL, in normal form.
+    url: str
+    # Links from the start.
+    depth: i64
+    # One of the outcomes above.
+    outcome: str
+    # What a reader needs of it: the links found, the redirect's target, the
+    # type or the status met.
+    detail: str
+
+# What a crawl found.
+record Crawl
+    # The URL the crawl began at, in normal form.
+    start: str
+    # The `User-Agent` it sent.
+    agent: str
+    # The robots group that bound it: its token, `*`, or "".
+    robots_group: str
+    # How many rules that group set.
+    robots_rules: i64
+    # Every page fetched, in the order fetched.
+    pages: [Page]
+    # Every URL visited, in the order visited.
+    visits: [Visit]
+    # Each URL a redirect answered, with the URL it named, in normal form.
+    redirects: {str: str}
+    # How many links led outside the site, which a crawl never follows.
+    external: i64
+
+# The path of the store in the data folder `data`.
+#
+# - `data`: the data folder.
+function path_in(data: str) -> str
+    return data + "/crawl.json"
+
+# Writes `crawl` into the data folder `data`, made where it is missing,
+# replacing a store already there whole.
+#
+# - `data`: the data folder.
+# - `crawl`: what the crawl found.
+#
+# Fails as `fs.make_dir_all` and `fs.write_atomic_text` do.
+function write(data: str, crawl: Crawl) -> ()?
+    fs.make_dir_all(data)?
+    text = json.format(crawl_json(crawl))?
+    fs.write_atomic_text(path: path_in(data), text: text)?
+    return ok()
+
+# The crawl stored in the data folder `data`.
+#
+# - `data`: the data folder.
+#
+# Fails as `read_file` does where there is no store, and `invalid` where
+# the store does not read.
+function read(data: str) -> Crawl?
+    text = read_file(path_in(data))?
+    v = json.parse(text)?
+    pages: [Page] @= []
+
+    for item in json.items_of(json.member(v, key: "pages")?)?
+        pages @ pages.push(page_of(item)?)
+
+    visits: [Visit] @= []
+
+    for item in json.items_of(json.member(v, key: "visits")?)?
+        visits @ visits.push(visit_of(item)?)
+
+    redirects: {str: str} @= {}
+    moved = json.members_of(json.member(v, key: "redirects")?)?
+
+    for from in keys(moved)
+        redirects[from] @ json.text_of(moved[from]?)?
+
+    made = Crawl(
+        start: text_at(v, key: "start")?,
+        agent: text_at(v, key: "agent")?,
+        robots_group: text_at(v, key: "robots_group")?,
+        robots_rules: int_at(v, key: "robots_rules")?,
+        pages: pages,
+        visits: visits,
+        redirects: redirects,
+        external: int_at(v, key: "external")?
+    )
+    return ok(made)
+
+# `crawl` as a JSON value.
+#
+# - `crawl`: what the crawl found.
+function crawl_json(crawl: Crawl) -> json.Value
+    pages: [json.Value] @= []
+
+    for p in crawl.pages
+        pages @ pages.push(page_json(p))
+
+    visits: [json.Value] @= []
+
+    for v in crawl.visits
+        visits @ visits.push(visit_json(v))
+
+    moved: {str: json.Value} @= {}
+
+    for from in keys(crawl.redirects)
+        moved[from] @ .text(v: crawl.redirects[from].must())
+
+    members: {str: json.Value} = {
+        "start": .text(v: crawl.start)
+        "agent": .text(v: crawl.agent)
+        "robots_group": .text(v: crawl.robots_group)
+        "robots_rules": number(crawl.robots_rules)
+        "external": number(crawl.external)
+        "pages": .list(items: pages)
+        "visits": .list(items: visits)
+        "redirects": .object(members: moved)
+    }
+
+    return .object(members: members)
+
+# `p` as a JSON value.
+#
+# - `p`: the page.
+function page_json(p: Page) -> json.Value
+    members: {str: json.Value} = {
+        "url": .text(v: p.url)
+        "depth": number(p.depth)
+        "title": .text(v: p.title)
+        "description": .text(v: p.description)
+        "language": .text(v: p.language)
+        "canonical": .text(v: p.canonical)
+        "index": .boolean(v: p.index)
+        "links": texts(p.links)
+        "headings": texts(p.headings)
+        "text": .text(v: p.text)
+    }
+
+    return .object(members: members)
+
+# The page a JSON value holds, as `page_json` wrote it.
+#
+# - `v`: the value.
+function page_of(v: json.Value) -> Page?
+    made = Page(
+        url: text_at(v, key: "url")?,
+        depth: int_at(v, key: "depth")?,
+        title: text_at(v, key: "title")?,
+        description: text_at(v, key: "description")?,
+        language: text_at(v, key: "language")?,
+        canonical: text_at(v, key: "canonical")?,
+        index: json.bool_of(json.member(v, key: "index")?)?,
+        links: texts_at(v, key: "links")?,
+        headings: texts_at(v, key: "headings")?,
+        text: text_at(v, key: "text")?
+    )
+    return ok(made)
+
+# `v` as a JSON value.
+#
+# - `v`: the visit.
+function visit_json(v: Visit) -> json.Value
+    members: {str: json.Value} = {
+        "url": .text(v: v.url)
+        "depth": number(v.depth)
+        "outcome": .text(v: v.outcome)
+        "detail": .text(v: v.detail)
+    }
+
+    return .object(members: members)
+
+# The visit a JSON value holds, as `visit_json` wrote it.
+#
+# - `v`: the value.
+function visit_of(v: json.Value) -> Visit?
+    made = Visit(
+        url: text_at(v, key: "url")?,
+        depth: int_at(v, key: "depth")?,
+        outcome: text_at(v, key: "outcome")?,
+        detail: text_at(v, key: "detail")?
+    )
+    return ok(made)
+
+# `n` as a JSON number; every count a crawl keeps is far below the 2^53 a
+# JSON number holds exactly.
+#
+# - `n`: the count.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# `items` as a JSON array of strings.
+#
+# - `items`: the texts.
+function texts(items: [str]) -> json.Value
+    values: [json.Value] @= []
+
+    for s in items
+        values @ values.push(.text(v: s))
+
+    return .list(items: values)
+
+# The text member `key` of the object `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function text_at(v: json.Value, key: str) -> str?
+    return json.text_of(json.member(v, key: key)?)
+
+# The whole-number member `key` of the object `v`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function int_at(v: json.Value, key: str) -> i64?
+    return json.int_of(json.member(v, key: key)?)
+
+# The member `key` of the object `v`, an array of texts.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function texts_at(v: json.Value, key: str) -> [str]?
+    found: [str] @= []
+
+    for item in json.items_of(json.member(v, key: key)?)?
+        found @ found.push(json.text_of(item)?)
+
+    return ok(found)
+
+test "page_json and page_of: a page written and read back"
+    p = Page(
+        url: "http://h/a",
+        depth: 2,
+        title: "Äppelkaka",
+        description: "",
+        language: "sv",
+        canonical: "",
+        index: true,
+        links: ["http://h/", "http://h/b"],
+        headings: ["Äppelkaka", "Method"],
+        text: "Apples\nCinnamon"
+    )
+    assert page_of(page_json(p)).must() == p
+
+test "crawl_json: a crawl written and read back through JSON text"
+    c = Crawl(
+        start: "http://h/",
+        agent: "searchd/0.1",
+        robots_group: "searchd",
+        robots_rules: 3,
+        pages: [],
+        visits: [Visit(url: "http://h/old", depth: 1, outcome: REDIRECT, detail: "http://h/new")],
+        redirects: {"http://h/old": "http://h/new"},
+        external: 1
+    )
+    v = json.parse(json.format(crawl_json(c)).must()).must()
+    assert visit_of(json.element(json.member(v, key: "visits").must(), index: 0).must()).must() == c.visits[0]
+    assert int_at(v, key: "external").must() == 1 && text_at(v, key: "robots_group").must() == "searchd"
+
+test "page_of: a member of the wrong kind is refused"
+    assert page_of(json.parse("{\"url\": 3}").must()).is_err()
