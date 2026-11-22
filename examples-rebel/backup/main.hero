@@ -19,7 +19,7 @@
 #     ./backup init                                 # asks the password twice
 #     ./backup run ~/Documents                      # the AWS_* variables for a bucket
 #     ./backup snapshots
-#     ./backup restore latest --target /tmp/restored [--path docs/a.txt]
+#     ./backup restore latest --target /tmp/restored [--path reports/a.txt]
 #     ./backup forget --keep-daily 7 --keep-weekly 4 --prune
 #     ./backup prune
 #     ./backup check
@@ -68,5 +68,20 @@
 
 use cli/commands
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"backup: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    exit(code: commands.run(args()))
+    exit(code: commands.run(text_arguments()))

@@ -1240,6 +1240,30 @@ test "start: one child's output is another's input, a pipeline with no shell"
     assert wait(@first).must() == .exited(code: 0)
     assert wait(@second).must() == .exited(code: 0)
 
+test "start: a child writing into a pipe the program holds ends by SIGPIPE once its reader is gone, and the program's own writes there still answer"
+    if !fixture.on_windows()
+        none: [str] = []
+        gone @= io.pipe().must()
+        io.close(@gone.reader).must()
+        writer @= start(
+            with_error(with_output(command("yes", none), to: .stream(stream: gone.writer)), to: .nothing)
+        ).must()
+        assert wait(@writer).must() == .signaled(signal: 13)
+
+        match io.write_text(gone.writer, text: "after")
+            .ok _  => assert false
+            .err e => assert e.code == CLOSED
+
+        io.close(@gone.writer).must()
+        kept @= io.pipe().must()
+        io.write_text(kept.writer, text: "before\n").must()
+        echo @= start(with_output(shell("echo child").must(), to: .stream(stream: kept.writer))).must()
+        assert wait(@echo).must() == .exited(code: 0)
+        io.write_text(kept.writer, text: "after\n").must()
+        io.close(@kept.writer).must()
+        assert io.read_all_text(kept.reader).must() == "before\nchild\nafter\n"
+        io.close(@kept.reader).must()
+
 test "start: input as text through a temporary file, a program that is not there, and a time limit not above 0"
     none: [str] = []
     child @= start(

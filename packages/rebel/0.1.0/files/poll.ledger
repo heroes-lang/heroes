@@ -37,12 +37,12 @@ capability poll/datagram  a datagram socket waited on for a datagram to receive 
   rust    mio::net::UdpSocket, tokio::net::UdpSocket::ready, tokio::net::UdpSocket::readable
   python  BaseSelector.register (a datagram socket)
 
-capability poll/stream  a pipe, a terminal or a file waited on beside the sockets
+capability poll/stream  a pipe, a terminal, a serial port, a local channel or a file waited on beside the sockets
   heroes  poll.add_stream
   go      os.File.Read on a pipe (waits in the runtime's poller where the system allows it)
   rust    tokio::io::unix::AsyncFd, mio::unix::SourceFd, mio::unix::pipe
   python  BaseSelector.register (any object with `fileno`), select.select, select.POLLPRI, select.POLLRDBAND, select.POLLWRBAND
-  note    a regular file is ready at every wait, on every system, as POSIX's poll defines it; Python's EpollSelector refuses one (`EPERM`, epoll's own), and this answers the same on the three systems. Windows waits on sockets alone, so a pipe or a console there is `unsupported`, said by the function and by its example; `/dev/null` is refused by Darwin's kqueue (`EINVAL`, measured 2026-11-16) and by epoll, `unsupported`
+  note    a regular file is ready at every wait, on every system, as POSIX's poll defines it; Python's EpollSelector refuses one (`EPERM`, epoll's own), and this answers the same on the three systems. Windows waits on sockets alone, so a pipe or a console there is `unsupported`, said by the function and by its example; `/dev/null` is refused by Darwin's kqueue (`EINVAL`, measured 2026-11-16) and by epoll, `unsupported`. A serial port, a pseudo-terminal's controlling side and a channel of `ipc` are waited on as the descriptor they read (defect 2667); a stream of `tls` is `unsupported`, its engine holding records it opened that the socket under them no longer shows, so a wait on the socket could sleep while the stream holds bytes
 
 capability poll/change  what an entry waits for, changed in place
   heroes  poll.change

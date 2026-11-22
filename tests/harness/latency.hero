@@ -131,8 +131,23 @@ function parsed(given: [str]) -> Asked
         return refused("record takes every clock, since a row has a cell for each")
     return Asked(word: word, names: names, runs: runs, clock: clock, note: note, wrong: "")
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"latency: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    asked = parsed(args())
+    asked = parsed(text_arguments())
 
     if asked.wrong != ""
         print("latency: " + asked.wrong)

@@ -15,31 +15,44 @@ function line(time_text: str, level_name: str, message: str, pieces: [piece.Piec
     parts @ parts.push("," + json.quote(log.MESSAGE_KEY) + ":" + json.quote(message))
 
     # Whether the object open at each depth holds a member yet, the line's own
-    # object first; and the groups opened but not yet written, since a group is
-    # written only once a value inside it comes.
+    # object first, the first `opened` of `wrote`; and the groups opened but
+    # not yet written, the first `pending` of `waiting`, since a group is
+    # written only once a value inside it comes. A close lowers a count and an
+    # open writes over what stands past it, so no close copies a stack.
     wrote: [bool] @= [true]
+    opened: i64 @= 1
     waiting: [str] @= []
+    pending: i64 @= 0
 
     for p in pieces
         if p.kind == piece.OPEN
-            waiting @ waiting.push(p.key)
+            if pending == waiting.len()
+                waiting @ waiting.push(p.key)
+            else
+                waiting[pending] @ p.key
+            pending @ pending + 1
         else if p.kind == piece.CLOSE
-            if waiting.len() > 0
-                waiting @ waiting.slice(from: 0, to: waiting.len() - 1)
+            if pending > 0
+                pending @ pending - 1
             else
                 parts @ parts.push("}")
-                wrote @ wrote.slice(from: 0, to: wrote.len() - 1)
+                opened @ opened - 1
         else
-            for key in waiting
-                if wrote[wrote.len() - 1]
+            for at in range(from: 0, to: pending)
+                if wrote[opened - 1]
                     parts @ parts.push(",")
-                parts @ parts.push(json.quote(key) + ":{")
-                wrote[wrote.len() - 1] @ true
-                wrote @ wrote.push(false)
+                parts @ parts.push(json.quote(waiting[at]) + ":{")
+                wrote[opened - 1] @ true
 
-            waiting @ []
+                if opened == wrote.len()
+                    wrote @ wrote.push(false)
+                else
+                    wrote[opened] @ false
+                opened @ opened + 1
 
-            if wrote[wrote.len() - 1]
+            pending @ 0
+
+            if wrote[opened - 1]
                 parts @ parts.push(",")
 
             written = if p.is_string
@@ -47,7 +60,7 @@ function line(time_text: str, level_name: str, message: str, pieces: [piece.Piec
             else
                 p.text
             parts @ parts.push(json.quote(p.key) + ":" + written)
-            wrote[wrote.len() - 1] @ true
+            wrote[opened - 1] @ true
 
     parts @ parts.push("}")
     return parts.join("")

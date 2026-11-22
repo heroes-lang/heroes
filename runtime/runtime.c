@@ -206,6 +206,11 @@
  * layer's members have a header of their own for it). */
 #include "platform/hero_layer_alloc.h"
 
+/* The runtime's own thread number as the platform layer reads it, which
+ * `parts/alloc.c` defines below beside the number itself
+ * (`platform/hero_layer_thread.h` says why the layer needs it). */
+#include "platform/hero_layer_thread.h"
+
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */
 #include "parts/alloc.c"

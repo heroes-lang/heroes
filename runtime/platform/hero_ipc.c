@@ -103,6 +103,8 @@
 #include "hero_handle_tag.h"
 /* A channel's block, given back by its stream's close. */
 #include "hero_layer_alloc.h"
+/* The runtime's own number for a thread, a lock's holder's. */
+#include "hero_layer_thread.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -224,6 +226,8 @@ typedef struct {
     bool closing;
     /* A lock: held by the thread `holder` names. */
     bool held;
+    /* The holding thread's number, `hero_layer_thread`'s. */
+    uint64_t holder;
     /* A pipe listener: an accept is in flight. */
     bool accepting;
     /* A listener's `HERO_IPC_SPACE_*`. */
@@ -239,7 +243,6 @@ typedef struct {
     /* A pipe listener's instance waiting for a client, a mapping, a
      * semaphore or a mutex. */
     HANDLE handle;
-    DWORD holder;
 #else
     /* A listener's socket, or a lock's file. */
     int fd;
@@ -247,7 +250,6 @@ typedef struct {
     dev_t device;
     ino_t inode;
     sem_t *semaphore;
-    pthread_t holder;
 #endif
 } hero_ipc_slot;
 
@@ -1126,9 +1128,25 @@ static int64_t hero_ipc_channel_close(void *payload) {
 #endif
 
 
+/* The descriptor a wait on a channel uses (`hero_stream_hold_waitable`): on
+ * POSIX its socket, which a read and a write reach directly, non-blocking
+ * and with no bytes kept between calls, so its readiness is the channel's.
+ * Windows waits on a socket of `hero_net.h`'s alone (`hero_poll.h`), and a
+ * channel there may be a named pipe, so there it is none. */
+static int64_t hero_ipc_channel_waitable(void *payload) {
+#if defined(_WIN32)
+    (void)payload;
+    hero_stream_set_error(HERO_STREAM_UNSUPPORTED, 0);
+    return -1;
+#else
+    return (int64_t)((hero_ipc_channel *)payload)->fd;
+#endif
+}
+
 /* The table every channel's stream is made with: it stays where it is for
  * as long as any of them is open, and nothing writes it. */
-static const hero_stream_ops hero_ipc_channel_ops = { hero_ipc_channel_read, hero_ipc_channel_write, hero_ipc_channel_close };
+static const hero_stream_ops hero_ipc_channel_ops = { hero_ipc_channel_read, hero_ipc_channel_write, hero_ipc_channel_close,
+                                                      hero_ipc_channel_waitable };
 
 /* The channel under `s`, held until `hero_stream_release(s)`; NULL with the
  * failure named where `s` is no open stream this member made. */
@@ -2894,13 +2912,16 @@ int64_t hero_ipc_semaphore_close(hero_ipc_semaphore *s) {
 
 /* -- locks ------------------------------------------------------------------- */
 
+/* A LOCK'S HOLDER IS THE RUNTIME'S NUMBER FOR ITS THREAD, never given to
+ * another thread of the process (`hero_layer_thread.h`). A `pthread_t`
+ * names a thread only while it runs, and Darwin hands a thread started
+ * after another ended the same one at once, as Windows reuses a thread's
+ * id, so a holder recorded that way was taken for a thread that never took
+ * the lock, which then released it and was told it held it (defect 2673). */
+
 /* Whether the calling thread is the one `slot` records. Under the lock. */
 static bool hero_ipc_mine(hero_ipc_slot *slot) {
-#if defined(_WIN32)
-    return slot->holder == GetCurrentThreadId();
-#else
-    return pthread_equal(slot->holder, pthread_self()) != 0;
-#endif
+    return slot->holder == hero_layer_thread();
 }
 
 /* Whether the calling thread holds the lock `name` through any handle.
@@ -2919,11 +2940,7 @@ static bool hero_ipc_held_here(const char *name) {
 /* Records the calling thread as the holder. Under the lock. */
 static void hero_ipc_hold(hero_ipc_slot *slot) {
     slot->held = true;
-#if defined(_WIN32)
-    slot->holder = GetCurrentThreadId();
-#else
-    slot->holder = pthread_self();
-#endif
+    slot->holder = hero_layer_thread();
 }
 
 /* Releases a lock the calling thread holds: the mark cleared, then the

@@ -58,7 +58,13 @@
  *     whatever else it started, so there the mark is set around each write
  *     and taken away when no write to a standard stream is in flight: left
  *     set, a sibling in the same pipeline that counts on the signal to end
- *     would run on.
+ *     would run on. A stream handed to a child (`hero_stream_hold_shared`)
+ *     is shared from that moment in the same way, and so is treated the
+ *     same way, per stream: its mark stands only while a write of this
+ *     process on it is in flight, every such write counted under the
+ *     table's lock (defect 2671: left set, a child given a pipe's writing
+ *     end ended by `EPIPE` and an exit status where a shell's ends by the
+ *     signal, and one that ignores a failed write never ended).
  *   - Linux 7.0.14 sends it to the writing THREAD: blocked there, it stayed
  *     pending on the writer, no other thread's handler ran, and
  *     `sigtimedwait` took it back. So each write to what may be a pipe
@@ -182,6 +188,9 @@ typedef struct {
     uint32_t busy;
     /* `hero_stream_hold`s not yet released, each one of `busy`. */
     uint32_t holds;
+    /* Writes in flight on a descriptor that is no standard stream's, each
+     * one of `busy` (Darwin's, where `shared` reads it). */
+    uint32_t writing;
     /* The index plus one of the next slot given back, 0 for none. */
     uint32_t next;
     /* One of `HERO_STREAM_KIND_*`, as it was when the stream was made; not
@@ -199,6 +208,10 @@ typedef struct {
     bool closing;
     /* One of the process's own three: borrowed, never closed. */
     bool standard;
+    /* Darwin: the stream was handed to a child (`hero_stream_hold_shared`)
+     * while its open file carried the mark this file sets, so the mark now
+     * stands only while `writing` is above 0 (the opening comment). */
+    bool shared;
 } hero_stream_slot;
 
 /* What a call holds of its slot while it runs, read under the lock: a slot
@@ -213,6 +226,8 @@ typedef struct {
     bool writes;
     bool appends;
     bool standard;
+    /* The call is a write counted in its slot's `writing`. */
+    bool counted;
 } hero_stream_use;
 
 static hero_stream_slot hero_stream_slots[HERO_STREAM_SLOTS];
@@ -379,6 +394,8 @@ static void hero_stream_release_slot(hero_stream_slot *slot) {
     slot->held = false;
     slot->closing = false;
     slot->holds = 0;
+    slot->writing = 0;
+    slot->shared = false;
     slot->fd = HERO_STREAM_NO_FD;
     slot->ops = NULL;
     slot->payload = NULL;
@@ -417,6 +434,7 @@ static hero_stream *hero_stream_keep(hero_stream_fd fd, const hero_stream_ops *o
         slot->payload = payload;
         slot->busy = 0;
         slot->holds = 0;
+        slot->writing = 0;
         slot->next = 0;
         slot->kind = (uint8_t)kind;
         slot->reads = reads;
@@ -425,6 +443,7 @@ static hero_stream *hero_stream_keep(hero_stream_fd fd, const hero_stream_ops *o
         slot->held = true;
         slot->closing = false;
         slot->standard = false;
+        slot->shared = false;
         handle = hero_stream_handle(index, slot->life);
     }
     hero_stream_leave();
@@ -448,6 +467,7 @@ static void hero_stream_read_slot(hero_stream_slot *slot, hero_stream_use *use) 
     use->writes = slot->writes;
     use->appends = slot->appends;
     use->standard = slot->standard;
+    use->counted = false;
 }
 
 /* What a stream stood on, released: the table's `close`, or the system's.
@@ -487,6 +507,17 @@ static void hero_stream_done(const hero_stream_use *use) {
     bool last = false;
 
     hero_stream_enter();
+    if (use->counted) {
+        slot->writing -= 1;
+#if defined(HERO_STREAM_MARKS)
+        /* The last write of this process on a stream a child shares: the
+         * child's own writes raise SIGPIPE again. The descriptor is still
+         * open, being released below at the earliest. */
+        if (slot->shared && slot->writing == 0) {
+            (void)fcntl(slot->fd, F_SETNOSIGPIPE, 0);
+        }
+#endif
+    }
     slot->busy -= 1;
     if (slot->closing && slot->busy == 0) {
         hero_stream_release_slot(slot);
@@ -522,14 +553,27 @@ static bool hero_stream_standard_now(uint32_t which, hero_stream_fd *fd) {
 }
 
 /* The slot `s` names, marked busy and copied into `use`; false with
- * `HERO_STREAM_NOT_OPEN` where it names none. */
-static bool hero_stream_take(hero_stream *s, hero_stream_use *use) {
+ * `HERO_STREAM_NOT_OPEN` where it names none. A `write` on a descriptor that
+ * is no standard stream's is counted in the slot's `writing` under the same
+ * lock, so a hand to a child (`hero_stream_hold_shared`) never takes the mark
+ * off from under it; on Darwin the first such write on a stream a child
+ * shares sets the mark again, before the system is asked to write. */
+static bool hero_stream_take_for(hero_stream *s, hero_stream_use *use, bool write) {
     hero_stream_enter();
     hero_stream_slot *slot = hero_stream_find((uint64_t)(uintptr_t)s, false);
 
     if (slot != NULL) {
         slot->busy += 1;
         hero_stream_read_slot(slot, use);
+        if (write && !slot->standard && slot->ops == NULL) {
+            slot->writing += 1;
+            use->counted = true;
+#if defined(HERO_STREAM_MARKS)
+            if (slot->shared && slot->writing == 1) {
+                (void)fcntl(slot->fd, F_SETNOSIGPIPE, 1);
+            }
+#endif
+        }
     }
     hero_stream_leave();
 
@@ -542,6 +586,10 @@ static bool hero_stream_take(hero_stream *s, hero_stream_use *use) {
         return false;
     }
     return true;
+}
+
+static bool hero_stream_take(hero_stream *s, hero_stream_use *use) {
+    return hero_stream_take_for(s, use, false);
 }
 
 /* What a descriptor is, one of `HERO_STREAM_KIND_*`, asked of the system;
@@ -812,6 +860,7 @@ hero_stream *hero_stream_std(int64_t which) {
         slot->life = 1;
         slot->busy = 0;
         slot->holds = 0;
+        slot->writing = 0;
         slot->next = 0;
         slot->kind = 0;
         slot->reads = true;
@@ -819,6 +868,7 @@ hero_stream *hero_stream_std(int64_t which) {
         slot->appends = false;
         slot->closing = false;
         slot->standard = true;
+        slot->shared = false;
         slot->held = true;
     }
     hero_stream_leave();
@@ -1061,7 +1111,7 @@ int64_t hero_stream_write(hero_stream *s, const void *data, uint64_t count) {
         hero_stream_fail(HERO_STREAM_INVALID, 0);
         return -1;
     }
-    if (!hero_stream_take(s, &use)) {
+    if (!hero_stream_take_for(s, &use, true)) {
         return -1;
     }
     if (count > HERO_STREAM_CHUNK) {
@@ -1450,6 +1500,63 @@ int64_t hero_stream_hold(hero_stream *s) {
     hero_stream_enter();
     use.slot->holds += 1;
     hero_stream_leave();
+    return number;
+}
+
+int64_t hero_stream_hold_waitable(hero_stream *s) {
+    hero_stream_use use;
+    int64_t number = -1;
+
+    if (!hero_stream_take(s, &use)) {
+        return -1;
+    }
+    if (use.ops == NULL) {
+        number = hero_stream_number_of(&use);
+    } else if (use.ops->waitable == NULL) {
+        hero_stream_fail(HERO_STREAM_UNSUPPORTED, 0);
+    } else {
+        /* The slot is busy, so the table's `close` cannot run meanwhile. */
+        hero_stream_clear();
+        number = use.ops->waitable(use.payload);
+        if (number < 0 && hero_stream_failed_kind == HERO_STREAM_OK) {
+            hero_stream_fail(HERO_STREAM_UNSUPPORTED, 0);
+        }
+    }
+    if (number < 0) {
+        hero_stream_done(&use);
+        return -1;
+    }
+    /* The call's own use of the slot stays, as the hold, until the
+     * release, as in `hero_stream_hold`. */
+    hero_stream_enter();
+    use.slot->holds += 1;
+    hero_stream_leave();
+    hero_stream_clear();
+    return number;
+}
+
+int64_t hero_stream_hold_shared(hero_stream *s) {
+    int64_t number = hero_stream_hold(s);
+
+#if defined(HERO_STREAM_MARKS)
+    if (number >= 0) {
+        hero_stream_enter();
+        hero_stream_slot *slot = hero_stream_find((uint64_t)(uintptr_t)s, true);
+
+        /* Held, so the slot is still the stream's and its descriptor open.
+         * A mark found on a stream that is no standard one is this file's
+         * (`hero_stream_open_fd`, `hero_stream_pipe_fds`); with no write of
+         * this process in flight it comes off now, else the last such write
+         * takes it off (`hero_stream_done`). */
+        if (slot != NULL && !slot->standard && !slot->shared && fcntl(slot->fd, F_GETNOSIGPIPE) == 1) {
+            slot->shared = true;
+            if (slot->writing == 0) {
+                (void)fcntl(slot->fd, F_SETNOSIGPIPE, 0);
+            }
+        }
+        hero_stream_leave();
+    }
+#endif
     return number;
 }
 

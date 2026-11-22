@@ -517,7 +517,8 @@ capability text/find-first  where a text first holds another
 - **A package is complete when no block says `pending`.** A block that cannot
   be done well in time says `pending`; nothing is written badly to empty it.
 
-The lists come from this machine: `go doc -all <package>`, the Rust
+The lists come from this machine: `go doc -all <package>` (run as § A9 runs
+Go, so it writes nothing outside the tree), the Rust
 documentation under `~/.rustup/toolchains/stable-aarch64-apple-darwin/share/doc/rust/html/std`,
 and `python3 -I -c "import m; print(dir(m))"`. Versions: Go 1.27, Rust 1.100,
 Python 3.15.
@@ -530,8 +531,14 @@ Python 3.15.
   separator at either end.
 - **Expected values are observed, not remembered.** Ask the reference
   libraries what they answer for the same input, with one-off commands
-  (`python3 -I -c '...'`, a Go file run with `GOCACHE` set inside the scratch
-  folder), and write what they answer. Where they disagree, decide, and write
+  (`python3 -I -c '...'`, a Go file run with `HOME`, `GOCACHE`, `GOPATH` and
+  `GOMODCACHE` set inside the scratch folder, and `go telemetry off` run once
+  under that `HOME`), and write what they answer. Go keeps its telemetry under
+  the user's configuration folder and reads its mode from there, never from a
+  variable: Go 1.27.4's `go help environment` lists `GOTELEMETRY` among those
+  "not read from the environment", and `GOTELEMETRY=off go env GOTELEMETRY`
+  answered `local` (run 2026-11-22), so the folder is moved instead, and
+  nothing is written outside the tree. Where they disagree, decide, and write
   the decision in the ledger's `note`.
 - A test's title says the function and the cases: `"index_of: at the start,
   inside, absent, and a text of more than one byte"`. No two tests of a

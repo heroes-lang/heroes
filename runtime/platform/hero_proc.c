@@ -51,8 +51,12 @@
  * The parent's own is `hero_stream_std`, nothing is the null device opened
  * by `hero_stream_open`, a new pipe is `hero_stream_pipe`, whose other end
  * the program takes, and each is passed to the child through
- * `hero_stream_hold`, which keeps its descriptor open across the launch
- * whatever another thread closes. Everything that member opens is
+ * `hero_stream_hold_shared`, which keeps its descriptor open across the
+ * launch whatever another thread closes, and on Darwin takes off the mark
+ * that stops a write's SIGPIPE, which the child would share: a child
+ * writing into a reader that has gone ends by the signal, as one a shell
+ * starts does, whether its stream is a pipe made here or one the program
+ * holds and writes to as well (defect 2671). Everything that member opens is
  * close-on-exec, or not inheritable, so the child gets a stream only by this
  * file's act: `dup2` onto 0, 1 and 2 (a spawn's file action, or after the
  * fork), or `DuplicateHandle` asking an inheritable copy that is named in the
@@ -974,7 +978,10 @@ static bool hero_proc_stdio_open(hero_proc_stdio *io, int which, int64_t kind, h
         io->source = given;
         break;
     }
-    io->descriptor = hero_stream_hold(io->source);
+    /* Shared from here with the child, whatever the stream is: on Darwin
+     * that takes off the mark that would keep the child's writes into a
+     * reader that has gone from raising SIGPIPE (`hero_stream.h`). */
+    io->descriptor = hero_stream_hold_shared(io->source);
     if (io->descriptor == -1) {
         hero_proc_fail_as_stream();
         hero_proc_stdio_shut(io, false);
@@ -1745,21 +1752,6 @@ static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const un
     if (!hero_proc_stdio_open_all(io, kinds, given)) {
         return false;
     }
-#if defined(F_SETNOSIGPIPE)
-    /* Darwin's mark that a write to a pipe nobody reads raises no signal is
-     * the OPEN FILE's, and `hero_stream_pipe` sets it on every pipe's
-     * writing end (`platform/hero_stream.c` measured both). The writing end
-     * of a pipe made here for the child's output or error is the child's
-     * alone, so the mark is taken off it: a child whose reader is gone ends
-     * by SIGPIPE, as one a shell starts does, and never writes on against an
-     * error it does not read. A stream the program itself holds keeps its
-     * mark, being the program's to write to as well. */
-    for (int which = HERO_PROC_OUTPUT; which <= HERO_PROC_ERROR; which += 1) {
-        if (kinds[which] == HERO_PROC_STDIO_PIPE) {
-            (void)fcntl((int)io[which].descriptor, F_SETNOSIGPIPE, 0);
-        }
-    }
-#endif
     for (int which = 0; which < 3 && failed == 0; which += 1) {
         if (!io[which].held) {
             continue;

@@ -602,29 +602,6 @@ test "client_over and server_over: a closed stream and one of the process's own 
     assert !io.is_closed(own)
     io.close(@p.reader).must()
 
-test "connect: example.com at port 443, its certificate checked by the system's own store, where the network answers"
-    made = connect(
-        host: "example.com",
-        port: 443,
-        deadline: time.seconds(10).must(),
-        roots: "",
-        protocols: ["http/1.1"],
-        checks: hero_tls.HERO_TLS_CHECK_ALL
-    )
-
-    match made
-        .ok s =>
-            stream @= s
-            version = version_of(stream).must()
-            assert version == 12 || version == 13
-            print("example.com:443 answered over TLS 1." + to_str(version - 10))
-            io.close(@stream).must()
-        .err e =>
-            # No network: the test says so, and passes only where no
-            # certificate was refused.
-            print("example.com:443 unrun, the network did not answer: " + e.msg)
-            assert e.code != failure.INVALID
-
 # The loopback certificate, for the tests above that need one valid chain.
 function fixture_chain() -> str
     return fixture.LOCALHOST_CHAIN

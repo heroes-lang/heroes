@@ -1,4 +1,4 @@
-# pipeline: an event pipeline in the manner of Kafka Connect's S3 sink and
+# ingest: an event pipeline in the manner of Kafka Connect's S3 sink and
 # a Kafka Streams aggregation, in small. A member of a Kafka consumer
 # group reads the events producers write (JSON or MessagePack, by their
 # `content-type`), cuts them into tumbling windows by their event time
@@ -15,14 +15,14 @@
 #
 # Run for real:
 #
-#     heroes build examples-rebel/pipeline/main.hero -o pipeline
-#     ./pipeline check pipeline.toml          # read the file, say what it names
-#     ./pipeline migrate pipeline.toml        # apply the schema
-#     ./pipeline run pipeline.toml            # consume until Ctrl-C or SIGTERM
-#     ./pipeline replay pipeline.toml         # write the writes kept as jobs
-#     ./pipeline export pipeline.toml 2026-03-14
+#     heroes build examples-rebel/ingest/main.hero -o ingest
+#     ./ingest check pipeline.toml            # read the file, say what it names
+#     ./ingest migrate pipeline.toml          # apply the schema
+#     ./ingest run pipeline.toml              # consume until Ctrl-C or SIGTERM
+#     ./ingest replay pipeline.toml           # write the writes kept as jobs
+#     ./ingest export pipeline.toml 2026-03-14
 #
-# `config/loader.hero` documents the file. The demo, `./pipeline demo`,
+# `config/loader.hero` documents the file. The demo, `./ingest demo`,
 # starts on loopback a Kafka broker, an S3 service and a PostgreSQL server
 # it carries (`standins/`), produces a scripted morning of events, runs
 # the pipeline until it has caught up, exports, replays the one write the
@@ -52,8 +52,23 @@
 use core/commands
 use demo/supervise
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"ingest: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    words = args()
+    words = text_arguments()
 
     if words.len() == 1 && words[0] == "demo"
         exit(code: supervise.run())
@@ -69,6 +84,6 @@ function main()
         exit(code: commands.export_command(path: words[1], day: words[2]))
     else
         print(
-            "usage: pipeline demo | pipeline check|migrate|run|replay <pipeline.toml> | pipeline export <pipeline.toml> <YYYY-MM-DD>"
+            "usage: ingest demo | ingest check|migrate|run|replay <pipeline.toml> | ingest export <pipeline.toml> <YYYY-MM-DD>"
         )
         exit(code: 2)

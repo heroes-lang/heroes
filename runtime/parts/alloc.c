@@ -231,6 +231,12 @@ static uint64_t hero_this_thread(void) {
     return hero_thread_number;
 }
 
+/* The same number, for the platform layer's members
+ * (`platform/hero_layer_thread.h`). */
+uint64_t hero_layer_thread(void) {
+    return hero_this_thread();
+}
+
 /* THE LIVE LEASES, BY ADDRESS, AND WHERE EACH WAS TAKEN (M-panic-location step
  * 9). `hero_live_held` counts them, and the gate and the fault handlers read
  * that count; this table is what lets the gate say WHERE the ones never ended

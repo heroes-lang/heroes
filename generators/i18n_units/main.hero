@@ -2,14 +2,15 @@
 # CLDR 49's unit, list and number patterns from the release's JSON zip,
 # pinned by its URL and SHA-256 (`cldr.SOURCE_URL`, `cldr.SOURCE_SHA256`),
 # and writes the table byte for byte, or says whether the table in the tree
-# is still what it writes. It stands outside Rebel's version folder, so a
-# program that takes Rebel never carries it.
+# is still what it writes. It stands in `generators/`, outside Rebel's tree,
+# so a program that takes Rebel never carries it and nothing that reads
+# Rebel's packages, the site's index among them, reads it as one.
 #
 # Run from the repository's root, the zip fetched from `cldr.SOURCE_URL` into
 # any folder:
 #
-#     heroes run packages/rebel/generate/i18n_units/main.hero -- write <zip>
-#     heroes run packages/rebel/generate/i18n_units/main.hero -- check <zip>
+#     heroes run generators/i18n_units/main.hero -- write <zip>
+#     heroes run generators/i18n_units/main.hero -- check <zip>
 #
 # `write` writes the table. `check` reads it and exits 0 where it holds
 # exactly what `write` would write, and 1 where it does not, naming the first
@@ -56,12 +57,27 @@ function run(command: str, zip: str) -> i64?
     print(table.TABLE_PATH, " is not what the generator writes: the first line that differs is ", first)
     return ok(DIFFERS)
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"i18n_units: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    words = args()
+    words = text_arguments()
 
     if words.len() != 2 || words[0] != "write" && words[0] != "check"
         print(
-            "usage, from the repository's root: heroes run packages/rebel/generate/i18n_units/main.hero -- write|check <zip of ",
+            "usage, from the repository's root: heroes run generators/i18n_units/main.hero -- write|check <zip of ",
             cldr.SOURCE_URL,
             ">"
         )
