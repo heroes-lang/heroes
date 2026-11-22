@@ -609,6 +609,16 @@ finish everything, and we add nothing more*. So the landing waits for every capa
 `ui-feature-catalogue`'s ordered list on macOS, Win32 and GTK 4, and the round takes no new item beyond
 the open issues and the catalogue's rows.
 
+**Turned by the author the same night**: asked whether Rebel has a library for audio, the microphone
+and printers (it has none; the `ui` catalogue names printing and the system's beep as `could`), and
+given the choice between a round of its own after the landing and this round, the author answered *B*,
+this round. So `audio` (playing, recording from the microphone, the devices, WAV, the beep) and printing
+(the printers, the print and page dialogs answered through the event queue, a document and a web view
+printed) enter the landing. And asked *is there anything else missing?*, the coordinator measures it
+before answering: a catalogue of every capability area of Go's, Python's, Rust's, .NET's, Java's and
+Node's libraries against Rebel's ledgers (`rebel-scratch/coord/rebel-gap-catalogue.md`), each absent area
+with a verdict, put to the author.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
