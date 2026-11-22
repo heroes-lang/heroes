@@ -63,10 +63,18 @@ function words() -> str
     return bytes.to_text_lossy(room.slice(from: 0, to: got))
 
 # The failure the floor's last call on this thread named, as a `T?`: its code,
-# and `asked` then the layer's words.
+# and `asked` then the layer's words, which already open with `asked` where
+# the layer named the call so, and are then told once.
 function last<T>(asked: str) -> T?
     code = code_of(hero_ui.last_error())
-    return fail(code: code, msg: f"{asked}: {words()}")
+    return fail(code: code, msg: told(asked: asked, said: words()))
+
+# `asked` then `said`, or `said` alone where it opens with `asked` and a
+# colon already.
+function told(asked: str, said: str) -> str
+    if bytes.has_prefix(s: bytes.from_text(said), prefix: bytes.from_text(f"{asked}: "))
+        return said
+    return f"{asked}: {said}"
 
 ## Tests
 
@@ -92,3 +100,9 @@ test "last: the floor's refusal of an unknown backend becomes invalid, its messa
         .err e =>
             assert e.code == INVALID
             assert e.msg == "opening an app: the backend 42 is neither HERO_UI_HEADLESS nor HERO_UI_NATIVE"
+
+test "told: the layer's words told once where they open with what was asked, as the clipboard's and the screens' did twice"
+    assert told(asked: "writing the clipboard", said: "writing the clipboard: no room left") == "writing the clipboard: no room left"
+    assert told(asked: "reading the screens", said: "the system refused") == "reading the screens: the system refused"
+    assert told(asked: "a", said: "ab: c") == "a: ab: c"
+    assert told(asked: "a", said: "a") == "a: a"
