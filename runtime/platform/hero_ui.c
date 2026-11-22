@@ -3436,6 +3436,7 @@ typedef struct hero_ui_gtk_functions {
     void (*window_close)(void *window);
     void (*window_destroy)(void *window);
     void (*widget_set_visible)(void *widget, int visible);
+    int (*widget_get_visible)(void *widget);
     void (*widget_set_sensitive)(void *widget, int sensitive);
     int (*widget_is_sensitive)(void *widget);
     void (*widget_set_size_request)(void *widget, int width, int height);
@@ -3645,6 +3646,7 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(window_close, "gtk_window_close");
     HERO_UI_GTK_NEED(window_destroy, "gtk_window_destroy");
     HERO_UI_GTK_NEED(widget_set_visible, "gtk_widget_set_visible");
+    HERO_UI_GTK_NEED(widget_get_visible, "gtk_widget_get_visible");
     HERO_UI_GTK_NEED(widget_set_sensitive, "gtk_widget_set_sensitive");
     HERO_UI_GTK_NEED(widget_is_sensitive, "gtk_widget_is_sensitive");
     HERO_UI_GTK_NEED(widget_set_size_request, "gtk_widget_set_size_request");
@@ -5231,16 +5233,25 @@ static int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y
 }
 
 /* The size GTK draws `widget` at as it stands with its text and items,
- * apart from the size it was placed at. */
+ * apart from the size it was placed at, and shown for the moment it is
+ * measured: GTK 4 measures a widget it does not show as 0 by 0, and this arm
+ * hides one until it is placed (measured under Xvfb, GTK 4.18.6). */
 static hero_ui_gtk_size hero_ui_gtk_natural(void *widget) {
     int width = -1;
     int height = -1;
+    int shown = hero_ui_gtk.widget_get_visible(widget);
     hero_ui_gtk_size least;
     hero_ui_gtk_size natural;
 
     hero_ui_gtk.widget_get_size_request(widget, &width, &height);
     hero_ui_gtk.widget_set_size_request(widget, -1, -1);
+    if (!shown) {
+        hero_ui_gtk.widget_set_visible(widget, 1);
+    }
     hero_ui_gtk.widget_get_preferred_size(widget, &least, &natural);
+    if (!shown) {
+        hero_ui_gtk.widget_set_visible(widget, 0);
+    }
     hero_ui_gtk.widget_set_size_request(widget, width, height);
     if (natural.width < least.width) {
         natural.width = least.width;
