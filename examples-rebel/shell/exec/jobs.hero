@@ -13,7 +13,6 @@ use <rebel>/io
 use <rebel>/os
 use <rebel>/process
 use <rebel>/strings
-use <rebel>/time
 use <rebel>/unicode/segment
 
 use exec/state
@@ -87,39 +86,28 @@ variant Waited
 # Waits for every child of `job`, a stopped one sent on first, gives them
 # back and marks it done; or leaves the job as it stands where one stops
 # again or a Ctrl-C the shell counts comes first, as a shell's `fg` and
-# `wait` end on either. No wait of `process` ends on a signal, so each child
-# is asked where it stands every ten milliseconds.
+# `wait` end on either: one wait of `process` ends on the first of the three.
 #
 # - `job`: the job.
 function finish(@job: state.Job) -> Waited
     status @= 0
 
     for k in range(from: 0, to: job.children.len())
-        seen_running @= true
-
         match job.children[k].state
-            .stopped _ =>
-                _ = process.send_signal(job.children[k], signal: .resume).is_err()
-                seen_running @ false
+            .stopped _          => _ = process.send_signal(job.children[k], signal: .resume).is_err()
             .running | .ended _ => _ = 0
 
         waiting @= true
 
         while waiting
-            match process.state_of(@job.children[k])
+            match process.wait_or_signal(@job.children[k])
                 .ok s =>
                     match s
-                        .ended _ => waiting @ false
-                        .stopped _ =>
-                            if seen_running
-                                return .stopped
-                            time.sleep(time.milliseconds(10).must())
+                        .ended _   => waiting @ false
+                        .stopped _ => return .stopped
                         .running =>
-                            seen_running @ true
-
                             if os.take_signals(.interrupt) > 0
                                 return .interrupted
-                            time.sleep(time.milliseconds(10).must())
                 .err _ => waiting @ false
 
         status @ match process.wait(@job.children[k])

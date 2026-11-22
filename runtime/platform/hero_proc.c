@@ -118,6 +118,7 @@
 /* The tag that keeps this table's handles apart from every other member's
  * (2026-11-16): `HERO_HANDLE_TAG_PROC`. */
 #include "hero_handle_tag.h"
+#include "hero_layer_signal.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -132,6 +133,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <poll.h>
 #include <pthread.h>
 #include <signal.h>
 #include <spawn.h>
@@ -287,6 +289,16 @@ typedef struct {
     bool orphan;
     /* POSIX: a thread of the layer waits for it. */
     bool watched;
+#if !defined(_WIN32)
+    /* POSIX: the bell `hero_proc_heed` waits on, a pipe one helper thread
+     * writes once when the process ends or stops; `belled` while it is open,
+     * `ringing` while the helper holds it, `listeners` the waits polling it.
+     * Closed by the last of them, under the lock. */
+    int bell[2];
+    bool belled;
+    bool ringing;
+    uint32_t listeners;
+#endif
 } hero_proc_slot;
 
 /* The table and its free list, one object under one lock. */
@@ -755,12 +767,13 @@ static void *hero_proc_watching(void *at) {
     return NULL;
 }
 
-/* Starts that thread: detached, on a small stack, with every signal but a
- * fault's held off, so no handler of the program ever runs on it (a fault's
- * signal goes to the thread that faulted, and holding one turns a fault into
- * a hang on Darwin, as `parts/spawn.c` measured). False where the system
- * gives no thread. Under the lock, which the new thread then waits for. */
-static bool hero_proc_watch(hero_proc_slot *slot) {
+/* Starts a thread of the layer's for `slot`: detached, on a small stack, with
+ * every signal but a fault's held off, so no handler of the program ever runs
+ * on it (a fault's signal goes to the thread that faulted, and holding one
+ * turns a fault into a hang on Darwin, as `parts/spawn.c` measured). False
+ * where the system gives no thread. Under the lock, which the new thread then
+ * waits for. */
+static bool hero_proc_thread(void *(*run)(void *), hero_proc_slot *slot) {
     pthread_attr_t how;
     pthread_t thread;
     sigset_t held;
@@ -780,11 +793,16 @@ static bool hero_proc_watch(hero_proc_slot *slot) {
     (void)sigdelset(&held, SIGFPE);
     (void)sigdelset(&held, SIGSYS);
     if (pthread_sigmask(SIG_BLOCK, &held, &before) == 0) {
-        made = pthread_create(&thread, &how, hero_proc_watching, slot) == 0;
+        made = pthread_create(&thread, &how, run, slot) == 0;
         (void)pthread_sigmask(SIG_SETMASK, &before, NULL);
     }
     (void)pthread_attr_destroy(&how);
     return made;
+}
+
+/* The thread that waits for one process released while it ran. */
+static bool hero_proc_watch(hero_proc_slot *slot) {
+    return hero_proc_thread(hero_proc_watching, slot);
 }
 
 /* Every released process no thread waits for is looked at, and its slot
@@ -878,6 +896,11 @@ static hero_proc_slot *hero_proc_reserve(void) {
         slot->closing = false;
         slot->orphan = false;
         slot->watched = false;
+#if !defined(_WIN32)
+        slot->belled = false;
+        slot->ringing = false;
+        slot->listeners = 0;
+#endif
     }
     hero_proc_leave();
     return slot;
@@ -2178,6 +2201,266 @@ int64_t hero_proc_state(hero_proc *p, int64_t waits, int64_t *stop_signal) {
         return 2;
     }
     return 0;
+}
+
+/* -- a wait a counted signal ends (feature 2690) ------------------------- */
+
+/* Polled where no bell can be had: the system gave no pipe or no thread. */
+#define HERO_PROC_HEED_SLICE_MS 50
+/* One wait in the system lasts at most an hour, then the limit is read
+ * again: no system's timeout is asked past what its type holds. */
+#define HERO_PROC_HEED_CHUNK_MS (60 * 60 * 1000)
+
+/* The milliseconds of a wait from `left_ns`, rounded up so a wait never ends
+ * short of its limit and loops, and at most one chunk; -1 for no limit. */
+static int64_t hero_proc_heed_ms(int64_t left_ns) {
+    if (left_ns < 0) {
+        return -1;
+    }
+    int64_t ms = left_ns / 1000000 + (left_ns % 1000000 != 0 ? 1 : 0);
+
+    return ms > HERO_PROC_HEED_CHUNK_MS ? HERO_PROC_HEED_CHUNK_MS : ms;
+}
+
+#if defined(_WIN32)
+/* Nanoseconds on a clock that never goes back. */
+static int64_t hero_proc_heed_now(void) {
+    return (int64_t)GetTickCount64() * 1000000;
+}
+#else
+static int64_t hero_proc_heed_now(void) {
+    struct timespec at;
+
+    (void)clock_gettime(CLOCK_MONOTONIC, &at);
+    return (int64_t)at.tv_sec * 1000000000 + (int64_t)at.tv_nsec;
+}
+
+/* The slot's bell closed where neither its helper nor a wait holds it. Under
+ * the lock. */
+static void hero_proc_bell_put(hero_proc_slot *slot) {
+    if (slot->belled && !slot->ringing && slot->listeners == 0) {
+        (void)close(slot->bell[0]);
+        (void)close(slot->bell[1]);
+        slot->belled = false;
+    }
+}
+
+/* The helper: waits, taking nothing (`WNOWAIT`), until the process ends or
+ * stops, writes the bell once and leaves the slot as a call in flight leaves
+ * it, so a slot released meanwhile is given back, or watched, by it. What it
+ * saw is taken by the wait the bell wakes, under the lock. A stop taken
+ * before it began `waitid` reports no more, as in `hero_proc_await_change`. */
+static void *hero_proc_ringing(void *at) {
+    hero_proc_slot *slot = at;
+    siginfo_t told;
+
+    hero_proc_enter();
+    bool runs = slot->state == HERO_PROC_STATE_RUNNING;
+    pid_t pid = slot->pid;
+    hero_proc_leave();
+
+    if (runs) {
+        int waited = 0;
+
+        do {
+            memset(&told, 0, sizeof told);
+            waited = waitid(P_PID, (id_t)pid, &told, WEXITED | WSTOPPED | WNOWAIT);
+        } while (waited != 0 && errno == EINTR);
+    }
+    unsigned char rung = 1;
+
+    hero_proc_enter();
+    (void)!write(slot->bell[1], &rung, 1);
+    slot->ringing = false;
+    hero_proc_bell_put(slot);
+    hero_proc_leave();
+    (void)hero_proc_done(slot);
+    return NULL;
+}
+
+/* The descriptor of the slot's bell, readable once the process ended or
+ * stopped after it was made: the one open, rung or still ringing, or a new
+ * one with its helper, which holds the slot busy until it rings. -1 where the
+ * system gives no pipe or no thread. Under the lock. */
+static int hero_proc_bell(hero_proc_slot *slot) {
+    if (slot->belled) {
+        return slot->bell[0];
+    }
+    int ends[2];
+
+    if (hero_proc_report_pipe(ends) != 0) {
+        return -1;
+    }
+    slot->bell[0] = ends[0];
+    slot->bell[1] = ends[1];
+    slot->belled = true;
+    slot->ringing = true;
+    slot->busy += 1;
+    if (!hero_proc_thread(hero_proc_ringing, slot)) {
+        slot->busy -= 1;
+        slot->ringing = false;
+        hero_proc_bell_put(slot);
+        return -1;
+    }
+    return ends[0];
+}
+#endif
+
+int64_t hero_proc_heed(hero_proc *p, int64_t limit_ns, int64_t *stop_signal) {
+    if (stop_signal != NULL) {
+        *stop_signal = 0;
+    }
+    if (limit_ns < -1) {
+        hero_proc_fail(HERO_PROC_INVALID, 0);
+        return -1;
+    }
+    hero_proc_slot *slot = hero_proc_take(p);
+
+    if (slot == NULL) {
+        return -1;
+    }
+    int64_t ends = limit_ns < 0 ? -1 : hero_proc_heed_now() + limit_ns;
+    bool heard = false;
+    bool stop_seen = false;
+#if defined(_WIN32)
+    HANDLE door = hero_signal_door_event();
+
+    for (;;) {
+        hero_proc_enter();
+        if (slot->state == HERO_PROC_STATE_RUNNING) {
+            hero_proc_look(slot);
+        }
+        bool runs = slot->state == HERO_PROC_STATE_RUNNING;
+        HANDLE process = slot->process;
+        hero_proc_leave();
+
+        if (!runs) {
+            break;
+        }
+        if (hero_signal_any() != 0) {
+            heard = true;
+            break;
+        }
+        int64_t now = hero_proc_heed_now();
+
+        if (ends >= 0 && now >= ends) {
+            break;
+        }
+        int64_t ms = hero_proc_heed_ms(ends < 0 ? -1 : ends - now);
+        HANDLE both[2] = { process, door };
+        DWORD waited = WaitForMultipleObjects(door != NULL ? 2 : 1, both, FALSE, ms < 0 ? INFINITE : (DWORD)ms);
+
+        if (waited == WAIT_FAILED) {
+            DWORD why = GetLastError();
+
+            hero_proc_enter();
+            if (slot->state == HERO_PROC_STATE_RUNNING) {
+                slot->lost = (int64_t)why;
+                slot->state = HERO_PROC_STATE_LOST;
+            }
+            hero_proc_leave();
+            break;
+        }
+    }
+#else
+    int door = hero_signal_door();
+    /* The bell rang and the look after it saw nothing: the system told the
+     * change and would not hand it yet, so the next look waits a moment, as
+     * `hero_proc_await_change` does, and never in a tight loop. */
+    bool rang = false;
+
+    for (;;) {
+        int saw = HERO_PROC_SAW_NOTHING;
+        int bell = -1;
+
+        hero_proc_enter();
+        if (slot->state == HERO_PROC_STATE_RUNNING) {
+            saw = hero_proc_look_as(slot, WUNTRACED | WCONTINUED);
+        }
+        bool settled = slot->state != HERO_PROC_STATE_RUNNING || saw == HERO_PROC_SAW_STOP;
+        bool pause = rang && saw == HERO_PROC_SAW_NOTHING;
+
+        if (!settled && !pause) {
+            bell = hero_proc_bell(slot);
+            if (bell >= 0) {
+                slot->listeners += 1;
+            }
+        }
+        hero_proc_leave();
+
+        if (settled) {
+            stop_seen = saw == HERO_PROC_SAW_STOP;
+            break;
+        }
+        rang = false;
+        if (hero_signal_any() != 0) {
+            heard = true;
+        } else {
+            int64_t now = hero_proc_heed_now();
+            int64_t ms = hero_proc_heed_ms(ends < 0 ? -1 : (ends > now ? ends - now : 0));
+
+            if (pause || bell < 0) {
+                int64_t most = pause ? 1 : HERO_PROC_HEED_SLICE_MS;
+
+                ms = ms < 0 || ms > most ? most : ms;
+            }
+            struct pollfd fds[2];
+
+            memset(fds, 0, sizeof fds);
+            fds[0].fd = door;
+            fds[0].events = POLLIN;
+            fds[1].fd = bell;
+            fds[1].events = POLLIN;
+            int n = poll(fds, 2, (int)ms);
+
+            if (n < 0 && errno != EINTR) {
+                struct timespec moment = { 0, 1000000 };
+
+                (void)nanosleep(&moment, NULL);
+            }
+            rang = n > 0 && bell >= 0 && fds[1].revents != 0;
+            heard = n > 0 && door >= 0 && fds[0].revents != 0 && hero_signal_any() != 0;
+        }
+        if (bell >= 0) {
+            hero_proc_enter();
+            slot->listeners -= 1;
+            hero_proc_bell_put(slot);
+            hero_proc_leave();
+        }
+        if (heard) {
+            break;
+        }
+        if (ends >= 0 && hero_proc_heed_now() >= ends) {
+            break;
+        }
+    }
+#endif
+    hero_proc_enter();
+    uint8_t state = slot->state;
+    int64_t stopped = slot->stopped;
+    int64_t lost = slot->lost;
+    hero_proc_leave();
+
+    if (hero_proc_done(slot)) {
+        hero_proc_fail(HERO_PROC_NOT_OPEN, 0);
+        return -1;
+    }
+    if (state == HERO_PROC_STATE_ENDED) {
+        hero_proc_clear();
+        return 1;
+    }
+    if (state != HERO_PROC_STATE_RUNNING) {
+        hero_proc_fail(HERO_PROC_OTHER, lost);
+        return -1;
+    }
+    hero_proc_clear();
+    if (stop_signal != NULL) {
+        *stop_signal = stopped;
+    }
+    if (stop_seen) {
+        return 2;
+    }
+    return heard ? 3 : 0;
 }
 
 /* Both doors that stop a process: nothing is sent to one that has ended. */

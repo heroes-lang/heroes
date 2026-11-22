@@ -1,0 +1,122 @@
+# The scripts of `unicode/names`' properties: their long names, every code
+# point's script, the script extensions, and every name of a script, read
+# from `Scripts.txt`, `ScriptExtensions.txt` and `PropertyValueAliases.txt`.
+
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+use runs
+
+# What the scripts' three files give the tables.
+record Scripts
+    # The long name of every script, in the order of their bytes.
+    names: [str]
+    # Every code point's script, as runs `first << 8 | script`.
+    runs: [i64]
+    # The ranges `first << 29 | last << 8 | set` of the extensions, the sets
+    # `offset << 8 | length` and their members.
+    extension_ranges: [i64]
+    extension_sets: [i64]
+    extension_members: [i64]
+    # Every name of a script, in the order of their bytes, and the script
+    # each names.
+    aliases: [str]
+    alias_targets: [i64]
+
+# The index of `name` in `names`, or -1.
+function index_in(names: [str], name: str) -> i64
+    at @= 0
+
+    while at < names.len()
+        if names[at] == name
+            return at
+        at @ at + 1
+
+    return -1
+
+# What `scripts`, `extensions` and `aliases`, the three files' texts, give.
+#
+# Fails `invalid` where a line does not read, or names a script
+# `PropertyValueAliases.txt` does not, or where `Unknown` is no script.
+function scripts_of(scripts: str, extensions: str, aliases: str) -> Scripts?
+    long_of: {str: str} @= {}
+    every: {str: str} @= {}
+
+    for row in runs.rows(aliases)
+        if row.len() >= 3 && row[0] == "sc"
+            long = row[2]
+            long_of[row[1]] @ long
+
+            for name in row.slice(from: 1, to: row.len())
+                every[name] @ long
+
+    names = sort(values_of(long_of))
+    unknown = index_in(names, name: "Unknown")
+
+    if unknown < 0
+        return fail(code: "invalid", msg: "no script is named Unknown")
+    values @= runs.filled(unknown)
+
+    for line in ucdkit.data_lines(scripts)?
+        script = index_in(names, name: line.fields[0])
+
+        if script < 0
+            return fail(code: "invalid", msg: f"the script \"{line.fields[0]}\" of {line.first} has no long name")
+        runs.fill(@values, line: line, value: script)
+
+    script_runs: [i64] @= []
+
+    for one in runs.runs_of(values, none: -1)
+        script_runs @ script_runs.push(one.first << 8 | one.value)
+
+    sets: [[i64]] @= []
+    set_spans: [i64] @= []
+    members: [i64] @= []
+    set_of @= runs.filled(-1)
+
+    for line in ucdkit.data_lines(extensions)?
+        set: [i64] @= []
+
+        for code in strings.words(line.fields[0])
+            long = match long_of[code]
+                .ok l  => l
+                .err _ => return fail(code: "invalid", msg: f"the script \"{code}\" of {line.first} has no long name")
+
+            set @ set.push(index_in(names, name: long))
+
+        found @= 0
+
+        while found < sets.len() && sets[found] != set
+            found @ found + 1
+
+        if found == sets.len()
+            sets @ sets.push(set)
+            set_spans @ set_spans.push(members.len() << 8 | set.len())
+
+            for member in set
+                members @ members.push(member)
+        runs.fill(@set_of, line: line, value: found)
+
+    extension_ranges: [i64] @= []
+
+    for one in runs.runs_of(set_of, none: -1)
+        extension_ranges @ extension_ranges.push(one.first << 29 | one.last << 8 | one.value)
+
+    alias_names = sort(keys(every))
+    targets: [i64] @= []
+
+    for name in alias_names
+        targets @ targets.push(index_in(names, name: every[name].must()))
+
+    return ok(
+        Scripts(names: names, runs: script_runs, extension_ranges: extension_ranges, extension_sets: set_spans, extension_members: members, aliases: alias_names, alias_targets: targets)
+    )
+
+# The values of `m`, each once.
+function values_of(m: {str: str}) -> [str]
+    seen: {str: bool} @= {}
+
+    for key in keys(m)
+        seen[m[key].must()] @ true
+
+    return keys(seen)

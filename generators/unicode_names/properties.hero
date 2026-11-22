@@ -1,0 +1,100 @@
+# The blocks and the binary properties of `unicode/names`' properties, read
+# from `Blocks.txt`, `PropList.txt`, `DerivedCoreProperties.txt`,
+# `emoji-data.txt` and `PropertyAliases.txt`.
+
+use <ucdkit>/ucdkit
+
+use runs
+use scripts
+
+# The blocks, by the order of their code points: each name, and its range
+# `first << 21 | last` beside it.
+record Blocks
+    names: [str]
+    ranges: [i64]
+
+# What `Blocks.txt`, `text`, gives.
+#
+# Fails `invalid` where a line does not read.
+function blocks_of(text: str) -> Blocks?
+    by_first: {i64: str} @= {}
+    lasts: {i64: i64} @= {}
+
+    for line in ucdkit.data_lines(text)?
+        by_first[line.first] @ line.fields[0]
+        lasts[line.first] @ line.last
+
+    out @= Blocks(names: [], ranges: [])
+
+    for first in sort(keys(by_first))
+        out.names @ out.names.push(by_first[first].must())
+        out.ranges @ out.ranges.push(first << 21 | lasts[first].must())
+
+    return ok(out)
+
+# The binary properties of the three files: their long names in the order
+# of their bytes, where each one's ranges begin, the ranges, every name
+# `PropertyAliases.txt` gives one of them and the property each names.
+record Binary
+    names: [str]
+    starts: [i64]
+    ranges: [i64]
+    aliases: [str]
+    alias_targets: [i64]
+
+# What `files`, the texts of the files that list binary properties, and
+# `aliases`, `PropertyAliases.txt`'s, give: a property is a line's one
+# field after its code points.
+#
+# Fails `invalid` where a line does not read.
+function binary_of(files: [str], aliases: str) -> Binary?
+    lines_of: {str: [ucdkit.Line]} @= {}
+
+    for text in files
+        for line in ucdkit.data_lines(text)?
+            if line.fields.len() == 1
+                name = line.fields[0]
+                held = lines_of[name].default([])
+                lines_of[name] @ held.push(line)
+
+    names = sort(keys(lines_of))
+    out @= Binary(names: names, starts: [], ranges: [], aliases: [], alias_targets: [])
+
+    for name in names
+        out.starts @ out.starts.push(out.ranges.len())
+
+        for span in runs.ranges_of(lines_of[name].must())
+            out.ranges @ out.ranges.push(span)
+
+    out.starts @ out.starts.push(out.ranges.len())
+    target_of: {str: i64} @= {}
+
+    for row in runs.rows(aliases)
+        if row.len() >= 2
+            property = scripts.index_in(names, name: row[1])
+
+            if property >= 0
+                for alias in row
+                    target_of[alias] @ property
+
+    out.aliases @ sort(keys(target_of))
+
+    for alias in out.aliases
+        out.alias_targets @ out.alias_targets.push(target_of[alias].must())
+
+    return ok(out)
+
+## Tests
+
+test "blocks_of: the blocks by their first code point"
+    got = blocks_of("0080..00FF; Latin-1 Supplement\n0000..007F; Basic Latin\n").must()
+    assert got.names == ["Basic Latin", "Latin-1 Supplement"]
+    assert got.ranges == [0x7f, 0x80 << 21 | 0xff]
+
+test "binary_of: two files' properties by their bytes, a property's lines joined, its aliases long and short"
+    files = ["0041..005A ; Upper\n005B ; Upper\n0030 ; Digit_Like\n", "0061 ; Upper\n0020 ; White_Space ; extra\n"]
+    got = binary_of(files, aliases: "Upper ; Upper ; Uppercase\nWS ; White_Space\nDL ; Digit_Like\n").must()
+    assert got.names == ["Digit_Like", "Upper"]
+    assert got.starts == [0, 1, 3]
+    assert got.ranges == [0x30 << 21 | 0x30, 0x41 << 21 | 0x5b, 0x61 << 21 | 0x61]
+    assert got.aliases == ["DL", "Digit_Like", "Upper", "Uppercase"] && got.alias_targets == [0, 0, 1, 1]

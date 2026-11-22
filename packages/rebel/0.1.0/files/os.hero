@@ -867,7 +867,9 @@ variant Signal
 # It changes the whole process, and a second call changes nothing. A signal
 # the program inherited ignored stays ignored, so a job a shell started with
 # `&` hears no Ctrl-C; a child the program starts begins with the signal at
-# its default. See also `take_signals`, `catch_stop`.
+# its default. A counted signal ends a wait on it, `poll.add_signals` and
+# `process.wait_or_signal`, until it is taken. See also `take_signals`,
+# `catch_stop`.
 function count_signal(signal: Signal) -> ()?
     asked = f"counting {signal_name(signal)}"
 
@@ -901,7 +903,9 @@ function count_signal(signal: Signal) -> ()?
 # - `signal`: the signal counted.
 #
 # The system joins a signal sent while the same one waits to be delivered, so
-# a burst is counted short of what was sent.
+# a burst is counted short of what was sent. A wait on the counted signals
+# (`poll.add_signals`, `process.wait_or_signal`) ends while any of them is not
+# taken, and waits again once every count is.
 function take_signals(signal: Signal) -> i64
     return match signal_number(signal)
         .ok n  => hero_os.signal_take(n.to_i32().must())

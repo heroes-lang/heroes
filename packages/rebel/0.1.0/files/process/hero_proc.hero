@@ -62,6 +62,7 @@ extern "hero_proc.h"
     function hero_proc_wait(p: Proc, @code: i64, @by_signal: i64) -> i64
     function hero_proc_ended(p: Proc) -> i64
     function hero_proc_state(p: Proc, waits: i64, @stop_signal: i64) -> i64
+    function hero_proc_heed(p: Proc, limit_ns: i64, @stop_signal: i64) -> i64
     function hero_proc_terminate(p: Proc) -> i64
     function hero_proc_kill(p: Proc) -> i64
     function hero_proc_signal(p: Proc, sig: i64, group: i64) -> i64
@@ -198,6 +199,20 @@ function ended(p: Proc) -> i64
 #   answered, else 0.
 function state(p: Proc, waits: i64, @stop_signal: i64) -> i64
     return hero_proc_state(p, waits: waits, stop_signal: @stop_signal)
+
+# Waits for `p` to end or stop, as `state` with `waits` 1 does, ending also
+# where a signal the program counts (`os.count_signal`) came and is not taken,
+# or `limit_ns` passed: 1 it has ended, 2 a signal stopped it in this call, 3
+# a counted signal came, answered at once while one stays untaken, 0 the limit
+# passed; or -1. A stop it was seen in before the call is waited past.
+#
+# - `p`: the process waited for; it stays the program's.
+# - `limit_ns`: the longest to wait, -1 for as long as it takes, 0 to look
+#   once; below -1 is `HERO_PROC_INVALID`.
+# - `stop_signal`: with 2 the signal that stopped it; with 3 and 0 the signal
+#   it was last seen stopped by, 0 where it runs.
+function heed(p: Proc, limit_ns: i64, @stop_signal: i64) -> i64
+    return hero_proc_heed(p, limit_ns: limit_ns, stop_signal: @stop_signal)
 
 # 0 once `p` is asked to end, or -1. It sends SIGTERM, and nothing to a
 # process that has ended already; on Windows it answers -1 with

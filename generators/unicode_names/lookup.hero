@@ -1,0 +1,264 @@
+# The rest of `unicode/names`' name table: each name as word numbers, the
+# runs of named code points, the jamo, the aliases and the named
+# sequences, and the index of every name, alias and named sequence by the
+# hash of its loose form (UAX #44's rule LM2), in buckets.
+
+use <rebel>/bytes
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+use runs
+
+# The prime the hash of a loose name is taken modulo, the factor each byte
+# is added after, the spread it ends multiplied by, and the shift that gives
+# a bucket of 4,096.
+constant HASH_PRIME: i64
+    1099511627689
+
+constant HASH_FACTOR: i64
+    131
+
+constant HASH_SPREAD: i64
+    4194301
+
+constant BUCKET_SHIFT: i64
+    28
+
+constant BUCKETS: i64
+    4096
+
+# The kinds of an alias, by their number.
+constant ALIAS_KINDS: [str]
+    ["correction", "control", "alternate", "figment", "abbreviation"]
+
+# `values` packed `per` to an entry of `bits` bits each, the first in the
+# highest bits; the last entry filled out with `fill`.
+function packed_high(values: [i64], per: i64, bits: i64, fill: i64) -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < values.len()
+        entry @= 0
+        k @= 0
+
+        while k < per
+            value = if at + k < values.len()
+                values[at + k]
+            else
+                fill
+            entry @ entry << bits | value
+            k @ k + 1
+
+        out @ out.push(entry)
+        at @ at + per
+
+    return out
+
+# Each name's words, their numbers in `words`, and how many each name holds.
+record Tokens
+    tokens: [i64]
+    starts: [i64]
+    counts: [i64]
+
+# The tokens of `names` over `words`: four to an entry of 15 bits each, the
+# first in the highest; the first token of names 0, 16, 32 and on; the count
+# of each name, fifteen to an entry of 4 bits each, the first in the lowest.
+#
+# Fails `invalid` where a name holds a word `words` lacks, or more than
+# fifteen.
+function tokens_of(names: [str], words: [str]) -> Tokens?
+    number: {str: i64} @= {}
+    at @= 0
+
+    while at < words.len()
+        number[words[at]] @ at
+        at @ at + 1
+
+    flat: [i64] @= []
+    starts: [i64] @= []
+    counts: [i64] @= []
+    at @ 0
+
+    for name in names
+        if at % 16 == 0
+            starts @ starts.push(flat.len())
+        held = strings.split(s: name, sep: " ")
+
+        if held.len() > 15
+            return fail(code: "invalid", msg: f"the name \"{name}\" holds more than fifteen words")
+        counts @ counts.push(held.len())
+
+        for word in held
+            flat @ flat.push(number[word]?)
+
+        at @ at + 1
+
+    packed_counts: [i64] @= []
+    at @ 0
+
+    while at < counts.len()
+        entry @= 0
+        k @= 0
+
+        while k < 15 && at + k < counts.len()
+            entry @ entry | counts[at + k] << 4 * k
+            k @ k + 1
+
+        packed_counts @ packed_counts.push(entry)
+        at @ at + 15
+
+    return ok(Tokens(tokens: packed_high(flat, per: 4, bits: 15, fill: 0), starts: starts, counts: packed_counts))
+
+# The runs of consecutive code points of `points`, ascending: `first << 21 |
+# index`, `index` the run's first name's.
+function name_runs(points: [i64]) -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < points.len()
+        if at == 0 || points[at - 1] != points[at] - 1
+            out @ out.push(points[at] << 21 | at)
+        at @ at + 1
+
+    return out
+
+# The short names of the jamo in `Jamo.txt`, `text`, from `first` to `last`.
+#
+# Fails as `ucdkit.data_lines` fails.
+function jamo(text: str, first: i64, last: i64) -> [str]?
+    out: [str] @= []
+
+    for line in ucdkit.data_lines(text)?
+        if line.first >= first && line.first <= last
+            out @ out.push(line.fields[0])
+
+    return ok(out)
+
+# The aliases of `NameAliases.txt`, `text`, in its order: `code point << 3 |
+# kind`, and the names beside.
+record Aliases
+    entries: [i64]
+    names: [str]
+
+# Fails `invalid` where a line does not read or names a kind of none.
+function aliases_of(text: str) -> Aliases?
+    out @= Aliases(entries: [], names: [])
+
+    for line in ucdkit.data_lines(text)?
+        kind @= 0
+
+        while kind < ALIAS_KINDS.len() && ALIAS_KINDS[kind] != line.fields[1]
+            kind @ kind + 1
+
+        if kind == ALIAS_KINDS.len()
+            return fail(code: "invalid", msg: f"the alias of {line.first} is of the kind \"{line.fields[1]}\"")
+        out.entries @ out.entries.push(line.first << 3 | kind)
+        out.names @ out.names.push(line.fields[0])
+
+    return ok(out)
+
+# The named sequences of `NamedSequences.txt`, `text`, in its order: each
+# name, its code points `offset << 5 | length`, and the points one after
+# another.
+record Sequences
+    names: [str]
+    spans: [i64]
+    points: [i64]
+
+# Fails `invalid` where a code point does not read.
+function sequences_of(text: str) -> Sequences?
+    out @= Sequences(names: [], spans: [], points: [])
+
+    for row in runs.rows(text)
+        held = ucdkit.points_of(row[1])?
+        out.names @ out.names.push(row[0])
+        out.spans @ out.spans.push(out.points.len() << 5 | held.len())
+
+        for point in held
+            out.points @ out.points.push(point)
+
+    return ok(out)
+
+# Whether `c` is an ASCII letter or digit.
+function alphanumeric(c: str) -> bool
+    return c.len() == 1 && strings.contains(s: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", substr: c)
+
+# The loose form of `name`, UAX #44's rule LM2: no space, no underscore, no
+# hyphen between two letters or digits but the one of HANGUL JUNGSEONG O-E,
+# in uppercase.
+function loose(name: str) -> str
+    letters = name.chars()
+    out: [str] @= []
+    at @= 0
+
+    while at < letters.len()
+        c = letters[at]
+        medial = c == "-" && at > 0 && at < letters.len() - 1 && alphanumeric(letters[at - 1]) && alphanumeric(letters[at + 1])
+
+        if c != " " && c != "_" && !(medial && name != "HANGUL JUNGSEONG O-E")
+            out @ out.push(c)
+        at @ at + 1
+
+    return strings.to_upper(out.join(""))
+
+# The hash of `name`'s loose form, spread, below `HASH_PRIME`.
+function hash(name: str) -> i64
+    h @= 0
+
+    for b in bytes.from_text(loose(name))
+        h @ (h * HASH_FACTOR + b.to_i64().must()) % HASH_PRIME
+
+    return h * HASH_SPREAD % HASH_PRIME
+
+# The index of `entries`, every name, alias and named sequence in that
+# order: where each bucket's entries end, three to an entry of 16 bits, the
+# last filled out with the total; and the entries, each bucket's in the order
+# of their hashes, three to an entry of 16 bits, the last filled out with 0.
+record Index
+    ends: [i64]
+    targets: [i64]
+
+function index_of(entries: [str]) -> Index
+    keyed: [[i64]] @= []
+
+    while keyed.len() < BUCKETS
+        keyed @ keyed.push([])
+
+    at @= 0
+
+    while at < entries.len()
+        h = hash(entries[at])
+        keyed[h >> BUCKET_SHIFT] @ keyed[h >> BUCKET_SHIFT].push(h << 16 | at)
+        at @ at + 1
+
+    ends: [i64] @= []
+    targets: [i64] @= []
+
+    for bucket in keyed
+        for key in sort(bucket)
+            targets @ targets.push(key & 65535)
+
+        ends @ ends.push(targets.len())
+
+    return Index(
+        ends: packed_high(ends, per: 3, bits: 16, fill: targets.len()),
+        targets: packed_high(targets, per: 3, bits: 16, fill: 0)
+    )
+
+## Tests
+
+test "packed_high: the first in the highest bits, the last entry filled"
+    assert packed_high([1, 2, 3, 4], per: 3, bits: 16, fill: 9) == [1 << 32 | 2 << 16 | 3, 4 << 32 | 9 << 16 | 9]
+
+test "tokens_of: words by their numbers, a start every sixteen names, counts fifteen to an entry"
+    got = tokens_of(names: ["A B", "B"], words: ["B", "A"]).must()
+    assert got.tokens == [1 << 45 | 0 << 30 | 0 << 15 | 0] && got.starts == [0] && got.counts == [2 | 1 << 4]
+    assert tokens_of(names: ["C"], words: ["A"]).is_err()
+
+test "name_runs: a run begins where a code point does not follow the one before"
+    assert name_runs([0x20, 0x21, 0x23]) == [0x20 << 21, 0x23 << 21 | 2]
+
+test "loose: spaces, underscores and medial hyphens go, a final hyphen and O-E's stay"
+    assert loose("zero width-space_x") == "ZEROWIDTHSPACEX"
+    assert loose("TIBETAN MARK TSA -PHRU") == "TIBETANMARKTSA-PHRU"
+    assert loose("HANGUL JUNGSEONG O-E") == "HANGULJUNGSEONGO-E"

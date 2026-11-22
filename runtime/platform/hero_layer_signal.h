@@ -38,4 +38,21 @@ int64_t hero_signal_take_over(int32_t sig);
  * event. Lock-free, so it takes no lock a caller may hold. */
 void hero_signal_count_one(int32_t sig);
 
+/* A WAIT THAT ENDS ON A COUNTED SIGNAL (feature 2690): what `hero_poll.c` and
+ * `hero_proc.c` wait on beside their own, readable, or set, while a delivery
+ * of any signal is counted and not taken; `hero_signal_take` settles it.
+ *
+ * POSIX: the door's descriptor, its pipe made first where no watch made it
+ * yet, or -1 where the system gave none. Windows: -1. */
+int32_t hero_signal_door(void);
+
+/* Windows: the door's manual-reset event, made once, set by each count and
+ * settled by each take; NULL where the system gave none. POSIX: NULL. */
+void *hero_signal_door_event(void);
+
+/* 1 where a delivery of any signal is counted and not taken; 0 where none
+ * is, the descriptor or the event settled first, so a wait that woke for a
+ * byte no count stands behind waits again quietly. Lock-free. */
+int64_t hero_signal_any(void);
+
 #endif

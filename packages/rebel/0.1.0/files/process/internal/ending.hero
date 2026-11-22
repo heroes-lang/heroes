@@ -1,7 +1,7 @@
 # A child's end through the floor: waited for, its command's time limit kept
 # on the monotonic clock, or looked at without waiting; the same with a stop
-# told beside the end, for a shell's job control; and the CPU time it used,
-# read once it has ended.
+# told beside the end, for a shell's job control, and a wait a counted signal
+# ends; and the CPU time it used, read once it has ended.
 
 use process/hero_proc
 use process/internal/clock
@@ -26,10 +26,22 @@ record Seen
     # The signal it was seen stopped by where it has not ended, 0 where it
     # was not; only a look that tells a stop sets it.
     stop_signal: i64
+    # Whether a signal the program counts ended the wait before the child
+    # ended or stopped; only `heeded` sets it.
+    heard: bool
 
 # What is seen of a child that runs.
 function running() -> Seen
-    return Seen(ended: false, code: 0, signal: 0, timed_out: false, user_ns: 0, system_ns: 0, stop_signal: 0)
+    return Seen(
+        ended: false,
+        code: 0,
+        signal: 0,
+        timed_out: false,
+        user_ns: 0,
+        system_ns: 0,
+        stop_signal: 0,
+        heard: false
+    )
 
 # The end of `p`, waiting for it, `timed_out` saying whether its time limit
 # ended it. Fails with the code of the floor's refusal.
@@ -45,7 +57,7 @@ function settled(p: hero_proc.Proc, timed_out: bool, asked: str, program: str) -
     if hero_proc.cpu(p, user_ns: @user, system_ns: @system) < 0
         return codes.last(asked: asked, program: program, dir: "")
     return ok(
-        Seen(ended: true, code: code, signal: signal, timed_out: timed_out, user_ns: user, system_ns: system, stop_signal: 0)
+        Seen(ended: true, code: code, signal: signal, timed_out: timed_out, user_ns: user, system_ns: system, stop_signal: 0, heard: false)
     )
 
 # The end of `p`, ended at once for its time limit and waited for.
@@ -153,6 +165,32 @@ function waited_state(p: hero_proc.Proc, started: i64, limit: i64, was_stopped: 
         else
             clock.rest(pause)
         pause @ clock.next_pause(pause)
+
+# The end of `p`, its next stop, or a signal the program counts, waiting for
+# the first, in the floor's one wait: `heard` where the signal came first,
+# `stop_signal` then the stop `p` was last seen in. A stop it was seen in
+# before the call is waited past. Where `limit` is above 0, `limit`
+# nanoseconds past `started` it is ended at once.
+function heeded(p: hero_proc.Proc, started: i64, limit: i64, asked: str, program: str) -> Seen?
+    left: i64 @= -1
+
+    if limit > 0
+        left @ max_with(a: clock.deadline(started: started, limit: limit) - clock.now()?, b: 0)
+    stop: i64 @= 0
+    where = hero_proc.heed(p, limit_ns: left, stop_signal: @stop)
+
+    if where < 0
+        return codes.last(asked: asked, program: program, dir: "")
+
+    if where == 1
+        return settled(p, timed_out: false, asked: asked, program: program)
+
+    if where == 0
+        return stopped(p, asked: asked, program: program)
+    seen @= running()
+    seen.stop_signal @ stop
+    seen.heard @ where == 3
+    return ok(seen)
 
 # The larger of `a` and `b`.
 function max_with(a: i64, b: i64) -> i64

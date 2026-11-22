@@ -53,6 +53,7 @@
 
 /* The layer's one list of handle tags, after the member's own header. */
 #include "hero_handle_tag.h"
+#include "hero_layer_signal.h"
 #include "hero_stream_net.h"
 
 #include <stdatomic.h>
@@ -128,6 +129,9 @@ _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a set's handle ca
 /* A regular file, ready at every wait. */
 #define HERO_POLL_ON_FILE 3
 #define HERO_POLL_ON_TIMER 4
+/* The signals the program counts: a copy of the signal door's descriptor,
+ * the entry's own, closed when it leaves the set (POSIX). */
+#define HERO_POLL_ON_SIGNALS 5
 
 typedef struct {
     /* The life the entry holds or last held, which its key names. */
@@ -754,7 +758,7 @@ static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned in
         e->round = 0;
         e->told_at = 0;
         key = hero_poll_key(e);
-        if (on == HERO_POLL_ON_SOCKET || on == HERO_POLL_ON_STREAM) {
+        if (on == HERO_POLL_ON_SOCKET || on == HERO_POLL_ON_STREAM || on == HERO_POLL_ON_SIGNALS) {
             os = hero_poll_watch(slot->queue, fd, interest, 0, (uint64_t)key);
         }
         if (os != 0) {
@@ -901,6 +905,37 @@ int64_t hero_poll_add_timer(hero_poll_set *set, int64_t first_ns, int64_t every_
     return hero_poll_enter_entry(set, HERO_POLL_ON_TIMER, 0, -1, -1, NULL, hero_poll_later(now, first_ns), every_ns);
 }
 
+int64_t hero_poll_add_signals(hero_poll_set *set) {
+#if defined(_WIN32)
+    (void)set;
+    hero_poll_fail(HERO_POLL_UNSUPPORTED, 0);
+    return -1;
+#else
+    int door = hero_signal_door();
+
+    if (door < 0) {
+        hero_poll_fail(HERO_POLL_OTHER, hero_poll_os_code());
+        return -1;
+    }
+    /* Its own copy, close-on-exec: two entries of one descriptor would be one
+     * to `kqueue` and refused by `epoll`. */
+    int copy = fcntl(door, F_DUPFD_CLOEXEC, 3);
+
+    if (copy < 0) {
+        int64_t code = hero_poll_os_code();
+
+        hero_poll_fail(hero_poll_kind_of(code), code);
+        return -1;
+    }
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SIGNALS, HERO_POLL_READ, copy, -1, NULL, -1, 0);
+
+    if (key < 0) {
+        (void)close(copy);
+    }
+    return key;
+#endif
+}
+
 int64_t hero_poll_set_timer(hero_poll_set *set, int64_t key, int64_t first_ns, int64_t every_ns) {
     int64_t now = hero_poll_now();
     int64_t kind = HERO_POLL_OK;
@@ -950,7 +985,7 @@ int64_t hero_poll_change(hero_poll_set *set, int64_t key, int64_t interest) {
         kind = HERO_POLL_INVALID;
     } else if (e == NULL) {
         kind = HERO_POLL_NOT_FOUND;
-    } else if (e->on == HERO_POLL_ON_TIMER || !hero_poll_interest_ok(interest)) {
+    } else if (e->on == HERO_POLL_ON_TIMER || e->on == HERO_POLL_ON_SIGNALS || !hero_poll_interest_ok(interest)) {
         kind = HERO_POLL_INVALID;
     } else {
         if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
@@ -976,6 +1011,8 @@ int64_t hero_poll_change(hero_poll_set *set, int64_t key, int64_t interest) {
 typedef struct {
     int64_t net_hold;
     hero_stream *stream;
+    /* The signals entry's own copy of the door's descriptor, -1 for none. */
+    int64_t copy;
 } hero_poll_held;
 
 static void hero_poll_let_go(hero_poll_held held) {
@@ -985,12 +1022,17 @@ static void hero_poll_let_go(hero_poll_held held) {
     if (held.stream != NULL) {
         (void)hero_stream_release(held.stream);
     }
+#if !defined(_WIN32)
+    if (held.copy >= 0) {
+        (void)close((int)held.copy);
+    }
+#endif
 }
 
 /* The entry taken out of its set's lists and given back, what it held
  * answered. Under the lock; the system forgets the descriptor separately. */
 static hero_poll_held hero_poll_entry_free(hero_poll_slot *slot, hero_poll_entry *e) {
-    hero_poll_held held = { e->net_hold, e->stream };
+    hero_poll_held held = { e->net_hold, e->stream, e->on == HERO_POLL_ON_SIGNALS ? e->fd : -1 };
 
     if (e->on == HERO_POLL_ON_TIMER) {
         hero_poll_unlink(&slot->timers, e);
@@ -1011,7 +1053,7 @@ static hero_poll_held hero_poll_entry_free(hero_poll_slot *slot, hero_poll_entry
 
 int64_t hero_poll_remove(hero_poll_set *set, int64_t key) {
     int64_t kind = HERO_POLL_OK;
-    hero_poll_held held = { -1, NULL };
+    hero_poll_held held = { -1, NULL, -1 };
 
     hero_poll_enter();
     hero_poll_slot *slot = hero_poll_find(set);
@@ -1024,7 +1066,7 @@ int64_t hero_poll_remove(hero_poll_set *set, int64_t key) {
     } else if (e == NULL) {
         kind = HERO_POLL_NOT_FOUND;
     } else {
-        if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
+        if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM || e->on == HERO_POLL_ON_SIGNALS) {
             /* Forgotten by the system before its hold is let go: the
              * descriptor is still open, so the call reaches this entry's. */
             (void)hero_poll_watch(slot->queue, e->fd, 0, e->interest, (uint64_t)key);
@@ -1067,7 +1109,7 @@ static void hero_poll_release(hero_poll_slot *slot) {
     }
 #endif
     for (uint32_t i = 0; i < slot->fresh; i += 1) {
-        hero_poll_held held = { -1, NULL };
+        hero_poll_held held = { -1, NULL, -1 };
 
         hero_poll_enter();
         hero_poll_entry *e = &hero_poll_entries[slot->base + i];
@@ -1122,8 +1164,17 @@ static void hero_poll_tell(int64_t *events, uint64_t at, int64_t key, int64_t bi
 static void hero_poll_told(hero_poll_slot *slot, uint64_t key, int64_t bits, int64_t *events, uint64_t room, uint64_t *written) {
     hero_poll_entry *e = hero_poll_entry_of(slot, (int64_t)key);
 
-    if (e == NULL || (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM)) {
+    if (e == NULL || (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM && e->on != HERO_POLL_ON_SIGNALS)) {
         return;
+    }
+    if (e->on == HERO_POLL_ON_SIGNALS) {
+        /* Whatever the system says of the pipe is told as READ only where a
+         * count stands behind it; a byte with none is drained here and the
+         * wait goes on. */
+        if (hero_signal_any() == 0) {
+            return;
+        }
+        bits = HERO_POLL_READ;
     }
     if ((bits & HERO_POLL_HANGUP) != 0 && (e->interest & HERO_POLL_READ) != 0) {
         bits |= HERO_POLL_READ;
@@ -1225,7 +1276,7 @@ static uint32_t hero_poll_fill(const hero_poll_slot *slot) {
     for (uint32_t i = 0; i < slot->fresh; i += 1) {
         const hero_poll_entry *e = &hero_poll_entries[slot->base + i];
 
-        if (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM) {
+        if (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM && e->on != HERO_POLL_ON_SIGNALS) {
             continue;
         }
         hero_poll_fd *p = &hero_poll_array[slot->base + n];

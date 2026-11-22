@@ -182,6 +182,13 @@ capability child/poll  whether a started child has ended, never waiting
   python  Popen.poll
   note    the status is then the child's `state`, and `wait` answers it at once
 
+capability child/wait-or-signal  a wait for a child that a signal the program counts ends
+  heroes  process.wait_or_signal
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-22 (feature 2690): the end, the next stop or a counted signal, the first of the three, as a shell's `fg` and `wait` end on Ctrl-C; `.running` answers the signal, at once while it stays untaken. POSIX waits on the runtime's signal door beside a pipe a thread of the layer writes when the child ends or stops, so nothing is asked at intervals; Windows waits on the child and the event the console's handler sets
+
 capability child/terminate  a child asked to end
   heroes  process.terminate
   go      os.Interrupt

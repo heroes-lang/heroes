@@ -2,18 +2,15 @@
 # combining classes, the decompositions, the compositions, the quick checks of
 # UAX #15, NFKC_Casefold and the soft-dotted letters.
 #
-# The table is data, made and not typed: a one-off program read the Unicode
-# Character Database 17.0.0 (UCD.zip of https://www.unicode.org/Public/17.0.0/ucd/,
-# fetched 2026-11-17), packed it, normalized every code point in the four
-# forms with the packed tables alone and held each answer, each combining
-# class and each decomposition to Python 3.15.2's `unicodedata` (17.0.0),
-# every line of `NormalizationTest.txt` to the five invariants it states, and
-# NFKC_Casefold of every code point to ICU 78.3 (Unicode 17.0), then wrote
-# this module whole. Nothing here is edited by hand. What it read:
+# Generated, never edited by hand: the Heroes program
+# `generators/unicode_normalize/` read the Unicode Character Database 17.0.0,
+# each file held to its SHA-256, packed it into the tables below, and wrote
+# this module whole; its `check` command says whether this module is still
+# what it writes. What it read:
 #
-# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575
-# - `DerivedNormalizationProps.txt`, SHA-256 71fd6a206a2c0cdd
-# - `PropList.txt`, SHA-256 130dcddcaadaf071
+# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c
+# - `DerivedNormalizationProps.txt`, SHA-256 71fd6a206a2c0cdd41feb6b7f656aa31091db45e9cedc926985d718397f9e488
+# - `PropList.txt`, SHA-256 130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd
 
 # The kinds of a decomposition, in the order `DECOMPOSITIONS` numbers them:
 # the canonical one first, then the tags of `UnicodeData.txt`.

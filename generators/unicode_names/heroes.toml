@@ -1,0 +1,9 @@
+[dependencies.rebel]
+path = "../../packages/rebel/0.1.0/files"
+packages = ["bytes", "numbers", "strings"]
+
+[dependencies.tablekit]
+path = "../tablekit"
+
+[dependencies.ucdkit]
+path = "../ucdkit"

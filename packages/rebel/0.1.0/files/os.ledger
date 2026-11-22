@@ -430,11 +430,11 @@ capability signal/mask  signals held on a thread, waited for, sent to the progra
   python  signal.pthread_sigmask, signal.SIG_BLOCK, signal.SIG_UNBLOCK, signal.SIG_SETMASK, signal.Sigmasks, signal.sigpending, signal.sigwait, signal.pause, signal.raise_signal, signal.pthread_kill, signal.siginterrupt
 
 capability signal/wait  a wait that ends when a counted signal comes
-  heroes  pending
+  heroes  poll.add_signals, process.wait_or_signal
   go      os/signal.NotifyContext
   rust    -
   python  signal.set_wakeup_fd
-  note    a descriptor a poller watches, or a context that ends. The runtime's door has the descriptor (`hero_signal_fd`, readable once a counted signal came); what is pending is `poll` watching it and the count's reading draining it, so a wait wakes once for each signal taken
+  note    added 2026-11-22 (feature 2690), pending until then. The runtime's door is readable while a counted signal is not taken, and the count's reading (`take_signals`) drains it, so a wait wakes once for each signal taken and every waiter of the process sees it: `poll.add_signals` puts it in a readiness set, and `process.wait_or_signal` waits for a child's end or stop and ends on it. Windows: a counted Ctrl-C ends `wait_or_signal` through the event the console's handler sets; `poll.add_signals` is `unsupported`, a set there waiting on sockets alone
 
 dropped plumbing  a type a value is carried in, where here it is a list, a map, a record or a code
   go      -

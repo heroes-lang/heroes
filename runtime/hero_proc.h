@@ -261,6 +261,28 @@ int64_t hero_proc_ended(hero_proc *p);
  * waits for the end. */
 int64_t hero_proc_state(hero_proc *p, int64_t waits, int64_t *stop_signal);
 
+/* A WAIT A COUNTED SIGNAL ENDS (feature 2690): `hero_proc_state` with
+ * `waits` 1, ended also where a delivery of a signal the runtime's door
+ * counts (`hero_os.h`) is not taken, or `limit_ns` passes. Answers 1 it has
+ * ended, 2 a signal stopped it in this call, `*stop_signal` that signal; 3 a
+ * counted signal came, and at once while one stays untaken, so the caller
+ * takes it (`hero_signal_take`) before it waits again; 0 `limit_ns` passed;
+ * or -1 as `hero_proc_state` fails, and `HERO_PROC_INVALID` for a `limit_ns`
+ * below -1. With 3 and 0 `*stop_signal` is the signal it was last seen
+ * stopped by, 0 where it runs. `limit_ns` -1 waits as long as it takes, 0
+ * looks once and never waits.
+ *
+ * A stop the process was seen in before the call is waited past, as
+ * `hero_proc_state`'s is; a stop and an end are put before a signal that
+ * came with them. POSIX: the wait polls the door's descriptor beside a pipe
+ * one helper thread writes when the process ends or stops, so nothing is
+ * asked at intervals; where the system gives no pipe or no thread it looks
+ * again every 50 ms, and still ends at once on a signal. Windows: no process
+ * stops, and the wait is on the process and the door's event together, which
+ * the console's handler sets for Ctrl-C and Ctrl-Break, the one signal
+ * counted there. */
+int64_t hero_proc_heed(hero_proc *p, int64_t limit_ns, int64_t *stop_signal);
+
 /* Asks the process to end: SIGTERM, which a program may catch to finish its
  * work, or ignore. Answers 0 once it is asked, also where the process has
  * ended already, when nothing is sent; or -1.
