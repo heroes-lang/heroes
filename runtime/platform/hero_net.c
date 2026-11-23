@@ -1943,6 +1943,45 @@ static hero_net_fd hero_net_made(const struct addrinfo *at, int64_t *code) {
     return fd;
 }
 
+/* The platform's number for the `bind` of `where`, `size` bytes of a socket
+ * of `type` and `protocol`, that has just failed.
+ *
+ * Winsock says WSAEACCES to two refusals the kinds keep apart. A bind that
+ * asks `SO_REUSEADDR` over a socket that holds the port by
+ * `SO_EXCLUSIVEADDRUSE`, as `open_udp`'s does, is refused with it where every
+ * other platform says the address is in use; so is a bind of a port the
+ * system keeps from programs (a reserved range), where `permission` is the
+ * true word. What tells them apart is the same address asked once more for
+ * the port alone: a port some socket holds answers WSAEADDRINUSE to that, a
+ * port reserved answers WSAEACCES again. A holder that has gone between the
+ * two answers leaves the number as the first bind gave it. The probe holds
+ * nothing past this call and is never inherited. */
+static int64_t hero_net_bind_code(const struct sockaddr *where, hero_net_len size, int type, int protocol) {
+    int64_t code = hero_net_os_code();
+#if defined(_WIN32)
+    if (code == WSAEACCES) {
+        SOCKET probe = socket(where->sa_family, type, protocol);
+
+        if (probe != INVALID_SOCKET) {
+            int one = 1;
+
+            if (SetHandleInformation((HANDLE)probe, HANDLE_FLAG_INHERIT, 0) &&
+                setsockopt(probe, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&one, (hero_net_len)sizeof one) == 0 &&
+                bind(probe, where, size) != 0 && WSAGetLastError() == WSAEADDRINUSE) {
+                code = WSAEADDRINUSE;
+            }
+            (void)closesocket(probe);
+        }
+    }
+#else
+    (void)where;
+    (void)size;
+    (void)type;
+    (void)protocol;
+#endif
+    return code;
+}
+
 /* A descriptor listening on the address, or NO_FD with the platform's
  * number in `code`. A listener never blocks: its `accept` waits as every
  * call does. */
@@ -1964,6 +2003,11 @@ static hero_net_fd hero_net_try_listen(const struct addrinfo *at, int64_t *code)
 
     if (failed == 0) {
         failed = bind(fd, at->ai_addr, (hero_net_len)at->ai_addrlen);
+        if (failed != 0) {
+            *code = hero_net_bind_code(at->ai_addr, (hero_net_len)at->ai_addrlen, at->ai_socktype, at->ai_protocol);
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
+        }
     }
     if (failed == 0) {
         failed = listen(fd, SOMAXCONN);
@@ -2879,6 +2923,11 @@ static hero_net_fd hero_net_bound(int family, const struct sockaddr_storage *whe
     }
     if (failed == 0) {
         failed = bind(fd, (const struct sockaddr *)where, size);
+        if (failed != 0) {
+            *code = hero_net_bind_code((const struct sockaddr *)where, size, SOCK_DGRAM, IPPROTO_UDP);
+            (void)hero_net_close_fd(fd);
+            return HERO_NET_NO_FD;
+        }
     }
     if (failed != 0) {
         *code = hero_net_os_code();
