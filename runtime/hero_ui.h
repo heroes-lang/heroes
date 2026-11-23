@@ -1244,4 +1244,21 @@ int64_t hero_ui_claim_instance(hero_ui_app *app, const void *arguments, uint64_t
 /* A later launch's arguments (`hero_ui_claim_instance`). */
 #define HERO_UI_OPEN_ARGUMENTS 3
 
+/* -- A TIP OVER A WIDGET -----------------------------------------------------
+ *
+ * wxWidgets' `wxWindow::SetToolTip`: a few words the system shows over a
+ * widget while the pointer rests on it, saying what a button of an image or
+ * a terse field does. */
+
+/* Gives widget `id` the tip `text`, `count` bytes; none, `count` 0, takes it
+ * back. A widget placed in a box or a window, a menu item or a tray icon;
+ * `INVALID` for another kind. 0, or -1. */
+int64_t hero_ui_set_tip(hero_ui_app *app, int64_t id, const void *text, uint64_t count);
+
+/* Writes the tip widget `id` holds, as the system holds it, into `buffer`
+ * and answers its length, 0 for none; where it is longer than `count`,
+ * nothing is written and the length is answered all the same. -1 on
+ * failure. */
+int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
+
 #endif

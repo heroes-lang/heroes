@@ -224,6 +224,9 @@ extern "hero_ui.h"
     function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_set_label_for(app: App, id: i64, label: i64) -> i64
+    # A tip over a widget.
+    function hero_ui_set_tip(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_tip(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
     # A notification of the system's.
     function hero_ui_notify(app: App, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
@@ -1144,6 +1147,25 @@ function set_accessible_name(app: App, id: i64, @name: [u8], count: u64) -> i64
 # - `count`: the bytes `buffer` holds.
 function accessible_name(app: App, id: i64, @buffer: [u8], count: u64) -> i64
     return hero_ui_accessible_name(app, id: id, @buffer, count: count)
+
+# 0 once widget `id` shows the tip `text`, none where it is empty; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `text`: the tip's UTF-8; left as it was handed.
+# - `count`: its bytes.
+function set_tip(app: App, id: i64, @text: [u8], count: u64) -> i64
+    return hero_ui_set_tip(app, id: id, @text, count: count)
+
+# The length of the tip widget `id` holds, written into `buffer` where it
+# fits; 0 for none; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `buffer`: where the tip is written; left `count` long.
+# - `count`: the bytes `buffer` holds.
+function tip(app: App, id: i64, @buffer: [u8], count: u64) -> i64
+    return hero_ui_tip(app, id: id, @buffer, count: count)
 
 # 0 once label `label` is tied to widget `id`, 0 untying it; or -1.
 #

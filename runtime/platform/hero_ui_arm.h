@@ -215,6 +215,13 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count);
 int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count);
 void hero_ui_arm_instance_end(void);
 
+/* A TIP OVER A WIDGET (`hero_ui.h`): `tip` writes the tip where it fits
+ * and its length through `length`, as `text` does. On macOS by
+ * `hero_ui_appkit.swift`; refusals for the Win32 and GTK 4 arms in the
+ * block of calls neither draws. */
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count);
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
  * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits

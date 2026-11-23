@@ -3829,3 +3829,74 @@ public func hero_ui_appkit_set_identity(_ identifier: UnsafePointer<UInt8>?, _ i
         return answerOk
     }
 }
+
+// MARK: a tip over a widget
+
+extension Backend {
+    // The tip widget `id` holds, nil for a kind that holds none: a widget's
+    // view's, a menu item's, a tray icon's button's.
+    func tipOf(_ widget: Native) -> String? {
+        if widget.kind == kindTray {
+            return widget.status?.button?.toolTip ?? ""
+        }
+        if widget.kind == kindMenuItem {
+            return widget.item?.toolTip ?? ""
+        }
+        if widget.kind == kindWindow || widget.kind == kindMenu || widget.kind == kindContextMenu || widget.view == nil {
+            return nil
+        }
+        return widget.view?.toolTip ?? ""
+    }
+
+    func setTip(_ id: Int64, _ text: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard tipOf(widget) != nil else {
+            return answerInvalid
+        }
+        let tip: String? = text.isEmpty ? nil : text
+        if widget.kind == kindTray {
+            widget.status?.button?.toolTip = tip
+        } else if widget.kind == kindMenuItem {
+            widget.item?.toolTip = tip
+        } else {
+            widget.view?.toolTip = tip
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_tip(_ id: Int64, _ words: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let tip = text(words, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setTip(id, tip) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tip(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ length: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let length = length else {
+        return answerInvalid
+    }
+    let (answer, bytes) = MainActor.assumeIsolated { () -> (Int64, [UInt8]) in
+        guard let shared = backend(), let widget = shared.widgets[id] else {
+            return (answerNotFound, [])
+        }
+        guard let tip = shared.tipOf(widget) else {
+            return (answerInvalid, [])
+        }
+        return (answerOk, Array(tip.utf8))
+    }
+    if answer != answerOk {
+        return answer
+    }
+    length.pointee = Int64(bytes.count)
+    if let buffer = buffer, bytes.count <= Int(count) {
+        for at in 0..<bytes.count {
+            buffer[at] = bytes[at]
+        }
+    }
+    return answerOk
+}

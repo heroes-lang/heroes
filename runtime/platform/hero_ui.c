@@ -3709,6 +3709,14 @@ int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_c
     return hero_ui_appkit_set_identity(identifier, identifier_count, name, name_count);
 }
 
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    return hero_ui_appkit_set_tip(id, text, count);
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    return hero_ui_appkit_tip(id, buffer, count, length);
+}
+
 int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
     return hero_ui_appkit_open_items(what, items, count);
 }
@@ -4166,6 +4174,21 @@ int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count
 void hero_ui_arm_instance_end(void) {
 }
 
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    (void)id;
+    (void)text;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows a tip over a widget on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    (void)id;
+    (void)buffer;
+    (void)count;
+    (void)length;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's tip on macOS alone, and this system's arm has no such call");
+}
+
 #endif
 
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
@@ -4507,4 +4530,31 @@ static int64_t hero_ui_open_as_system(int64_t value, int64_t what, const void *i
         return hero_ui_claim_answered(hero_ui_arm_hand_over(bytes, (int64_t)count), "handing a later launch's arguments to the app");
     }
     return hero_ui_session_answered(hero_ui_arm_open_items(what, bytes, (int64_t)count), "asking the app to open documents as the system would");
+}
+
+/* -- A TIP OVER A WIDGET ---------------------------------------------------- */
+
+int64_t hero_ui_set_tip(hero_ui_app *app, int64_t id, const void *text, uint64_t count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the tip", false)) {
+        return -1;
+    }
+    return hero_ui_answered(hero_ui_arm_set_tip(id, text, (int64_t)count), "giving a widget its tip", id);
+}
+
+int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) {
+    int64_t length = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && buffer == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the tip and none given");
+    }
+    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
+        count = (uint64_t)HERO_UI_TEXT_MOST;
+    }
+    if (hero_ui_answered(hero_ui_arm_tip(id, buffer, (int64_t)count, &length), "reading a widget's tip", id) != 0) {
+        return -1;
+    }
+    return length;
 }

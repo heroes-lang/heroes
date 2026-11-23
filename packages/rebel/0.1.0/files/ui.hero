@@ -1420,6 +1420,30 @@ variant Handed
 function set_drop(@app: App, widget: Widget, on: bool) -> ()?
     return drops.set_drop(@app, widget: widget, on: on)
 
+# Gives `widget` a tip, as wxWidgets' `wxWindow::SetToolTip`: a few words
+# the system shows over it while the pointer rests there, saying what a
+# button of an image or a terse field does; "" takes it back.
+#
+# - `app`: the app holding it.
+# - `widget`: a widget in a window, a menu item or a tray icon.
+# - `text`: the tip, its lines kept.
+#
+# Fails `closed`, `invalid` for a window, a box, a menu or a timer, or a
+# zero byte; `unsupported` where the system's arm shows no tip (Windows and
+# Linux, pending), `failed`. See also `tip_of`.
+function set_tip(@app: App, widget: Widget, text: str) -> ()?
+    return state.set_tip(@app, widget: widget, text: text)
+
+# The tip `widget` shows, "" for none: on the native side as the system
+# holds it.
+#
+# - `app`: the app holding it.
+# - `widget`: the widget.
+#
+# Fails as `set_tip` does.
+function tip_of(app: App, widget: Widget) -> str?
+    return state.tip_of(app, widget: widget)
+
 # Gives `widget` the name a screen reader says for it, where it shows no
 # words of its own (a picture, a slider, a button of an image) or its words
 # do not say what it is, as Qt's `QWidget::setAccessibleName` and ARIA's
