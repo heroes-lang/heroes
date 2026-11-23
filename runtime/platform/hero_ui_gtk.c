@@ -664,6 +664,9 @@ typedef struct hero_ui_gtk_functions {
     void *(*column_view_sorter_get_primary_sort_column)(void *sorter);
     int (*column_view_sorter_get_primary_sort_order)(void *sorter);
     void *(*separator_new)(int orientation);
+    void (*widget_set_tooltip_text)(void *widget, const char *text);
+    const char *(*widget_get_tooltip_text)(void *widget);
+    void *(*notebook_get_tab_label)(void *notebook, void *child);
     void (*orientable_set_orientation)(void *orientable, int orientation);
     double (*monitor_get_scale)(void *monitor);
     size_t (*x11_display_get_type)(void);
@@ -1119,6 +1122,9 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_column, "gtk_column_view_sorter_get_primary_sort_column");
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_order, "gtk_column_view_sorter_get_primary_sort_order");
     HERO_UI_GTK_NEED(separator_new, "gtk_separator_new");
+    HERO_UI_GTK_NEED(widget_set_tooltip_text, "gtk_widget_set_tooltip_text");
+    HERO_UI_GTK_NEED(widget_get_tooltip_text, "gtk_widget_get_tooltip_text");
+    HERO_UI_GTK_NEED(notebook_get_tab_label, "gtk_notebook_get_tab_label");
     HERO_UI_GTK_NEED(orientable_set_orientation, "gtk_orientable_set_orientation");
     HERO_UI_GTK_MAY(monitor_get_scale, "gdk_monitor_get_scale");
     HERO_UI_GTK_MAY(x11_display_get_type, "gdk_x11_display_get_type");
@@ -1307,6 +1313,9 @@ struct hero_ui_native {
     uint8_t *argb;
     /* A window's drop target while it takes dropped files, else NULL. */
     void *drop_target;
+    /* A tray icon's tip, NULL for none: the host draws it, so it is kept
+     * here; every other widget's is GTK's own. */
+    char *tip;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -2041,6 +2050,7 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
     hero_layer_free(widget->accessible);
+    hero_layer_free(widget->tip);
     hero_ui_ids_free(&widget->order);
     hero_ui_forget(widget->id);
     hero_layer_free(widget);
@@ -8709,7 +8719,7 @@ static void *hero_ui_gtk_tray_item_property(void *connection, const char *sender
         return hero_ui_gtk_tray_pixmap(NULL);
     }
     if (strcmp(property, "ToolTip") == 0) {
-        return hero_ui_gtk.variant_new("(s@a(iiay)ss)", "", hero_ui_gtk_tray_pixmap(NULL), words, "");
+        return hero_ui_gtk.variant_new("(s@a(iiay)ss)", "", hero_ui_gtk_tray_pixmap(NULL), words, tray != NULL && tray->tip != NULL ? tray->tip : "");
     }
     if (strcmp(property, "ItemIsMenu") == 0) {
         return hero_ui_gtk.variant_new_boolean(1);
@@ -9269,6 +9279,94 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "no session manager answers on the D-Bus session bus (org.gnome.SessionManager, which GTK 4 speaks outside a sandbox), so no session's end asks this app, and the arm reads neither the XDG portal's session monitor nor X11's XSMP");
     }
     hero_ui_gtk_session_ask();
+    return HERO_UI_OK;
+}
+
+/* -- A TIP OVER A WIDGET ---------------------------------------------------- */
+
+/* The GTK widget that shows widget `widget`'s tip, NULL for a kind that
+ * has none (a window, a menu and its separators, a context menu): a page's
+ * is its tab's label, every other widget's the widget itself; a menu item
+ * and a tray icon are told apart by the callers. */
+static void *hero_ui_gtk_tip_target(const hero_ui_native *widget) {
+    hero_ui_native *tabs;
+
+    switch (widget->kind) {
+    case HERO_UI_WINDOW:
+    case HERO_UI_MENU:
+    case HERO_UI_MENU_SEPARATOR:
+    case HERO_UI_CONTEXT_MENU:
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_TRAY:
+        return NULL;
+    case HERO_UI_PAGE:
+        tabs = hero_ui_find(widget->parent);
+        return tabs != NULL ? hero_ui_gtk.notebook_get_tab_label(tabs->widget, widget->widget) : NULL;
+    default:
+        return widget->widget;
+    }
+}
+
+/* What a menu item's tip is refused with: measured on GTK 4.18.6, a
+ * `GtkPopoverMenu` built from a `GMenu` gave the item's button no tooltip
+ * for a `tooltip` attribute on the item. */
+static const char hero_ui_gtk_menu_tip_words[] = "GTK 4's menus show no tip for an item: a GtkPopoverMenu draws a GMenu item as a label, an icon and an accelerator, and a tooltip attribute on the item left its button with none (measured on GTK 4.18.6)";
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    void *target;
+    char *made = NULL;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, hero_ui_gtk_menu_tip_words);
+    }
+    target = hero_ui_gtk_tip_target(widget);
+    if (target == NULL && widget->kind != HERO_UI_TRAY) {
+        return HERO_UI_INVALID;
+    }
+    if (count > 0) {
+        made = hero_ui_gtk_text(text, count, false);
+        if (made == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    if (widget->kind == HERO_UI_TRAY) {
+        hero_layer_free(widget->tip);
+        widget->tip = made;
+        hero_ui_gtk_tray_words(widget);
+        return HERO_UI_OK;
+    }
+    hero_ui_gtk.widget_set_tooltip_text(target, made);
+    hero_layer_free(made);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    void *target;
+    const char *text;
+    size_t bytes;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, hero_ui_gtk_menu_tip_words);
+    }
+    target = hero_ui_gtk_tip_target(widget);
+    if (target == NULL && widget->kind != HERO_UI_TRAY) {
+        return HERO_UI_INVALID;
+    }
+    /* GTK 4 owns the text it gives back: a tray icon's is the record's. */
+    text = widget->kind == HERO_UI_TRAY ? widget->tip : hero_ui_gtk.widget_get_tooltip_text(target);
+    bytes = text != NULL ? strlen(text) : 0;
+    *length = (int64_t)bytes;
+    if (bytes > 0 && *length <= count) {
+        memcpy(buffer, text, bytes);
+    }
     return HERO_UI_OK;
 }
 

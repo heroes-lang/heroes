@@ -467,7 +467,7 @@ capability ui/tooltip  a tip shown over a widget
   rust    -
   python  -
   wx      wxToolTip, wxWindow (SetToolTip), wxRichToolTip
-  note    catalogue CT49; a widget in a window, a menu item or a tray icon, its lines kept, "" taking it back; the system shows it when the pointer rests, after its own delay; macOS by `NSView.toolTip`, `NSMenuItem.toolTip` and the status item's button's; a tip of a title and an icon (`wxRichToolTip`) and the delay are not offered; Windows pending (a `TOOLTIPS_CLASS` window with `TTM_ADDTOOLW` per control, `TTF_SUBCLASS`), Linux pending (`gtk_widget_set_tooltip_text`)
+  note    catalogue CT49; a widget in a window, a menu item or a tray icon, its lines kept, "" taking it back; the system shows it when the pointer rests, after its own delay; macOS by `NSView.toolTip`, `NSMenuItem.toolTip` and the status item's button's; a tip of a title and an icon (`wxRichToolTip`) and the delay are not offered; Windows pending (a `TOOLTIPS_CLASS` window with `TTM_ADDTOOLW` per control, `TTF_SUBCLASS`), Linux by `gtk_widget_set_tooltip_text` and `gtk_widget_get_tooltip_text` on the widget the person points at, a page's on its tab's label (`gtk_notebook_get_tab_label`), a tray icon's as the StatusNotifierItem's `ToolTip` description, kept in the arm and told by `NewToolTip` (read back through a StatusNotifierWatcher and its host); an item of a menu is `unsupported` with words, GTK 4.18.6's `GtkPopoverMenu` having given an item's button no tooltip for a `tooltip` attribute (measured)
 
 capability ui/clipboard  the system's clipboard: text, files and an image copied and pasted by the program
   heroes  ui.set_clipboard, ui.clipboard, ui.Clip, ui.ClipKind, ui.CLIPBOARD_MOST

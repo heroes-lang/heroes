@@ -4096,6 +4096,10 @@ int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count
 void hero_ui_arm_instance_end(void) {
 }
 
+#if defined(_WIN32)
+
+/* A tip over a widget: the Win32 arm's refusals; the GTK 4 arm draws it. */
+
 int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
     (void)id;
     (void)text;
@@ -4110,6 +4114,8 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
     (void)length;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's tip on macOS alone, and this system's arm has no such call");
 }
+
+#endif
 
 #endif
 
