@@ -667,6 +667,18 @@ typedef struct hero_ui_gtk_functions {
     void (*widget_set_tooltip_text)(void *widget, const char *text);
     const char *(*widget_get_tooltip_text)(void *widget);
     void *(*notebook_get_tab_label)(void *notebook, void *child);
+    void (*text_buffer_undo)(void *buffer);
+    void (*text_buffer_redo)(void *buffer);
+    int (*text_buffer_get_can_undo)(void *buffer);
+    int (*text_buffer_get_can_redo)(void *buffer);
+    void (*text_buffer_select_range)(void *buffer, const hero_ui_gtk_iter *insert, const hero_ui_gtk_iter *bound);
+    int (*text_buffer_get_selection_bounds)(void *buffer, hero_ui_gtk_iter *start, hero_ui_gtk_iter *end);
+    void (*text_buffer_get_iter_at_offset)(void *buffer, hero_ui_gtk_iter *iter, int offset);
+    int (*text_iter_get_offset)(const hero_ui_gtk_iter *iter);
+    int (*text_view_scroll_to_iter)(void *view, hero_ui_gtk_iter *iter, double margin, int use_align, double xalign, double yalign);
+    int (*widget_activate_action_variant)(void *widget, const char *name, void *args);
+    void (*editable_select_region)(void *editable, int start, int end);
+    int (*editable_get_selection_bounds)(void *editable, int *start, int *end);
     void (*orientable_set_orientation)(void *orientable, int orientation);
     double (*monitor_get_scale)(void *monitor);
     size_t (*x11_display_get_type)(void);
@@ -1125,6 +1137,18 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(widget_set_tooltip_text, "gtk_widget_set_tooltip_text");
     HERO_UI_GTK_NEED(widget_get_tooltip_text, "gtk_widget_get_tooltip_text");
     HERO_UI_GTK_NEED(notebook_get_tab_label, "gtk_notebook_get_tab_label");
+    HERO_UI_GTK_NEED(text_buffer_undo, "gtk_text_buffer_undo");
+    HERO_UI_GTK_NEED(text_buffer_redo, "gtk_text_buffer_redo");
+    HERO_UI_GTK_NEED(text_buffer_get_can_undo, "gtk_text_buffer_get_can_undo");
+    HERO_UI_GTK_NEED(text_buffer_get_can_redo, "gtk_text_buffer_get_can_redo");
+    HERO_UI_GTK_NEED(text_buffer_select_range, "gtk_text_buffer_select_range");
+    HERO_UI_GTK_NEED(text_buffer_get_selection_bounds, "gtk_text_buffer_get_selection_bounds");
+    HERO_UI_GTK_NEED(text_buffer_get_iter_at_offset, "gtk_text_buffer_get_iter_at_offset");
+    HERO_UI_GTK_NEED(text_iter_get_offset, "gtk_text_iter_get_offset");
+    HERO_UI_GTK_NEED(text_view_scroll_to_iter, "gtk_text_view_scroll_to_iter");
+    HERO_UI_GTK_NEED(widget_activate_action_variant, "gtk_widget_activate_action_variant");
+    HERO_UI_GTK_NEED(editable_select_region, "gtk_editable_select_region");
+    HERO_UI_GTK_NEED(editable_get_selection_bounds, "gtk_editable_get_selection_bounds");
     HERO_UI_GTK_NEED(orientable_set_orientation, "gtk_orientable_set_orientation");
     HERO_UI_GTK_MAY(monitor_get_scale, "gdk_monitor_get_scale");
     HERO_UI_GTK_MAY(x11_display_get_type, "gdk_x11_display_get_type");
@@ -9279,6 +9303,235 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "no session manager answers on the D-Bus session bus (org.gnome.SessionManager, which GTK 4 speaks outside a sandbox), so no session's end asks this app, and the arm reads neither the XDG portal's session monitor nor X11's XSMP");
     }
     hero_ui_gtk_session_ask();
+    return HERO_UI_OK;
+}
+
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS ---------------------------------
+ *
+ * A text area is a `GtkTextBuffer`, which keeps the edits made since the
+ * program's last text (`set_text` is an irreversible action, each injected
+ * edit one user action) and says whether it can undo or redo. A text field
+ * is a `GtkEntry` over a `GtkText`, whose history is its own: the person's
+ * Ctrl+Z is its `text.undo` action, no call says whether that action would
+ * do anything, and the editable interface's edits (the program's text, an
+ * injected edit) are not in the history, so only what is typed is. A field's
+ * `can_undo` is therefore asked by doing the undo and the redo that puts the
+ * text and the selection back, muted, in one turn of the loop.
+ *
+ * Positions are bytes of the UTF-8 text; GTK's are characters. */
+
+/* The character index of byte `bytes` of `text`, or -1 where it is past the
+ * text or inside a character. */
+static int64_t hero_ui_gtk_chars_before(const char *text, int64_t bytes) {
+    int64_t length = (int64_t)strlen(text);
+    int64_t chars = 0;
+
+    if (bytes < 0 || bytes > length || (bytes < length && ((uint8_t)text[bytes] & 0xC0u) == 0x80u)) {
+        return -1;
+    }
+    for (int64_t at = 0; at < bytes; at += 1) {
+        if (((uint8_t)text[at] & 0xC0u) != 0x80u) {
+            chars += 1;
+        }
+    }
+    return chars;
+}
+
+/* The byte where character `chars` of `text` starts, or its length where
+ * `chars` is the text's end or past it. */
+static int64_t hero_ui_gtk_bytes_before(const char *text, int64_t chars) {
+    int64_t at = 0;
+
+    while (text[at] != '\0' && chars > 0) {
+        at += 1;
+        while (((uint8_t)text[at] & 0xC0u) == 0x80u) {
+            at += 1;
+        }
+        chars -= 1;
+    }
+    return at;
+}
+
+/* Text area `area`'s whole text in GLib's memory, NULL where it has none to
+ * give; `hero_ui_arm_text`'s own reading. */
+static char *hero_ui_gtk_area_read(const hero_ui_native *area) {
+    hero_ui_gtk_iter start;
+    hero_ui_gtk_iter end;
+
+    hero_ui_gtk.text_buffer_get_start_iter(area->buffer, &start);
+    hero_ui_gtk.text_buffer_get_end_iter(area->buffer, &end);
+    return hero_ui_gtk.text_buffer_get_text(area->buffer, &start, &end, 1);
+}
+
+/* Runs `action` ("text.undo" or "text.redo") on text field `field`'s text,
+ * muted, and says whether its text changed. */
+static bool hero_ui_gtk_field_acts(const hero_ui_native *field, const char *action) {
+    void *text = hero_ui_gtk.editable_get_delegate(field->widget);
+    const char *now = hero_ui_gtk.editable_get_text(field->widget);
+    char *before = hero_ui_gtk_text((const uint8_t *)(now != NULL ? now : ""), (int64_t)strlen(now != NULL ? now : ""), false);
+    bool changed;
+
+    if (before == NULL || text == NULL) {
+        hero_layer_free(before);
+        return false;
+    }
+    hero_ui_mute(1);
+    (void)hero_ui_gtk.widget_activate_action_variant(text, action, NULL);
+    hero_ui_mute(-1);
+    now = hero_ui_gtk.editable_get_text(field->widget);
+    changed = strcmp(before, now != NULL ? now : "") != 0;
+    hero_layer_free(before);
+    return changed;
+}
+
+/* Whether text field `field` can undo (`redo` false) or redo, by doing it and
+ * its reverse; its selection is put back as it was. */
+static bool hero_ui_gtk_field_can(const hero_ui_native *field, bool redo) {
+    int from = 0;
+    int to = 0;
+    bool can;
+
+    (void)hero_ui_gtk.editable_get_selection_bounds(field->widget, &from, &to);
+    can = hero_ui_gtk_field_acts(field, redo ? "text.redo" : "text.undo");
+    if (can) {
+        (void)hero_ui_gtk_field_acts(field, redo ? "text.undo" : "text.redo");
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.editable_select_region(field->widget, from, to);
+    hero_ui_mute(-1);
+    return can;
+}
+
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    *done = 0;
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        bool can = which == HERO_UI_UNDO ? hero_ui_gtk.text_buffer_get_can_undo(widget->buffer) != 0 : hero_ui_gtk.text_buffer_get_can_redo(widget->buffer) != 0;
+
+        if (can) {
+            hero_ui_mute(1);
+            if (which == HERO_UI_UNDO) {
+                hero_ui_gtk.text_buffer_undo(widget->buffer);
+            } else {
+                hero_ui_gtk.text_buffer_redo(widget->buffer);
+            }
+            hero_ui_mute(-1);
+        }
+        *done = can ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        *done = hero_ui_gtk_field_acts(widget, which == HERO_UI_UNDO ? "text.undo" : "text.redo") ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    *can = 0;
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        *can = (which == HERO_UI_UNDO ? hero_ui_gtk.text_buffer_get_can_undo(widget->buffer) : hero_ui_gtk.text_buffer_get_can_redo(widget->buffer)) != 0 ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        *can = hero_ui_gtk_field_can(widget, which == HERO_UI_REDO) ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    char *held;
+    const char *text;
+    int64_t first;
+    int64_t last;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind != HERO_UI_TEXT_AREA && widget->kind != HERO_UI_TEXT_FIELD) {
+        return HERO_UI_INVALID;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD && (!widget->visible || !hero_ui_gtk.widget_get_visible(widget->widget) || !hero_ui_gtk.widget_is_sensitive(widget->widget))) {
+        return HERO_UI_INVALID;
+    }
+    held = widget->kind == HERO_UI_TEXT_AREA ? hero_ui_gtk_area_read(widget) : NULL;
+    text = widget->kind == HERO_UI_TEXT_AREA ? held : hero_ui_gtk.editable_get_text(widget->widget);
+    if (text == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    first = hero_ui_gtk_chars_before(text, start);
+    last = hero_ui_gtk_chars_before(text, end);
+    if (held != NULL) {
+        hero_ui_gtk.g_free(held);
+    }
+    if (first < 0 || last < 0) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_mute(1);
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk_iter from;
+        hero_ui_gtk_iter to;
+
+        hero_ui_gtk.text_buffer_get_iter_at_offset(widget->buffer, &from, (int)first);
+        hero_ui_gtk.text_buffer_get_iter_at_offset(widget->buffer, &to, (int)last);
+        hero_ui_gtk.text_buffer_select_range(widget->buffer, &to, &from);
+        (void)hero_ui_gtk.text_view_scroll_to_iter(widget->inner, &to, 0.0, 0, 0.0, 0.0);
+    } else {
+        /* The field takes the keys, as the person's click gives them (its
+         * text not chosen whole), and shows its selection by them. */
+        (void)hero_ui_gtk.text_grab_focus_without_selecting(hero_ui_gtk.editable_get_delegate(widget->widget));
+        hero_ui_gtk.editable_select_region(widget->widget, (int)first, (int)last);
+    }
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    char *held = NULL;
+    const char *text;
+    int from = 0;
+    int to = 0;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk_iter first;
+        hero_ui_gtk_iter last;
+
+        (void)hero_ui_gtk.text_buffer_get_selection_bounds(widget->buffer, &first, &last);
+        from = hero_ui_gtk.text_iter_get_offset(&first);
+        to = hero_ui_gtk.text_iter_get_offset(&last);
+        held = hero_ui_gtk_area_read(widget);
+        text = held;
+    } else if (widget->kind == HERO_UI_TEXT_FIELD) {
+        /* A field holds its selection while it has not the keys, as the
+         * system keeps it. */
+        (void)hero_ui_gtk.editable_get_selection_bounds(widget->widget, &from, &to);
+        text = hero_ui_gtk.editable_get_text(widget->widget);
+    } else {
+        return HERO_UI_INVALID;
+    }
+    if (text == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    *start = hero_ui_gtk_bytes_before(text, from);
+    *end = hero_ui_gtk_bytes_before(text, to);
+    if (held != NULL) {
+        hero_ui_gtk.g_free(held);
+    }
     return HERO_UI_OK;
 }
 
