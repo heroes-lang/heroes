@@ -1,0 +1,220 @@
+# The samples of a TIFF image turned into an `image.Image`: scaled from
+# their own width to 8 or 16 bits, WhiteIsZero turned about, a palette
+# looked up, CMYK and YCbCr turned to RGB, and an associated alpha made
+# straight.
+
+use image
+use image/colorspace
+
+# What a page's samples are and how to read them.
+record Spec
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The bits of a sample, 1 to 16.
+    bits: i64
+    # The samples a pixel holds.
+    spp: i64
+    # PhotometricInterpretation: 0 WhiteIsZero, 1 BlackIsZero, 2 RGB, 3
+    # palette, 4 transparency mask, 5 CMYK, 6 YCbCr.
+    photometric: i64
+    # -1 where no sample is alpha, 1 where the first extra sample is
+    # associated (premultiplied) alpha, 2 where it is unassociated.
+    alpha: i64
+    # The ColorMap, all the reds, then all the greens, then all the blues,
+    # 16 bits each; empty where the photometric is not 3.
+    palette: [i64]
+    # ReferenceBlackWhite, six numbers; empty for the default.
+    refs: [i64]
+
+# The samples of one colour a pixel of `photometric` holds.
+function colors_of(photometric: i64) -> i64
+    return match photometric
+        2 | 6 => 3
+        5     => 4
+        _     => 1
+
+# `v` of `bits` bits as a number of `out_bits` bits, rounded.
+function scaled(v: i64, bits: i64, out_bits: i64) -> i64
+    if bits == out_bits
+        return v
+    top = (1 << bits) - 1
+    out_top = (1 << out_bits) - 1
+    return (v * out_top + top / 2) / top
+
+# Adds `v` to `out` as one byte, or two with the high one first where `wide`.
+function put(@out: [u8], v: i64, wide: bool)
+    if wide
+        out @ out.push(to_u8(v >> 8).must())
+        out @ out.push(to_u8(v & 255).must())
+    else
+        out @ out.push(to_u8(v).must())
+
+# The colour of a YCbCr pixel read as `refs` says (ReferenceBlackWhite: the
+# black and white of Y, then of Cb and of Cr).
+function ycbcr_color(y: i64, cb: i64, cr: i64, refs: [i64] lent) -> image.Color
+    if refs.len() != 6 || refs == [0, 255, 128, 255, 128, 255]
+        return colorspace.from_ycbcr(
+            colorspace.YCbCr(y: to_u8(y).must(), cb: to_u8(cb).must(), cr: to_u8(cr).must())
+        )
+    ys = clamp8(v: y - refs[0], span: refs[1] - refs[0], full: 255)
+    cbs = (cb - refs[2]) * 127 / spanned(refs[3] - refs[2])
+    crs = (cr - refs[4]) * 127 / spanned(refs[5] - refs[4])
+    r = clamp_to(ys + crs * 1402 / 1000)
+    g = clamp_to(ys - (cbs * 344 + crs * 714) / 1000)
+    b = clamp_to(ys + cbs * 1772 / 1000)
+    return image.Color(r: to_u8(r).must(), g: to_u8(g).must(), b: to_u8(b).must(), a: 255)
+
+# `d`, or 1 where it is 0, so that it divides.
+function spanned(d: i64) -> i64
+    if d == 0
+        return 1
+    return d
+
+# `v` scaled from `span` to `full`, kept within 0 to `full`.
+function clamp8(v: i64, span: i64, full: i64) -> i64
+    r = v * full / spanned(span)
+
+    if r < 0
+        return 0
+
+    if r > full
+        return full
+    return r
+
+# `v` kept within 0 to 255.
+function clamp_to(v: i64) -> i64
+    if v < 0
+        return 0
+
+    if v > 255
+        return 255
+    return v
+
+# The image of `samples`, `s.spp` samples a pixel row after row. Fails
+# `invalid` where `samples` holds another count, a palette is too short, or
+# a sample passes its own width.
+function image_of(samples: [u16] lent, s: Spec) -> image.Image?
+    if samples.len() != s.width * s.height * s.spp
+        return fail(
+            code: image.INVALID,
+            msg: f"{samples.len()} samples where {s.width} by {s.height} pixels of {s.spp} hold {s.width * s.height * s.spp}"
+        )
+    colors = colors_of(s.photometric)
+    top = (1 << s.bits) - 1
+    reduced = s.photometric == 3 || s.photometric == 5 || s.photometric == 6
+    wide = s.bits > 8 && !reduced
+
+    out_bits = if wide
+        16
+    else
+        8
+    out_top = (1 << out_bits) - 1
+    has_alpha = s.alpha > 0
+
+    extra = if has_alpha
+        1
+    else
+        0
+
+    if s.photometric == 3 && s.palette.len() < 3 * (1 << s.bits)
+        return fail(
+            code: image.INVALID,
+            msg: f"a palette of {s.palette.len()} entries, where 3 times {1 << s.bits} are due"
+        )
+
+    if s.spp < colors + extra
+        return fail(code: image.INVALID, msg: f"{s.spp} samples a pixel, too few for photometric {s.photometric}")
+    out: [u8] @= []
+    base @= 0
+
+    for _ in range(from: 0, to: s.width * s.height)
+        parts: [i64] @= []
+
+        for k in range(from: 0, to: colors)
+            v = to_i64(samples[base + k]).must()
+
+            if v > top
+                return fail(code: image.INVALID, msg: f"a sample of {v} in {s.bits} bits")
+            parts @ parts.push(v)
+
+        a @= out_top
+
+        if has_alpha
+            raw_a = to_i64(samples[base + colors]).must()
+
+            if raw_a > top
+                return fail(code: image.INVALID, msg: f"an alpha sample of {raw_a} in {s.bits} bits")
+            a @ scaled(v: raw_a, bits: s.bits, out_bits: out_bits)
+        channels: [i64] @= []
+
+        if s.photometric == 0 || s.photometric == 1 || s.photometric == 4
+            v = if s.photometric == 0
+                top - parts[0]
+            else
+                parts[0]
+            channels @ channels.push(scaled(v: v, bits: s.bits, out_bits: out_bits))
+        else if s.photometric == 2
+            for v in parts
+                channels @ channels.push(scaled(v: v, bits: s.bits, out_bits: out_bits))
+        else if s.photometric == 3
+            n = 1 << s.bits
+
+            for plane in range(from: 0, to: 3)
+                channels @ channels.push(s.palette[plane * n + parts[0]] >> 8)
+        else if s.photometric == 5
+            ink: [i64] @= []
+
+            for v in parts
+                ink @ ink.push(scaled(v: v, bits: s.bits, out_bits: 8))
+
+            c = colorspace.from_cmyk(
+                colorspace.Cmyk(cyan: to_u8(ink[0]).must(), magenta: to_u8(ink[1]).must(), yellow: to_u8(ink[2]).must(), black: to_u8(ink[3]).must())
+            )
+            channels @ [to_i64(c.r).must(), to_i64(c.g).must(), to_i64(c.b).must()]
+        else
+            c = ycbcr_color(y: parts[0], cb: parts[1], cr: parts[2], refs: s.refs)
+            channels @ [to_i64(c.r).must(), to_i64(c.g).must(), to_i64(c.b).must()]
+
+        if s.alpha == 1
+            for i in range(from: 0, to: channels.len())
+                channels[i] @ unpremultiplied(c: channels[i], alpha: a, top: out_top)
+
+        for c in channels
+            put(out: @out, v: c, wide: wide)
+
+        if has_alpha
+            put(out: @out, v: a, wide: wide)
+        base @ base + s.spp
+
+    shown = if reduced
+        3
+    else
+        colors
+    format = format_for(colors: shown, wide: wide, alpha: has_alpha)?
+    return image.from_pixels(width: s.width, height: s.height, format: format, pixels: out)
+
+# `c` of an image whose alpha is `alpha`, undone from being multiplied by it.
+function unpremultiplied(c: i64, alpha: i64, top: i64) -> i64
+    if alpha <= 0
+        return 0
+    r = (c * top + alpha / 2) / alpha
+
+    if r > top
+        return top
+    return r
+
+# The format of `colors` colour samples (1 or 3), 8 or 16 bits, with or
+# without alpha.
+function format_for(colors: i64, wide: bool, alpha: bool) -> image.Format?
+    channels = colors + if alpha
+        1
+    else
+        0
+
+    bits = if wide
+        16
+    else
+        8
+    return image.format_of(channels: channels, bits: bits)

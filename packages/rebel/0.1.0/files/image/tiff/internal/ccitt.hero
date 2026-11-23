@@ -1,0 +1,344 @@
+# CCITT bilevel coding as TIFF holds it: Modified Huffman (compression 2,
+# runs only, each row padded to a byte), Group 3 (compression 3, rows after an
+# end-of-line code, one-dimensional or mixed with two-dimensional rows) and
+# Group 4 (compression 4, two-dimensional rows against the row before). A row
+# is the positions where its colour changes; a black pixel is a 1 bit.
+
+use image
+use image/tiff/internal/ccitt_codes
+use image/tiff/internal/lzw
+
+# The modes of a two-dimensional code, as the lookup table answers them.
+constant PASS: i64
+    1
+
+# Horizontal mode: two runs follow.
+constant HORIZONTAL: i64
+    2
+
+# Vertical mode: the new change stands 0 to 3 pixels from the one above,
+# mode `VERTICAL + 3 + delta`, so 3 is straight below.
+constant VERTICAL: i64
+    3
+
+# The extension code, which opens uncompressed mode.
+constant EXTENSION: i64
+    20
+
+# The decoding tables: a run, by the next 13 bits, for each colour, and a
+# mode, by the next 7 bits.
+record Tables
+    # `length << 16 | run` of the white code that begins a 13-bit window, 0 for none.
+    white: [i64]
+    # The same for black.
+    black: [i64]
+    # `length << 8 | mode` for a 7-bit window, 0 for none.
+    modes: [i64]
+
+# A bit reader over a strip.
+record Bits
+    # The bytes.
+    src: [u8]
+    # The next bit, counted from the first bit of the first byte.
+    pos: i64
+
+# `s`, a text of 0s and 1s, as a number.
+function value_of(s: str) -> i64
+    v @= 0
+
+    for i in range(from: 0, to: s.len())
+        bit = if s[i] == '1'
+            1
+        else
+            0
+        v @ v << 1 | bit
+
+    return v
+
+# Puts `code` of `bits` bits into every window of `size` bits that begins
+# with it, as `length << shift | what`.
+function fill_window(@table: [i64], code: str, size: i64, packed: i64)
+    low = value_of(code) << size - code.len()
+
+    for i in range(from: 0, to: 1 << size - code.len())
+        table[low + i] @ packed
+
+# The decoding tables, built from the code words.
+function tables() -> Tables
+    white @= lzw.zero_list(8192)
+    black @= lzw.zero_list(8192)
+    modes @= lzw.zero_list(128)
+    wt = ccitt_codes.white_terminating()
+    bt = ccitt_codes.black_terminating()
+    wm = ccitt_codes.white_makeup()
+    bm = ccitt_codes.black_makeup()
+    ex = ccitt_codes.extended_makeup()
+
+    for i in range(from: 0, to: 64)
+        fill_window(table: @white, code: wt[i], size: 13, packed: wt[i].len() << 16 | i)
+        fill_window(table: @black, code: bt[i], size: 13, packed: bt[i].len() << 16 | i)
+
+    for i in range(from: 0, to: 27)
+        fill_window(table: @white, code: wm[i], size: 13, packed: wm[i].len() << 16 | (i + 1) * 64)
+        fill_window(table: @black, code: bm[i], size: 13, packed: bm[i].len() << 16 | (i + 1) * 64)
+
+    for i in range(from: 0, to: 13)
+        fill_window(table: @white, code: ex[i], size: 13, packed: ex[i].len() << 16 | (28 + i) * 64)
+        fill_window(table: @black, code: ex[i], size: 13, packed: ex[i].len() << 16 | (28 + i) * 64)
+
+    names = ["0001", "001", "1", "011", "000011", "0000011", "010", "000010", "0000010", "0000001"]
+    ids = [
+        PASS
+        HORIZONTAL
+        VERTICAL + 3
+        VERTICAL + 4
+        VERTICAL + 5
+        VERTICAL + 6
+        VERTICAL + 2
+        VERTICAL + 1
+        VERTICAL
+        EXTENSION
+    ]
+
+    for i in range(from: 0, to: names.len())
+        fill_window(table: @modes, code: names[i], size: 7, packed: names[i].len() << 8 | ids[i])
+
+    return Tables(white: white, black: black, modes: modes)
+
+# The next `n` bits of `r`, 16 at most, zeros past its end.
+function peek(r: Bits lent, n: i64) -> i64
+    at = r.pos >> 3
+    acc @= 0
+
+    for k in range(from: 0, to: 3)
+        b = if at + k < r.src.len()
+            to_i64(r.src[at + k]).must()
+        else
+            0
+        acc @ acc << 8 | b
+
+    return acc >> 24 - (r.pos & 7) - n & (1 << n) - 1
+
+# One whole run of `colour` (0 white, 1 black): makeup codes added up and the
+# terminating code that ends them. Fails `invalid` where the bits are no code
+# or the data ends.
+function run_of(@r: Bits, t: Tables lent, colour: i64) -> i64?
+    total @= 0
+
+    while true
+        if r.pos >= r.src.len() * 8
+            return fail(code: image.INVALID, msg: "a CCITT strip that ends inside a row")
+
+        e = if colour == 0
+            t.white[peek(r, n: 13)]
+        else
+            t.black[peek(r, n: 13)]
+
+        if e == 0
+            return fail(code: image.INVALID, msg: f"bits that are no CCITT run code, at bit {r.pos}")
+        r.pos @ r.pos + (e >> 16)
+        run = e & 65535
+        total @ total + run
+
+        if run < 64
+            return ok(total)
+
+        if total > 2560 * 64
+            return fail(code: image.INVALID, msg: "a CCITT run of absurd length")
+
+    return ok(total)
+
+# Adds the colour change at `x` to `changes`, or takes the one already there
+# away where it stands at `x` too: a run of zero pixels.
+function change(@changes: [i64], x: i64)
+    if changes.len() > 0 && changes[changes.len() - 1] == x
+        changes @ changes.slice(from: 0, to: changes.len() - 1)
+    else
+        changes @ changes.push(x)
+
+# The changes of a one-dimensional row of `width` pixels. Fails `invalid` for
+# a run past the row.
+function row_1d(@r: Bits, t: Tables lent, width: i64) -> [i64]?
+    changes: [i64] @= []
+    x @= 0
+    colour @= 0
+
+    while x < width
+        run = run_of(r: @r, t: t, colour: colour)?
+
+        if run > width - x
+            return fail(code: image.INVALID, msg: f"a CCITT run of {run} pixels from column {x} of a row {width} wide")
+        x @ x + run
+
+        if x < width
+            change(changes: @changes, x: x)
+        colour @ 1 - colour
+
+    return ok(changes)
+
+# The first changing element of `ref` right of `a0` that changes away from
+# `colour`, found from index `from`; its index.
+function first_b(ref: [i64] lent, a0: i64, colour: i64, from: i64) -> i64
+    i @= from
+
+    while i < ref.len() && (ref[i] <= a0 || i % 2 != colour)
+        i @ i + 1
+
+    return i
+
+# The changes of a two-dimensional row of `width` pixels coded against `ref`,
+# the changes of the row above. Fails `invalid` for a code that makes no
+# progress or passes the row, and `unsupported` for uncompressed mode.
+function row_2d(@r: Bits, t: Tables lent, ref: [i64] lent, width: i64) -> [i64]?
+    changes: [i64] @= []
+    a0 @= -1
+    colour @= 0
+    bi @= 0
+
+    while a0 < width
+        if r.pos >= r.src.len() * 8
+            return fail(code: image.INVALID, msg: "a CCITT strip that ends inside a row")
+
+        low = if bi > 3
+            bi - 3
+        else
+            0
+        bi @ first_b(ref, a0: a0, colour: colour, from: low)
+
+        b1 = if bi < ref.len()
+            ref[bi]
+        else
+            width
+
+        b2 = if bi + 1 < ref.len()
+            ref[bi + 1]
+        else
+            width
+        e = t.modes[peek(r, n: 7)]
+
+        if e == 0
+            return fail(code: image.INVALID, msg: f"bits that are no CCITT mode code, at bit {r.pos}")
+        r.pos @ r.pos + (e >> 8)
+        mode = e & 255
+
+        if mode == EXTENSION
+            return fail(code: image.UNSUPPORTED, msg: "CCITT uncompressed mode, which no fax writer uses")
+
+        if mode == PASS
+            a0 @ b2
+        else if mode == HORIZONTAL
+            start = if a0 < 0
+                0
+            else
+                a0
+            first = run_of(r: @r, t: t, colour: colour)?
+            second = run_of(r: @r, t: t, colour: 1 - colour)?
+            end = start + first + second
+
+            if end > width || end == start && a0 >= 0
+                return fail(
+                    code: image.INVALID,
+                    msg: f"CCITT horizontal runs of {first} and {second} from column {start} of a row {width} wide"
+                )
+
+            if start + first < width
+                change(changes: @changes, x: start + first)
+
+            if end < width
+                change(changes: @changes, x: end)
+            a0 @ end
+        else
+            a1 = b1 + mode - VERTICAL - 3
+
+            if a1 > width || a1 < 0 || a1 <= a0 && a0 >= 0
+                return fail(
+                    code: image.INVALID,
+                    msg: f"a CCITT vertical code that puts a change at column {a1} of a row {width} wide, after column {a0}"
+                )
+
+            if a1 < width
+                change(changes: @changes, x: a1)
+            a0 @ a1
+            colour @ 1 - colour
+
+    return ok(changes)
+
+# The bytes of a row of `width` pixels whose colour changes are `changes`,
+# black as 1 bits, white as 0.
+function render(changes: [i64] lent, width: i64) -> [u8]
+    row: [u8] @= []
+
+    for _ in range(from: 0, to: (width + 7) / 8)
+        row @ row.push(0)
+
+    for k in range(from: 0, to: changes.len())
+        if k % 2 == 0
+            end = if k + 1 < changes.len()
+                changes[k + 1]
+            else
+                width
+
+            for x in range(from: changes[k], to: end)
+                row[x >> 3] @ to_u8(to_i64(row[x >> 3]).must() | 0x80 >> (x & 7)).must()
+
+    return row
+
+# Moves past an end-of-line code at the reader's place, with the zeros that
+# fill before it, and tells whether there was one.
+function skip_eol(@r: Bits) -> bool
+    zeros @= 0
+
+    while r.pos + zeros < r.src.len() * 8 && peek_bit(r, at: r.pos + zeros) == 0
+        zeros @ zeros + 1
+
+    if zeros >= 11 && r.pos + zeros < r.src.len() * 8
+        r.pos @ r.pos + zeros + 1
+        return true
+    return false
+
+# The bit of `r` at the absolute bit `at`.
+function peek_bit(r: Bits lent, at: i64) -> i64
+    return to_i64(r.src[at >> 3]).must() >> 7 - (at & 7) & 1
+
+# `rows` rows of `width` pixels from `src`, coded as compression `kind` (2,
+# 3 or 4) with the `options` of T4Options or T6Options, as bytes of 1 bit a
+# pixel, rows padded to bytes. Fails `invalid` where the data is no code or
+# ends early, `unsupported` for uncompressed mode.
+function decode(src: [u8] lent, kind: i64, width: i64, rows: i64, options: i64) -> [u8]?
+    t = tables()
+    r @= Bits(src: src, pos: 0)
+    out: [u8] @= []
+    ref: [i64] @= []
+    two_d = kind == 3 && options & 1 != 0
+
+    for row in range(from: 0, to: rows)
+        coded_2d @= kind == 4
+
+        if kind == 3
+            had = skip_eol(r: @r)
+
+            if two_d
+                if !had
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"row {row} of a two-dimensional Group 3 strip has no end-of-line code"
+                    )
+
+                if r.pos >= r.src.len() * 8
+                    return fail(code: image.INVALID, msg: "a CCITT strip that ends inside a row")
+                coded_2d @ peek_bit(r, at: r.pos) == 0
+                r.pos @ r.pos + 1
+
+        changes = if coded_2d
+            row_2d(r: @r, t: t, ref: ref, width: width)?
+        else
+            row_1d(r: @r, t: t, width: width)?
+
+        if kind == 2
+            r.pos @ (r.pos + 7) / 8 * 8
+        ref @ changes
+
+        for b in render(changes, width: width)
+            out @ out.push(b)
+
+    return ok(out)

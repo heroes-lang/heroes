@@ -1,0 +1,320 @@
+# One page decoded: each strip or tile read out of the file, undone from its
+# compression and predictor, its samples unpacked into the page's whole
+# raster, and the raster turned into an `image.Image`.
+
+use compress
+use compress/zstd
+use image
+use image/tiff/internal/ccitt
+use image/tiff/internal/ifd
+use image/tiff/internal/jpegstrip
+use image/tiff/internal/layout
+use image/tiff/internal/lzw
+use image/tiff/internal/packbits
+use image/tiff/internal/pixels
+use image/tiff/internal/samples
+
+# The name of a compression this reader does not decode, for a message.
+function compression_name(c: i64) -> str
+    return match c
+        6             => "old-style JPEG (6), which libtiff itself no longer writes"
+        34712         => "JPEG 2000 (34712)"
+        34661         => "JBIG (34661)"
+        34925         => "LZMA (34925)"
+        32771         => "CCITT RLE with word alignment (32771)"
+        50001         => "WebP (50001)"
+        34887         => "LERC (34887)"
+        32909 | 32845 => "PixarLog (32909)"
+        34676 | 34677 => "SGILog (34676)"
+        _             => f"compression {c}"
+
+# The bytes of one row of a chunk `columns` pixels wide: `comps` samples of
+# `bits` bits each, rows padded to whole bytes.
+function row_bytes_of(columns: i64, comps: i64, bits: i64) -> i64
+    return (columns * comps * bits + 7) / 8
+
+# The bytes of a chunk of `columns` by `rows` pixels under `l`, in the
+# layout the file stores it in.
+function raw_size_of(l: layout.Layout, columns: i64, rows: i64) -> i64
+    comps = if l.planar == 2
+        1
+    else
+        l.spp
+
+    if l.photometric == 6 && l.planar == 1 && (l.sub_h > 1 || l.sub_v > 1) && l.compression != 7
+        units = (columns + l.sub_h - 1) / l.sub_h * ((rows + l.sub_v - 1) / l.sub_v)
+        return units * (l.sub_h * l.sub_v + 2)
+    return row_bytes_of(columns: columns, comps: comps, bits: l.bits) * rows
+
+# The decompressed bytes of the strip or tile `k` of `l`, `columns` by `rows`
+# pixels, predictor undone.
+function chunk_raw(data: [u8] lent, h: ifd.Header, l: layout.Layout, k: i64, columns: i64, rows: i64) -> [u8]?
+    at = l.offsets[k]
+    count = l.counts[k]
+
+    if at < 0 || count < 0 || at > data.len() || count > data.len() - at
+        return fail(
+            code: image.INVALID,
+            msg: f"strip or tile {k} stands at byte {at} for {count} bytes, past the {data.len()} of the file"
+        )
+    want = raw_size_of(l, columns: columns, rows: rows)
+    held = data.slice(from: at, to: at + count)
+
+    src = if l.fill_order == 2
+        samples.reversed_bits(held)
+    else
+        held
+
+    comps = if l.planar == 2
+        1
+    else
+        l.spp
+    unpacked: [u8] @= []
+
+    if l.compression == 1
+        if src.len() < want
+            return fail(code: image.INVALID, msg: f"strip or tile {k} holds {src.len()} bytes, where {want} are due")
+        unpacked @ src.slice(from: 0, to: want)
+    else if l.compression == 5
+        unpacked @ lzw.decode(src, expected: want)?
+    else if l.compression == 32773
+        unpacked @ packbits.decode(src, expected: want)?
+    else if l.compression == 8 || l.compression == 32946
+        match compress.decompress(src, format: .zlib, limit: want)
+            .ok v => unpacked @ v
+            .err e =>
+                return fail(
+                    code: image.INVALID,
+                    msg: f"strip or tile {k} does not inflate to {want} bytes at most: {e.msg}"
+                )
+
+        if unpacked.len() < want
+            return fail(
+                code: image.INVALID,
+                msg: f"strip or tile {k} inflates to {unpacked.len()} bytes, where {want} are due"
+            )
+    else if l.compression == 2 || l.compression == 3 || l.compression == 4
+        if l.bits != 1 || comps != 1
+            return fail(
+                code: image.INVALID,
+                msg: f"CCITT coding of {l.bits} bits and {comps} samples a pixel, where it holds one bit"
+            )
+        unpacked @ ccitt.decode(src, kind: l.compression, width: columns, rows: rows, options: l.fax_options)?
+    else if l.compression == 7
+        if l.bits != 8 || l.planar != 1
+            return fail(code: image.UNSUPPORTED, msg: "JPEG strips of other than 8 bits a sample in one plane")
+        unpacked @ jpegstrip.jpeg_raw(src, l: l, columns: columns, rows: rows)?
+    else if l.compression == 50000
+        match zstd.decompress(src, limit: want)
+            .ok v => unpacked @ v
+            .err e =>
+                return fail(
+                    code: image.INVALID,
+                    msg: f"strip or tile {k} does not decompress to {want} bytes at most: {e.msg}"
+                )
+
+        if unpacked.len() < want
+            return fail(
+                code: image.INVALID,
+                msg: f"strip or tile {k} decompresses to {unpacked.len()} bytes, where {want} are due"
+            )
+    else
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"{compression_name(l.compression)}, which this reader does not decode"
+        )
+
+    if l.predictor == 2 && l.compression != 7
+        samples.undo_predictor(raw: @unpacked, rows: rows, row_bytes: row_bytes_of(columns: columns, comps: comps, bits: l.bits), comps: comps, bits: l.bits, big_endian: h.big_endian)?
+    return ok(unpacked)
+
+# Stores the samples of `raw`, a chunk `columns` by `rows`, into `out` at
+# column `x0` and row `y0` of the page, `copy_columns` by `copy_rows` of
+# them (a tile's padding is dropped). `plane` is the plane of a planar page,
+# or -1.
+function place(@out: [u16], raw: [u8] lent, l: layout.Layout, h: ifd.Header, x0: i64, y0: i64, columns: i64, copy_columns: i64, copy_rows: i64, plane: i64)
+    comps = if plane >= 0
+        1
+    else
+        l.spp
+    row_bytes = row_bytes_of(columns: columns, comps: comps, bits: l.bits)
+
+    for r in range(from: 0, to: copy_rows)
+        row = samples.unpack(
+            raw,
+            at: r * row_bytes,
+            count: copy_columns * comps,
+            bits: l.bits,
+            big_endian: h.big_endian
+        )
+        base = ((y0 + r) * l.width + x0) * l.spp
+
+        for x in range(from: 0, to: copy_columns)
+            for c in range(from: 0, to: comps)
+                into = if plane >= 0
+                    plane
+                else
+                    c
+                out[base + x * l.spp + into] @ to_u16(row[x * comps + c]).must()
+
+# Stores a YCbCr chunk whose chroma is shared by `l.sub_h` by `l.sub_v`
+# pixels: units of the luma samples of that block, then one Cb and one Cr,
+# the chroma copied to every pixel of the block.
+function place_subsampled(@out: [u16], raw: [u8] lent, l: layout.Layout, x0: i64, y0: i64, columns: i64, rows: i64, copy_columns: i64, copy_rows: i64)
+    across = (columns + l.sub_h - 1) / l.sub_h
+    unit = l.sub_h * l.sub_v + 2
+
+    for uy in range(from: 0, to: (rows + l.sub_v - 1) / l.sub_v)
+        for ux in range(from: 0, to: across)
+            at = (uy * across + ux) * unit
+            cb = raw[at + l.sub_h * l.sub_v]
+            cr = raw[at + l.sub_h * l.sub_v + 1]
+
+            for dy in range(from: 0, to: l.sub_v)
+                for dx in range(from: 0, to: l.sub_h)
+                    x = ux * l.sub_h + dx
+                    y = uy * l.sub_v + dy
+
+                    if x < copy_columns && y < copy_rows
+                        base = ((y0 + y) * l.width + x0 + x) * l.spp
+                        out[base] @ to_u16(raw[at + dy * l.sub_h + dx]).must()
+                        out[base + 1] @ to_u16(cb).must()
+                        out[base + 2] @ to_u16(cr).must()
+
+# The whole raster of the page `l` describes: `l.spp` samples a pixel, row
+# after row.
+function raster_of(data: [u8] lent, h: ifd.Header, l: layout.Layout) -> [u16]?
+    out @= samples.zeros16(l.width * l.height * l.spp)
+
+    planes = if l.planar == 2
+        l.spp
+    else
+        1
+    per_plane = layout.chunk_count(
+        width: l.width,
+        height: l.height,
+        tile_width: l.tile_width,
+        tile_height: l.tile_height,
+        rows_per_strip: l.rows_per_strip
+    )
+    shared = l.photometric == 6 && l.planar == 1 && (l.sub_h > 1 || l.sub_v > 1) && l.compression != 7
+
+    if l.photometric == 6 && l.planar == 2 && (l.sub_h > 1 || l.sub_v > 1) && l.compression != 7
+        return fail(code: image.UNSUPPORTED, msg: "a YCbCr page stored in planes with its chroma subsampled")
+
+    for plane in range(from: 0, to: planes)
+        for k in range(from: 0, to: per_plane)
+            tiles = l.tile_width > 0
+
+            across = if tiles
+                (l.width + l.tile_width - 1) / l.tile_width
+            else
+                1
+
+            x0 = if tiles
+                k % across * l.tile_width
+            else
+                0
+
+            y0 = if tiles
+                k / across * l.tile_height
+            else
+                k * l.rows_per_strip
+
+            columns = if tiles
+                l.tile_width
+            else
+                l.width
+
+            rows = if tiles
+                l.tile_height
+            else
+                min_of(a: l.rows_per_strip, b: l.height - y0)
+            copy_columns = min_of(a: columns, b: l.width - x0)
+            copy_rows = min_of(a: rows, b: l.height - y0)
+            raw = chunk_raw(data, h: h, l: l, k: plane * per_plane + k, columns: columns, rows: rows)?
+
+            plane_of = if planes > 1
+                plane
+            else
+                -1
+
+            if shared
+                place_subsampled(
+                    out: @out,
+                    raw: raw,
+                    l: l,
+                    x0: x0,
+                    y0: y0,
+                    columns: columns,
+                    rows: rows,
+                    copy_columns: copy_columns,
+                    copy_rows: copy_rows
+                )
+            else
+                place(
+                    out: @out,
+                    raw: raw,
+                    l: l,
+                    h: h,
+                    x0: x0,
+                    y0: y0,
+                    columns: columns,
+                    copy_columns: copy_columns,
+                    copy_rows: copy_rows,
+                    plane: plane_of
+                )
+
+    return ok(out)
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Which extra sample is alpha, as `pixels.Spec.alpha` says: -1 for none, 1
+# for associated, 2 for unassociated. An extra sample marked unspecified
+# right after the colours of a gray, RGB, palette or YCbCr page is straight
+# alpha, as Go's and Pillow's readers take it; a CMYK page's is a spot
+# channel and is dropped.
+function alpha_of(l: layout.Layout) -> i64
+    colors = pixels.colors_of(l.photometric)
+
+    if l.spp <= colors
+        return -1
+
+    first = if l.extra.len() > 0
+        l.extra[0]
+    else
+        0
+
+    if first == 1
+        return 1
+
+    if first == 2
+        return 2
+
+    if first == 0 && l.photometric != 5 && l.spp == colors + 1
+        return 2
+    return -1
+
+# The image of the page `l` describes in `data`.
+function image_of(data: [u8] lent, h: ifd.Header, l: layout.Layout) -> image.Image?
+    raster = raster_of(data, h: h, l: l)?
+
+    photometric = if l.compression == 7 && l.photometric == 6
+        2
+    else
+        l.photometric
+    spec = pixels.Spec(
+        width: l.width,
+        height: l.height,
+        bits: l.bits,
+        spp: l.spp,
+        photometric: photometric,
+        alpha: alpha_of(l),
+        palette: l.palette,
+        refs: l.refs
+    )
+    return pixels.image_of(raster, s: spec)

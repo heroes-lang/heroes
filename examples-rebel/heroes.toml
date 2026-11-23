@@ -62,6 +62,7 @@ packages = [
     "image/jpeg",
     "image/netpbm",
     "image/png",
+    "image/tiff",
     "image/vector",
     "ini",
     "io",

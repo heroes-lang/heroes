@@ -2,7 +2,7 @@
 # and `image/draw` (Go 1.27) and Python's Pillow let a program do with an
 # image in memory, one block per capability, and what Rebel answers. The file
 # formats are the subpackages' own ledgers: `image/png`, `image/jpeg`,
-# `image/gif`, `image/bmp`, `image/netpbm`.
+# `image/gif`, `image/bmp`, `image/netpbm`, `image/tiff`.
 #
 # Go's lists are this machine's, 2026-11-18: `go doc -all` on each package.
 # Pillow is not installed here and nothing may be installed, so its names are
@@ -297,12 +297,12 @@ capability image/open-any  a file of any format decoded by one call
   python  Image.open, Image.Image.save (format by extension), Image.register_open, Image.register_save, Image.register_extension, Image.register_mime
   note    Go's registry is a mutable global filled by init functions, which the language has none of
 
-capability image/other-formats  TIFF, WebP, ICO, AVIF, HEIF, TGA, PSD, PCX and Pillow's other formats
+capability image/other-formats  WebP, ICO, AVIF, HEIF, TGA, PSD, PCX and Pillow's other formats
   heroes  pending
   go      -
   rust    -
   python  TiffImagePlugin, WebPImagePlugin, IcoImagePlugin, AvifImagePlugin, TgaImagePlugin, PsdImagePlugin, PcxImagePlugin, DdsImagePlugin, QoiImagePlugin, Jpeg2KImagePlugin, EpsImagePlugin, PdfImagePlugin, and the other plugins
-  note    each would be a subpackage beside `image/png`; PDF writing is `pdf`'s
+  note    each is a subpackage beside `image/png`; PDF writing is `pdf`'s; TIFF is `image/tiff`, with its own ledger
 
 capability image/sequence  the frames of an animation
   heroes  image/gif.decode, image/gif.composite

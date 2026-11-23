@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-three packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-four packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -164,6 +164,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
+| 5 | `image/tiff` | TIFF read and written: every page of a file, in strips or tiles, coded by PackBits, LZW, Deflate, Zstandard, JPEG or the fax codings, 1 to 16 bits a sample as gray, RGB, a palette, CMYK or YCbCr, with alpha; written in every coding but JPEG, classic or BigTIFF, as strips or tiles, or as one bit a pixel | `bytes`, `compress`, `compress/zstd`, `hash`, `image`, `image/colorspace`, `image/jpeg` |  |
 | 5 | `pdf` | PDF documents written (text in the standard fonts and in embedded TrueType fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `font`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |

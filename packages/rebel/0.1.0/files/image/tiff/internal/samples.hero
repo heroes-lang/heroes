@@ -1,0 +1,131 @@
+# The samples of a decoded strip or tile: the horizontal predictor undone,
+# the bits of a row unpacked to whole numbers, and the bytes of a fill order
+# read backwards turned about. A sample is held as the whole number the file
+# wrote, 0 to 2^bits - 1; `pixels` scales them.
+
+use image
+
+# `raw` with the bits of every byte in the other order, the fill order 2
+# files write.
+function reversed_bits(raw: [u8] lent) -> [u8]
+    out: [u8] @= []
+
+    for b in raw
+        v = to_i64(b).must()
+        r @= 0
+
+        for k in range(from: 0, to: 8)
+            r @ r | (v >> k & 1) << 7 - k
+
+        out @ out.push(to_u8(r).must())
+
+    return out
+
+# Undoes the horizontal predictor (2) of `rows` rows of `row_bytes` bytes in
+# `raw`: every sample was written as its difference from the same sample of
+# the pixel before it, `comps` samples back, modulo 2^8 or 2^16. Fails
+# `unsupported` for any other width, where the predictor is not defined.
+function undo_predictor(@raw: [u8], rows: i64, row_bytes: i64, comps: i64, bits: i64, big_endian: bool) -> ()?
+    if bits != 8 && bits != 16
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"the horizontal predictor over samples of {bits} bits, which TIFF defines for 8, 16, 32 and 64"
+        )
+
+    for r in range(from: 0, to: rows)
+        base = r * row_bytes
+
+        if bits == 8
+            for i in range(from: comps, to: row_bytes)
+                raw[base + i] @ to_u8(to_i64(raw[base + i]).must() + to_i64(raw[base + i - comps]).must() & 255).must()
+        else
+            count = row_bytes / 2
+
+            for j in range(from: comps, to: count)
+                at = base + j * 2
+                back = base + (j - comps) * 2
+
+                a = if big_endian
+                    to_i64(raw[at]).must() << 8 | to_i64(raw[at + 1]).must()
+                else
+                    to_i64(raw[at + 1]).must() << 8 | to_i64(raw[at]).must()
+
+                b = if big_endian
+                    to_i64(raw[back]).must() << 8 | to_i64(raw[back + 1]).must()
+                else
+                    to_i64(raw[back + 1]).must() << 8 | to_i64(raw[back]).must()
+                v = a + b & 65535
+
+                if big_endian
+                    raw[at] @ to_u8(v >> 8).must()
+                    raw[at + 1] @ to_u8(v & 255).must()
+                else
+                    raw[at] @ to_u8(v & 255).must()
+                    raw[at + 1] @ to_u8(v >> 8).must()
+
+    return ok()
+
+# The `count` samples of `bits` bits each that begin at byte `at` of `raw`:
+# whole bytes for 8 and 16 bits (the file's order), and a run of bits read
+# most significant first otherwise. The caller has checked that they fit.
+function unpack(raw: [u8] lent, at: i64, count: i64, bits: i64, big_endian: bool) -> [i64]
+    out: [i64] @= []
+
+    if bits == 8
+        for i in range(from: 0, to: count)
+            out @ out.push(to_i64(raw[at + i]).must())
+
+        return out
+
+    if bits == 16
+        for i in range(from: 0, to: count)
+            first = to_i64(raw[at + i * 2]).must()
+            second = to_i64(raw[at + i * 2 + 1]).must()
+
+            if big_endian
+                out @ out.push(first << 8 | second)
+            else
+                out @ out.push(second << 8 | first)
+
+        return out
+    acc @= 0
+    have @= 0
+    pos @= at
+
+    for _ in range(from: 0, to: count)
+        while have < bits
+            acc @ acc << 8 | to_i64(raw[pos]).must()
+            have @ have + 8
+            pos @ pos + 1
+
+        out @ out.push(acc >> have - bits & (1 << bits) - 1)
+        have @ have - bits
+        acc @ acc & (1 << have) - 1
+
+    return out
+
+# `n` zeros as a list of 16-bit numbers.
+function zeros16(n: i64) -> [u16]
+    out: [u16] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+test "undo_predictor: 8 and 16 bits, chunky, and a width it is not defined for"
+    raw: [u8] @= [10, 20, 30, 1, 2, 3, 255, 1, 1, 7, 7, 7]
+    assert !undo_predictor(raw: @raw, rows: 2, row_bytes: 6, comps: 3, bits: 8, big_endian: false).is_err()
+    assert raw == [10, 20, 30, 11, 22, 33, 255, 1, 1, 6, 8, 8]
+    wide: [u8] @= [0x01, 0x00, 0xff, 0xff, 0x00, 0x02]
+    assert !undo_predictor(raw: @wide, rows: 1, row_bytes: 6, comps: 1, bits: 16, big_endian: true).is_err()
+    assert wide == [0x01, 0x00, 0x00, 0xff, 0x01, 0x01]
+    assert undo_predictor(raw: @raw, rows: 1, row_bytes: 1, comps: 1, bits: 4, big_endian: false).is_err()
+
+test "unpack: 1, 4, 12 and 16 bits, and reversed bits"
+    assert unpack([0b10110010], at: 0, count: 8, bits: 1, big_endian: false) == [1, 0, 1, 1, 0, 0, 1, 0]
+    assert unpack([0x12, 0xab], at: 0, count: 4, bits: 4, big_endian: false) == [1, 2, 10, 11]
+    assert unpack([0xab, 0xcd, 0xef], at: 0, count: 2, bits: 12, big_endian: false) == [0xabc, 0xdef]
+    assert unpack([0x01, 0x02], at: 0, count: 1, bits: 16, big_endian: true) == [258]
+    assert unpack([0x01, 0x02], at: 0, count: 1, bits: 16, big_endian: false) == [513]
+    assert reversed_bits([0b00000001, 0b10110000]) == [0b10000000, 0b00001101]

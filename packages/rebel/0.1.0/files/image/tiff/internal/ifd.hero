@@ -1,0 +1,286 @@
+# The structure of a TIFF file: its header, the chain of its image file
+# directories and the values of their entries, classic (version 42) and
+# BigTIFF (version 43), in either byte order. Every count and offset is
+# checked against the file's length before a byte is read, so a hostile file
+# fails `invalid` and never reads past its end.
+
+use bytes
+use image
+
+# What the first eight bytes of a file say.
+record Header
+    # Whether the numbers are written most significant byte first (`MM`).
+    big_endian: bool
+    # Whether the file is BigTIFF: 8-byte offsets and counts.
+    big: bool
+    # The offset of the first directory.
+    first: i64
+
+# One entry of a directory, its values located in the file.
+record Entry
+    # The tag number.
+    tag: i64
+    # The field type, 1 to 18.
+    kind: i64
+    # How many values.
+    count: i64
+    # The offset in the file of the first value.
+    at: i64
+
+# A directory read: its entries and where the next one stands.
+record Directory
+    # The entries whose field type is known, in file order.
+    entries: [Entry]
+    # The offset of the next directory, 0 for the last.
+    next: i64
+
+# The two bytes of `data` at `at`; the caller has checked `at + 2` against the length.
+function u16_at(data: [u8] lent, at: i64, big_endian: bool) -> i64
+    a = to_i64(data[at]).must()
+    b = to_i64(data[at + 1]).must()
+
+    if big_endian
+        return a << 8 | b
+    return b << 8 | a
+
+# The four bytes of `data` at `at`.
+function u32_at(data: [u8] lent, at: i64, big_endian: bool) -> i64
+    first = u16_at(data, at: at, big_endian: big_endian)
+    second = u16_at(data, at: at + 2, big_endian: big_endian)
+
+    if big_endian
+        return first << 16 | second
+    return second << 16 | first
+
+# The eight bytes of `data` at `at`, or -1 where the number passes the largest
+# `i64`.
+function u64_at(data: [u8] lent, at: i64, big_endian: bool) -> i64
+    first = u32_at(data, at: at, big_endian: big_endian)
+    second = u32_at(data, at: at + 4, big_endian: big_endian)
+
+    high = if big_endian
+        first
+    else
+        second
+
+    if high >= 0x80000000
+        return -1
+
+    if big_endian
+        return first << 32 | second
+    return second << 32 | first
+
+# The number of `data` at `at` of `size` bytes: 2, 4 or 8, -1 where it passes
+# the largest `i64`.
+function number_at(data: [u8] lent, at: i64, size: i64, big_endian: bool) -> i64
+    if size == 2
+        return u16_at(data, at: at, big_endian: big_endian)
+
+    if size == 4
+        return u32_at(data, at: at, big_endian: big_endian)
+    return u64_at(data, at: at, big_endian: big_endian)
+
+# The header of `data`. Fails `invalid` where the file does not begin as TIFF
+# or BigTIFF.
+function header_of(data: [u8] lent) -> Header?
+    if data.len() < 8
+        return fail(code: image.INVALID, msg: f"{data.len()} bytes, where a TIFF file holds an 8-byte header at least")
+    big_endian = data[0] == 'M' && data[1] == 'M'
+
+    if !big_endian && !(data[0] == 'I' && data[1] == 'I')
+        return fail(code: image.INVALID, msg: "the data does not begin with TIFF's II or MM")
+    version = u16_at(data, at: 2, big_endian: big_endian)
+
+    if version == 42
+        first = u32_at(data, at: 4, big_endian: big_endian)
+        return ok(Header(big_endian: big_endian, big: false, first: first))
+
+    if version == 43
+        if data.len() < 16 || u16_at(data, at: 4, big_endian: big_endian) != 8 || u16_at(data, at: 6, big_endian: big_endian) != 0
+            return fail(code: image.INVALID, msg: "a BigTIFF header that does not give 8-byte offsets")
+        first = u64_at(data, at: 8, big_endian: big_endian)
+
+        if first < 0
+            return fail(code: image.INVALID, msg: "a BigTIFF first directory past 2^63")
+        return ok(Header(big_endian: big_endian, big: true, first: first))
+    return fail(code: image.INVALID, msg: f"a TIFF version of {version}, where 42 and 43 are defined")
+
+# The bytes a value of field type `kind` takes, 0 for a type no TIFF defines.
+function size_of_kind(kind: i64) -> i64
+    return match kind
+        1 | 2 | 6 | 7              => 1
+        3 | 8                      => 2
+        4 | 9 | 11 | 13            => 4
+        5 | 10 | 12 | 16 | 17 | 18 => 8
+        _                          => 0
+
+# The directory at `offset`. Fails `invalid` where it runs past the end, and
+# where an entry's values do.
+function directory_at(data: [u8] lent, h: Header, offset: i64) -> Directory?
+    head = if h.big
+        8
+    else
+        2
+
+    entry_size = if h.big
+        20
+    else
+        12
+
+    tail = if h.big
+        8
+    else
+        4
+
+    if offset < 8 || offset > data.len() - head
+        return fail(code: image.INVALID, msg: f"a directory at byte {offset}, past the {data.len()} bytes of the file")
+
+    count = if h.big
+        u64_at(data, at: offset, big_endian: h.big_endian)
+    else
+        u16_at(data, at: offset, big_endian: h.big_endian)
+
+    if count < 0 || count > (data.len() - offset - head - tail) / entry_size
+        return fail(
+            code: image.INVALID,
+            msg: f"a directory of {count} entries at byte {offset}, which the file is too short to hold"
+        )
+    entries: [Entry] @= []
+
+    inline = if h.big
+        8
+    else
+        4
+
+    word = if h.big
+        8
+    else
+        4
+
+    for i in range(from: 0, to: count)
+        at = offset + head + i * entry_size
+        tag = u16_at(data, at: at, big_endian: h.big_endian)
+        kind = u16_at(data, at: at + 2, big_endian: h.big_endian)
+        n = number_at(data, at: at + 4, size: word, big_endian: h.big_endian)
+        size = size_of_kind(kind)
+
+        if size > 0
+            if n < 0 || n > data.len()
+                return fail(code: image.INVALID, msg: f"tag {tag} holds {n} values, more than the file has bytes")
+            place @= at + 4 + word
+
+            if n * size > inline
+                place @ number_at(data, at: place, size: word, big_endian: h.big_endian)
+
+                if place < 8 || place < 0 || place > data.len() - n * size
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"the {n} values of tag {tag} stand at byte {place}, past the end of the file"
+                    )
+            entries @ entries.push(Entry(tag: tag, kind: kind, count: n, at: place))
+
+    next = number_at(data, at: offset + head + count * entry_size, size: word, big_endian: h.big_endian)
+
+    if next < 0
+        return fail(code: image.INVALID, msg: "a next directory past 2^63")
+    return ok(Directory(entries: entries, next: next))
+
+# The entry of `tag` among `entries`. Fails `not_found` where there is none.
+function entry_of(entries: [Entry] lent, tag: i64) -> Entry?
+    for e in entries
+        if e.tag == tag
+            return ok(e)
+
+    return fail(code: NOT_FOUND, msg: f"no tag {tag}")
+
+# Whether `entries` holds `tag`.
+function has_tag(entries: [Entry] lent, tag: i64) -> bool
+    for e in entries
+        if e.tag == tag
+            return true
+
+    return false
+
+# The integer values of `e`: bytes, shorts, longs, 8-byte integers, offsets
+# and undefined bytes, the signed types as signed. Fails `invalid` for text,
+# a rational and a float.
+function ints_of(data: [u8] lent, h: Header, e: Entry) -> [i64]?
+    out: [i64] @= []
+    size = size_of_kind(e.kind)
+
+    if e.kind == 2 || e.kind == 5 || e.kind == 10 || e.kind == 11 || e.kind == 12
+        return fail(
+            code: image.INVALID,
+            msg: f"tag {e.tag} holds text, a rational or a float, where a whole number is read"
+        )
+
+    for i in range(from: 0, to: e.count)
+        at = e.at + i * size
+
+        v = if size == 1
+            to_i64(data[at]).must()
+        else
+            number_at(data, at: at, size: size, big_endian: h.big_endian)
+
+        if v < 0 && size == 8 && e.kind != 17
+            return fail(code: image.INVALID, msg: f"tag {e.tag} holds a number past 2^63")
+
+        if e.kind == 6 && v >= 128
+            out @ out.push(v - 256)
+        else if e.kind == 8 && v >= 32768
+            out @ out.push(v - 65536)
+        else if e.kind == 9 && v >= 0x80000000
+            out @ out.push(v - 0x100000000)
+        else
+            out @ out.push(v)
+
+    return ok(out)
+
+# The one whole number `e` holds, or `fallback` where it is absent.
+function int_or(data: [u8] lent, h: Header, entries: [Entry] lent, tag: i64, fallback: i64) -> i64?
+    match entry_of(entries, tag: tag)
+        .err _ => return ok(fallback)
+        .ok e =>
+            values = ints_of(data, h: h, e: e)?
+
+            if values.len() < 1
+                return fail(code: image.INVALID, msg: f"tag {tag} holds no value")
+            return ok(values[0])
+
+# The values of a rational entry as numerators and denominators, two numbers
+# each, or an empty list where the entry is of another type.
+function rationals_of(data: [u8] lent, h: Header, e: Entry) -> [i64]
+    out: [i64] @= []
+
+    if e.kind != 5 && e.kind != 10
+        return out
+
+    for i in range(from: 0, to: e.count * 2)
+        v = u32_at(data, at: e.at + i * 4, big_endian: h.big_endian)
+
+        if e.kind == 10 && v >= 0x80000000
+            out @ out.push(v - 0x100000000)
+        else
+            out @ out.push(v)
+
+    return out
+
+# The text of an ASCII entry, up to its first zero byte, invalid bytes made
+# U+FFFD.
+function text_of(data: [u8] lent, e: Entry) -> str
+    if e.kind != 2 && e.kind != 1 && e.kind != 7
+        return ""
+    raw: [u8] @= []
+
+    for i in range(from: 0, to: e.count)
+        b = data[e.at + i]
+
+        if b == 0
+            break
+        raw @ raw.push(b)
+
+    return bytes.to_text_lossy(raw)
+
+# The code of a search that found nothing.
+constant NOT_FOUND: str
+    "not_found"

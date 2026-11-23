@@ -1,0 +1,108 @@
+# A whole file read: the chain of its directories followed, each page decoded,
+# and what each says about itself (orientation, resolution, texts) kept beside
+# its pixels.
+
+use image
+use image/tiff/internal/ifd
+use image/tiff/internal/layout
+use image/tiff/internal/page
+
+# The most directories one file is followed through: a loop in the chain, or
+# a file made of nothing else, ends here.
+constant MAX_PAGES: i64
+    4096
+
+# The units a resolution is in: 1 none, 2 per inch, 3 per centimetre.
+record Resolution
+    # Pixels per unit, across.
+    x: f64
+    # Pixels per unit, down.
+    y: f64
+    # ResolutionUnit.
+    unit: i64
+
+# One page decoded, with what its directory says.
+record Decoded
+    # The pixels.
+    image: image.Image
+    # The layout the page was stored in.
+    l: layout.Layout
+    # NewSubfileType: whether the page is a reduced-resolution copy of another.
+    reduced: bool
+    # The resolution, where the page gives both directions.
+    resolution: Resolution?
+    # ImageDescription, Software and DateTime, where present.
+    description: str?
+    software: str?
+    date_time: str?
+    # The ICC profile, empty where none.
+    icc: [u8]
+
+# A file's header and its decoded pages.
+record Read
+    # The header.
+    header: ifd.Header
+    # The pages, in file order.
+    pages: [Decoded]
+
+# The value of a rational tag as a float, or an error where absent.
+function rational_of(data: [u8] lent, h: ifd.Header, entries: [ifd.Entry] lent, tag: i64) -> f64?
+    e = ifd.entry_of(entries, tag: tag)?
+    r = ifd.rationals_of(data, h: h, e: e)
+
+    if r.len() < 2 || r[1] == 0
+        return fail(code: "not_found", msg: f"tag {tag} holds no rational")
+    return ok(to_f64(r[0]) / to_f64(r[1]))
+
+# The text of `tag`, or an error where absent.
+function text_tag(data: [u8] lent, entries: [ifd.Entry] lent, tag: i64) -> str?
+    e = ifd.entry_of(entries, tag: tag)?
+    return ok(ifd.text_of(data, e: e))
+
+# The resolution the directory gives, or an error where either direction is
+# missing.
+function resolution_of(data: [u8] lent, h: ifd.Header, entries: [ifd.Entry] lent) -> Resolution?
+    x = rational_of(data, h: h, entries: entries, tag: 282)?
+    y = rational_of(data, h: h, entries: entries, tag: 283)?
+    unit = ifd.int_or(data, h: h, entries: entries, tag: 296, fallback: 2)?
+    return ok(Resolution(x: x, y: y, unit: unit))
+
+# The ICC profile bytes of the directory, empty where it has none.
+function icc_of(data: [u8] lent, entries: [ifd.Entry] lent) -> [u8]
+    match ifd.entry_of(entries, tag: 34675)
+        .err _ => return []
+        .ok e  => return data.slice(from: e.at, to: e.at + e.count)
+
+# Every page of `data`, decoded, the pixels of all of them together within
+# `limits`. Fails as the face's `decode` says.
+function read_all(data: [u8] lent, limits: image.Limits) -> Read?
+    h = ifd.header_of(data)?
+    pages: [Decoded] @= []
+    seen: [i64] @= []
+    next @= h.first
+    budget @= limits.max_pixels
+
+    while next != 0
+        if seen.len() >= MAX_PAGES
+            return fail(code: image.LIMIT, msg: f"more than {MAX_PAGES} directories in one file")
+
+        for s in seen
+            if s == next
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the directory at byte {next} is reached twice: a loop in the chain"
+                )
+
+        seen @ seen.push(next)
+        dir = ifd.directory_at(data, h: h, offset: next)?
+        own = image.Limits(max_width: limits.max_width, max_height: limits.max_height, max_pixels: budget)
+        l = layout.layout_of(data, h: h, entries: dir.entries, limits: own)?
+        budget @ budget - l.width * l.height
+        img = page.image_of(data, h: h, l: l)?
+        subfile = ifd.int_or(data, h: h, entries: dir.entries, tag: 254, fallback: 0)?
+        pages @ pages.push(
+            Decoded(image: img, l: l, reduced: subfile & 1 == 1, resolution: resolution_of(data, h: h, entries: dir.entries), description: text_tag(data, entries: dir.entries, tag: 270), software: text_tag(data, entries: dir.entries, tag: 305), date_time: text_tag(data, entries: dir.entries, tag: 306), icc: icc_of(data, entries: dir.entries))
+        )
+        next @ dir.next
+
+    return ok(Read(header: h, pages: pages))
