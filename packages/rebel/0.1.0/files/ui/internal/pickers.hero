@@ -219,6 +219,29 @@ test "font_button: a font as one text, set and read as a font, refused for a siz
     assert fixture.code_of(ui.inject(@app, input: .type_text(widget: button, text: "junk"))) == ui.INVALID
     ui.close(@app).must()
 
+# The first family of the ones a stock system of each kind ships (Menlo on
+# macOS, DejaVu Sans Mono on a Linux desktop, Consolas and Courier New on
+# Windows) that the system's own font button accepts, tried against a probe
+# made in `into` and destroyed again. Fails `unsupported`, with the words,
+# where the arm makes no font button or the system holds none of them, so a
+# native case skips by them.
+function shipped_family(@app: ui.App, into: ui.Widget) -> str?
+    tried = ["Menlo", "DejaVu Sans Mono", "Consolas", "Courier New"]
+
+    for family in tried
+        match ui.font_button(@app, into: into, font: ui.Font(family: family, size: 13, bold: false, italic: false))
+            .ok probe =>
+                ui.destroy(@app, widget: probe).must()
+                return ok(family)
+            .err e =>
+                if e.code == ui.UNSUPPORTED
+                    return fail(code: e.code, msg: e.msg)
+
+    return fail(
+        code: failure.UNSUPPORTED,
+        msg: f"the system holds none of the font families this case names ({tried.join(", ")})"
+    )
+
 test "font_button: on the native side the system's font button, its font read back as the system holds it, a family the system lacks refused, a pick told once and a program's set told none (catalogue CT46)"
     if hero_ui.native_here() == 0
         skip_test(
@@ -226,20 +249,21 @@ test "font_button: on the native side the system's font button, its font read ba
         )
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Font", width: 300, height: 200).must()
-    offered = ui.font_button(@app, into: w, font: ui.Font(family: "Menlo", size: 13, bold: true, italic: false))
-    refusal = fixture.unsupported_words(offered)
+    chosen = shipped_family(@app, into: w)
+    refusal = fixture.unsupported_words(chosen)
 
     if refusal != ""
         ui.close(@app).must()
         skip_test(reason: refusal)
-    button = offered.must()
-    assert ui.picked_font(app, widget: button).must() == ui.Font(family: "Menlo", size: 13, bold: true, italic: false)
-    ui.set_picked_font(@app, widget: button, font: ui.Font(family: "Menlo", size: 20, bold: true, italic: true)).must()
-    assert ui.text_of(app, widget: button).must() == "20|bi|Menlo"
+    family = chosen.must()
+    button = ui.font_button(@app, into: w, font: ui.Font(family: family, size: 13, bold: true, italic: false)).must()
+    assert ui.picked_font(app, widget: button).must() == ui.Font(family: family, size: 13, bold: true, italic: false)
+    ui.set_picked_font(@app, widget: button, font: ui.Font(family: family, size: 20, bold: true, italic: true)).must()
+    assert ui.text_of(app, widget: button).must() == f"20|bi|{family}"
     assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "NoSuchFamilyHeroes", size: 12, bold: false, italic: false))) == ui.INVALID
-    assert ui.text_of(app, widget: button).must() == "20|bi|Menlo"
-    ui.inject(@app, input: .type_text(widget: button, text: "11|-|Menlo")).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: button, text: "11|-|Menlo")
+    assert ui.text_of(app, widget: button).must() == f"20|bi|{family}"
+    ui.inject(@app, input: .type_text(widget: button, text: f"11|-|{family}")).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: button, text: f"11|-|{family}")
     assert ui.rect_of(@app, widget: button).must().width > 0
     ui.destroy(@app, widget: button).must()
     ui.close(@app).must()
