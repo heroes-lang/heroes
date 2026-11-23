@@ -14,7 +14,7 @@
   <p>
     Rebel pubblica tutti i suoi pacchetti insieme sotto un nome solo, <code>rebel</code>, e un programma nomina ognuno di quelli che usa. Questo piccolo programma legge una tabella scritta in CSV, valori separati da virgole, il testo semplice che salva un foglio di calcolo, con il <code>csv</code> di Rebel:
   </p>
-<figure class="example" data-src="examples-rebel/reach_csv.hero" data-lines="5-16">
+<figure class="example" data-src="examples-rebel/reach/reach_csv.hero" data-lines="5-16">
 <pre><code>use &lt;rebel&gt;/csv
 
 function main()
@@ -27,7 +27,7 @@ function main()
                 rows @ rows.push([r["album"].default("?")])
 
             print(csv.format(rows))</code></pre>
-    <figcaption>examples-rebel/reach_csv.hero, righe 5&ndash;16</figcaption>
+    <figcaption>examples-rebel/reach/reach_csv.hero, righe 5&ndash;16</figcaption>
   </figure>
   <p>
     Controllalo prima che abbia scaricato qualcosa, e la riga che nomina il pacchetto dice che cosa manca:
@@ -303,7 +303,7 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
 
   <footer>
     <p>Il programma è un file del repository,
-    <code>examples-rebel/reach_csv.hero</code>, il programma di prova del
+    <code>examples-rebel/reach/reach_csv.hero</code>, il programma di prova del
     <code>csv</code> di Rebel. Le trascrizioni sono state eseguite su una sua
     copia, in una cartella accanto a un piccolo indice che pubblica
     <code>packages/rebel/0.1.0/files/</code> del repository come Rebel 0.1.0,

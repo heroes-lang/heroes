@@ -235,7 +235,7 @@ qualified everywhere else, never redefined; among them:
   thin binding of one header, one Heroes function per C function. No policy
   in it; the face turns C's answers into `T?`.
 - **The ledger**, `<package>.ledger` (A8).
-- **The driver**, `examples-rebel/reach_<package>.hero`: a program whose `main`
+- **The driver**, `examples-rebel/reach/reach_<package>.hero`: a program whose `main`
   names something of the package, so that its tests can be run.
 - **A large table or a large capability goes in a subpackage**
   (`unicode/normalize`, `compress/zstd`, `sql/sqlite`), so only the programs
@@ -576,9 +576,14 @@ is something this project measured or the specification states.
 
 `examples-rebel/` holds three kinds of program, told apart by where they stand:
 
-- **The drivers**, `examples-rebel/reach_<package>.hero` (§ A2), one for each face, whose
-  `heroes test` runs that face's tests; they read the one catalogue at the folder's root,
-  `examples-rebel/heroes.toml`.
+- **The drivers**, `examples-rebel/reach/reach_<package>.hero` (§ A2), one for each face,
+  whose `heroes test` runs that face's tests; they stand together in the drivers' folder,
+  `reach/`, and read its one catalogue, `examples-rebel/reach/heroes.toml`, whose `path` to
+  Rebel is the folder's only way out of itself: a driver names no file of another folder, so
+  the folder moves whole with its catalogue's one line changed. That folder is
+  no program: the check of Rebel's programs and the site pass it by under one name each
+  (`DRIVERS` in `tests/harness/rebel_apps_run.hero`, `generators/rebel_index/programs.hero`
+  and `site/src/lib/examples-model.ts`), and Rebel's pipeline runs each driver's tests.
 - **The twins**, `examples-rebel/<name>/`, one for each program of the compiler's own
   `examples/<name>/` that once used a library: the same program written with Rebel, the
   hand-written helpers replaced by Rebel's packages and the program's own logic kept. A twin
@@ -797,13 +802,13 @@ function is_digit(c: str) -> bool
 From the worktree's root, for the package `<p>`:
 
 - **Write the face first, bodies as `???`.** `./heroes check
-  examples-rebel/reach_<p>.hero` accepts a module with holes and lists each
+  examples-rebel/reach/reach_<p>.hero` accepts a module with holes and lists each
   hole with the type it expects; a caller of a function with a hole already
   type-checks.
 - **Format at the moment of writing**: `./heroes fmt <file> --in-place`.
 - **While writing, `./heroes check` only.** It compiles no C and costs little.
 - **When a module is whole, its tests**: `./heroes test
-  examples-rebel/reach_<p>.hero`. A module holding a `???` builds no binary, so
+  examples-rebel/reach/reach_<p>.hero`. A module holding a `???` builds no binary, so
   the tests of a package run once every module the driver reaches is whole.
   The machine is shared and its memory is short (author, 2026-11-16 11:40: two
   test runs at once at most): one test run of yours at a time, and none while

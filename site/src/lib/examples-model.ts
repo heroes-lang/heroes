@@ -22,12 +22,14 @@
  * **an application** holds its own `main.expected`, its demo's transcript;
  * **a twin** holds none and bears the name of a program of `examples/`, its
  * original, and is run with the original's arguments and input and held to
- * the original's output, which is what its page shows. A file at the top of
- * `examples-rebel/` is a package's driver, `reach_<package>.hero` (§ A2),
- * whose package is read on its reference page and not here, the README or
- * the drivers' catalogue; anything else there, a folder that is neither, an
- * application bearing an original's name, or a twin declaring what the check
- * reads of an application alone, is a build error. Their slugs open
+ * the original's output, which is what its page shows. One folder is no
+ * program: `examples-rebel/reach/` holds the packages' drivers,
+ * `reach_<package>.hero` (§ A2), each package read on its reference page and
+ * not here, and their one catalogue (§ A10). A file at the top of
+ * `examples-rebel/` is the README or one of the two indexes; anything else
+ * there or in the drivers' folder, a folder that is neither, an application
+ * bearing an original's name, or a twin declaring what the check reads of an
+ * application alone, is a build error. Their slugs open
  * `rebel/`, so no name of one group can be read as the other's, and a twin's
  * page and its original's each link the other, the same program with Rebel
  * and without.
@@ -70,7 +72,14 @@ const INDEX = 'packages';
 /** The programs written with Rebel, the second group. */
 const REBEL = 'examples-rebel';
 
-/** A package's driver in `examples-rebel/` (README § A2). */
+/**
+ * The drivers' folder of `examples-rebel/`, holding every package's driver and
+ * their one catalogue (README § A10), as `tests/harness/rebel_apps_run.hero`'s
+ * `DRIVERS` names it: no program, so it has no page.
+ */
+const DRIVERS = `${REBEL}/reach`;
+
+/** A package's driver in the drivers' folder (README § A2). */
 const DRIVER = /^reach_[a-z0-9_]+\.hero$/;
 
 /** A program's catalogue, beside its `main.hero` (spec § 1). */
@@ -109,7 +118,7 @@ function isDocument(path: string, dir: string): boolean {
 const PROGRAM_FLOOR = 44;
 const GALLERY_FLOOR = 10;
 
-/** The drivers `examples-rebel/` held when it was first read: 160. */
+/** The drivers `examples-rebel/` held when it was first read: 160 (194 when they moved into `reach/`, 2026-11-23). */
 const DRIVER_FLOOR = 150;
 
 export interface SourceFile {
@@ -560,12 +569,13 @@ export function examples(): Example[] {
  * its own `main.expected`, read first, and a twin by its original, the
  * program of `examples/` bearing its name, whose words it is run with.
  * `originals` are `examples/`'s programs. The top of the folder holds the
- * drivers, the README, the drivers' catalogue (README § A2, § A10) and the
- * two indexes `generators/rebel_index/` writes (`REBEL_INDEXES`); any
- * other file there, a folder holding no `main.hero`, a folder that is neither
- * an application nor a twin, an application bearing an original's name, and
- * a twin holding a file the check reads of an application alone are shapes
- * this module does not know, and build errors.
+ * README and the two indexes `generators/rebel_index/` writes
+ * (`REBEL_INDEXES`), and the drivers' folder (`DRIVERS`) holds the drivers
+ * and their catalogue (README § A2, § A10); any other file in either, a
+ * folder inside the drivers', a folder holding no `main.hero`, a folder that
+ * is neither an application nor a twin, an application bearing an original's
+ * name, and a twin holding a file the check reads of an application alone
+ * are shapes this module does not know, and build errors.
  */
 function rebelPrograms(originals: Example[]): Example[] {
   const out: Example[] = [];
@@ -573,19 +583,28 @@ function rebelPrograms(originals: Example[]): Example[] {
   for (const path of walk(REBEL)) {
     const rest = path.slice(REBEL.length + 1);
     if (rest.includes('/')) continue;
-    if (rest === 'README.md' || rest === CATALOGUE || REBEL_INDEXES.has(rest)) continue;
-    if (DRIVER.test(rest)) {
+    if (rest === 'README.md' || REBEL_INDEXES.has(rest)) continue;
+    throw new Error(
+      `${path} is at the top of ${REBEL}/ and is none of what stands there: the README or the two\n` +
+        `  indexes generators/rebel_index/ writes, INDEX.md and PACKAGES.md. A package's driver,\n` +
+        `  \`reach_<package>.hero\`, stands in ${DRIVERS}/ beside its catalogue, and a program written\n` +
+        `  with Rebel is a folder of its own, a project with its own catalogue (examples-rebel/README.md § A10).`
+    );
+  }
+  for (const path of walk(DRIVERS)) {
+    const rest = path.slice(DRIVERS.length + 1);
+    if (rest === CATALOGUE) continue;
+    if (!rest.includes('/') && DRIVER.test(rest)) {
       drivers += 1;
       continue;
     }
     throw new Error(
-      `${path} is at the top of ${REBEL}/ and is none of what stands there: a package's driver\n` +
-        `  \`reach_<package>.hero\`, the README, the drivers' catalogue or the two indexes\n` +
-        `  generators/rebel_index/ writes, INDEX.md and PACKAGES.md. A program written with\n` +
-        `  Rebel is a folder of its own, a project with its own catalogue (examples-rebel/README.md § A10).`
+      `${path} is in ${DRIVERS}/ and is none of what stands there: a package's driver,\n` +
+        `  \`reach_<package>.hero\`, or the drivers' catalogue, ${CATALOGUE} (examples-rebel/README.md § A2, § A10).`
     );
   }
   for (const dir of directoriesIn(REBEL)) {
+    if (dir === DRIVERS) continue;
     if (!isFile(`${dir}/main.hero`)) {
       throw new Error(`${dir} is a folder of ${REBEL}/ holding no main.hero, so it is no program, and nothing else stands there.`);
     }
