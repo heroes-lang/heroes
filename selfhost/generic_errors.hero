@@ -1,7 +1,8 @@
 # The words of a call that fills a generic function's type parameters with a
-# type its body cannot serve, and of a generic no type can serve (spec § 11;
-# panel 256's R1 and R2; design.md §4.17: the body's operation is quoted and
-# its line named, so the call's reader need not open the body).
+# type its body cannot serve, of a generic no type can serve, and of what
+# `heroes doc` prints a generic asks of its calls (spec § 11; panel 256's R1,
+# R2 and R4; design.md §4.17: the body's operation is quoted and its line
+# named, so the call's reader need not open the body).
 
 use ast
 use check/generic_needs
@@ -133,3 +134,49 @@ function chain(s: source.Source, decls: [ast.Decl], first: i64, via: [i64]) -> [
         out @ out.push(source.span_text(s, decls[d].name))
 
     return out
+
+# One need as `heroes doc` prints it under its generic (R4): what a call's
+# type must be, the operation that asks it, and its line.
+function described(s: source.Source, decls: [ast.Decl], need: generic_needs.Need) -> str
+    names: [str] @= []
+
+    for l in need.letters
+        names @ names.push(letter_name(s, decls, decl: need.decl, letter: l))
+
+    words: str @= names.join(" and ")
+
+    # A verb agrees with every letter named, but `or`'s, which asks of one.
+    one = names.len() == 1 || need.rule == .send_at
+    asks: str @= ""
+    does: str @= ""
+
+    match need.rule
+        .send_at =>
+            words @ names.join(" or ")
+            asks @ " holds a C handle or a thread"
+            does @ "hands it over"
+        .send_bare =>
+            asks @ agreeing(one, single: " holds", many: " hold") + " no C handle and no thread"
+            does @ "copies it"
+        .spawn_handle =>
+            asks @ agreeing(one, single: " holds", many: " hold") + " no C handle and no thread"
+            does @ "hands it to a new thread"
+        .cross_ptr =>
+            asks @ agreeing(one, single: " reaches", many: " reach") + " no `ptr` and no `cstr`"
+            does @ "makes it cross between threads"
+        .unit_mailbox =>
+            asks @ " is not `()`"
+            does @ "is a mailbox of it"
+
+    place = source.elsewhere(s, here: decls[need.decl].span.start, there: need.at.start)
+    op: str @= "`" + source.span_text(s, need.at) + "` " + does
+
+    if need.via.len() > 0
+        inner = source.span_text(s, decls[need.via[need.via.len() - 1]].name)
+        op @ "`" + source.span_text(s, need.at) + "` reaches `" + source.span_text(s, need.origin) + "` in `" + inner + "`, which " + does
+    return words + asks + ": " + op + ", " + place
+
+function agreeing(one: bool, single: str, many: str) -> str
+    if one
+        return single
+    return many

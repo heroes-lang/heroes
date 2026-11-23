@@ -79,6 +79,45 @@ function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             told[said] @ true
             state.push_diagnostic(@c, told_at(c, s, decls, need: made.needs[b.need], b: b))
 
+# What `heroes doc` prints under each generic declaration (R4): every need
+# of its own body and carried in from its callees, in words, once each.
+function described(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: [str]}
+    out: {i64: [str]} @= {}
+    generic = generic_needs.generics_of(decls)
+
+    if generic.len() == 0
+        return out
+
+    needs = carried(c, a, r, s, decls, generic: generic).needs
+
+    # In the order a reader meets them, by where each stands in the body.
+    placed: [i64] @= []
+    index: i64 @= 0
+
+    for need in needs
+        placed @ placed.push(need.at.start * needs.len() + index)
+        index @ index + 1
+
+    for one in sort(placed)
+        need = needs[one % needs.len()]
+        line = generic_errors.described(s, decls, need: need)
+        list: [str] @= []
+
+        if !out[need.decl].is_err()
+            list @ out[need.decl].must()
+
+        if !holds_text(list, line)
+            out[need.decl] @ list.push(line)
+
+    return out
+
+function holds_text(list: [str], text: str) -> bool
+    for x in list
+        if x == text
+            return true
+
+    return false
+
 # Every need of every generic body, carried through every call until none
 # is new, and every call that breaks one.
 function carried(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], generic: [i64]) -> Carried
