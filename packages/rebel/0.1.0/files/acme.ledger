@@ -160,7 +160,7 @@ capability acme/csr  the certificate request made from a key and the names
   go      x509.CreateCertificateRequest (used by lego certificate.generateCsr)
   rust    -
   python  acme.crypto_util.make_csr
-  note    `x509` reads certificate requests and does not yet write them (its ledger's x509/create-request is pending), so the live tests made theirs with OpenSSL 3
+  note    `x509.create_request` makes a certificate request, and the program hands `finalize` its DER; the live tests made theirs with OpenSSL 3
 
 capability acme/download  the certificate chain downloaded, and its alternates
   heroes  acme.download, acme.Chain

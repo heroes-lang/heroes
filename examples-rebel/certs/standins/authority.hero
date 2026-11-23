@@ -2,8 +2,9 @@
 # self-signed, whose certificate a client trusts, and an intermediate the
 # root signed, which signs every certificate issued, so the root's key is
 # used twice and then only kept. Both keys are P-256, made at start by
-# `crypto/keypairs` and never written anywhere; both certificates are
-# written from `pki`'s pieces and read back by `x509` before they are used.
+# `crypto/keypairs` and never written anywhere; both certificates are made by
+# `x509.create_self_signed` and `x509.create_certificate`, which read them back
+# before they are used.
 #
 # A certificate issued carries what a TLS server's certificate of the web
 # carries: the names of the order in its subjectAltName, the first name as
@@ -12,12 +13,12 @@
 # served (`caIssuers`).
 
 use <rebel>/asn1
+use <rebel>/big
 use <rebel>/crypto/keypairs
 use <rebel>/pem
 use <rebel>/time
 use <rebel>/x509
 
-use pki/parts
 use pki/request
 use pki/signing
 
@@ -50,8 +51,8 @@ record Authority
     issuer_pem: str
     # The intermediate's DER, served at its `caIssuers` URL.
     issuer_der: [u8]
-    # The intermediate's name, every certificate's issuer.
-    issuer_name: asn1.Value
+    # The intermediate's certificate, every certificate's issuer.
+    issuer: x509.Certificate
     # The intermediate's key identifier.
     issuer_key_id: [u8]
 
@@ -62,8 +63,8 @@ record Authority
 # - `serials`: two serial numbers' bytes, the root's then the
 #   intermediate's, `signing.positive_serial`'s.
 #
-# Fails as `keypairs.generate`, `signing.certificate` and `x509` fail; both
-# keys are closed on every failure.
+# Fails as `keypairs.generate` and `x509` fail; both keys are closed on every
+# failure.
 function make(at: time.Instant, serials: [[u8]]) -> Authority?
     root_key @= keypairs.generate(.p256)?
 
@@ -91,38 +92,74 @@ function make(at: time.Instant, serials: [[u8]]) -> Authority?
 # Fails as `make` fails.
 function certified(root_key: keypairs.PrivateKey, issuer_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Authority?
     start = time.add(at, d: time.days(-1)?)?
-    root_spki = signing.public_der(root_key)?
-    root_id = signing.key_id(root_spki)?
-    root_name = parts.name(common_name: ROOT_NAME, organization: ORGANIZATION)
-    root_tbs = signing.Tbs(
-        serial: serials[0],
-        issuer: root_name,
-        subject: root_name,
-        spki: root_spki,
-        validity: parts.validity(not_before: start, not_after: time.add(start, d: time.days(7305)?)?)?,
-        extensions: [parts.basic_constraints(is_ca: true, path_len: -1)?, parts.key_usage(true)?, parts.subject_key_id(root_id)?]
-    )
-    root_der = signing.certificate(root_key, tbs: root_tbs)?
-    issuer_spki = signing.public_der(issuer_key)?
-    issuer_id = signing.key_id(issuer_spki)?
-    issuer_name = parts.name(common_name: ISSUER_NAME, organization: ORGANIZATION)
-    issuer_tbs = signing.Tbs(
-        serial: serials[1],
-        issuer: root_name,
-        subject: issuer_name,
-        spki: issuer_spki,
-        validity: parts.validity(not_before: start, not_after: time.add(start, d: time.days(1826)?)?)?,
-        extensions: [parts.basic_constraints(is_ca: true, path_len: 0)?, parts.key_usage(true)?, parts.server_usage()?, parts.subject_key_id(issuer_id)?, parts.authority_key_id(root_id)?]
-    )
-    issuer_der = signing.certificate(root_key, tbs: issuer_tbs)?
-    root = x509.decode_certificate(root_der)?
-    issuer = x509.decode_certificate(issuer_der)?
-
-    if !x509.is_signed_by(certificate: issuer, issuer: root)?
-        return fail(code: x509.INVALID, msg: "the intermediate made does not verify under the root")
+    root_profile @= x509.default_profile()
+    root_profile.role @ .authority
+    root_profile.key_usage @ authority_usage()
+    root = x509.create_self_signed(x509.CertificateTemplate(serial: serial_of(serials[0]), subject: named(common: ROOT_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(7305)?)?), profile: root_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), signer: root_key, scheme: .ecdsa_sha256)?
+    issuer_profile @= x509.default_profile()
+    issuer_profile.role @ .limited_authority(path_len: 0)
+    issuer_profile.key_usage @ authority_usage()
+    issuer_profile.extended_key_usage @ server_purposes()
+    issuer = x509.create_certificate(x509.CertificateTemplate(serial: serial_of(serials[1]), subject: named(common: ISSUER_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(1826)?)?), profile: issuer_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), subject_key: x509.public_key_of(issuer_key)?, issuer: root, signer: root_key, scheme: .ecdsa_sha256)?
     return ok(
-        Authority(root_key: root_key, issuer_key: issuer_key, root_pem: x509.format_certificate(root), issuer_pem: x509.format_certificate(issuer), issuer_der: issuer_der, issuer_name: issuer_name, issuer_key_id: issuer_id)
+        Authority(root_key: root_key, issuer_key: issuer_key, root_pem: x509.format_certificate(root), issuer_pem: x509.format_certificate(issuer), issuer_der: issuer.der, issuer: issuer, issuer_key_id: signing.key_id(issuer.public_key.der)?)
     )
+
+# The name of an authority or a server: its organization, then its common name,
+# either left out where it is "".
+#
+# - `common`: the common name.
+# - `organization`: the organization.
+#
+# Fails as `x509.new_name` and `x509.new_attribute` fail.
+function named(common: str, organization: str) -> x509.Name?
+    rdns: [[x509.Attribute]] @= []
+
+    if organization != ""
+        rdns @ rdns.push([x509.new_attribute(oid: x509.ORGANIZATION_NAME, text: organization)?])
+
+    if common != ""
+        rdns @ rdns.push([x509.new_attribute(oid: x509.COMMON_NAME, text: common)?])
+    return x509.new_name(rdns)
+
+# A serial number made of drawn bytes.
+#
+# - `drawn`: the bytes, `signing.positive_serial`'s.
+function serial_of(drawn: [u8]) -> big.Integer
+    return big.from_bytes(drawn, order: .big_endian)
+
+# What an authority's key is for: certificates and lists signed.
+function authority_usage() -> x509.KeyUsage
+    return x509.KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+
+# What a TLS server's key is for: signatures.
+function server_usage() -> x509.KeyUsage
+    return x509.KeyUsage(
+        digital_signature: true,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+
+# The purposes of a TLS server's certificate: serverAuth and clientAuth, as the
+# CAs of the web write them.
+function server_purposes() -> [asn1.Oid]
+    return [asn1.Oid(dotted: x509.SERVER_AUTH), asn1.Oid(dotted: x509.CLIENT_AUTH)]
 
 # Closes both keys of `a`.
 #
@@ -154,19 +191,15 @@ record Asked
 # - `asked`: the request, the names, the serial, the dates and the issuer's
 #   URL.
 #
-# Fails as `signing.certificate` and the `parts` it is made of fail.
+# Fails as `x509.create_certificate` fails.
 function issue(a: Authority, asked: Asked) -> [u8]?
-    spki = asked.request.public_key.der
-    common = request.subject_name(asked.domains)
-    tbs = signing.Tbs(
-        serial: asked.serial,
-        issuer: a.issuer_name,
-        subject: parts.name(common_name: common, organization: ""),
-        spki: spki,
-        validity: parts.validity(not_before: asked.not_before, not_after: asked.not_after)?,
-        extensions: [parts.basic_constraints(is_ca: false, path_len: -1)?, parts.key_usage(false)?, parts.server_usage()?, parts.subject_key_id(signing.key_id(spki)?)?, parts.authority_key_id(a.issuer_key_id)?, parts.issuer_access(asked.issuer_url)?, parts.alt_names(domains: asked.domains, subject_empty: common == "")?]
-    )
-    return signing.certificate(a.issuer_key, tbs: tbs)
+    profile @= x509.default_profile()
+    profile.role @ .end_entity
+    profile.key_usage @ server_usage()
+    profile.extended_key_usage @ server_purposes()
+    profile.alt_names @ request.general_names(asked.domains)
+    made = x509.create_certificate(x509.CertificateTemplate(serial: serial_of(asked.serial), subject: named(common: request.subject_name(asked.domains), organization: "")?, not_before: time.to_date_time(asked.not_before), not_after: time.to_date_time(asked.not_after), profile: profile, ocsp_urls: [], issuer_urls: [asked.issuer_url], crl_urls: []), subject_key: asked.request.public_key, issuer: a.issuer, signer: a.issuer_key, scheme: .ecdsa_sha256)?
+    return ok(made.der)
 
 # The chain served for a certificate: it, then the intermediate, PEM.
 #
@@ -216,21 +249,24 @@ function https_identity(at: time.Instant, serials: [[u8]]) -> Https?
 # Fails as `https_identity` fails.
 function https_signed(root_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Https?
     start = time.add(at, d: time.days(-1)?)?
-    validity = parts.validity(not_before: start, not_after: time.add(start, d: time.days(730)?)?)?
-    root_spki = signing.public_der(root_key)?
-    root_id = signing.key_id(root_spki)?
-    root_name = parts.name(common_name: "Certs Stand-in HTTPS Root", organization: ORGANIZATION)
-    root_der = signing.certificate(root_key, tbs: signing.Tbs(serial: serials[0], issuer: root_name, subject: root_name, spki: root_spki, validity: validity, extensions: [parts.basic_constraints(is_ca: true, path_len: 0)?, parts.key_usage(true)?, parts.subject_key_id(root_id)?]))?
+    not_before = time.to_date_time(start)
+    not_after = time.to_date_time(time.add(start, d: time.days(730)?)?)
+    root_profile @= x509.default_profile()
+    root_profile.role @ .limited_authority(path_len: 0)
+    root_profile.key_usage @ authority_usage()
+    root = x509.create_self_signed(x509.CertificateTemplate(serial: serial_of(serials[0]), subject: named(common: "Certs Stand-in HTTPS Root", organization: ORGANIZATION)?, not_before: not_before, not_after: not_after, profile: root_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), signer: root_key, scheme: .ecdsa_sha256)?
     server_key @= keypairs.generate(.p256)?
-    server_spki = signing.public_der(server_key)
+    server_public = x509.public_key_of(server_key)
     key_pem = keypairs.format_private_pem(server_key)
     _ = keypairs.close_private(@server_key).is_err()
-    spki = server_spki?
-    domains = ["localhost", "127.0.0.1"]
-    server_der = signing.certificate(root_key, tbs: signing.Tbs(serial: serials[1], issuer: root_name, subject: parts.name(common_name: "localhost", organization: ORGANIZATION), spki: spki, validity: validity, extensions: [parts.basic_constraints(is_ca: false, path_len: -1)?, parts.key_usage(false)?, parts.server_usage()?, parts.subject_key_id(signing.key_id(spki)?)?, parts.authority_key_id(root_id)?, parts.alt_names(domains: domains, subject_empty: false)?]))?
-    root_pem = pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: root_der))?
-    server_pem = pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: server_der))?
-    return ok(Https(chain: server_pem + root_pem, key: key_pem?, root: root_pem))
+    server_profile @= x509.default_profile()
+    server_profile.role @ .end_entity
+    server_profile.key_usage @ server_usage()
+    server_profile.extended_key_usage @ server_purposes()
+    server_profile.alt_names @ request.general_names(["localhost", "127.0.0.1"])
+    server = x509.create_certificate(x509.CertificateTemplate(serial: serial_of(serials[1]), subject: named(common: "localhost", organization: ORGANIZATION)?, not_before: not_before, not_after: not_after, profile: server_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), subject_key: server_public?, issuer: root, signer: root_key, scheme: .ecdsa_sha256)?
+    root_pem = x509.format_certificate(root)
+    return ok(Https(chain: x509.format_certificate(server) + root_pem, key: key_pem?, root: root_pem))
 
 test "make: an intermediate the root signed, both read back as authorities"
     at = time.now().must()

@@ -1,0 +1,94 @@
+# The places a certificate names: general names written under their context
+# tags (RFC 5280 § 4.2.1.6), the URLs of an authority's services as general
+# names, and the two extensions that hold them, `authorityInfoAccess` and
+# `cRLDistributionPoints`. Each returns the ASN.1 value or the DER for
+# `writing.extension` to wrap, and refuses what RFC 5280 forbids, naming the
+# part.
+
+use asn1
+use x509/internal/shapes
+
+## Codes
+
+# A part RFC 5280 does not allow, the message saying which.
+constant INVALID: str
+    "invalid"
+
+## General names
+
+# A text under the IMPLICIT tag `[number]` as an IA5String.
+#
+# - `text`: the characters, ASCII.
+# - `tag`: the context tag's number.
+# - `what`: the part, for a refusal.
+#
+# Fails `invalid` where `text` holds a character an IA5String lacks.
+function implicit_text(text: str, tag: i64, what: str) -> asn1.Value?
+    return shapes.within(
+        r: asn1.with_tag(.text(kind: .ia5, v: text), tag: asn1.Tag(kind: .context_specific, number: tag, constructed: false)),
+        what: what
+    )
+
+# A general name kept as its own DER, which must be tagged `[number]`.
+#
+# - `der`: the bytes kept.
+# - `tag`: the tag it must have.
+# - `what`: the part, for a refusal.
+#
+# Fails `invalid` where `der` is no DER or is tagged otherwise.
+function kept(der: [u8], tag: i64, what: str) -> asn1.Value?
+    v = shapes.within(r: asn1.decode_der(der), what: what)?
+
+    if shapes.context_number(v) != tag
+        return fail(code: INVALID, msg: f"{what} kept as DER that is not tagged [{tag}]")
+    return ok(v)
+
+# `urls` as general names of the `uniformResourceIdentifier` kind.
+#
+# - `urls`: ASCII, none empty.
+#
+# Fails `invalid` where a URL is empty or holds a character an IA5String lacks.
+function uri_names(urls: [str]) -> [asn1.Value]?
+    names: [asn1.Value] @= []
+
+    for url in urls
+        if url.len() == 0
+            return fail(code: INVALID, msg: "a uniformResourceIdentifier with no text")
+        names @ names.push(implicit_text(text: url, tag: 6, what: "a uniformResourceIdentifier")?)
+
+    return ok(names)
+
+# `crlDistributionPoints`' DER naming one list for each of `names` (RFC 5280
+# § 4.2.1.13): each point's `fullName` is that one general name.
+#
+# - `names`: general names, most often URIs, already written.
+function distribution_points(names: [asn1.Value]) -> [u8]?
+    points: [asn1.Value] @= []
+    context = asn1.Tag(kind: .context_specific, number: 0, constructed: true)
+
+    for name in names
+        full: asn1.Value = .constructed(tag: context, items: [name])
+        point: asn1.Value = .constructed(tag: context, items: [full])
+        points @ points.push(.sequence(items: [point]))
+
+    return asn1.encode_der(.sequence(items: points))
+
+# `authorityInfoAccess`' DER (RFC 5280 § 4.2.2.1): each of `names` reached by
+# the method of the same place in `methods`.
+#
+# - `methods`: dotted identifiers, `OCSP` and `CA_ISSUERS`.
+# - `names`: the general names, one for each method, already written.
+#
+# Fails `invalid` where the two lists differ in length or are empty.
+function access_descriptions(methods: [str], names: [asn1.Value]) -> [u8]?
+    if methods.len() != names.len() || names.len() == 0
+        return fail(
+            code: INVALID,
+            msg: "an authorityInfoAccess of no access, or of methods and places that do not pair"
+        )
+    accesses: [asn1.Value] @= []
+
+    for i in range(from: 0, to: names.len())
+        accesses @ accesses.push(.sequence(items: [.oid(v: asn1.Oid(dotted: methods[i])), names[i]]))
+
+    return asn1.encode_der(.sequence(items: accesses))

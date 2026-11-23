@@ -1,0 +1,79 @@
+# What a signature of each scheme of `crypto/keypairs` writes into a
+# certificate, a request and a list: the AlgorithmIdentifier that names it,
+# and the SEQUENCE of a body, that identifier and the signature's BIT STRING
+# that all three share (RFC 5280 § 4.1.1.2). RFC 8410 for Ed25519, RFC 5758
+# for ECDSA, RFC 4055 for RSA PKCS #1 v1.5 and for RSA-PSS. A hash inside
+# RSA-PSS's parameters is written with its NULL, as RFC 4055 allows and as
+# OpenSSL and Go write it (observed on OpenSSL 4.1.0, 2026-11-23).
+
+use asn1
+use crypto/keypairs
+
+# The SHA-256 identifier, of FIPS 180-4.
+constant SHA256: str
+    "2.16.840.1.101.3.4.2.1"
+
+# The SHA-384 identifier.
+constant SHA384: str
+    "2.16.840.1.101.3.4.2.2"
+
+# The SHA-512 identifier.
+constant SHA512: str
+    "2.16.840.1.101.3.4.2.3"
+
+# An AlgorithmIdentifier of `dotted` whose parameters are NULL.
+function with_null(dotted: str) -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: dotted)), .null_value])
+
+# An AlgorithmIdentifier of `dotted` with no parameters.
+function bare(dotted: str) -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: dotted))])
+
+# The RSASSA-PSS identifier of RFC 4055 § 3.1: the hash `hash`, MGF1 over the
+# same hash, and a salt of `salt` bytes, the trailer field left at its
+# default.
+function pss(hash: str, salt: i64) -> asn1.Value
+    mask: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: "1.2.840.113549.1.1.8")), with_null(hash)])
+    parameters: asn1.Value = .sequence(
+        items: [asn1.tagged(with_null(hash), number: 0), asn1.tagged(mask, number: 1), asn1.tagged(.integer(v: salt), number: 2)]
+    )
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: "1.2.840.113549.1.1.10")), parameters])
+
+# The AlgorithmIdentifier `scheme`'s signatures are named by.
+#
+# - `scheme`: how the signature is made.
+function identifier(scheme: keypairs.Scheme) -> asn1.Value
+    return match scheme
+        .ed25519          => bare("1.3.101.112")
+        .ecdsa_sha256     => bare("1.2.840.10045.4.3.2")
+        .ecdsa_sha384     => bare("1.2.840.10045.4.3.3")
+        .rsa_pss_sha256   => pss(hash: SHA256, salt: 32)
+        .rsa_pss_sha384   => pss(hash: SHA384, salt: 48)
+        .rsa_pss_sha512   => pss(hash: SHA512, salt: 64)
+        .rsa_pkcs1_sha256 => with_null("1.2.840.113549.1.1.11")
+        .rsa_pkcs1_sha384 => with_null("1.2.840.113549.1.1.12")
+        .rsa_pkcs1_sha512 => with_null("1.2.840.113549.1.1.13")
+
+test "identifier: the nine schemes' identifiers as OpenSSL writes them, read back by the scheme they name"
+    assert asn1.encode_der(identifier(.ed25519)).must() == [0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70]
+    assert asn1.encode_der(identifier(.ecdsa_sha256)).must() == [0x30, 0x0a, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02]
+    assert asn1.encode_der(identifier(.rsa_pkcs1_sha256)).must() == [0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b, 0x05, 0x00]
+    assert asn1.encode_der(identifier(.rsa_pss_sha256)).must().len() == 67
+    assert asn1.encode_der(identifier(.rsa_pss_sha512)).must().len() == 67
+
+# `body` signed and written as the SEQUENCE a certificate, a request and a
+# list are: the body, its algorithm and the signature's BIT STRING.
+#
+# - `signer`: the private key, which stays open.
+# - `scheme`: how it signs; the identifier written is `identifier`'s.
+# - `body`: the TBSCertificate, the CertificationRequestInfo or the
+#   TBSCertList, in which the same identifier has been written.
+#
+# Fails as `asn1.encode_der` and `keypairs.sign` fail.
+function signed(signer: keypairs.PrivateKey, scheme: keypairs.Scheme, body: asn1.Value) -> [u8]?
+    message = asn1.encode_der(body)?
+    signature = keypairs.sign(signer, scheme: scheme, message: message)?
+    whole: asn1.Value = .sequence(
+        items: [body, identifier(scheme), .bit_string(v: asn1.BitString(bytes: signature, bit_len: signature.len() * 8))]
+    )
+    return asn1.encode_der(whole)

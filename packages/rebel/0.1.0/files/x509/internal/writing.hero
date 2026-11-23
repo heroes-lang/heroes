@@ -1,0 +1,278 @@
+# The parts of a certificate, a request and a list that are written without
+# the face's records: a moment as RFC 5280 § 4.1.2.5 writes it, a serial
+# number, an extension's envelope and the values of the extensions a
+# certificate most often carries. Each returns the ASN.1 value for `asn1` to
+# encode, and each refuses what RFC 5280 forbids, naming the part.
+
+use asn1
+use big
+use bytes
+use crypto
+use time
+use x509/internal/shapes
+
+## Codes
+
+# A part RFC 5280 does not allow, the message saying which.
+constant INVALID: str
+    "invalid"
+
+## Moments and numbers
+
+# `at` as RFC 5280 § 4.1.2.5 writes a validity's end: a UTCTime for the years
+# 1950 to 2049, a GeneralizedTime for any other, its fraction of a second
+# dropped, neither type having a place for it.
+#
+# - `at`: the moment, in UTC.
+# - `what`: the part, for a refusal.
+#
+# Fails `invalid` where `at` is not a date of the years 0 to 9999.
+function moment(at: time.DateTime, what: str) -> asn1.Value?
+    whole = time.DateTime(
+        year: at.year,
+        month: at.month,
+        day: at.day,
+        hour: at.hour,
+        minute: at.minute,
+        second: at.second,
+        nanosecond: 0
+    )
+
+    if whole.year >= 1950 && whole.year <= 2049
+        utc: asn1.Value = .utc_time(v: whole)
+        _ = shapes.within(r: asn1.encode_der(utc), what: what)?
+        return ok(utc)
+    general: asn1.Value = .generalized_time(v: whole)
+    _ = shapes.within(r: asn1.encode_der(general), what: what)?
+    return ok(general)
+
+# `at` as a GeneralizedTime, which `invalidityDate` (RFC 5280 § 5.3.2) always
+# is, its fraction of a second dropped.
+#
+# - `at`: the moment, in UTC.
+# - `what`: the part, for a refusal.
+#
+# Fails `invalid` where `at` is not a date of the years 0 to 9999.
+function general_moment(at: time.DateTime, what: str) -> asn1.Value?
+    whole = time.DateTime(
+        year: at.year,
+        month: at.month,
+        day: at.day,
+        hour: at.hour,
+        minute: at.minute,
+        second: at.second,
+        nanosecond: 0
+    )
+    general: asn1.Value = .generalized_time(v: whole)
+    _ = shapes.within(r: asn1.encode_der(general), what: what)?
+    return ok(general)
+
+# `n` as a certificate's serial number, a list's number or any INTEGER RFC
+# 5280 asks positive and of 20 octets at most (§§ 4.1.2.2, 5.2.3).
+#
+# - `n`: the number.
+# - `what`: the part, for a refusal.
+# - `zero_allowed`: whether 0 is a value: a list's number may be 0, a serial
+#   number may not.
+#
+# Fails `invalid` where `n` is negative, is 0 and `zero_allowed` is false, or
+# takes more than 20 octets in DER.
+function integer(n: big.Integer, what: str, zero_allowed: bool) -> asn1.Value?
+    least = big.compare(a: n, b: big.from_int(0))
+
+    if least < 0 || least == 0 && !zero_allowed
+        return fail(
+            code: INVALID,
+            msg: f"{what} is {big.format_base(n: n, base: 10)}, where RFC 5280 asks a {sign_word(zero_allowed)}integer"
+        )
+    value: asn1.Value = .big_integer(v: n)
+    octets = shapes.within(r: asn1.encode_content(value), what: what)?
+
+    if octets.len() > 20
+        return fail(code: INVALID, msg: f"{what} takes {octets.len()} octets in DER, where RFC 5280 allows 20 at most")
+    return ok(value)
+
+# The word before "integer" in a refusal of a number.
+function sign_word(zero_allowed: bool) -> str
+    if zero_allowed
+        return "non-negative "
+    return "positive "
+
+## Extensions
+
+# One extension: its identifier, its criticality written only where true as
+# DER has it, and `der` inside an OCTET STRING.
+#
+# - `oid`: the extension's identifier, in dotted text.
+# - `critical`: whether a reader that does not know it must refuse.
+# - `der`: the DER of the extension's own value.
+#
+# Fails `invalid` where `oid` is no identifier or `der` is no DER.
+function extension(oid: str, critical: bool, der: [u8]) -> asn1.Value?
+    what = f"the extension {oid}"
+    _ = shapes.within(r: asn1.decode_der(der), what: what)?
+    identifier = shapes.within(r: asn1.parse_oid(oid), what: what)?
+    parts: [asn1.Value] @= [.oid(v: identifier)]
+
+    if critical
+        parts @ parts.push(.boolean(v: true))
+    parts @ parts.push(.octet_string(v: der))
+    return ok(.sequence(items: parts))
+
+# The identifiers of `extensions`, written by `extension`, in order.
+function identifiers_of(extensions: [asn1.Value]) -> [str]?
+    ids: [str] @= []
+
+    for one in extensions
+        ids @ ids.push(shapes.within(r: asn1.oid_of(asn1.items_of(one)?[0]), what: "an extension")?.dotted)
+
+    return ok(ids)
+
+# Refuses `extensions` where one identifier stands twice (RFC 5280 § 4.2).
+#
+# - `extensions`: extensions written by `extension`.
+#
+# Fails `invalid`, naming the identifier.
+function refuse_duplicates(extensions: [asn1.Value]) -> ()?
+    ids = identifiers_of(extensions)?
+
+    for i in range(from: 0, to: ids.len())
+        for j in range(from: 0, to: i)
+            if ids[i] == ids[j]
+                return fail(
+                    code: INVALID,
+                    msg: f"the extension {ids[i]} is written twice, or given in `extra` where another field writes it"
+                )
+
+    return ok()
+
+# `keyUsage`'s DER (RFC 5280 § 4.2.1.3): a BIT STRING of the nine bits, the
+# trailing zeros dropped as DER's rule for a named-bit list asks (X.690
+# § 11.2.2).
+#
+# - `flags`: nine booleans, digitalSignature first and decipherOnly last, at
+#   least one true.
+#
+# Fails `invalid` where `flags` is not nine or none is true.
+function key_usage(flags: [bool]) -> [u8]?
+    if flags.len() != 9
+        return fail(code: INVALID, msg: f"a keyUsage of {flags.len()} bits, where RFC 5280 names 9")
+    last @= -1
+
+    for i in range(from: 0, to: 9)
+        if flags[i]
+            last @ i
+
+    if last < 0
+        return fail(code: INVALID, msg: "a keyUsage with no bit set, where RFC 5280 asks one at least")
+    weights = [128, 64, 32, 16, 8, 4, 2, 1]
+    packed: [u8] @= []
+
+    for index in range(from: 0, to: (last + 8) / 8)
+        total @= 0
+
+        for bit in range(from: 0, to: 8)
+            if index * 8 + bit <= last && flags[index * 8 + bit]
+                total @ total + weights[bit]
+
+        packed @ packed.push(to_u8(total).must())
+
+    return asn1.encode_der(.bit_string(v: asn1.BitString(bytes: packed, bit_len: last + 1)))
+
+# `basicConstraints`' DER of an end entity (RFC 5280 § 4.2.1.9): `cA` false
+# is DER's default and is not written, so the SEQUENCE is empty.
+function end_entity_constraints() -> [u8]
+    return [0x30, 0x00]
+
+# `basicConstraints`' DER of an authority with no limit below it: `cA` true.
+function authority_constraints() -> [u8]
+    return [0x30, 0x03, 0x01, 0x01, 0xff]
+
+# `basicConstraints`' DER of an authority that allows `path_len` authorities
+# below it.
+#
+# - `path_len`: 0 or more.
+#
+# Fails `invalid` where `path_len` is negative.
+function limited_authority_constraints(path_len: i64) -> [u8]?
+    if path_len < 0
+        return fail(code: INVALID, msg: f"a path length of {path_len}, where RFC 5280 asks 0 or more")
+    return asn1.encode_der(.sequence(items: [.boolean(v: true), .integer(v: path_len)]))
+
+# `extKeyUsage`'s DER (RFC 5280 § 4.2.1.12): the purposes' identifiers.
+#
+# - `purposes`: dotted identifiers, one at least.
+#
+# Fails `invalid` where `purposes` is empty or an identifier is malformed.
+function key_purposes(purposes: [str]) -> [u8]?
+    if purposes.len() == 0
+        return fail(code: INVALID, msg: "an extKeyUsage of no purpose, where RFC 5280 asks one at least")
+    items: [asn1.Value] @= []
+
+    for dotted in purposes
+        items @ items.push(.oid(v: shapes.within(r: asn1.parse_oid(dotted), what: "an extKeyUsage")?))
+
+    return asn1.encode_der(.sequence(items: items))
+
+# `subjectKeyIdentifier`'s value by RFC 5280 § 4.2.1.2's first method: the
+# SHA-1 of the subjectPublicKey BIT STRING's bytes, its tag, length and
+# count of unused bits left out.
+#
+# - `key`: the bytes inside the BIT STRING of a SubjectPublicKeyInfo.
+function key_id(key: [u8]) -> [u8]
+    return crypto.sha1(key)
+
+# `subjectKeyIdentifier`'s DER: an OCTET STRING of `id`.
+#
+# - `id`: the key identifier.
+function key_id_der(id: [u8]) -> [u8]?
+    return asn1.encode_der(.octet_string(v: id))
+
+# `authorityKeyIdentifier`'s DER naming the issuer's key by its identifier
+# (RFC 5280 § 4.2.1.1): `[0]` IMPLICIT inside a SEQUENCE.
+#
+# - `id`: the issuer's key identifier.
+function authority_key_id(id: [u8]) -> [u8]?
+    return asn1.encode_der(
+        .sequence(items: [.primitive(tag: asn1.Tag(kind: .context_specific, number: 0, constructed: false), content: id)])
+    )
+
+# `cRLNumber`'s DER: the INTEGER `integer` wrote.
+#
+# - `value`: the value `integer` answered.
+function crl_number(value: asn1.Value) -> [u8]?
+    return asn1.encode_der(value)
+
+# `reasonCode`'s DER (RFC 5280 § 5.3.1): an ENUMERATED.
+#
+# - `code`: 1 to 10 but 7.
+function reason_code(code: i64) -> [u8]?
+    return asn1.encode_der(.enumerated(v: code))
+
+# `invalidityDate`'s DER (RFC 5280 § 5.3.2): the GeneralizedTime
+# `general_moment` wrote.
+#
+# - `value`: that value.
+function invalidity_date(value: asn1.Value) -> [u8]?
+    return asn1.encode_der(value)
+
+test "moment: UTCTime inside 1950 to 2049, GeneralizedTime outside, the fraction dropped, a date that does not exist refused"
+    inside = time.DateTime(year: 2026, month: 11, day: 22, hour: 23, minute: 32, second: 17, nanosecond: 999)
+    assert moment(inside, what: "m").must() == .utc_time(v: time.DateTime(year: 2026, month: 11, day: 22, hour: 23, minute: 32, second: 17, nanosecond: 0))
+    assert asn1.encode_der(moment(inside, what: "m").must()).must() == bytes.parse_hex("170d3236313132323233333231375a").must()
+    first = time.DateTime(year: 1950, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert asn1.tag_of(moment(first, what: "m").must()).number == asn1.UTC_TIME
+    last = time.DateTime(year: 2049, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert asn1.tag_of(moment(last, what: "m").must()).number == asn1.UTC_TIME
+    after = time.DateTime(year: 2050, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert asn1.tag_of(moment(after, what: "m").must()).number == asn1.GENERALIZED_TIME
+    before = time.DateTime(year: 1949, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert asn1.tag_of(moment(before, what: "m").must()).number == asn1.GENERALIZED_TIME
+    forever = time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert asn1.encode_der(moment(forever, what: "m").must()).must() == bytes.parse_hex("180f39393939313233313233353935395a").must()
+    nonexistent = time.DateTime(year: 2026, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert moment(nonexistent, what: "the validity").is_err()
+    assert moment(
+        time.DateTime(year: 10000, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        what: "m"
+    ).is_err()

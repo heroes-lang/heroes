@@ -1,0 +1,159 @@
+# The keys the tests of `create_certificate`, `create_self_signed`,
+# `create_request` and `create_crl` sign with, and the answers OpenSSL 4.1.0
+# (2026-11-23) gave for the same fields, which the tests compare byte for
+# byte. The three keys are made for these tests and protect nothing. The
+# Ed25519 and RSA PKCS #1 v1.5 signatures are deterministic, so what OpenSSL
+# signed and what this package signs are the same bytes; ECDSA and RSA-PSS
+# are checked by OpenSSL's `verify` and `req -verify` instead (the commands are
+# in the commit that added this file). Each is a function that only the tests
+# call.
+
+# An Ed25519 key, `openssl genpkey -algorithm ed25519`.
+function ed25519_key() -> str
+    lines = [
+        "-----BEGIN PRIVATE KEY-----"
+        "MC4CAQAwBQYDK2VwBCIEIBlIUfKDgKlOJkF3Rd9M3ucB54jRc07ArfZ98EIewUZd"
+        "-----END PRIVATE KEY-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A P-256 key, `openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256`.
+function p256_key() -> str
+    lines = [
+        "-----BEGIN PRIVATE KEY-----"
+        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgKQZlHfrzQ4bgyzLm"
+        "OVxgQpEC2WpYHB8wS+bZ3mlDK3GhRANCAAQlGOAJoC/LgO0jdM6d32AgTXUpHaEw"
+        "jWQAfSXbzR/GKmmpliWNDNie1qe2eBJ2sf+RA8ALDHB/o+gBIbzGmZdC"
+        "-----END PRIVATE KEY-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# An RSA key of 2048 bits, `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048`.
+function rsa_key() -> str
+    lines = [
+        "-----BEGIN PRIVATE KEY-----"
+        "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCrrU2KFc94WdDU"
+        "NX1ldvPEReP7IsjyCy0Y6cJ/K2XxbZF+YurIZnGAgmXqmH4ntOrCUNf2zgg+Nk2V"
+        "tsC3n0DBydmthN+B742ooGr/Amvp1AZzu957iUGohk2LNA9mDDWW86oexDIcyv1Y"
+        "8oEfYWnQa+rQSnxF4m3t2mdJrx+x6VprjnsqhMROCu8NdOkDjDIp3KUwjvQi2QmI"
+        "w8tvEwU60ZBGxBxUdnzJimyjAhq069zlWIoFKNVqtKmP4vKfKjrcrh5zkwJ9acaM"
+        "2MjjrZv9kwsylfzu0JKPuJaq4OxynkANXst27CboEi3CSthlmqCscb5mxNJCU48x"
+        "M1uTCEcvAgMBAAECggEAPrI1xR4d/LfgWf+G4g1FDQLxNYAInsySFa0ZCNRSkI8R"
+        "OXTqhXFUNjho+/ng6KNbsMdRd6Law82VG/3395dDUQJkashBz/QqadDcAnFh860p"
+        "Bg8wOzFvNxqFKzdCAGSpFY27LS09l+JSD6/QlCNBP4qJ4LOzGtqMhvbiDbjU/GXA"
+        "sWCjTdGCKdXSlgZY8H9kQ1AfIJ4fOfW2JOiBu85NfWYI/q7IMz0Jj2pKO9mipyu9"
+        "16s0LsxgsBD39Jz/lWuVwjllxoN8qKBf9BEZ9QjR99TWdwM1qd/y4ehIilMUcK0z"
+        "oUBwwPvX/BJg3to7VFusRe3653dJ9eVbxMaZvaXhAQKBgQDjDj/5juIuc2kIe+Ii"
+        "fY6NDpBMc3ZkJUaxuZcVmcxA6tBGW3dc7fUNtVimsmJ1jzgTGFHlYcpUHLmUIbWM"
+        "5PTcV8FV4EVq/kGGrD/eWdBupyk3us8RuP+U6qx0UE13huFTzrZBI3ONogn7nn2T"
+        "g8gffbs8AL4Dk1xPzwZHQTAxbwKBgQDBj9Iag6VS4dd7x9XUYGE9HJ7UgXvoydtU"
+        "+pgBqjwp8ysKwwVPTiXo4YoVc/6JDP15M5cVpyZKv/Y/tKz6Zf8VrlPqRN2tRdCv"
+        "aU2ohVeHkA5/7t7kZVqZNcY4Rjb4YNeuX6/mMK5YzGnnuYkBNl/xXgIfKo3nraAZ"
+        "eaOsB77mQQKBgQCPa+/jPmsGtmXxMvebm73QwhNKB2EQTy+Bkd6qiVSo6OoYlywl"
+        "qjWxrAxMd7+TzJy6CxGoGAZK7T4YINbiIbm9+TypdxnCRMq1O9a4J/lt++8gQcMM"
+        "ydO/iCDY8+SLDMsGOjuLl84k9+bgZrOh24sswSnk8/8SmSGlU/r+RWIgxwKBgGe+"
+        "ZAgeAyA3N716UBtyROvySRbxB66vckVLwukxiumZEbrE6DWnVx5ItC/nacefFMQ/"
+        "aH0Mh7OMy7k9Z3EV9fBy7TslCgNy5fT+ZccrIMzh40OijgiwYiy367QBvjjF/xPQ"
+        "6YBhGzEw7ppqkQn7UNUXY9+8eS5xmtvMnHL5+9GBAoGBANrhrPiLcOeX3EwHtDId"
+        "nMtY0M1Ifku+99H+kk9vXtYkCf6pwlgpSrd64vFUSM4JGcDTbKZuTSmF2GT9ycAB"
+        "8HwpJEAkmvRFbIZbeWu9mCUQIXx+i8XG4tufCTu0oooUtVBFi6ntDox746lpu0Rm"
+        "ZezQgUUJLK/EV+MqUoGnRXVU"
+        "-----END PRIVATE KEY-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# `openssl req -x509` of the Ed25519 key: subject `C=IT, O=Heroes Test, CN=Heroes Made Root`, serial `0102030405060708090a0b0c0d0e0f1011121314`, 2026-11-01 to 2036-11-01, `subjectKeyIdentifier = hash`, `basicConstraints = critical,CA:TRUE,pathlen:1`, `keyUsage = critical,keyCertSign,cRLSign`.
+function root() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIBgzCCATWgAwIBAgIUAQIDBAUGBwgJCgsMDQ4PEBESExQwBQYDK2VwMD4xCzAJ"
+        "BgNVBAYTAklUMRQwEgYDVQQKDAtIZXJvZXMgVGVzdDEZMBcGA1UEAwwQSGVyb2Vz"
+        "IE1hZGUgUm9vdDAeFw0yNjExMDEwMDAwMDBaFw0zNjExMDEwMDAwMDBaMD4xCzAJ"
+        "BgNVBAYTAklUMRQwEgYDVQQKDAtIZXJvZXMgVGVzdDEZMBcGA1UEAwwQSGVyb2Vz"
+        "IE1hZGUgUm9vdDAqMAUGAytlcAMhAIbO62YstFpbW1dmOJoYXmHdRNFSk0Dbjj84"
+        "Xp3IizUto0UwQzAdBgNVHQ4EFgQUCY7XfYpE74Jt9aE7QCpB+SKh7FUwEgYDVR0T"
+        "AQH/BAgwBgEB/wIBATAOBgNVHQ8BAf8EBAMCAQYwBQYDK2VwA0EA31umv0MwmZxn"
+        "MvmMfQPCfZzpYm0ftHAFso3uyMOwU3WIxLEBpH2bD1DcmxWSsGtqZ/1zfYrV19oV"
+        "pqPHiX2WDg=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# `openssl x509 -req` of a request for the P-256 key, signed by the Ed25519 root: subject `CN=made.example.org`, serial `7edcba9876543210`, 2026-11-01 to 2027-02-01, with a key identifier, the authority's, `CA:FALSE`, `digitalSignature`, `serverAuth` and `clientAuth`, six alternative names, an OCSP and a CA issuers access and one distribution point.
+function leaf() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIICyTCCAnugAwIBAgIIfty6mHZUMhAwBQYDK2VwMD4xCzAJBgNVBAYTAklUMRQw"
+        "EgYDVQQKDAtIZXJvZXMgVGVzdDEZMBcGA1UEAwwQSGVyb2VzIE1hZGUgUm9vdDAe"
+        "Fw0yNjExMDEwMDAwMDBaFw0yNzAyMDEwMDAwMDBaMBsxGTAXBgNVBAMMEG1hZGUu"
+        "ZXhhbXBsZS5vcmcwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQlGOAJoC/LgO0j"
+        "dM6d32AgTXUpHaEwjWQAfSXbzR/GKmmpliWNDNie1qe2eBJ2sf+RA8ALDHB/o+gB"
+        "IbzGmZdCo4IBiTCCAYUwHQYDVR0OBBYEFPzR/XhByGnlMGlNZ+N44UBe8HZCMB8G"
+        "A1UdIwQYMBaAFAmO132KRO+CbfWhO0AqQfkioexVMAwGA1UdEwEB/wQCMAAwDgYD"
+        "VR0PAQH/BAQDAgeAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjBzBgNV"
+        "HREEbDBqghBtYWRlLmV4YW1wbGUub3JnghIqLm1hZGUuZXhhbXBsZS5vcmeHBMAA"
+        "AgeHECABDbgAAAAAAAAAAAAAAAeBD29wc0BleGFtcGxlLm9yZ4YZaHR0cHM6Ly9t"
+        "YWRlLmV4YW1wbGUub3JnLzBgBggrBgEFBQcBAQRUMFIwJAYIKwYBBQUHMAGGGGh0"
+        "dHA6Ly9vY3NwLmV4YW1wbGUub3JnLzAqBggrBgEFBQcwAoYeaHR0cDovL2NhLmV4"
+        "YW1wbGUub3JnL3Jvb3QuZGVyMC8GA1UdHwQoMCYwJKAioCCGHmh0dHA6Ly9jYS5l"
+        "eGFtcGxlLm9yZy9yb290LmNybDAFBgMrZXADQQC7GTrBm7/B8a+shFWSQnLEjNyo"
+        "h+vUZmLwAWuJYjSoGu5QuvRzMXredq1+W12l0BDZthYn7jjvnuXyg5dVqx0P"
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# `openssl req -x509` of the RSA key, SHA-256 and PKCS #1 v1.5: subject `C=US, O=Dev Co, CN=dev.example.org`, serial `0a1b2c3d4e5f`, 2026-11-01 to 2027-11-01, `CA:FALSE`, `digitalSignature` and `keyEncipherment`, `serverAuth`, three alternative names, no authority key identifier.
+function server() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIDdDCCAlygAwIBAgIGChssPU5fMA0GCSqGSIb3DQEBCwUAMDgxCzAJBgNVBAYT"
+        "AlVTMQ8wDQYDVQQKDAZEZXYgQ28xGDAWBgNVBAMMD2Rldi5leGFtcGxlLm9yZzAe"
+        "Fw0yNjExMDEwMDAwMDBaFw0yNzExMDEwMDAwMDBaMDgxCzAJBgNVBAYTAlVTMQ8w"
+        "DQYDVQQKDAZEZXYgQ28xGDAWBgNVBAMMD2Rldi5leGFtcGxlLm9yZzCCASIwDQYJ"
+        "KoZIhvcNAQEBBQADggEPADCCAQoCggEBAKutTYoVz3hZ0NQ1fWV288RF4/siyPIL"
+        "LRjpwn8rZfFtkX5i6shmcYCCZeqYfie06sJQ1/bOCD42TZW2wLefQMHJ2a2E34Hv"
+        "jaigav8Ca+nUBnO73nuJQaiGTYs0D2YMNZbzqh7EMhzK/VjygR9hadBr6tBKfEXi"
+        "be3aZ0mvH7HpWmuOeyqExE4K7w106QOMMincpTCO9CLZCYjDy28TBTrRkEbEHFR2"
+        "fMmKbKMCGrTr3OVYigUo1Wq0qY/i8p8qOtyuHnOTAn1pxozYyOOtm/2TCzKV/O7Q"
+        "ko+4lqrg7HKeQA1ey3bsJugSLcJK2GWaoKxxvmbE0kJTjzEzW5MIRy8CAwEAAaOB"
+        "gzCBgDAdBgNVHQ4EFgQUMxltokY3Q1tsJwEi80ggPxA4TCgwDAYDVR0TAQH/BAIw"
+        "ADAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwLAYDVR0RBCUw"
+        "I4IJbG9jYWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEB"
+        "CwUAA4IBAQCQNPLUirgvkJZzfldaI8vDg6RQwIz45u8X/s4okFCryGljOWJlzwNh"
+        "GZ0+oZtZCj6/2PcZ+7H6fPKR4E1u6y7SSoHI9bd/GmmZM7CtyvHrrAcYqvU8ljqe"
+        "y3DqrQZuOK5qnYT/HjI5EFNLtGNIeSb/lZ6uFY6LCcsG8ztjAhlsxnH5nsWYkIF8"
+        "+GrGQEPSS+OjA47xZtzbrvbADiZLID9zP1PyTZL9sX8QTc2ySwP4MJ6mD4lJL8yH"
+        "OQsedbPG9AVBfqfNbrVgx5qWnkwP665M0tnowYJCLi5kcip0NAHagYeertxZz7rl"
+        "+CyKx9eXuI1+AVSSYvXajAcTCbH1W8qo"
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# `openssl req -new` of the Ed25519 key: subject `O=Heroes Test, CN=csr.example.org`, an extension request of `CA:FALSE`, `digitalSignature`, `serverAuth` and two alternative names.
+function request() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE REQUEST-----"
+        "MIIBFjCByQIBADAwMRQwEgYDVQQKDAtIZXJvZXMgVGVzdDEYMBYGA1UEAwwPY3Ny"
+        "LmV4YW1wbGUub3JnMCowBQYDK2VwAyEAhs7rZiy0WltbV2Y4mhheYd1E0VKTQNuO"
+        "PzhenciLNS2gZjBkBgkqhkiG9w0BCQ4xVzBVMAwGA1UdEwEB/wQCMAAwDgYDVR0P"
+        "AQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMBMCAGA1UdEQQZMBeCD2Nzci5l"
+        "eGFtcGxlLm9yZ4cEwAACCTAFBgMrZXADQQD2ftLwJjbP0BtKayHgAaNnsOs30fJn"
+        "UCU4GCLNOOqjm9n176sUgXzpPASb3esJUaeovhkJBDa3Ae4F5v6PVAkJ"
+        "-----END CERTIFICATE REQUEST-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# `openssl ca -gencrl` of the Ed25519 root: number 5, 2026-11-10 to 2026-12-10, three entries (`0AAA` with no reason, `1234` superseded, `7EDCBA9876543210` key compromise) in the order `openssl ca` sorts them.
+function crl() -> str
+    lines = [
+        "-----BEGIN X509 CRL-----"
+        "MIIBSTCB/AIBATAFBgMrZXAwPjELMAkGA1UEBhMCSVQxFDASBgNVBAoMC0hlcm9l"
+        "cyBUZXN0MRkwFwYDVQQDDBBIZXJvZXMgTWFkZSBSb290Fw0yNjExMTAwMDAwMDBa"
+        "Fw0yNjEyMTAwMDAwMDBaMGEwEwICCqoXDTI2MTEwNzAwMDAwMFowIQICEjQXDTI2"
+        "MTEwNjAwMDAwMFowDDAKBgNVHRUEAwoBBDAnAgh+3LqYdlQyEBcNMjYxMTA1MTIw"
+        "MDAwWjAMMAoGA1UdFQQDCgEBoC8wLTAfBgNVHSMEGDAWgBQJjtd9ikTvgm31oTtA"
+        "KkH5IqHsVTAKBgNVHRQEAwIBBTAFBgMrZXADQQCuI8fKgrTMz0V3ee08hz3JbJKh"
+        "KkFISsGRXL7LPgUBgVH5smxVHnXeGhMKnea0Z5nJlrCZ1AST5WyOvUZlQDEO"
+        "-----END X509 CRL-----"
+    ]
+    return lines.join("\n") + "\n"
