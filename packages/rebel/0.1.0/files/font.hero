@@ -404,29 +404,47 @@ function bounds_of(f: Font lent, glyph: i64) -> Box?
         Box(left: to_f64(bin.i16_at(d, at: span[0] + 2)), bottom: to_f64(bin.i16_at(d, at: span[0] + 4)), right: to_f64(bin.i16_at(d, at: span[0] + 6)), top: to_f64(bin.i16_at(d, at: span[0] + 8)))
     )
 
-# One step of an outline.
+# One step of an outline. Every coordinate is in font units, x to the right of
+# the glyph's pen position and y up from the baseline.
 variant Segment
     # Lifts the pen to a point and begins a contour.
     move
+        # Where the contour begins, to the right of the pen position.
         x: f64
+        # Where the contour begins, above the baseline.
         y: f64
     # A straight line to a point.
     line
+        # Where the line ends, to the right of the pen position.
         x: f64
+        # Where the line ends, above the baseline.
         y: f64
     # A quadratic curve (TrueType's) to a point, bent toward a control point.
     quad
+        # The control point's place to the right of the pen position: the curve
+        # leans toward it and does not pass through it.
         control_x: f64
+        # The control point's place above the baseline.
         control_y: f64
+        # Where the curve ends, to the right of the pen position.
         x: f64
+        # Where the curve ends, above the baseline.
         y: f64
     # A cubic curve (CFF's) to a point, bent toward two control points.
     cubic
+        # The first control point's place to the right of the pen position, the
+        # one the curve leaves its start toward.
         control1_x: f64
+        # The first control point's place above the baseline.
         control1_y: f64
+        # The second control point's place to the right of the pen position, the
+        # one the curve arrives at its end from.
         control2_x: f64
+        # The second control point's place above the baseline.
         control2_y: f64
+        # Where the curve ends, to the right of the pen position.
         x: f64
+        # Where the curve ends, above the baseline.
         y: f64
     # Joins the contour's last point to its first and ends it.
     close

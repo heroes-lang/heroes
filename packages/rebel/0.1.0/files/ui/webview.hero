@@ -812,3 +812,15 @@ test "format_refusal: no such card"
 # An event the program sends unasked.
 test "format_event: a board changed"
     assert format_event("board.changed", data: .text(v: "b1")).must() == "{\"heroes\":1,\"event\":\"board.changed\",\"data\":\"b1\"}"
+
+# A web page printed with settings the program holds, and the choice the
+# headless app's queue answers it with.
+test "print_page: a page printed with the office's settings"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Notes", width: 640, height: 480).must()
+    v = webview(@app, into: w).must()
+    office = printing.default_settings("Office")
+    ui.inject(@app, input: .choose_print(settings: office)).must()
+    dialog = print_page(@app, view: v, settings: office, ask: false).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: dialog, choice: .chosen(settings: office))
+    ui.close(@app).must()

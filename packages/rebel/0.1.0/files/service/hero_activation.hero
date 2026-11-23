@@ -63,6 +63,8 @@ extern "hero_activation.h"
     function hero_activation_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
 
 # 1 where this system has the protocol `what` names, 0 where it has not.
+#
+# - `what`: one of the `HERO_ACTIVATION_HAS_` constants.
 function has(what: i64) -> i64
     return hero_activation_has(what)
 
@@ -128,6 +130,8 @@ function last_os_error() -> i64
 
 # The layer's own words for the last failure, written into `buffer`; their
 # length, 0 where there are none.
+#
+# - `buffer`: room for the words, as many bytes as the caller sized.
 function last_message(@buffer: [u8]) -> i64
     return hero_activation_last_message(@buffer, n: buffer.len().to_u64().must())
 
@@ -140,10 +144,14 @@ function on_posix() -> bool
         .other   => return false
 
 # A folder of the machine's temporary place for one test's socket.
+#
+# - `name`: a word of the folder's name, which says whose it is.
 function scratch(name: str) -> str
     return fs.make_temp_dir(dir: "", pattern: "hero-activation-" + name + "-*").must()
 
 # Room for `n` bytes.
+#
+# - `n`: how many bytes, 0 or more.
 function room(n: i64) -> [u8]
     filled: [u8] @= []
 
@@ -170,6 +178,8 @@ record Wait
     room: i64
 
 # One datagram received at `w.path`, on the thread that calls it.
+#
+# - `w`: the socket's path, how long to wait and how much room to receive into.
 function listen_once(w: Wait) -> Got
     buffer: [u8] @= room(w.room)
     got = receive(w.path, within_ms: w.within_ms, @buffer)
@@ -181,12 +191,16 @@ function listen_once(w: Wait) -> Got
 
 # Whether `path` names a file or socket yet, for a test waiting for the
 # thread above to have made its socket.
+#
+# - `path`: the file or socket asked about.
 function stands(path: str) -> bool
     match fs.exists(path)
         .ok found => return found
         .err _    => return false
 
 # 1 for true, for a comparison with what `has` answers.
+#
+# - `on`: the answer expected.
 function wanted(on: bool) -> i64
     if on
         return 1
@@ -201,16 +215,24 @@ function on_darwin() -> bool
         .other   => return false
 
 # The notice `text` as the bytes a datagram carries.
+#
+# - `text`: the notice, as the manager reads it.
 function notice(text: str) -> [u8]
     return bytes.from_text(text)
 
 # The text of bytes a test knows to be text.
+#
+# - `b`: bytes that are UTF-8; others abort the test.
 function text_of(b: [u8]) -> str
     return bytes.to_text(b).must()
 
 # One datagram sent to `path` once a thread has made its socket there, and
 # what the thread received: the sender waits for the file a few seconds at
 # most, so a thread that never binds is a failure, never a hang.
+#
+# - `path`: where the receiving thread makes its socket.
+# - `data`: the datagram sent.
+# - `room_bytes`: the room the thread receives into.
 function round_trip(path: str, data: [u8], room_bytes: i64) -> Got
     t = spawn(listen_once, Wait(path: path, within_ms: 10000, room: room_bytes)).must()
     waited @= 0

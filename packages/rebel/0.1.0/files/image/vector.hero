@@ -59,29 +59,47 @@ record Point
     # The row, in pixels, downward.
     y: f64
 
-# One step of a path.
+# One step of a path. Every coordinate is in pixels, x to the right and y
+# downward, as a `Point`'s.
 variant Segment
     # Lifts the pen to a point and begins a contour.
     move
+        # The column where the contour begins.
         x: f64
+        # The row where the contour begins.
         y: f64
     # A straight line to a point.
     line
+        # The column where the line ends.
         x: f64
+        # The row where the line ends.
         y: f64
     # A quadratic curve to a point, bent toward a control point.
     quad
+        # The control point's column: the curve leans toward it and does not
+        # pass through it.
         control_x: f64
+        # The control point's row.
         control_y: f64
+        # The column where the curve ends.
         x: f64
+        # The row where the curve ends.
         y: f64
     # A cubic curve to a point, bent toward two control points.
     cubic
+        # The first control point's column, the one the curve leaves its start
+        # toward.
         control1_x: f64
+        # The first control point's row.
         control1_y: f64
+        # The second control point's column, the one the curve arrives at its
+        # end from.
         control2_x: f64
+        # The second control point's row.
         control2_y: f64
+        # The column where the curve ends.
         x: f64
+        # The row where the curve ends.
         y: f64
     # Joins the contour's last point to its first and ends it.
     close

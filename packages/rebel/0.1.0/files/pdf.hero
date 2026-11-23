@@ -2987,6 +2987,28 @@ test "raw_stream_of: compressed bytes"
 function noto() -> Font
     return load_font(font_samples.noto_sans(), index: 0).must()
 
+# The sample font is a face with a name of its own.
+test "noto: the sample font read as an embedded face"
+    assert base_font_of(noto()) == "NotoSans-Regular"
+
+# A standard font is measured by its number alone; an embedded one is number 14
+# with the slot its face is read against.
+test "measured: a standard font and an embedded one"
+    standard = measured(.helvetica)
+    assert standard.number >= 0 && standard.number < 14
+    assert standard.slots.len() == 0
+    drawn = measured(noto())
+    assert drawn.number == 14
+    assert drawn.slots.len() == 1
+
+# A standard font keeps its own number in every document, and an embedded font
+# is added to a document once and answers the same number again.
+test "font_number: a standard font, and an embedded font asked twice"
+    doc @= document()
+    assert font_number(@doc, font: .courier) == measured(.courier).number
+    first = font_number(@doc, font: noto())
+    assert font_number(@doc, font: noto()) == first
+
 # The measures of the sample's font as fontTools reads them, and the width of a
 # text from its `hmtx`: A is 639 and H 741 in the 1000 units of the em.
 test "load_font: the name, the metrics, the width of a text and the glyphs it has"
