@@ -277,6 +277,14 @@ function listen_into(@s: session.Session, ms: i64) -> i64
 
     return took
 
+# Whether `text` is one of `items`.
+function is_listed(items: [str], text: str) -> bool
+    for item in items
+        if item == text
+            return true
+
+    return false
+
 test "serve: a service published on the loopback is found by a querier, changed, and said goodbye for"
     name = loopback_name()
 
@@ -324,10 +332,24 @@ test "serve: a service published on the loopback is found by a querier, changed,
     assert found[0].addresses == [host]
     assert found[0].texts == [bytes.from_text("k=v")]
     assert cache.pointers(querier.heard, owner: "_blue._sub._hero-test._tcp.local.", now_ms: now).len() == 1
+
+    # The announcements gave the querier the enumeration's pointer, so its
+    # question lists it as known and the responder keeps quiet (RFC 6762
+    # § 7.1): nothing is multicast, whoever else answers on this machine. A
+    # querier that holds nothing is answered, and only this responder lists
+    # the instance's type: the system's own, where there is one, lists others.
+    spoken = responder.sent.len()
     session.ask(querier, questions: [session.plain(names.ENUMERATION, type_code: dns.TYPE_PTR)]).must()
     _ = serve(@responder, wait_ms: 400).must()
-    assert listen_into(@querier, ms: 400) >= 1
-    assert cache.pointers(querier.heard, owner: names.ENUMERATION, now_ms: session.elapsed_ms(querier).must()).len() >= 1
+    assert responder.sent.len() == spoken
+    newcomer @= session.open([name]).must()
+    session.ask(newcomer, questions: [session.plain(names.ENUMERATION, type_code: dns.TYPE_PTR)]).must()
+    _ = serve(@responder, wait_ms: 400).must()
+    assert responder.sent.len() == spoken + 1
+    assert listen_into(@newcomer, ms: 400) >= 1
+    types = cache.pointers(newcomer.heard, owner: names.ENUMERATION, now_ms: session.elapsed_ms(newcomer).must())
+    assert is_listed(types, text: kind)
+    session.close(@newcomer).must()
     _ = listen_into(@querier, ms: 1100)
     changed = model.Described(
         instance: instance,
