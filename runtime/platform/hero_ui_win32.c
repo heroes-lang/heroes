@@ -164,6 +164,10 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 /* The message a dialog's thread posts the UI thread's hidden window once
  * its dialog is answered or ended (DIALOGS ANSWERED THROUGH THE QUEUE). */
 #define HERO_UI_WIN_DIALOG_DONE (WM_APP + 0x4A)
+/* The message the thread that listens for a later launch posts the UI
+ * thread's hidden window when it has queued what the launch handed over
+ * (THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM). */
+#define HERO_UI_WIN_HANDED (WM_APP + 0x4B)
 /* How long `press_key` waits for the key it sent to come back through the
  * queue, and how long the clipboard is asked of another program holding it. */
 #define HERO_UI_WIN_KEY_WAIT_MS 2000u
@@ -1334,6 +1338,7 @@ static _Thread_local int64_t hero_ui_win_replaying;
 static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person);
 static void hero_ui_win_edit_reset(hero_ui_native *widget);
 static void hero_ui_win_edit_end(hero_ui_native *widget);
+static void hero_ui_win_handed_take(void);
 
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
@@ -1634,6 +1639,9 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         return 0;
     case HERO_UI_WIN_DIALOG_DONE:
         hero_ui_win_dialogs_reap();
+        return 0;
+    case HERO_UI_WIN_HANDED:
+        hero_ui_win_handed_take();
         return 0;
     case HERO_UI_WIN_SETTLE:
         widget = hero_ui_find((int64_t)lparam);
@@ -8751,6 +8759,422 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     hero_ui_win_own_drop = NULL;
     (void)GlobalFree(block);
     return HERO_UI_OK;
+}
+
+/* -- THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM --------
+ *
+ * THE IDENTITY is the process's explicit AppUserModelID
+ * (`SetCurrentProcessExplicitAppUserModelID`), by which the task bar groups
+ * the app's windows and pins its icon; its name is taken and shown nowhere,
+ * since Windows has no application menu and the program titles its own
+ * windows.
+ *
+ * ONE INSTANCE is a named mutex of the session (`Local\hero-ui-<identifier>`),
+ * which the system takes back with the process, so a process that ended
+ * leaves no claim behind. The first instance also keeps a named pipe of the
+ * machine (`\\.\pipe\hero-ui-<identifier>-<session>`) that a thread of its
+ * own listens on, one client at a time, each read held to a deadline and the
+ * text it hands bounded; the pipe takes no client of another machine
+ * (`PIPE_REJECT_REMOTE_CLIENTS`) and, by the default access the system gives
+ * it, none that writes from another user's account. A later launch writes
+ * its arguments to it, and the thread queues them and posts the UI thread's
+ * hidden window, which tells them as `HERO_UI_EVENT_OPEN`. Only the session's
+ * own launches meet: a user's second session claims a second instance.
+ *
+ * DOCUMENTS reach an app on Windows as the command line of a new process,
+ * which is a later launch's arguments handed over; the system makes no open
+ * request of its own to a running app. */
+
+/* How long a later launch waits for the first instance's pipe, and the first
+ * instance for a client's bytes, in milliseconds. */
+#define HERO_UI_WIN_CLAIM_WAIT_MS 5000u
+#define HERO_UI_WIN_CLAIM_READ_MS 2000u
+#define HERO_UI_WIN_CLAIM_NAME_ROOM 320
+
+/* One text a later launch handed over, waiting for the UI thread. */
+typedef struct hero_ui_win_handed {
+    struct hero_ui_win_handed *next;
+    int64_t count;
+    uint8_t bytes[1];
+} hero_ui_win_handed;
+
+/* This process's claim of its one instance: the mutex that holds it, the
+ * pipe and the thread that listens, the events that stop the thread and
+ * that its reads wait on, the window it posts, the texts it queued (under
+ * `lock`) and the pipe's name. */
+typedef struct hero_ui_win_claim {
+    HANDLE mutex;
+    HANDLE pipe;
+    HANDLE thread;
+    HANDLE stop;
+    HANDLE io;
+    HWND host;
+    CRITICAL_SECTION lock;
+    hero_ui_win_handed *first;
+    hero_ui_win_handed *last;
+    wchar_t pipe_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+} hero_ui_win_claim;
+
+static _Thread_local hero_ui_win_claim *hero_ui_win_claimed;
+
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
+    wchar_t wide[HERO_UI_IDENTITY_MOST + 1];
+    HRESULT made;
+
+    (void)name;
+    (void)name_count;
+    for (int64_t at = 0; at < identifier_count && at < HERO_UI_IDENTITY_MOST; at += 1) {
+        wide[at] = (wchar_t)identifier[at];
+    }
+    wide[identifier_count < HERO_UI_IDENTITY_MOST ? identifier_count : HERO_UI_IDENTITY_MOST] = 0;
+    made = SetCurrentProcessExplicitAppUserModelID(wide);
+    if (FAILED(made)) {
+        return hero_ui_win_failed("giving the app its identity (SetCurrentProcessExplicitAppUserModelID)", (DWORD)HRESULT_CODE(made));
+    }
+    return HERO_UI_OK;
+}
+
+/* Writes the claim's names for `identifier`: the mutex's into `mutex` and
+ * the pipe's into `pipe`, each `HERO_UI_WIN_CLAIM_NAME_ROOM` units. */
+static void hero_ui_win_claim_names(const uint8_t *identifier, int64_t count, wchar_t *mutex, wchar_t *pipe) {
+    static const wchar_t local[] = L"Local\\hero-ui-";
+    static const wchar_t machine[] = L"\\\\.\\pipe\\hero-ui-";
+    DWORD session = 0;
+    size_t used;
+
+    if (!ProcessIdToSessionId(GetCurrentProcessId(), &session)) {
+        session = 0;
+    }
+    wcscpy(mutex, local);
+    wcscpy(pipe, machine);
+    used = wcslen(machine);
+    for (int64_t at = 0; at < count && at < HERO_UI_IDENTITY_MOST; at += 1) {
+        mutex[wcslen(local) + (size_t)at] = (wchar_t)identifier[at];
+        pipe[used + (size_t)at] = (wchar_t)identifier[at];
+    }
+    mutex[wcslen(local) + (size_t)(count < HERO_UI_IDENTITY_MOST ? count : HERO_UI_IDENTITY_MOST)] = 0;
+    pipe[used + (size_t)(count < HERO_UI_IDENTITY_MOST ? count : HERO_UI_IDENTITY_MOST)] = 0;
+    used = wcslen(pipe);
+    (void)swprintf(pipe + used, HERO_UI_WIN_CLAIM_NAME_ROOM - used, L"-%lu", (unsigned long)session);
+}
+
+/* Reads `count` bytes the client wrote, through the claim's event, within
+ * `HERO_UI_WIN_CLAIM_READ_MS` and no longer than the claim lives. */
+static bool hero_ui_win_claim_read(hero_ui_win_claim *claim, void *into, DWORD count) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_CLAIM_READ_MS;
+    uint8_t *at = into;
+    DWORD got = 0;
+
+    while (got < count) {
+        OVERLAPPED over;
+        DWORD chunk = 0;
+
+        memset(&over, 0, sizeof over);
+        over.hEvent = claim->io;
+        (void)ResetEvent(claim->io);
+        if (!ReadFile(claim->pipe, at + got, count - got, NULL, &over)) {
+            ULONGLONG now = GetTickCount64();
+            HANDLE both[2];
+
+            if (GetLastError() != ERROR_IO_PENDING) {
+                return false;
+            }
+            both[0] = claim->stop;
+            both[1] = claim->io;
+            if (WaitForMultipleObjects(2, both, FALSE, now >= deadline ? 0 : (DWORD)(deadline - now)) != WAIT_OBJECT_0 + 1) {
+                (void)CancelIoEx(claim->pipe, &over);
+                (void)GetOverlappedResult(claim->pipe, &over, &chunk, TRUE);
+                return false;
+            }
+        }
+        if (!GetOverlappedResult(claim->pipe, &over, &chunk, FALSE) || chunk == 0) {
+            return false;
+        }
+        got += chunk;
+    }
+    return true;
+}
+
+/* Takes the one text a connected client wrote, a length of four bytes and
+ * that many bytes of UTF-8 whose every item ends in a zero, queues it for
+ * the UI thread and tells it; anything else is dropped. */
+static void hero_ui_win_claim_take(hero_ui_win_claim *claim) {
+    uint8_t head[4];
+    uint32_t length;
+    hero_ui_win_handed *text;
+
+    if (!hero_ui_win_claim_read(claim, head, sizeof head)) {
+        return;
+    }
+    length = (uint32_t)head[0] | ((uint32_t)head[1] << 8) | ((uint32_t)head[2] << 16) | ((uint32_t)head[3] << 24);
+    if (length > (uint32_t)HERO_UI_TEXT_MOST) {
+        return;
+    }
+    text = hero_layer_alloc(sizeof *text + length);
+    if (text == NULL) {
+        return;
+    }
+    text->next = NULL;
+    text->count = (int64_t)length;
+    if ((length > 0 && !hero_ui_win_claim_read(claim, text->bytes, length)) || !hero_ui_is_utf8(text->bytes, length) || (length > 0 && text->bytes[length - 1] != 0)) {
+        hero_layer_free(text);
+        return;
+    }
+    EnterCriticalSection(&claim->lock);
+    if (claim->last != NULL) {
+        claim->last->next = text;
+    } else {
+        claim->first = text;
+    }
+    claim->last = text;
+    LeaveCriticalSection(&claim->lock);
+    (void)PostMessageW(claim->host, HERO_UI_WIN_HANDED, 0, 0);
+}
+
+/* The thread that listens on the claim's pipe, one client at a time, until
+ * the claim's stop event is set. */
+static DWORD WINAPI hero_ui_win_claim_serve(LPVOID given) {
+    hero_ui_win_claim *claim = given;
+
+    for (;;) {
+        OVERLAPPED over;
+        DWORD ignored = 0;
+        BOOL connected;
+
+        memset(&over, 0, sizeof over);
+        over.hEvent = claim->io;
+        (void)ResetEvent(claim->io);
+        connected = ConnectNamedPipe(claim->pipe, &over);
+        if (!connected && GetLastError() == ERROR_IO_PENDING) {
+            HANDLE both[2];
+
+            both[0] = claim->stop;
+            both[1] = claim->io;
+            if (WaitForMultipleObjects(2, both, FALSE, INFINITE) != WAIT_OBJECT_0 + 1) {
+                (void)CancelIoEx(claim->pipe, &over);
+                (void)GetOverlappedResult(claim->pipe, &over, &ignored, TRUE);
+                return 0;
+            }
+            connected = GetOverlappedResult(claim->pipe, &over, &ignored, FALSE);
+        } else if (!connected && GetLastError() == ERROR_PIPE_CONNECTED) {
+            connected = TRUE;
+        }
+        if (connected) {
+            hero_ui_win_claim_take(claim);
+        }
+        (void)DisconnectNamedPipe(claim->pipe);
+        if (WaitForSingleObject(claim->stop, connected ? 0 : 100) == WAIT_OBJECT_0) {
+            return 0;
+        }
+    }
+}
+
+/* Writes `count` bytes of arguments to the pipe `name` as a later launch
+ * does, waiting for the first instance's pipe up to
+ * `HERO_UI_WIN_CLAIM_WAIT_MS`; 0 where they were taken, else the Windows
+ * error. */
+static DWORD hero_ui_win_claim_send(const wchar_t *name, const uint8_t *arguments, int64_t count) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_CLAIM_WAIT_MS;
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+    uint8_t head[4];
+    DWORD written = 0;
+    DWORD code = 0;
+    int64_t sent = 0;
+
+    for (;;) {
+        ULONGLONG now = GetTickCount64();
+
+        /* The identification level lets the pipe's owner know who writes and
+         * nothing more: it may not act as the writer. */
+        pipe = CreateFileW(name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION, NULL);
+        if (pipe != INVALID_HANDLE_VALUE) {
+            break;
+        }
+        code = GetLastError();
+        if (now >= deadline || (code != ERROR_PIPE_BUSY && code != ERROR_FILE_NOT_FOUND)) {
+            return code != 0 ? code : ERROR_TIMEOUT;
+        }
+        if (code == ERROR_PIPE_BUSY) {
+            (void)WaitNamedPipeW(name, 100);
+        } else {
+            Sleep(20);
+        }
+    }
+    head[0] = (uint8_t)(count & 0xff);
+    head[1] = (uint8_t)((count >> 8) & 0xff);
+    head[2] = (uint8_t)((count >> 16) & 0xff);
+    head[3] = (uint8_t)((count >> 24) & 0xff);
+    code = 0;
+    if (!WriteFile(pipe, head, sizeof head, &written, NULL) || written != sizeof head) {
+        code = GetLastError() != 0 ? GetLastError() : ERROR_WRITE_FAULT;
+    }
+    while (code == 0 && sent < count) {
+        DWORD part = (DWORD)(count - sent > (int64_t)(1u << 20) ? (int64_t)(1u << 20) : count - sent);
+
+        if (!WriteFile(pipe, arguments + sent, part, &written, NULL) || written == 0) {
+            code = GetLastError() != 0 ? GetLastError() : ERROR_WRITE_FAULT;
+        } else {
+            sent += written;
+        }
+    }
+    /* What is written stays readable by the first instance after this end
+     * closes, so nothing waits here for it. */
+    (void)CloseHandle(pipe);
+    return code;
+}
+
+/* Ends claim `claim`: the thread stopped, every handle given back, the
+ * texts still queued dropped. */
+static void hero_ui_win_claim_free(hero_ui_win_claim *claim) {
+    hero_ui_win_handed *text;
+
+    if (claim->thread != NULL) {
+        (void)SetEvent(claim->stop);
+        (void)WaitForSingleObject(claim->thread, INFINITE);
+        (void)CloseHandle(claim->thread);
+    }
+    if (claim->pipe != INVALID_HANDLE_VALUE && claim->pipe != NULL) {
+        (void)CloseHandle(claim->pipe);
+    }
+    if (claim->stop != NULL) {
+        (void)CloseHandle(claim->stop);
+    }
+    if (claim->io != NULL) {
+        (void)CloseHandle(claim->io);
+    }
+    if (claim->mutex != NULL) {
+        (void)CloseHandle(claim->mutex);
+    }
+    for (text = claim->first; text != NULL;) {
+        hero_ui_win_handed *next = text->next;
+
+        hero_layer_free(text);
+        text = next;
+    }
+    DeleteCriticalSection(&claim->lock);
+    hero_layer_free(claim);
+}
+
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first) {
+    wchar_t mutex_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+    wchar_t pipe_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+    hero_ui_win_claim *claim;
+    HANDLE mutex;
+    DWORD code;
+    bool taken;
+
+    if (hero_ui_win_claimed != NULL) {
+        *first = 1;
+        return HERO_UI_OK;
+    }
+    hero_ui_win_claim_names(identifier, identifier_count, mutex_name, pipe_name);
+    mutex = CreateMutexW(NULL, FALSE, mutex_name);
+    code = GetLastError();
+    /* A mutex made by a process of another elevation refuses to be opened,
+     * which says as much as finding it made. */
+    taken = (mutex != NULL && code == ERROR_ALREADY_EXISTS) || (mutex == NULL && code == ERROR_ACCESS_DENIED);
+    if (taken) {
+        if (mutex != NULL) {
+            (void)CloseHandle(mutex);
+        }
+        code = hero_ui_win_claim_send(pipe_name, arguments, count);
+        if (code != 0) {
+            return hero_ui_win_failed("handing the arguments to the app's first instance", code);
+        }
+        *first = 0;
+        return HERO_UI_OK;
+    }
+    if (mutex == NULL) {
+        return hero_ui_win_failed("claiming the app's one instance (CreateMutexW)", code);
+    }
+    claim = hero_layer_alloc_zero(1, sizeof *claim);
+    if (claim == NULL) {
+        (void)CloseHandle(mutex);
+        return HERO_UI_LIMIT;
+    }
+    InitializeCriticalSection(&claim->lock);
+    claim->mutex = mutex;
+    claim->pipe = INVALID_HANDLE_VALUE;
+    wcscpy(claim->pipe_name, pipe_name);
+    if (hero_ui_win_dialog_host == NULL) {
+        hero_ui_win_dialog_host = CreateWindowExW(0, hero_ui_win_panel_class, L"", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+    }
+    claim->host = hero_ui_win_dialog_host;
+    claim->stop = CreateEventW(NULL, TRUE, FALSE, NULL);
+    claim->io = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (claim->host == NULL || claim->stop == NULL || claim->io == NULL) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making what the app's one instance listens with", code);
+    }
+    claim->pipe = CreateNamedPipeW(pipe_name, PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS, 1, 4096, 4096, 0, NULL);
+    if (claim->pipe == INVALID_HANDLE_VALUE) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making the pipe a later launch hands its arguments to", code);
+    }
+    claim->thread = CreateThread(NULL, 0, hero_ui_win_claim_serve, claim, 0, NULL);
+    if (claim->thread == NULL) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making the thread that listens for a later launch", code);
+    }
+    hero_ui_win_claimed = claim;
+    *first = 1;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
+    DWORD code;
+
+    if (hero_ui_win_claimed == NULL) {
+        return HERO_UI_INVALID;
+    }
+    code = hero_ui_win_claim_send(hero_ui_win_claimed->pipe_name, arguments, count);
+    return code == 0 ? HERO_UI_OK : hero_ui_win_failed("handing a later launch's arguments to the app", code);
+}
+
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
+    (void)what;
+    (void)items;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows opens a document in an app as the command line of a new process, which the app's one instance takes as a later launch's arguments, and makes no open request of its own to a running app");
+}
+
+void hero_ui_arm_instance_end(void) {
+    if (hero_ui_win_claimed != NULL) {
+        hero_ui_win_claim_free(hero_ui_win_claimed);
+        hero_ui_win_claimed = NULL;
+    }
+}
+
+/* The texts a later launch handed over, told to the program as the
+ * arguments of an opening (`HERO_UI_WIN_HANDED`). */
+static void hero_ui_win_handed_take(void) {
+    hero_ui_win_claim *claim = hero_ui_win_claimed;
+
+    while (claim != NULL) {
+        hero_ui_win_handed *text;
+        int64_t items = 0;
+
+        EnterCriticalSection(&claim->lock);
+        text = claim->first;
+        if (text != NULL) {
+            claim->first = text->next;
+            if (claim->first == NULL) {
+                claim->last = NULL;
+            }
+        }
+        LeaveCriticalSection(&claim->lock);
+        if (text == NULL) {
+            return;
+        }
+        for (int64_t at = 0; at < text->count; at += 1) {
+            items += text->bytes[at] == 0 ? 1 : 0;
+        }
+        hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, text->bytes, text->count);
+        hero_layer_free(text);
+    }
 }
 
 #endif

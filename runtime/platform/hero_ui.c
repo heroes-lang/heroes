@@ -4063,7 +4063,6 @@ int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
     (void)end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a text widget's selection on macOS alone, and this system's arm has no such call");
 }
-#endif
 
 int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
     (void)identifier;
@@ -4097,6 +4096,7 @@ int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count
 
 void hero_ui_arm_instance_end(void) {
 }
+#endif
 
 int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
     (void)id;
