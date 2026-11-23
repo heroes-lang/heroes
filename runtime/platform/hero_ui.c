@@ -3692,6 +3692,11 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
  * with it. An arm that draws one defines it in its own member, and its system
  * leaves this block's condition. */
 
+#if defined(_WIN32)
+
+/* The session's end and files dropped on a window: the Win32 arm's
+ * refusals; the GTK 4 arm draws them in its member. */
+
 int64_t hero_ui_arm_answer_quit(int64_t go) {
     (void)go;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer holds the session's end for the program's answer on macOS alone, and this system's arm has no such call");
@@ -3701,11 +3706,6 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     (void)session_end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
 }
-
-#if defined(_WIN32)
-
-/* Files dropped on a window: the Win32 arm's refusals; the GTK 4 arm draws
- * them in its member. */
 
 int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
     (void)id;

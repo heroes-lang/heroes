@@ -1342,6 +1342,8 @@ static int64_t hero_ui_gtk_tray_shown(hero_ui_native *tray, bool shown);
 static int64_t hero_ui_gtk_tray_named(hero_ui_native *tray, const uint8_t *name, int64_t count);
 static hero_ui_native *hero_ui_gtk_tray_of_node(const hero_ui_native *node);
 static int64_t hero_ui_gtk_tray_click(hero_ui_native *tray, const hero_ui_native *item);
+static void hero_ui_gtk_session_watch(void);
+static void hero_ui_gtk_session_unwatch(void);
 
 /* Above 0 while `inject` acts, so a slider moved to where it stands is told. */
 static _Thread_local int64_t hero_ui_gtk_injecting;
@@ -1905,6 +1907,7 @@ int64_t hero_ui_arm_open(void) {
     hero_ui_gtk_injecting = 0;
     hero_ui_make_host();
     hero_ui_gtk_watch_appearance();
+    hero_ui_gtk_session_watch();
     return HERO_UI_OK;
 }
 
@@ -9029,6 +9032,230 @@ static int64_t hero_ui_gtk_tray_click(hero_ui_native *tray, const hero_ui_native
     return HERO_UI_OK;
 }
 
+/* -- THE SESSION'S END ASKING THE PROGRAM ---------------------------------------
+ *
+ * GTK 4 hears the session's end through `GtkApplication` alone, which this
+ * arm opens none of, so the arm speaks the protocol `GtkApplication` speaks
+ * outside a sandbox: while an app is open it is a client of
+ * `org.gnome.SessionManager` (GNOME's, and the desktops serving that name),
+ * registered at `open` and unregistered at `close`. The manager's
+ * `QueryEndSession` queues `HERO_UI_EVENT_QUIT` 1 and holds the logout by an
+ * inhibitor of the app's (`Inhibit`, its logout flag) before the client
+ * answers that it may end, as GTK's `query-end` handlers do, so the logout's
+ * dialog names the program until it answers. `answer_quit` 1 takes the
+ * inhibitor away and the session's end goes on; 0 keeps it while a
+ * `QueryEndSession` of the manager's waits, since the protocol gives a
+ * client no way to cancel one, and the person's Cancel in that dialog ends
+ * it (`CancelEndSession`). `EndSession` and `CancelEndSession` end every
+ * hold, and `close` answers as ending. Where no manager owns that name (a
+ * sandbox's or KDE's XDG portal session monitor, X11's XSMP, which GTK 4
+ * left, or none at all), no session's end reaches the app, and `ask_quit`
+ * refuses `UNSUPPORTED` naming it; elsewhere `ask_quit` 1 runs the handler of
+ * `QueryEndSession` itself, its inhibitor a real one. No quit but the
+ * session's end is asked of an app on Linux: a desktop's Quit closes its
+ * windows, each told as its close, so `ask_quit` 0 refuses `UNSUPPORTED`. */
+
+#define HERO_UI_GTK_SM "org.gnome.SessionManager"
+#define HERO_UI_GTK_SM_PATH "/org/gnome/SessionManager"
+#define HERO_UI_GTK_SM_CLIENT "org.gnome.SessionManager.ClientPrivate"
+/* `GSM_INHIBITOR_FLAG_LOGOUT`. */
+#define HERO_UI_GTK_SM_LOGOUT 1u
+
+/* The session bus while the open app is the manager's client, its client's
+ * path and its watch of the client's signals; the inhibitor holding the
+ * session's end, 0 for none; the asks held; and whether a `QueryEndSession`
+ * of the manager's waits on the app. */
+static _Thread_local void *hero_ui_gtk_session_bus;
+static _Thread_local char *hero_ui_gtk_session_client;
+static _Thread_local unsigned hero_ui_gtk_session_watch_id;
+static _Thread_local uint32_t hero_ui_gtk_session_cookie;
+static _Thread_local int64_t hero_ui_gtk_session_held;
+static _Thread_local bool hero_ui_gtk_session_asking;
+
+/* A call to the session manager, waited for: it answers each of these at
+ * once and calls nothing of the app's. Its answer, or NULL. */
+static void *hero_ui_gtk_session_call(const char *path, const char *interface, const char *method, void *arguments, const char *reply) {
+    hero_ui_gerror *error = NULL;
+    void *answer = hero_ui_gtk.dbus_connection_call_sync(hero_ui_gtk_session_bus, HERO_UI_GTK_SM, path, interface, method, arguments, reply, 0, 5000, NULL, &error);
+
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+    }
+    return answer;
+}
+
+static void hero_ui_gtk_session_release(void) {
+    if (hero_ui_gtk_session_cookie != 0 && hero_ui_gtk_session_bus != NULL) {
+        void *answer = hero_ui_gtk_session_call(HERO_UI_GTK_SM_PATH, HERO_UI_GTK_SM, "Uninhibit", hero_ui_gtk.variant_new("(u)", hero_ui_gtk_session_cookie), NULL);
+
+        if (answer != NULL) {
+            hero_ui_gtk.variant_unref(answer);
+        }
+    }
+    hero_ui_gtk_session_cookie = 0;
+}
+
+static void hero_ui_gtk_session_hold(void) {
+    char name[256];
+    void *answer;
+
+    if (hero_ui_gtk_session_cookie != 0 || hero_ui_gtk_session_bus == NULL) {
+        return;
+    }
+    hero_ui_gtk_program_name(name, sizeof name);
+    answer = hero_ui_gtk_session_call(HERO_UI_GTK_SM_PATH, HERO_UI_GTK_SM, "Inhibit", hero_ui_gtk.variant_new("(susu)", name, 0u, "the program asks the person before it ends", HERO_UI_GTK_SM_LOGOUT), "(u)");
+    if (answer != NULL) {
+        void *cookie = hero_ui_gtk.variant_get_child_value(answer, 0);
+
+        hero_ui_gtk_session_cookie = hero_ui_gtk.variant_get_uint32(cookie);
+        hero_ui_gtk.variant_unref(cookie);
+        hero_ui_gtk.variant_unref(answer);
+    }
+}
+
+/* The app is asked to end at the session's end: told, and held. */
+static void hero_ui_gtk_session_ask(void) {
+    hero_ui_tell(HERO_UI_EVENT_QUIT, 0, 1, 0);
+    hero_ui_gtk_session_held += 1;
+    hero_ui_gtk_session_hold();
+}
+
+/* Answers the manager that the client may end, the app's hold being its
+ * inhibitor; not waited for, as the manager expects no reply. */
+static void hero_ui_gtk_session_respond(void) {
+    hero_ui_gtk.dbus_connection_call(hero_ui_gtk_session_bus, HERO_UI_GTK_SM, hero_ui_gtk_session_client, HERO_UI_GTK_SM_CLIENT, "EndSessionResponse", hero_ui_gtk.variant_new("(bs)", 1, ""), NULL, 0, -1, NULL, NULL, NULL);
+}
+
+static void hero_ui_gtk_session_told(void *connection, const char *sender, const char *path, const char *interface, const char *signal, void *parameters, void *data) {
+    (void)sender;
+    (void)interface;
+    (void)parameters;
+    (void)data;
+    if (connection != hero_ui_gtk_session_bus || hero_ui_gtk_session_client == NULL || path == NULL || strcmp(path, hero_ui_gtk_session_client) != 0) {
+        return;
+    }
+    if (strcmp(signal, "QueryEndSession") == 0) {
+        hero_ui_gtk_session_asking = true;
+        hero_ui_gtk_session_ask();
+        hero_ui_gtk_session_respond();
+    } else if (strcmp(signal, "EndSession") == 0 || strcmp(signal, "CancelEndSession") == 0) {
+        /* The session ends now, or the person cancelled its end: no hold
+         * keeps it any longer, and a cancelled one answers every ask held
+         * as staying. */
+        hero_ui_gtk_session_asking = false;
+        hero_ui_gtk_session_release();
+        if (signal[0] == 'C') {
+            hero_ui_gtk_session_held = 0;
+        } else {
+            hero_ui_gtk_session_respond();
+        }
+    }
+}
+
+/* Makes the open app the session manager's client, where one answers. */
+static void hero_ui_gtk_session_watch(void) {
+    hero_ui_gerror *error = NULL;
+    const char *startup = getenv("DESKTOP_AUTOSTART_ID");
+    char name[256];
+    void *answer;
+    bool managed = false;
+
+    if (hero_ui_gtk_session_bus != NULL || !hero_ui_gtk_bus_named()) {
+        return;
+    }
+    hero_ui_gtk_session_bus = hero_ui_gtk.bus_get_sync(HERO_G_BUS_TYPE_SESSION, NULL, &error);
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+        error = NULL;
+    }
+    if (hero_ui_gtk_session_bus == NULL) {
+        return;
+    }
+    answer = hero_ui_gtk.dbus_connection_call_sync(hero_ui_gtk_session_bus, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner", hero_ui_gtk.variant_new("(s)", HERO_UI_GTK_SM), "(b)", 0, 5000, NULL, &error);
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+    }
+    if (answer != NULL) {
+        void *owned = hero_ui_gtk.variant_get_child_value(answer, 0);
+
+        managed = hero_ui_gtk.variant_get_boolean(owned) != 0;
+        hero_ui_gtk.variant_unref(owned);
+        hero_ui_gtk.variant_unref(answer);
+    }
+    hero_ui_gtk_program_name(name, sizeof name);
+    answer = managed ? hero_ui_gtk_session_call(HERO_UI_GTK_SM_PATH, HERO_UI_GTK_SM, "RegisterClient", hero_ui_gtk.variant_new("(ss)", name, startup != NULL ? startup : ""), "(o)") : NULL;
+    if (answer != NULL) {
+        void *path = hero_ui_gtk.variant_get_child_value(answer, 0);
+        const char *client = hero_ui_gtk.variant_get_string(path, NULL);
+        size_t bytes = strlen(client);
+
+        hero_ui_gtk_session_client = hero_layer_alloc(bytes + 1);
+        if (hero_ui_gtk_session_client != NULL) {
+            memcpy(hero_ui_gtk_session_client, client, bytes + 1);
+        }
+        hero_ui_gtk.variant_unref(path);
+        hero_ui_gtk.variant_unref(answer);
+        /* The manager's startup id names one start: a later app of this
+         * process registers as a new client. */
+        if (startup != NULL) {
+            (void)unsetenv("DESKTOP_AUTOSTART_ID");
+        }
+    }
+    if (hero_ui_gtk_session_client == NULL) {
+        hero_ui_gtk.object_unref(hero_ui_gtk_session_bus);
+        hero_ui_gtk_session_bus = NULL;
+        return;
+    }
+    hero_ui_gtk_session_watch_id = hero_ui_gtk.dbus_connection_signal_subscribe(hero_ui_gtk_session_bus, HERO_UI_GTK_SM, HERO_UI_GTK_SM_CLIENT, NULL, hero_ui_gtk_session_client, NULL, 0, hero_ui_gtk_session_told, NULL, NULL);
+}
+
+/* Answers every ask held as ending and leaves the session manager. */
+static void hero_ui_gtk_session_unwatch(void) {
+    hero_ui_gtk_session_held = 0;
+    hero_ui_gtk_session_asking = false;
+    hero_ui_gtk_session_release();
+    if (hero_ui_gtk_session_bus == NULL) {
+        return;
+    }
+    if (hero_ui_gtk_session_watch_id != 0) {
+        hero_ui_gtk.dbus_connection_signal_unsubscribe(hero_ui_gtk_session_bus, hero_ui_gtk_session_watch_id);
+        hero_ui_gtk_session_watch_id = 0;
+    }
+    if (hero_ui_gtk_session_client != NULL) {
+        void *answer = hero_ui_gtk_session_call(HERO_UI_GTK_SM_PATH, HERO_UI_GTK_SM, "UnregisterClient", hero_ui_gtk.variant_new("(o)", hero_ui_gtk_session_client), NULL);
+
+        if (answer != NULL) {
+            hero_ui_gtk.variant_unref(answer);
+        }
+        hero_layer_free(hero_ui_gtk_session_client);
+        hero_ui_gtk_session_client = NULL;
+    }
+    hero_ui_gtk.object_unref(hero_ui_gtk_session_bus);
+    hero_ui_gtk_session_bus = NULL;
+}
+
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    if (hero_ui_gtk_session_held == 0) {
+        return HERO_UI_OK;
+    }
+    hero_ui_gtk_session_held = 0;
+    if (go == 1 || !hero_ui_gtk_session_asking) {
+        hero_ui_gtk_session_release();
+    }
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    if (session_end == 0) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "no quit but the session's end is asked of an app on Linux: a desktop's Quit closes the app's windows, each told as the window's close");
+    }
+    if (hero_ui_gtk_session_client == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "no session manager answers on the D-Bus session bus (org.gnome.SessionManager, which GTK 4 speaks outside a sandbox), so no session's end asks this app, and the arm reads neither the XDG portal's session monitor nor X11's XSMP");
+    }
+    hero_ui_gtk_session_ask();
+    return HERO_UI_OK;
+}
+
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
 /* Every kind and act of `hero_ui.h` is drawn here, so neither switch
@@ -9049,6 +9276,8 @@ static void hero_ui_gtk_close_more(void) {
     /* Every dialog ended, its callback given GTK's turns to come. */
     hero_ui_arm_dialogs_end(0);
     hero_ui_gtk_unwatch_appearance();
+    /* Every ask to end the app still held is answered as ending. */
+    hero_ui_gtk_session_unwatch();
     hero_ui_gtk_undocked = false;
     hero_ui_gtk_modal = 0;
     hero_layer_free(hero_ui_gtk_clip);
