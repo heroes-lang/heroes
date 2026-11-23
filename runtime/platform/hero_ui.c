@@ -2156,6 +2156,13 @@ typedef struct hero_ui_watch {
     int64_t fd;
     int64_t key;
     bool queued;
+#if defined(_WIN32)
+    /* A set is told once as it is added, ready or not (the face's `ready`),
+     * which the descriptor's first ring gives it elsewhere; here the ring is
+     * a hint the set's own question may overrule, so the first telling is
+     * owed to the entry, not the handle. */
+    bool fresh;
+#endif
 } hero_ui_watch;
 
 static _Thread_local hero_ui_watch hero_ui_watches[HERO_UI_WATCH_MOST];
@@ -2200,12 +2207,13 @@ static bool hero_ui_watch_open(const hero_ui_watch *watch) {
 
 /* Whether descriptor `fd` is readable now. A run loop's source for it needs a
  * pass of the loop to tell, which a wait of 0 does not give, so the wait asks
- * first and tells an entry that is ready at once. Windows has no such
- * descriptor to ask (`hero_poll_descriptor` refuses first). */
+ * first and tells an entry that is ready at once. On Windows the handle is a
+ * hint a notice may set with nothing ready (`hero_poll_ready`), so the wait
+ * tells every entry and `hero_ui_watch_told` asks the set itself. */
 static bool hero_ui_fd_readable(int64_t fd) {
 #if defined(_WIN32)
     (void)fd;
-    return false;
+    return true;
 #else
     struct pollfd asked;
 
@@ -2274,6 +2282,16 @@ bool hero_ui_watch_told(int64_t id) {
         hero_ui_watch_drop(watch);
         return false;
     }
+#if defined(_WIN32)
+    /* What woke the wait is an event the set may have set with nothing left
+     * ready, a socket read in full or a timer taken: the set is asked, which
+     * resets the event, and only an entry ready now is told, the first telling
+     * of a set added aside. */
+    if (hero_poll_ready(watch->set) <= 0 && !watch->fresh) {
+        return false;
+    }
+    watch->fresh = false;
+#endif
     return watch->what == HERO_UI_WATCH_OWN ? hero_ui_watch_drain() : hero_ui_watch_ready(watch);
 }
 
@@ -3266,20 +3284,9 @@ void hero_ui_arm_unwatch_fd(int64_t id) {
 
 #elif defined(_WIN32)
 
-/* No descriptor a Win32 wait can watch exists: a set there is a `WSAPoll`
- * over an array, and `hero_poll_descriptor` refuses first, so the arm's wait
- * is never handed one. When the layer's Windows set gives a handle, this
- * refusal leaves for the arm's own waiting on it. */
-
-int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
-    (void)fd;
-    (void)id;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "a Windows poll set is a `WSAPoll` array that gives the arm's wait no handle to watch, and the Win32 arm waits on none until the layer's set gives one");
-}
-
-void hero_ui_arm_unwatch_fd(int64_t id) {
-    (void)id;
-}
+/* The Win32 arm defines `hero_ui_arm_watch_fd` and `hero_ui_arm_unwatch_fd`
+ * itself (`hero_ui_win32.c`): the event handle a set gives is waited on by its
+ * own `MsgWaitForMultipleObjectsEx`, beside the window messages. */
 
 #else
 
@@ -3302,7 +3309,11 @@ static int64_t hero_ui_poll_refused(const char *what) {
     int64_t answer = hero_poll_last_error();
 
     if (answer == HERO_POLL_UNSUPPORTED) {
-        (void)snprintf(words, sizeof words, "%s: this system's poll set holds no descriptor for a loop to wait on (a Windows set, and a POSIX system that waits with `poll`, wait in their own call)", what);
+#if defined(_WIN32)
+        (void)snprintf(words, sizeof words, "%s: a socket of the set stands in another set that a wait watches already, and Windows lets one event watch a socket", what);
+#else
+        (void)snprintf(words, sizeof words, "%s: this system's poll set holds no descriptor for a loop to wait on (a POSIX system that waits with `poll` waits in its own call)", what);
+#endif
         return hero_ui_said(HERO_UI_UNSUPPORTED, words);
     }
     if (answer == HERO_POLL_NOT_OPEN || answer == HERO_POLL_INVALID) {
@@ -3334,6 +3345,9 @@ static int64_t hero_ui_watch_start(hero_ui_watch *watch, int64_t what, hero_poll
     watch->fd = fd;
     watch->key = key;
     watch->queued = false;
+#if defined(_WIN32)
+    watch->fresh = what == HERO_UI_WATCH_SET;
+#endif
     return 0;
 }
 

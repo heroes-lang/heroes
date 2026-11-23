@@ -387,7 +387,8 @@
  * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
  * `.swift`); the header every web view's arm and `hero_ui.c` share,
  * `platform/hero_ui_web.h`, and the one `hero_ui.c` shares with its two C
- * arms, `platform/hero_ui_arm.h`; and Monocypher's, which
+ * arms, `platform/hero_ui_arm.h`, and the Win32 arm's table of the events its
+ * wait watches, `platform/hero_ui_win32_watch.h`; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -474,6 +475,7 @@
 #include "platform/hero_ui_web_win32.c"
 #include "hero_ui_win32.h"
 #include "platform/hero_ui_win32.c"
+#include "platform/hero_ui_win32_watch.h"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #include "hero_service.h"

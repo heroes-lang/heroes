@@ -2562,10 +2562,12 @@ function page_dialog(@app: App, over: Widget, settings: printing.Settings) -> Di
 # - `set`: the set, open, and waited on by no other thread.
 #
 # Fails `closed`; `invalid` for a set closed, watched already or waited on
-# by another thread; `unsupported` on a headless app and where the system's
-# sets hold no descriptor a loop can wait on (Windows, and the POSIX systems
-# that wait with `poll`), the words saying which; `limit`; `failed`. See also
-# `add_mailbox`.
+# by another thread; `unsupported` on a headless app, where the system's
+# sets hold no descriptor a loop can wait on (the POSIX systems that wait
+# with `poll`), and on Windows where a socket of the set stands in another
+# set the app's wait watches, which the system lets one event watch (the
+# words say which); `limit`, on Windows too for more than 63 sets watched
+# at once; `failed`. See also `add_mailbox`.
 function add_set(@app: App, set: poll.Set) -> i64?
     return sources.watch_set(@app, set: set)
 

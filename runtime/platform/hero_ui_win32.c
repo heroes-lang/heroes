@@ -42,6 +42,7 @@
 #include <wchar.h>
 #include "hero_ui_print_win32.h"
 #include "hero_ui_web_win32.h"
+#include "hero_ui_win32_watch.h"
 
 /* ==========================================================================
  * THE WIN32 ARM: the system's own controls, `BUTTON`, `EDIT`, `STATIC`,
@@ -110,9 +111,11 @@
  * in a dialog.
  *
  * THE LOOP: `pump` takes the thread's messages until one queues an event or
- * its time passes, waiting in `MsgWaitForMultipleObjectsEx`. While the person
- * drags a window's border or holds a menu open, Windows runs a loop of its
- * own inside `DispatchMessageW`, and `pump` returns when it ends.
+ * its time passes, waiting in `MsgWaitForMultipleObjectsEx`, which also waits
+ * on the events the poll sets the app's wait watches give
+ * (`hero_ui_win32_watch.h`). While the person drags a window's border or holds
+ * a menu open, Windows runs a loop of its own inside `DispatchMessageW`, and
+ * `pump` returns when it ends.
  *
  * DIALOGS stand over their window, each shown by a thread of its own, so
  * the program goes on while the person answers (DIALOGS ANSWERED THROUGH
@@ -3593,8 +3596,16 @@ int64_t hero_ui_arm_pump(int64_t ms) {
         if (hero_ui_pushed_count() != before || now >= deadline) {
             return HERO_UI_OK;
         }
-        (void)MsgWaitForMultipleObjectsEx(0, NULL, (DWORD)(deadline - now), QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+        hero_ui_win_watch_wait((DWORD)(deadline - now));
     }
+}
+
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
+    return hero_ui_win_watch_arm(fd, id);
+}
+
+void hero_ui_arm_unwatch_fd(int64_t id) {
+    hero_ui_win_watch_end(id);
 }
 
 static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int64_t value, int64_t second);

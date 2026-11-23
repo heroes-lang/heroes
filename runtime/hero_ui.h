@@ -1345,8 +1345,8 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * sockets, streams and timers beside its windows holds them in a poll set
  * the app waits on. Both are watched through `hero_poll.h`'s
  * `hero_poll_descriptor`, the descriptor that stays readable while an entry
- * of the set is ready, which the arm's loop waits on beside the system's
- * own events; the event is `HERO_UI_EVENT_READY`, and the program then asks
+ * of the set is ready (on Windows the handle of an event the set owns),
+ * which the arm's loop waits on beside the system's own events; the event is `HERO_UI_EVENT_READY`, and the program then asks
  * the set (`hero_poll_wait` with a limit of 0) or the mailbox (a receive
  * within 0) what is ready, which is why the watch tells and never takes.
  * Native apps only, on the main thread, as every call here. */
@@ -1356,8 +1356,9 @@ typedef struct hero_poll_set hero_poll_set;
 /* Has the app's wait watch the poll set `set`, and answers the number its
  * `HERO_UI_EVENT_READY` names, 1 or more; or -1: `INVALID` for a set closed
  * already, one watched already or one another thread waits on, `UNSUPPORTED`
- * where the set holds no descriptor to wait on (a Windows set, and the
- * POSIX systems that wait with `poll`: the words say so), `LIMIT`, `OTHER`.
+ * where the set holds no descriptor to wait on (the POSIX systems that wait
+ * with `poll`) or, on Windows, holds a socket that another set watched by a
+ * wait holds too (the words say which), `LIMIT`, `OTHER`.
  * The set stays the program's: closing the app lets it go, never closes it,
  * and a set the program closes first is dropped without a word at the next
  * wait. Where a timer of the set falls due the same event is told, the wait

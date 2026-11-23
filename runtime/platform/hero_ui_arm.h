@@ -185,7 +185,10 @@ int64_t hero_ui_arm_print_words(char *words, int64_t count);
  * and GTK 4 arms define their own (`g_unix_fd_add` on GTK 4, whose callback
  * calls `hero_ui_watch_told` and returns `G_SOURCE_REMOVE`), `hero_ui.c`
  * answering `HERO_UI_UNSUPPORTED` for them until they do. `hero_ui_watch_told`
- * answers whether it queued an event. */
+ * answers whether it queued an event. On Windows `fd` is the HANDLE of the
+ * event the set owns (`hero_poll_descriptor`), which the arm waits on in the
+ * same `MsgWaitForMultipleObjectsEx` as the window messages, one shot as
+ * above; `HERO_UI_LIMIT` for more than 63 watched at once. */
 int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id);
 void hero_ui_arm_unwatch_fd(int64_t id);
 bool hero_ui_watch_told(int64_t id);
