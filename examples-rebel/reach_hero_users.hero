@@ -1,0 +1,11 @@
+# Reaches Rebel's floor over the platform layer's users and groups,
+# `hero_users.h`, so that `heroes test` on this file runs the floor's own tests
+# (spec § 12, § 13). It prints the kind the floor reports for a name no user
+# has, which is the same on every machine.
+
+use <rebel>/os/hero_users
+
+function main()
+    room: [u8] @= []
+    _ = hero_users.user_named("no-such-user-in-rebel-tests", @room, n: 0)
+    print(hero_users.last_error() == hero_users.HERO_USERS_NOT_FOUND)

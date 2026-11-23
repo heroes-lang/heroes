@@ -1,0 +1,330 @@
+# The users and groups read back from the bytes `hero_users.h` writes, and the
+# failures each lookup tells: a user is four fields, a group two, and the groups
+# of a user as many groups as it has, each field its text and a zero byte. The
+# face turns each record here into its own; this module holds no type of the
+# face, which a private module cannot reach.
+
+use os/hero_users
+use os/internal/codes
+use os/internal/snapshot
+
+# How many bytes a lookup is first given room for: a record of a user is some
+# hundred bytes, and a user in a few dozen groups some thousand.
+constant FIRST_ROOM: i64
+    8192
+
+# How many readings of one lookup are made before an answer that grows on each
+# is a failure: a directory service may add a group between two calls.
+constant TRIES: i64
+    16
+
+# Which lookup is asked.
+variant Lookup
+    user_named
+    user_identified
+    group_named
+    group_identified
+    groups_of
+
+# One user as the layer wrote it. An empty `group` and an empty `home` are what
+# the system did not tell.
+record UserEntry
+    # The user's id as the system writes it.
+    id: str
+    # The user's name.
+    name: str
+    # The id of the user's primary group, or "".
+    group: str
+    # The user's home folder, or "".
+    home: str
+
+# One group as the layer wrote it. An empty `name` is a group the system holds
+# no record of.
+record GroupEntry
+    # The group's id as the system writes it.
+    id: str
+    # The group's name, or "".
+    name: str
+
+# What `lookup` is called in a message.
+function named(lookup: Lookup) -> str
+    return match lookup
+        .user_named       => "the user"
+        .user_identified  => "the user"
+        .group_named      => "the group"
+        .group_identified => "the group"
+        .groups_of        => "the groups of the user"
+
+# One call of `lookup` for `key` into `buffer`, `n` bytes long: the length of
+# the whole answer, or -1.
+function called(lookup: Lookup, key: str, @buffer: [u8], n: u64) -> i64
+    return match lookup
+        .user_named       => hero_users.user_named(key, @buffer, n: n)
+        .user_identified  => hero_users.user_identified(key, @buffer, n: n)
+        .group_named      => hero_users.group_named(key, @buffer, n: n)
+        .group_identified => hero_users.group_identified(key, @buffer, n: n)
+        .groups_of        => hero_users.groups_of(key, @buffer, n: n)
+
+# The failure of `asked` where the floor answered -1: its kind as a code, and
+# the system's own number in the message.
+function failed<T>(asked: str, key: str) -> T?
+    kind = hero_users.last_error()
+    number = hero_users.last_os_error()
+
+    if kind == hero_users.HERO_USERS_NOT_FOUND
+        return fail(code: codes.NOT_FOUND, msg: f"{asked} \"{key}\" is none the system has")
+
+    if kind == hero_users.HERO_USERS_INVALID
+        return fail(
+            code: codes.INVALID,
+            msg: f"\"{key}\" is not {asked}'s name or id as this system writes one (its number {number})"
+        )
+
+    if kind == hero_users.HERO_USERS_DENIED
+        return fail(
+            code: codes.PERMISSION,
+            msg: f"the system does not let this program do it for \"{key}\" (its number {number})"
+        )
+
+    if kind == hero_users.HERO_USERS_LIMIT
+        return fail(code: codes.LIMIT, msg: f"the system had no room to read {asked} \"{key}\" (its number {number})")
+
+    if kind == hero_users.HERO_USERS_UNSUPPORTED
+        return fail(code: codes.UNSUPPORTED, msg: "this system has no such thing")
+    return fail(code: codes.FAILED, msg: f"the system refused {asked} \"{key}\" (its number {number})")
+
+# The whole answer of `lookup` for `key` as bytes. Fails with the floor's code
+# where it refuses, and `failed` where the answer grew on every one of `TRIES`
+# readings. `key` is checked before the floor is asked: it holds no zero byte,
+# which C would read as its end.
+function bytes_of(lookup: Lookup, key: str) -> [u8]?
+    if codes.has_zero(key)
+        return fail(code: codes.INVALID, msg: f"\"{key}\" holds a zero byte, which no name or id does")
+
+    if key.len() == 0
+        return fail(code: codes.INVALID, msg: f"{named(lookup)} has no empty name or id")
+    room: i64 @= FIRST_ROOM
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got = called(lookup, key, @buffer, n: room.to_u64().must())
+
+        if got < 0
+            return failed(asked: named(lookup), key: key)
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+        room @ got
+        tries @ tries + 1
+
+    return fail(code: codes.FAILED, msg: f"{named(lookup)} \"{key}\" grew on each of {TRIES} readings")
+
+# The fields `bytes` holds, each as its text where it is UTF-8 and as text with
+# U+FFFD for each byte that is none where it is not: a name on POSIX is the
+# bytes the system holds. Fails `failed` where a field has no end.
+function fields_of(bytes: [u8] lent) -> [str]?
+    found: [str] @= []
+    at: i64 @= 0
+
+    while at < bytes.len()
+        end = snapshot.zero_after(bytes, from: at)?
+        found @ found.push(snapshot.shown(bytes, from: at, to: end))
+        at @ end + 1
+
+    return ok(found)
+
+# The user `bytes` holds. Fails `failed` where it does not hold the four fields
+# of one.
+function user_of(bytes: [u8] lent) -> UserEntry?
+    fields = fields_of(bytes)?
+
+    if fields.len() != 4
+        return fail(code: codes.FAILED, msg: f"a user's record holds {fields.len()} fields where the layer writes 4")
+    return ok(UserEntry(id: fields[0], name: fields[1], group: fields[2], home: fields[3]))
+
+# The group `bytes` holds. Fails `failed` where it does not hold the two fields
+# of one.
+function group_of(bytes: [u8] lent) -> GroupEntry?
+    fields = fields_of(bytes)?
+
+    if fields.len() != 2
+        return fail(code: codes.FAILED, msg: f"a group's record holds {fields.len()} fields where the layer writes 2")
+    return ok(GroupEntry(id: fields[0], name: fields[1]))
+
+# The groups `bytes` holds, in the layer's order. Fails `failed` where the fields
+# are not a whole number of groups.
+function groups_in(bytes: [u8] lent) -> [GroupEntry]?
+    fields = fields_of(bytes)?
+
+    if fields.len() % 2 != 0
+        return fail(
+            code: codes.FAILED,
+            msg: f"the groups of a user hold {fields.len()} fields, which are not whole groups of 2"
+        )
+    found: [GroupEntry] @= []
+    at: i64 @= 0
+
+    while at < fields.len()
+        found @ found.push(GroupEntry(id: fields[at], name: fields[at + 1]))
+        at @ at + 2
+
+    return ok(found)
+
+# The process changed to the user `name`, or the failure that says why not. A
+# Windows process keeps the user it started as, and says so in these words.
+function changed(name: str) -> ()?
+    if codes.has_zero(name) || name.len() == 0
+        return fail(code: codes.INVALID, msg: "a user's name holds at least one character and no zero byte")
+
+    if hero_users.change(name) == 0
+        return ok()
+
+    if hero_users.last_error() == hero_users.HERO_USERS_UNSUPPORTED
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: "a Windows process keeps the user it was started as: a thread takes another user's rights only with that user's password, which no function here is given"
+        )
+
+    if hero_users.last_error() == hero_users.HERO_USERS_DENIED
+        return fail(
+            code: codes.PERMISSION,
+            msg: f"this process is not root: it may only change to the user and the group it runs as already, and \"{name}\" is another"
+        )
+
+    if hero_users.last_error() == hero_users.HERO_USERS_OTHER
+        return fail(
+            code: codes.FAILED,
+            msg: f"the change to \"{name}\" did not hold (its number {hero_users.last_os_error()}): the process may be changed in part and must end"
+        )
+    return failed(asked: "the user", key: name)
+
+# An id as the layer wrote it, read for the face's `AccountId`: a security
+# identifier where `text` begins `S-`, else a number.
+record Id
+    # Whether it is a security identifier.
+    sid: bool
+    # The number, where it is not a SID.
+    number: i64
+    # The SID's text, where it is one.
+    text: str
+
+# The id the layer wrote as `text`. Fails `failed` where it is neither a SID nor
+# digits alone.
+function id_of(text: str) -> Id?
+    if text.len() > 2 && text[0] == 'S' && text[1] == '-'
+        return ok(Id(sid: true, number: 0, text: text))
+    return ok(Id(sid: false, number: number_of(text)?, text: text))
+
+# The key a lookup by id hands the layer for the number `value`. Fails
+# `invalid` for a number below 0, which no account has.
+function number_key(value: i64) -> str?
+    if value < 0
+        return fail(code: codes.INVALID, msg: f"{value} is no account's number: they are 0 or above")
+    return ok(f"{value}")
+
+# The number `text` writes, digits alone, for an id of a system that numbers
+# its accounts. Fails `failed` where it is not one.
+function number_of(text: str) -> i64?
+    bytes: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        bytes @ bytes.push(text[i])
+
+    return snapshot.number_of(bytes, from: 0, to: bytes.len())
+
+## Tests
+
+# Adds the bytes of `text` and a zero byte to `out`.
+function add_text(@out: [u8], text: str)
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    out @ out.push(0)
+
+# The bytes the layer writes for the fields `fields`.
+function written(fields: [str]) -> [u8]
+    out: [u8] @= []
+
+    for field in fields
+        add_text(@out, text: field)
+
+    return out
+
+test "user_of: every field, and a user with no primary group and no home"
+    whole = user_of(written(["501", "joseph", "20", "/Users/joseph"])).must()
+    assert whole == UserEntry(id: "501", name: "joseph", group: "20", home: "/Users/joseph")
+    bare = user_of(written(["S-1-5-18", "SYSTEM", "", ""])).must()
+    assert bare.group == "" && bare.home == "" && bare.id == "S-1-5-18"
+
+test "user_of fails: three fields, five fields, a field with no end, and none"
+    for bad in [written(["1", "a", "2"]), written(["1", "a", "2", "h", "x"]), [49, 0, 97], []]
+        match user_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED && e.msg.len() > 0
+
+test "group_of: a group, and a name of more than one byte; and it fails on one field and on three"
+    assert group_of(written(["20", "staff"])).must() == GroupEntry(id: "20", name: "staff")
+    assert group_of(written(["7", "équipe"])).must().name == "équipe"
+
+    for bad in [written(["20"]), written(["1", "a", "2"])]
+        match group_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED
+
+test "groups_in: none, one, several in order, one with no name, and an odd number of fields refused"
+    assert groups_in([]).must() == []
+    assert groups_in(written(["0", "root"])).must() == [GroupEntry(id: "0", name: "root")]
+    several = groups_in(written(["20", "staff", "12", "everyone", "99", ""])).must()
+    assert several.len() == 3 && several[1].name == "everyone" && several[2] == GroupEntry(id: "99", name: "")
+
+    match groups_in(written(["20", "staff", "12"]))
+        .ok _  => assert false
+        .err e => assert e.code == codes.FAILED
+
+test "fields_of: a name that is not UTF-8 is shown with U+FFFD and hides no other"
+    odd: [u8] = [97, 255, 0, 98, 0]
+    assert fields_of(odd).must() == ["a�", "b"]
+
+test "id_of: a number, a SID, and what is neither"
+    assert id_of("501").must() == Id(sid: false, number: 501, text: "501")
+    assert id_of("S-1-5-18").must() == Id(sid: true, number: 0, text: "S-1-5-18")
+
+    for bad in ["", "S", "S-", "x1", "-2"]
+        match id_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED
+
+test "number_key: 0, the largest, and a number below 0 refused"
+    assert number_key(0).must() == "0"
+    assert number_key(9223372036854775807).must() == "9223372036854775807"
+
+    match number_key(-1)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+test "number_of: digits, zero, the largest, and what is no number"
+    assert number_of("0").must() == 0
+    assert number_of("501").must() == 501
+    assert number_of("9223372036854775807").must() == 9223372036854775807
+
+    for bad in ["", "-1", "1a", "S-1-5-18", "9223372036854775808"]
+        match number_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED
+
+test "bytes_of: a name with a zero byte or no characters is invalid before the system is asked, and a name no one has is not found"
+    with_zero: [u8] = [97, 0, 98]
+
+    for key in ["", with_zero.validated_bytes().must()]
+        match bytes_of(.user_named, key)
+            .ok _  => assert false
+            .err e => assert e.code == codes.INVALID
+
+    match bytes_of(.group_named, "no-such-group-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND
+
+    match bytes_of(.groups_of, "no-such-user-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND

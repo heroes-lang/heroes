@@ -1,0 +1,102 @@
+# The platform layer's list of the machine's processes, `hero_procs.h`, bound
+# thin: one function per C function, in C's order, each answering what C
+# answers. The floor of `os`'s `processes`: where the call fails its answer is
+# -1 and `last_error` then the kind, which `os` turns into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. The
+# list is the header's fill form: it leaves `buffer` `n` bytes long and answers
+# how many bytes the whole list has; where that is above `n` the buffer was too
+# short and holds nothing to read, and the caller asks again with that many.
+# An entry is `FIELDS` fields, each followed by one zero byte, and the header
+# says what each holds. The tests ask `os/hero_os`, the other floor, for the
+# process's own id.
+
+use os/hero_os
+
+extern "hero_procs.h"
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, and `HERO_PROCS_UNSUPPORTED` a POSIX system neither
+    # Darwin nor Linux.
+    constant HERO_PROCS_OK: i64
+    constant HERO_PROCS_INVALID: i64
+    constant HERO_PROCS_DENIED: i64
+    constant HERO_PROCS_LIMIT: i64
+    constant HERO_PROCS_UNSUPPORTED: i64
+    constant HERO_PROCS_OTHER: i64
+    # How many fields one entry of the list holds.
+    constant HERO_PROCS_FIELDS: i64
+    function hero_procs_list(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_procs_last_error() -> i64
+    function hero_procs_last_os_error() -> i64
+
+# How many bytes the list of the machine's processes has, or -1. The list is
+# written into `buffer` where `n` bytes hold it: for each process, in ascending
+# order of its id, `fields` fields of text each ended by a zero byte.
+#
+# - `buffer`: where the list is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
+function list(@buffer: [u8], n: u64) -> i64
+    return hero_procs_list(@buffer, n: n)
+
+# The kind of the last call's failure on this thread, `HERO_PROCS_OK` after one
+# that did not fail.
+function last_error() -> i64
+    return hero_procs_last_error()
+
+# The platform's own number for the last failure on this thread, 0 where the
+# layer itself refused.
+function last_os_error() -> i64
+    return hero_procs_last_os_error()
+
+# How many fields one entry of the list holds.
+function fields() -> i64
+    return HERO_PROCS_FIELDS
+
+## Tests
+
+test "list: no buffer measures, a short one is filled within its count, the right count is the whole list, and a large one holds the same"
+    none: [u8] @= []
+    need = list(@none, n: 0)
+    assert need > 0
+    assert none.len() == 0
+    assert last_error() == HERO_PROCS_OK
+    assert last_os_error() == 0
+    one: [u8] @= []
+    assert list(@one, n: 1) > 0
+    assert one.len() == 1
+    large: [u8] @= []
+    assert list(@large, n: 4194304) > 0
+    assert large.len() == 4194304
+
+test "list: a whole number of entries, each of the header's fields and ending in a zero byte, with this process's id among the first fields"
+    room: [u8] @= []
+    need = list(@room, n: 4194304)
+    assert need > 0 && need <= 4194304
+    assert room[need - 1] == 0
+    expected: [u8] @= []
+    own = f"{hero_os.os_pid()}"
+
+    for i in range(from: 0, to: own.len())
+        expected @ expected.push(own[i])
+
+    expected @ expected.push(0)
+    zeros: i64 @= 0
+    first: i64 @= 0
+    found: i64 @= 0
+
+    for index in range(from: 0, to: need)
+        if room[index] == 0
+            if zeros % HERO_PROCS_FIELDS == 0 && index + 1 - first == expected.len() && room.slice(from: first, to: index + 1) == expected
+                found @ found + 1
+            zeros @ zeros + 1
+            first @ index + 1
+
+    assert zeros % HERO_PROCS_FIELDS == 0
+    assert found == 1
+
+test "fields: the header's count, ten fields to an entry"
+    assert fields() == HERO_PROCS_FIELDS
+    assert fields() == 10

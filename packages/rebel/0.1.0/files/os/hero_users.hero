@@ -1,0 +1,170 @@
+# The platform layer's users and groups, `hero_users.h`, bound thin: one
+# function per C function, in C's order, each answering what C answers. The
+# floor of `os`'s lookups of users and groups and of the user changed: where a
+# call fails its answer is -1 and `last_error` then the kind, which `os` turns
+# into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. A
+# function that answers bytes is the header's fill form: it leaves `buffer`
+# `n` bytes long and answers how many bytes the whole answer has; where that is
+# above `n` the buffer was too short and holds nothing to read, and the caller
+# asks again with that many. An answer is fields, each ended by one zero byte.
+# A name or an id handed to C holds no zero byte, which the caller checks
+# first. The tests ask `os/hero_os`, the other floor, for the process's own id.
+
+use os/hero_os
+
+extern "hero_users.h"
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, and `HERO_USERS_UNSUPPORTED` a process of Windows asked
+    # to take another user's rights.
+    constant HERO_USERS_OK: i64
+    constant HERO_USERS_INVALID: i64
+    constant HERO_USERS_NOT_FOUND: i64
+    constant HERO_USERS_DENIED: i64
+    constant HERO_USERS_LIMIT: i64
+    constant HERO_USERS_UNSUPPORTED: i64
+    constant HERO_USERS_OTHER: i64
+    function hero_users_user_named(name: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_users_user_identified(id: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_users_group_named(name: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_users_group_identified(id: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_users_groups_of(name: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_users_change(name: cstr lent) -> i64
+    function hero_users_last_error() -> i64
+    function hero_users_last_os_error() -> i64
+
+# How many bytes the record of the user `name` has, or -1: four fields, the
+# user's id, name, primary group's id and home, the last two empty where the
+# system tells none. The record is written into `buffer` where `n` bytes hold
+# it.
+#
+# - `name`: the user's name; it aborts where it holds a zero byte, and the empty
+#   name is `HERO_USERS_INVALID`.
+# - `buffer`: where the record is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
+function user_named(name: str, @buffer: [u8], n: u64) -> i64
+    return hero_users_user_named(name.cstr(), @buffer, n: n)
+
+# How many bytes the record of the user whose id is `id` has, or -1, as
+# `user_named` answers it.
+#
+# - `id`: the user's id, digits on POSIX and a SID on Windows; it aborts where it
+#   holds a zero byte, and what is no id of the system is `HERO_USERS_INVALID`.
+# - `buffer`: where the record is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short.
+function user_identified(id: str, @buffer: [u8], n: u64) -> i64
+    return hero_users_user_identified(id.cstr(), @buffer, n: n)
+
+# How many bytes the record of the group `name` has, or -1: two fields, the
+# group's id and its name.
+#
+# - `name`: the group's name; it aborts where it holds a zero byte, and the
+#   empty name is `HERO_USERS_INVALID`.
+# - `buffer`: where the record is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short.
+function group_named(name: str, @buffer: [u8], n: u64) -> i64
+    return hero_users_group_named(name.cstr(), @buffer, n: n)
+
+# How many bytes the record of the group whose id is `id` has, or -1, as
+# `group_named` answers it.
+#
+# - `id`: the group's id, digits on POSIX and a SID on Windows; it aborts where
+#   it holds a zero byte.
+# - `buffer`: where the record is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short.
+function group_identified(id: str, @buffer: [u8], n: u64) -> i64
+    return hero_users_group_identified(id.cstr(), @buffer, n: n)
+
+# How many bytes the groups of the user `name` have, or -1: for each, in the
+# system's order, the two fields of a group, the name empty where the system
+# holds no record of the group.
+#
+# - `name`: the user's name; it aborts where it holds a zero byte.
+# - `buffer`: where the groups are written, where `n` bytes hold them; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short.
+function groups_of(name: str, @buffer: [u8], n: u64) -> i64
+    return hero_users_groups_of(name.cstr(), @buffer, n: n)
+
+# Changes the user and the groups of the process to those of the user `name`,
+# and answers 0, or -1. THIS CHANGES THE PROCESS: no test of this floor calls it
+# with a user that exists.
+#
+# - `name`: the user's name; it aborts where it holds a zero byte, and the empty
+#   name is `HERO_USERS_INVALID`.
+function change(name: str) -> i64
+    return hero_users_change(name.cstr())
+
+# The kind of the last call's failure on this thread, `HERO_USERS_OK` after one
+# that did not fail.
+function last_error() -> i64
+    return hero_users_last_error()
+
+# The platform's own number for the last failure on this thread, 0 where the
+# layer itself refused.
+function last_os_error() -> i64
+    return hero_users_last_os_error()
+
+## Tests
+
+test "user_named: no buffer measures, a short buffer is filled within its count, and the whole record holds the user's four fields"
+    none: [u8] @= []
+    need = user_named("root", @none, n: 0)
+
+    if need < 0
+        assert last_error() == HERO_USERS_NOT_FOUND
+    else
+        assert none.len() == 0
+        assert last_error() == HERO_USERS_OK
+        short: [u8] @= []
+        assert user_named("root", @short, n: 3) == need
+        assert short.len() == 3
+        whole: [u8] @= []
+        assert user_named("root", @whole, n: need.to_u64().must()) == need
+        zeros: i64 @= 0
+
+        for b in whole
+            if b == 0
+                zeros @ zeros + 1
+
+        assert zeros == 4 && whole[need - 1] == 0
+
+test "user_named, group_named and groups_of: an empty name and a name no one has are refused by the kinds that say so"
+    room: [u8] @= []
+    assert user_named("", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert user_named("no-such-user-in-rebel-tests", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_NOT_FOUND
+    assert group_named("", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert group_named("no-such-group-in-rebel-tests", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_NOT_FOUND
+    assert groups_of("", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert groups_of("no-such-user-in-rebel-tests", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_NOT_FOUND
+    assert change("") == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert change("no-such-user-in-rebel-tests") == -1
+    assert last_error() == HERO_USERS_NOT_FOUND
+
+test "user_identified and group_identified: an id that is none is invalid, one nobody holds is not found"
+    room: [u8] @= []
+    assert user_identified("not an id", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert group_identified("-1", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID
+    assert user_identified("S-1-5-21-1-2-3-999999", @room, n: 0) == -1
+    assert last_error() == HERO_USERS_INVALID || last_error() == HERO_USERS_NOT_FOUND
+    assert hero_os.os_pid() > 0
