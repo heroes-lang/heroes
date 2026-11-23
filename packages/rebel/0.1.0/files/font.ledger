@@ -189,11 +189,11 @@ capability font/system  a font found on the system by its name
   note    CoreText on macOS, DirectWrite on Windows and fontconfig elsewhere, each a C port with both arms; the row of the gap catalogue, K10's last part
 
 capability font/draw  glyphs rasterised and text drawn into an image
-  heroes  pending
+  heroes  image/text.draw, image/text.draw_block, image/text.outline
   go      font.Drawer, font.Drawer.DrawString, DrawBytes, font.Face, font.Hinting, opentype.NewFace, opentype.Face, opentype.FaceOptions, basicfont.Face7x13, basicfont.Face, basicfont.Range, Face.Glyph, Face.GlyphBounds, Face.GlyphAdvance, Face.Metrics, Face.Close
   rust    -
   python  -
-  note    `image`'s half of the row (the lane that owns `image` draws the glyphs this package outlines); a rasteriser that runs TrueType instructions is its own program
+  note    `image`'s half of the row, in the package `image/text` and its own ledger: a glyph's outline filled anti-aliased through `image/vector`; a rasteriser that runs TrueType instructions is its own program, see `font/hinting`
 
 capability font/hinting  the instructions of a font run to fit its glyphs to a pixel grid
   heroes  refused: the outlines are read as the font draws them at its own scale; running `fpgm`, `prep` and the glyph programs is a rasteriser's work, and an interpreter of TrueType's instruction set is a program of its own which nothing in this package's callers asks for

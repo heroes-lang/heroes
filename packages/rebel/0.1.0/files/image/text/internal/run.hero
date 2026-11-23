@@ -1,0 +1,80 @@
+# One line of text set in a font: each character's glyph found, kerned by the
+# font's `kern` table where asked, its outline turned from font units (y up)
+# into pixels (y down) at the pen's place, and the pen moved by the glyph's
+# advance. The path is only built where it is asked for, so measuring costs
+# the glyph lookups alone.
+
+use font
+use image
+use image/vector
+use unicode
+
+# The code of a character the font has no glyph for.
+constant NOT_FOUND: str
+    "not_found"
+
+# A line set: its outline in pixels and how far the pen moved.
+record Run
+    # The outline of every glyph, contours closed, in drawing order; empty where
+    # no path was asked for.
+    path: [vector.Segment]
+    # The pen's travel in pixels: the sum of the advances, the kerning and the
+    # spacing between letters.
+    width: f64
+
+# The glyph that draws `c`: its own, or glyph 0 (`.notdef`) where `notdef` is
+# set and the font has none. Fails `not_found`, naming the character.
+function glyph_for(f: font.Font lent, c: str, notdef: bool) -> i64?
+    code_point = unicode.code_point(c)
+
+    match font.glyph_of(f, code_point: code_point)
+        .ok g => return ok(g)
+        .err e =>
+            if notdef
+                return ok(0)
+            return fail(code: NOT_FOUND, msg: f"the font has no glyph for U+{code_point}: {e.msg}")
+
+# `text` set at `size` pixels to the em, its pen starting at column `x` on the
+# baseline row `y`. Fails `invalid` where `size` is not a positive number,
+# `not_found` where a character has no glyph, and as `font.outline_of` and
+# `font.advance_of` fail.
+function set_line(f: font.Font lent, text: str, size: f64, kerning: bool, spacing: f64, notdef: bool, x: f64, y: f64, with_path: bool) -> Run?
+    if !(size > 0.0) || size > 100000.0
+        return fail(code: image.INVALID, msg: f"a size of {size} pixels to the em, where a positive number is read")
+    scale = size / to_f64(font.metrics_of(f).units_per_em)
+    pen @= x
+    previous @= -1
+    path: [vector.Segment] @= []
+
+    for c in text.chars()
+        glyph = glyph_for(f, c: c, notdef: notdef)?
+
+        if kerning && previous >= 0
+            pen @ pen + to_f64(font.kern_of(f, left: previous, right: glyph)) * scale
+
+        if with_path
+            for s in font.outline_of(f, glyph: glyph)?.segments
+                match s
+                    .move m => vector.move_to(path: @path, x: pen + m.x * scale, y: y - m.y * scale)
+                    .line l => vector.line_to(path: @path, x: pen + l.x * scale, y: y - l.y * scale)
+                    .quad q => vector.quad_to(
+                        path: @path,
+                        control_x: pen + q.control_x * scale,
+                        control_y: y - q.control_y * scale,
+                        x: pen + q.x * scale,
+                        y: y - q.y * scale
+                    )
+                    .cubic k => vector.cubic_to(
+                        path: @path,
+                        control1_x: pen + k.control1_x * scale,
+                        control1_y: y - k.control1_y * scale,
+                        control2_x: pen + k.control2_x * scale,
+                        control2_y: y - k.control2_y * scale,
+                        x: pen + k.x * scale,
+                        y: y - k.y * scale
+                    )
+                    .close => vector.close_path(path: @path)
+        pen @ pen + to_f64(font.advance_of(f, glyph: glyph)?) * scale + spacing
+        previous @ glyph
+
+    return ok(Run(path: path, width: pen - x))

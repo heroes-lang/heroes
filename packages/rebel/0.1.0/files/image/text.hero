@@ -1,0 +1,430 @@
+# Text drawn into an image: a line set in a font, its glyph outlines filled
+# anti-aliased through `image/vector`, kerned and spaced as asked, measured
+# before it is drawn, cut into lines no wider than a width and aligned.
+#
+# It reads no font file and finds no font by name: `font.parse` makes the
+# `font.Font` a caller gives, and the three systems' own fonts are `font`'s to
+# find. It lays out left to right, one script at a time: no shaping (a letter's
+# joined forms, ligatures, the order of right-to-left text), no kerning past
+# the `kern` table, no hinting and no styles but the font's own. A character
+# with no glyph fails `not_found`, or is drawn as the font's `.notdef`.
+#
+# It fails with `invalid` for a size that is not a positive number, `not_found`
+# for a character the font lacks, and the codes `font` and `image/vector`
+# fail with.
+#
+# Not written yet, each a `pending` block of its ledger: complex-script shaping
+# and right-to-left text.
+
+use font
+use image
+use image/text/internal/ink
+use image/text/internal/lines
+use image/text/internal/run
+use image/text/internal/samples
+use image/vector
+
+## Codes
+
+# The code of a character the font has no glyph for.
+constant NOT_FOUND: str
+    run.NOT_FOUND
+
+## Laying out
+
+# How a line sits in the width it is given.
+variant Align
+    # Its left end at the left edge.
+    left
+    # Centred in the width.
+    center
+    # Its right end at the right edge.
+    right
+
+# How a line of text is set.
+record Style
+    # The size of the em square in pixels, above 0.
+    size: f64
+    # The colour the glyphs are filled with.
+    color: image.Color
+    # Whether the font's `kern` table moves a letter toward or from the one
+    # before it.
+    kerning: bool
+    # Pixels added after every letter, negative to tighten.
+    spacing: f64
+    # Whether a character the font has no glyph for is drawn as its `.notdef`
+    # (usually a box) instead of failing `not_found`.
+    notdef: bool
+
+# The style of text `size` pixels to the em in `color`: kerned, no extra
+# spacing, a missing character an error.
+#
+# - `size`: the size of the em square in pixels.
+# - `color`: the glyphs' colour.
+#
+# See also `draw`.
+function style(size: f64, color: image.Color) -> Style
+    return Style(size: size, color: color, kerning: true, spacing: 0.0, notdef: false)
+
+# What a line occupies.
+record Measure
+    # The pen's travel in pixels.
+    width: f64
+    # How far the font's letters reach above the baseline in pixels, from the
+    # font's ascent.
+    ascent: f64
+    # How far they reach below it in pixels, positive.
+    descent: f64
+    # The distance between the baselines of two lines in pixels: the ascent,
+    # the descent and the font's line gap.
+    line_height: f64
+
+# How much room `text` takes set in `f`.
+#
+# - `f`: the font.
+# - `text`: one line; a line feed is a character with no glyph.
+# - `how`: its size, kerning and spacing; the colour is not read.
+#
+# Fails `invalid` where the size is not a positive number, `not_found` where
+# a character has no glyph and `how.notdef` is not set. See also `draw`.
+function measure(f: font.Font, text: str, how: Style) -> Measure?
+    r = run.set_line(f, text: text, size: how.size, kerning: how.kerning, spacing: how.spacing, notdef: how.notdef, x: 0.0, y: 0.0, with_path: false)?
+    m = font.metrics_of(f)
+    scale = how.size / to_f64(m.units_per_em)
+    return ok(
+        Measure(width: r.width, ascent: to_f64(m.ascent) * scale, descent: to_f64(-m.descent) * scale, line_height: to_f64(m.ascent - m.descent + m.line_gap) * scale)
+    )
+
+# The outline of `text` as a path in pixels, for a program that strokes it,
+# turns it or fills it its own way.
+#
+# - `f`: the font.
+# - `text`: one line.
+# - `how`: its size, kerning and spacing; the colour is not read.
+# - `x`: the column where the pen starts.
+# - `y`: the row of the baseline: the letters stand on it and reach up from it.
+#
+# Fails as `measure` fails. See also `draw`.
+function outline(f: font.Font, text: str, how: Style, x: f64, y: f64) -> [vector.Segment]?
+    return ok(
+        run.set_line(f, text: text, size: how.size, kerning: how.kerning, spacing: how.spacing, notdef: how.notdef, x: x, y: y, with_path: true)?.path
+    )
+
+## Drawing
+
+# Fills `text` into `img`: one line, its pen starting at column `x` on the
+# baseline row `y`, the glyphs anti-aliased over what is there by their alpha.
+#
+# - `img`: the image drawn into; text outside it is cut, not refused.
+# - `f`: the font.
+# - `text`: one line.
+# - `x`: the column where the pen starts.
+# - `y`: the row of the baseline.
+# - `how`: its size, colour, kerning and spacing.
+#
+# The answer is how far the pen travelled in pixels, so that a program sets
+# the next piece of a line where this one ended. Fails as `measure` fails,
+# before it changes a pixel. Aborts where `img` is not valid. See also
+# `draw_block`.
+function draw(@img: image.Image, f: font.Font, text: str, x: f64, y: f64, how: Style) -> f64?
+    assert image.is_valid(img)
+    r = run.set_line(f, text: text, size: how.size, kerning: how.kerning, spacing: how.spacing, notdef: how.notdef, x: x, y: y, with_path: true)?
+    vector.fill_path(img: @img, path: r.path, color: how.color, rule: .non_zero)?
+    return ok(r.width)
+
+# `text` cut into lines no wider than `max_width`.
+#
+# - `f`: the font.
+# - `text`: paragraphs ended by a line feed; words ended by a space.
+# - `how`: its size, kerning and spacing.
+# - `max_width`: the widest a line may be, in pixels; a word wider than that is
+#   cut between characters, and a single character wider stands alone.
+#
+# The words of a paragraph are joined by single spaces; an empty paragraph
+# makes an empty line. Fails as `measure` fails. See also `draw_block`.
+function wrap(f: font.Font, text: str, how: Style, max_width: f64) -> [str]?
+    return lines.wrapped(
+        f,
+        text: text,
+        size: how.size,
+        kerning: how.kerning,
+        spacing: how.spacing,
+        notdef: how.notdef,
+        max_width: max_width
+    )
+
+# Fills `text` into `img` as a block: cut into lines of at most `max_width`,
+# each aligned in that width, the first line's top at row `y`.
+#
+# - `img`: the image drawn into.
+# - `f`: the font.
+# - `text`: paragraphs ended by a line feed.
+# - `x`: the column of the block's left edge.
+# - `y`: the row of the block's top: the first baseline stands an ascent below.
+# - `how`: its size, colour, kerning and spacing.
+# - `max_width`: the block's width in pixels.
+# - `align`: where each line sits in it.
+# - `line_spacing`: the factor of the font's line height between baselines, 1.0
+#   for the font's own.
+#
+# The answer is the block's height in pixels: the lines times the spaced line
+# height. Fails as `measure` fails, before it changes a pixel. Aborts where
+# `img` is not valid. See also `wrap` and `draw`.
+function draw_block(@img: image.Image, f: font.Font, text: str, x: f64, y: f64, how: Style, max_width: f64, align: Align, line_spacing: f64) -> f64?
+    assert image.is_valid(img)
+    cut = wrap(f, text: text, how: how, max_width: max_width)?
+    m = measure(f, text: "", how: how)?
+    step = m.line_height * line_spacing
+    paths: [[vector.Segment]] @= []
+
+    for i in range(from: 0, to: cut.len())
+        w = run.set_line(f, text: cut[i], size: how.size, kerning: how.kerning, spacing: how.spacing, notdef: how.notdef, x: 0.0, y: 0.0, with_path: false)?.width
+
+        left = match align
+            .left   => x
+            .center => x + (max_width - w) / 2.0
+            .right  => x + max_width - w
+
+        paths @ paths.push(
+            run.set_line(f, text: cut[i], size: how.size, kerning: how.kerning, spacing: how.spacing, notdef: how.notdef, x: left, y: y + m.ascent + to_f64(i) * step, with_path: true)?.path
+        )
+
+    for p in paths
+        vector.fill_path(img: @img, path: p, color: how.color, rule: .non_zero)?
+
+    return ok(to_f64(cut.len()) * step)
+
+## Tests
+
+test "measure: the width is the font's advances, the heights its ascent and descent"
+    f = font.parse(samples.truetype(), 0).must()
+    m = measure(f, text: "HOH", how: style(size: 50.0, color: image.Color(r: 0, g: 0, b: 0, a: 255))).must()
+    assert m.width == font.width_of(f, text: "HOH", size: 50.0).must()
+    assert m.ascent == 1069.0 * 50.0 / 1000.0 && m.descent == 293.0 * 50.0 / 1000.0
+    assert m.line_height == m.ascent + m.descent
+    assert measure(f, text: "", how: style(size: 50.0, color: image.Color(r: 0, g: 0, b: 0, a: 255))).must().width == 0.0
+
+test "draw: the ink of a letter has the glyph's area, stands on the baseline and starts at its bearing"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+
+    for ch in ["H", "O", "A", "e", "o"]
+        glyph @= font.glyph_of(f, code_point: 72).must()
+
+        if ch == "O"
+            glyph @ font.glyph_of(f, code_point: 79).must()
+
+        if ch == "A"
+            glyph @ font.glyph_of(f, code_point: 65).must()
+
+        if ch == "e"
+            glyph @ font.glyph_of(f, code_point: 101).must()
+
+        if ch == "o"
+            glyph @ font.glyph_of(f, code_point: 111).must()
+        img @= image.blank(width: 120, height: 120, format: .rgba).must()
+        w = draw(img: @img, f: f, text: ch, x: 20.0, y: 90.0, how: style(size: 80.0, color: black)).must()
+        width = font.width_of(f, text: ch, size: 80.0).must()
+        assert w > width - 0.0001 && w < width + 0.0001
+        outline_path = font.outline_of(f, glyph: glyph).must().segments
+        flipped = outline(f, text: ch, how: style(size: 80.0, color: black), x: 20.0, y: 90.0).must()
+        area = ink.area_of(flipped)
+        covered = ink.coverage_of(img)
+        assert covered > area * 0.96
+        assert covered < area * 1.04
+        b = font.bounds_of(f, glyph: glyph).must()
+        box = ink.bounds_of(img)
+        left_want = 20.0 + b.left * 80.0 / 1000.0
+        right_want = 20.0 + b.right * 80.0 / 1000.0
+        top_want = 90.0 - b.top * 80.0 / 1000.0
+        bottom_want = 90.0 - b.bottom * 80.0 / 1000.0
+        assert to_f64(box[0]) >= left_want - 1.5 && to_f64(box[0]) <= left_want + 1.5
+        assert to_f64(box[2]) >= right_want - 1.5 && to_f64(box[2]) <= right_want + 1.5
+        assert to_f64(box[1]) >= top_want - 1.5 && to_f64(box[1]) <= top_want + 1.5
+        assert to_f64(box[3]) >= bottom_want - 1.5 && to_f64(box[3]) <= bottom_want + 1.5
+        assert outline_path.len() > 0
+
+test "draw: the colour of the ink, over what is there, and text cut by the image's edge"
+    f = font.parse(samples.truetype(), 0).must()
+    img @= image.blank(width: 60, height: 60, format: .rgb).must()
+    image.fill_rect(img: @img, x: 0, y: 0, width: 60, height: 60, color: image.Color(r: 255, g: 255, b: 255, a: 255))
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    _ = draw(img: @img, f: f, text: "H", x: 10.0, y: 50.0, how: style(size: 60.0, color: red)).must()
+    stem = image.color_at(img, x: 20, y: 30)
+    assert stem.r == 255 && stem.g == 0 && stem.b == 0
+    assert image.color_at(img, x: 2, y: 2).g == 255
+    edge @= image.blank(width: 30, height: 30, format: .rgba).must()
+    cut = draw(img: @edge, f: f, text: "HOH", x: 15.0, y: 25.0, how: style(size: 60.0, color: red)).must()
+    assert cut > 60.0
+    away @= image.blank(width: 30, height: 30, format: .rgba).must()
+    _ = draw(img: @away, f: f, text: "H", x: 500.0, y: 500.0, how: style(size: 20.0, color: red)).must()
+    assert ink.bounds_of(away) == []
+
+test "draw: two pieces of a line end where one line does, and the spacing adds to every letter"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    whole @= image.blank(width: 160, height: 60, format: .rgba).must()
+    _ = draw(img: @whole, f: f, text: "HOA", x: 5.0, y: 45.0, how: style(size: 40.0, color: black)).must()
+    parts @= image.blank(width: 160, height: 60, format: .rgba).must()
+    first = draw(img: @parts, f: f, text: "H", x: 5.0, y: 45.0, how: style(size: 40.0, color: black)).must()
+    _ = draw(img: @parts, f: f, text: "OA", x: 5.0 + first, y: 45.0, how: style(size: 40.0, color: black)).must()
+    assert ink.bounds_of(whole) == ink.bounds_of(parts)
+    wide = Style(size: 40.0, color: black, kerning: true, spacing: 3.0, notdef: false)
+    assert measure(f, text: "HOA", how: wide).must().width == measure(f, text: "HOA", how: style(size: 40.0, color: black)).must().width + 9.0
+
+test "outline: the path draw fills, and the same path filled apart gives the same pixels"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    drawn @= image.blank(width: 100, height: 70, format: .rgba).must()
+    _ = draw(img: @drawn, f: f, text: "OH", x: 4.0, y: 55.0, how: style(size: 50.0, color: black)).must()
+    apart @= image.blank(width: 100, height: 70, format: .rgba).must()
+    path = outline(f, text: "OH", how: style(size: 50.0, color: black), x: 4.0, y: 55.0).must()
+    assert !vector.fill_path(img: @apart, path: path, color: black, rule: .non_zero).is_err()
+    assert drawn == apart
+
+test "draw: a character the font lacks fails not_found before a pixel changes, or is drawn as .notdef"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    img @= image.blank(width: 80, height: 60, format: .rgba).must()
+
+    match draw(img: @img, f: f, text: "Hz", x: 5.0, y: 45.0, how: style(size: 40.0, color: black))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg.len() > 10
+
+    assert ink.bounds_of(img) == []
+    lenient = Style(size: 40.0, color: black, kerning: true, spacing: 0.0, notdef: true)
+    _ = draw(img: @img, f: f, text: "Hz", x: 5.0, y: 45.0, how: lenient).must()
+    assert ink.coverage_of(img) > 100.0
+
+test "draw: Greek and Cyrillic letters, and a size that is no positive number refused"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    img @= image.blank(width: 100, height: 60, format: .rgba).must()
+    _ = draw(img: @img, f: f, text: "ΑαДдŁą", x: 2.0, y: 45.0, how: style(size: 20.0, color: black)).must()
+    assert ink.coverage_of(img) > 50.0
+
+    for bad in [0.0, -3.0, 1000000.0]
+        match measure(f, text: "H", how: style(size: bad, color: black))
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+test "wrap: lines no wider than the width, words kept, paragraphs ended by line feeds, long words cut"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    how = style(size: 20.0, color: black)
+    broken = wrap(f, text: "HOH OAO HOH OAO", how: how, max_width: 70.0).must()
+    assert broken.len() > 1
+
+    for l in broken
+        assert measure(f, text: l, how: how).must().width <= 70.0
+
+    assert join(broken, " ") == "HOH OAO HOH OAO"
+    paragraphs = wrap(f, text: "HO\n\nAV", how: how, max_width: 500.0).must()
+    assert paragraphs == ["HO", "", "AV"]
+    cut = wrap(f, text: "HHHHHHHHHHHH", how: how, max_width: 50.0).must()
+    assert cut.len() > 1 && join(cut, "") == "HHHHHHHHHHHH"
+
+    for l in cut
+        assert measure(f, text: l, how: how).must().width <= 50.0
+
+    assert wrap(f, text: "", how: how, max_width: 50.0).must() == [""]
+    assert wrap(f, text: "  HO   AV  ", how: how, max_width: 500.0).must() == ["HO AV"]
+
+test "draw_block: the height, the first baseline and the three alignments"
+    f = font.parse(samples.truetype(), 0).must()
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    how = style(size: 24.0, color: black)
+    m = measure(f, text: "", how: how).must()
+    ends: [i64] @= []
+
+    aligns: [Align] = [.left, .center, .right]
+
+    for align in aligns
+        img @= image.blank(width: 200, height: 120, format: .rgba).must()
+        height = draw_block(
+            img: @img,
+            f: f,
+            text: "HO\nHOHO",
+            x: 10.0,
+            y: 5.0,
+            how: how,
+            max_width: 180.0,
+            align: align,
+            line_spacing: 1.5
+        ).must()
+        assert height == 2.0 * m.line_height * 1.5
+        box = ink.bounds_of(img)
+        assert box[1] >= 5 && box[3] <= 5 + 120
+        ends @ ends.push(box[2])
+
+    assert ends[0] < ends[1] && ends[1] < ends[2]
+    assert ends[2] >= 10 + 180 - 4 && ends[2] <= 10 + 180
+
+## Examples
+
+# The room a word takes.
+test "measure: the width and the heights of a word"
+    f = font.parse(samples.truetype(), 0).must()
+    m = measure(f, text: "HOH", how: style(size: 32.0, color: image.Color(r: 0, g: 0, b: 0, a: 255))).must()
+    assert m.width > 0.0 && m.ascent == 1069.0 * 32.0 / 1000.0
+
+# A style of text.
+test "style: size and colour, kerned, no spacing"
+    s = style(size: 12.0, color: image.Color(r: 1, g: 2, b: 3, a: 255))
+    assert s.size == 12.0 && s.kerning && s.spacing == 0.0 && !s.notdef
+
+# The path a word is drawn from.
+test "outline: the contours of a word in pixels"
+    f = font.parse(samples.truetype(), 0).must()
+    path = outline(
+        f,
+        text: "O",
+        how: style(size: 40.0, color: image.Color(r: 0, g: 0, b: 0, a: 255)),
+        x: 0.0,
+        y: 40.0
+    ).must()
+    assert path.len() > 4
+
+# A word drawn into an image.
+test "draw: a word filled into an image"
+    f = font.parse(samples.truetype(), 0).must()
+    img @= image.blank(width: 64, height: 32, format: .rgba).must()
+    w = draw(
+        img: @img,
+        f: f,
+        text: "HO",
+        x: 4.0,
+        y: 26.0,
+        how: style(size: 24.0, color: image.Color(r: 0, g: 0, b: 0, a: 255))
+    ).must()
+    assert w > 20.0 && ink.coverage_of(img) > 50.0
+
+# A paragraph cut into lines.
+test "wrap: a paragraph cut to a width"
+    f = font.parse(samples.truetype(), 0).must()
+    broken = wrap(
+        f,
+        text: "HOH OAO HOH",
+        how: style(size: 20.0, color: image.Color(r: 0, g: 0, b: 0, a: 255)),
+        max_width: 60.0
+    ).must()
+    assert broken.len() >= 2
+
+# A centred block.
+test "draw_block: two centred broken"
+    f = font.parse(samples.truetype(), 0).must()
+    img @= image.blank(width: 120, height: 80, format: .rgba).must()
+    h = draw_block(
+        img: @img,
+        f: f,
+        text: "HO HO HO",
+        x: 0.0,
+        y: 0.0,
+        how: style(size: 20.0, color: image.Color(r: 0, g: 0, b: 0, a: 255)),
+        max_width: 70.0,
+        align: .center,
+        line_spacing: 1.0
+    ).must()
+    assert h > 20.0 && ink.coverage_of(img) > 50.0

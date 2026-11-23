@@ -1,0 +1,26 @@
+# Reaches Rebel's `image/text`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It sets a word in the font file named on the
+# command line, `main`'s one argument, and prints the width the word takes; with
+# none it says so.
+
+use <rebel>/font
+use <rebel>/fs
+use <rebel>/image
+use <rebel>/image/text
+
+function main()
+    given = args()
+
+    if given.len() == 0
+        print("give a .ttf file to measure \"Hero\" in")
+        return
+
+    match fs.read_bytes(given[0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match font.parse(data, 0)
+                .err e => print(e.code, ": ", e.msg)
+                .ok f =>
+                    match text.measure(f, text: "Hero", how: text.style(size: 16.0, color: image.Color(r: 0, g: 0, b: 0, a: 255)))
+                        .err e => print(e.code, ": ", e.msg)
+                        .ok m  => print("width ", m.width)

@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-six packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-seven packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -100,6 +100,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists`, `math` |  |
 | 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `strings`, `unicode`, `unicode/segment` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
+| 3 | `image/text` | text drawn into an image: a line set in a `font`, kerned and spaced, its outline filled anti-aliased through `image/vector`, measured, cut into lines and aligned in a width | `bytes`, `font`, `image`, `image/vector`, `unicode` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `html`, `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |

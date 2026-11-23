@@ -63,6 +63,7 @@ packages = [
     "image/jpeg",
     "image/netpbm",
     "image/png",
+    "image/text",
     "image/tiff",
     "image/vector",
     "image/webp",
