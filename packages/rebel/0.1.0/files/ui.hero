@@ -321,6 +321,12 @@ variant Kind
     tray
     # A line between the widgets of a box.
     separator
+    # A frame with a title around the widgets it holds.
+    group
+    # A field the person types into, with a list of items beside it.
+    editable_combo
+    # A whole number the person types or steps by arrows.
+    spin
 
 # What `widget` is.
 #
@@ -845,6 +851,22 @@ function label(@app: App, into: Widget, text: str) -> Widget?
 function separator(@app: App, into: Widget) -> Widget?
     return makers.separator(@app, into: into)
 
+# A new group box in `into`, as wxWidgets' `wxStaticBox`: a frame with
+# `title` above it around the widgets made in it, which it lays out one under
+# another as a column does, in its own content. `set_text` changes its title
+# and `text_of` reads it. It is a box: widgets are made in it by passing it
+# as `into`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or another group box.
+# - `title`: one line without a zero byte, "" for a frame with no title.
+#
+# Fails `closed`, `invalid`, `failed`, `unsupported` where the system's arm
+# draws none (Windows and Linux, pending).
+function group(@app: App, into: Widget, title: str) -> Widget?
+    return frames.group(@app, into: into, title: title)
+
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
 # - `app`: the app it is made in.
@@ -976,6 +998,26 @@ function list(@app: App, into: Widget, items: [str], multiple: bool) -> Widget?
 function combo(@app: App, into: Widget, items: [str]) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_COMBO, text: "", items: items)
 
+# A new editable combo box in `into`, as wxWidgets' `wxComboBox`: a field the
+# person types a text into with `items` in a list that opens beside it and
+# completes what is typed, a font size or a recent address. What the person
+# types is `.text_changed`; choosing an item makes the text that item's and
+# is `.selection_changed` with its index and then `.text_changed`. The text
+# is `text_of`'s and `set_text`'s, and the combo has chosen the first item
+# equal to it (`selection_of`), or none. `set_selection` takes one index and
+# types that item; `set_items` keeps the text.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `items`: the items, each one line without a zero byte.
+# - `text`: the text it starts with, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`, `unsupported` where the
+# system's arm draws none (Windows and Linux, pending).
+function editable_combo(@app: App, into: Widget, items: [str], text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_EDITABLE_COMBO, text: text, items: items)
+
 # A new progress bar in `into`, empty, filled as its value goes from 0 to
 # `most`.
 #
@@ -998,6 +1040,27 @@ function progress(@app: App, into: Widget, most: i64) -> Widget?
 # Fails `closed`, `invalid` for a widget no progress bar, `failed`.
 function set_moving(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_moving(@app, widget: widget, on: on)
+
+# A new spin in `into`, as wxWidgets' `wxSpinCtrl`: a whole number the person
+# types into a field or steps up and down by arrows beside it, each arrow
+# changing it by 1. A change by the person is `.value_changed` with the new
+# value, told once the number is final: at each arrow and where a typed number
+# is committed, which one past the range is clamped to and a text that is no
+# whole number leaves at the value held. `set_value`, `value_of` and
+# `set_range` act on it as on a slider, and `.slide` gives the value as typed
+# or stepped to.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `least`: its lowest value, below `most`.
+# - `most`: its highest value.
+# - `value`: where it starts, from `least` to `most`.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`, `unsupported` where the
+# system's arm draws none (Windows and Linux, pending).
+function spin(@app: App, into: Widget, least: i64, most: i64, value: i64) -> Widget?
+    return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_SPIN, least: least, most: most, value: value)
 
 # A new slider in `into`, its knob at `value` between `least` and `most`;
 # each move by the person is `.value_changed`.
@@ -1189,7 +1252,7 @@ function is_checked(app: App, widget: Widget) -> bool?
 # gets less than it needs. No event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider, a progress bar or a split.
+# - `widget`: a slider, a spin, a progress bar or a split.
 # - `value`: from its lowest value to its highest; for a split 0 to
 #   `MOST_SIZE`.
 #
@@ -1201,7 +1264,7 @@ function set_value(@app: App, widget: Widget, value: i64) -> ()?
 # split's divider stands at, the first pane's width or height.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider, a progress bar or a split.
+# - `widget`: a slider, a spin, a progress bar or a split.
 #
 # Fails `closed`, `invalid`, `failed`.
 function value_of(app: App, widget: Widget) -> i64?
@@ -1211,7 +1274,7 @@ function value_of(app: App, widget: Widget) -> i64?
 # value moved inside where it falls outside.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
+# - `widget`: a slider, a spin or a progress bar.
 # - `least`: its lowest value, below `most`; 0 for a progress bar.
 # - `most`: its highest value.
 #
@@ -1313,7 +1376,7 @@ function context_menu(@app: App, widget: Widget) -> Widget?
 #   image and its tip.
 #
 # Fails `closed`, `invalid`, `unsupported` where the system's arm draws no
-# tray (Windows and Linux, pending), `failed`. See also `set_docked`.
+# tray, `failed`. See also `set_docked`.
 function tray(@app: App, text: str) -> Widget?
     return makers.tray(@app, text: text)
 
@@ -1325,8 +1388,7 @@ function tray(@app: App, text: str) -> Widget?
 # - `app`: the app.
 # - `on`: whether it stands in the Dock.
 #
-# Fails `closed`, `unsupported` where the system's arm has no such call
-# (Windows and Linux, pending), `failed`. See also `tray`.
+# Fails `closed`, `unsupported` where the system's arm has no such call, `failed`. See also `tray`.
 function set_docked(@app: App, on: bool) -> ()?
     return desk.set_docked(@app, on: on)
 
@@ -1344,8 +1406,7 @@ variant Appearance
 #
 # - `app`: the app.
 #
-# Fails `closed`, `unsupported` where the system's arm has no such call
-# (Windows and Linux, pending), `failed`.
+# Fails `closed`, `unsupported` where the system's arm has no such call, `failed`.
 function appearance_of(app: App) -> Appearance?
     return desk.appearance_of(app)
 
@@ -1361,8 +1422,7 @@ function appearance_of(app: App) -> Appearance?
 # - `app`: the app.
 # - `go`: whether the app ends.
 #
-# Fails `closed`, `unsupported` where the system's arm holds no such ask
-# (Windows and Linux, pending), `failed`.
+# Fails `closed`, `unsupported` where the system's arm holds no such ask, `failed`.
 function answer_quit(@app: App, go: bool) -> ()?
     return session.answer_quit(@app, go: go)
 
@@ -1430,7 +1490,7 @@ variant Handed
 # - `on`: whether it takes them.
 #
 # Fails `closed`, `invalid` for a widget no window, `unsupported` where
-# the system's arm takes no dropped files (Windows and Linux, pending),
+# the system's arm takes no dropped files,
 # `failed`.
 function set_drop(@app: App, widget: Widget, on: bool) -> ()?
     return drops.set_drop(@app, widget: widget, on: on)
@@ -1470,7 +1530,7 @@ function tip_of(app: App, widget: Widget) -> str?
 #   named by its own words.
 #
 # Fails `closed`, `invalid` for a box, a menu or a timer, `unsupported`
-# where the system's arm has no such call (Windows and Linux, pending),
+# where the system's arm has no such call,
 # `failed`. See also `set_label_for`.
 function set_accessible_name(@app: App, widget: Widget, name: str) -> ()?
     return state.set_accessible_name(@app, widget: widget, name: name)
@@ -1485,7 +1545,7 @@ function set_accessible_name(@app: App, widget: Widget, name: str) -> ()?
 # - `widget`: a widget in a window, not a label.
 #
 # Fails `closed`, `invalid`, `unsupported` where the system's arm has no
-# such call (Windows and Linux, pending), `failed`. See also
+# such call, `failed`. See also
 # `set_accessible_name`.
 function set_label_for(@app: App, caption: Widget, widget: Widget) -> ()?
     return state.set_label_for(@app, caption: caption, widget: widget)
@@ -2076,9 +2136,10 @@ variant Input
     toggle
         # The checkbox.
         widget: Widget
-    # Drags a slider's knob to a value.
+    # Drags a slider's knob to a value, or gives a spin the number the
+    # person typed or stepped to.
     slide
-        # The slider.
+        # The slider or the spin.
         widget: Widget
         # The value, from its lowest to its highest.
         value: i64
@@ -2164,8 +2225,10 @@ variant Input
         # The appearance.
         appearance: Appearance
     # Asks the app to end, as the system would: on macOS through the quit
-    # Apple event the system sends, its reason the session's end where
-    # `session_end` is.
+    # Apple event the system sends, on Windows through the query to end the
+    # session the system sends each window, on Linux through the session
+    # manager's own query, its reason the session's end where `session_end`
+    # is.
     ask_quit
         # Whether it is the session's end.
         session_end: bool
@@ -2182,7 +2245,9 @@ variant Input
         items: [str]
     # Drops files on a window that takes them, as the person's drag from
     # the system's file manager would: on macOS through the window's drag
-    # destination, or a text area's where one stands at the point.
+    # destination, or a text area's where one stands at the point; on
+    # Windows through the window's drop message, on Linux through the
+    # window's drop target.
     drop_files
         # The window.
         window: Widget

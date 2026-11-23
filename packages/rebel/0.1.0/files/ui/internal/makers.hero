@@ -100,6 +100,9 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
 
     if (kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP) && items.len() > 0
         n.chosen @ [0]
+
+    if kind == hero_ui.HERO_UI_EDITABLE_COMBO
+        n.chosen @ model.chosen_by_text(n)
     return added(@app, n: n)
 
 # A new separator (`ui.separator`), filling its box across.
@@ -304,8 +307,8 @@ function boxed(app: ui.App, into: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: into,
-        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE],
-        what: "a window, a row, a column, a grid, a page, a scrolled box or a pane"
+        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE, hero_ui.HERO_UI_GROUP],
+        what: "a window, a row, a column, a grid, a page, a scrolled box, a pane or a group box"
     )
 
 # Adds `n`, a node of a new number, to `app`: on the native side its widget

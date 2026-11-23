@@ -1268,4 +1268,44 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * side runs. */
 #define HERO_UI_SEPARATOR 32
 
+/* -- A GROUP BOX --------------------------------------------------------------
+ *
+ * wxWidgets' `wxStaticBox`: a box drawn with a title and a frame around the
+ * widgets it holds. `HERO_UI_GROUP` is a frame as a page is: its widgets are
+ * made with it as their parent, stand in its own content and are placed from
+ * that content's top-left corner (`hero_ui_place`); the room its frame and
+ * title take around the content is `hero_ui_insets`'s. Its title is its
+ * `hero_ui_set_text`'s, and `hero_ui_text` reads it back. */
+#define HERO_UI_GROUP 33
+
+/* -- AN EDITABLE COMBO BOX ----------------------------------------------------
+ *
+ * wxWidgets' `wxComboBox`: a field the person types a text into, with a list
+ * of items that opens beside it and completes what is typed. Its items are
+ * `hero_ui_set_items`' and its text `hero_ui_set_text`'s, read back by
+ * `hero_ui_text` as the person left it. The person's typing is
+ * `HERO_UI_EVENT_TEXT`, as a text field's; the person's choice of an item
+ * from the list is `HERO_UI_EVENT_SELECT` with the item's index, then
+ * `HERO_UI_EVENT_TEXT`, the text having become the item's. What the combo
+ * has chosen (`hero_ui_selection`) is the first item equal to its text, or
+ * nothing; `hero_ui_set_value` with an index sets the text to that item,
+ * with -1 it does nothing, and `hero_ui_set_items` keeps the text. */
+#define HERO_UI_EDITABLE_COMBO 34
+
+/* -- A SPIN -------------------------------------------------------------------
+ *
+ * wxWidgets' `wxSpinCtrl`: a whole number the person types into a field or
+ * steps up and down by arrows beside it. It runs between the range
+ * `hero_ui_set_range` bounds (0 to 100 until set) and its value is
+ * `hero_ui_set_value`'s and `hero_ui_value`'s, 0 until set; each arrow press
+ * changes it by 1. A change by the person is `HERO_UI_EVENT_VALUE` with the
+ * new value, told once the number is final: each press of an arrow, and a
+ * typed number when the person commits it (Return, or the field giving the
+ * keys up), which a number past the range is clamped to and a text that is
+ * no whole number leaves at the value held, shown again. A program's
+ * `hero_ui_set_value` tells nothing; `hero_ui_inject` of
+ * `HERO_UI_EVENT_VALUE` gives the value as typed or stepped to, told only
+ * where it changes the value. */
+#define HERO_UI_SPIN 35
+
 #endif

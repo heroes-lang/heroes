@@ -180,6 +180,9 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         app.events @ app.events.push(.clicked(widget: w))
     else if kind == hero_ui.HERO_UI_EVENT_TEXT
         n.text @ native.read_text(app, id: id)?
+
+        if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO
+            n.chosen @ model.chosen_by_text(n)
         model.put(@app.table, n: n)
         app.events @ app.events.push(.text_changed(widget: w, text: n.text))
     else if kind == hero_ui.HERO_UI_EVENT_SELECT
