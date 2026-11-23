@@ -239,6 +239,62 @@ int64_t hero_crypto_seal_nonce_for_tests(hero_crypto_key *k, const void *nonce, 
  * bytes than a nonce and a tag. */
 int64_t hero_crypto_open(hero_crypto_key *k, const void *sealed, uint64_t sealed_count, const void *associated, uint64_t associated_count, void *buffer, uint64_t count);
 
+/* COUNTED NONCES, for a protocol whose peer computes every record's nonce
+ * from a first one both sides derived (SSH's AES-GCM, RFC 5647 § 7.1; TLS
+ * 1.3's records, RFC 8446 § 5.3): the key holds the first nonce and how many
+ * records it has sealed or opened, and computes the next record's nonce
+ * itself, so no caller gives a nonce and none is used twice. A counted key
+ * works one way, as each direction of such a protocol has a key of its own:
+ * `HERO_CRYPTO_SEALING` seals by `hero_crypto_seal_counted` alone,
+ * `HERO_CRYPTO_OPENING` opens by `hero_crypto_open_counted` alone, and
+ * `hero_crypto_seal`, `hero_crypto_seal_nonce_for_tests` and
+ * `hero_crypto_open` refuse a counted key, as the counted calls refuse
+ * another. A record's nonce is spent by every call that reaches the cipher,
+ * one that does not open included: the next call takes the record after
+ * it, so a record is never tried twice under one nonce, and a protocol ends
+ * its connection at the first record that does not open. */
+
+/* How the nonce of record n, counting from 0, is made from the first:
+ * INCREMENTED adds n to the last 8 bytes read as a big-endian number,
+ * modulo 2^64, the first 4 kept (RFC 5647 § 7.1's invocation counter);
+ * XORED takes the first nonce XOR n written as 12 big-endian bytes (RFC 8446
+ * § 5.3). */
+#define HERO_CRYPTO_COUNT_INCREMENTED 1
+#define HERO_CRYPTO_COUNT_XORED 2
+/* Which way a counted key works. */
+#define HERO_CRYPTO_SEALING 1
+#define HERO_CRYPTO_OPENING 2
+/* The most records a counted key seals or opens, 2^64 - 1: past it the
+ * nonces would come round to the first. */
+#define HERO_CRYPTO_RECORDS_MOST UINT64_C(18446744073709551615)
+
+/* A secret key of `kind` from `count` bytes of `bytes`, as
+ * `hero_crypto_from_secret` makes one, that counts its nonces from the
+ * `nonce_count` bytes of `nonce`, `HERO_CRYPTO_NONCE_BYTES`, by `counting`,
+ * and works the one `way`. Fails as `hero_crypto_from_secret` does, and
+ * `HERO_CRYPTO_INVALID` for another nonce length, counting or way. */
+hero_crypto_key *hero_crypto_from_secret_counted(int64_t kind, const void *bytes, uint64_t count, const void *nonce, uint64_t nonce_count, int64_t counting, int64_t way);
+
+/* `text_count` bytes of `text` sealed under the counted key `k` with
+ * `associated_count` bytes of `associated` and the next record's nonce:
+ * written into `buffer` as the ciphertext, as long as the text, and the tag,
+ * so `text_count` + `HERO_CRYPTO_TAG_BYTES` bytes, by the fill form, the
+ * nonce written nowhere since the peer computes it. A short buffer seals
+ * nothing and spends no nonce. Fails `HERO_CRYPTO_INVALID` for a key that is
+ * not counted or opens, `HERO_CRYPTO_LIMIT` past
+ * `HERO_CRYPTO_RECORDS_MOST`. */
+int64_t hero_crypto_seal_counted(hero_crypto_key *k, const void *text, uint64_t text_count, const void *associated, uint64_t associated_count, void *buffer, uint64_t count);
+
+/* `sealed_count` bytes of `sealed`, the ciphertext and the tag of the next
+ * record, opened under the counted key `k` with `associated` and that
+ * record's nonce: the text, `sealed_count` less the tag, into `buffer` by
+ * the fill form; a short buffer opens nothing and spends no nonce. Fails
+ * `HERO_CRYPTO_FORGED` where the tag does not hold, `buffer` then holding
+ * zeros and the nonce spent; `HERO_CRYPTO_INVALID` for fewer bytes than a
+ * tag, or a key that is not counted or seals; `HERO_CRYPTO_LIMIT` past
+ * `HERO_CRYPTO_RECORDS_MOST`. */
+int64_t hero_crypto_open_counted(hero_crypto_key *k, const void *sealed, uint64_t sealed_count, const void *associated, uint64_t associated_count, void *buffer, uint64_t count);
+
 /* The signature by the private key `k` of `count` bytes of `message`, by
  * `scheme`, into `buffer` by the fill form; a `buffer_count` of 0 measures
  * the most it can be. Ed25519 is deterministic, ECDSA and RSA-PSS draw. */

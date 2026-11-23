@@ -33,12 +33,12 @@ capability seal/caller-nonce  a text sealed with a nonce the caller chooses
   rust    ring::aead::SealingKey, ring::aead::OpeningKey, ring::aead::BoundKey, ring::aead::Nonce, ring::aead::LessSafeKey::seal_in_place_append_tag
   python  AESGCM.encrypt (with its nonce), ChaCha20Poly1305.encrypt (with its nonce)
   note    the floor keeps `seal_nonce_for_tests` for the known-answer tests alone, named as such, as `tls` keeps its unchecked connection
-capability seal/counted-nonces  nonces counted by the key, for protocols whose peer computes them (TLS, QUIC records)
-  heroes  pending
+capability seal/counted-nonces  nonces counted by the key, for protocols whose peer computes them (SSH's AES-GCM, TLS and QUIC records)
+  heroes  seal.from_secret_counted, seal.seal_counted, seal.open_counted, seal.Counting, seal.Way
   go      -
   rust    ring::aead::NonceSequence, ring::aead::BoundKey
   python  -
-  note    a counter the key holds, never the caller's, is the one safe shape of a nonce not drawn; no protocol of Rebel needs it yet, `tls` keeping its records in the system's library
+  note    a counter the key holds, never the caller's, is the one safe shape of a nonce not drawn, so the layer computes record n's nonce under its lock and no call is handed one n twice; a key works one way, as ring's sealing and opening keys do, since each direction of a protocol has a key of its own; RFC 5647 § 7.1's rule (the last 8 bytes plus n, modulo 2^64) and RFC 8446 § 5.3's (XOR n) are both offered, checked against Python's cryptography 50.0.2 sealing with the nonces each rule makes from a first nonce two below the counter's wrap; a record that does not open still spends its nonce, so no record is tried twice under one nonce and the next call takes the record after it, a protocol ending its connection at the first that does not open as `ssh` and TLS do
 capability seal/short-tags-and-nonces  GCM with a tag shorter than 16 bytes or a nonce other than 12
   heroes  refused: NIST SP 800-38D allows them for formats that need them and each weakens the tag or makes the nonce a hash, and no format of Rebel needs one
   go      cipher.NewGCMWithTagSize, cipher.NewGCMWithNonceSize
