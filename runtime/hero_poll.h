@@ -103,7 +103,9 @@ typedef struct hero_poll_set hero_poll_set;
 #define HERO_POLL_LIMIT 4
 /* This system cannot wait on a stream of this kind: a pipe or a console on
  * Windows, a device the system refuses (`/dev/null` on Darwin and Linux), a
- * stream that stands on neither a descriptor nor a socket of this layer. */
+ * stream that stands on neither a descriptor nor a socket of this layer; and
+ * on Windows a socket that a set handed out by `hero_poll_descriptor` holds
+ * already, which the system lets one event watch. */
 #define HERO_POLL_UNSUPPORTED 5
 /* The stop was asked (THE STOP ENDS A WAIT, above). */
 #define HERO_POLL_STOPPED 6
@@ -226,12 +228,41 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
  * so what is ready now is told too. Read it, never close it or wait on it
  * with anything but readability: it is the set's, and goes at its close. A
  * timer stands on no descriptor: `hero_poll_next_due` says when one falls.
- * Answers the descriptor, or -1: `HERO_POLL_UNSUPPORTED` on Windows and the
- * POSIX systems that wait with `poll`, whose sets hold no descriptor of their
- * own, `HERO_POLL_NOT_OPEN`, `HERO_POLL_INVALID` while another thread waits
- * on the set, `HERO_POLL_LIMIT` or `HERO_POLL_OTHER` where Linux gave no
- * doorbell. */
+ *
+ * ON WINDOWS it is the HANDLE of an event the set owns, as an `int64_t`,
+ * which a loop waits on for being signalled, `MsgWaitForMultipleObjectsEx`'s
+ * or `WaitForSingleObject`'s, and never sets, resets or closes: it is signalled
+ * by the system's notice of one of the set's sockets, by a mailbox's send, by
+ * the stop, and by a wait that told an entry, and reset by the start of the
+ * next wait, which asks the entries itself; so a ready entry is told again
+ * until it is read, and an event signalled may find nothing ready, once, when
+ * the program had read all of it first. The set registers its sockets with it
+ * from this call on, and a socket holds one registration for the process:
+ * a socket an entry of another set holds, that was handed its descriptor
+ * already, is refused (`HERO_POLL_UNSUPPORTED`, the platform's number
+ * `WSAEALREADY`), at this call or at the add that brings it.
+ *
+ * Answers the descriptor, or -1: `HERO_POLL_UNSUPPORTED` on the POSIX systems
+ * that wait with `poll`, whose sets hold no descriptor of their own, and on
+ * Windows as said above, `HERO_POLL_NOT_OPEN`, `HERO_POLL_INVALID` while
+ * another thread waits on the set, `HERO_POLL_LIMIT` or `HERO_POLL_OTHER`
+ * where Linux gave no doorbell or Windows no event. */
 int64_t hero_poll_descriptor(hero_poll_set *set);
+
+/* WHETHER A WAIT OF NO TIME WOULD TELL AN ENTRY, for a loop that waits on the
+ * set's descriptor and must not take a hint for an answer: 1 while a socket, a
+ * file or a mailbox of the set is ready, or the stop was asked; 0 while none
+ * is. A timer never counts, `hero_poll_next_due` says when one falls. It tells
+ * nothing and takes nothing: no entry is marked told, no event written, no
+ * doorbell emptied. ONLY WINDOWS NEEDS IT, and only there is it answered: the
+ * descriptor there is an event that a notice or a wait sets and that may be set
+ * with nothing ready, so this call RESETS it first and asks after, and a notice
+ * that comes meanwhile sets it again, none lost. Elsewhere the descriptor is
+ * readable while the system holds an event, no more, and the call answers -1,
+ * `HERO_POLL_UNSUPPORTED`. -1 also: `HERO_POLL_NOT_OPEN`, `HERO_POLL_INVALID`
+ * while another thread waits on the set, `HERO_POLL_OTHER` with the system's
+ * number where its poll failed. */
+int64_t hero_poll_ready(hero_poll_set *set);
 
 /* How many nanoseconds until the set's first timer falls due, 0 where one is
  * due now, -1 where no timer is due again; -1 with `HERO_POLL_NOT_OPEN` for a

@@ -1,9 +1,10 @@
 /* The C the case of a set's descriptor calls (panel 256's R9, provisional):
  * a set of `hero_poll.h` holding the program's mailbox by its number, its
  * descriptor asked once, and each step asked of it as a loop that waits on
- * readability alone would: `poll` with no wait. Each function answers 1
- * where the step held, or on Windows, whose sets hold no descriptor and
- * answer `HERO_POLL_UNSUPPORTED`; else 0, or a negative step. */
+ * readability alone would: `poll` with no wait, or on Windows, where the
+ * descriptor is the HANDLE of an event the set owns, a wait of no time on the
+ * handle. Each function answers 1 where the step held, else 0, or a negative
+ * step. */
 #ifndef POLL_A_SETS_DESCRIPTOR_SHOWN_H
 #define POLL_A_SETS_DESCRIPTOR_SHOWN_H
 
@@ -12,7 +13,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#include <windows.h>
+#else
 #include <poll.h>
 #endif
 
@@ -28,24 +31,19 @@ static int64_t shown_made(int64_t number) {
         return -1;
     }
     shown_fd = hero_poll_descriptor(shown_set);
-#if defined(_WIN32)
-    return shown_fd == -1 && hero_poll_last_error() == HERO_POLL_UNSUPPORTED ? 1 : -2;
-#else
     return shown_fd >= 0 ? 1 : -2;
-#endif
 }
 
 /* Whether the descriptor is readable now is `want`. */
 static int64_t shown_readable(int64_t want) {
 #if defined(_WIN32)
-    (void)want;
-    return 1;
+    int64_t now = WaitForSingleObject((HANDLE)(uintptr_t)shown_fd, 0) == WAIT_OBJECT_0 ? 1 : 0;
 #else
     struct pollfd p = { (int)shown_fd, POLLIN, 0 };
     int64_t now = poll(&p, 1, 0) == 1 && (p.revents & POLLIN) != 0 ? 1 : 0;
+#endif
 
     return now == want ? 1 : 0;
-#endif
 }
 
 /* Whether a wait of no time tells the mailbox, is `want`. */

@@ -63,6 +63,22 @@
  * A WAIT THAT MUST NOT BLOCK RINGS ITS OWN DOORBELL on `kqueue`, in the one
  * call: Darwin's `kevent` with a zero timeout that finds nothing ready costs
  * tens of microseconds, one that finds an event a fraction of one.
+ * A WINDOWS SET'S EVENT (panel 256's R9, provisional). `WSAPoll` waits on
+ * sockets and takes no handle, so a loop that waits in another call, a user
+ * interface's `MsgWaitForMultipleObjectsEx`, is given an event the set owns
+ * (`hero_poll_descriptor`, made at that call, a manual-reset one). It is a
+ * hint and never the answer: it is set by `WSAEventSelect` on the set's
+ * sockets (`hero_poll_select`), by a mailbox's ring and by the stop, and by a
+ * wait that told an entry, so what stays ready is told again, and it is
+ * reset at the start of every wait, which asks `WSAPoll` and the mailboxes
+ * itself; a notice that comes after the reset sets it again, so none is lost.
+ * A socket holds ONE registration, the last `WSAEventSelect` winning, so a
+ * set registers each socket once, for every interest its entries on it have,
+ * and a socket another set that was handed out holds is refused, `UNSUPPORTED`
+ * with `WSAEALREADY`, where the system would let the earlier loop go deaf in
+ * silence. An event is kept for the life of the process once made, one for
+ * each set slot at most: the stop's hook and the runtime's ring then never
+ * reach a handle the system gave to another object.
  * HANGUP, BY SYSTEM: Darwin tells it as `EV_EOF` on the read or the write
  * filter, once the peer has closed its side; Linux as `EPOLLRDHUP` (the peer
  * closed its side) or `EPOLLHUP` (both are closed); Windows as `POLLHUP`. A
@@ -273,6 +289,11 @@ static SRWLOCK hero_poll_lock = SRWLOCK_INIT;
  * reads (defect 2696: bound and never connected, it took any process's
  * datagram, and every later wait failed `stopped`). */
 static _Atomic SOCKET hero_poll_bell = INVALID_SOCKET;
+/* The event of each set slot (`hero_poll_descriptor`), 0 until the slot's
+ * first set is handed its descriptor and the same handle for every set the
+ * slot holds after: never closed, so the stop's hook and a ring, which take no
+ * lock, never signal a handle the system has given to another object. */
+static _Atomic uintptr_t hero_poll_events[HERO_POLL_SETS];
 #else
 static pthread_mutex_t hero_poll_lock = PTHREAD_MUTEX_INITIALIZER;
 /* The stop's pipe: the hook writes `hero_poll_bell_out`, every set watches
@@ -322,6 +343,7 @@ static int64_t hero_poll_kind_of(int64_t code) {
     switch (code) {
 #if defined(_WIN32)
     case WSAENOTSOCK:
+    case WSAEALREADY:
         return HERO_POLL_UNSUPPORTED;
     case WSAENOBUFS:
     case WSAEMFILE:
@@ -406,6 +428,16 @@ static void hero_poll_hear_stop(void) {
     if (bell != INVALID_SOCKET) {
         /* `send`, the socket being connected to itself. */
         (void)send(bell, "\1", 1, 0);
+    }
+    /* Every event a set owns, as the pipe is in every `kqueue` and `epoll`: a
+     * loop that waits on a set's descriptor hears the stop, and goes on hearing
+     * it, since no wait resets an event once the stop is asked. */
+    for (uint32_t at = 0; at < HERO_POLL_SETS; at += 1) {
+        uintptr_t event = atomic_load(&hero_poll_events[at]);
+
+        if (event != 0) {
+            (void)SetEvent((HANDLE)event);
+        }
     }
 #else
     int out = atomic_load(&hero_poll_bell_out);
@@ -522,7 +554,17 @@ static void hero_poll_ring(void *ctx) {
     EV_SET(&trigger, HERO_POLL_DOOR_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, (void *)(uintptr_t)HERO_POLL_DOOR_KEY);
     (void)kevent(slot->queue, &trigger, 1, NULL, 0, NULL);
 #elif defined(_WIN32)
-    (void)send((SOCKET)(uint64_t)slot->door_out, "\1", 1, 0);
+    uintptr_t event = atomic_load(&hero_poll_events[slot - hero_poll_sets]);
+
+    if (slot->door_out >= 0) {
+        (void)send((SOCKET)(uint64_t)slot->door_out, "\1", 1, 0);
+    }
+    /* The event of a loop that waits in the system's own call, set here and
+     * not by a datagram that reaches it later, so a value sent is told at
+     * once to a program that asks the handle in the next call. */
+    if (event != 0) {
+        (void)SetEvent((HANDLE)event);
+    }
 #elif defined(HERO_POLL_EPOLL)
     uint64_t one = 1;
     ssize_t wrote = write((int)slot->door_out, &one, sizeof one);
@@ -838,6 +880,84 @@ static int64_t hero_poll_watch(int q, int64_t fd, unsigned now, unsigned was, ui
 }
 #endif
 
+#if defined(_WIN32)
+/* The notices `WSAEventSelect` is asked for a socket that an entry waits on
+ * for `interest`: what it reads, what it writes, and always the connection
+ * made, refused or closed, which `WSAPoll` tells as writable, hangup or error. */
+static long hero_poll_notices(unsigned interest) {
+    return (long)(FD_CLOSE | FD_CONNECT | ((interest & HERO_POLL_READ) != 0 ? FD_READ | FD_ACCEPT : 0) | ((interest & HERO_POLL_WRITE) != 0 ? FD_WRITE : 0));
+}
+
+/* Socket `fd` registered with `event` for what every entry of `slot` on it
+ * waits for, or its registration cancelled where none does (`except`, an entry
+ * on its way out, is not counted). A socket holds one registration, so one
+ * that an entry of another set handed out also holds is refused: 0, or the
+ * system's number, `WSAEALREADY` for that refusal. Under the lock; the cost is
+ * the entries of this set and of the sets handed out, and only a set handed
+ * out pays it. */
+static int64_t hero_poll_select(const hero_poll_slot *slot, uintptr_t event, int64_t fd, const hero_poll_entry *except) {
+    long notices = 0;
+
+    for (uint32_t i = 0; i < slot->fresh; i += 1) {
+        const hero_poll_entry *e = &hero_poll_entries[slot->base + i];
+
+        if (e != except && e->on == HERO_POLL_ON_SOCKET && e->fd == fd) {
+            notices |= hero_poll_notices(e->interest);
+        }
+    }
+    if (notices == 0) {
+        return WSAEventSelect((SOCKET)(uint64_t)fd, NULL, 0) != 0 ? hero_poll_os_code() : 0;
+    }
+    for (uint32_t s = 0; s < hero_poll_fresh; s += 1) {
+        const hero_poll_slot *other = &hero_poll_sets[s];
+
+        if (other == slot || other->span == 0 || !other->shown) {
+            continue;
+        }
+        for (uint32_t i = 0; i < other->fresh; i += 1) {
+            const hero_poll_entry *e = &hero_poll_entries[other->base + i];
+
+            if (e->on == HERO_POLL_ON_SOCKET && e->fd == fd) {
+                return WSAEALREADY;
+            }
+        }
+    }
+    return WSAEventSelect((SOCKET)(uint64_t)fd, (WSAEVENT)event, notices) != 0 ? hero_poll_os_code() : 0;
+}
+
+/* Every socket of `slot` registered with `event`, as the set is handed out:
+ * 0, or the number of the first refusal with every registration made before it
+ * cancelled: the refused socket's own is another set's, left as it is. Under
+ * the lock. */
+static int64_t hero_poll_select_all(const hero_poll_slot *slot, uintptr_t event) {
+    for (uint32_t i = 0; i < slot->fresh; i += 1) {
+        const hero_poll_entry *e = &hero_poll_entries[slot->base + i];
+        int64_t os = 0;
+
+        if (e->on != HERO_POLL_ON_SOCKET) {
+            continue;
+        }
+        os = hero_poll_select(slot, event, e->fd, NULL);
+        if (os != 0) {
+            for (uint32_t j = 0; j < i; j += 1) {
+                const hero_poll_entry *done = &hero_poll_entries[slot->base + j];
+
+                if (done->on == HERO_POLL_ON_SOCKET) {
+                    (void)WSAEventSelect((SOCKET)(uint64_t)done->fd, NULL, 0);
+                }
+            }
+            return os;
+        }
+    }
+    return 0;
+}
+
+/* The event of a set handed out, 0 for none. */
+static uintptr_t hero_poll_event_of(const hero_poll_slot *slot) {
+    return slot->shown ? atomic_load(&hero_poll_events[slot - hero_poll_sets]) : 0;
+}
+#endif
+
 #if !defined(HERO_POLL_ARRAY)
 /* A set's queue, close-on-exec, the stop's pipe watched in it under the key 0
  * where the pipe stands: -1 with the system's number where refused. */
@@ -1000,6 +1120,12 @@ static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned in
         if (on == HERO_POLL_ON_SOCKET || on == HERO_POLL_ON_STREAM || on == HERO_POLL_ON_SIGNALS) {
             os = hero_poll_watch(slot->queue, fd, interest, 0, (uint64_t)key);
         }
+#if defined(_WIN32)
+        /* A set handed out has its event told of the socket as it stands. */
+        if (os == 0 && on == HERO_POLL_ON_SOCKET && slot->shown) {
+            os = hero_poll_select(slot, hero_poll_event_of(slot), fd, NULL);
+        }
+#endif
         if (os != 0) {
             kind = hero_poll_kind_of(os);
             e->on = HERO_POLL_ON_NOTHING;
@@ -1307,6 +1433,15 @@ int64_t hero_poll_change(hero_poll_set *set, int64_t key, int64_t interest) {
         if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
             os = hero_poll_watch(slot->queue, e->fd, (unsigned)interest, e->interest, (uint64_t)key);
         }
+#if defined(_WIN32)
+        if (os == 0 && e->on == HERO_POLL_ON_SOCKET && slot->shown) {
+            uint8_t was = e->interest;
+
+            e->interest = (uint8_t)interest;
+            os = hero_poll_select(slot, hero_poll_event_of(slot), e->fd, NULL);
+            e->interest = was;
+        }
+#endif
         if (os != 0) {
             kind = hero_poll_kind_of(os);
         } else {
@@ -1397,7 +1532,21 @@ int64_t hero_poll_remove(hero_poll_set *set, int64_t key) {
              * descriptor is still open, so the call reaches this entry's. */
             (void)hero_poll_watch(slot->queue, e->fd, 0, e->interest, (uint64_t)key);
         }
+#if defined(_WIN32)
+        if (e->on == HERO_POLL_ON_SOCKET && slot->shown) {
+            /* What the system is told of the socket afterwards is what the
+             * entries left on it want, none cancelling it; a refusal here
+             * leaves a notice or two more than they want, which is a hint. */
+            int64_t fd = e->fd;
+
+            held = hero_poll_entry_free(slot, e);
+            (void)hero_poll_select(slot, hero_poll_event_of(slot), fd, NULL);
+        } else {
+            held = hero_poll_entry_free(slot, e);
+        }
+#else
         held = hero_poll_entry_free(slot, e);
+#endif
     }
     hero_poll_leave();
 
@@ -1425,7 +1574,83 @@ int64_t hero_poll_count(hero_poll_set *set) {
 }
 
 int64_t hero_poll_descriptor(hero_poll_set *set) {
-#if defined(HERO_POLL_ARRAY)
+#if defined(_WIN32)
+    int64_t kind = HERO_POLL_OK;
+    int64_t os = 0;
+    int64_t answer = -1;
+    hero_poll_slot *slot = NULL;
+    uintptr_t event = 0;
+    bool shown = false;
+
+    hero_poll_enter();
+    slot = hero_poll_find(set);
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else {
+        shown = slot->shown;
+        event = atomic_load(&hero_poll_events[slot - hero_poll_sets]);
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+    if (!shown) {
+        if (event == 0) {
+            /* Manual-reset, not set, inherited by no child: the set's own. */
+            HANDLE made = CreateEventW(NULL, TRUE, FALSE, NULL);
+            uintptr_t none = 0;
+
+            if (made == NULL) {
+                int64_t code = (int64_t)GetLastError();
+
+                hero_poll_fail(hero_poll_kind_of(code) == HERO_POLL_LIMIT ? HERO_POLL_LIMIT : HERO_POLL_OTHER, code);
+                return -1;
+            }
+            if (atomic_compare_exchange_strong(&hero_poll_events[slot - hero_poll_sets], &none, (uintptr_t)made)) {
+                event = (uintptr_t)made;
+            } else {
+                (void)CloseHandle(made);
+                event = none;
+            }
+        }
+        hero_poll_enter();
+        if (hero_poll_find(set) == slot && !slot->shown && !slot->waiting) {
+            /* Reset first: the event of a set that held the slot before may
+             * still be set. Every socket then told to it, or none is. */
+            (void)ResetEvent((HANDLE)event);
+            os = hero_poll_select_all(slot, event);
+            if (os == 0) {
+                slot->shown = true;
+            }
+        }
+        hero_poll_leave();
+
+        if (os != 0) {
+            hero_poll_fail(hero_poll_kind_of(os), os);
+            return -1;
+        }
+    }
+    hero_poll_enter();
+    if (hero_poll_find(set) == slot && slot->shown) {
+        answer = (int64_t)atomic_load(&hero_poll_events[slot - hero_poll_sets]);
+    }
+    hero_poll_leave();
+
+    if (answer < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    /* Set once, so whatever is ready now, a mailbox's value, a file or a
+     * socket, is told by the handle too; a wait that finds nothing resets it,
+     * and a wait asked after the stop never gets as far as resetting. */
+    hero_poll_ring(slot);
+    hero_poll_clear();
+    return answer;
+#elif defined(HERO_POLL_ARRAY)
     hero_poll_enter();
     bool open = hero_poll_find(set) != NULL;
     hero_poll_leave();
@@ -1565,11 +1790,26 @@ static void hero_poll_release(hero_poll_slot *slot) {
         hero_poll_entry *e = &hero_poll_entries[slot->base + i];
 
         if (e->on != HERO_POLL_ON_NOTHING) {
+#if defined(_WIN32)
+            /* Forgotten by the system before the socket's hold is let go. */
+            if (e->on == HERO_POLL_ON_SOCKET && slot->shown) {
+                (void)WSAEventSelect((SOCKET)(uint64_t)e->fd, NULL, 0);
+            }
+#endif
             held = hero_poll_entry_free(slot, e);
         }
         hero_poll_leave();
         hero_poll_let_go(held);
     }
+#if defined(_WIN32)
+    /* A loop that waits on the event learns the set is gone: it is set, kept
+     * as it is for the slot's next set to reset (`hero_poll_events`). */
+    uintptr_t event = hero_poll_event_of(slot);
+
+    if (event != 0) {
+        (void)SetEvent((HANDLE)event);
+    }
+#endif
     hero_poll_enter();
     hero_poll_slot_free(slot);
     hero_poll_leave();
@@ -1840,6 +2080,9 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
         int64_t door = -1;
         bool shown = false;
         bool ready_left = false;
+#if defined(_WIN32)
+        uintptr_t signal = 0;
+#endif
 #if defined(HERO_POLL_ARRAY)
         uint32_t places = 0;
         uint32_t base = 0;
@@ -1871,6 +2114,15 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             hero_poll_fail(kind, 0);
             return -1;
         }
+#if defined(_WIN32)
+        /* The event of a loop waiting in the system's own call reset first,
+         * and what is ready asked after: a notice that comes between sets it
+         * again, and nothing the wait finds is lost to the reset. */
+        if (shown) {
+            signal = atomic_load(&hero_poll_events[slot - hero_poll_sets]);
+            (void)ResetEvent((HANDLE)signal);
+        }
+#endif
         /* Asked before the system is: a value sent after this rings the
          * doorbell, which ends the system's wait at once. */
         written = hero_poll_mailboxes_told(mailboxes, events, room, written, &ready_left);
@@ -2029,6 +2281,12 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             return -1;
         }
         if (stopped || hero_net_stop_asked() != 0) {
+#if defined(_WIN32)
+            /* The stop's own signal may have come before this wait's reset. */
+            if (signal != 0) {
+                (void)SetEvent((HANDLE)signal);
+            }
+#endif
             hero_poll_fail(HERO_POLL_STOPPED, 0);
             return -1;
         }
@@ -2037,11 +2295,20 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             return -1;
         }
         if (written > 0) {
+#if defined(_WIN32)
+            /* The event stays set while an entry told may still be ready: a
+             * socket is told again until the program reads it, and a
+             * registration notices a read's end and no more. */
+            if (signal != 0) {
+                (void)SetEvent((HANDLE)signal);
+            }
+#else
             if (shown && ready_left) {
                 /* The descriptor stays readable while a mailbox told may
                  * still hold a value: the program may take one of many. */
                 hero_poll_ring(slot);
             }
+#endif
             hero_poll_clear();
             return (int64_t)written;
         }
@@ -2053,6 +2320,102 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
         (void)queue;
     }
 }
+
+#if defined(_WIN32)
+int64_t hero_poll_ready(hero_poll_set *set) {
+    int64_t kind = HERO_POLL_OK;
+    hero_poll_slot *slot = NULL;
+    uint32_t places = 0;
+    uint32_t base = 0;
+    uint32_t mailboxes = 0;
+    uint32_t files = 0;
+    uintptr_t event = 0;
+
+    hero_poll_enter();
+    slot = hero_poll_find(set);
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else {
+        slot->waiting = true;
+        slot->busy += 1;
+        places = hero_poll_fill(slot);
+        base = slot->base;
+        mailboxes = slot->mailboxes;
+        files = slot->files;
+        event = hero_poll_event_of(slot);
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+    /* Reset first and asked after, so a notice that comes between sets it again
+     * and the next wait of a loop on the handle returns for it; once the stop
+     * is asked it is left set, as no wait resets it either. */
+    bool stop = hero_net_stop_asked() != 0;
+
+    if (event != 0 && !stop) {
+        (void)ResetEvent((HANDLE)event);
+    }
+    int64_t ready = stop || files != 0 ? 1 : 0;
+    int64_t failed = 0;
+
+    if (ready == 0) {
+        int64_t one[HERO_POLL_EVENT_NUMBERS];
+        bool left = false;
+
+        ready = hero_poll_mailboxes_told(mailboxes, one, 1, 0, &left) > 0 ? 1 : 0;
+    }
+    if (ready == 0 && places > 0) {
+        int n = WSAPoll(&hero_poll_array[base], (ULONG)places, 0);
+
+        if (n == SOCKET_ERROR) {
+            failed = hero_poll_os_code();
+        }
+        /* The stop's bell and the doorbell are not entries: the stop was asked
+         * above, and a ring is asked of the mailboxes themselves. */
+        for (uint32_t i = 0; n > 0 && i < places && ready == 0; i += 1) {
+            uint32_t entry = hero_poll_array_entry[base + i];
+
+            if (entry != 0 && entry != HERO_POLL_DOOR_PLACE && hero_poll_array[base + i].revents != 0) {
+                ready = 1;
+            }
+        }
+    }
+    hero_poll_enter();
+    slot->waiting = false;
+    slot->busy -= 1;
+    bool closed = slot->closing;
+    bool release = closed && slot->busy == 0;
+    hero_poll_leave();
+
+    if (release) {
+        hero_poll_release(slot);
+    }
+    if (closed) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    if (failed != 0) {
+        hero_poll_fail(HERO_POLL_OTHER, failed);
+        return -1;
+    }
+    hero_poll_clear();
+    return ready;
+}
+#else
+int64_t hero_poll_ready(hero_poll_set *set) {
+    hero_poll_enter();
+    bool open = hero_poll_find(set) != NULL;
+    hero_poll_leave();
+
+    hero_poll_fail(open ? HERO_POLL_UNSUPPORTED : HERO_POLL_NOT_OPEN, 0);
+    return -1;
+}
+#endif
 
 int64_t hero_poll_last_error(void) {
     return hero_poll_kind;

@@ -2314,6 +2314,14 @@ hero_net_socket *hero_net_accept(hero_net_socket *listener) {
         hero_net_failed_with(code);
         return NULL;
     }
+#if defined(_WIN32)
+    /* A connection takes the listener's event registration with it (`accept`'s
+     * own page): a set handed out by `hero_poll_descriptor` registers its
+     * listener, and every connection it took would then signal that set's event
+     * for each read and close, though no set holds it. Cancelled, which does
+     * nothing where none was made. */
+    (void)WSAEventSelect(got, NULL, 0);
+#endif
     /* Non-blocking, as every socket the table holds: BSD's accept gives it
      * the listener's flags and Linux's does not, so it is asked here. */
     if (!hero_net_blocking(got, false) || !hero_net_ready(got)) {
