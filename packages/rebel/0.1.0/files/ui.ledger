@@ -328,7 +328,7 @@ capability ui/color-picker  a colour picked in the system's own control and choo
   rust    -
   python  tkinter.colorchooser.askcolor
   wx      wxColourPickerCtrl, wxColourDialog
-  note    catalogue CT45; a widget with no range: its value is `set_value`'s and `value_of`'s, the colour as four sRGB bytes `0xRRGGBBAA` (`picked_color` and `set_picked_color` speak `image.Color`), and `.value_changed` is told once for a pick by the person, the chooser giving the alpha too; macOS by an `NSColorWell` with the shared `NSColorPanel` showing alpha, its colour read in sRGB; Windows pending (a button over `ChooseColor` or the system's colour dialog), Linux pending (`GtkColorDialogButton`)
+  note    catalogue CT45; a widget with no range: its value is `set_value`'s and `value_of`'s, the colour as four sRGB bytes `0xRRGGBBAA` (`picked_color` and `set_picked_color` speak `image.Color`), and `.value_changed` is told once for a pick by the person, the chooser giving the alpha too; macOS by an `NSColorWell` with the shared `NSColorPanel` showing alpha, its colour read in sRGB; Windows pending (a button over `ChooseColor` or the system's colour dialog), Linux by a `GtkColorDialogButton` (GTK 4.10, over a `GtkColorDialog` showing alpha; refused `unsupported` by name where the installed GTK is older) whose `GdkRGBA` floats are the four bytes as `b / 255` and back as `(int)(c * 255 + 0.5)`, exact for every byte, the value held as the program or the person gave it
 
 capability ui/font-picker  a font picked in the system's own control and chooser
   heroes  ui.font_button, ui.picked_font, ui.set_picked_font, ui.Font, ui.Kind.font_button

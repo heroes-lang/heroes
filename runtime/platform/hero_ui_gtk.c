@@ -149,6 +149,14 @@ typedef struct hero_ui_gtk_size {
     int height;
 } hero_ui_gtk_size;
 
+/* GDK's `GdkRGBA`: red, green, blue and alpha, each from 0 to 1. */
+typedef struct hero_ui_gtk_rgba {
+    float red;
+    float green;
+    float blue;
+    float alpha;
+} hero_ui_gtk_rgba;
+
 /* GTK's `GtkTextIter`, 80 bytes on every 64-bit target GTK 4.18.6 builds for;
  * held in more room, aligned as its pointers are. */
 typedef union hero_ui_gtk_iter {
@@ -423,6 +431,13 @@ typedef struct hero_ui_gtk_functions {
     void *(*date_time_new_utc)(int year, int month, int day, int hour, int minute, double seconds);
     void (*date_time_unref)(void *date);
     void (*menu_button_set_label)(void *button, const char *label);
+    /* GTK 4.10's colour dialog and the button that opens it, found where the
+     * library has them (A COLOUR PICKED). */
+    void *(*color_dialog_new)(void);
+    void (*color_dialog_set_with_alpha)(void *dialog, int with);
+    void *(*color_dialog_button_new)(void *dialog);
+    void (*color_dialog_button_set_rgba)(void *button, const hero_ui_gtk_rgba *color);
+    const hero_ui_gtk_rgba *(*color_dialog_button_get_rgba)(void *button);
     void *(*menu_new)(void);
     void (*menu_remove_all)(void *menu);
     void (*menu_append_section)(void *menu, const char *label, void *section);
@@ -941,6 +956,11 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(date_time_new_utc, "g_date_time_new_utc");
     HERO_UI_GTK_NEED(date_time_unref, "g_date_time_unref");
     HERO_UI_GTK_NEED(menu_button_set_label, "gtk_menu_button_set_label");
+    HERO_UI_GTK_MAY(color_dialog_new, "gtk_color_dialog_new");
+    HERO_UI_GTK_MAY(color_dialog_set_with_alpha, "gtk_color_dialog_set_with_alpha");
+    HERO_UI_GTK_MAY(color_dialog_button_new, "gtk_color_dialog_button_new");
+    HERO_UI_GTK_MAY(color_dialog_button_set_rgba, "gtk_color_dialog_button_set_rgba");
+    HERO_UI_GTK_MAY(color_dialog_button_get_rgba, "gtk_color_dialog_button_get_rgba");
     HERO_UI_GTK_NEED(menu_new, "g_menu_new");
     HERO_UI_GTK_NEED(menu_remove_all, "g_menu_remove_all");
     HERO_UI_GTK_NEED(menu_append_section, "g_menu_append_section");
@@ -1464,6 +1484,8 @@ static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t va
 static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, bool told);
 static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most);
 static bool hero_ui_gtk_is_picker(int64_t kind);
+static bool hero_ui_gtk_make_color(hero_ui_native *made);
+static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool told);
 static bool hero_ui_gtk_make_bar(hero_ui_native *made);
 static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar);
 static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height);
@@ -2565,6 +2587,104 @@ static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, i
     return HERO_UI_OK;
 }
 
+/* -- A COLOUR PICKED ------------------------------------------------------------
+ *
+ * `GtkColorDialogButton` (GTK 4.10), over a `GtkColorDialog` that lets the
+ * person pick the alpha too. Its `rgba` is a `GdkRGBA` of floats from 0 to 1;
+ * the layer's value is the four sRGB bytes `0xRRGGBBAA`, a byte `b` given as
+ * `b / 255` and read as `(int)(c * 255 + 0.5)`, which is exact for every byte
+ * (a float keeps the quotient to 6e-8 of itself, and the rounding is 0.5
+ * away). The value is held as the program or the person gave it, so reading
+ * it asks GTK nothing. A GTK older than 4.10 is refused by name where the
+ * kind is made. */
+
+/* The value of `color`: four bytes, red the highest. */
+static int64_t hero_ui_gtk_color_value(const hero_ui_gtk_rgba *color) {
+    const float parts[4] = {color->red, color->green, color->blue, color->alpha};
+    int64_t value = 0;
+
+    for (int i = 0; i < 4; i += 1) {
+        float scaled = parts[i] * 255.0f + 0.5f;
+        int64_t byte = scaled < 0.0f ? 0 : scaled > 255.0f ? 255 : (int64_t)scaled;
+
+        value = value * 256 + byte;
+    }
+    return value;
+}
+
+/* Puts colour `value` in `button`, which tells its own change. */
+static void hero_ui_gtk_color_put(void *button, int64_t value) {
+    hero_ui_gtk_rgba color;
+
+    color.red = (float)((value >> 24) & 255) / 255.0f;
+    color.green = (float)((value >> 16) & 255) / 255.0f;
+    color.blue = (float)((value >> 8) & 255) / 255.0f;
+    color.alpha = (float)(value & 255) / 255.0f;
+    hero_ui_gtk.color_dialog_button_set_rgba(button, &color);
+}
+
+/* The colour well `widget` holds, in its button, muted. */
+static void hero_ui_gtk_color_show(hero_ui_native *widget) {
+    widget->setting = true;
+    hero_ui_mute(1);
+    hero_ui_gtk_color_put(widget->widget, widget->value);
+    hero_ui_mute(-1);
+    widget->setting = false;
+}
+
+/* The person picked a colour in the chooser: told once, where it is not the
+ * colour held. */
+static void hero_ui_gtk_colored(void *button, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, button);
+    const hero_ui_gtk_rgba *color;
+    int64_t value;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_COLOR_WELL || widget->setting) {
+        return;
+    }
+    color = hero_ui_gtk.color_dialog_button_get_rgba(button);
+    value = color != NULL ? hero_ui_gtk_color_value(color) : widget->value;
+    if (value != widget->value) {
+        widget->value = value;
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+    }
+}
+
+static bool hero_ui_gtk_make_color(hero_ui_native *made) {
+    void *dialog = hero_ui_gtk.color_dialog_new();
+
+    if (dialog == NULL) {
+        return false;
+    }
+    hero_ui_gtk.color_dialog_set_with_alpha(dialog, 1);
+    /* The button takes the dialog's reference. */
+    made->widget = hero_ui_gtk.color_dialog_button_new(dialog);
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->value = 0;
+    hero_ui_gtk_color_show(made);
+    hero_ui_gtk_connect(made->widget, "notify::rgba", (hero_ui_gtk_callback)hero_ui_gtk_colored, made->id);
+    return true;
+}
+
+/* Gives colour well `widget` the colour `value`, told where `told` and it is
+ * not the one held, as the person's pick is: the button's own change tells
+ * it, and `hero_ui_gtk_colored` keeps it. */
+static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool told) {
+    if (value < 0 || value > 0xFFFFFFFFLL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour is four sRGB bytes 0xRRGGBBAA, a number from 0 to 4294967295");
+    }
+    if (told) {
+        hero_ui_gtk_color_put(widget->widget, value);
+        return HERO_UI_OK;
+    }
+    widget->value = value;
+    hero_ui_gtk_color_show(widget);
+    return HERO_UI_OK;
+}
+
 /* -- The arm ------------------------------------------------------------------ */
 
 /* Whether `name` names something in the environment. */
@@ -2907,6 +3027,10 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     if (kind == HERO_UI_TABLE && (hero_ui_gtk.column_view_sorter_get_primary_sort_column == NULL || hero_ui_gtk.column_view_sorter_get_primary_sort_order == NULL)) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "a table's sort is read from GTK 4.10's gtk_column_view_sorter_get_primary_sort_column, which this GTK lacks");
     }
+    if (kind == HERO_UI_COLOR_WELL && (hero_ui_gtk.color_dialog_new == NULL || hero_ui_gtk.color_dialog_set_with_alpha == NULL || hero_ui_gtk.color_dialog_button_new == NULL || hero_ui_gtk.color_dialog_button_set_rgba == NULL ||
+                                       hero_ui_gtk.color_dialog_button_get_rgba == NULL)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a colour well is GTK 4.10's GtkColorDialogButton, which this GTK lacks");
+    }
     if (kind != HERO_UI_WINDOW && kind != HERO_UI_TRAY) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
@@ -3031,6 +3155,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
         ok = hero_ui_gtk_make_picker(made);
+        break;
+    case HERO_UI_COLOR_WELL:
+        ok = hero_ui_gtk_make_color(made);
         break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
@@ -3441,6 +3568,9 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
     case HERO_UI_DATE_TIME_PICKER:
         answer = hero_ui_gtk_picker_set(widget, value, false);
         break;
+    case HERO_UI_COLOR_WELL:
+        answer = hero_ui_gtk_color_set(widget, value, false);
+        break;
     case HERO_UI_EDITABLE_COMBO:
         if (value < -1 || value >= widget->items) {
             answer = HERO_UI_INVALID;
@@ -3508,6 +3638,9 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
     }
     if (hero_ui_gtk_is_picker(widget->kind)) {
         return hero_ui_gtk_picker_range(widget, least, most);
+    }
+    if (widget->kind == HERO_UI_COLOR_WELL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour well has no range: its value is a colour, four sRGB bytes");
     }
     if (widget->kind == HERO_UI_SPIN) {
         if (least < -HERO_UI_GTK_EXACT || most > HERO_UI_GTK_EXACT) {
@@ -3916,6 +4049,7 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_EDITABLE_COMBO:
@@ -4066,6 +4200,7 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -4309,6 +4444,13 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_VALUE:
         if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
             answer = hero_ui_gtk_act(kind, widget, value, second, usable);
+        } else if (widget->kind == HERO_UI_COLOR_WELL) {
+            /* Picked as the person does: the button's colour changed, and
+             * told where it is not the one held. */
+            answer = value < 0 || value > 0xFFFFFFFFLL ? hero_ui_gtk_color_set(widget, value, false) : HERO_UI_OK;
+            if (answer == HERO_UI_OK && usable) {
+                answer = hero_ui_gtk_color_set(widget, value, true);
+            }
         } else if (hero_ui_gtk_is_picker(widget->kind)) {
             /* Picked as the person does: the moment shown and told, where it
              * is not the one held. */
@@ -11324,14 +11466,14 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the date and time picker and every act of `hero_ui.h` is
+/* Every kind up to the colour well and every act of `hero_ui.h` is
  * drawn here, so neither switch refuses one before `create` and `inject`,
  * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the date and time picker is drawn here: one the contract
-     * gains is refused by name until this arm makes it. */
-    return kind <= HERO_UI_DATE_TIME_PICKER;
+    /* No kind past the colour well is drawn here: one the contract gains is
+     * refused by name until this arm makes it. */
+    return kind <= HERO_UI_COLOR_WELL;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
