@@ -1,0 +1,162 @@
+# What the core tables of a font say about it as a whole: `head` (the scale
+# and the box), `maxp` (how many glyphs), `hhea` (the vertical metrics and how
+# many of the advances `hmtx` holds), `OS/2` (the weight, the heights of the
+# capitals and of the small letters) and `post` (the slant and the underline).
+# `head`, `maxp`, `hhea` and `hmtx` are required; `OS/2` and `post` are not.
+
+use font/internal/bin
+use font/internal/sfnt
+
+# The scalars of a font, read once.
+record Core
+    # The number of font units to the em square, 16 to 16384.
+    units_per_em: i64
+    # The left of the box every glyph fits in, in font units.
+    x_min: i64
+    # The bottom of that box.
+    y_min: i64
+    # The right of that box.
+    x_max: i64
+    # The top of that box.
+    y_max: i64
+    # `head`'s style bits: bit 0 bold, bit 1 italic.
+    mac_style: i64
+    # Whether `loca` holds 32-bit offsets, where it holds 16-bit offsets
+    # halved otherwise.
+    loca_long: bool
+    # How many glyphs the font has, `maxp`'s.
+    num_glyphs: i64
+    # The ascent `hhea` says, positive above the baseline.
+    ascent: i64
+    # The descent `hhea` says, negative below the baseline.
+    descent: i64
+    # The gap between lines `hhea` says.
+    line_gap: i64
+    # How many glyphs `hmtx` gives an advance of their own.
+    num_h_metrics: i64
+    # Where `hmtx` begins in the file.
+    hmtx_at: i64
+    # `OS/2`'s weight class, 100 to 900, 400 where the font has no `OS/2`.
+    weight: i64
+    # `OS/2`'s width class, 1 to 9, 5 where the font has no `OS/2`.
+    width_class: i64
+    # `OS/2`'s `fsSelection` bits, 0 where the font has none: bit 0 italic,
+    # bit 5 bold, bit 7 use the typographic metrics.
+    selection: i64
+    # The height of a capital letter, from `OS/2` of version 2 and later.
+    cap_height: i64?
+    # The height of a small letter without an ascender, from the same.
+    x_height: i64?
+    # The slant of upright strokes in degrees, from `post`: negative leans
+    # right; 0 where the font has none.
+    italic_angle: f64
+    # Where an underline stands, from `post`; 0 where the font has none.
+    underline_position: i64
+    # How thick an underline is, from `post`; 0 where the font has none.
+    underline_thickness: i64
+    # Whether `post` says every glyph is as wide as another.
+    fixed_pitch: bool
+
+# The table `tag` of `d` with `least` bytes at least.
+function required(d: sfnt.Directory lent, tag: str, least: i64) -> sfnt.Table?
+    t = sfnt.table_named(d, tag: tag)?
+
+    if t.length < least
+        return fail(code: sfnt.INVALID, msg: f"the {tag} table holds {t.length} bytes, at least {least} are read")
+    return ok(t)
+
+# The core of the font whose directory is `d` in `data`. Fails `invalid`
+# where a required table is missing, too short, or says what a font cannot:
+# a scale of no size, no glyph, more advances than glyphs, an `hmtx` that does
+# not hold what `hhea` and `maxp` count.
+function read(data: [u8] lent, d: sfnt.Directory lent) -> Core?
+    head = required(d, tag: "head", least: 54)?
+    maxp = required(d, tag: "maxp", least: 6)?
+    hhea = required(d, tag: "hhea", least: 36)?
+    hmtx = sfnt.table_named(d, tag: "hmtx")?
+
+    units = bin.u16_at(data, at: head.offset + 18)
+
+    if units < 16 || units > 16384
+        return fail(code: sfnt.INVALID, msg: f"{units} font units to the em: a font holds 16 to 16384")
+    format = bin.i16_at(data, at: head.offset + 50)
+
+    if format != 0 && format != 1
+        return fail(code: sfnt.INVALID, msg: f"head says the offsets of loca are in format {format}, which is 0 or 1")
+    glyphs = bin.u16_at(data, at: maxp.offset + 4)
+
+    if glyphs < 1
+        return fail(code: sfnt.INVALID, msg: "the font has no glyph: even .notdef is missing")
+    metrics = bin.u16_at(data, at: hhea.offset + 34)
+
+    if metrics < 1 || metrics > glyphs
+        return fail(code: sfnt.INVALID, msg: f"hhea says {metrics} advances for a font of {glyphs} glyphs")
+
+    if hmtx.length < 4 * metrics + 2 * (glyphs - metrics)
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"hmtx holds {hmtx.length} bytes: {metrics} advances and {glyphs} glyphs need more"
+        )
+
+    ascent @= bin.i16_at(data, at: hhea.offset + 4)
+    descent @= bin.i16_at(data, at: hhea.offset + 6)
+    gap @= bin.i16_at(data, at: hhea.offset + 8)
+    weight @= 400
+    width_class @= 5
+    selection @= 0
+    cap: i64? @= fail(code: sfnt.NOT_FOUND, msg: "the font's OS/2 table is older than version 2")
+    xh: i64? @= fail(code: sfnt.NOT_FOUND, msg: "the font's OS/2 table is older than version 2")
+
+    match sfnt.table_named(d, tag: "OS/2")
+        .err _ => _ = 0
+        .ok os =>
+            if os.length >= 78
+                weight @ bin.u16_at(data, at: os.offset + 4)
+                width_class @ bin.u16_at(data, at: os.offset + 6)
+                selection @ bin.u16_at(data, at: os.offset + 62)
+
+                if ascent == 0 && descent == 0 && gap == 0
+                    ascent @ bin.i16_at(data, at: os.offset + 68)
+                    descent @ bin.i16_at(data, at: os.offset + 70)
+                    gap @ bin.i16_at(data, at: os.offset + 72)
+
+            if os.length >= 90 && bin.u16_at(data, at: os.offset) >= 2
+                xh @ ok(bin.i16_at(data, at: os.offset + 86))
+                cap @ ok(bin.i16_at(data, at: os.offset + 88))
+
+    angle @= 0.0
+    position @= 0
+    thickness @= 0
+    pitch @= false
+
+    match sfnt.table_named(d, tag: "post")
+        .err _ => _ = 0
+        .ok post =>
+            if post.length >= 16
+                angle @ to_f64(bin.i32_at(data, at: post.offset + 4)) / 65536.0
+                position @ bin.i16_at(data, at: post.offset + 8)
+                thickness @ bin.i16_at(data, at: post.offset + 10)
+                pitch @ bin.u32_at(data, at: post.offset + 12) != 0
+
+    return ok(
+        Core(units_per_em: units, x_min: bin.i16_at(data, at: head.offset + 36), y_min: bin.i16_at(data, at: head.offset + 38), x_max: bin.i16_at(data, at: head.offset + 40), y_max: bin.i16_at(data, at: head.offset + 42), mac_style: bin.u16_at(data, at: head.offset + 44), loca_long: format == 1, num_glyphs: glyphs, ascent: ascent, descent: descent, line_gap: gap, num_h_metrics: metrics, hmtx_at: hmtx.offset, weight: weight, width_class: width_class, selection: selection, cap_height: cap, x_height: xh, italic_angle: angle, underline_position: position, underline_thickness: thickness, fixed_pitch: pitch)
+    )
+
+# The advance width of glyph `glyph` in font units. `glyph` is 0 to
+# `c.num_glyphs - 1`; one outside answers 0.
+function advance_of(data: [u8] lent, c: Core lent, glyph: i64) -> i64
+    if glyph < 0 || glyph >= c.num_glyphs
+        return 0
+
+    if glyph < c.num_h_metrics
+        return bin.u16_at(data, at: c.hmtx_at + 4 * glyph)
+    return bin.u16_at(data, at: c.hmtx_at + 4 * (c.num_h_metrics - 1))
+
+# The left side bearing of glyph `glyph` in font units; 0 outside the font.
+function bearing_of(data: [u8] lent, c: Core lent, glyph: i64) -> i64
+    if glyph < 0 || glyph >= c.num_glyphs
+        return 0
+
+    if glyph < c.num_h_metrics
+        return bin.i16_at(data, at: c.hmtx_at + 4 * glyph + 2)
+    return bin.i16_at(data, at: c.hmtx_at + 4 * c.num_h_metrics + 2 * (glyph - c.num_h_metrics))

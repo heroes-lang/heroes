@@ -1,0 +1,86 @@
+# A font read: its bytes, its table directory and what its core tables, its
+# character map and its outlines say, found once so that no lookup reads a
+# table's header again.
+
+use font/internal/cff
+use font/internal/cmap
+use font/internal/core
+use font/internal/glyf
+use font/internal/sfnt
+
+# A font read.
+record Parsed
+    # The whole file the font was read from.
+    data: [u8]
+    # The font's table directory.
+    directory: sfnt.Directory
+    # What the core tables say.
+    core: core.Core
+    # The character map, or why the font has none this package reads.
+    charmap: cmap.Chosen?
+    # Whether the outlines are CFF (an OpenType font with PostScript
+    # outlines) and not TrueType's.
+    postscript: bool
+    # Where `glyf` and `loca` stand: all zero for a CFF font.
+    glyf: glyf.Source
+    # The structure of the `CFF ` table: why not, for a TrueType font.
+    cff: cff.Info?
+
+# The font number `index` of `data`, 0 for a single font. Fails `invalid`
+# where a required table is missing or says what no font does, `not_found`
+# where a collection has no font `index`, `unsupported` for a container this
+# package does not read.
+function parse(data: [u8], index: i64) -> Parsed?
+    at = sfnt.offset_of(data, index: index)?
+    d = sfnt.directory_at(data, at: at)?
+    c = core.read(data, d: d)?
+    charmap: cmap.Chosen? @= fail(code: sfnt.NOT_FOUND, msg: "the font has no cmap table")
+
+    match sfnt.table_named(d, tag: "cmap")
+        .err _ => _ = 0
+        .ok t  => charmap @ cmap.choose(data, t: t)
+
+    return finish(data, d: d, c: c, charmap: charmap)
+
+# The rest of a font's reading: its outlines.
+function finish(data: [u8], d: sfnt.Directory, c: core.Core, charmap: cmap.Chosen?) -> Parsed?
+    no_cff: cff.Info? = fail(code: sfnt.NOT_FOUND, msg: "the font's outlines are TrueType's")
+    none = glyf.Source(glyf_at: 0, glyf_length: 0, loca_at: 0, loca_long: false, num_glyphs: c.num_glyphs)
+
+    match sfnt.table_named(d, tag: "CFF ")
+        .ok t =>
+            info = cff.read(data, t: t)?
+
+            if info.num_glyphs != c.num_glyphs
+                return fail(
+                    code: sfnt.INVALID,
+                    msg: f"maxp says {c.num_glyphs} glyphs, the CFF table {info.num_glyphs}"
+                )
+            return ok(
+                Parsed(data: data, directory: d, core: c, charmap: charmap, postscript: true, glyf: none, cff: ok(info))
+            )
+        .err _ => _ = 0
+
+    glyf_table = match sfnt.table_named(d, tag: "glyf")
+        .ok t  => t
+        .err _ => return fail(code: sfnt.INVALID, msg: "the font has neither glyf nor CFF outlines")
+
+    loca = sfnt.table_named(d, tag: "loca")?
+    entry @= 2
+
+    if c.loca_long
+        entry @ 4
+
+    if loca.length < entry * (c.num_glyphs + 1)
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"loca holds {loca.length} bytes, {c.num_glyphs} glyphs need {entry * (c.num_glyphs + 1)}"
+        )
+    source = glyf.Source(
+        glyf_at: glyf_table.offset,
+        glyf_length: glyf_table.length,
+        loca_at: loca.offset,
+        loca_long: c.loca_long,
+        num_glyphs: c.num_glyphs
+    )
+    return ok(Parsed(data: data, directory: d, core: c, charmap: charmap, postscript: false, glyf: source, cff: no_cff))

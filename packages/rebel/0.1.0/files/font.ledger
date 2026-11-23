@@ -1,0 +1,208 @@
+# The ledger of `font`: what Go's `golang.org/x/image/font`, `font/sfnt`,
+# `font/opentype` and `font/basicfont` (x/image v0.48.0; `go doc -all` run
+# 2026-11-23 inside the scratch folder), Rust's `ttf-parser` (0.25.1, the
+# list of its docs.rs `all.html`, read 2026-11-23: Rust's standard library
+# has no font) and Python's `fontTools` (4.68.0, `dir()` of `fontTools.ttLib`,
+# `TTFont`, `TTCollection`, `fontTools.subset` and the module names of
+# `fontTools.pens`, run 2026-11-23) let a program do with a font, one block per
+# capability, and what Rebel answers. Rust's modules and Python's tables are
+# named by the module, never one item at a time: `ttf_parser::gpos` is every
+# item of that module.
+#
+# What the tests expect is what fontTools 4.68.0 read from the same files:
+# the two samples of `font/internal/samples.hero` (Noto Sans Regular 2.015 cut
+# to 29 glyphs, under the SIL Open Font License 1.1, Copyright 2022 The Noto
+# Project Authors; the licence text stands in each font's `name` table, id 13
+# and 14, and in full at https://github.com/notofonts/latin-greek-cyrillic/blob/main/OFL.txt),
+# and, run once outside the tree on 2026-11-23, the whole of ten fonts of this
+# Mac (Noto Sans Regular 3,884 glyphs; Arial Unicode MS 50,377; SF NS 2,954;
+# Monaco 1,678; Apple SD Gothic Neo, CFF with 18,662 CID-keyed glyphs;
+# Hiragino Sans GB; Hiragino Mincho ProN; Hiragino Kaku Gothic W8; Kohinoor;
+# LastResort, CFF), their glyph counts, scale, ascent, descent and line gap,
+# every character `cmap` maps, the names of ids 1, 2, 4, 6 and 16, and for
+# every glyph sampled (the first 24, then one in 1 to 41) the advance, the
+# left bearing, the box and the number and coordinate sums of the outline's
+# steps: 0 differences in all ten, in Arial Unicode MS's 33 glyphs that hold a
+# contour of one point compared with that contour left out, which fontTools
+# draws as a `move` and a `close` and this package does not, a point that
+# draws nothing.
+
+capability font/parse  a font read from the bytes of a file, a single font or one of a collection
+  heroes  font.parse, font.font_count, font.Font
+  go      sfnt.Parse, sfnt.ParseCollection, sfnt.Collection, Collection.Font, Collection.NumFonts, sfnt.Font, opentype.Parse, opentype.ParseCollection, opentype.Collection, opentype.Font
+  rust    Face::parse, Face::from_slice, fonts_in_collection, RawFace::parse, RawFace::from_slice, RawFace, TableRecord, Tag, FaceParsingError
+  python  TTFont, TTCollection, SFNTReader, TTLibError, TTLibFileIsCollectionError
+  note    a table whose place runs past the file is `invalid`, where Go reads it lazily and fails at the first use; a TrueType font and an OpenType font with CFF outlines read the same way; a CFF2 font and a Type 1 font are `unsupported`
+
+capability font/parse-reader  a font read through a reader at an offset, so that a large file is never held whole
+  heroes  refused: a font is read from the bytes the program holds, which `fs.read_bytes` gives; a reader would hand a font's tables to the program one read at a time with no gain, the largest font files being tens of megabytes
+  go      sfnt.ParseReaderAt, sfnt.ParseCollectionReaderAt, opentype.ParseReaderAt, opentype.ParseCollectionReaderAt, Font.WriteSourceTo
+  rust    -
+  python  -
+  note    -
+
+capability font/names  the family, style, PostScript name, copyright, licence and other strings of a font
+  heroes  font.name_of, font.NameId
+  go      Font.Name, sfnt.NameID and its constants (NameIDCopyright to NameIDVariationsPostScriptPrefix)
+  rust    name::Table, name::Names, name::Name, Face::names
+  python  TTFont['name'], table__n_a_m_e.getName, getDebugName
+  note    English wins over every other language wherever it stands (a Windows record in American English, then in another English, a Unicode record, a Macintosh Roman record, then any other Windows language), as fontTools' `getDebugName` does; a Macintosh Roman string with a byte past 127 reads that byte as the replacement character
+
+capability font/metrics  the scale, the vertical metrics, the heights, the slant, the underline, the box, the weight and the style bits
+  heroes  font.metrics_of, font.Metrics, font.outlines_of, font.Outlines
+  go      Font.Metrics, Font.UnitsPerEm, Font.NumGlyphs, Font.Bounds, Font.PostTable, sfnt.PostTable, sfnt.Units, font.Metrics, font.Weight, font.Style, font.Stretch
+  rust    Face::units_per_em, number_of_glyphs, ascender, descender, line_gap, capital_height, x_height, italic_angle, underline_metrics, weight, width, style, is_bold, is_italic, is_oblique, is_monospaced, is_regular, is_variable, global_bounding_box, Weight, Width, Style, LineMetrics, Rect, head::Table, hhea::Table, maxp::Table, post::Table
+  python  head, hhea, maxp, post and OS/2 table fields, getGlyphCount
+  note    the ascent, descent and line gap are `hhea`'s, and `OS/2`'s typographic ones where `hhea` holds zeros, as CoreText and FreeType read them; Go's `Metrics` is those scaled to a size and rounded, which a program multiplies out
+
+capability font/cmap  the glyph a character has, and every character a font has a glyph for
+  heroes  font.glyph_of, font.code_points_of
+  go      Font.GlyphIndex, sfnt.GlyphIndex
+  rust    Face::glyph_index, Face::tables, Format, cmap::Subtables, cmap::Subtable, cmap::Subtable0, cmap::Subtable4, cmap::Subtable6, cmap::Subtable10, cmap::Subtable12, cmap::Subtable13
+  python  TTFont.getBestCmap, getGlyphID, getReverseGlyphMap
+  note    the subtable chosen is the Unicode one the specification prefers: Windows full repertoire, Unicode platform, Windows BMP, Windows symbol; `.notdef` is never answered, where Go answers 0 for a missing character
+
+capability font/cmap-legacy  the legacy byte encodings of a font (cmap format 2) and its variation selectors (format 14)
+  heroes  pending
+  go      -
+  rust    cmap::Subtable2, cmap::Subtable14, Face::glyph_variation_index
+  python  table__c_m_a_p.cmap formats 2 and 14
+  note    the specification's two formats that map no single Unicode scalar to a glyph by themselves
+
+capability font/advance  the advance and the left side bearing of a glyph
+  heroes  font.advance_of, font.bearing_of
+  go      Font.GlyphAdvance
+  rust    Face::glyph_hor_advance, Face::glyph_hor_side_bearing, hmtx::Table, hmtx::Metrics, Face::glyph_phantom_points, PhantomPoints
+  python  TTFont['hmtx']
+  note    in font units, never scaled or hinted, where Go's are in 26.6 fixed point at a size
+
+capability font/bounds  the box a glyph's points lie in
+  heroes  font.bounds_of, font.Box
+  go      Font.GlyphBounds
+  rust    Face::glyph_bounding_box, Rect, RectF
+  python  fontTools.pens.boundsPen.ControlBoundsPen
+  note    the control points count, as `glyf`'s own box does and fontTools' `ControlBoundsPen` does; Go's and ttf-parser's `BoundsPen`-like boxes measure the curve itself
+
+capability font/outline  a glyph's outline as lines and curves, composites expanded
+  heroes  font.outline_of, font.Outline, font.Segment, font.to_cubics
+  go      Font.LoadGlyph, sfnt.Segment, sfnt.Segments, sfnt.SegmentOp, sfnt.LoadGlyphOptions
+  rust    Face::outline_glyph, OutlineBuilder, glyf::Table, cff::Table, cff::Matrix, Transform, Fixed
+  python  TTFont.getGlyphSet, fontTools.pens.basePen.BasePen, fontTools.pens.recordingPen.RecordingPen, fontTools.pens.t2CharStringPen, fontTools.pens.ttGlyphPen
+  note    TrueType contours start where fontTools starts them (on the contour's first on-curve point, else the middle of its last and first points), a run of off-curve points is a chain of quadratic curves, a contour of one point has no step; CFF's hints are read and left, its four flex operators, subroutines (local and global, up to 10 deep) and arithmetic are run; the deprecated accented `endchar` is `unsupported`; unhinted, at font units, where Go scales to a size
+
+capability font/text-width  the width of a text set in a font, and whether the font can show it
+  heroes  font.width_of, font.has_glyphs
+  go      font.MeasureString, font.MeasureBytes, font.BoundString, font.BoundBytes, font.Drawer.MeasureString, font.Drawer.MeasureBytes, font.Drawer.BoundString, font.Drawer.BoundBytes
+  rust    -
+  python  -
+  note    the sum of the advances, never kerned, as `pdf.width_of` does not kern the standard fonts; a character the font lacks fails `not_found` naming it, where Go measures `.notdef`
+
+capability font/kern  the adjustment between two glyphs side by side from the `kern` table
+  heroes  font.kern_of
+  go      Font.Kern, font.Face.Kern
+  rust    kern::Table, kern::Subtables, kern::Subtable, kern::Subtable0, kern::KerningPair
+  python  TTFont['kern']
+  note    format 0 horizontal subtables are read and their adjustments added; the formats 2 and 3 of the specification and Apple's `kerx` are not
+
+capability font/tables  the tags of a font's tables and the bytes of each
+  heroes  font.table_tags, font.table_of
+  go      -
+  rust    RawFace::table, RawFace::table_records, Face::table_data, Face::tables, FaceTables
+  python  TTFont.keys, getTableData, TTFont.get
+  note    a table is the file's bytes as they stand, no table of them decoded
+
+capability font/subset  a TrueType font cut down to the glyphs a document uses, as a font file
+  heroes  font.subset, font.subset_glyphs, font.subset_glyph_of, font.Subset
+  go      -
+  rust    -
+  python  fontTools.subset.Subsetter, fontTools.subset.Options, fontTools.subset.subset_glyphs, fontTools.subset.closure_glyphs, fontTools.subset.load_font, fontTools.subset.save_font, fontTools.subset.main
+  note    glyphs are renumbered from 0 in the order of the original (`.notdef` first), the components of every composite come along and are renumbered, the glyphs keep their instructions with `cvt `, `fpgm` and `prep`, `loca` is written with 32-bit offsets and `post` as format 3 (no glyph names); the layout tables (`GPOS`, `GSUB`, `GDEF`) are left out, where fontTools keeps those of the features asked for; the tables of the result are read back by fontTools 4.68.0 and by Poppler's `pdftotext` through `pdf`
+
+capability font/subset-cff  a CFF font cut down to the glyphs a document uses
+  heroes  pending
+  go      -
+  rust    -
+  python  fontTools.subset (CFF outlines), fontTools.subset.cff, fontTools.subset.desubroutinize, fontTools.subset.remove_unused_subroutines
+  note    needs the Top DICT, the charset and the subroutines rewritten; a CFF font is `unsupported` to `font.subset` meanwhile, never cut badly
+
+capability font/glyph-names  the name of a glyph, and the glyph of a name
+  heroes  pending
+  go      Font.GlyphName
+  rust    Face::glyph_name, Face::glyph_index_by_name, post::Names
+  python  TTFont.getGlyphName, getGlyphNames, getGlyphOrder, standardGlyphOrder
+  note    `post` format 2 and the CFF string INDEX with its 391 standard strings
+
+capability font/layout  the pair adjustments, substitutions and mark positioning of GPOS and GSUB, shaped text
+  heroes  pending
+  go      -
+  rust    gpos::*, gsub::*, gdef::*, opentype_layout::*, Face::tables
+  python  GPOS, GSUB, GDEF, fontTools.otlLib
+  note    the kerning most recent fonts hold is GPOS's pair adjustment, so `font.kern_of` reads 0 for such a font
+
+capability font/color  color glyphs, bitmap glyphs and SVG glyphs
+  heroes  pending
+  go      sfnt.ErrColoredGlyph
+  rust    colr::*, cpal::Table, cbdt::Table, cblc::Table, sbix::*, svg::*, RasterGlyphImage, RasterImageFormat, RgbaColor, Face::glyph_raster_image, glyph_svg_image, paint_color_glyph, is_color_glyph, color_palettes
+  python  COLR, CPAL, CBDT, CBLC, sbix, SVG
+  note    -
+
+capability font/variations  the instances of a variable font
+  heroes  pending
+  go      -
+  rust    fvar::*, avar::*, gvar::Table, hvar::Table, mvar::Table, stat::*, Variation, VariationAxis, NormalizedCoordinate, Face::set_variation, variation_coordinates, variation_axes, has_non_default_variation_coordinates
+  python  fvar, avar, gvar, HVAR, MVAR, STAT, fontTools.varLib, TTFont.normalizeLocation
+  note    a variable font is read at its default design; the variations are not applied
+
+capability font/vertical  the vertical metrics and origins of vertical text
+  heroes  pending
+  go      -
+  rust    vhea::Table, vorg::Table, Face::vertical_ascender, vertical_descender, vertical_height, vertical_line_gap, glyph_ver_advance, glyph_ver_side_bearing, glyph_y_origin
+  python  vhea, vmtx, VORG
+  note    -
+
+capability font/os2-extras  the strikeout, subscript and superscript metrics, the typographic metrics, the unicode and code page ranges and the script metrics of OS/2
+  heroes  pending
+  go      -
+  rust    os2::Table, os2::ScriptMetrics, os2::UnicodeRanges, UnicodeRanges, ScriptMetrics, Face::strikeout_metrics, subscript_metrics, superscript_metrics, typographic_ascender, typographic_descender, typographic_line_gap, unicode_ranges, permissions, is_subsetting_allowed, is_outline_embedding_allowed, os2::Permissions, os2::Style, os2::Weight, os2::Width
+  python  OS/2 table fields
+  note    -
+
+capability font/apple-layout  Apple's aat tables and the MATH table
+  heroes  pending
+  go      -
+  rust    ankr::*, apple_layout::*, bsln, feat::*, kerx::*, morx::*, trak::*, math::*
+  python  ankr, bsln, feat, kerx, morx, trak, MATH
+  note    -
+
+capability font/web  web fonts: WOFF and WOFF2
+  heroes  pending
+  go      -
+  rust    -
+  python  fontTools.ttLib.woff2, flavor
+  note    WOFF is zlib over each table and WOFF2 Brotli over all of them with a transform of `glyf`; `compress` and `compress/brotli` have the codecs
+
+capability font/system  a font found on the system by its name
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    CoreText on macOS, DirectWrite on Windows and fontconfig elsewhere, each a C port with both arms; the row of the gap catalogue, K10's last part
+
+capability font/draw  glyphs rasterised and text drawn into an image
+  heroes  pending
+  go      font.Drawer, font.Drawer.DrawString, DrawBytes, font.Face, font.Hinting, opentype.NewFace, opentype.Face, opentype.FaceOptions, basicfont.Face7x13, basicfont.Face, basicfont.Range, Face.Glyph, Face.GlyphBounds, Face.GlyphAdvance, Face.Metrics, Face.Close
+  rust    -
+  python  -
+  note    `image`'s half of the row (the lane that owns `image` draws the glyphs this package outlines); a rasteriser that runs TrueType instructions is its own program
+
+capability font/hinting  the instructions of a font run to fit its glyphs to a pixel grid
+  heroes  refused: the outlines are read as the font draws them at its own scale; running `fpgm`, `prep` and the glyph programs is a rasteriser's work, and an interpreter of TrueType's instruction set is a program of its own which nothing in this package's callers asks for
+  go      font.HintingNone, font.HintingVertical, font.HintingFull
+  rust    -
+  python  fontTools.ttLib.tables.ttProgram
+  note    the programs are kept in a subset, so a reader that runs them still can
+
+dropped
+  go      sfnt.Buffer (re-usable buffers: Heroes values are copies), sfnt.ErrNotFound and sfnt.ErrColoredGlyph as variables (the codes `not_found` and `unsupported` are their answers), the `font.Face` interface (Heroes has no interface), font.Drawer's Dst, Src, Face and Dot fields (drawing)
+  rust    Fixed, LazyArray16, LazyArray32, LazyArrayIter16, LazyArrayIter32, PointF, GlyphId, Face::from_raw_tables, Face::raw_face, Face::height, RawFaceTables, FromData, CFFError, Language, PlatformId, loca::Table, head::IndexToLocationFormat (zero-copy plumbing and the integer types of the crate's own representation, which `i64` and `f64` are)
+  python  fontTools.ttLib.ttFont.TTFont.save, saveXML, importXML, ensureDecompiled, isLoaded, close, reorderGlyphs, setGlyphOrder and fontTools.ttLib's SFNTWriter, newTable, registerCustomTableClass, unregisterCustomTableClass, getTableClass, getCustomTableClass, getTableModule, getClassTag, getSearchRange, maxPowerOfTwo, sortedTagList, reorderFontTables, identifierToTag, tagToIdentifier, tagToXML, xmlToTag, tostr, byteord, debugmsg, Config, AbstractConfig, OPTIONS, OPTIMIZE_FONT_SPEED, TTFTableOrder, OTFTableOrder, beyond64k, ttVisitor, xmlWriter (a font compiler's and editor's own plumbing: writing a font from tables, its XML form and the library's configuration), fontTools.pens modules not named above (areaPen, cairoPen, cocoaPen, cu2quPen, explicitClosingLinePen, filterPen, freetypePen, hashPointPen, momentsPen, perimeterPen, pointInsidePen, pointPen, qtPen, qu2cuPen, quartzPen, reportLabPen, reverseContourPen, roundingPen, statisticsPen, svgPathPen, teePen, transformPen, wxPen: drawing targets and outline arithmetic, which a path's consumer does), fontTools.subset's options, visitors and layout pruning (NameRecordVisitor, NullPen, Counter, Timer, closure_lookups, collect_features, collect_lookups, intersect, intersect_class, intersect_glyphs, is_hinting, mirrored, neuter_lookups, parse_gids, parse_glyphs, parse_unicodes, prune_features, prune_hints, prune_lookups, prune_post_subset, prune_pre_subset, remap, remapComponentsFast, remap_duplicate_features, remove_hints, remove_redundant_langsys, retain_empty_scripts, subset, subset_feature_tags, subset_features, makeName, makeOutputFileName, maxCtxFont, may_have_non_1to1, multiVarStore, NAME_IDS_TO_OBFUSCATE, USE_HARFBUZZ_REPACKER: the layout tables are not carried)

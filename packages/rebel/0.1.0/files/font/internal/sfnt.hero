@@ -1,0 +1,134 @@
+# The table directory of an sfnt file: a single TrueType or OpenType font, or
+# one font of a collection (`ttcf`), and where each of its tables stands in
+# the file. Nothing is read of a table here, only where it is.
+
+use font/internal/bin
+
+# The tag every font a collection holds begins with.
+constant COLLECTION_TAG: str
+    "ttcf"
+
+# The widest directory read: a font of the specification has some thirty
+# tables, and a count past this one is a file that is not a font.
+constant MAX_TABLES: i64
+    512
+
+# The most fonts a collection may hold.
+constant MAX_FONTS: i64
+    4096
+
+# Why a file is not read, as the face's codes spell them.
+constant INVALID: str
+    "invalid"
+
+# What the file asked for and this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What no entry of the directory names.
+constant NOT_FOUND: str
+    "not_found"
+
+# One table of the directory.
+record Table
+    # Its four-character tag, `glyf`; a tag with trailing spaces keeps them
+    # (`CFF `, `OS/2` has none).
+    tag: str
+    # Where the table begins in the file.
+    offset: i64
+    # How many bytes it holds.
+    length: i64
+
+# The directory of one font.
+record Directory
+    # The first four bytes of the font: 0x00010000 for TrueType outlines,
+    # 0x4F54544F (`OTTO`) for CFF, and `true` for Apple's.
+    version: i64
+    # Its tables, in the file's order.
+    tables: [Table]
+
+# How many fonts `data` holds: the count of a collection, 1 for a single
+# font. Fails `invalid` where the file is neither, `unsupported` where it is
+# a web font container (`wOFF`, `wOF2`) or a Type 1 font.
+function font_count(data: [u8] lent) -> i64?
+    if data.len() < 12
+        return fail(code: INVALID, msg: f"a font file holds at least 12 bytes, this one {data.len()}")
+    head = bin.tag_at(data, at: 0)
+
+    if head == COLLECTION_TAG
+        n = bin.u32_at(data, at: 8)
+
+        if n < 1 || n > MAX_FONTS
+            return fail(code: INVALID, msg: f"a font collection of {n} fonts: it holds 1 to {MAX_FONTS}")
+
+        if !bin.fits(data, at: 12, length: 4 * n)
+            return fail(code: INVALID, msg: f"the collection's {n} offsets run past the end of the file")
+        return ok(n)
+
+    _ = directory_at(data, at: 0)?
+    return ok(1)
+
+# The offset of the `index`th font of `data`, 0 for a single font.
+function offset_of(data: [u8] lent, index: i64) -> i64?
+    count = font_count(data)?
+
+    if index < 0 || index >= count
+        return fail(code: NOT_FOUND, msg: f"no font {index} in a file of {count}")
+
+    if bin.tag_at(data, at: 0) == COLLECTION_TAG
+        return ok(bin.u32_at(data, at: 12 + 4 * index))
+    return ok(0)
+
+# The directory of the font whose header stands at `at`. Fails `invalid`
+# where the header or a table's place runs past the end of the file,
+# `unsupported` for a container this package does not read.
+function directory_at(data: [u8] lent, at: i64) -> Directory?
+    if !bin.fits(data, at: at, length: 12)
+        return fail(code: INVALID, msg: f"the font's header at byte {at} runs past the end of the file")
+    version = bin.u32_at(data, at: at)
+    head = bin.tag_at(data, at: at)
+
+    if head == "wOFF" || head == "wOF2"
+        return fail(code: UNSUPPORTED, msg: f"a {head} web font: this package reads sfnt files, which a web font wraps")
+
+    if head == "typ1" || head == "%!PS"
+        return fail(code: UNSUPPORTED, msg: "a Type 1 font: this package reads TrueType and OpenType")
+
+    if version != 65536 && head != "OTTO" && head != "true"
+        return fail(
+            code: INVALID,
+            msg: f"not a font: it begins with {bin.u32_at(data, at: at)}, not a TrueType or OpenType header"
+        )
+
+    count = bin.u16_at(data, at: at + 4)
+
+    if count < 1 || count > MAX_TABLES
+        return fail(code: INVALID, msg: f"a font of {count} tables: it holds 1 to {MAX_TABLES}")
+
+    if !bin.fits(data, at: at + 12, length: 16 * count)
+        return fail(code: INVALID, msg: f"the {count} table records run past the end of the file")
+
+    tables: [Table] @= []
+
+    for k in range(from: 0, to: count)
+        rec = at + 12 + 16 * k
+        offset = bin.u32_at(data, at: rec + 8)
+        length = bin.u32_at(data, at: rec + 12)
+        tag = bin.tag_at(data, at: rec)
+
+        if !bin.fits(data, at: offset, length: length)
+            return fail(
+                code: INVALID,
+                msg: f"the table {tag} says {length} bytes at byte {offset}, past the end of a file of {data.len()}"
+            )
+        tables @ tables.push(Table(tag: tag, offset: offset, length: length))
+
+    return ok(Directory(version: version, tables: tables))
+
+# The first table of `d` named `tag`, as `not_found` where there is none.
+function table_named(d: Directory lent, tag: str) -> Table?
+    for t in d.tables
+        if t.tag == tag
+            return ok(t)
+
+    return fail(code: NOT_FOUND, msg: f"the font has no {tag} table")

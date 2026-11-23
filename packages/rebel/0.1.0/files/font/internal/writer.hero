@@ -1,0 +1,133 @@
+# An sfnt file written: the tables laid one after another on four-byte
+# boundaries behind a directory sorted by tag, each with its checksum, and
+# `head`'s whole-file adjustment set so that the file sums to 0xB1B0AFBA.
+
+use bytes
+use font/internal/bin
+
+# The modulus of the 32-bit sums of the format.
+constant WORD: i64
+    4294967296
+
+# One table to write.
+record Part
+    # Its four-character tag.
+    tag: str
+    # Its bytes, unpadded.
+    body: [u8]
+
+# The sum of the 32-bit big-endian words of `body`, its last word padded
+# with zeros, modulo 2^32.
+function checksum_of(body: [u8] lent) -> i64
+    total @= 0
+    k @= 0
+
+    while k < body.len()
+        word @= 0
+
+        for j in range(from: 0, to: 4)
+            word @ word << 8 | bin.u8_at(body, at: k + j)
+
+        total @ (total + word) % WORD
+        k @ k + 4
+
+    return total
+
+# `body` padded with zeros to a multiple of four bytes.
+function padded(body: [u8] lent) -> [u8]
+    out: [u8] @= []
+    bytes.push_all(to: @out, from: body)
+
+    while out.len() % 4 != 0
+        out @ out.push(0)
+
+    return out
+
+# The font file made of `parts`, whose first four bytes are `version`.
+# Every tag is four ASCII characters and no tag stands twice. The `head` part
+# must hold 54 bytes or more; its `checkSumAdjustment` is rewritten.
+function assemble(version: i64, parts: [Part]) -> [u8]
+    tags: [str] @= []
+
+    for p in parts
+        tags @ tags.push(p.tag)
+
+    ordered = tags.sort()
+    count = ordered.len()
+    out: [u8] @= []
+    bin.put_u32(@out, v: version)
+    bin.put_u16(@out, v: count)
+    entry @= 1
+    log2 @= 0
+
+    while entry * 2 <= count
+        entry @ entry * 2
+        log2 @ log2 + 1
+
+    bin.put_u16(@out, v: entry * 16)
+    bin.put_u16(@out, v: log2)
+    bin.put_u16(@out, v: count * 16 - entry * 16)
+    place @= 12 + 16 * count
+    bodies: [[u8]] @= []
+
+    for tag in ordered
+        body = body_of(parts, tag: tag)
+        padded_body = padded(body)
+        bytes.push_all(to: @out, from: bytes.from_text(tag))
+        bin.put_u32(@out, v: checksum_of(body))
+        bin.put_u32(@out, v: place)
+        bin.put_u32(@out, v: body.len())
+        bodies @ bodies.push(padded_body)
+        place @ place + padded_body.len()
+
+    for b in bodies
+        bytes.push_all(to: @out, from: b)
+
+    adjust(@out, tags: ordered, count: count)
+    return out
+
+# The body of the part tagged `tag`.
+function body_of(parts: [Part] lent, tag: str) -> [u8]
+    for p in parts
+        if p.tag == tag
+            return p.body
+
+    return []
+
+# Sets `head`'s checkSumAdjustment in the written font `out`, so that the
+# whole file sums to 0xB1B0AFBA.
+function adjust(@out: [u8], tags: [str] lent, count: i64)
+    for k in range(from: 0, to: count)
+        if tags[k] == "head"
+            at = bin.u32_at(out, at: 12 + 16 * k + 8)
+            now = bin.u32_at(out, at: at + 8)
+            sum = checksum_of(out)
+            fixed = (2981146554 - sum + now + WORD) % WORD
+            out[at + 8] @ to_u8(fixed >> 24 & 255).must()
+            out[at + 9] @ to_u8(fixed >> 16 & 255).must()
+            out[at + 10] @ to_u8(fixed >> 8 & 255).must()
+            out[at + 11] @ to_u8(fixed & 255).must()
+
+test "checksum_of and padded: whole words, a partial last word, nothing"
+    assert checksum_of([1, 2, 3, 4]) == 16909060
+    assert checksum_of([1]) == 16777216
+    assert checksum_of([]) == 0
+    assert checksum_of([255, 255, 255, 255, 0, 0, 0, 2]) == 1
+    assert padded([1]) == [1, 0, 0, 0]
+    assert padded([1, 2, 3, 4]) == [1, 2, 3, 4]
+    assert padded([]) == []
+
+test "assemble: tags sorted, tables on four-byte boundaries, the whole file summing to 0xB1B0AFBA"
+    head: [u8] @= []
+
+    for _ in range(from: 0, to: 54)
+        head @ head.push(0)
+
+    file = assemble(version: 65536, parts: [Part(tag: "name", body: [1, 2, 3]), Part(tag: "head", body: head)])
+    assert file.len() == 12 + 32 + 56 + 4
+    assert bin.u16_at(file, at: 4) == 2
+    assert bin.tag_at(file, at: 12) == "head"
+    assert bin.tag_at(file, at: 28) == "name"
+    assert bin.u32_at(file, at: 20) == 44
+    assert bin.u32_at(file, at: 36) == 100
+    assert checksum_of(file) == 2981146554

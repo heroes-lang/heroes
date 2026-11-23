@@ -1,0 +1,70 @@
+# The shape of a glyph as the readers hand it on: a path of straight lines,
+# quadratic curves (TrueType) and cubic curves (CFF) in font units, kept flat
+# so that nothing here depends on the face's own types.
+
+# The kinds of step in a path; each is followed in `coords` by what it needs.
+constant MOVE: i64
+    0
+
+# A straight line to a point: 2 numbers.
+constant LINE: i64
+    1
+
+# A quadratic curve: a control point and the end, 4 numbers.
+constant QUAD: i64
+    2
+
+# A cubic curve: two control points and the end, 6 numbers.
+constant CUBIC: i64
+    3
+
+# The end of a contour, which joins its last point to its first: no numbers.
+constant CLOSE: i64
+    4
+
+# A glyph's outline.
+record Path
+    # The kind of each step.
+    ops: [i64]
+    # The numbers the steps read, in order, x before y.
+    coords: [f64]
+
+# A path of no step: a glyph with nothing to draw, a space.
+function empty() -> Path
+    return Path(ops: [], coords: [])
+
+# How many numbers a step of kind `op` reads.
+function width_of(op: i64) -> i64
+    return match op
+        0 => 2
+        1 => 2
+        2 => 4
+        3 => 6
+        _ => 0
+
+# The left, bottom, right and top of every point of `p`, controls included,
+# as four numbers; four zeros for a path with none.
+function bounds_of(p: Path lent) -> [f64]
+    if p.coords.len() == 0
+        return [0.0, 0.0, 0.0, 0.0]
+    left @= p.coords[0]
+    bottom @= p.coords[1]
+    right @= p.coords[0]
+    top @= p.coords[1]
+    k @= 2
+
+    while k + 1 < p.coords.len()
+        if p.coords[k] < left
+            left @ p.coords[k]
+
+        if p.coords[k] > right
+            right @ p.coords[k]
+
+        if p.coords[k + 1] < bottom
+            bottom @ p.coords[k + 1]
+
+        if p.coords[k + 1] > top
+            top @ p.coords[k + 1]
+        k @ k + 2
+
+    return [left, bottom, right, top]
