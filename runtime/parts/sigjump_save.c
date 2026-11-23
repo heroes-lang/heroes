@@ -68,6 +68,7 @@ static void hero_jmp_set(const ucontext_t *ucp) {
     bool standing = hero_sig_standing(own);
     if (!hero_ctx_recording()) {
         uintptr_t t = hero_jmp_context_sp(ucp);
+        hero_sig_range_entered(t);
         if (standing) {
             hero_sig_landing(own, t);
             uintptr_t lo = 0, hi = 0;
@@ -169,9 +170,14 @@ __attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *r
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
+    uintptr_t entered = 0;
     if (own != NULL && oucp != NULL && ucp != NULL) {
         bool field = !hero_ctx_recording();
         uintptr_t t = field ? hero_jmp_context_sp(ucp) : 0;
+        if (field) {
+            hero_sig_range_entered(t);
+            entered = t;
+        }
         if (field) hero_sig_landing(own, t);
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {
             HeroSigEntry *e = &own->entries[i];
@@ -193,6 +199,10 @@ __attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *r
         }
     }
     int r = atomic_load_explicit(&hero_ctx_real_swap, memory_order_relaxed)(oucp, ucp);
+    /* The context switched to came back unchanged: nothing saved a point in
+     * it, so its coroutine ended (or left without a save) and the range holds
+     * no frames of it any more (defect 2706, `sigentries.c`). */
+    if (entered != 0 && r == 0 && hero_jmp_context_sp(ucp) == entered) hero_sig_range_ended(entered);
     if (n > 0) {
         for (int j = 0; j < n; j += 1) {
             for (int i = 0; i < own->depth; i += 1) {

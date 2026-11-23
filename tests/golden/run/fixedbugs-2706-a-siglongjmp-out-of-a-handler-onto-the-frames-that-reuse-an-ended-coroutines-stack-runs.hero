@@ -1,0 +1,24 @@
+# Fixed 2026-11-23, defect 2706, lane-jmp-fixes (panel 257 critic's `n6`): a helper runs a
+# `makecontext` task on a local array of its frame, the task returns through `uc_link` and the
+# helper returns; later the same thread saves a point with `sigsetjmp` in frames that occupy
+# that memory, a signal is raised 300 KiB below the save point (past the dead array), the
+# handler `siglongjmp`s to the save point, and the program is called. Correct C.
+# Symptom: the program aborted in the words of S (*either C called it from inside that handler,
+# or C left the handler in a way this runtime does not follow*, causes the program has none of)
+# when the signal was raised 260 KiB or more below the save point, and ran below that, on
+# Darwin and, since step 118a, on Linux (3 of 3 at `-O0` and `-O2`).
+# Cause: the range `makecontext` was given was kept for ever, so a jump to a save point inside
+# it was judged as a jump onto a coroutine's stack, which proves no handler on the thread's own
+# stack left (rule 4), and where the handler lay depended on where the signal was raised.
+# Fix: a range lives for jumps only while its coroutine may hold frames: a range no switch
+# entered, or whose coroutine a switch saw finish (its `swapcontext` returned with the context
+# unchanged), is judged as the thread's own stack, where a target above the handler leaves it.
+extern "fixedbugs-2706-reused-stacks.h"
+    function rs_case(run: i64, depth: i64, down: i64, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("result ", rs_case(run: 1, depth: 5, down: 150, cb: answer))
