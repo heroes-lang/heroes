@@ -1,0 +1,1 @@
+If C calls a callback on a thread where one of its signal handlers has not ended, the program aborts, saying the handler was not seen to end; a handler ends by its return or by a `longjmp`, `siglongjmp` or `_longjmp` out of it, but not by an inline jump or a `swapcontext` away from it.

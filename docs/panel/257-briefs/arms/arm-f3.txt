@@ -1,0 +1,1 @@
+A callback called while a handler of C's has not been seen to end, by return or by `longjmp`, `siglongjmp` or `_longjmp` out of it, aborts, saying so.

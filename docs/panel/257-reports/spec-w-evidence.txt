@@ -1,0 +1,90 @@
+# Panel 257, spec-warden: the measure outputs behind spec-warden.md (verbatim, nothing edited)
+
+## The four --refresh requests (the first 9 lines of each output; the key is never in them)
+### build/refresh-1-w16.txt
+constant SPEC_REAL_TOKENS: i64
+    12935
+constant SPEC_REAL_MODEL: str
+    "claude-opus-5"
+constant SPEC_REAL_TAKEN: str
+    "2026-11-23"
+constant SPEC_DIGEST: str
+    "535dedd42ad42225"
+note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints. The names car
+
+### build/refresh-2-f3.txt
+constant SPEC_REAL_TOKENS: i64
+    12867
+constant SPEC_REAL_MODEL: str
+    "claude-opus-5"
+constant SPEC_REAL_TAKEN: str
+    "2026-11-23"
+constant SPEC_DIGEST: str
+    "7f2425a636c8eef1"
+note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints. The names car
+
+### build/refresh-3-f1b.txt
+constant SPEC_REAL_TOKENS: i64
+    12920
+constant SPEC_REAL_MODEL: str
+    "claude-opus-5"
+constant SPEC_REAL_TAKEN: str
+    "2026-11-23"
+constant SPEC_DIGEST: str
+    "08a061b310e82ec9"
+note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints. The names car
+
+### build/refresh-4-w26.txt
+constant SPEC_REAL_TOKENS: i64
+    12947
+constant SPEC_REAL_MODEL: str
+    "claude-opus-5"
+constant SPEC_REAL_TAKEN: str
+    "2026-11-23"
+constant SPEC_DIGEST: str
+    "5d451c5c7bf639da"
+note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit — the two copies are what the harness cross-checks against what this tool prints. The names car
+
+## Vendored counts, offline (heroes-next measure <copy>), each from the saved original
+w16      claude-legacy 9675  cl100k_base 9851   (delta vs 9585/9761: +90 / +90)
+w19      claude-legacy 9660  cl100k_base 9836   (delta vs 9585/9761: +75 / +75)
+w23      claude-legacy 9688  cl100k_base 9864   (delta vs 9585/9761: +103 / +103)
+w24      claude-legacy 9678  cl100k_base 9854   (delta vs 9585/9761: +93 / +93)
+w25      claude-legacy 9673  cl100k_base 9849   (delta vs 9585/9761: +88 / +88)
+w26      claude-legacy 9686  cl100k_base 9862   (delta vs 9585/9761: +101 / +101)
+w27      claude-legacy 9661  cl100k_base 9837   (delta vs 9585/9761: +76 / +76)
+mM26     claude-legacy 9679  cl100k_base 9855   (delta vs 9585/9761: +94 / +94)
+w26s     claude-legacy 9692  cl100k_base 9867   (delta vs 9585/9761: +107 / +106)
+w26fold  claude-legacy 9681  cl100k_base 9857   (delta: +96 / +96)
+w26app   claude-legacy 9687  cl100k_base 9863   (delta: +102 / +102)
+arm-f1   claude-legacy 9678  cl100k_base 9854   (delta: +93 / +93)
+arm-f1b  claude-legacy 9670  cl100k_base 9846   (delta: +85 / +85)
+arm-f2   claude-legacy 9672  cl100k_base 9848   (delta: +87 / +87)
+arm-f3   claude-legacy 9629  cl100k_base 9805   (delta: +44 / +44)
+
+## sha256 of the files beside the report
+c60f81dbf60569b05b67cc5429b59778b89dd650c02d6d1869d86a53d15f7f57  spec-w-evidence.txt
+1433b27ed73ef4ad5960b48b53cc3faf985d8f3ff78c86db1d82c8e3fe297a38  spec-w1.txt
+54ff538fab7f0eae830ebb13a09c71c9093ba4623da63065a0ab8c0aeda576bf  spec-w10.txt
+3dab4167ad3680b48544f93944cbd14fe841cdb719346a6ce07f146cfe842b3a  spec-w11.txt
+ac0d44cb0375ea2fe091828d07f49691c3d0a8a022fccc1298c7db7fd302a933  spec-w12.txt
+b295750ac27059e40a8893323bf72b1b1dfcfd1a5e32e656cee2a317a3bb8fa4  spec-w2.txt
+1433b27ed73ef4ad5960b48b53cc3faf985d8f3ff78c86db1d82c8e3fe297a38  spec-w3.txt
+878adfab3c32e744d6035b8329105de6deefd116f832bfbfa819514cd53608e2  spec-w4.txt
+9e62bb9ea682a69ecd4323f7dde14e16c8d29d675f0071e1a1ba1bf0c7e5c134  spec-w5.txt
+1433b27ed73ef4ad5960b48b53cc3faf985d8f3ff78c86db1d82c8e3fe297a38  spec-w6.txt
+54ff538fab7f0eae830ebb13a09c71c9093ba4623da63065a0ab8c0aeda576bf  spec-w7.txt
+54ff538fab7f0eae830ebb13a09c71c9093ba4623da63065a0ab8c0aeda576bf  spec-w8.txt
+f7fd4e0d296a3d2a6e17eaf2c6e3416cb6d434c37a2a9c481189f3969cf52c3d  spec-w9.txt
+ae5d77f965605d61ea222706c5d1b6c914ac31b33707b2ddcb93ff8b5dbfaefd  spec-w1.diff
+9ac91015107d6eac682b97a1519d1a336936886e9793e9e49998d5a25b476762  spec-w10.diff
+741f1c2896cf139e0881e11147ea875b35d89a055d8804988b148c0f40ef91cd  spec-w11.diff
+8c5ea1a821ac105d1d5a417946e4f8f14dfd586d538bb8126851cebb5859c426  spec-w12.diff
+13122aa5c105d60b07faac834d270847bdb894272848dbad2d3ecf10a02fa589  spec-w2.diff
+f4215e9c1d039d498b0eb388631333d7099dffe648ad98f2b7c3437b8d195800  spec-w3.diff
+3489f642e25ccaa760ab83b5bec99aa4415b6b44660593ae6368e767724a75be  spec-w4.diff
+4c2006f980119aa68cc60c34b71de6a74c4176c69d3c383692ea0a1b44e8e58f  spec-w5.diff
+aa042f5d1317caa92801b1808476cd9521c72b5bc57d9239633d41bcc0613424  spec-w6.diff
+9d5d4b6d1a724cb834685059269ec56632e3f7b4781c6683fd175b9ac23b2eb7  spec-w7.diff
+27b700f27f349c37aed4e5988760bddb922df875661eb55abd4516edac1f3b94  spec-w8.diff
+b5baf5c3ab30de1f4898ac1c0ace543ded3854b1ca0d39b7c9bd980c0da785e9  spec-w9.diff

@@ -1,0 +1,1 @@
+On Linux and macOS, if C calls a callback on a thread where one of its signal handlers has not ended, the program aborts, saying the handler was not seen to end; a handler ends by its return or by a `longjmp`, `siglongjmp`, `_longjmp` or `setcontext` out of it, but not by an inline jump, a `swapcontext` away from it or a jump onto another stack given to `makecontext`.

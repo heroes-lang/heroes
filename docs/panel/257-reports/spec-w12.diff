@@ -1,0 +1,11 @@
+--- a/spec/heroes-spec.md
++++ b/spec/heroes-spec.md
+@@ -425,7 +425,7 @@
+ aborts, or fails the call where the kernel writes, and so past a local lent with
+ `@`, which C receives itself; past a field or an element it is the binding's word.
+ A callback is a **parameter**, never a result or a signal handler, nor called by one; its parameters follow the same rule
+-and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
++and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. A handler of C's ends by its return or by a `longjmp`, `siglongjmp`, `_longjmp` or `setcontext` out of it; left by an inline jump it is still taken to be running, and a callback called later on its thread from deeper in the stack than the handler was may abort, saying the handler was not seen to end. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
+ 
+ A group's `record` is the header's struct: all its fields, and the same name
+ unless the header writes it after the word struct, which `tag` gives:

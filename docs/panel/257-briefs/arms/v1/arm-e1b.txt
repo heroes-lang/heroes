@@ -1,0 +1,1 @@
+. C may leave a handler by `longjmp`, `siglongjmp` or `_longjmp` and the program's callbacks run on, whatever memory the buffer is in; a handler left any other way (an inline `__builtin_longjmp`, a C++ exception, a jump to a buffer the handler refilled) is held running, and the next callback aborts saying the handler was not seen to end, though C is correct

@@ -1,0 +1,7 @@
+--- a/spec/heroes-spec.md
++++ b/spec/heroes-spec.md
+@@ -427,3 +427,3 @@
+ A callback is a **parameter**, never a result or a signal handler, nor called by one; its parameters follow the same rule
+-and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
++and `()` is `void`: `atexit(f: (function() -> ())) -> i32`. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call. C may leave a handler by `longjmp`, `siglongjmp` or `_longjmp` and the program's callbacks run on, whatever memory the buffer is in; a handler left any other way (an inline `__builtin_longjmp`, a C++ exception, a jump to a buffer the handler refilled) is held running, and the next callback aborts saying the handler was not seen to end, though C is correct
+ 

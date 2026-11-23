@@ -1,0 +1,1 @@
+A handler of C's ends, for the program, where this runtime sees it return or sees `longjmp`, `siglongjmp` or `_longjmp` take the thread out of it; a handler left any other way (a jump no function of the C library makes) or jumped within is held running, and a callback called while one is held running aborts, saying the handler was not seen to end.
