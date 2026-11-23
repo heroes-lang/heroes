@@ -195,5 +195,6 @@ packages = [
     "x509",
     "xlsx",
     "xml",
+    "xmldsig",
     "yaml",
 ]

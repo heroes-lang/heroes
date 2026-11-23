@@ -1,0 +1,180 @@
+# A reference turned into the bytes its digest is of, as XML Signature 1.1
+# § 4.4.3 says for a reference inside the document: `""` the whole document
+# and `#id` the element an identifier names, both without comments, and the
+# XPointer forms `#xpointer(/)` and `#xpointer(id('id'))` with them; then the
+# enveloped transform, which takes the signature out, and one canonical form,
+# Canonical XML 1.0 where none is named.
+#
+# An identifier must name exactly one element: two elements of one identifier
+# would let a document show one and have the other checked, which is how a
+# signature is wrapped around content it never covered.
+
+use bytes
+use xml
+use xmldsig/internal/names
+use xmldsig/internal/structure
+
+# The code of an identifier that names no element.
+constant NOT_FOUND: str
+    "not_found"
+
+# What a reference names and the bytes digested.
+record Resolved
+    # The place of the element named; empty for the whole document, whose root
+    # it is.
+    place: [i64]
+    # Whether the whole document is named, `""` or `#xpointer(/)`.
+    whole: bool
+    # The bytes the digest is of.
+    data: [u8]
+
+# The place of the one element whose identifier is `id`, by any of the
+# attributes `id_attributes` names. Fails `not_found` where none holds it and
+# `invalid` where two elements do.
+function place_of_id(doc: xml.Document, id: str, id_attributes: [str]) -> [i64]?
+    found: [[i64]] @= []
+
+    for name in id_attributes
+        for p in xml.places_with_attribute(doc, name: name, value: id)
+            if !found.any_equal(p)
+                found @ found.push(p)
+
+    if found.len() == 0
+        return fail(
+            code: NOT_FOUND,
+            msg: f"no element holds the identifier \"{id}\" in any of {id_attributes.join(", ")}"
+        )
+
+    if found.len() > 1
+        return fail(
+            code: names.INVALID,
+            msg: f"{found.len()} elements hold the identifier \"{id}\": a reference must name one, or the content shown could be another than the content checked"
+        )
+    return ok(found[0])
+
+# Whether `places` holds `p`.
+function any_equal(places: [[i64]], p: [i64]) -> bool
+    for q in places
+        if q == p
+            return true
+
+    return false
+
+# The identifier inside `#xpointer(id('x'))` or `#xpointer(id("x"))`, empty
+# where `fragment` is not of that form.
+function xpointer_id(fragment: str) -> str
+    open = "xpointer(id("
+
+    if fragment.len() < open.len() + 4 || fragment.slice(from: 0, to: open.len()) != open
+        return ""
+    tail = fragment.slice(from: fragment.len() - 2, to: fragment.len())
+    quote = fragment[open.len()]
+    last = fragment[fragment.len() - 3]
+
+    if tail != "))" || quote != '\'' && quote != '"' || last != quote
+        return ""
+    return fragment.slice(from: open.len() + 1, to: fragment.len() - 3)
+
+# The reference `ref` of the signature at `signature` in `doc`, resolved and
+# turned into bytes. Fails `unsupported` for a reference outside the document
+# or a transform not read, `invalid` for transforms in an order that has no
+# meaning, and as `place_of_id` does.
+function resolve(doc: xml.Document, signature: [i64], ref: structure.Ref, id_attributes: [str]) -> Resolved?
+    place: [i64] @= []
+    whole: bool @= false
+    keeps_comments: bool @= false
+
+    if ref.uri == ""
+        whole @ true
+    else if ref.uri == "#xpointer(/)"
+        whole @ true
+        keeps_comments @ true
+    else if ref.uri.len() > 1 && ref.uri[0] == '#'
+        fragment = ref.uri.slice(from: 1, to: ref.uri.len())
+        pointed = xpointer_id(fragment)
+
+        if pointed != ""
+            place @ place_of_id(doc: doc, id: pointed, id_attributes: id_attributes)?
+            keeps_comments @ true
+        else if fragment.len() > 9 && fragment.slice(from: 0, to: 9) == "xpointer("
+            return fail(
+                code: names.UNSUPPORTED,
+                msg: f"the reference \"{ref.uri}\": XPointer is read as `#xpointer(/)` and `#xpointer(id('...'))` alone"
+            )
+        else
+            place @ place_of_id(doc: doc, id: fragment, id_attributes: id_attributes)?
+    else
+        return fail(
+            code: names.UNSUPPORTED,
+            msg: f"the reference \"{ref.uri}\" names something outside the document, which this package fetches nothing to read"
+        )
+
+    enveloped: bool @= false
+    canonical: xml.CanonicalOptions @= xml.canonical_options(.inclusive)
+    named: bool @= false
+    k: i64 @= 0
+
+    for t in ref.transforms
+        if t == names.ENVELOPED
+            if enveloped || named
+                return fail(
+                    code: names.INVALID,
+                    msg: f"the reference \"{ref.uri}\" takes the signature out after its content became bytes, or twice"
+                )
+            enveloped @ true
+        else
+            if named
+                return fail(
+                    code: names.INVALID,
+                    msg: f"the reference \"{ref.uri}\" writes its content in a canonical form twice"
+                )
+
+            match names.canonical_of(uri: t, prefixes: ref.prefixes[k])
+                .ok c => canonical @ c
+                .err _ => return fail(
+                    code: names.UNSUPPORTED,
+                    msg: f"the transform \"{t}\": the enveloped transform and the canonical forms are read, and XPath, XPath Filter 2.0, XSLT and base 64 are not"
+                )
+
+            named @ true
+        k @ k + 1
+
+    if !keeps_comments
+        canonical.comments @ false
+    inside = whole || signature.len() > place.len() && signature.slice(from: 0, to: place.len()) == place
+
+    source = if enveloped && inside
+        xml.without_node(doc, place: signature)?
+    else
+        doc
+
+    text = if whole
+        xml.canonicalize(source, options: canonical)?
+    else
+        xml.canonicalize_at(source, place: place, options: canonical)?
+    return ok(Resolved(place: place, whole: whole, data: bytes.from_text(text)))
+
+## Tests
+
+test "xpointer_id: either quote, an empty name, and forms that are not it"
+    assert xpointer_id("xpointer(id('a1'))") == "a1"
+    assert xpointer_id("xpointer(id(\"é\"))") == "é"
+    assert xpointer_id("xpointer(id(''))") == ""
+    assert xpointer_id("xpointer(id('a\"))") == ""
+    assert xpointer_id("xpointer(/)") == ""
+    assert xpointer_id("a1") == ""
+
+test "place_of_id: one element, none, two elements of one identifier, and one element holding it twice"
+    doc = xml.parse("<r ID=\"x\"><a Id=\"y\"/><b id=\"y\" ID=\"z\" Id=\"z\"/></r>").must()
+    names_read = ["ID", "Id", "id"]
+    root: [i64] = []
+    assert place_of_id(doc: doc, id: "x", id_attributes: names_read) == ok(root)
+    assert place_of_id(doc: doc, id: "z", id_attributes: names_read) == ok([1])
+
+    match place_of_id(doc: doc, id: "y", id_attributes: names_read)
+        .ok _  => assert false
+        .err e => assert e.code == names.INVALID
+
+    match place_of_id(doc: doc, id: "none", id_attributes: names_read)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
