@@ -2,18 +2,11 @@
 # bytes, four a pixel in raster order: the predictor, the cross-colour
 # transform, the subtraction of green and the colour index.
 
+use math
+
 # The two numbers averaged and rounded down.
 function average(a: i64, b: i64) -> i64
     return (a + b) / 2
-
-# `v` kept within 0 to 255.
-function clamp(v: i64) -> i64
-    if v < 0
-        return 0
-
-    if v > 255
-        return 255
-    return v
 
 # The prediction of one channel under `mode` (0 to 13) from the channel of the
 # pixel left (`l`), above (`t`), above and left (`tl`) and above and right
@@ -36,8 +29,8 @@ function predicted(mode: i64, l: i64, t: i64, tl: i64, tr: i64, pick_left: bool)
             l
         else
             t
-        12 => clamp(l + t - tl)
-        _  => clamp(average(a: l, b: t) + (average(a: l, b: t) - tl) / 2)
+        12 => math.clamp_i64(x: l + t - tl, low: 0, high: 255)
+        _  => math.clamp_i64(x: average(a: l, b: t) + (average(a: l, b: t) - tl) / 2, low: 0, high: 255)
 
 # The prediction of the pixel at column `x` and row `y` of the `width`-wide
 # image `px` under `mode`, its four channels packed red first as `r << 24 |
