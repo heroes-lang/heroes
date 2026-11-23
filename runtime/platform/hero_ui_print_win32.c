@@ -405,6 +405,27 @@ static int64_t hero_ui_print_win32_choose(HWND window, int64_t page, hero_ui_pri
     return chosen ? 1 : 0;
 }
 
+int64_t hero_ui_print_win32_check(const uint8_t *settings, int64_t count) {
+    hero_ui_print_settings given;
+    WCHAR name[HERO_PRINTING_NAME_MOST + 1];
+    HANDLE printer = NULL;
+
+    if (!hero_ui_print_read(settings, count, &given)) {
+        return hero_ui_print_win32_refuse(HERO_UI_PRINT_INVALID, "the dialog's settings are not the text hero_ui_print_win32.h names");
+    }
+    if (given.printer[0] == '\0') {
+        return HERO_UI_PRINT_OK;
+    }
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, given.printer, -1, name, HERO_PRINTING_NAME_MOST + 1) <= 0) {
+        return hero_ui_print_win32_refuse(HERO_UI_PRINT_INVALID, "the printer's name is not UTF-8");
+    }
+    if (!OpenPrinterW(name, &printer, NULL)) {
+        return hero_ui_print_win32_refuse(HERO_UI_PRINT_NOT_FOUND, "no printer of that name: the spooler could not open it");
+    }
+    (void)ClosePrinter(printer);
+    return HERO_UI_PRINT_OK;
+}
+
 int64_t hero_ui_print_win32_show(void *window, int64_t dialog, int64_t page, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t)) {
     hero_ui_print_settings given;
     char text[HERO_PRINTING_RANGES_MOST * 24 + 1024];
@@ -666,6 +687,12 @@ static void hero_ui_print_win32_end_web(void *window) {
 }
 
 #else
+
+int64_t hero_ui_print_win32_check(const uint8_t *settings, int64_t count) {
+    (void)settings;
+    (void)count;
+    return hero_ui_print_win32_refuse(HERO_UI_PRINT_UNSUPPORTED, "the Win32 print dialogs stand on Windows alone");
+}
 
 int64_t hero_ui_print_win32_show(void *window, int64_t dialog, int64_t page, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t)) {
     (void)window;
