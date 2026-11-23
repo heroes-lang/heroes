@@ -325,8 +325,9 @@ void hero_signal_learn(void) {
  * many swaps made while it stood have not yet returned in their own frames
  * (rule 5); whether a `setcontext` into a coroutine's stack holds it until it
  * ends (rule 6); `unsure`, 1 where a jump this runtime could not follow passed
- * over it and 2 where the entry is itself a re-entry (a jump landed in frames
- * the thread had left); and whether it is gone, one store, so a nested signal
+ * over it, 2 where the entry is itself a re-entry (a jump landed in frames
+ * the thread had left) and 3 where a jump onto a coroutine's stack passed over
+ * it and did not leave it (defect 2705); and whether it is gone, one store, so a nested signal
  * never sees an entry half moved. */
 typedef struct {
     uintptr_t at;
@@ -395,6 +396,7 @@ static _Thread_local HeroSignalStack hero_signal_stack;
 #define HERO_SIG_UNSURE 2
 #define HERO_SIG_SWITCHED 3
 #define HERO_SIG_REENTERED 4
+#define HERO_SIG_ONSTACK 5
 
 #if defined(HERO_SIG_WRAPS)
 /* `parts/sigentries.c`, below: is this thread inside a wrapped handler? */
@@ -450,6 +452,7 @@ static void hero_signal_measure(void) {
 #define HERO_SIGNAL_STANDING 3
 #define HERO_SIGNAL_SWITCHED 4
 #define HERO_SIGNAL_REENTERED 5
+#define HERO_SIGNAL_ONSTACK 6
 
 /* EVERY REFUSAL THE FOURTH QUESTION MAKES SAYS WHAT THE RUNTIME KNOWS, never
  * more (the author's ruling B of 2026-11-20 on defect 2522's rows 1 and 2).
@@ -487,6 +490,16 @@ static void hero_signal_measure(void) {
  * UNFOLLOWED's words, *a buffer this runtime holds no record of*, were false of
  * it. The handler is held to be running again.
  *
+ * HERO_SIGNAL_ONSTACK: C jumped (`longjmp`, `siglongjmp`, `_longjmp`) out of
+ * the handler onto a stack a context switch had entered and none saw end, a
+ * coroutine's that `makecontext` was given (panel 257's `as_0`, defect 2705):
+ * the runtime followed the jump and judged it, and a jump onto another stack
+ * proves no handler left, since it cannot tell it from a jump onto frames the
+ * handler itself switched to. STANDING's words, *C left the handler in a way
+ * this runtime does not follow (an inline `__builtin_longjmp`, a C++
+ * exception, a jump inside a system library)*, named three causes the program
+ * has none of.
+ *
  * HERO_SIGNAL_UNFOLLOWED: C jumped, while the handler ran, to a buffer this
  * runtime holds no trusted record of (panel 251's R1: such a jump keeps every
  * entry), so whether the jump left the handler or landed inside it is not
@@ -522,6 +535,12 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
               "jump and jumped back into, or frames only a signal's delivery "
               "puts on the alternate stack): the handler is held to be running again, where neither this "
               "runtime's memory nor the C library's is safe to use. "
+        : how == HERO_SIGNAL_ONSTACK
+            ? " was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) "
+              "onto a stack a context switch had entered and this runtime has not seen end (a coroutine's, "
+              "`makecontext`'s), where it cannot tell that jump from one onto frames the handler itself "
+              "switched to, so whether the jump left the handler is not known: a handler not seen to end is "
+              "held to be running, where neither this runtime's memory nor the C library's is safe to use. "
         : how == HERO_SIGNAL_UNFOLLOWED
             ? " was called after C, inside a signal handler, jumped to a buffer this runtime holds no "
               "record of as it now stands (copied with `memcpy`, refilled where the runtime does not "
@@ -574,6 +593,7 @@ static void hero_callback_asked(const char *what, void *ret, void *frame) {
         hero_signal_refuse(what, inside == HERO_SIG_UNSURE       ? HERO_SIGNAL_UNFOLLOWED
                                  : inside == HERO_SIG_SWITCHED   ? HERO_SIGNAL_SWITCHED
                                  : inside == HERO_SIG_REENTERED  ? HERO_SIGNAL_REENTERED
+                                 : inside == HERO_SIG_ONSTACK    ? HERO_SIGNAL_ONSTACK
                                                                  : HERO_SIGNAL_STANDING);
     }
     if (plain == 0 || own == NULL) return;

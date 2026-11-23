@@ -233,12 +233,20 @@ static bool hero_rebind_standing(const HeroSignalStack *own) { return own->depth
 static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
     uintptr_t lo = 0, hi = 0;
     bool ranged = hero_rebind_target_range(own, t, &lo, &hi);
+    /* A jump onto a coroutine's stack that an entry survives is told as such
+     * (`unsure` 3, defect 2705): the words say what the runtime judged. */
+    uintptr_t clo = 0, chi = 0;
+    bool oncoroutine = by_jump && hero_rebind_live_range(t, &clo, &chi);
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroRebindEntry *e = &own->entries[i];
         if (e->dead || hero_rebind_pinned(e)) continue;
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !(t >= e->alt_lo && t < e->alt_hi);
-        if (above || left_alt) hero_rebind_drop(own, i);
+        if (above || left_alt) {
+            hero_rebind_drop(own, i);
+        } else if (oncoroutine && e->unsure == 0) {
+            e->unsure = 3;
+        }
     }
 }
 
@@ -342,7 +350,7 @@ __attribute__((noinline)) static int hero_rebind_inside(void) {
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroRebindEntry *e = &own->entries[i];
         if (e->dead) continue;
-        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : HERO_SIG_UNSURE;
+        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : e->unsure == 3 ? HERO_SIG_ONSTACK : HERO_SIG_UNSURE;
         return hero_rebind_pinned(e) ? HERO_SIG_SWITCHED : HERO_SIG_INSIDE;
     }
     return HERO_SIG_INSIDE;
