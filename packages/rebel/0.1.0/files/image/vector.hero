@@ -1,0 +1,1358 @@
+# Paths of lines and curves drawn into an image: a path built from moves,
+# lines, quadratic and cubic curves and arcs, or read from SVG's path data,
+# moved by an affine matrix, filled under the non-zero or the even-odd rule,
+# stroked with a width, caps, joins and dashes, and a region painted from a
+# point. Every shape is anti-aliased: a pixel the shape covers by a third
+# takes a third of the colour's alpha.
+#
+# It reads and writes no file and draws no text: `image` holds the pixels,
+# `image/text` draws text with a font's outlines through this package. A coordinate is a number of pixels, x
+# to the right and y downward, the top left corner of the top left pixel at
+# 0, 0; a pixel (`i`, `j`) covers 0 to 1 around its own corner, `i` to
+# `i + 1`.
+#
+# A path is not trusted: a coordinate that is not a number, or is past
+# 1,073,741,824 either way, fails `invalid`, and a path or a stroke that would
+# need more than 8,388,608 points, or a dash pattern that would cut more than
+# 1,000,000 dashes, fails `limit` before the memory is taken. A shape built
+# from a number that is not one, a NaN, makes a path that fails `invalid`
+# when it is drawn. Drawing never reads or writes past `img`: what falls
+# outside is dropped, and the time follows the rows the shape crosses.
+#
+# It fails with `invalid` and `limit`.
+#
+# Not written yet, each a `pending` block of its ledger: a region painted across pixels that differ by a tolerance; shapes combined by union, intersection, difference and exclusive or.
+
+use image
+use image/vector/internal/arcs
+use image/vector/internal/flatten
+use image/vector/internal/flood
+use image/vector/internal/paint
+use image/vector/internal/raster
+use image/vector/internal/shapes
+use image/vector/internal/stroke as stroke_internal
+use image/vector/internal/svgpath
+use math
+
+## Codes
+
+# A path or a setting is not what the function takes: a coordinate that is
+# not a number or is past the reach of a path, a width below 0, a dash
+# pattern that does not alternate positive lengths, SVG path data that is
+# none. Failed by `fill_path`, `stroke_path`, `stroke_outline`,
+# `bounds_of`, `contains` and `parse_svg`.
+constant INVALID: str
+    "invalid"
+
+# The shape needs more than the package allows: more points than a path may
+# flatten to, or more dashes than a stroke may be cut into. Failed by
+# `fill_path`, `stroke_path`, `stroke_outline`, `bounds_of` and `contains`.
+constant LIMIT: str
+    "limit"
+
+## Paths
+
+# A point on the page.
+record Point
+    # The column, in pixels, to the right.
+    x: f64
+    # The row, in pixels, downward.
+    y: f64
+
+# One step of a path.
+variant Segment
+    # Lifts the pen to a point and begins a contour.
+    move
+        x: f64
+        y: f64
+    # A straight line to a point.
+    line
+        x: f64
+        y: f64
+    # A quadratic curve to a point, bent toward a control point.
+    quad
+        control_x: f64
+        control_y: f64
+        x: f64
+        y: f64
+    # A cubic curve to a point, bent toward two control points.
+    cubic
+        control1_x: f64
+        control1_y: f64
+        control2_x: f64
+        control2_y: f64
+        x: f64
+        y: f64
+    # Joins the contour's last point to its first and ends it.
+    close
+
+# An affine transform of the page: a point (`x`, `y`) goes to (`a` × `x` +
+# `c` × `y` + `e`, `b` × `x` + `d` × `y` + `f`), SVG's `matrix(a b c d e f)`.
+record Matrix
+    # How far x carries a point's column.
+    a: f64
+    # How far x carries a point's row.
+    b: f64
+    # How far y carries a point's column.
+    c: f64
+    # How far y carries a point's row.
+    d: f64
+    # The column added.
+    e: f64
+    # The row added.
+    f: f64
+
+# The box around a path.
+record Bounds
+    # The leftmost column.
+    left: f64
+    # The topmost row.
+    top: f64
+    # The rightmost column.
+    right: f64
+    # The bottommost row.
+    bottom: f64
+
+# Lifts the pen of `path` to (`x`, `y`) and begins a contour there.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `x`: the column.
+# - `y`: the row.
+#
+# See also `line_to`.
+function move_to(@path: [Segment], x: f64, y: f64)
+    path @ path.push(.move(x: x, y: y))
+
+# Draws a straight line from the pen to (`x`, `y`).
+#
+# - `path`: the path built, changed in the caller's place.
+# - `x`: the column the line ends at.
+# - `y`: the row it ends at.
+#
+# With no contour open the line begins one at its end. See also `move_to`.
+function line_to(@path: [Segment], x: f64, y: f64)
+    path @ path.push(.line(x: x, y: y))
+
+# Draws a quadratic curve from the pen to (`x`, `y`), bent toward the control
+# point (`control_x`, `control_y`).
+#
+# - `path`: the path built, changed in the caller's place.
+# - `control_x`: the control point's column.
+# - `control_y`: its row.
+# - `x`: the column the curve ends at.
+# - `y`: the row it ends at.
+#
+# See also `cubic_to`.
+function quad_to(@path: [Segment], control_x: f64, control_y: f64, x: f64, y: f64)
+    path @ path.push(.quad(control_x: control_x, control_y: control_y, x: x, y: y))
+
+# Draws a cubic curve from the pen to (`x`, `y`), bent toward two control
+# points.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `control1_x`: the first control point's column.
+# - `control1_y`: its row.
+# - `control2_x`: the second control point's column.
+# - `control2_y`: its row.
+# - `x`: the column the curve ends at.
+# - `y`: the row it ends at.
+#
+# See also `quad_to`.
+function cubic_to(@path: [Segment], control1_x: f64, control1_y: f64, control2_x: f64, control2_y: f64, x: f64, y: f64)
+    path @ path.push(
+        .cubic(control1_x: control1_x, control1_y: control1_y, control2_x: control2_x, control2_y: control2_y, x: x, y: y)
+    )
+
+# Joins the contour's last point to its first and ends it.
+#
+# - `path`: the path built, changed in the caller's place.
+#
+# See also `move_to`.
+function close_path(@path: [Segment])
+    path @ path.push(.close)
+
+# The point the pen of `path` stands at: where its last step ends, or where
+# the contour began after a `close`.
+#
+# - `path`: the path asked.
+#
+# Fails `not_found` where `path` has no step, or ends with a `close` that no
+# `move` opened. See also `move_to`.
+function pen_of(path: [Segment] lent) -> Point?
+    if path.len() == 0
+        return fail(code: "not_found", msg: "the path has no step")
+
+    match path[path.len() - 1]
+        .move s  => return ok(Point(x: s.x, y: s.y))
+        .line s  => return ok(Point(x: s.x, y: s.y))
+        .quad s  => return ok(Point(x: s.x, y: s.y))
+        .cubic s => return ok(Point(x: s.x, y: s.y))
+        .close =>
+            j @= path.len() - 2
+
+            while j >= 0
+                match path[j]
+                    .move s                               => return ok(Point(x: s.x, y: s.y))
+                    .line _ | .quad _ | .cubic _ | .close => j @ j - 1
+
+            return fail(code: "not_found", msg: "no move opens the contour a close ends")
+
+# Draws an elliptical arc from the pen to (`x`, `y`) as SVG's `A` does: on an
+# ellipse of radii `radius_x` and `radius_y` turned by `tilt` degrees,
+# the larger of the two arcs where `large` is true, turning toward the y axis
+# (clockwise on the page) where `sweep` is true. Radii too small to reach
+# the end grow until they do; where either is 0 the arc is a line; with no
+# pen, or the pen already at the end, it draws nothing.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `radius_x`: the ellipse's horizontal radius before it is turned.
+# - `radius_y`: its vertical radius.
+# - `tilt`: the turn of its axes, in degrees.
+# - `large`: whether the arc takes more than half the ellipse.
+# - `sweep`: whether it turns clockwise on the page.
+# - `x`: the column the arc ends at.
+# - `y`: the row it ends at.
+#
+# The arc is drawn as cubic curves, one for each quarter turn at most. See
+# also `add_arc`.
+function arc_to(@path: [Segment], radius_x: f64, radius_y: f64, tilt: f64, large: bool, sweep: bool, x: f64, y: f64)
+    match pen_of(path)
+        .err _ => return
+        .ok p =>
+            if radius_x == 0.0 || radius_y == 0.0 || !arcs.finite([radius_x, radius_y, tilt])
+                path @ path.push(.line(x: x, y: y))
+                return
+            curves = arcs.by_endpoints(
+                x0: p.x,
+                y0: p.y,
+                rx: radius_x,
+                ry: radius_y,
+                rotation: tilt,
+                large: large,
+                sweep: sweep,
+                x1: x,
+                y1: y
+            )
+            k @= 0
+
+            while k < curves.len()
+                last = k + 6 >= curves.len()
+
+                end_x = if last
+                    x
+                else
+                    curves[k + 4]
+
+                end_y = if last
+                    y
+                else
+                    curves[k + 5]
+                path @ path.push(
+                    .cubic(control1_x: curves[k], control1_y: curves[k + 1], control2_x: curves[k + 2], control2_y: curves[k + 3], x: end_x, y: end_y)
+                )
+                k @ k + 6
+
+# Adds the rectangle whose top left corner is (`x`, `y`), of `width` by
+# `height`, as a closed contour that turns clockwise on the page.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `x`: the left column.
+# - `y`: the top row.
+# - `width`: the columns; a negative one puts the rectangle to the left of `x`.
+# - `height`: the rows; a negative one puts it above `y`.
+#
+# See also `add_rounded_rect`.
+function add_rect(@path: [Segment], x: f64, y: f64, width: f64, height: f64)
+    move_to(path: @path, x: x, y: y)
+    line_to(path: @path, x: x + width, y: y)
+    line_to(path: @path, x: x + width, y: y + height)
+    line_to(path: @path, x: x, y: y + height)
+    close_path(@path)
+
+# Adds the ellipse around (`center_x`, `center_y`) as a closed contour of four
+# cubic arcs, turning clockwise on the page from its rightmost point.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `center_x`: the column of its centre.
+# - `center_y`: the row of its centre.
+# - `radius_x`: the horizontal radius.
+# - `radius_y`: the vertical radius.
+#
+# A circle is an ellipse of two equal radii. See also `add_arc`.
+function add_ellipse(@path: [Segment], center_x: f64, center_y: f64, radius_x: f64, radius_y: f64)
+    add_arc(
+        path: @path,
+        center_x: center_x,
+        center_y: center_y,
+        radius_x: radius_x,
+        radius_y: radius_y,
+        start: 0.0,
+        sweep: 360.0
+    )
+    close_path(@path)
+
+# Adds the arc of the ellipse around (`center_x`, `center_y`) that begins at
+# angle `start` and turns through `sweep` degrees, as an open contour of cubic
+# curves. Angle 0 is the rightmost point and angles grow clockwise on the
+# page, so 90 is the bottom, as `ImageDraw.arc` counts them; a negative
+# `sweep` turns the other way, and one past 360 either way is cut to a full
+# turn.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `center_x`: the column of the ellipse's centre.
+# - `center_y`: the row of its centre.
+# - `radius_x`: the horizontal radius.
+# - `radius_y`: the vertical radius.
+# - `start`: the angle the arc begins at, in degrees.
+# - `sweep`: the degrees it turns through.
+#
+# See also `add_chord`, `add_pie` and `arc_to`.
+function add_arc(@path: [Segment], center_x: f64, center_y: f64, radius_x: f64, radius_y: f64, start: f64, sweep: f64)
+    turn = math.clamp(x: sweep, low: -360.0, high: 360.0)
+    first = math.to_radians(start)
+    move_to(path: @path, x: center_x + radius_x * math.cos(first), y: center_y + radius_y * math.sin(first))
+    curves = arcs.by_centre(
+        cx: center_x,
+        cy: center_y,
+        rx: radius_x,
+        ry: radius_y,
+        phi: 0.0,
+        start: first,
+        sweep: math.to_radians(turn)
+    )
+    k @= 0
+
+    while k < curves.len()
+        cubic_to(
+            path: @path,
+            control1_x: curves[k],
+            control1_y: curves[k + 1],
+            control2_x: curves[k + 2],
+            control2_y: curves[k + 3],
+            x: curves[k + 4],
+            y: curves[k + 5]
+        )
+        k @ k + 6
+
+# Adds the arc of `add_arc` closed by the straight line between its ends: a
+# chord.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `center_x`: the column of the ellipse's centre.
+# - `center_y`: the row of its centre.
+# - `radius_x`: the horizontal radius.
+# - `radius_y`: the vertical radius.
+# - `start`: the angle the arc begins at, in degrees.
+# - `sweep`: the degrees it turns through.
+#
+# See also `add_pie`.
+function add_chord(@path: [Segment], center_x: f64, center_y: f64, radius_x: f64, radius_y: f64, start: f64, sweep: f64)
+    add_arc(
+        path: @path,
+        center_x: center_x,
+        center_y: center_y,
+        radius_x: radius_x,
+        radius_y: radius_y,
+        start: start,
+        sweep: sweep
+    )
+    close_path(@path)
+
+# Adds the slice of the ellipse that `add_arc` cuts out: the centre, a line
+# to the arc's start, the arc, and the line back.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `center_x`: the column of the ellipse's centre.
+# - `center_y`: the row of its centre.
+# - `radius_x`: the horizontal radius.
+# - `radius_y`: the vertical radius.
+# - `start`: the angle the slice begins at, in degrees.
+# - `sweep`: the degrees it turns through.
+#
+# See also `add_chord`.
+function add_pie(@path: [Segment], center_x: f64, center_y: f64, radius_x: f64, radius_y: f64, start: f64, sweep: f64)
+    move_to(path: @path, x: center_x, y: center_y)
+    first = math.to_radians(start)
+    line_to(path: @path, x: center_x + radius_x * math.cos(first), y: center_y + radius_y * math.sin(first))
+    curves = arcs.by_centre(
+        cx: center_x,
+        cy: center_y,
+        rx: radius_x,
+        ry: radius_y,
+        phi: 0.0,
+        start: first,
+        sweep: math.to_radians(math.clamp(x: sweep, low: -360.0, high: 360.0))
+    )
+    k @= 0
+
+    while k < curves.len()
+        cubic_to(
+            path: @path,
+            control1_x: curves[k],
+            control1_y: curves[k + 1],
+            control2_x: curves[k + 2],
+            control2_y: curves[k + 3],
+            x: curves[k + 4],
+            y: curves[k + 5]
+        )
+        k @ k + 6
+
+    close_path(@path)
+
+# Adds the rectangle of `add_rect` with its corners rounded by quarter
+# ellipses.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `x`: the left column.
+# - `y`: the top row.
+# - `width`: the columns, 0 or more.
+# - `height`: the rows, 0 or more.
+# - `radius_x`: the corners' horizontal radius, held to half of `width`.
+# - `radius_y`: their vertical radius, held to half of `height`.
+#
+# A radius below 0 is taken as 0, and a rectangle of that gets square
+# corners. See also `add_rect`.
+function add_rounded_rect(@path: [Segment], x: f64, y: f64, width: f64, height: f64, radius_x: f64, radius_y: f64)
+    if !arcs.finite([x, y, width, height, radius_x, radius_y])
+        move_to(@path, x: 0.0 / 0.0, y: 0.0 / 0.0)
+        return
+    rx = math.clamp(x: radius_x, low: 0.0, high: math.max(a: width, b: 0.0) / 2.0)
+    ry = math.clamp(x: radius_y, low: 0.0, high: math.max(a: height, b: 0.0) / 2.0)
+
+    if rx == 0.0 || ry == 0.0
+        add_rect(path: @path, x: x, y: y, width: width, height: height)
+        return
+    move_to(path: @path, x: x + rx, y: y)
+    line_to(path: @path, x: x + width - rx, y: y)
+    arc_to(path: @path, radius_x: rx, radius_y: ry, tilt: 0.0, large: false, sweep: true, x: x + width, y: y + ry)
+    line_to(path: @path, x: x + width, y: y + height - ry)
+    arc_to(
+        path: @path,
+        radius_x: rx,
+        radius_y: ry,
+        tilt: 0.0,
+        large: false,
+        sweep: true,
+        x: x + width - rx,
+        y: y + height
+    )
+    line_to(path: @path, x: x + rx, y: y + height)
+    arc_to(path: @path, radius_x: rx, radius_y: ry, tilt: 0.0, large: false, sweep: true, x: x, y: y + height - ry)
+    line_to(path: @path, x: x, y: y + ry)
+    arc_to(path: @path, radius_x: rx, radius_y: ry, tilt: 0.0, large: false, sweep: true, x: x + rx, y: y)
+    close_path(@path)
+
+# Adds the polygon through `points`, closed by a line from the last back to
+# the first.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `points`: the corners in order; none adds nothing.
+#
+# See also `add_polyline`.
+function add_polygon(@path: [Segment], points: [Point])
+    add_polyline(@path, points: points)
+
+    if points.len() > 0
+        close_path(@path)
+
+# Adds the open contour through `points`, which a stroke leaves open at both
+# ends.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `points`: the points in order; none adds nothing.
+#
+# See also `add_polygon`.
+function add_polyline(@path: [Segment], points: [Point])
+    for i in range(from: 0, to: points.len())
+        if i == 0
+            move_to(path: @path, x: points[i].x, y: points[i].y)
+        else
+            line_to(path: @path, x: points[i].x, y: points[i].y)
+
+# Adds every step of `other` to `path`.
+#
+# - `path`: the path built, changed in the caller's place.
+# - `other`: the steps added after those of `path`.
+function add_path(@path: [Segment], other: [Segment])
+    for s in other
+        path @ path.push(s)
+
+## Matrices
+
+# The matrix that moves nothing.
+function identity() -> Matrix
+    return Matrix(a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0)
+
+# The matrix that moves every point by `dx` columns and `dy` rows.
+#
+# - `dx`: the columns, to the right.
+# - `dy`: the rows, downward.
+function translation(dx: f64, dy: f64) -> Matrix
+    return Matrix(a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: dx, f: dy)
+
+# The matrix that stretches every distance from the origin by `sx` across and
+# `sy` down.
+#
+# - `sx`: the factor of the columns; a negative one mirrors.
+# - `sy`: the factor of the rows.
+function scaling(sx: f64, sy: f64) -> Matrix
+    return Matrix(a: sx, b: 0.0, c: 0.0, d: sy, e: 0.0, f: 0.0)
+
+# The matrix that turns every point by `degrees` around (`about_x`,
+# `about_y`), clockwise on the page where `degrees` is positive.
+#
+# - `degrees`: the turn.
+# - `about_x`: the column of the fixed point.
+# - `about_y`: its row.
+function rotation(degrees: f64, about_x: f64, about_y: f64) -> Matrix
+    r = math.to_radians(degrees)
+    c = math.cos(r)
+    s = math.sin(r)
+    return Matrix(
+        a: c,
+        b: s,
+        c: -s,
+        d: c,
+        e: about_x - c * about_x + s * about_y,
+        f: about_y - s * about_x - c * about_y
+    )
+
+# The matrix that does `first` and then `second`.
+#
+# - `first`: the transform applied first.
+# - `second`: the transform applied to its answer.
+function compose(first: Matrix, second: Matrix) -> Matrix
+    return Matrix(
+        a: second.a * first.a + second.c * first.b,
+        b: second.b * first.a + second.d * first.b,
+        c: second.a * first.c + second.c * first.d,
+        d: second.b * first.c + second.d * first.d,
+        e: second.a * first.e + second.c * first.f + second.e,
+        f: second.b * first.e + second.d * first.f + second.f
+    )
+
+# The point (`x`, `y`) moved by `m`.
+#
+# - `m`: the transform.
+# - `x`: the column.
+# - `y`: the row.
+function apply(m: Matrix, x: f64, y: f64) -> Point
+    return Point(x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f)
+
+# `path` with every point moved by `m`: lines stay lines, and a curve stays the
+# curve whose control points moved, which is exact for an affine `m`.
+#
+# - `path`: the path moved; it is left as it was.
+# - `m`: the transform.
+function transform(path: [Segment], m: Matrix) -> [Segment]
+    steps = steps_of(path)
+    moved: [f64] @= []
+
+    for i in range(from: 0, to: steps.numbers.len() / 2)
+        p = apply(m: m, x: steps.numbers[2 * i], y: steps.numbers[2 * i + 1])
+        moved @ moved.push(p.x)
+        moved @ moved.push(p.y)
+
+    return path_of(Steps(ops: steps.ops, numbers: moved))
+
+## SVG
+
+# The path the SVG path data `d` describes: `M`, `L`, `H`, `V`, `C`, `S`, `Q`,
+# `T`, `A` and `Z`, upper case absolute and lower case relative, a command
+# repeated by the numbers that follow it, an arc drawn as cubic curves.
+#
+# - `d`: the text of a `d` attribute, such as `M 10 10 L 90 10 Z`.
+#
+# Fails `invalid` where `d` is not path data, the message naming the byte and
+# what was expected there. See also `path_of`.
+function parse_svg(d: str) -> [Segment]?
+    flat = svgpath.parse(d)?
+    return ok(path_of(Steps(ops: flat.ops, numbers: flat.coords)))
+
+## Numbers
+
+# What kind of step a number of `Steps.ops` stands for: a move, 2 numbers.
+constant MOVE: i64
+    0
+
+# A line, 2 numbers.
+constant LINE: i64
+    1
+
+# A quadratic curve, 4 numbers: the control point and the end.
+constant QUAD: i64
+    2
+
+# A cubic curve, 6 numbers: two control points and the end.
+constant CUBIC: i64
+    3
+
+# A close, no numbers.
+constant CLOSE: i64
+    4
+
+# A path held as numbers, which code that does arithmetic on a path takes
+# more easily than a list of cases. Every number is a column or a row, in
+# pairs, x before y, so a transform of the page is a transform of each pair.
+record Steps
+    # The kind of each step: `MOVE`, `LINE`, `QUAD`, `CUBIC` or `CLOSE`.
+    ops: [i64]
+    # The numbers the steps read, in order: 2 for a move or a line, 4 for a
+    # quadratic curve, 6 for a cubic curve, none for a close.
+    numbers: [f64]
+
+# `path` as numbers.
+#
+# - `path`: the path read.
+#
+# See also `path_of`.
+function steps_of(path: [Segment]) -> Steps
+    ops: [i64] @= []
+    numbers: [f64] @= []
+
+    for s in path
+        match s
+            .move v =>
+                ops @ ops.push(MOVE)
+                numbers @ numbers.push(v.x)
+                numbers @ numbers.push(v.y)
+            .line v =>
+                ops @ ops.push(LINE)
+                numbers @ numbers.push(v.x)
+                numbers @ numbers.push(v.y)
+            .quad v =>
+                ops @ ops.push(QUAD)
+                numbers @ numbers.push(v.control_x)
+                numbers @ numbers.push(v.control_y)
+                numbers @ numbers.push(v.x)
+                numbers @ numbers.push(v.y)
+            .cubic v =>
+                ops @ ops.push(CUBIC)
+                numbers @ numbers.push(v.control1_x)
+                numbers @ numbers.push(v.control1_y)
+                numbers @ numbers.push(v.control2_x)
+                numbers @ numbers.push(v.control2_y)
+                numbers @ numbers.push(v.x)
+                numbers @ numbers.push(v.y)
+            .close => ops @ ops.push(CLOSE)
+
+    return Steps(ops: ops, numbers: numbers)
+
+# The path that `steps` holds.
+#
+# - `steps`: the steps and their numbers; each step must find its numbers,
+#   and an `ops` entry that is no kind is taken as a close.
+#
+# Aborts where a step reads past the numbers. See also `steps_of`.
+function path_of(steps: Steps) -> [Segment]
+    out: [Segment] @= []
+    k @= 0
+
+    for op in steps.ops
+        n = shapes.width_of(op)
+
+        if op == MOVE
+            out @ out.push(.move(x: steps.numbers[k], y: steps.numbers[k + 1]))
+        else if op == LINE
+            out @ out.push(.line(x: steps.numbers[k], y: steps.numbers[k + 1]))
+        else if op == QUAD
+            out @ out.push(
+                .quad(control_x: steps.numbers[k], control_y: steps.numbers[k + 1], x: steps.numbers[k + 2], y: steps.numbers[k + 3])
+            )
+        else if op == CUBIC
+            out @ out.push(
+                .cubic(control1_x: steps.numbers[k], control1_y: steps.numbers[k + 1], control2_x: steps.numbers[k + 2], control2_y: steps.numbers[k + 3], x: steps.numbers[k + 4], y: steps.numbers[k + 5])
+            )
+        else
+            out @ out.push(.close)
+        k @ k + n
+
+    return out
+
+## Measures
+
+# The smallest box around `path`, its curves flattened to a twentieth of a
+# pixel.
+#
+# - `path`: the path measured.
+#
+# Fails `not_found` where `path` has no point, `invalid` where a coordinate
+# is not a number within 1,073,741,824, `limit` where it needs more than
+# 8,388,608 points. See also `contains`.
+function bounds_of(path: [Segment]) -> Bounds?
+    steps = steps_of(path)
+    lines = flatten.from_steps(steps.ops, coords: steps.numbers)?
+
+    if lines.xs.len() == 0
+        return fail(code: "not_found", msg: "the path has no point")
+    left @= lines.xs[0]
+    right @= lines.xs[0]
+    top @= lines.ys[0]
+    bottom @= lines.ys[0]
+
+    for i in range(from: 1, to: lines.xs.len())
+        left @ math.min(a: left, b: lines.xs[i])
+        right @ math.max(a: right, b: lines.xs[i])
+        top @ math.min(a: top, b: lines.ys[i])
+        bottom @ math.max(a: bottom, b: lines.ys[i])
+
+    return ok(Bounds(left: left, top: top, right: right, bottom: bottom))
+
+## Filling
+
+# Which parts a path that crosses itself fills.
+variant Rule
+    # A point is inside where the contours turn around it a net number of
+    # times other than 0: two contours turning one way fill their overlap,
+    # one turning the other way leaves a hole.
+    non_zero
+    # A point is inside where a line out of it crosses the contours an odd
+    # number of times: an overlap is a hole.
+    even_odd
+
+# Whether the point (`x`, `y`) is inside `path`, every contour closed.
+#
+# - `path`: the path asked.
+# - `x`: the point's column.
+# - `y`: its row.
+# - `rule`: which parts of a path that crosses itself are inside.
+#
+# Fails as `bounds_of` does, except `not_found`, and `invalid` where `x` or
+# `y` is not a number. A point on the outline may
+# be either; a curve is the polygon within a twentieth of a pixel of it. See
+# also `fill_path`.
+function contains(path: [Segment], x: f64, y: f64, rule: Rule) -> bool?
+    if !arcs.finite([x, y])
+        return fail(code: INVALID, msg: f"the point ({x}, {y}) is not a number")
+    steps = steps_of(path)
+    lines = flatten.from_steps(steps.ops, coords: steps.numbers)?
+    w = raster.winding_at(lines: lines, x: x, y: y)
+    return ok(raster.is_inside(w, even_odd: rule == .even_odd))
+
+# Fills `path` into `img` with `color`, every contour closed, anti-aliased: a
+# pixel takes `color` by the share of it the path covers, laid over what is
+# there by `color`'s alpha as `image.composite` lays an image over another.
+#
+# - `img`: the image drawn on.
+# - `path`: the path filled; one that is empty or has no area draws nothing.
+# - `color`: the colour, alpha included.
+# - `rule`: which parts of a path that crosses itself are filled.
+#
+# Fails `invalid` where a coordinate of `path` is not a number within
+# 1,073,741,824, `limit` where it needs more than 8,388,608 points. Aborts
+# where `img` is not valid. The time follows the rows of `img` the path
+# crosses. See also `stroke_path`.
+function fill_path(@img: image.Image, path: [Segment], color: image.Color, rule: Rule) -> ()?
+    assert image.is_valid(img)
+    steps = steps_of(path)
+    lines = flatten.from_steps(steps.ops, coords: steps.numbers)?
+    paint.fill(
+        paint.target_of(img),
+        pixels: @img.pixels,
+        lines: lines,
+        ink: paint.ink_of(img.format, color: color),
+        even_odd: rule == .even_odd
+    )
+    return ok()
+
+## Stroking
+
+# How the end of an open contour is drawn.
+variant Cap
+    # Cut square at the end.
+    butt
+    # A half disc around the end.
+    round
+    # Half the width beyond the end.
+    square
+
+# How two sides meet at a corner.
+variant Join
+    # The outer edges run on until they meet, cut to a bevel where the point
+    # would pass `Stroke.miter_limit` widths.
+    miter
+    # An arc around the corner.
+    round
+    # The outer corners joined by a straight line.
+    bevel
+
+# How a stroke is drawn.
+record Stroke
+    # The width in pixels, 0 or more; 0 draws nothing.
+    width: f64
+    # The ends of an open contour.
+    cap: Cap
+    # The corners.
+    join: Join
+    # The longest a mitered corner may be, as a multiple of the width, 1 or
+    # more; the usual limit is 4.
+    miter_limit: f64
+    # The dashes: lengths alternately drawn and left, in pixels; empty draws
+    # a line, and a list of an odd count is repeated to make it even.
+    dashes: [f64]
+    # How far into the dashes the stroke begins, in pixels.
+    dash_offset: f64
+
+# A stroke of `width` pixels with butt caps, mitered corners cut at 4 widths
+# and no dashes.
+#
+# - `width`: the width in pixels, 0 or more.
+function stroke(width: f64) -> Stroke
+    return Stroke(width: width, cap: .butt, join: .miter, miter_limit: 4.0, dashes: [], dash_offset: 0.0)
+
+# The polygons of `style`'s stroke of `path`, as a path whose every contour
+# is closed and turns the same way, so that filling it under `non_zero` is
+# the stroke.
+#
+# - `path`: the path stroked; its curves are flattened to a twentieth of a
+#   pixel first.
+# - `style`: the width, caps, joins and dashes.
+#
+# Fails `invalid` where a coordinate of `path` is not a number within
+# 1,073,741,824, where the width is below 0 or not a number, the miter limit
+# below 1, a dash below 0 or not a number or the dashes all 0, or the offset
+# not a number; `limit` where the stroke needs more than 8,388,608 points or
+# more than 1,000,000 dashes. See also `stroke_path`.
+function stroke_outline(path: [Segment], style: Stroke) -> [Segment]?
+    steps = steps_of(path)
+    lines = flatten.from_steps(steps.ops, coords: steps.numbers)?
+
+    cap = match style.cap
+        .butt   => stroke_internal.CAP_BUTT
+        .round  => stroke_internal.CAP_ROUND
+        .square => stroke_internal.CAP_SQUARE
+
+    corner = match style.join
+        .miter => stroke_internal.JOIN_MITER
+        .round => stroke_internal.JOIN_ROUND
+        .bevel => stroke_internal.JOIN_BEVEL
+
+    pieces = stroke_internal.outline(lines, width: style.width, cap: cap, corner: corner, miter_limit: style.miter_limit, dashes: style.dashes, offset: style.dash_offset)?
+    ops: [i64] @= []
+    numbers: [f64] @= []
+
+    for c in range(from: 0, to: pieces.starts.len())
+        first = pieces.starts[c]
+
+        last = if c + 1 < pieces.starts.len()
+            pieces.starts[c + 1]
+        else
+            pieces.xs.len()
+
+        for i in range(from: first, to: last)
+            kind = if i == first
+                MOVE
+            else
+                LINE
+            ops @ ops.push(kind)
+            numbers @ numbers.push(pieces.xs[i])
+            numbers @ numbers.push(pieces.ys[i])
+
+        ops @ ops.push(CLOSE)
+
+    return ok(path_of(Steps(ops: ops, numbers: numbers)))
+
+# Strokes `path` into `img` with `color`, anti-aliased, as `fill_path` fills.
+#
+# - `img`: the image drawn on.
+# - `path`: the path stroked; open contours stay open.
+# - `color`: the colour, alpha included.
+# - `style`: the width, caps, joins and dashes; `stroke` makes the usual.
+#
+# Fails as `stroke_outline` does. Aborts where `img` is not valid. A stroke
+# that crosses itself is laid once, not twice: `color` at half alpha is half
+# alpha where the stroke overlaps itself. See also `fill_path`.
+function stroke_path(@img: image.Image, path: [Segment], color: image.Color, style: Stroke) -> ()?
+    assert image.is_valid(img)
+    outline = stroke_outline(path, style: style)?
+    return fill_path(@img, path: outline, color: color, rule: .non_zero)
+
+## Regions
+
+# Paints with `color` the region of 4-connected pixels, each next to another
+# above, below or beside it, that hold exactly what the pixel at (`x`, `y`)
+# holds, and answers how many it painted. The colour is written as
+# `image.set_color` writes it, with no blending.
+#
+# - `img`: the image painted.
+# - `x`: the starting column.
+# - `y`: the starting row.
+# - `color`: the colour written.
+#
+# A start outside `img`, or one already holding the colour, answers 0.
+# Aborts where `img` is not valid. See also `flood_fill_to_border`.
+function flood_fill(@img: image.Image, x: i64, y: i64, color: image.Color) -> i64
+    assert image.is_valid(img)
+
+    if x < 0 || y < 0 || x >= img.width || y >= img.height
+        return 0
+    paint_bytes = paint.pixel_of(img.format, color: color)
+    g = flood.Grid(width: img.width, height: img.height, pixel: paint_bytes.len())
+    at = (y * img.width + x) * paint_bytes.len()
+    like = img.pixels.slice(from: at, to: at + paint_bytes.len())
+
+    if like == paint_bytes
+        return 0
+    return flood.fill(g: g, pixels: @img.pixels, x: x, y: y, like: like, to_border: false, paint: paint_bytes)
+
+# Paints with `color` every pixel reachable from (`x`, `y`) by 4-connected
+# steps without crossing one that holds exactly `border`, and answers how many
+# it painted.
+#
+# - `img`: the image painted.
+# - `x`: the starting column.
+# - `y`: the starting row.
+# - `color`: the colour written.
+# - `border`: the colour that stops the fill; it is compared as `img` holds
+#   it, so a colour a gray image cannot tell from another stops both.
+#
+# A start outside `img` or on a border pixel answers 0. Aborts where `img`
+# is not valid. See also `flood_fill`.
+function flood_fill_to_border(@img: image.Image, x: i64, y: i64, color: image.Color, border: image.Color) -> i64
+    assert image.is_valid(img)
+
+    if x < 0 || y < 0 || x >= img.width || y >= img.height
+        return 0
+    g = flood.Grid(width: img.width, height: img.height, pixel: image.pixel_bytes_of(img.format))
+    return flood.fill(
+        g: g,
+        pixels: @img.pixels,
+        x: x,
+        y: y,
+        like: paint.pixel_of(img.format, color: border),
+        to_border: true,
+        paint: paint.pixel_of(img.format, color: color)
+    )
+
+## Tests
+
+test "fill_path: a path of a NaN, past the reach, or nothing; and an image of no pixels"
+    img @= image.blank(width: 2, height: 2, format: .gray).must()
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    bad: [Segment] @= []
+    move_to(@bad, x: 0.0, y: 0.0)
+    line_to(@bad, x: 0.0 / 0.0, y: 1.0)
+    assert fill_path(@img, path: bad, color: white, rule: .non_zero).is_err()
+    far: [Segment] @= []
+    add_rect(@far, x: 0.0, y: 0.0, width: 2000000000.0, height: 1.0)
+    assert fill_path(@img, path: far, color: white, rule: .non_zero).is_err()
+    empty: [Segment] = []
+    assert !fill_path(@img, path: empty, color: white, rule: .non_zero).is_err()
+    assert img.pixels == [0, 0, 0, 0]
+    none @= image.blank(width: 0, height: 0, format: .rgba).must()
+    square: [Segment] @= []
+    add_rect(@square, x: 0.0, y: 0.0, width: 5.0, height: 5.0)
+    assert !fill_path(@none, path: square, color: white, rule: .non_zero).is_err()
+
+test "fill_path: whole pixels exact, a half pixel half, a quarter a quarter, and the edge of the image"
+    img @= image.blank(width: 4, height: 3, format: .gray).must()
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    r: [Segment] @= []
+    add_rect(@r, x: 0.5, y: 1.0, width: 2.0, height: 1.0)
+    add_rect(@r, x: -5.0, y: 2.25, width: 50.0, height: 5.0)
+    assert !fill_path(@img, path: r, color: white, rule: .non_zero).is_err()
+    assert img.pixels == [0, 0, 0, 0, 128, 255, 128, 0, 191, 191, 191, 191]
+
+test "fill_path: even-odd leaves the overlap a hole, non-zero fills it, and a contour the other way cuts one"
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    both: [Segment] @= []
+    add_rect(@both, x: 0.0, y: 0.0, width: 4.0, height: 4.0)
+    add_rect(@both, x: 1.0, y: 1.0, width: 2.0, height: 2.0)
+    even @= image.blank(width: 4, height: 4, format: .gray).must()
+    assert !fill_path(@even, path: both, color: white, rule: .even_odd).is_err()
+    assert image.color_at(even, x: 1, y: 1).r == 0
+    assert image.color_at(even, x: 0, y: 0).r == 255
+    zero @= image.blank(width: 4, height: 4, format: .gray).must()
+    assert !fill_path(@zero, path: both, color: white, rule: .non_zero).is_err()
+    assert image.color_at(zero, x: 1, y: 1).r == 255
+    reverse: [Segment] @= []
+    add_rect(@reverse, x: 0.0, y: 0.0, width: 4.0, height: 4.0)
+    move_to(@reverse, x: 1.0, y: 1.0)
+    line_to(@reverse, x: 1.0, y: 3.0)
+    line_to(@reverse, x: 3.0, y: 3.0)
+    line_to(@reverse, x: 3.0, y: 1.0)
+    close_path(@reverse)
+    cut @= image.blank(width: 4, height: 4, format: .gray).must()
+    assert !fill_path(@cut, path: reverse, color: white, rule: .non_zero).is_err()
+    assert image.color_at(cut, x: 2, y: 2).r == 0
+    assert image.color_at(cut, x: 3, y: 3).r == 255
+
+test "fill_path: alpha laid over what is there, on RGBA, gray and alpha, and 16 bits"
+    r: [Segment] @= []
+    add_rect(@r, x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    half = image.Color(r: 255, g: 0, b: 0, a: 128)
+    over @= image.blank(width: 1, height: 1, format: .rgb).must()
+    assert !fill_path(@over, path: r, color: half, rule: .non_zero).is_err()
+    assert over.pixels == [128, 0, 0]
+    wide @= image.blank(width: 1, height: 1, format: .rgba16).must()
+    assert !fill_path(@wide, path: r, color: image.Color(r: 255, g: 255, b: 255, a: 255), rule: .non_zero).is_err()
+    assert wide.pixels == [255, 255, 255, 255, 255, 255, 255, 255]
+    ga @= image.blank(width: 1, height: 1, format: .gray_alpha).must()
+    assert !fill_path(@ga, path: r, color: image.Color(r: 255, g: 255, b: 255, a: 255), rule: .non_zero).is_err()
+    assert ga.pixels == [255, 255]
+    nothing @= image.blank(width: 1, height: 1, format: .rgb).must()
+    assert !fill_path(@nothing, path: r, color: image.Color(r: 9, g: 9, b: 9, a: 0), rule: .non_zero).is_err()
+    assert nothing.pixels == [0, 0, 0]
+
+test "fill_path: a disc of radius 10 covers pi times 100 pixels, within a pixel and a half"
+    img @= image.blank(width: 24, height: 24, format: .gray).must()
+    r: [Segment] @= []
+    add_ellipse(@r, center_x: 12.3, center_y: 11.7, radius_x: 10.0, radius_y: 10.0)
+    assert !fill_path(@img, path: r, color: image.Color(r: 255, g: 255, b: 255, a: 255), rule: .non_zero).is_err()
+    sum @= 0
+
+    for v in img.pixels
+        sum @ sum + to_i64(v).must()
+
+    area = to_f64(sum) / 255.0
+    assert area > 312.6 && area < 315.7
+
+test "stroke_path: a line of one pixel on a row, a square cap, a dash pattern, and a width of 0"
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    line: [Segment] @= []
+    move_to(@line, x: 2.0, y: 1.5)
+    line_to(@line, x: 4.0, y: 1.5)
+    butt @= image.blank(width: 6, height: 3, format: .gray).must()
+    assert !stroke_path(@butt, path: line, color: white, style: stroke(1.0)).is_err()
+    assert butt.pixels == [0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0]
+    square @= image.blank(width: 6, height: 3, format: .gray).must()
+    capped = Stroke(width: 1.0, cap: .square, join: .miter, miter_limit: 4.0, dashes: [], dash_offset: 0.0)
+    assert !stroke_path(@square, path: line, color: white, style: capped).is_err()
+    assert square.pixels == [0, 0, 0, 0, 0, 0, 0, 128, 255, 255, 128, 0, 0, 0, 0, 0, 0, 0]
+    long: [Segment] @= []
+    move_to(@long, x: 0.0, y: 0.5)
+    line_to(@long, x: 10.0, y: 0.5)
+    dashed @= image.blank(width: 10, height: 1, format: .gray).must()
+    dots = Stroke(width: 1.0, cap: .butt, join: .miter, miter_limit: 4.0, dashes: [2.0, 2.0], dash_offset: 1.0)
+    assert !stroke_path(@dashed, path: long, color: white, style: dots).is_err()
+    assert dashed.pixels == [255, 0, 0, 255, 255, 0, 0, 255, 255, 0]
+    zero @= image.blank(width: 6, height: 3, format: .gray).must()
+    assert !stroke_path(@zero, path: line, color: white, style: stroke(0.0)).is_err()
+    assert zero.pixels == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+test "stroke_outline: a width below 0, a miter limit below 1, bad dashes, and a pattern that would cut too many"
+    line: [Segment] @= []
+    move_to(@line, x: 0.0, y: 0.0)
+    line_to(@line, x: 5.0, y: 0.0)
+    assert stroke_outline(line, style: stroke(-1.0)).is_err()
+    assert stroke_outline(
+        line,
+        style: Stroke(width: 1.0, cap: .butt, join: .miter, miter_limit: 0.5, dashes: [], dash_offset: 0.0)
+    ).is_err()
+    assert stroke_outline(
+        line,
+        style: Stroke(width: 1.0, cap: .butt, join: .miter, miter_limit: 4.0, dashes: [0.0], dash_offset: 0.0)
+    ).is_err()
+    assert stroke_outline(
+        line,
+        style: Stroke(width: 1.0, cap: .butt, join: .miter, miter_limit: 4.0, dashes: [1.0, -1.0], dash_offset: 0.0)
+    ).is_err()
+    many = stroke_outline(
+        line,
+        style: Stroke(width: 1.0, cap: .butt, join: .miter, miter_limit: 4.0, dashes: [0.000001, 0.000001], dash_offset: 0.0)
+    )
+    assert many.is_err()
+
+test "stroke_outline: a bend as a miter, a bevel and a round, and a point closed on itself"
+    bend: [Segment] @= []
+    move_to(@bend, x: 0.0, y: 10.0)
+    line_to(@bend, x: 10.0, y: 10.0)
+    line_to(@bend, x: 10.0, y: 0.0)
+    miter = bounds_of(stroke_outline(bend, style: stroke(2.0)).must()).must()
+    assert miter.right == 11.0 && miter.bottom == 11.0
+    bevel = bounds_of(
+        stroke_outline(bend, style: Stroke(width: 2.0, cap: .butt, join: .bevel, miter_limit: 4.0, dashes: [], dash_offset: 0.0)).must()
+    ).must()
+    assert bevel.right == 11.0 && bevel.bottom == 11.0
+    img @= image.blank(width: 12, height: 12, format: .gray).must()
+    corner = Stroke(width: 2.0, cap: .butt, join: .bevel, miter_limit: 4.0, dashes: [], dash_offset: 0.0)
+    assert !stroke_path(@img, path: bend, color: image.Color(r: 255, g: 255, b: 255, a: 255), style: corner).is_err()
+    assert image.color_at(img, x: 10, y: 10).r == 128
+    rounded @= image.blank(width: 12, height: 12, format: .gray).must()
+    assert !stroke_path(@rounded, path: bend, color: image.Color(r: 255, g: 255, b: 255, a: 255), style: Stroke(width: 2.0, cap: .butt, join: .round, miter_limit: 4.0, dashes: [], dash_offset: 0.0)).is_err()
+    assert image.color_at(rounded, x: 10, y: 10).r > 190 && image.color_at(rounded, x: 10, y: 10).r < 250
+
+test "parse_svg: empty data, a first command that is not a move, a missing number, and a flag that is not a flag"
+    assert parse_svg("").must().len() == 0
+    assert parse_svg("   ").must().len() == 0
+    assert parse_svg("L 1 2").is_err()
+    assert parse_svg("1 2 3").is_err()
+    assert parse_svg("M 1").is_err()
+    assert parse_svg("M 1 2 A 1 1 0 2 0 5 5").is_err()
+    assert parse_svg("M 1 2 X").is_err()
+    assert parse_svg("M 1 2 Z 3 4").is_err()
+    assert parse_svg("M 1e999 2").is_err()
+
+test "parse_svg: relative and absolute, repeated numbers, compact numbers, H V, smooth curves, and compact arc flags"
+    got = parse_svg("m1.5.5-1-2 l1 1 2 2 h3 v-1z").must()
+    want: [Segment] = [
+        .move(x: 1.5, y: 0.5)
+        .line(x: 0.5, y: -1.5)
+        .line(x: 1.5, y: -0.5)
+        .line(x: 3.5, y: 1.5)
+        .line(x: 6.5, y: 1.5)
+        .line(x: 6.5, y: 0.5)
+        .close
+    ]
+    assert got == want
+    smooth = parse_svg("M0 0 C 1 1 2 1 3 0 S 5 -1 6 0 Q 7 1 8 0 T 10 0").must()
+    cubic = smooth[2]
+
+    match cubic
+        .cubic v                             => assert v.control1_x == 4.0 && v.control1_y == -1.0
+        .move _ | .line _ | .quad _ | .close => assert false
+
+    last = smooth[4]
+
+    match last
+        .quad v                               => assert v.control_x == 9.0 && v.control_y == -1.0
+        .move _ | .line _ | .cubic _ | .close => assert false
+
+    arc = parse_svg("M0 0a5 5 0 00 10 0").must()
+    assert arc.len() == 3
+    assert parse_svg("M 0 0 A 0 5 0 0 1 10 0").must().len() == 2
+    assert parse_svg("M 5 5 A 3 3 0 0 1 5 5").must().len() == 1
+
+## Examples
+
+# A contour begins at a point.
+test "move_to: a contour begins at a point"
+    p: [Segment] @= []
+    move_to(@p, x: 1.0, y: 2.0)
+    want: [Segment] = [.move(x: 1.0, y: 2.0)]
+    assert p == want
+
+# A line to a point.
+test "line_to: a line from the pen to a point"
+    p: [Segment] @= []
+    line_to(@p, x: 3.0, y: 4.0)
+    want: [Segment] = [.line(x: 3.0, y: 4.0)]
+    assert p == want
+
+# A quadratic curve bent toward a control point.
+test "quad_to: a curve to (2, 0) bent toward (1, 1)"
+    p: [Segment] @= []
+    quad_to(@p, control_x: 1.0, control_y: 1.0, x: 2.0, y: 0.0)
+    want: [Segment] = [.quad(control_x: 1.0, control_y: 1.0, x: 2.0, y: 0.0)]
+    assert p == want
+
+# A cubic curve bent toward two control points.
+test "cubic_to: a curve to (3, 0) bent toward (1, 1) and (2, 1)"
+    p: [Segment] @= []
+    cubic_to(@p, control1_x: 1.0, control1_y: 1.0, control2_x: 2.0, control2_y: 1.0, x: 3.0, y: 0.0)
+    want: [Segment] = [.cubic(control1_x: 1.0, control1_y: 1.0, control2_x: 2.0, control2_y: 1.0, x: 3.0, y: 0.0)]
+    assert p == want
+
+# A contour closed.
+test "close_path: a triangle closed"
+    p: [Segment] @= []
+    move_to(@p, x: 0.0, y: 0.0)
+    line_to(@p, x: 4.0, y: 0.0)
+    line_to(@p, x: 0.0, y: 4.0)
+    close_path(@p)
+    assert p.len() == 4
+
+# Where the pen stands after a closed contour.
+test "pen_of: after a close, where the contour began"
+    p: [Segment] @= []
+    move_to(@p, x: 1.0, y: 2.0)
+    line_to(@p, x: 5.0, y: 2.0)
+    close_path(@p)
+    assert pen_of(p).must() == Point(x: 1.0, y: 2.0)
+    empty: [Segment] = []
+    assert pen_of(empty).is_err()
+
+# A quarter circle drawn as one cubic curve.
+test "arc_to: a quarter turn of radius 10 from (0, 0) to (10, 10)"
+    p: [Segment] @= []
+    move_to(@p, x: 0.0, y: 0.0)
+    arc_to(@p, radius_x: 10.0, radius_y: 10.0, tilt: 0.0, large: false, sweep: true, x: 10.0, y: 10.0)
+    assert p.len() == 2
+
+    match p[1]
+        .cubic v =>
+            assert math.abs(v.control1_x - 5.522847498) < 0.000001
+            assert v.x == 10.0 && v.y == 10.0
+        .move _ | .line _ | .quad _ | .close => assert false
+
+# A rectangle.
+test "add_rect: a rectangle of 4 by 2"
+    p: [Segment] @= []
+    add_rect(@p, x: 1.0, y: 1.0, width: 4.0, height: 2.0)
+    assert p.len() == 5
+    assert bounds_of(p).must() == Bounds(left: 1.0, top: 1.0, right: 5.0, bottom: 3.0)
+
+# A circle.
+test "add_ellipse: a circle of radius 10 around (20, 20)"
+    p: [Segment] @= []
+    add_ellipse(@p, center_x: 20.0, center_y: 20.0, radius_x: 10.0, radius_y: 10.0)
+    b = bounds_of(p).must()
+    assert math.abs(b.left - 10.0) < 0.000001 && math.abs(b.bottom - 30.0) < 0.000001
+    assert contains(p, x: 20.0, y: 20.0, rule: .non_zero).must()
+    assert !contains(p, x: 29.0, y: 29.0, rule: .non_zero).must()
+
+# A quarter of a circle's outline.
+test "add_arc: from the right to the bottom of a circle"
+    p: [Segment] @= []
+    add_arc(@p, center_x: 20.0, center_y: 20.0, radius_x: 10.0, radius_y: 10.0, start: 0.0, sweep: 90.0)
+    assert p.len() == 2
+    assert pen_of(p).must().x - 20.0 < 0.000001
+
+# An arc closed by its chord.
+test "add_chord: a half circle closed by its diameter"
+    p: [Segment] @= []
+    add_chord(@p, center_x: 5.0, center_y: 5.0, radius_x: 5.0, radius_y: 5.0, start: 0.0, sweep: 180.0)
+    assert contains(p, x: 5.0, y: 8.0, rule: .non_zero).must()
+    assert !contains(p, x: 5.0, y: 2.0, rule: .non_zero).must()
+
+# A slice of a circle.
+test "add_pie: a quarter slice around the centre"
+    p: [Segment] @= []
+    add_pie(@p, center_x: 0.0, center_y: 0.0, radius_x: 10.0, radius_y: 10.0, start: 0.0, sweep: 90.0)
+    assert contains(p, x: 3.0, y: 3.0, rule: .non_zero).must()
+    assert !contains(p, x: -3.0, y: 3.0, rule: .non_zero).must()
+
+# A rectangle with rounded corners.
+test "add_rounded_rect: the corner is cut, the middle of an edge is not"
+    p: [Segment] @= []
+    add_rounded_rect(@p, x: 0.0, y: 0.0, width: 20.0, height: 20.0, radius_x: 5.0, radius_y: 5.0)
+    assert !contains(p, x: 0.5, y: 0.5, rule: .non_zero).must()
+    assert contains(p, x: 10.0, y: 0.5, rule: .non_zero).must()
+
+# A triangle.
+test "add_polygon: a triangle of three points"
+    p: [Segment] @= []
+    add_polygon(@p, points: [Point(x: 0.0, y: 0.0), Point(x: 4.0, y: 0.0), Point(x: 0.0, y: 4.0)])
+    assert p.len() == 4
+    assert contains(p, x: 1.0, y: 1.0, rule: .even_odd).must()
+
+# A polyline is left open.
+test "add_polyline: two points are a move and a line"
+    p: [Segment] @= []
+    add_polyline(@p, points: [Point(x: 0.0, y: 0.0), Point(x: 4.0, y: 4.0)])
+    want: [Segment] = [.move(x: 0.0, y: 0.0), .line(x: 4.0, y: 4.0)]
+    assert p == want
+
+# One path after another.
+test "add_path: the steps of another path added"
+    p: [Segment] @= []
+    other: [Segment] @= []
+    add_rect(@other, x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    add_path(path: @p, other: other)
+    add_path(path: @p, other: other)
+    assert p.len() == 10
+
+# The matrix that moves nothing.
+test "identity: a point stays"
+    assert apply(identity(), x: 3.0, y: 4.0) == Point(x: 3.0, y: 4.0)
+
+# A shift.
+test "translation: a point moved 2 right and 3 down"
+    assert apply(translation(dx: 2.0, dy: 3.0), x: 1.0, y: 1.0) == Point(x: 3.0, y: 4.0)
+
+# A stretch.
+test "scaling: x doubled, y mirrored"
+    assert apply(scaling(sx: 2.0, sy: -1.0), x: 3.0, y: 4.0) == Point(x: 6.0, y: -4.0)
+
+# A quarter turn about a point.
+test "rotation: a quarter turn about (1, 1) takes (2, 1) to (1, 2)"
+    p = apply(rotation(degrees: 90.0, about_x: 1.0, about_y: 1.0), x: 2.0, y: 1.0)
+    assert math.abs(p.x - 1.0) < 0.000000001 && math.abs(p.y - 2.0) < 0.000000001
+
+# Two matrices as one.
+test "compose: a scale and then a shift"
+    m = compose(first: scaling(sx: 2.0, sy: 2.0), second: translation(dx: 1.0, dy: 0.0))
+    assert apply(m, x: 3.0, y: 4.0) == Point(x: 7.0, y: 8.0)
+
+# A point through a matrix.
+test "apply: a shift of (5, -5) takes the origin to (5, -5)"
+    assert apply(translation(dx: 5.0, dy: -5.0), x: 0.0, y: 0.0) == Point(x: 5.0, y: -5.0)
+
+# A path moved.
+test "transform: a unit square scaled by 3 and shifted"
+    p: [Segment] @= []
+    add_rect(@p, x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    moved = transform(p, m: compose(first: scaling(sx: 3.0, sy: 3.0), second: translation(dx: 10.0, dy: 0.0)))
+    assert bounds_of(moved).must() == Bounds(left: 10.0, top: 0.0, right: 13.0, bottom: 3.0)
+
+# SVG's path data.
+test "parse_svg: a triangle in SVG's own words"
+    p = parse_svg("M 0 0 L 4 0 L 0 4 Z").must()
+    want: [Segment] = [.move(x: 0.0, y: 0.0), .line(x: 4.0, y: 0.0), .line(x: 0.0, y: 4.0), .close]
+    assert p == want
+
+# A path as numbers and back.
+test "steps_of: a line is a move and a line, four numbers"
+    p: [Segment] @= []
+    add_polyline(@p, points: [Point(x: 1.0, y: 2.0), Point(x: 3.0, y: 4.0)])
+    s = steps_of(p)
+    assert s.ops == [MOVE, LINE] && s.numbers == [1.0, 2.0, 3.0, 4.0]
+
+# The numbers back to a path.
+test "path_of: the numbers of a closed triangle"
+    p = path_of(Steps(ops: [MOVE, LINE, LINE, CLOSE], numbers: [0.0, 0.0, 1.0, 0.0, 0.0, 1.0]))
+    assert p.len() == 4
+
+# The box around a path.
+test "bounds_of: a triangle"
+    p = parse_svg("M 1 2 L 5 2 L 1 9 Z").must()
+    assert bounds_of(p).must() == Bounds(left: 1.0, top: 2.0, right: 5.0, bottom: 9.0)
+
+# A point asked of a path.
+test "contains: the overlap of two squares under each rule"
+    p: [Segment] @= []
+    add_rect(@p, x: 0.0, y: 0.0, width: 4.0, height: 4.0)
+    add_rect(@p, x: 2.0, y: 2.0, width: 4.0, height: 4.0)
+    assert contains(p, x: 3.0, y: 3.0, rule: .non_zero).must()
+    assert !contains(p, x: 3.0, y: 3.0, rule: .even_odd).must()
+
+# A square filled into an image.
+test "fill_path: a square of 2 by 2 in an image of 4 by 4"
+    img @= image.blank(width: 4, height: 4, format: .gray).must()
+    p: [Segment] @= []
+    add_rect(@p, x: 1.0, y: 1.0, width: 2.0, height: 2.0)
+    assert !fill_path(@img, path: p, color: image.Color(r: 255, g: 255, b: 255, a: 255), rule: .non_zero).is_err()
+    assert image.color_at(img, x: 1, y: 1).r == 255
+    assert image.color_at(img, x: 0, y: 0).r == 0
+
+# The usual stroke.
+test "stroke: a width of 3, butt caps, mitered corners, no dashes"
+    s = stroke(3.0)
+    assert s.width == 3.0 && s.cap == .butt && s.join == .miter && s.dashes.len() == 0
+
+# A stroke as polygons.
+test "stroke_outline: a line of width 2 is a rectangle 2 high"
+    p: [Segment] @= []
+    add_polyline(@p, points: [Point(x: 0.0, y: 5.0), Point(x: 10.0, y: 5.0)])
+    o = stroke_outline(p, style: stroke(2.0)).must()
+    assert bounds_of(o).must() == Bounds(left: 0.0, top: 4.0, right: 10.0, bottom: 6.0)
+
+# A stroke drawn.
+test "stroke_path: a line of one pixel along the middle row"
+    img @= image.blank(width: 3, height: 3, format: .gray).must()
+    p: [Segment] @= []
+    add_polyline(@p, points: [Point(x: 0.0, y: 1.5), Point(x: 3.0, y: 1.5)])
+    assert !stroke_path(@img, path: p, color: image.Color(r: 255, g: 255, b: 255, a: 255), style: stroke(1.0)).is_err()
+    assert img.pixels == [0, 0, 0, 255, 255, 255, 0, 0, 0]
+
+# A region painted.
+test "flood_fill: one side of a wall, then the other"
+    img @= image.blank(width: 3, height: 3, format: .gray).must()
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    image.set_color(@img, x: 1, y: 0, color: white)
+    image.set_color(@img, x: 1, y: 1, color: white)
+    image.set_color(@img, x: 1, y: 2, color: white)
+    assert flood_fill(@img, x: 0, y: 0, color: white) == 3
+    assert flood_fill(@img, x: 2, y: 2, color: image.Color(r: 128, g: 128, b: 128, a: 255)) == 3
+
+# A region painted up to a border.
+test "flood_fill_to_border: a frame holds the fill"
+    img @= image.blank(width: 4, height: 4, format: .gray).must()
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    frame: [Segment] @= []
+    add_rect(@frame, x: 0.0, y: 0.0, width: 4.0, height: 4.0)
+    assert !fill_path(@img, path: frame, color: white, rule: .non_zero).is_err()
+    hole: [Segment] @= []
+    add_rect(@hole, x: 1.0, y: 1.0, width: 2.0, height: 2.0)
+    assert !fill_path(@img, path: hole, color: image.Color(r: 0, g: 0, b: 0, a: 255), rule: .non_zero).is_err()
+    assert flood_fill_to_border(@img, x: 1, y: 1, color: image.Color(r: 90, g: 90, b: 90, a: 255), border: white) == 4

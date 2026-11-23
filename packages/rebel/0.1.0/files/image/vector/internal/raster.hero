@@ -1,0 +1,224 @@
+# Contours of straight lines turned into the share of each pixel they cover.
+# Each pixel row is sampled at sixteen heights; at each, the places the
+# outline crosses the line are sorted and the fill rule says which stretches
+# are inside, and a stretch covers every pixel it spans by exactly the part of
+# it that falls there. So a vertical edge is exact, and an edge that is
+# nearly flat is exact to a sixteenth of a pixel.
+
+use image/vector/internal/flatten
+use lists
+use math
+
+# How many heights a pixel row is sampled at.
+constant SAMPLES: i64
+    16
+
+# The largest coverage: a pixel wholly inside.
+constant FULL: i64
+    65535
+
+# How many rows `band` covers at most in one call.
+constant BAND: i64
+    32
+
+# A side of the outline that is not level, held top to bottom.
+record Edge
+    # The column of the top end.
+    x0: f64
+    # The row of the top end, above `y1`.
+    y0: f64
+    # The row of the bottom end.
+    y1: f64
+    # How far x moves for each row down.
+    slope: f64
+    # 1 where the contour ran down this side, -1 where it ran up.
+    dir: i64
+
+# Where the outline crosses a sample line.
+record Crossing
+    # The column.
+    x: f64
+    # The direction of the edge, 1 or -1.
+    dir: i64
+
+# Whether `a` begins above `b`.
+function above(a: Edge, b: Edge) -> bool
+    return a.y0 < b.y0
+
+# Whether `a` crosses the line left of `b`.
+function left_of(a: Crossing, b: Crossing) -> bool
+    return a.x < b.x
+
+# The sides of the contours of `lines`, each closed by its last point to its
+# first, level sides left out and the rest sorted by their top.
+function edges_of(lines: flatten.Lines lent) -> [Edge]
+    out: [Edge] @= []
+
+    for c in range(from: 0, to: lines.starts.len())
+        first = lines.starts[c]
+
+        last = if c + 1 < lines.starts.len()
+            lines.starts[c + 1] - 1
+        else
+            lines.xs.len() - 1
+
+        for i in range(from: first, to: last + 1)
+            j = if i == last
+                first
+            else
+                i + 1
+            ya = lines.ys[i]
+            yb = lines.ys[j]
+
+            if ya == yb
+                continue
+            xa = lines.xs[i]
+            xb = lines.xs[j]
+
+            if ya < yb
+                out @ out.push(Edge(x0: xa, y0: ya, y1: yb, slope: (xb - xa) / (yb - ya), dir: 1))
+            else
+                out @ out.push(Edge(x0: xb, y0: yb, y1: ya, slope: (xa - xb) / (ya - yb), dir: -1))
+
+    return lists.sort_by(out, above)
+
+# Whether the winding number `w` is inside under the rule: `even_odd` asks it
+# odd, otherwise it asks it other than 0.
+function is_inside(w: i64, even_odd: bool) -> bool
+    if even_odd
+        return w % 2 != 0
+    return w != 0
+
+# Adds to `cover` and `delta`, the sums a row's coverage is read from, the
+# stretch from column `xa` to `xb` as one sample line's share: `weight` for
+# each whole pixel it spans and its part of an end pixel. `cover` has one
+# place past the last column.
+function add_span(@cover: [f64], @delta: [f64], width: i64, xa: f64, xb: f64, weight: f64)
+    a = math.max(a: xa, b: 0.0)
+    b = math.min(a: xb, b: to_f64(width))
+
+    if !(b > a)
+        return
+    ia = to_i64(math.floor(a)).must()
+    ib = to_i64(math.floor(b)).must()
+
+    if ia == ib
+        cover[ia] @ cover[ia] + (b - a) * weight
+        return
+    cover[ia] @ cover[ia] + (to_f64(ia + 1) - a) * weight
+    cover[ib] @ cover[ib] + (b - to_f64(ib)) * weight
+    delta[ia + 1] @ delta[ia + 1] + weight
+    delta[ib] @ delta[ib] - weight
+
+# The coverage, 0 to `FULL`, of each pixel of rows `top` to `top + rows` less
+# one of an image `width` columns wide, row after row, for the sides `edges`
+# (sorted by `edges_of`) under the fill rule.
+#
+# `rows` is at most `BAND`; the edges that cannot reach the rows are passed
+# over once, so a path of many sides costs no more than the sides the band
+# touches, a row at a time.
+function band(edges: [Edge] lent, width: i64, top: i64, rows: i64, even_odd: bool) -> [i64]
+    out: [i64] @= []
+    bottom = top + rows
+    near: [Edge] @= []
+    k @= 0
+
+    while k < edges.len() && edges[k].y0 < to_f64(bottom)
+        if edges[k].y1 > to_f64(top)
+            near @ near.push(edges[k])
+        k @ k + 1
+
+    for _ in range(from: 0, to: rows * width)
+        out @ out.push(0)
+
+    if near.len() == 0
+        return out
+    weight = 1.0 / to_f64(SAMPLES)
+
+    for r in range(from: 0, to: rows)
+        y = to_f64(top + r)
+        active: [Edge] @= []
+
+        for e in near
+            if e.y0 < y + 1.0 && e.y1 > y
+                active @ active.push(e)
+
+        if active.len() == 0
+            continue
+        cover: [f64] @= []
+        delta: [f64] @= []
+
+        for _ in range(from: 0, to: width + 2)
+            cover @ cover.push(0.0)
+            delta @ delta.push(0.0)
+
+        for s in range(from: 0, to: SAMPLES)
+            sy = y + (to_f64(s) + 0.5) * weight
+            crossings: [Crossing] @= []
+
+            for e in active
+                if e.y0 <= sy && sy < e.y1
+                    crossings @ crossings.push(Crossing(x: e.x0 + (sy - e.y0) * e.slope, dir: e.dir))
+
+            ordered = lists.sort_by(crossings, left_of)
+            wind @= 0
+            began @= 0.0
+
+            for c in ordered
+                before = is_inside(wind, even_odd: even_odd)
+                wind @ wind + c.dir
+                after = is_inside(wind, even_odd: even_odd)
+
+                if !before && after
+                    began @ c.x
+                else if before && !after
+                    add_span(cover: @cover, delta: @delta, width: width, xa: began, xb: c.x, weight: weight)
+
+        run @= 0.0
+
+        for x in range(from: 0, to: width)
+            run @ run + delta[x]
+            share = cover[x] + run
+
+            v = if share >= 1.0
+                FULL
+            else if share <= 0.0
+                0
+            else
+                to_i64(share * to_f64(FULL) + 0.5).must()
+            out[r * width + x] @ v
+
+    return out
+
+# The winding number of the contours of `lines`, each closed, around the
+# point (`x`, `y`): how many times they turn around it counter-clockwise on
+# a page whose y grows downward, less the times they turn the other way.
+function winding_at(lines: flatten.Lines lent, x: f64, y: f64) -> i64
+    wind @= 0
+
+    for c in range(from: 0, to: lines.starts.len())
+        first = lines.starts[c]
+
+        last = if c + 1 < lines.starts.len()
+            lines.starts[c + 1] - 1
+        else
+            lines.xs.len() - 1
+
+        for i in range(from: first, to: last + 1)
+            j = if i == last
+                first
+            else
+                i + 1
+            ya = lines.ys[i]
+            yb = lines.ys[j]
+
+            if ya <= y && yb > y || yb <= y && ya > y
+                at = lines.xs[i] + (y - ya) * (lines.xs[j] - lines.xs[i]) / (yb - ya)
+
+                if at > x
+                    if yb > ya
+                        wind @ wind + 1
+                    else
+                        wind @ wind - 1
+
+    return wind

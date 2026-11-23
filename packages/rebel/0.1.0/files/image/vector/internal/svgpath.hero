@@ -1,0 +1,319 @@
+# SVG's path data read into steps: the commands M, L, H, V, C, S, Q, T, A
+# and Z, upper case for absolute coordinates and lower case for relative
+# ones, a command repeated by the numbers that follow it, numbers written as
+# SVG writes them (`1.5.5` is 1.5 and 0.5, `-1-2` is -1 and -2) and the two
+# flags of an arc one digit each. An arc becomes the cubics that draw it.
+
+use image/vector/internal/arcs
+use image/vector/internal/shapes
+use numbers
+
+# A number read, and where the next token begins.
+record Token
+    # The number.
+    value: f64
+    # The byte after it.
+    at: i64
+
+# Whether byte `b` is a space SVG skips.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\n' || b == '\t' || b == '\r'
+
+# Whether byte `b` is a digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The first byte at or after `at` that is not a space, a comma following the
+# spaces counting as one more separator.
+function skip(s: str lent, at: i64) -> i64
+    i @= at
+
+    while i < s.len() && is_space(s[i])
+        i @ i + 1
+
+    if i < s.len() && s[i] == ','
+        i @ i + 1
+
+        while i < s.len() && is_space(s[i])
+            i @ i + 1
+    return i
+
+# The number that begins at `at`. Fails `invalid` where none does.
+function number_at(s: str lent, at: i64) -> Token?
+    i @= at
+
+    if i < s.len() && (s[i] == '-' || s[i] == '+')
+        i @ i + 1
+    digits @= 0
+
+    while i < s.len() && is_digit(s[i])
+        i @ i + 1
+        digits @ digits + 1
+
+    if i < s.len() && s[i] == '.'
+        i @ i + 1
+
+        while i < s.len() && is_digit(s[i])
+            i @ i + 1
+            digits @ digits + 1
+
+    if digits == 0
+        return fail(code: "invalid", msg: f"a number was expected at byte {at}")
+
+    if i < s.len() && (s[i] == 'e' || s[i] == 'E')
+        j @= i + 1
+
+        if j < s.len() && (s[j] == '-' || s[j] == '+')
+            j @ j + 1
+        found @= 0
+
+        while j < s.len() && is_digit(s[j])
+            j @ j + 1
+            found @ found + 1
+
+        if found > 0
+            i @ j
+    v = numbers.parse_float(s.slice(from: at, to: i))?
+
+    if !shapes.in_reach(v)
+        return fail(code: "invalid", msg: f"the number at byte {at} is not within {shapes.REACH}")
+    return ok(Token(value: v, at: i))
+
+# How many numbers command `c` reads, or -1 where it is none.
+function arity_of(c: u8) -> i64
+    if c == 'M' || c == 'L' || c == 'T'
+        return 2
+
+    if c == 'H' || c == 'V'
+        return 1
+
+    if c == 'C'
+        return 6
+
+    if c == 'S' || c == 'Q'
+        return 4
+
+    if c == 'A'
+        return 7
+
+    if c == 'Z'
+        return 0
+    return -1
+
+# Where the path stands while it is read.
+record Pen
+    # The current point.
+    x: f64
+    y: f64
+    # Where the contour began.
+    sx: f64
+    sy: f64
+    # The last control point, and whether it is a cubic's (1) or a
+    # quadratic's (2) or none (0), for the smooth commands.
+    kx: f64
+    ky: f64
+    kind: i64
+
+# Adds to `ops` and `coords` the command `c` of `a`, its numbers already
+# made absolute, and returns where the pen stands then.
+function apply(@ops: [i64], @coords: [f64], c: u8, a: [f64] lent, pen: Pen lent) -> Pen
+    x = pen.x
+    y = pen.y
+
+    if c == 'Z'
+        ops @ ops.push(shapes.CLOSE)
+        return Pen(x: pen.sx, y: pen.sy, sx: pen.sx, sy: pen.sy, kx: pen.sx, ky: pen.sy, kind: 0)
+
+    if c == 'M'
+        ops @ ops.push(shapes.MOVE)
+        coords @ coords.push(a[0])
+        coords @ coords.push(a[1])
+        return Pen(x: a[0], y: a[1], sx: a[0], sy: a[1], kx: a[0], ky: a[1], kind: 0)
+
+    if c == 'L' || c == 'H' || c == 'V'
+        nx = if c == 'V'
+            x
+        else
+            a[0]
+
+        ny = if c == 'H'
+            y
+        else if c == 'V'
+            a[0]
+        else
+            a[1]
+        ops @ ops.push(shapes.LINE)
+        coords @ coords.push(nx)
+        coords @ coords.push(ny)
+        return Pen(x: nx, y: ny, sx: pen.sx, sy: pen.sy, kx: nx, ky: ny, kind: 0)
+
+    if c == 'C' || c == 'S'
+        # S's first control point is the last one reflected, or the point itself.
+        c1x = if c == 'S'
+            if pen.kind == 1
+                2.0 * x - pen.kx
+            else
+                x
+        else
+            a[0]
+
+        c1y = if c == 'S'
+            if pen.kind == 1
+                2.0 * y - pen.ky
+            else
+                y
+        else
+            a[1]
+
+        k = if c == 'S'
+            0
+        else
+            2
+        ops @ ops.push(shapes.CUBIC)
+        coords @ coords.push(c1x)
+        coords @ coords.push(c1y)
+        coords @ coords.push(a[k])
+        coords @ coords.push(a[k + 1])
+        coords @ coords.push(a[k + 2])
+        coords @ coords.push(a[k + 3])
+        return Pen(x: a[k + 2], y: a[k + 3], sx: pen.sx, sy: pen.sy, kx: a[k], ky: a[k + 1], kind: 1)
+
+    if c == 'Q' || c == 'T'
+        qx = if c == 'T'
+            if pen.kind == 2
+                2.0 * x - pen.kx
+            else
+                x
+        else
+            a[0]
+
+        qy = if c == 'T'
+            if pen.kind == 2
+                2.0 * y - pen.ky
+            else
+                y
+        else
+            a[1]
+
+        k = if c == 'T'
+            0
+        else
+            2
+        ops @ ops.push(shapes.QUAD)
+        coords @ coords.push(qx)
+        coords @ coords.push(qy)
+        coords @ coords.push(a[k])
+        coords @ coords.push(a[k + 1])
+        return Pen(x: a[k], y: a[k + 1], sx: pen.sx, sy: pen.sy, kx: qx, ky: qy, kind: 2)
+
+    # `A`: the endpoint form, in the file's own order of numbers.
+    curves = arcs.by_endpoints(
+        x0: x,
+        y0: y,
+        rx: a[0],
+        ry: a[1],
+        rotation: a[2],
+        large: a[3] != 0.0,
+        sweep: a[4] != 0.0,
+        x1: a[5],
+        y1: a[6]
+    )
+
+    if curves.len() == 0 && (a[0] == 0.0 || a[1] == 0.0) || curves.len() == 0 && (x != a[5] || y != a[6])
+        ops @ ops.push(shapes.LINE)
+        coords @ coords.push(a[5])
+        coords @ coords.push(a[6])
+    k @= 0
+
+    while k < curves.len()
+        ops @ ops.push(shapes.CUBIC)
+
+        for j in range(from: 0, to: 6)
+            coords @ coords.push(curves[k + j])
+
+        k @ k + 6
+
+    if curves.len() > 0
+        coords[coords.len() - 2] @ a[5]
+        coords[coords.len() - 1] @ a[6]
+    return Pen(x: a[5], y: a[6], sx: pen.sx, sy: pen.sy, kx: a[5], ky: a[6], kind: 0)
+
+# The steps of the SVG path data `d`. Fails `invalid` where `d` is not path
+# data, naming the byte and what was expected there: a first command that is
+# not a move, a letter that is no command, a number missing, an arc's flag
+# that is not 0 or 1, a number not within the reach of a path.
+function parse(d: str lent) -> shapes.Flat?
+    ops: [i64] @= []
+    coords: [f64] @= []
+    at @= skip(d, at: 0)
+    pen @= Pen(x: 0.0, y: 0.0, sx: 0.0, sy: 0.0, kx: 0.0, ky: 0.0, kind: 0)
+    command: u8 @= 0
+    started @= false
+
+    while at < d.len()
+        b = d[at]
+
+        letter = if b >= 'a' && b <= 'z'
+            b - 32
+        else
+            b
+
+        if arity_of(letter) >= 0 && (b < '0' || b > '9')
+            command @ b
+            at @ skip(d, at: at + 1)
+        else if command == 0
+            return fail(code: "invalid", msg: f"path data begins with a number at byte {at}, not a command")
+        else if command == 'z' || command == 'Z'
+            return fail(code: "invalid", msg: f"a number follows a close at byte {at}")
+        else if !(is_digit(b) || b == '-' || b == '+' || b == '.')
+            return fail(code: "invalid", msg: f"byte {at} is not a command or a number")
+
+        if !started && command != 'M' && command != 'm'
+            return fail(code: "invalid", msg: "path data must begin with a move, M or m")
+        started @ true
+
+        upper = if command >= 'a' && command <= 'z'
+            command - 32
+        else
+            command
+        relative = command >= 'a' && command <= 'z'
+        n = arity_of(upper)
+        a: [f64] @= []
+
+        for i in range(from: 0, to: n)
+            if upper == 'A' && (i == 3 || i == 4)
+                if at >= d.len() || d[at] != '0' && d[at] != '1'
+                    return fail(code: "invalid", msg: f"an arc's flag at byte {at} is not 0 or 1")
+                a @ a.push(to_f64(d[at] - '0'))
+                at @ skip(d, at: at + 1)
+            else
+                t = number_at(d, at: at)?
+                a @ a.push(t.value)
+                at @ skip(d, at: t.at)
+
+        if relative && n > 0
+            for i in range(from: 0, to: n)
+                if upper == 'A'
+                    if i == 5
+                        a[i] @ a[i] + pen.x
+                    else if i == 6
+                        a[i] @ a[i] + pen.y
+                else if upper == 'H'
+                    a[i] @ a[i] + pen.x
+                else if upper == 'V'
+                    a[i] @ a[i] + pen.y
+                else if i % 2 == 0
+                    a[i] @ a[i] + pen.x
+                else
+                    a[i] @ a[i] + pen.y
+        pen @ apply(ops: @ops, coords: @coords, c: upper, a: a, pen: pen)
+
+        if command == 'M'
+            command @ 'L'
+        else if command == 'm'
+            command @ 'l'
+
+        if upper == 'Z'
+            at @ skip(d, at: at)
+
+    return ok(shapes.Flat(ops: ops, coords: coords))

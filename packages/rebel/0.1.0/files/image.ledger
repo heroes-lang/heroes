@@ -190,14 +190,14 @@ capability image/draw-shapes  lines, rectangles and circles drawn
   go      draw.Draw of a Uniform over a rectangle
   rust    -
   python  ImageDraw.Draw, ImageDraw.line, ImageDraw.rectangle, ImageDraw.ellipse, ImageDraw.circle
-  note    one pixel wide, written with no blending, as Pillow's Draw writes on an image; the time follows the part of the shape inside the image, so a shape of any size cannot hang a program. Pillow's line width and outline width are pending under image/draw-more
+  note    one pixel wide, written with no blending, as Pillow's Draw writes on an image; the time follows the part of the shape inside the image, so a shape of any size cannot hang a program. Pillow's line width and outline width are `image/vector`'s `stroke_path`, under image/draw-more
 
 capability image/draw-more  polygons, arcs, chords, pie slices, rounded rectangles, wide lines, flood fill
-  heroes  pending
+  heroes  image/vector.add_polygon, image/vector.add_arc, image/vector.add_chord, image/vector.add_pie, image/vector.add_rounded_rect, image/vector.stroke_path, image/vector.flood_fill, image/vector.flood_fill_to_border, image/vector.fill_path
   go      -
   rust    -
-  python  ImageDraw.polygon, ImageDraw.regular_polygon, ImageDraw.arc, ImageDraw.chord, ImageDraw.pieslice, ImageDraw.rounded_rectangle, ImageDraw.point, ImageDraw.bitmap, ImageDraw.floodfill, ImageDraw.shape, ImagePath, line and outline width
-  note    -
+  python  ImageDraw.polygon, ImageDraw.regular_polygon, ImageDraw.arc, ImageDraw.chord, ImageDraw.pieslice, ImageDraw.rounded_rectangle, ImageDraw.point, ImageDraw.floodfill, ImageDraw.shape, ImagePath, line and outline width
+  note    in the subpackage `image/vector`, with its own ledger: every shape is a path, filled or stroked anti-aliased with a width, caps, joins and dashes. ImageDraw.point is `set_color`; ImageDraw.bitmap is a mask drawn through a colour, pending under image/mask
 
 capability image/text  text drawn with a font
   heroes  pending

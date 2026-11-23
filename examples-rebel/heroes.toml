@@ -61,6 +61,7 @@ packages = [
     "image/jpeg",
     "image/netpbm",
     "image/png",
+    "image/vector",
     "ini",
     "io",
     "io/hero_stream",

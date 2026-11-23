@@ -1,0 +1,142 @@
+# Contours cut into dashes: each contour walked from its start by a pattern
+# of alternating dashes and gaps, the pattern beginning again on every
+# contour, a closed contour walked once round, back to its first point.
+
+use image/vector/internal/flatten
+use math
+
+# The most dashes one path may be cut into.
+constant MAX_DASHES: i64
+    1000000
+
+# A length too short to tell a direction by.
+constant TINY: f64
+    0.000001
+
+# `pattern`, repeated once more where it has an odd number of lengths, so
+# that it alternates dash and gap throughout.
+function evened(pattern: [f64] lent) -> [f64]
+    out: [f64] @= []
+
+    for v in pattern
+        out @ out.push(v)
+
+    if pattern.len() % 2 == 1
+        for v in pattern
+            out @ out.push(v)
+    return out
+
+# The sum of `pattern`.
+function total_of(pattern: [f64] lent) -> f64
+    sum @= 0.0
+
+    for v in pattern
+        sum @ sum + v
+
+    return sum
+
+# The contours of `lines` as open contours, the dashes of `pattern` (an even
+# number of lengths, dash first, their sum above 0), the first starting
+# `offset` into the pattern. A dash of no length is kept as two points a
+# hair apart along the path, so that a cap can still be put on it.
+# Fails `limit` where the dashes pass `MAX_DASHES`.
+function dashed(lines: flatten.Lines lent, pattern: [f64] lent, offset: f64) -> flatten.Lines?
+    xs: [f64] @= []
+    ys: [f64] @= []
+    starts: [i64] @= []
+    closed: [bool] @= []
+    total = total_of(pattern)
+    count @= 0
+
+    for c in range(from: 0, to: lines.starts.len())
+        first = lines.starts[c]
+
+        last = if c + 1 < lines.starts.len()
+            lines.starts[c + 1] - 1
+        else
+            lines.xs.len() - 1
+        pieces @= last - first
+
+        if lines.closed[c]
+            pieces @ pieces + 1
+        length @= 0.0
+
+        for i in range(from: first, to: first + pieces)
+            j = if i == last
+                first
+            else
+                i + 1
+            length @ length + math.hypot(x: lines.xs[j] - lines.xs[i], y: lines.ys[j] - lines.ys[i])
+
+        if length / total * to_f64(pattern.len()) > to_f64(MAX_DASHES)
+            return fail(
+                code: flatten.LIMIT,
+                msg: f"a contour of {length} pixels cut by a pattern of {total} pixels makes more than {MAX_DASHES} dashes"
+            )
+        at @= math.rem_euclid(x: offset, by: total)
+        slot @= 0
+
+        while at >= pattern[slot]
+            at @ at - pattern[slot]
+            slot @ (slot + 1) % pattern.len()
+
+        left @= pattern[slot] - at
+        drawing @= slot % 2 == 0
+        points @= 0
+
+        if drawing
+            starts @ starts.push(xs.len())
+            closed @ closed.push(false)
+            xs @ xs.push(lines.xs[first])
+            ys @ ys.push(lines.ys[first])
+            points @ 1
+
+        for i in range(from: first, to: first + pieces)
+            j = if i == last
+                first
+            else
+                i + 1
+            ax = lines.xs[i]
+            ay = lines.ys[i]
+            span = math.hypot(x: lines.xs[j] - ax, y: lines.ys[j] - ay)
+
+            if span == 0.0
+                continue
+            ux = (lines.xs[j] - ax) / span
+            uy = (lines.ys[j] - ay) / span
+            walked @= 0.0
+
+            while span - walked > left
+                walked @ walked + left
+                px = ax + ux * walked
+                py = ay + uy * walked
+
+                if drawing
+                    if points == 1 && xs[xs.len() - 1] == px && ys[ys.len() - 1] == py
+                        xs @ xs.push(px + ux * TINY)
+                        ys @ ys.push(py + uy * TINY)
+                    else
+                        xs @ xs.push(px)
+                        ys @ ys.push(py)
+                else
+                    starts @ starts.push(xs.len())
+                    closed @ closed.push(false)
+                    xs @ xs.push(px)
+                    ys @ ys.push(py)
+                    points @ 1
+                drawing @ !drawing
+                slot @ (slot + 1) % pattern.len()
+                left @ pattern[slot]
+                count @ count + 1
+
+                if count > MAX_DASHES
+                    return fail(code: flatten.LIMIT, msg: f"more than {MAX_DASHES} dashes")
+
+            left @ left - (span - walked)
+
+            if drawing
+                xs @ xs.push(lines.xs[j])
+                ys @ ys.push(lines.ys[j])
+                points @ points + 1
+
+    return ok(flatten.Lines(xs: xs, ys: ys, starts: starts, closed: closed))

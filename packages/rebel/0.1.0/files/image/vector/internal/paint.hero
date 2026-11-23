@@ -1,0 +1,158 @@
+# A colour laid over the pixels of an image by a coverage: the colour's alpha
+# times the share of the pixel a shape covers, then Porter and Duff's "over"
+# on straight alpha, rounded, as `image.composite` lays one image over
+# another.
+
+use image
+use image/vector/internal/flatten
+use image/vector/internal/raster
+use math
+
+# How an image holds its pixels.
+record Target
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The samples a pixel, 1 to 4; the last is alpha where it is 2 or 4.
+    channels: i64
+    # Whether a sample is 16 bits, two bytes, high one first.
+    wide: bool
+
+# The colour to lay down, as the samples of the target's format.
+record Ink
+    # The colour samples, without alpha: 1 or 3.
+    colour: [i64]
+    # The alpha, 0 to the largest sample.
+    alpha: i64
+
+# The bytes of one sample of `t`.
+function sample_size(t: Target) -> i64
+    if t.wide
+        return 2
+    return 1
+
+# The largest value of a sample of `t`.
+function top_of(t: Target) -> i64
+    if t.wide
+        return 65535
+    return 255
+
+# Whether the last sample of a pixel of `t` is alpha.
+function has_alpha(t: Target) -> bool
+    return t.channels == 2 || t.channels == 4
+
+# The sample at byte `at` of `pixels`.
+function read(pixels: [u8] lent, at: i64, wide: bool) -> i64
+    if wide
+        return to_i64(pixels[at]).must() * 256 + to_i64(pixels[at + 1]).must()
+    return to_i64(pixels[at]).must()
+
+# Writes `v`, within the largest sample, at byte `at` of `pixels`.
+function write(@pixels: [u8], at: i64, wide: bool, v: i64)
+    if wide
+        pixels[at] @ to_u8(v / 256).must()
+        pixels[at + 1] @ to_u8(v % 256).must()
+    else
+        pixels[at] @ to_u8(v).must()
+
+# Lays `ink` over the pixel at byte `at` of `pixels` by `share`, 0 to
+# `raster.FULL` of it.
+function lay(t: Target, @pixels: [u8], at: i64, ink: Ink lent, share: i64)
+    top = top_of(t)
+    size = sample_size(t)
+    sa = (ink.alpha * share + raster.FULL / 2) / raster.FULL
+
+    if sa == 0
+        return
+    colours = ink.colour.len()
+
+    if sa == top
+        for c in range(from: 0, to: colours)
+            write(pixels: @pixels, at: at + c * size, wide: t.wide, v: ink.colour[c])
+
+        if has_alpha(t)
+            write(pixels: @pixels, at: at + colours * size, wide: t.wide, v: top)
+        return
+
+    da = if has_alpha(t)
+        read(pixels, at: at + colours * size, wide: t.wide)
+    else
+        top
+    out_alpha = sa * top + da * (top - sa)
+
+    for c in range(from: 0, to: colours)
+        dc = read(pixels, at: at + c * size, wide: t.wide)
+        v = (ink.colour[c] * sa * top + dc * da * (top - sa) + out_alpha / 2) / out_alpha
+        write(pixels: @pixels, at: at + c * size, wide: t.wide, v: v)
+
+    if has_alpha(t)
+        write(pixels: @pixels, at: at + colours * size, wide: t.wide, v: (out_alpha + top / 2) / top)
+
+# Fills the contours of `lines`, each closed, into `pixels` with `ink`, `rows`
+# at a time so that the coverage held at once is a band's.
+function fill(t: Target, @pixels: [u8], lines: flatten.Lines lent, ink: Ink lent, even_odd: bool)
+    edges = raster.edges_of(lines)
+
+    if edges.len() == 0 || t.width == 0 || t.height == 0
+        return
+    pixel = t.channels * sample_size(t)
+
+    first = if edges[0].y0 > 0.0
+        to_i64(math.floor(edges[0].y0)).must()
+    else
+        0
+    top @= first
+
+    while top < t.height
+        rows = if top + raster.BAND > t.height
+            t.height - top
+        else
+            raster.BAND
+        cov = raster.band(edges: edges, width: t.width, top: top, rows: rows, even_odd: even_odd)
+
+        for r in range(from: 0, to: rows)
+            for x in range(from: 0, to: t.width)
+                share = cov[r * t.width + x]
+
+                if share > 0
+                    lay(t: t, pixels: @pixels, at: ((top + r) * t.width + x) * pixel, ink: ink, share: share)
+
+        top @ top + rows
+
+# The target an image of `img`'s size and format makes.
+function target_of(img: image.Image lent) -> Target
+    return Target(
+        width: img.width,
+        height: img.height,
+        channels: image.channels_of(img.format),
+        wide: image.bits_of(img.format) == 16
+    )
+
+# The bytes of the pixel `color` makes in an image of `format`, alpha
+# included.
+function pixel_of(format: image.Format, color: image.Color) -> [u8]
+    one @= image.blank(width: 1, height: 1, format: format).must()
+    image.set_color(@one, x: 0, y: 0, color: color)
+    return one.pixels
+
+# The colour samples and the alpha of `color` held as `format` holds a pixel.
+function ink_of(format: image.Format, color: image.Color) -> Ink
+    one @= image.blank(width: 1, height: 1, format: format).must()
+    image.set_color(@one, x: 0, y: 0, color: image.Color(r: color.r, g: color.g, b: color.b, a: 255))
+    samples: [i64] @= []
+
+    for v in image.samples_at(one, x: 0, y: 0)
+        samples @ samples.push(to_i64(v).must())
+
+    colours = if image.has_alpha(format)
+        samples.len() - 1
+    else
+        samples.len()
+    wide = image.bits_of(format) == 16
+
+    alpha = if wide
+        to_i64(color.a).must() * 257
+    else
+        to_i64(color.a).must()
+    return Ink(colour: samples.slice(from: 0, to: colours), alpha: alpha)

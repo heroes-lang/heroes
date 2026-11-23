@@ -1,0 +1,196 @@
+# A path made into straight lines: every curve cut into pieces short enough
+# that the polygon is within a twentieth of a pixel of it. A contour that is
+# not closed is kept open, so that a stroke can cap it and a fill closes it by
+# itself.
+
+use image/vector/internal/shapes
+use math
+
+# Why a path with a coordinate no drawing can take is not read.
+constant INVALID: str
+    "invalid"
+
+# Why a path that would need too many points is not read.
+constant LIMIT: str
+    "limit"
+
+# The most points a path may flatten to: past it the memory a caller's
+# curves could ask for is no longer a drawing.
+constant MAX_POINTS: i64
+    8388608
+
+# The most pieces one curve is cut into, whatever its size.
+constant MAX_PIECES: i64
+    4096
+
+# How far, in pixels, the polygon may stand from the curve it replaces.
+constant TOLERANCE: f64
+    0.05
+
+# Contours of straight lines.
+record Lines
+    # The x of every point, contour after contour.
+    xs: [f64]
+    # The y of every point, the same order.
+    ys: [f64]
+    # Where each contour's first point stands in `xs`; a contour ends where
+    # the next begins, the last at the end.
+    starts: [i64]
+    # Whether the path closed each contour.
+    closed: [bool]
+
+# The number of pieces a curve whose second differences are at most `m` long
+# is cut into so that each stays within `TOLERANCE`: the chord of a piece of a
+# curve departs from it by at most an eighth of the curve's largest second
+# derivative over the square of the pieces. `bound` is that derivative's size
+# as a multiple of `m`: 2 for a quadratic, 6 for a cubic.
+function pieces_for(m: f64, bound: f64) -> i64
+    raw = math.sqrt(bound * m / (8.0 * TOLERANCE))
+
+    if !(raw <= to_f64(MAX_PIECES))
+        return MAX_PIECES
+
+    if raw <= 1.0
+        return 1
+    return to_i64(math.ceil(raw)).must()
+
+# Opens a contour at (`x`, `y`).
+function begin(@xs: [f64], @ys: [f64], @starts: [i64], @closed: [bool], x: f64, y: f64)
+    starts @ starts.push(xs.len())
+    closed @ closed.push(false)
+    xs @ xs.push(x)
+    ys @ ys.push(y)
+
+# Adds the points of the quadratic curve from (`x0`, `y0`) through the control
+# point (`cx`, `cy`) to (`x1`, `y1`), the first point left out.
+function quad_points(@xs: [f64], @ys: [f64], x0: f64, y0: f64, cx: f64, cy: f64, x1: f64, y1: f64)
+    m = math.hypot(x: x0 - 2.0 * cx + x1, y: y0 - 2.0 * cy + y1)
+    n = pieces_for(m: m, bound: 2.0)
+
+    for i in range(from: 1, to: n)
+        t = to_f64(i) / to_f64(n)
+        u = 1.0 - t
+        xs @ xs.push(u * u * x0 + 2.0 * u * t * cx + t * t * x1)
+        ys @ ys.push(u * u * y0 + 2.0 * u * t * cy + t * t * y1)
+
+    xs @ xs.push(x1)
+    ys @ ys.push(y1)
+
+# Adds the points of the cubic curve from (`x0`, `y0`) through the control
+# points to (`x3`, `y3`), the first point left out.
+function cubic_points(@xs: [f64], @ys: [f64], x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64, x3: f64, y3: f64)
+    first = math.hypot(x: x0 - 2.0 * x1 + x2, y: y0 - 2.0 * y1 + y2)
+    second = math.hypot(x: x1 - 2.0 * x2 + x3, y: y1 - 2.0 * y2 + y3)
+    n = pieces_for(m: math.max(a: first, b: second), bound: 6.0)
+
+    for i in range(from: 1, to: n)
+        t = to_f64(i) / to_f64(n)
+        u = 1.0 - t
+        a = u * u * u
+        b = 3.0 * u * u * t
+        c = 3.0 * u * t * t
+        d = t * t * t
+        xs @ xs.push(a * x0 + b * x1 + c * x2 + d * x3)
+        ys @ ys.push(a * y0 + b * y1 + c * y2 + d * y3)
+
+    xs @ xs.push(x3)
+    ys @ ys.push(y3)
+
+# `path` as contours of straight lines. A line or curve that follows no
+# `move`, and none yet drawn, begins its contour at its own end; one that
+# follows a `close` begins a new contour where the closed one began, as SVG
+# does. Every coordinate is within `REACH`, which the face has checked.
+# Fails `limit` where the points pass `MAX_POINTS`.
+function flatten(path: shapes.Flat lent) -> Lines?
+    xs: [f64] @= []
+    ys: [f64] @= []
+    starts: [i64] @= []
+    closed: [bool] @= []
+    k @= 0
+    open @= false
+    have_pen @= false
+    px @= 0.0
+    py @= 0.0
+    sx @= 0.0
+    sy @= 0.0
+
+    for op in path.ops
+        if op == shapes.CLOSE
+            if open
+                closed[closed.len() - 1] @ true
+                open @ false
+                px @ sx
+                py @ sy
+            continue
+        end_at = k + shapes.width_of(op) - 2
+        x = path.coords[end_at]
+        y = path.coords[end_at + 1]
+
+        if op == shapes.MOVE
+            begin(xs: @xs, ys: @ys, starts: @starts, closed: @closed, x: x, y: y)
+            open @ true
+            have_pen @ true
+            sx @ x
+            sy @ y
+        else
+            if !open && have_pen
+                begin(xs: @xs, ys: @ys, starts: @starts, closed: @closed, x: sx, y: sy)
+                open @ true
+            else if !open
+                begin(xs: @xs, ys: @ys, starts: @starts, closed: @closed, x: x, y: y)
+                open @ true
+                have_pen @ true
+                sx @ x
+                sy @ y
+                px @ x
+                py @ y
+
+            if px != x || py != y || op != shapes.LINE
+                if op == shapes.LINE
+                    xs @ xs.push(x)
+                    ys @ ys.push(y)
+                else if op == shapes.QUAD
+                    quad_points(
+                        xs: @xs,
+                        ys: @ys,
+                        x0: px,
+                        y0: py,
+                        cx: path.coords[k],
+                        cy: path.coords[k + 1],
+                        x1: x,
+                        y1: y
+                    )
+                else
+                    cubic_points(
+                        xs: @xs,
+                        ys: @ys,
+                        x0: px,
+                        y0: py,
+                        x1: path.coords[k],
+                        y1: path.coords[k + 1],
+                        x2: path.coords[k + 2],
+                        y2: path.coords[k + 3],
+                        x3: x,
+                        y3: y
+                    )
+        px @ x
+        py @ y
+        k @ k + shapes.width_of(op)
+
+        if xs.len() > MAX_POINTS
+            return fail(code: LIMIT, msg: f"the path flattens to more than {MAX_POINTS} points")
+
+    return ok(Lines(xs: xs, ys: ys, starts: starts, closed: closed))
+
+# `ops` and `coords`, a path in the flat form, as contours of straight lines.
+# Fails `invalid` where a coordinate is not a number within `REACH`, and
+# `limit` as `flatten` does.
+function from_steps(ops: [i64] lent, coords: [f64] lent) -> Lines?
+    for i in range(from: 0, to: coords.len())
+        if !shapes.in_reach(coords[i])
+            return fail(
+                code: INVALID,
+                msg: f"coordinate {i / 2} of the path, {coords[i]}, is not a number within {shapes.REACH}"
+            )
+
+    return flatten(shapes.Flat(ops: ops, coords: coords))

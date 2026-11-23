@@ -1,0 +1,64 @@
+# The shape of a path as the face hands it to the private modules: the kinds
+# of step and the numbers they read in two flat lists, so that nothing here
+# depends on the face's own types.
+
+use math
+
+# Lifts the pen to a point and begins a contour: 2 numbers.
+constant MOVE: i64
+    0
+
+# A straight line to a point: 2 numbers.
+constant LINE: i64
+    1
+
+# A quadratic curve: a control point and the end, 4 numbers.
+constant QUAD: i64
+    2
+
+# A cubic curve: two control points and the end, 6 numbers.
+constant CUBIC: i64
+    3
+
+# Joins the contour's last point to its first and ends it: no numbers.
+constant CLOSE: i64
+    4
+
+# The largest coordinate a path may hold, either way: past it the products
+# the rasterizer computes could lose all their digits.
+constant REACH: f64
+    1073741824.0
+
+# A path in the face's flat form.
+record Flat
+    # The kind of each step.
+    ops: [i64]
+    # The numbers the steps read, in order, x before y.
+    coords: [f64]
+
+# How many numbers a step of kind `op` reads.
+function width_of(op: i64) -> i64
+    if op == MOVE || op == LINE
+        return 2
+
+    if op == QUAD
+        return 4
+
+    if op == CUBIC
+        return 6
+    return 0
+
+# Whether `v` is a number the rasterizer takes: finite and within `REACH`.
+function in_reach(v: f64) -> bool
+    return math.is_finite(v) && v >= -REACH && v <= REACH
+
+test "width_of and in_reach: every step, the edges, and a NaN"
+    assert width_of(MOVE) == 2
+    assert width_of(LINE) == 2
+    assert width_of(QUAD) == 4
+    assert width_of(CUBIC) == 6
+    assert width_of(CLOSE) == 0
+    assert in_reach(1073741824.0) && in_reach(-1073741824.0)
+    assert !in_reach(1073741825.0)
+    assert !in_reach(0.0 / 0.0)
+    assert !in_reach(1.0 / 0.0)

@@ -1,0 +1,308 @@
+# The outline of a stroke: every side of every contour a rectangle, every
+# corner a join, every free end a cap, each a polygon of its own, all turned
+# the same way round. Filled together under the non-zero rule they are
+# exactly the union of the pieces, so a stroke that crosses itself or bends
+# back on itself has no seam and no hole, whatever the corners.
+
+use image/vector/internal/dash
+use image/vector/internal/flatten
+use image/vector/internal/shapes
+use math
+
+# The ends of an open contour: cut square at the point.
+constant CAP_BUTT: i64
+    0
+
+# The ends of an open contour: a half disc.
+constant CAP_ROUND: i64
+    1
+
+# The ends of an open contour: a half of the width beyond the point.
+constant CAP_SQUARE: i64
+    2
+
+# A corner of two sides: the outer edges meeting in a point, cut to a bevel
+# past the limit.
+constant JOIN_MITER: i64
+    0
+
+# A corner of two sides: an arc around the point.
+constant JOIN_ROUND: i64
+    1
+
+# A corner of two sides: the outer corners joined by a straight line.
+constant JOIN_BEVEL: i64
+    2
+
+# Two points closer than this are one.
+constant SAME: f64
+    0.000000001
+
+# How far, in pixels, a polygon of an arc may stand from it.
+constant ARC_TOLERANCE: f64
+    0.05
+
+# The sides of the polygon that stands for an arc of `sweep` radians of a
+# circle of radius `r`.
+function arc_steps(r: f64, sweep: f64) -> i64
+    step = if r <= ARC_TOLERANCE
+        math.PI
+    else
+        2.0 * math.acos(1.0 - ARC_TOLERANCE / r)
+    raw = math.abs(sweep) / step
+
+    if !(raw <= 512.0)
+        return 512
+
+    if raw <= 1.0
+        return 1
+    return to_i64(math.ceil(raw)).must()
+
+# Adds the polygon of `px`, `py` as a closed contour, turned the way the
+# others are, or leaves it out where it has no area.
+function emit(@xs: [f64], @ys: [f64], @starts: [i64], @closed: [bool], px: [f64] lent, py: [f64] lent)
+    n = px.len()
+    area @= 0.0
+
+    for i in range(from: 0, to: n)
+        j = (i + 1) % n
+        area @ area + px[i] * py[j] - px[j] * py[i]
+
+    if !(area > 0.000000000001 || area < -0.000000000001)
+        return
+    starts @ starts.push(xs.len())
+    closed @ closed.push(true)
+
+    for i in range(from: 0, to: n)
+        k = if area > 0.0
+            i
+        else
+            n - 1 - i
+        xs @ xs.push(px[k])
+        ys @ ys.push(py[k])
+
+# Adds the points of the arc around (`cx`, `cy`) of radius `r` from angle
+# `from` through `sweep` radians, both ends included.
+function arc_into(@px: [f64], @py: [f64], cx: f64, cy: f64, r: f64, from: f64, sweep: f64)
+    n = arc_steps(r: r, sweep: sweep)
+
+    for i in range(from: 0, to: n + 1)
+        a = from + sweep * to_f64(i) / to_f64(n)
+        px @ px.push(cx + r * math.cos(a))
+        py @ py.push(cy + r * math.sin(a))
+
+# The piece of the corner at (`vx`, `vy`) where a side that runs along
+# (`d0x`, `d0y`) meets one that runs along (`d1x`, `d1y`), both of length 1,
+# for a stroke of half width `hw`.
+function join_into(@xs: [f64], @ys: [f64], @starts: [i64], @closed: [bool], vx: f64, vy: f64, d0x: f64, d0y: f64, d1x: f64, d1y: f64, hw: f64, kind: i64, miter_limit: f64)
+    cross = d0x * d1y - d0y * d1x
+    dot = d0x * d1x + d0y * d1y
+
+    if math.abs(cross) < 0.000000001 && dot > 0.0
+        return
+
+    side = if cross > 0.0
+        -1.0
+    else
+        1.0
+    ax = vx - side * d0y * hw
+    ay = vy + side * d0x * hw
+    bx = vx - side * d1y * hw
+    by = vy + side * d1x * hw
+    px: [f64] @= [vx]
+    py: [f64] @= [vy]
+
+    if kind == JOIN_ROUND
+        a0 = math.atan2(y: ay - vy, x: ax - vx)
+        a1 = math.atan2(y: by - vy, x: bx - vx)
+        delta @= a1 - a0
+
+        if delta > math.PI
+            delta @ delta - 2.0 * math.PI
+
+        if delta <= -math.PI
+            delta @ delta + 2.0 * math.PI
+
+        if math.abs(cross) < 0.000000001
+            delta @ -math.PI
+        arc_into(px: @px, py: @py, cx: vx, cy: vy, r: hw, from: a0, sweep: delta)
+    else
+        px @ px.push(ax)
+        py @ py.push(ay)
+
+        if kind == JOIN_MITER && dot > -0.999999 && math.sqrt(2.0 / (1.0 + dot)) <= miter_limit
+            px @ px.push(vx - side * (d0y + d1y) * hw / (1.0 + dot))
+            py @ py.push(vy + side * (d0x + d1x) * hw / (1.0 + dot))
+        px @ px.push(bx)
+        py @ py.push(by)
+    emit(xs: @xs, ys: @ys, starts: @starts, closed: @closed, px: px, py: py)
+
+# The cap at (`x`, `y`) of an open contour that leaves by the direction
+# (`dx`, `dy`), of length 1, for a stroke of half width `hw`.
+function cap_into(@xs: [f64], @ys: [f64], @starts: [i64], @closed: [bool], x: f64, y: f64, dx: f64, dy: f64, hw: f64, kind: i64)
+    nx = -dy * hw
+    ny = dx * hw
+    px: [f64] @= []
+    py: [f64] @= []
+
+    if kind == CAP_SQUARE
+        px @ [x + nx, x + nx + dx * hw, x - nx + dx * hw, x - nx]
+        py @ [y + ny, y + ny + dy * hw, y - ny + dy * hw, y - ny]
+    else if kind == CAP_ROUND
+        arc_into(px: @px, py: @py, cx: x, cy: y, r: hw, from: math.atan2(y: ny, x: nx), sweep: -math.PI)
+    else
+        return
+    emit(xs: @xs, ys: @ys, starts: @starts, closed: @closed, px: px, py: py)
+
+# The pieces of a contour of a single point, which a stroke of half width
+# `hw` marks as its cap says: a disc, a square, or nothing.
+function dot_into(@xs: [f64], @ys: [f64], @starts: [i64], @closed: [bool], x: f64, y: f64, hw: f64, kind: i64)
+    px: [f64] @= []
+    py: [f64] @= []
+
+    if kind == CAP_ROUND
+        arc_into(px: @px, py: @py, cx: x, cy: y, r: hw, from: 0.0, sweep: 2.0 * math.PI)
+    else if kind == CAP_SQUARE
+        px @ [x - hw, x + hw, x + hw, x - hw]
+        py @ [y - hw, y - hw, y + hw, y + hw]
+    else
+        return
+    emit(xs: @xs, ys: @ys, starts: @starts, closed: @closed, px: px, py: py)
+
+# The contours of `lines` stroked `width` wide as polygons, closed and all
+# turned one way, to be filled under the non-zero rule. A contour of one
+# point that a `move` alone made draws nothing; two points that are the same
+# draw a dot as `cap` says.
+# Fails `limit` where the polygons pass the points a path may flatten to.
+function stroked(lines: flatten.Lines lent, width: f64, cap: i64, corner: i64, miter_limit: f64) -> flatten.Lines?
+    xs: [f64] @= []
+    ys: [f64] @= []
+    starts: [i64] @= []
+    closed: [bool] @= []
+    hw = width / 2.0
+
+    for c in range(from: 0, to: lines.starts.len())
+        first = lines.starts[c]
+
+        last = if c + 1 < lines.starts.len()
+            lines.starts[c + 1] - 1
+        else
+            lines.xs.len() - 1
+        px: [f64] @= []
+        py: [f64] @= []
+
+        for i in range(from: first, to: last + 1)
+            if px.len() == 0 || math.hypot(x: lines.xs[i] - px[px.len() - 1], y: lines.ys[i] - py[py.len() - 1]) > SAME
+                px @ px.push(lines.xs[i])
+                py @ py.push(lines.ys[i])
+
+        n @= px.len()
+        shut = lines.closed[c]
+
+        if shut && n > 1 && math.hypot(x: px[0] - px[n - 1], y: py[0] - py[n - 1]) <= SAME
+            n @ n - 1
+
+        if n == 1
+            if last > first || shut
+                dot_into(xs: @xs, ys: @ys, starts: @starts, closed: @closed, x: px[0], y: py[0], hw: hw, kind: cap)
+            continue
+
+        sides = if shut
+            n
+        else
+            n - 1
+        ux: [f64] @= []
+        uy: [f64] @= []
+
+        for s in range(from: 0, to: sides)
+            t = (s + 1) % n
+            length = math.hypot(x: px[t] - px[s], y: py[t] - py[s])
+            ux @ ux.push((px[t] - px[s]) / length)
+            uy @ uy.push((py[t] - py[s]) / length)
+            qx = [px[s] - uy[s] * hw, px[t] - uy[s] * hw, px[t] + uy[s] * hw, px[s] + uy[s] * hw]
+            qy = [py[s] + ux[s] * hw, py[t] + ux[s] * hw, py[t] - ux[s] * hw, py[s] - ux[s] * hw]
+            emit(xs: @xs, ys: @ys, starts: @starts, closed: @closed, px: qx, py: qy)
+
+        corners = if shut
+            range(from: 0, to: n)
+        else
+            range(from: 1, to: n - 1)
+
+        for v in corners
+            before = if v == 0
+                sides - 1
+            else
+                v - 1
+            join_into(
+                xs: @xs,
+                ys: @ys,
+                starts: @starts,
+                closed: @closed,
+                vx: px[v],
+                vy: py[v],
+                d0x: ux[before],
+                d0y: uy[before],
+                d1x: ux[v],
+                d1y: uy[v],
+                hw: hw,
+                kind: corner,
+                miter_limit: miter_limit
+            )
+
+        if !shut
+            cap_into(
+                xs: @xs,
+                ys: @ys,
+                starts: @starts,
+                closed: @closed,
+                x: px[0],
+                y: py[0],
+                dx: -ux[0],
+                dy: -uy[0],
+                hw: hw,
+                kind: cap
+            )
+            cap_into(
+                xs: @xs,
+                ys: @ys,
+                starts: @starts,
+                closed: @closed,
+                x: px[n - 1],
+                y: py[n - 1],
+                dx: ux[sides - 1],
+                dy: uy[sides - 1],
+                hw: hw,
+                kind: cap
+            )
+
+        if xs.len() > flatten.MAX_POINTS
+            return fail(code: flatten.LIMIT, msg: f"the stroke is more than {flatten.MAX_POINTS} points")
+
+    return ok(flatten.Lines(xs: xs, ys: ys, starts: starts, closed: closed))
+
+# `lines` stroked as `stroked` does, cut into dashes first where `dashes` is
+# not empty. Fails `invalid` where `width` is below 0 or not a number, the
+# miter limit below 1, a dash below 0 or not a number or all of them 0, the
+# offset not a number; `limit` as `stroked` and `dash.dashed` do.
+function outline(lines: flatten.Lines lent, width: f64, cap: i64, corner: i64, miter_limit: f64, dashes: [f64] lent, offset: f64) -> flatten.Lines?
+    if !shapes.in_reach(width) || width < 0.0 || !shapes.in_reach(miter_limit) || miter_limit < 1.0 || !shapes.in_reach(offset)
+        return fail(
+            code: flatten.INVALID,
+            msg: f"a stroke of width {width}, miter limit {miter_limit} and dash offset {offset} is not within 0 to {shapes.REACH}, 1 to {shapes.REACH} and either way {shapes.REACH}"
+        )
+    pattern = dash.evened(dashes)
+
+    for v in pattern
+        if !shapes.in_reach(v) || v < 0.0
+            return fail(code: flatten.INVALID, msg: f"a dash of {v} is not within 0 to {shapes.REACH}")
+
+    if width == 0.0
+        return ok(flatten.Lines(xs: [], ys: [], starts: [], closed: []))
+
+    if pattern.len() == 0
+        return stroked(lines, width: width, cap: cap, corner: corner, miter_limit: miter_limit)
+
+    if dash.total_of(pattern) <= 0.0
+        return fail(code: flatten.INVALID, msg: "the dashes are all 0 long")
+    cut = dash.dashed(lines, pattern: pattern, offset: offset)?
+    return stroked(cut, width: width, cap: cap, corner: corner, miter_limit: miter_limit)

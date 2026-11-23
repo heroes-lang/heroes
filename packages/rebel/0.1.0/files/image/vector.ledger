@@ -1,0 +1,132 @@
+# The ledger of `image/vector`: what golang.org/x/image/vector (the
+# Rasterizer), Java's java.awt.geom and java.awt.BasicStroke, and Python's
+# Pillow (ImageDraw, ImagePath) let a program do with a path drawn into an
+# image, one block per capability, and what Rebel answers. None of the three
+# is on this machine as source or documentation: Go's x/image is not part of
+# its standard library, Pillow is not installed and nothing may be installed,
+# and `java` here is the system's stub with no JDK. The names are those of
+# the documented public APIs, not read by `go doc` or `dir()`: a question
+# rather than a measurement, and no expected value of the tests comes from
+# them. Rust's standard library has no vector graphics: `-` in its lines.
+#
+# The tests hold what the shapes' definitions state, computed by hand: the
+# coverage of a rectangle on a fraction of a pixel is the fraction (a half
+# pixel is 128, a quarter 191 under a white colour on black), the area of a
+# disc of radius 10 is within 0.5 pixels of pi times 100, the extreme points
+# of a stroke are the geometry's (a bend of width 2 reaches 1 beyond each
+# side), and the arc is the cubic whose control distance is 4/3 tan(a/4) of
+# the radius.
+
+capability vector/path  a path built from moves, lines, quadratic and cubic curves, arcs and closes
+  heroes  image/vector.Segment, image/vector.move_to, image/vector.line_to, image/vector.quad_to, image/vector.cubic_to, image/vector.arc_to, image/vector.close_path, image/vector.pen_of, image/vector.add_path, image/vector.Point
+  go      vector.Rasterizer.MoveTo, vector.Rasterizer.LineTo, vector.Rasterizer.QuadTo, vector.Rasterizer.CubeTo, vector.Rasterizer.ClosePath, vector.Rasterizer.Pen
+  rust    -
+  python  ImagePath.Path, ImageDraw.shape, ImageDraw.Outline, ImageDraw.Outline.move, ImageDraw.Outline.line, ImageDraw.Outline.curve, ImageDraw.Outline.close
+  note    a path is a list of segments the program builds in its own list, `quad_to` and `cubic_to` as Go's QuadTo and CubeTo; java.awt.geom.Path2D's moveTo, lineTo, quadTo, curveTo, closePath, getCurrentPoint and append are the same names and answers. `arc_to` is SVG's endpoint arc, which Java has no call for (Arc2D is by centre and angles, under vector/shapes); the arc becomes the cubics that draw it
+
+capability vector/shapes  rectangles, rounded rectangles, ellipses, arcs, chords, pie slices and polygons as paths
+  heroes  image/vector.add_rect, image/vector.add_rounded_rect, image/vector.add_ellipse, image/vector.add_arc, image/vector.add_chord, image/vector.add_pie, image/vector.add_polygon, image/vector.add_polyline
+  go      -
+  rust    -
+  python  ImageDraw.rectangle, ImageDraw.rounded_rectangle, ImageDraw.ellipse, ImageDraw.circle, ImageDraw.arc, ImageDraw.chord, ImageDraw.pieslice, ImageDraw.polygon, ImageDraw.regular_polygon, ImageDraw.line
+  note    angles in degrees from the right, growing clockwise on the page, as Pillow counts them and as Java's Arc2D (OPEN, CHORD, PIE) does with its counter-clockwise convention reversed; Pillow draws these into an image and here each is a path, which `fill_path` and `stroke_path` draw. java.awt.geom's Rectangle2D, RoundRectangle2D, Ellipse2D, Arc2D and Line2D are the same shapes. A regular polygon is `add_polygon` over points the program computes
+
+capability vector/transform  a path moved by an affine matrix: translation, scale, rotation, any composition
+  heroes  image/vector.Matrix, image/vector.identity, image/vector.translation, image/vector.scaling, image/vector.rotation, image/vector.compose, image/vector.apply, image/vector.transform
+  go      -
+  rust    -
+  python  Image.transform, ImageTransform.AffineTransform
+  note    SVG's `matrix(a b c d e f)` as java.awt.geom.AffineTransform's (m00, m10, m01, m11, m02, m12) in that order; `compose(first:, second:)` is AffineTransform.concatenate in the order things happen, not the order matrices multiply. A shear is a `Matrix` built directly
+
+capability vector/svg-path  SVG's path data read into a path
+  heroes  image/vector.parse_svg
+  go      -
+  rust    -
+  python  -
+  note    every command, absolute and relative, a command repeated by its numbers, numbers as SVG writes them (`1.5.5`, `-1-2`) and an arc's compact flags; an arc becomes cubics. Neither Go's, Java's nor Pillow's library reads path data (Java's Batik is not the JDK's)
+
+capability vector/fill  a path filled with a colour, anti-aliased, over what is there
+  heroes  image/vector.fill_path
+  go      vector.Rasterizer.Draw, vector.Rasterizer.DrawOp
+  rust    -
+  python  ImageDraw.polygon, ImageDraw.shape, ImageDraw.Draw
+  note    each pixel row is sampled at sixteen heights with the crossings exact, so the share of a pixel covered is exact across and to a sixteenth down; the colour's alpha times the share is laid over the pixel as `image.composite` lays an image. Go's Rasterizer draws a coverage mask that `draw.DrawMask` composites (`image/mask`, pending in `image`'s ledger); here the colour is composited at once. Java's RenderingHints.VALUE_ANTIALIAS_ON is always on: a shape that is not anti-aliased is `image`'s `draw_line`, `draw_rect` and `fill_rect`
+
+capability vector/fill-rule  which parts of a path that crosses itself are filled
+  heroes  image/vector.Rule
+  go      -
+  rust    -
+  python  -
+  note    `non_zero` and `even_odd` as Java's Path2D.WIND_NON_ZERO and WIND_EVEN_ODD; Go's Rasterizer fills by the accumulated area, which is non-zero for contours that do not overlap
+
+capability vector/stroke  a path stroked with a width, caps, joins, a miter limit and a dash pattern
+  heroes  image/vector.Stroke, image/vector.Cap, image/vector.Join, image/vector.stroke, image/vector.stroke_path, image/vector.stroke_outline
+  go      -
+  rust    -
+  python  ImageDraw.line (width, joint), ImageDraw.rectangle (width), ImageDraw.ellipse (width), ImageDraw.polygon (width)
+  note    java.awt.BasicStroke's width, CAP_BUTT, CAP_ROUND, CAP_SQUARE, JOIN_MITER, JOIN_ROUND, JOIN_BEVEL, miterlimit, dash and dash_phase, with BasicStroke.createStrokedShape as `stroke_outline`. A stroke is the union of one rectangle a side, one piece a corner and one a cap, filled under the non-zero rule, so a stroke that crosses itself is one stroke, never two; a path of one point drawn with a zero-length line is a dot as its cap says; a stroke of width 0 draws nothing, as SVG's
+
+capability vector/measure  the box around a path, and whether a point is inside it
+  heroes  image/vector.bounds_of, image/vector.contains, image/vector.Bounds
+  go      vector.Rasterizer.Bounds, vector.Rasterizer.Size
+  rust    -
+  python  ImagePath.Path.getbbox, ImagePath.Path.compact
+  note    java.awt.Shape's getBounds2D and contains, by the flattened polygon (within a twentieth of a pixel of the curve) and the fill rule asked, where Java's contains asks the path's own rule
+
+capability vector/numbers  a path as flat numbers, and back
+  heroes  image/vector.Steps, image/vector.steps_of, image/vector.path_of
+  go      -
+  rust    -
+  python  ImagePath.Path.tolist, ImagePath.Path.map
+  note    java.awt.geom.PathIterator's currentSegment, as arrays of kinds and coordinates, for a program that wants to do arithmetic on a path or hand it to another package
+
+capability vector/flood  a region of an image painted from a point
+  heroes  image/vector.flood_fill, image/vector.flood_fill_to_border
+  go      -
+  rust    -
+  python  ImageDraw.floodfill
+  note    4-connected, a row at a time with an explicit stack, so a region of any shape cannot overflow the stack; the pixels compared are exact bytes
+
+capability vector/flood-tolerance  a region painted across pixels that differ by a tolerance
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageDraw.floodfill (thresh)
+  note    a distance between colours, which `image`'s colour spaces define
+
+capability vector/point  one pixel set
+  heroes  image.set_color
+  go      -
+  rust    -
+  python  ImageDraw.point, ImageDraw.Draw.point
+  note    a pixel is `image`'s; no path is needed for it
+
+capability vector/bitmap  a one-bit bitmap drawn in a colour
+  heroes  refused: that is a mask laid through a colour, which is `image/mask`'s pending block in `image`'s ledger
+  go      -
+  rust    -
+  python  ImageDraw.bitmap
+  note    -
+
+capability vector/combine  shapes combined by union, intersection, difference and exclusive or
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    java.awt.geom.Area's add, subtract, intersect, exclusiveOr; a stroke already is a union, and filled contours turned against each other cut under non-zero
+
+capability vector/flatten  a path flattened to a polygon at a tolerance
+  heroes  refused: the polygon a curve is cut to is drawn and measured, never returned; `bounds_of` and `contains` read it, and a program that wants the points of a curve evaluates it from `steps_of`
+  go      -
+  rust    -
+  python  -
+  note    java.awt.geom.FlatteningPathIterator
+
+dropped
+  go      vector.Rasterizer.Reset, vector.Rasterizer.DrawOp's op argument: a rasterizer is a value that keeps a pen and a buffer between calls, which a path in a list and a call that draws it do without
+  go      vector.Rasterizer.Draw's image.Image and mask arguments: Go's interfaces, which the language has none of
+  python  ImageDraw.Draw, ImageDraw.getdraw, ImageDraw.Draw.im, ImageDraw.Draw.mode, ImageDraw.Draw.fill, ImageDraw.Draw.ink, ImageDraw.Draw.fontmode, ImageDraw.Draw.font: a drawing context that holds an image, a colour and a mode; here the image is the argument and the colour another
+  python  ImageDraw.text, ImageDraw.multiline_text, ImageDraw.textbbox, ImageDraw.textlength: held in `image/text`
+  python  ImagePath.Path.transform, ImagePath.Path.compact, ImagePath.Path.__getitem__, ImagePath.Path.__setitem__: a Pillow path is a sequence of points in a C array; here a path is a list of segments and `transform` takes a matrix
+  java    java.awt.geom.Point2D, Dimension2D, RectangularShape, Rectangle2D.intersects, Line2D.linesIntersect, Line2D.ptSegDist, Line2D.ptLineDist, Line2D.relativeCCW: arithmetic over points that a program writes, and `Point` and `Bounds` are its records
+  java    java.awt.geom.Area, java.awt.geom.GeneralPath, java.awt.geom.IllegalPathStateException, java.awt.geom.NoninvertibleTransformException: classes with state a program holds in a list; an exception is a failure code here

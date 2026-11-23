@@ -1,0 +1,112 @@
+# Arcs of ellipses as cubic curves: an arc cut into pieces of at most a
+# quarter turn, each drawn by one cubic whose end tangents are the ellipse's
+# own, which keeps it within a thousandth of a percent of the radius.
+
+use math
+
+# Whether every one of `values` is a number and not infinite.
+function finite(values: [f64] lent) -> bool
+    for v in values
+        if !math.is_finite(v)
+            return false
+
+    return true
+
+# The cubic curves of the arc of the ellipse around (`cx`, `cy`) of radii
+# `rx` and `ry`, turned by `phi` radians, from angle `start` through `sweep`
+# radians (positive turns from the x axis toward the y axis), as 6 numbers a
+# piece: two control points and the end.
+function by_centre(cx: f64, cy: f64, rx: f64, ry: f64, phi: f64, start: f64, sweep: f64) -> [f64]
+    out: [f64] @= []
+
+    if !finite([cx, cy, rx, ry, phi, start, sweep])
+        return out
+    raw = math.abs(sweep) / (math.PI / 2.0) - 0.000000001
+
+    pieces = if raw <= 1.0
+        1
+    else
+        to_i64(math.ceil(raw)).must()
+    step = sweep / to_f64(pieces)
+    k = 4.0 / 3.0 * math.tan(step / 4.0)
+    cp = math.cos(phi)
+    sp = math.sin(phi)
+
+    for i in range(from: 0, to: pieces)
+        a = start + step * to_f64(i)
+        b = a + step
+        ca = math.cos(a)
+        sa = math.sin(a)
+        cb = math.cos(b)
+        sb = math.sin(b)
+
+        # The ellipse's own points and tangents, before the turn.
+        ax = rx * ca
+        ay = ry * sa
+        bx = rx * cb
+        by = ry * sb
+        c1x = ax - k * rx * sa
+        c1y = ay + k * ry * ca
+        c2x = bx + k * rx * sb
+        c2y = by - k * ry * cb
+        out @ out.push(cx + cp * c1x - sp * c1y)
+        out @ out.push(cy + sp * c1x + cp * c1y)
+        out @ out.push(cx + cp * c2x - sp * c2y)
+        out @ out.push(cy + sp * c2x + cp * c2y)
+        out @ out.push(cx + cp * bx - sp * by)
+        out @ out.push(cy + sp * bx + cp * by)
+
+    return out
+
+# The cubic curves of the arc SVG's `A` draws from (`x0`, `y0`) to (`x1`,
+# `y1`) on an ellipse of radii `rx` and `ry` turned by `rotation` degrees:
+# the one of the two sizes that `large` says, turning the way `sweep` says
+# (true toward the y axis). Radii too small to reach the end are grown
+# until they do. Empty where the two points are one, a number is not finite
+# or a radius is 0; the caller draws a line in the last two cases.
+function by_endpoints(x0: f64, y0: f64, rx: f64, ry: f64, rotation: f64, large: bool, sweep: bool, x1: f64, y1: f64) -> [f64]
+    if !finite([x0, y0, rx, ry, rotation, x1, y1]) || rx == 0.0 || ry == 0.0 || x0 == x1 && y0 == y1
+        return []
+    phi = math.to_radians(rotation)
+    cp = math.cos(phi)
+    sp = math.sin(phi)
+    ax @= math.abs(rx)
+    ay @= math.abs(ry)
+    hx = (x0 - x1) / 2.0
+    hy = (y0 - y1) / 2.0
+    qx = cp * hx + sp * hy
+    qy = -sp * hx + cp * hy
+    scale = qx * qx / (ax * ax) + qy * qy / (ay * ay)
+
+    if scale > 1.0
+        ax @ ax * math.sqrt(scale)
+        ay @ ay * math.sqrt(scale)
+    top = ax * ax * ay * ay - ax * ax * qy * qy - ay * ay * qx * qx
+    bottom = ax * ax * qy * qy + ay * ay * qx * qx
+
+    sign = if large == sweep
+        -1.0
+    else
+        1.0
+
+    coef = if top <= 0.0 || bottom <= 0.0
+        0.0
+    else
+        sign * math.sqrt(top / bottom)
+    ox = coef * ax * qy / ay
+    oy = -coef * ay * qx / ax
+    cx = cp * ox - sp * oy + (x0 + x1) / 2.0
+    cy = sp * ox + cp * oy + (y0 + y1) / 2.0
+    ux = (qx - ox) / ax
+    uy = (qy - oy) / ay
+    vx = (-qx - ox) / ax
+    vy = (-qy - oy) / ay
+    start = math.atan2(y: uy, x: ux)
+    delta @= math.atan2(y: ux * vy - uy * vx, x: ux * vx + uy * vy)
+
+    if !sweep && delta > 0.0
+        delta @ delta - 2.0 * math.PI
+
+    if sweep && delta < 0.0
+        delta @ delta + 2.0 * math.PI
+    return by_centre(cx: cx, cy: cy, rx: ax, ry: ay, phi: phi, start: start, sweep: delta)

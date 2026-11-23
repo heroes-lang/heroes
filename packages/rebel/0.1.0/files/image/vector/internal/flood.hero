@@ -1,0 +1,86 @@
+# A region of an image painted from a point: the pixels reachable from it by
+# steps of one pixel up, down, left or right that are alike, a row at a time.
+
+# How an image holds its pixels: the columns, the rows and the bytes of a
+# pixel.
+record Grid
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The bytes of one pixel.
+    pixel: i64
+
+# Whether the pixel at (`x`, `y`) of `pixels` holds exactly the bytes `like`.
+function same_at(g: Grid, pixels: [u8] lent, x: i64, y: i64, like: [u8] lent) -> bool
+    at = (y * g.width + x) * g.pixel
+
+    for i in range(from: 0, to: g.pixel)
+        if pixels[at + i] != like[i]
+            return false
+
+    return true
+
+# Whether the pixel at (`x`, `y`) is one the fill may take: it is not seen
+# yet, and it holds the bytes `like` (`to_border` false) or does not hold the
+# bytes `border` (`to_border` true).
+function takes(g: Grid, pixels: [u8] lent, seen: [bool] lent, x: i64, y: i64, like: [u8] lent, to_border: bool) -> bool
+    if seen[y * g.width + x]
+        return false
+    return same_at(g: g, pixels: pixels, x: x, y: y, like: like) != to_border
+
+# Paints with the bytes `paint` the pixels the fill takes from (`x`, `y`),
+# and answers how many. The pixel there must be one it takes; a start
+# outside the image, or a pixel that is not, answers 0.
+function fill(g: Grid, @pixels: [u8], x: i64, y: i64, like: [u8] lent, to_border: bool, paint: [u8] lent) -> i64
+    if x < 0 || y < 0 || x >= g.width || y >= g.height
+        return 0
+    seen: [bool] @= []
+
+    for _ in range(from: 0, to: g.width * g.height)
+        seen @ seen.push(false)
+
+    sx: [i64] @= [x]
+    sy: [i64] @= [y]
+    count @= 0
+
+    while sx.len() > 0
+        cx = sx[sx.len() - 1]
+        cy = sy[sy.len() - 1]
+        sx @ sx.slice(from: 0, to: sx.len() - 1)
+        sy @ sy.slice(from: 0, to: sy.len() - 1)
+
+        if !takes(g: g, pixels: pixels, seen: seen, x: cx, y: cy, like: like, to_border: to_border)
+            continue
+        left @= cx
+        right @= cx
+
+        while left > 0 && takes(g: g, pixels: pixels, seen: seen, x: left - 1, y: cy, like: like, to_border: to_border)
+            left @ left - 1
+
+        while right < g.width - 1 && takes(g: g, pixels: pixels, seen: seen, x: right + 1, y: cy, like: like, to_border: to_border)
+            right @ right + 1
+
+        for i in range(from: left, to: right + 1)
+            seen[cy * g.width + i] @ true
+            at = (cy * g.width + i) * g.pixel
+
+            for b in range(from: 0, to: g.pixel)
+                pixels[at + b] @ paint[b]
+
+        count @ count + right - left + 1
+
+        for ny in [cy - 1, cy + 1]
+            if ny < 0 || ny >= g.height
+                continue
+            inside @= false
+
+            for i in range(from: left, to: right + 1)
+                reach = takes(g: g, pixels: pixels, seen: seen, x: i, y: ny, like: like, to_border: to_border)
+
+                if reach && !inside
+                    sx @ sx.push(i)
+                    sy @ sy.push(ny)
+                inside @ reach
+
+    return count

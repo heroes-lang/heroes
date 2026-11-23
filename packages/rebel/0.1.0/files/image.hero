@@ -5,8 +5,9 @@
 # It reads and writes no file: PNG is `image/png`'s, JPEG `image/jpeg`'s,
 # GIF `image/gif`'s, BMP `image/bmp`'s, and PBM, PGM, PPM and PAM
 # `image/netpbm`'s; `kind_of` says which of them a file's bytes hold. It
-# opens no path: `fs.read_bytes` answers the bytes a decoder takes. It draws
-# no text and applies no filter but the resampling ones.
+# opens no path: `fs.read_bytes` answers the bytes a decoder takes. Shapes
+# beyond lines, rectangles and circles, anti-aliased, are `image/vector`'s. It
+# draws no text and applies no filter but the resampling ones.
 #
 # **A file from outside is not trusted.** Every decoder takes `Limits`, the
 # largest width, height and count of pixels the caller allows, and fails
@@ -20,8 +21,7 @@
 # formula: gradients, noise, a Mandelbrot set; CMYK, YCbCr, Lab, HSV and other
 # colour spaces; ICC profiles applied: one colour space into another; affine,
 # perspective and mesh transforms; one image laid over another through a third,
-# a mask; polygons, arcs, chords, pie slices, rounded rectangles, wide lines,
-# flood fill; text drawn with a font; extrema, colours, bounding box, means,
+# a mask; text drawn with a font; extrema, colours, bounding box, means,
 # entropy; Plan 9's palette and other made palettes; convolution filters: blur,
 # sharpen, edges; levels changed: invert, contrast, brightness, equalize,
 # posterize; an image split into channels and put back together; two images

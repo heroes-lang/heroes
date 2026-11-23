@@ -1,0 +1,23 @@
+# Reaches Rebel's `image/vector`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It fills a square into a small image and
+# prints the colour of a pixel inside and one outside.
+
+use <rebel>/image
+use <rebel>/image/vector
+
+function main()
+    match image.blank(width: 4, height: 4, format: .gray)
+        .err e => print(e.code, ": ", e.msg)
+        .ok blank =>
+            img @= blank
+            square: [vector.Segment] @= []
+            vector.add_rect(@square, x: 1.0, y: 1.0, width: 2.0, height: 2.0)
+
+            match vector.fill_path(@img, square, color: image.Color(r: 255, g: 255, b: 255, a: 255), rule: .non_zero)
+                .err e => print(e.code, ": ", e.msg)
+                .ok _ => print(
+                    "inside ",
+                    image.color_at(img, x: 1, y: 1).r,
+                    ", outside ",
+                    image.color_at(img, x: 0, y: 0).r
+                )
