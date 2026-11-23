@@ -671,7 +671,8 @@ Homebrew's taps are, Rebel another with its generators, and Rebel's examples a t
 evening before the answer (nothing of `examples-rebel`, `generators` or `packages/rebel` is on `origin/main` yet,
 so no public history moves): the catalogue the specification states already has two entry forms, from an index
 (`version`, `sum`) and from git (`git`, `tag`, `commit`, `sum`), so the pointer needs **no new form**, and the
-compiler resolves Rebel through a `path` entry (`examples-rebel/heroes.toml`), the net, the site and the CI being
+compiler resolves Rebel through a `path` entry (`examples-rebel/reach/heroes.toml` since step 127a, at the top of
+`examples-rebel/` that evening, 2026-11-23), the net, the site and the CI being
 what reads `packages/rebel` (28 files). The git form names no subfolder (searched in the specification,
 `docs/design.md` and `M-package-manager.md`, nothing found), so a git pointer needs the package at a repository's
 root: while Rebel is a folder of this repository the entry is a `path`, and it becomes a git entry the day the
