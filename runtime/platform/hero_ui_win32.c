@@ -7251,7 +7251,7 @@ int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *rig
 
 /* The cell of table `table` at `row` and `column`, an empty one where none. */
 static wchar_t *hero_ui_win_cell(const hero_ui_native *table, int64_t row, int64_t column) {
-    static wchar_t none[1] = {0};
+    static _Thread_local wchar_t none[1];
     int64_t at = row * table->columns + column;
 
     return table->columns > 0 && column < table->columns && at >= 0 && at < table->cell_count && table->cells[at] != NULL ? table->cells[at] : none;
