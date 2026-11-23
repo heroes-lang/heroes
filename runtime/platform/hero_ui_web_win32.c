@@ -1498,6 +1498,12 @@ int64_t hero_ui_web_win32_place(int64_t id, int64_t left, int64_t top, int64_t w
     return FAILED(v->controller->lpVtbl->put_Bounds(v->controller, bounds)) ? hero_ui_web_win32_said(HERO_UI_OTHER, "WebView2 refused the web view's place") : HERO_UI_OK;
 }
 
+void *hero_ui_web_win32_core(int64_t id) {
+    hero_ui_web_win32_view *v = hero_ui_web_win32_of(id);
+
+    return v != NULL ? (void *)v->core : NULL;
+}
+
 int64_t hero_ui_web_win32_show(int64_t id, int64_t on) {
     hero_ui_web_win32_view *v = hero_ui_web_win32_of(id);
 
@@ -1572,6 +1578,11 @@ int64_t hero_ui_web_win32_place(int64_t id, int64_t left, int64_t top, int64_t w
     (void)width;
     (void)height;
     return hero_ui_web_win32_said(HERO_UI_UNSUPPORTED, "WebView2 is Windows' web view");
+}
+
+void *hero_ui_web_win32_core(int64_t id) {
+    (void)id;
+    return NULL;
 }
 
 int64_t hero_ui_web_win32_show(int64_t id, int64_t on) {

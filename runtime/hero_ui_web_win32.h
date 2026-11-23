@@ -55,6 +55,12 @@ int64_t hero_ui_web_win32_create(int64_t id, const hero_ui_web_host *host, void 
 int64_t hero_ui_web_win32_place(int64_t id, int64_t left, int64_t top, int64_t width, int64_t height);
 
 /* Shows web view `id`, `on` 1, or hides it, 0. */
+/* The `ICoreWebView2` of web view `id`, which the web view's printing asks
+ * the other interfaces of by `QueryInterface`; NULL where WebView2 holds no
+ * such view, and off Windows. It is the view's own: never released by the
+ * caller. */
+void *hero_ui_web_win32_core(int64_t id);
+
 int64_t hero_ui_web_win32_show(int64_t id, int64_t on);
 
 /* Closes web view `id`, lets go of everything this member holds for it, and

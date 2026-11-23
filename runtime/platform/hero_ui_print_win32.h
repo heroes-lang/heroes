@@ -36,6 +36,14 @@
 
 #include <stdint.h>
 
+/* Whether the `count` bytes of `settings` are the text above and name a
+ * printer the spooler opens (an empty name is the default printer, which the
+ * dialog may find none of and choose): `HERO_UI_OK`, `HERO_UI_INVALID`,
+ * `HERO_UI_NOT_FOUND`, or `HERO_UI_UNSUPPORTED` off Windows, `words` saying
+ * why. It shows nothing and waits for nothing, so a caller that shows the
+ * dialog on a thread of its own tells a refusal of the call at once. */
+int64_t hero_ui_print_win32_check(const uint8_t *settings, int64_t count);
+
 /* Shows the print dialog (`page` 0) or the page-setup dialog (`page` 1) over
  * the window `window` (its `HWND`), its fields first set from the `count`
  * bytes of `settings`, waits for the person, queues the answer by `push`,

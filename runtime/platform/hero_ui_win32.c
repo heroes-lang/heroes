@@ -40,6 +40,7 @@
 #include <shellapi.h>
 #include <oleacc.h>
 #include <wchar.h>
+#include "hero_ui_print_win32.h"
 #include "hero_ui_web_win32.h"
 
 /* ==========================================================================
@@ -6148,6 +6149,7 @@ static const IID hero_ui_win_open_dialog_face = {0xD57C7288, 0xD4AD, 0x4768, {0x
 #define HERO_UI_WIN_DIALOG_ASK 2
 #define HERO_UI_WIN_DIALOG_FILES 3
 #define HERO_UI_WIN_DIALOG_FOLDERS 4
+#define HERO_UI_WIN_DIALOG_PRINT 5
 /* How long the UI thread waits for a dialog's thread to put its dialog on
  * the screen, and for a dialog to close and its thread to end once its
  * button is pressed. */
@@ -6178,6 +6180,13 @@ typedef struct hero_ui_win_dialog {
     wchar_t *filters;
     wchar_t *name;
     wchar_t extension[64];
+    /* A print's or a page setup's: 1 for the page setup, 0 for the print, the
+     * web view whose page it is asked for first (0 for none), and the
+     * settings' text, copied before its thread starts. */
+    int64_t page;
+    int64_t view;
+    uint8_t *settings;
+    int64_t settings_count;
     /* The UI thread's activation context (NULL for none), its awareness of
      * scale (NULL to leave the thread's) and the task dialog's function,
      * each a thread-local of the UI thread its thread cannot read. */
@@ -6197,6 +6206,14 @@ typedef struct hero_ui_win_dialog {
     atomic_bool finished;
     /* Ended unanswered by the UI thread. */
     atomic_bool ended;
+    /* A print answered as its person would (`print_answer`): the answer and
+     * the settings text the UI thread tells in place of what the dialog's
+     * own thread read, written by the UI thread before it sets `injected`
+     * and the dialog is closed. */
+    atomic_bool injected;
+    int64_t injected_value;
+    uint8_t *injected_text;
+    int64_t injected_count;
     /* The UI thread's own: whether its turn was given, whether its answer
      * was told. */
     bool started;
@@ -6223,6 +6240,8 @@ static void hero_ui_win_dialog_free(hero_ui_win_dialog *dialog) {
     hero_layer_free(dialog->filters);
     hero_layer_free(dialog->name);
     hero_layer_free(dialog->paths);
+    hero_layer_free(dialog->settings);
+    hero_layer_free(dialog->injected_text);
     hero_layer_free(dialog);
 }
 
@@ -6413,6 +6432,47 @@ static void hero_ui_win_show_folders(hero_ui_win_dialog *dialog) {
     }
 }
 
+/* The dialog whose print the thread running it shows, which the print
+ * member's `push` writes the answer into: the member queues its answer where
+ * this arm keeps it for the UI thread to tell. */
+static _Thread_local hero_ui_win_dialog *hero_ui_win_printing;
+
+static void hero_ui_win_print_kept(int64_t kind, int64_t dialog, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
+    hero_ui_win_dialog *own = hero_ui_win_printing;
+
+    (void)kind;
+    (void)dialog;
+    (void)second;
+    if (own == NULL) {
+        return;
+    }
+    hero_layer_free(own->paths);
+    own->paths = NULL;
+    own->paths_count = 0;
+    own->answer = value == 1 ? 1 : 0;
+    if (value == 1 && text != NULL && count > 0) {
+        own->paths = hero_layer_alloc((size_t)count);
+        if (own->paths == NULL) {
+            /* Settings no memory held are no choice that can be told whole. */
+            own->answer = 0;
+            return;
+        }
+        memcpy(own->paths, text, (size_t)count);
+        own->paths_count = count;
+    }
+}
+
+/* Shows print dialog or page setup `dialog` on its thread, which the
+ * member's own call waits in until the person answers: the choice and the
+ * settings chosen, or a cancel, a failure being told as one. */
+static void hero_ui_win_show_print(hero_ui_win_dialog *dialog) {
+    hero_ui_win_printing = dialog;
+    if (hero_ui_print_win32_show(dialog->owner, dialog->dialog, dialog->page, dialog->settings, dialog->settings_count, hero_ui_win_print_kept) != HERO_UI_OK) {
+        dialog->answer = 0;
+    }
+    hero_ui_win_printing = NULL;
+}
+
 /* A dialog's thread (ITS THREAD): takes the UI thread's look and scale,
  * waits for its turn, shows its dialog unless it was ended meanwhile, and
  * tells the UI thread it is done. Past `finished` it reads nothing of the
@@ -6432,6 +6492,8 @@ static DWORD WINAPI hero_ui_win_dialog_thread(LPVOID given) {
             hero_ui_win_show_box(dialog);
         } else if (dialog->kind == HERO_UI_WIN_DIALOG_ASK) {
             hero_ui_win_show_ask(dialog);
+        } else if (dialog->kind == HERO_UI_WIN_DIALOG_PRINT) {
+            hero_ui_win_show_print(dialog);
         } else {
             if (dialog->kind == HERO_UI_WIN_DIALOG_FILES) {
                 hero_ui_win_show_files(dialog);
@@ -6471,6 +6533,37 @@ static void hero_ui_win_dialogs_turn(void) {
     }
 }
 
+static bool hero_ui_win_print_page(int64_t view, int64_t dialog, const uint8_t *settings, int64_t count);
+
+/* Tells the answer of dialog `each`, whose thread finished: what its thread
+ * read, or what a print answered as its person (`print_answer`) gave in its
+ * place. A web view's print asked first is not told a choice: the page goes
+ * to WebView2 with the settings chosen, which tells how it went once it has
+ * handed the page on; a failure to start that is told as a cancel. */
+static void hero_ui_win_dialog_told(hero_ui_win_dialog *each) {
+    int64_t answer = each->answer;
+    const uint8_t *text = each->paths;
+    int64_t count = each->paths_count;
+
+    if (each->kind == HERO_UI_WIN_DIALOG_PRINT) {
+        if (atomic_load(&each->injected)) {
+            answer = each->injected_value;
+            text = each->injected_text;
+            count = each->injected_count;
+        }
+        if (each->view != 0 && answer == 1) {
+            if (hero_ui_win_print_page(each->view, each->dialog, text, count)) {
+                return;
+            }
+            answer = 0;
+        }
+    }
+    if (count > HERO_UI_TEXT_MOST) {
+        answer = 0;
+    }
+    hero_ui_tell_text(HERO_UI_EVENT_DIALOG, each->dialog, answer, 0, answer > 0 && count > 0 ? text : NULL, answer > 0 ? count : 0);
+}
+
 /* Tells the answer of each dialog whose thread finished, unless it was
  * ended or told already, gives back each whose thread has ended, and gives
  * the dialogs waiting behind them their turn (`HERO_UI_WIN_DIALOG_DONE`).
@@ -6487,9 +6580,7 @@ static void hero_ui_win_dialogs_reap(void) {
             continue;
         }
         if (!each->told && !atomic_load(&each->ended)) {
-            bool fits = each->paths_count <= HERO_UI_TEXT_MOST;
-
-            hero_ui_tell_text(HERO_UI_EVENT_DIALOG, each->dialog, fits ? each->answer : 0, 0, fits && each->paths_count > 0 ? each->paths : NULL, fits ? each->paths_count : 0);
+            hero_ui_win_dialog_told(each);
         }
         each->told = true;
         /* Its thread does nothing past `finished` but post and return. */
@@ -6629,6 +6720,7 @@ static hero_ui_win_dialog *hero_ui_win_dialog_new(int64_t dialog, int64_t window
     made->task = hero_ui_win_task;
     atomic_init(&made->finished, false);
     atomic_init(&made->ended, false);
+    atomic_init(&made->injected, false);
     return made;
 }
 
@@ -6904,6 +6996,172 @@ void hero_ui_arm_dialogs_end(int64_t window) {
 
 int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
     return hero_ui_arm_words(words, count);
+}
+
+/* -- THE PRINT AND PAGE-SETUP DIALOGS ---------------------------------------
+ *
+ * The system's print dialog and page setup are `hero_ui_print_win32.c`'s, and
+ * each waits for its person inside its call (`PrintDlgExW`, `PageSetupDlgW`),
+ * so this arm shows each on a thread of its own, as every dialog above is: a
+ * dialog of kind `HERO_UI_WIN_DIALOG_PRINT` over its window, in the same list,
+ * its turn and its ending, which tells `HERO_UI_EVENT_DIALOG` with the
+ * settings chosen (value 1) or none (value 0, a cancel or a failure to show).
+ * The settings are checked on the calling thread first, so a text that is no
+ * settings and a printer no spooler names are refused by the call itself.
+ * An answer as the person's (`print_answer`) closes the dialog the way a
+ * Cancel does and tells the answer given, the settings text of its own: the
+ * dialog's own fields are the person's to set, and no program sets them.
+ *
+ * A WEB VIEW'S PAGE is WebView2's `Print`, which runs on the UI thread, whose
+ * completion `hero_ui_print_win32_web` queues itself: where the person is
+ * asked first, the dialog above is shown with the view's number kept, and its
+ * choice, not told, starts the print. Whether the words of the last refusal
+ * are the print member's or this arm's is `hero_ui_win_print_member`'s. */
+
+static _Thread_local bool hero_ui_win_print_member;
+
+/* Refuses with the print member's words, `kind` being what it answered. */
+static int64_t hero_ui_win_print_refused(int64_t kind) {
+    hero_ui_win_print_member = true;
+    return kind;
+}
+
+/* Starts print or page setup `made`, the settings' text copied for its
+ * thread, once the text is checked: `HERO_UI_OK`, else the record given back
+ * and the member's refusal. */
+static int64_t hero_ui_win_print_start(hero_ui_win_dialog *made, int64_t page, int64_t view, const uint8_t *settings, int64_t count) {
+    int64_t kind = hero_ui_print_win32_check(settings, count);
+
+    if (kind != HERO_UI_OK) {
+        hero_ui_win_dialog_free(made);
+        return hero_ui_win_print_refused(kind);
+    }
+    made->page = page;
+    made->view = view;
+    made->settings = hero_layer_alloc((size_t)count + 1);
+    if (made->settings == NULL) {
+        return hero_ui_win_dialog_unmade(made);
+    }
+    if (count > 0) {
+        memcpy(made->settings, settings, (size_t)count);
+    }
+    made->settings[count] = 0;
+    made->settings_count = count;
+    return hero_ui_win_dialog_start(made);
+}
+
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
+    int64_t answer = HERO_UI_OK;
+    hero_ui_win_dialog *made;
+
+    hero_ui_win_print_member = false;
+    made = hero_ui_win_dialog_new(dialog, window, HERO_UI_WIN_DIALOG_PRINT, &answer);
+    if (made == NULL) {
+        return answer;
+    }
+    return hero_ui_win_print_start(made, page, 0, settings, count);
+}
+
+/* Hands the page of web view `view` to WebView2 as dialog `dialog`, with
+ * the settings; whether WebView2 took it, its completion told later. */
+static bool hero_ui_win_print_page(int64_t view, int64_t dialog, const uint8_t *settings, int64_t count) {
+    const hero_ui_native *web = hero_ui_find(view);
+    const hero_ui_native *top = web != NULL && web->kind == HERO_UI_WEBVIEW ? hero_ui_win_top(web->window) : NULL;
+    void *core = top != NULL ? hero_ui_web_win32_core(view) : NULL;
+
+    return core != NULL && top->hwnd != NULL && hero_ui_print_win32_web(core, top->hwnd, dialog, 0, settings, count, hero_ui_tell_text) == HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
+    const hero_ui_native *web = hero_ui_find(view);
+    const hero_ui_native *top;
+    void *core;
+    int64_t answer = HERO_UI_OK;
+    hero_ui_win_dialog *made;
+
+    hero_ui_win_print_member = false;
+    top = web != NULL && web->kind == HERO_UI_WEBVIEW ? hero_ui_win_top(web->window) : NULL;
+    core = top != NULL ? hero_ui_web_win32_core(view) : NULL;
+    if (core == NULL || top->hwnd == NULL) {
+        return hero_ui_refused(HERO_UI_NOT_FOUND, "WebView2 holds no such web view to print, or it stands in no window");
+    }
+    if (ask == 1) {
+        made = hero_ui_win_dialog_new(dialog, top->id, HERO_UI_WIN_DIALOG_PRINT, &answer);
+        return made == NULL ? answer : hero_ui_win_print_start(made, 0, view, settings, count);
+    }
+    answer = hero_ui_print_win32_web(core, top->hwnd, dialog, 0, settings, count, hero_ui_tell_text);
+    return answer == HERO_UI_OK ? answer : hero_ui_win_print_refused(answer);
+}
+
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
+    hero_ui_win_dialog *shown = NULL;
+    HWND window;
+
+    hero_ui_win_print_member = false;
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL && shown == NULL; each = each->next) {
+        if (each->kind == HERO_UI_WIN_DIALOG_PRINT && each->dialog == dialog && !each->told && !atomic_load(&each->ended) && !atomic_load(&each->finished)) {
+            shown = each;
+        }
+    }
+    if (shown == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (value == 1) {
+        /* The person's OK gives the settings the dialog was shown with where
+         * none are given, and the given ones are held to the same text. */
+        int64_t kind = hero_ui_print_win32_check(count > 0 ? settings : shown->settings, count > 0 ? count : shown->settings_count);
+
+        if (kind != HERO_UI_OK) {
+            return hero_ui_win_print_refused(kind);
+        }
+        if (count == 0) {
+            settings = shown->settings;
+            count = shown->settings_count;
+        }
+        shown->injected_text = hero_layer_alloc((size_t)count + 1);
+        if (shown->injected_text == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        memcpy(shown->injected_text, settings, (size_t)count);
+        shown->injected_count = count;
+    }
+    shown->injected_value = value == 1 ? 1 : 0;
+    atomic_store(&shown->injected, true);
+    if (!shown->started) {
+        /* Still waiting for its turn: told now, and its thread ends without
+         * showing it. */
+        hero_ui_win_dialog_told(shown);
+        shown->told = true;
+        atomic_store(&shown->ended, true);
+        shown->started = true;
+        (void)SetEvent(shown->turn);
+        return HERO_UI_OK;
+    }
+    window = hero_ui_win_dialog_window(shown);
+    if (window == NULL) {
+        return atomic_load(&shown->finished) ? HERO_UI_NOT_FOUND : hero_ui_refused(HERO_UI_OTHER, "the dialog's thread put no print dialog on the screen within ten seconds");
+    }
+    if (!hero_ui_win_dialog_press(shown, window, IDCANCEL)) {
+        return hero_ui_refused(HERO_UI_OTHER, "the print dialog did not close within ten seconds of its Cancel pressed");
+    }
+    return HERO_UI_OK;
+}
+
+void hero_ui_arm_print_end(int64_t window) {
+    const hero_ui_native *over = window == 0 ? NULL : hero_ui_find(window);
+
+    /* A print over a window ends with it (`dialogs_end` ends the dialogs of
+     * its list); WebView2's completions still to come are told to no one.
+     * A widget that is no window has no print over it. */
+    if (window == 0) {
+        hero_ui_print_win32_end(NULL);
+    } else if (over != NULL && over->kind == HERO_UI_WINDOW && over->hwnd != NULL) {
+        hero_ui_print_win32_end(over->hwnd);
+    }
+}
+
+int64_t hero_ui_arm_print_words(char *words, int64_t count) {
+    return hero_ui_win_print_member ? hero_ui_print_win32_words(words, count) : hero_ui_arm_words(words, count);
 }
 
 /* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
