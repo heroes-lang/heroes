@@ -121,6 +121,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_EDITABLE_COMBO
         return .editable_combo
 
+    if code == hero_ui.HERO_UI_SPIN
+        return .spin
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -279,7 +282,7 @@ function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
 function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
     n @= valued(app, widget: widget, kind: kind)?
 
-    if kind == hero_ui.HERO_UI_SLIDER && n.kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
+    if kind == hero_ui.HERO_UI_SLIDER && (n.kind == hero_ui.HERO_UI_SLIDER || n.kind == hero_ui.HERO_UI_SPIN) && (value < n.least || value > n.most)
         return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
 
     if model.is_split(n.kind)
@@ -309,8 +312,8 @@ function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN],
-        what: "a slider, a progress bar or a split"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN],
+        what: "a slider, a spin, a progress bar or a split"
     )
 
 # Sets a slider's or a progress bar's range (`ui.set_range`).
@@ -931,3 +934,55 @@ test "editable_combo: on the native side the system's field typed into and its l
     assert kept == "8" && kept_chosen == [0] && program_text == "9"
     assert fixture.code_of(nothing) == ui.TIMEOUT && emptied == []
     assert at.width > 0 && at.height > 0
+
+test "spin: a number between its ends, typed or stepped to and told as the value, set and read by the program, its range moving it, refused outside the range and for a range turned over (catalogue CT22)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    count = ui.spin(@app, into: shown, least: 1, most: 20, value: 5).must()
+    assert ui.kind_of(app, widget: count).must() == .spin
+    assert ui.value_of(app, widget: count).must() == 5
+    ui.inject(@app, input: .slide(widget: count, value: 6)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: count, value: 6)
+    ui.inject(@app, input: .slide(widget: count, value: 6)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    assert fixture.code_of(ui.inject(@app, input: .slide(widget: count, value: 21))) == ui.INVALID
+    ui.set_value(@app, widget: count, value: 20).must()
+    assert ui.value_of(app, widget: count).must() == 20
+    assert fixture.code_of(ui.set_value(@app, widget: count, value: 0)) == ui.INVALID
+    ui.set_range(@app, widget: count, least: 1, most: 10).must()
+    assert ui.value_of(app, widget: count).must() == 10
+    assert fixture.code_of(ui.spin(@app, into: shown, least: 5, most: 5, value: 5)) == ui.INVALID
+    assert fixture.code_of(ui.spin(@app, into: shown, least: 1, most: 9, value: 10)) == ui.INVALID
+    ui.set_enabled(@app, widget: count, on: false).must()
+    ui.inject(@app, input: .slide(widget: count, value: 3)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "spin: on the native side the system's field and arrows, a number stepped to or typed and told, one past the range clamped, set by the program told to none, its range and its width (catalogue CT22)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.window(@app, title: "Count", width: 300, height: 100).must()
+    offered = ui.spin(@app, into: shown, least: 0, most: 50, value: 7)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    count = offered.must()
+    first = ui.value_of(app, widget: count).must()
+    ui.inject(@app, input: .slide(widget: count, value: 8)).must()
+    stepped = ui.wait(@app, within: time.seconds(2).must()).must()
+    after_step = ui.value_of(app, widget: count).must()
+    ui.set_value(@app, widget: count, value: 30).must()
+    nothing = ui.wait(@app, within: time.milliseconds(100).must())
+    after_set = ui.value_of(app, widget: count).must()
+    ui.set_range(@app, widget: count, least: 0, most: 20).must()
+    clamped = ui.value_of(app, widget: count).must()
+    refused = ui.inject(@app, input: .slide(widget: count, value: 21))
+    at = ui.rect_of(@app, widget: count).must()
+    ui.close(@app).must()
+    assert first == 7 && stepped == .value_changed(widget: count, value: 8) && after_step == 8
+    assert fixture.code_of(nothing) == ui.TIMEOUT && after_set == 30 && clamped == 20
+    assert fixture.code_of(refused) == ui.INVALID
+    assert at.width > 0 && at.width < 160 && at.height > 0

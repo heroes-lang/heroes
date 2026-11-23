@@ -291,11 +291,12 @@ capability ui/slider  a knob the person drags between two values
   wx      wxSlider (wxEVT_SLIDER)
 
 capability ui/spin  a number typed, or stepped up and down
-  heroes  pending
+  heroes  ui.spin, ui.Kind.spin
   go      ui.NewSpinbox, Spinbox.SetValue, Spinbox.Value, Spinbox.OnChanged
   rust    -
   python  tkinter.Spinbox, ttk.Spinbox
   wx      wxSpinCtrl, wxSpinCtrlDouble
+  note    catalogue CT22; a whole number between a range's ends, each arrow changing it by 1 (a step of the program's own and a decimal number, `wxSpinCtrlDouble`, are not offered); `set_value`, `value_of` and `set_range` as a slider's, `.slide` giving the value typed or stepped to, `.value_changed` told at each arrow and where a typed number is committed (Return or the field giving the keys up), one past the range clamped and a text that is no number put back; macOS by an `NSTextField` and an `NSStepper` in a view of their own; Windows pending (the up-down control `UPDOWN_CLASS` with `UDS_SETBUDDYINT` over an `EDIT`), Linux pending (`GtkSpinButton`)
 
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture

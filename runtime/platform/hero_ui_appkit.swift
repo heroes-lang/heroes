@@ -232,6 +232,49 @@ private final class FlippedView: NSView {
     }
 }
 
+// A spin: the field of a whole number and the stepper beside it, laid out
+// again as the view is sized. The stepper holds the value the program and the
+// person have settled on; the field may hold a number being typed.
+private final class SpinView: NSView {
+    let field = NSTextField(string: "0")
+    let stepper = NSStepper(frame: NSRect(x: 0, y: 0, width: 19, height: 27))
+
+    override var isFlipped: Bool {
+        return true
+    }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        field.alignment = .right
+        stepper.minValue = 0
+        stepper.maxValue = 100
+        stepper.increment = 1
+        stepper.valueWraps = false
+        addSubview(field)
+        addSubview(stepper)
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func resizeSubviews(withOldSize old: NSSize) {
+        let arrows = stepper.fittingSize
+        field.frame = NSRect(x: 0, y: 0, width: max(0, bounds.width - arrows.width - 2), height: bounds.height)
+        stepper.frame = NSRect(x: max(0, bounds.width - arrows.width), y: max(0, (bounds.height - arrows.height) / 2), width: arrows.width, height: arrows.height)
+    }
+
+    var value: Int64 {
+        return Int64(stepper.doubleValue.rounded())
+    }
+
+    // Shows `value` in the field and the stepper.
+    func show(_ value: Int64) {
+        stepper.doubleValue = Double(value)
+        field.stringValue = String(value)
+    }
+}
+
 // One native widget and what it is made of.
 @MainActor
 private final class Native {
@@ -508,6 +551,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindSpin:
+            let spin = SpinView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            spin.field.target = self
+            spin.field.action = #selector(spinTyped(_:))
+            spin.field.tag = Int(widget.id)
+            spin.stepper.target = self
+            spin.stepper.action = #selector(spinStepped(_:))
+            spin.stepper.tag = Int(widget.id)
+            return spin
         case kindEditableCombo:
             let combo = NSComboBox(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             combo.usesDataSource = false
@@ -779,6 +831,32 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventSelect, Int64(sender.tag), Int64(sender.indexOfSelectedItem), 0)
     }
 
+    // A number typed into a spin and committed: one past the range is
+    // clamped to it, a text that is no whole number goes back to the value
+    // held, and the value is told where it changed.
+    @objc func spinTyped(_ sender: NSTextField) {
+        guard let spin = sender.superview as? SpinView else {
+            return
+        }
+        let held = spin.value
+        var next = held
+        if let typed = Int64(sender.stringValue.trimmingCharacters(in: .whitespaces)) {
+            next = min(max(typed, Int64(spin.stepper.minValue)), Int64(spin.stepper.maxValue))
+        }
+        spin.show(next)
+        if next != held {
+            queue(eventValue, Int64(sender.tag), next, 0)
+        }
+    }
+
+    @objc func spinStepped(_ sender: NSStepper) {
+        guard let spin = sender.superview as? SpinView else {
+            return
+        }
+        spin.show(spin.value)
+        queue(eventValue, Int64(sender.tag), spin.value, 0)
+    }
+
     @objc func slid(_ sender: NSSlider) {
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
     }
@@ -1040,6 +1118,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             slider.doubleValue = Double(value)
+        case kindSpin:
+            guard let spin = widget.view as? SpinView, Double(value) >= spin.stepper.minValue, Double(value) <= spin.stepper.maxValue else {
+                return answerInvalid
+            }
+            spin.show(value)
         case kindProgress:
             guard let bar = widget.view as? NSProgressIndicator, Double(value) >= bar.minValue, Double(value) <= bar.maxValue else {
                 return answerInvalid
@@ -1082,6 +1165,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let slider = widget.view as? NSSlider {
             slider.minValue = Double(least)
             slider.maxValue = Double(most)
+            return answerOk
+        }
+        if let spin = widget.view as? SpinView {
+            spin.stepper.minValue = Double(least)
+            spin.stepper.maxValue = Double(most)
             return answerOk
         }
         if let bar = widget.view as? NSProgressIndicator {
@@ -1166,6 +1254,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 for radio in widget.radios {
                     radio.isEnabled = on
                 }
+            } else if let spin = widget.view as? SpinView {
+                spin.field.isEnabled = on
+                spin.stepper.isEnabled = on
             } else if let control = widget.view as? NSControl {
                 control.isEnabled = on
             } else if widget.view is NSProgressIndicator {
@@ -1319,6 +1410,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         switch widget.kind {
         case kindTextField, kindEditableCombo:
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
+        case kindSpin:
+            // Room for the digits of the longer end of its range, and for
+            // the arrows.
+            guard let spin = widget.view as? SpinView else {
+                return NSSize(width: 0, height: 0)
+            }
+            let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
+            return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
         case kindSeparator:
@@ -1375,6 +1474,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return (widget.view as? NSButton)?.state == .on ? 1 : 0
         case kindSlider:
             return Int64(((widget.view as? NSSlider)?.doubleValue ?? 0).rounded())
+        case kindSpin:
+            return (widget.view as? SpinView)?.value ?? 0
         case kindProgress:
             return Int64(((widget.view as? NSProgressIndicator)?.doubleValue ?? 0).rounded())
         case kindCombo:
@@ -1508,6 +1609,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
         case eventValue:
+            if let spin = widget.view as? SpinView {
+                guard Double(value) >= spin.stepper.minValue, Double(value) <= spin.stepper.maxValue else {
+                    return answerInvalid
+                }
+                if spin.field.isEnabled && spin.value != value {
+                    spin.show(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
             guard let slider = widget.view as? NSSlider else {
                 return answerInvalid
             }
@@ -3372,6 +3483,7 @@ private let kindTray: Int64 = 31
 private let kindSeparator: Int64 = 32
 private let kindGroup: Int64 = 33
 private let kindEditableCombo: Int64 = 34
+private let kindSpin: Int64 = 35
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

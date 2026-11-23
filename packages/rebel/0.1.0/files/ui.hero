@@ -325,6 +325,8 @@ variant Kind
     group
     # A field the person types into, with a list of items beside it.
     editable_combo
+    # A whole number the person types or steps by arrows.
+    spin
 
 # What `widget` is.
 #
@@ -1039,6 +1041,27 @@ function progress(@app: App, into: Widget, most: i64) -> Widget?
 function set_moving(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_moving(@app, widget: widget, on: on)
 
+# A new spin in `into`, as wxWidgets' `wxSpinCtrl`: a whole number the person
+# types into a field or steps up and down by arrows beside it, each arrow
+# changing it by 1. A change by the person is `.value_changed` with the new
+# value, told once the number is final: at each arrow and where a typed number
+# is committed, which one past the range is clamped to and a text that is no
+# whole number leaves at the value held. `set_value`, `value_of` and
+# `set_range` act on it as on a slider, and `.slide` gives the value as typed
+# or stepped to.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `least`: its lowest value, below `most`.
+# - `most`: its highest value.
+# - `value`: where it starts, from `least` to `most`.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`, `unsupported` where the
+# system's arm draws none (Windows and Linux, pending).
+function spin(@app: App, into: Widget, least: i64, most: i64, value: i64) -> Widget?
+    return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_SPIN, least: least, most: most, value: value)
+
 # A new slider in `into`, its knob at `value` between `least` and `most`;
 # each move by the person is `.value_changed`.
 #
@@ -1229,7 +1252,7 @@ function is_checked(app: App, widget: Widget) -> bool?
 # gets less than it needs. No event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider, a progress bar or a split.
+# - `widget`: a slider, a spin, a progress bar or a split.
 # - `value`: from its lowest value to its highest; for a split 0 to
 #   `MOST_SIZE`.
 #
@@ -1241,7 +1264,7 @@ function set_value(@app: App, widget: Widget, value: i64) -> ()?
 # split's divider stands at, the first pane's width or height.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider, a progress bar or a split.
+# - `widget`: a slider, a spin, a progress bar or a split.
 #
 # Fails `closed`, `invalid`, `failed`.
 function value_of(app: App, widget: Widget) -> i64?
@@ -1251,7 +1274,7 @@ function value_of(app: App, widget: Widget) -> i64?
 # value moved inside where it falls outside.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
+# - `widget`: a slider, a spin or a progress bar.
 # - `least`: its lowest value, below `most`; 0 for a progress bar.
 # - `most`: its highest value.
 #
@@ -2113,9 +2136,10 @@ variant Input
     toggle
         # The checkbox.
         widget: Widget
-    # Drags a slider's knob to a value.
+    # Drags a slider's knob to a value, or gives a spin the number the
+    # person typed or stepped to.
     slide
-        # The slider.
+        # The slider or the spin.
         widget: Widget
         # The value, from its lowest to its highest.
         value: i64

@@ -53,7 +53,7 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .toggle t =>
             _ = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")?
         .slide s =>
-            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN], what: "a slider or a split")?
+            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN], what: "a slider, a spin or a split")?
 
             if model.is_split(n.kind)
                 frames.divider_ok(s.value)?

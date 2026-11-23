@@ -1891,7 +1891,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_EDITABLE_COMBO) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_SPIN) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2571,6 +2571,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a group box";
     case HERO_UI_EDITABLE_COMBO:
         return "making an editable combo box";
+    case HERO_UI_SPIN:
+        return "making a spin";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
