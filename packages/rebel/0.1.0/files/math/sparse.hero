@@ -20,6 +20,7 @@
 # end aborts.
 
 use math
+use math/internal/closeness
 use math/sparse/internal/compressed
 
 ## Codes
@@ -527,13 +528,13 @@ test "steady_state: two chains to their exact states, a periodic chain that neve
         triplets: [Triplet(row: 0, column: 0, value: 0.9), Triplet(row: 0, column: 1, value: 0.1), Triplet(row: 1, column: 0, value: 0.5), Triplet(row: 1, column: 1, value: 0.5)]
     ).must()
     settled = steady_state(two, tolerance: 0.00000000000010, most_iterations: 1000).must()
-    assert settled.change < 0.00000000000010 && compressed.close_to(a: settled.vector, b: [5.0 / 6.0, 1.0 / 6.0], within: 0.0000000000010)
+    assert settled.change < 0.00000000000010 && closeness.close_to(a: settled.vector, b: [5.0 / 6.0, 1.0 / 6.0], within: 0.0000000000010)
     three = from_triplets(
         rows: 3,
         columns: 3,
         triplets: [Triplet(row: 0, column: 0, value: 0.5), Triplet(row: 0, column: 1, value: 0.25), Triplet(row: 0, column: 2, value: 0.25), Triplet(row: 1, column: 0, value: 1.0 / 3.0), Triplet(row: 1, column: 1, value: 1.0 / 3.0), Triplet(row: 1, column: 2, value: 1.0 / 3.0), Triplet(row: 2, column: 1, value: 0.5), Triplet(row: 2, column: 2, value: 0.5)]
     ).must()
-    assert compressed.close_to(
+    assert closeness.close_to(
         a: steady_state(three, tolerance: 0.000000000000010, most_iterations: 1000).must().vector,
         b: [0.25, 0.375, 0.375],
         within: 0.0000000000010
@@ -581,7 +582,7 @@ test "pagerank: five pages with one that links nowhere and one nothing links to,
     ).must()
     ranks = pagerank(five, damping: 0.85, tolerance: 0.000000000000010, most_iterations: 1000).must()
     assert ranks.change < 0.000000000000010
-    assert compressed.close_to(
+    assert closeness.close_to(
         a: ranks.vector,
         b: [0.3501783623118859, 0.1884166980769098, 0.3653970214323854, 0.0395908940943583, 0.056417024084460574],
         within: 0.0000000000010
@@ -591,7 +592,7 @@ test "pagerank: five pages with one that links nowhere and one nothing links to,
         columns: 3,
         triplets: [Triplet(row: 0, column: 1, value: 2.0), Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 0, value: 1.0), Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 2, column: 1, value: 1.0)]
     ).must()
-    assert compressed.close_to(
+    assert closeness.close_to(
         a: pagerank(weighted, damping: 0.85, tolerance: 0.000000000000010, most_iterations: 1000).must().vector,
         b: [0.44597166419961937, 0.37766969761048846, 0.17635863818989214],
         within: 0.0000000000010

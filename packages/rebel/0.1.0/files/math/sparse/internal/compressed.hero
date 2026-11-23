@@ -134,21 +134,6 @@ function iterate(p: sparse.Matrix, damping: f64, tolerance: f64, most_iterations
 
     return sparse.Settled(vector: x, iterations: rounds, change: change)
 
-# Whether `a` and `b` are within `within` of each other, value by value.
-#
-# - `a`: one vector.
-# - `b`: another, as long.
-# - `within`: the largest difference allowed.
-function close_to(a: [f64], b: [f64], within: f64) -> bool
-    if a.len() != b.len()
-        return false
-
-    for k in range(from: 0, to: a.len())
-        if math.abs(a[k] - b[k]) > within
-            return false
-
-    return true
-
 ## Tests
 
 test "built: a place given twice summed in order, rows left empty at either end and inside, columns sorted within a row"

@@ -29,6 +29,7 @@
 
 use big
 use math
+use math/internal/closeness
 use math/matrix/internal/exact
 use math/matrix/internal/factor
 use math/matrix/internal/shapes
@@ -852,11 +853,11 @@ test "transpose, add, subtract, scale, multiply, multiply_vector, trace and norm
 
 test "solve, inverse and determinant: Strang's system, a matrix singular or not square, no unknowns, a nan, and entries near an f64's range (2^660 times it)"
     a = from_rows([[2.0, 1.0, 1.0], [4.0, -6.0, 0.0], [-2.0, 7.0, 2.0]]).must()
-    assert factor.close_to(a: solve(a, b: [5.0, -2.0, 9.0]).must(), b: [1.0, 1.0, 2.0], within: 0.000000000001)
+    assert closeness.close_to(a: solve(a, b: [5.0, -2.0, 9.0]).must(), b: [1.0, 1.0, 2.0], within: 0.000000000001)
     assert math.abs(determinant(a).must() + 16.0) < 0.000000000001
     huge = factor.power_of_two(660)
     big_a = scale(a, by: huge)
-    assert factor.close_to(
+    assert closeness.close_to(
         a: solve(big_a, b: [5.0 * huge, -2.0 * huge, 9.0 * huge]).must(),
         b: [1.0, 1.0, 2.0],
         within: 0.000000000001
@@ -871,7 +872,7 @@ test "solve, inverse and determinant: Strang's system, a matrix singular or not 
     assert solve(from_rows([[1.0, 2.0]]).must(), b: [1.0]).is_err() && solve(a, b: [1.0]).is_err()
     assert solve(identity(0), b: []).must().len() == 0 && determinant(identity(0)).must() == 1.0
     assert solve(from_rows([[0.0 / 0.0]]).must(), b: [1.0]).is_err() && determinant(from_rows([[1.0 / 0.0]]).must()).is_err()
-    assert factor.close_to(
+    assert closeness.close_to(
         a: inverse(from_rows([[4.0, 7.0], [2.0, 6.0]]).must()).must().values,
         b: [0.6, -0.7, -0.2, 0.4],
         within: 0.000000000001
@@ -889,7 +890,7 @@ test "lu: the permuted matrix is lower times upper, a pivot brought up, a singul
         for c in range(from: 0, to: 3)
             permuted @ permuted.push(value_at(a, row: k, column: c))
 
-    assert f.order[0] == 2 && factor.close_to(a: product.values, b: permuted, within: 0.000000000001)
+    assert f.order[0] == 2 && closeness.close_to(a: product.values, b: permuted, within: 0.000000000001)
 
     for r in range(from: 0, to: 3)
         for c in range(from: 0, to: 3)
@@ -913,8 +914,8 @@ test "qr: the worked example's R up to each row's sign, Q orthonormal and Q time
         within: 0.000000001
     )
     assert value_at(got.r, row: 0, column: 0) < 0.0
-    assert factor.close_to(a: multiply(a: got.q, b: got.r).must().values, b: a.values, within: 0.000000001)
-    assert factor.close_to(
+    assert closeness.close_to(a: multiply(a: got.q, b: got.r).must().values, b: a.values, within: 0.000000001)
+    assert closeness.close_to(
         a: multiply(a: transpose(got.q), b: got.q).must().values,
         b: identity(3).values,
         within: 0.000000000001
@@ -922,7 +923,7 @@ test "qr: the worked example's R up to each row's sign, Q orthonormal and Q time
     tall = from_rows([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).must()
     t = qr(tall).must()
     assert t.q.rows == 3 && t.q.columns == 2 && t.r.rows == 2
-    assert factor.close_to(a: multiply(a: t.q, b: t.r).must().values, b: tall.values, within: 0.000000000001)
+    assert closeness.close_to(a: multiply(a: t.q, b: t.r).must().values, b: tall.values, within: 0.000000000001)
     w = qr(transpose(tall)).must()
     assert w.q.columns == 2 && w.r.columns == 3
     assert qr(from_rows([[0.0 / 0.0]]).must()).is_err()
@@ -931,14 +932,14 @@ test "qr: the worked example's R up to each row's sign, Q orthonormal and Q time
 # decomposition", read 2026-11-22).
 test "cholesky: the worked example, a matrix not symmetric, one not positive definite, and entries near an f64's range (2^1000 times it)"
     a = from_rows([[4.0, 12.0, -16.0], [12.0, 37.0, -43.0], [-16.0, -43.0, 98.0]]).must()
-    assert factor.close_to(
+    assert closeness.close_to(
         a: cholesky(a).must().values,
         b: [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0],
         within: 0.000000000001
     )
     root = factor.power_of_two(500)
     huge = scale(cholesky(scale(a, by: root * root)).must(), by: 1.0 / root)
-    assert factor.close_to(a: huge.values, b: [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0], within: 0.000000000001)
+    assert closeness.close_to(a: huge.values, b: [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0], within: 0.000000000001)
 
     match cholesky(from_rows([[1.0, 2.0], [3.0, 1.0]]).must())
         .ok _  => assert false
@@ -952,12 +953,12 @@ test "cholesky: the worked example, a matrix not symmetric, one not positive def
 # block of [[3, 4], [4, 9]] beside a 2 has 1, 2 and 11.
 test "eigen_symmetric: two spectra worked by hand, each column a unit eigenvector, a matrix not symmetric or holding a nan refused"
     s = eigen_symmetric(from_rows([[2.0, 1.0], [1.0, 2.0]]).must()).must()
-    assert factor.close_to(a: s.values, b: [1.0, 3.0], within: 0.000000000001)
+    assert closeness.close_to(a: s.values, b: [1.0, 3.0], within: 0.000000000001)
     half = math.sqrt(0.5)
-    assert factor.close_to(a: s.vectors.values, b: [-half, half, half, half], within: 0.000000000001) || factor.close_to(a: s.vectors.values, b: [half, half, -half, half], within: 0.000000000001)
+    assert closeness.close_to(a: s.vectors.values, b: [-half, half, half, half], within: 0.000000000001) || closeness.close_to(a: s.vectors.values, b: [half, half, -half, half], within: 0.000000000001)
     a = from_rows([[2.0, 0.0, 0.0], [0.0, 3.0, 4.0], [0.0, 4.0, 9.0]]).must()
     e = eigen_symmetric(a).must()
-    assert factor.close_to(a: e.values, b: [1.0, 2.0, 11.0], within: 0.000000000001)
+    assert closeness.close_to(a: e.values, b: [1.0, 2.0, 11.0], within: 0.000000000001)
 
     for j in range(from: 0, to: 3)
         v: [f64] @= []
@@ -971,7 +972,7 @@ test "eigen_symmetric: two spectra worked by hand, each column a unit eigenvecto
         for x in v
             lv @ lv.push(e.values[j] * x)
 
-        assert factor.close_to(a: av, b: lv, within: 0.000000000001) && math.abs(factor.norm2(v) - 1.0) < 0.000000000001
+        assert closeness.close_to(a: av, b: lv, within: 0.000000000001) && math.abs(factor.norm2(v) - 1.0) < 0.000000000001
 
     assert eigen_symmetric(from_rows([[1.0, 2.0], [3.0, 1.0]]).must()).is_err()
     assert eigen_symmetric(from_rows([[0.0 / 0.0]]).must()).is_err()
@@ -981,8 +982,16 @@ test "eigen_symmetric: two spectra worked by hand, each column a unit eigenvecto
 # solved by Python's `fractions` on 2026-11-22: 3/2 + x.
 test "least_squares: a line fitted, an exact system, fewer rows than columns, a wrong length, and columns not independent"
     a = from_rows([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]).must()
-    assert factor.close_to(a: least_squares(a, b: [1.0, 3.0, 4.0, 4.0]).must(), b: [1.5, 1.0], within: 0.000000000001)
-    assert factor.close_to(a: least_squares(identity(2), b: [3.0, 4.0]).must(), b: [3.0, 4.0], within: 0.000000000001)
+    assert closeness.close_to(
+        a: least_squares(a, b: [1.0, 3.0, 4.0, 4.0]).must(),
+        b: [1.5, 1.0],
+        within: 0.000000000001
+    )
+    assert closeness.close_to(
+        a: least_squares(identity(2), b: [3.0, 4.0]).must(),
+        b: [3.0, 4.0],
+        within: 0.000000000001
+    )
     assert least_squares(from_rows([[1.0, 2.0]]).must(), b: [1.0]).is_err() && least_squares(a, b: [1.0]).is_err()
 
     match least_squares(from_rows([[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]]).must(), b: [1.0, 2.0, 3.0])
@@ -993,8 +1002,12 @@ test "least_squares: a line fitted, an exact system, fewer rows than columns, a 
 # singular values are their square roots, worked by hand.
 test "singular_values, rank and condition_number: worked values, a wide matrix, ranks of 0 to 3, a singular matrix, and no entry"
     a = from_rows([[3.0, 0.0], [4.0, 5.0]]).must()
-    assert factor.close_to(a: singular_values(a).must(), b: [math.sqrt(45.0), math.sqrt(5.0)], within: 0.000000000001)
-    assert factor.close_to(
+    assert closeness.close_to(
+        a: singular_values(a).must(),
+        b: [math.sqrt(45.0), math.sqrt(5.0)],
+        within: 0.000000000001
+    )
+    assert closeness.close_to(
         a: singular_values(transpose(a)).must(),
         b: [math.sqrt(45.0), math.sqrt(5.0)],
         within: 0.000000000001
@@ -1094,12 +1107,12 @@ test "norm_frobenius: the identity of four"
 # Two equations in two unknowns.
 test "solve: two equations"
     a = from_rows([[2.0, 1.0], [1.0, 3.0]]).must()
-    assert factor.close_to(a: solve(a, b: [3.0, 5.0]).must(), b: [0.8, 1.4], within: 0.000000000001)
+    assert closeness.close_to(a: solve(a, b: [3.0, 5.0]).must(), b: [0.8, 1.4], within: 0.000000000001)
 
 # An inverse that undoes the matrix.
 test "inverse: a two by two"
     a = from_rows([[4.0, 7.0], [2.0, 6.0]]).must()
-    assert factor.close_to(
+    assert closeness.close_to(
         a: multiply(a: a, b: inverse(a).must()).must().values,
         b: identity(2).values,
         within: 0.000000000001
@@ -1121,7 +1134,7 @@ test "qr: a tall matrix"
 
 # The square root of a covariance matrix.
 test "cholesky: a two by two"
-    assert factor.close_to(
+    assert closeness.close_to(
         a: cholesky(from_rows([[4.0, 2.0], [2.0, 2.0]]).must()).must().values,
         b: [2.0, 0.0, 1.0, 1.0],
         within: 0.000000000001
@@ -1134,7 +1147,7 @@ test "eigen_symmetric: a diagonal matrix"
 # A line fitted to three points.
 test "least_squares: a line through three points"
     a = from_rows([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0]]).must()
-    assert factor.close_to(a: least_squares(a, b: [1.0, 2.0, 3.0]).must(), b: [1.0, 1.0], within: 0.000000000001)
+    assert closeness.close_to(a: least_squares(a, b: [1.0, 2.0, 3.0]).must(), b: [1.0, 1.0], within: 0.000000000001)
 
 # How far a matrix stretches along its axes.
 test "singular_values: a diagonal matrix"
