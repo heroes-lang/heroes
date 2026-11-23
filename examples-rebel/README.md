@@ -64,7 +64,7 @@ package moves its row in the same change. There is no cycle.
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
-| 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
+| 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping; Canonical XML 1.0, 1.1 and exclusive | `numbers`, `strings`, `unicode` |  |
 | 2 | `html` | HTML read as a browser reads it (WHATWG), never failing; searched by tag, attribute, class and CSS selectors; changed and written; every named character reference | `strings`, `unicode` |  |
 | 2 | `url` | a URL parsed, built, escaped | `numbers`, `strings` |  |
 | 2 | `crypto` | SHA-1, SHA-2, HMAC, HKDF, PBKDF2, comparison in constant time | `bytes` | `hero_crypto.h` |

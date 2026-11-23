@@ -1,0 +1,344 @@
+# The events of one element written as Canonical XML: Canonical XML 1.0, 1.1
+# and Exclusive XML Canonicalization 1.0, with or without comments. The
+# element may stand inside others the text leaves out; their attributes say
+# which namespaces, and which `xml:` attributes, the element stands under.
+#
+# Every rule is the specifications': a start and an end tag for every element,
+# `"` around every value, namespace declarations first, by prefix, the default
+# first, then the attributes by namespace and local name, a declaration written
+# only where the element written around it does not already give it, and the
+# few escapes each place needs, in hexadecimal. The tree is checked before the
+# events come here, so nothing here fails on what the tree holds.
+
+use xml/internal/bases
+use xml/internal/event
+use xml/internal/scope
+
+# Canonical XML 1.0: every namespace in scope written on the first element.
+constant INCLUSIVE_10: i64
+    1
+
+# Canonical XML 1.1: as 1.0, `xml:id` and other `xml:` attributes not taken
+# from the elements left out, and `xml:base` joined from theirs.
+constant INCLUSIVE_11: i64
+    2
+
+# Exclusive XML Canonicalization 1.0: a namespace written only where an element
+# or one of its attributes uses it, or its prefix is listed.
+constant EXCLUSIVE: i64
+    3
+
+# The declarations in scope and those written so far: the lists `scope`
+# keeps, one set each.
+record Scopes
+    # The prefix of each declaration in scope.
+    prefixes: [str]
+    # Its namespace.
+    spaces: [str]
+    # The declaration of the same prefix it hides, -1 for none.
+    hidden: [i64]
+    # Each prefix's innermost declaration.
+    innermost: {str: i64}
+    # The declarations in use.
+    count: i64
+
+# A scope with nothing declared.
+function empty_scopes() -> Scopes
+    prefixes: [str] = []
+    spaces: [str] = []
+    hidden: [i64] = []
+    innermost: {str: i64} = {}
+    return Scopes(prefixes: prefixes, spaces: spaces, hidden: hidden, innermost: innermost, count: 0)
+
+# Declares `prefix` for `space` in `s`.
+function add(@s: Scopes, prefix: str, space: str)
+    scope.declare(
+        prefixes: @s.prefixes,
+        spaces: @s.spaces,
+        hidden: @s.hidden,
+        innermost: @s.innermost,
+        count: @s.count,
+        prefix: prefix,
+        space: space
+    )
+
+# Takes off `s` every declaration after the first `mark`.
+function back_to(@s: Scopes, mark: i64)
+    scope.leave(s.prefixes, s.hidden, @s.innermost, count: @s.count, mark: mark)
+
+# The namespace `prefix` stands for in `s`, the empty text where it stands for
+# none: the default namespace undeclared, or a prefix never declared.
+function value_in(s: Scopes lent, prefix: str) -> str
+    at = s.innermost[prefix].default(-1)
+
+    if at >= 0
+        return s.spaces[at]
+    return ""
+
+# Whether `prefix` is declared in `s`, to any namespace.
+function is_in(s: Scopes lent, prefix: str) -> bool
+    return s.innermost[prefix].default(-1) >= 0
+
+# The prefix the declaration `a` declares, or `-` where `a` is no declaration.
+function declared(a: event.Attr) -> str
+    if a.space != scope.XMLNS_SPACE
+        return "-"
+
+    if a.prefix == ""
+        return ""
+    return a.local
+
+# Declares in `s` every namespace the attributes `attributes` declare.
+function declare_all(@s: Scopes, attributes: [event.Attr] lent)
+    for a in attributes
+        p = declared(a)
+
+        if p != "-"
+            add(@s, prefix: p, space: a.value)
+
+# The element of `events`, which open with its start and end with its end, as
+# Canonical XML text, standing inside elements whose attributes are `above`,
+# outermost first.
+#
+# - `above`: the attributes of each element left out around it.
+# - `events`: the element's own events, nothing before or after.
+# - `method`: `INCLUSIVE_10`, `INCLUSIVE_11` or `EXCLUSIVE`.
+# - `listed`: for `EXCLUSIVE`, the prefixes written as 1.0 writes them, the
+#   empty one for the default namespace.
+# - `comments`: whether comments are written.
+function element_text(above: [[event.Attr]], events: [event.Event], method: i64, listed: [str], comments: bool) -> str
+    in_scope: Scopes @= empty_scopes()
+    written: Scopes @= empty_scopes()
+
+    for attributes in above
+        declare_all(@in_scope, attributes)
+
+    # Each open element's marks, to leave both scopes as they were at its end.
+    marks_in: [i64] @= []
+    marks_written: [i64] @= []
+    open_names: [str] @= []
+    pieces: [str] @= []
+    first: bool @= true
+
+    for e in events
+        if e.kind == event.START
+            marks_in @ marks_in.push(in_scope.count)
+            marks_written @ marks_written.push(written.count)
+            declare_all(@in_scope, e.attributes)
+
+            attributes = if first
+                with_inherited(above: above, own: e.attributes, method: method)
+            else
+                e.attributes
+            first @ false
+            name = qualified(prefix: e.prefix, local: e.local)
+            open_names @ open_names.push(name)
+            pieces @ pieces.push("<" + name)
+            candidates = candidates_of(e: e, in_scope: in_scope, method: method, listed: listed)
+
+            for p in sort(candidates)
+                v = value_in(in_scope, prefix: p)
+
+                if value_in(written, prefix: p) != v
+                    add(@written, prefix: p, space: v)
+                    pieces @ pieces.push(f" {scope.declared_as(p)}=\"{value_escaped(v)}\"")
+
+            for a in ordered(attributes)
+                pieces @ pieces.push(f" {qualified(prefix: a.prefix, local: a.local)}=\"{value_escaped(a.value)}\"")
+
+            pieces @ pieces.push(">")
+        else if e.kind == event.END
+            last = open_names.len() - 1
+            pieces @ pieces.push("</" + open_names[last] + ">")
+            open_names @ open_names.slice(from: 0, to: last)
+            back_to(@in_scope, mark: marks_in[last])
+            back_to(@written, mark: marks_written[last])
+            marks_in @ marks_in.slice(from: 0, to: last)
+            marks_written @ marks_written.slice(from: 0, to: last)
+        else if e.kind == event.TEXT
+            pieces @ pieces.push(text_escaped(e.text))
+        else if e.kind == event.COMMENT
+            if comments
+                pieces @ pieces.push("<!--" + e.text + "-->")
+        else
+            pieces @ pieces.push(instruction_text(target: e.target, data: e.text))
+
+    return pieces.join("")
+
+# The comment or instruction that stands outside the root, as Canonical XML
+# writes it, without the line feed that parts it from the root.
+function instruction_text(target: str, data: str) -> str
+    if data == ""
+        return "<?" + target + "?>"
+    return "<?" + target + " " + data + "?>"
+
+# `prefix:local`, or `local` alone where the prefix is empty.
+function qualified(prefix: str, local: str) -> str
+    if prefix == ""
+        return local
+    return prefix + ":" + local
+
+# The prefixes whose declarations the element `e` may write: every one in
+# scope but `xml` for Canonical XML, and for the exclusive form the one its
+# name uses, the empty one standing for the default namespace, those its
+# attributes use, and those of `listed` in scope.
+function candidates_of(e: event.Event, in_scope: Scopes lent, method: i64, listed: [str]) -> [str]
+    seen: {str: bool} @= {}
+
+    if method != EXCLUSIVE
+        at: i64 @= 0
+
+        while at < in_scope.count
+            p = in_scope.prefixes[at]
+
+            if in_scope.innermost[p].default(-1) == at && p != "xml"
+                seen[p] @ true
+            at @ at + 1
+
+        return keys(seen)
+
+    if e.prefix != "xml"
+        seen[e.prefix] @ true
+
+    for a in e.attributes
+        if a.prefix != "" && a.prefix != "xml" && declared(a) == "-"
+            seen[a.prefix] @ true
+
+    for p in listed
+        if is_in(in_scope, prefix: p) && p != "xml"
+            seen[p] @ true
+
+    return keys(seen)
+
+# `own`, the first element's attributes, with the `xml:` attributes of the
+# elements left out above it that the method carries down: every one for 1.0,
+# the nearest of each name, and for 1.1 `xml:lang` and `xml:space` alone with
+# `xml:base` joined from all. The exclusive form carries none.
+function with_inherited(above: [[event.Attr]], own: [event.Attr], method: i64) -> [event.Attr]
+    if method == EXCLUSIVE || above.len() == 0
+        return own
+    nearest: {str: str} @= {}
+    bases_above: [str] @= []
+
+    for attributes in above
+        for a in attributes
+            if a.space == scope.XML_SPACE
+                if a.local == "base"
+                    bases_above @ bases_above.push(a.value)
+
+                if method == INCLUSIVE_10 || a.local == "lang" || a.local == "space"
+                    nearest[a.local] @ a.value
+
+    kept: [event.Attr] @= []
+    own_names: {str: bool} @= {}
+
+    for a in own
+        if a.space == scope.XML_SPACE
+            own_names[a.local] @ true
+
+            if a.local == "base" && method == INCLUSIVE_11 && bases_above.len() > 0
+                bases_above @ bases_above.push(a.value)
+                continue
+
+        kept @ kept.push(a)
+
+    if method == INCLUSIVE_11 && bases_above.len() > 0
+        own_names["base"] @ true
+        joined = bases.fixed(bases_above)
+
+        if joined != ""
+            kept @ kept.push(event.Attr(prefix: "xml", local: "base", space: scope.XML_SPACE, value: joined))
+
+    for local in keys(nearest)
+        if !own_names[local].default(false)
+            kept @ kept.push(
+                event.Attr(prefix: "xml", local: local, space: scope.XML_SPACE, value: nearest[local].must())
+            )
+
+    return kept
+
+# The attributes of `attributes` that are no namespace declaration, ordered by
+# namespace and then by local name, the empty namespace first. Neither part
+# holds the character U+0001, which XML forbids, so a key of the two parted by
+# it orders as the pair does.
+function ordered(attributes: [event.Attr]) -> [event.Attr]
+    by_key: {str: event.Attr} @= {}
+
+    for a in attributes
+        if declared(a) == "-"
+            by_key[a.space + "\u{1}" + a.local] @ a
+
+    answer: [event.Attr] @= []
+
+    for k in sort(keys(by_key))
+        answer @ answer.push(by_key[k].must())
+
+    return answer
+
+# `s` as an element's text: `&`, `<`, `>` and a carriage return escaped.
+function text_escaped(s: str) -> str
+    return escaped(s: s, in_value: false)
+
+# `s` as an attribute's value between `"`: `&`, `<`, `"`, a tab, a line feed
+# and a carriage return escaped.
+function value_escaped(s: str) -> str
+    return escaped(s: s, in_value: true)
+
+# `s` escaped for text or a value, the bytes between two escapes cut once, at
+# ASCII bytes, so no cut splits a character.
+function escaped(s: str, in_value: bool) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        replacement = if b == '&'
+            "&amp;"
+        else if b == '<'
+            "&lt;"
+        else if b == '>' && !in_value
+            "&gt;"
+        else if b == '"' && in_value
+            "&quot;"
+        else if b == '\t' && in_value
+            "&#x9;"
+        else if b == '\n' && in_value
+            "&#xA;"
+        else if b == '\r'
+            "&#xD;"
+        else
+            ""
+
+        if replacement != ""
+            pieces @ pieces.push(s.slice(from: run, to: i))
+            pieces @ pieces.push(replacement)
+            run @ i + 1
+        i @ i + 1
+
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return pieces.join("")
+
+## Tests
+
+test "escaped: text and values, each escape alone, none, and a character of two bytes beside one"
+    assert text_escaped("") == ""
+    assert text_escaped("a&b<c>d\re\"f\tg\nh") == "a&amp;b&lt;c&gt;d&#xD;e\"f\tg\nh"
+    assert value_escaped("a&b<c>d\re\"f\tg\nh") == "a&amp;b&lt;c>d&#xD;e&quot;f&#x9;g&#xA;h"
+    assert text_escaped("é<é") == "é&lt;é"
+
+test "ordered: declarations left out, no namespace first, then by namespace and local name"
+    xs = [
+        event.Attr(prefix: "b", local: "attr", space: "http://www.ietf.org", value: "1")
+        event.Attr(prefix: "", local: "attr2", space: "", value: "2")
+        event.Attr(prefix: "a", local: "attr", space: "http://www.w3.org", value: "3")
+        event.Attr(prefix: "", local: "attr", space: "", value: "4")
+        event.Attr(prefix: "xmlns", local: "a", space: scope.XMLNS_SPACE, value: "http://www.w3.org")
+    ]
+    names = ordered(xs).map(local_and_value)
+    assert names == ["attr4", "attr22", "attr1", "attr3"]
+
+# The local name and the value of `a`, side by side.
+function local_and_value(a: event.Attr) -> str
+    return a.local + a.value
