@@ -590,6 +590,31 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            let picker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            picker.datePickerStyle = .textFieldAndStepper
+            picker.datePickerMode = .single
+            // The fields are read as UTC, so a value is the same seconds in
+            // every zone, and no zone shifts what the person picked.
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+            picker.calendar = calendar
+            picker.timeZone = calendar.timeZone
+            switch kind {
+            case kindDatePicker:
+                picker.datePickerElements = .yearMonthDay
+            case kindTimePicker:
+                picker.datePickerElements = .hourMinuteSecond
+            default:
+                picker.datePickerElements = [.yearMonthDay, .hourMinuteSecond]
+            }
+            picker.minDate = Date(timeIntervalSince1970: TimeInterval(pickerLeast[kind] ?? 0))
+            picker.maxDate = Date(timeIntervalSince1970: TimeInterval(pickerMost[kind] ?? 0))
+            picker.dateValue = Date(timeIntervalSince1970: 0)
+            picker.target = self
+            picker.action = #selector(picked(_:))
+            picker.tag = Int(widget.id)
+            return picker
         case kindSpin:
             let spin = SpinView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             spin.field.target = self
@@ -910,6 +935,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventValue, Int64(sender.tag), spin.value, 0)
     }
 
+    @objc func picked(_ sender: NSDatePicker) {
+        guard let widget = widgets[Int64(sender.tag)] else {
+            return
+        }
+        queue(eventValue, widget.id, pickerSeconds(sender, widget.kind), 0)
+    }
+
     @objc func slid(_ sender: NSSlider) {
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
     }
@@ -1178,6 +1210,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             spin.show(value)
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            guard let picker = widget.view as? NSDatePicker, pickerHolds(widget.kind, value),
+                  Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
+                  Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
+                return answerInvalid
+            }
+            picker.dateValue = Date(timeIntervalSince1970: TimeInterval(value))
         case kindProgress:
             guard let bar = widget.view as? NSProgressIndicator, Double(value) >= bar.minValue, Double(value) <= bar.maxValue else {
                 return answerInvalid
@@ -1230,6 +1269,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let bar = widget.view as? NSProgressIndicator {
             bar.minValue = Double(least)
             bar.maxValue = Double(most)
+            return answerOk
+        }
+        if let picker = widget.view as? NSDatePicker, isPicker(widget.kind) {
+            guard pickerHolds(widget.kind, least), pickerHolds(widget.kind, most), least < most else {
+                return answerInvalid
+            }
+            let held = pickerSeconds(picker, widget.kind)
+            picker.minDate = Date(timeIntervalSince1970: TimeInterval(least))
+            picker.maxDate = Date(timeIntervalSince1970: TimeInterval(most))
+            let kept = min(max(held, least), most)
+            if kept != held {
+                picker.dateValue = Date(timeIntervalSince1970: TimeInterval(kept))
+            }
             return answerOk
         }
         return answerInvalid
@@ -1479,6 +1531,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
             return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            return (widget.view as? NSDatePicker)?.fittingSize ?? NSSize(width: 0, height: 0)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
         case kindSeparator:
@@ -1537,6 +1591,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return Int64(((widget.view as? NSSlider)?.doubleValue ?? 0).rounded())
         case kindSpin:
             return (widget.view as? SpinView)?.value ?? 0
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            guard let picker = widget.view as? NSDatePicker else {
+                return 0
+            }
+            return pickerSeconds(picker, widget.kind)
         case kindProgress:
             return Int64(((widget.view as? NSProgressIndicator)?.doubleValue ?? 0).rounded())
         case kindCombo:
@@ -1676,6 +1735,18 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
                 if spin.field.isEnabled && spin.value != value {
                     spin.show(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
+            if let picker = widget.view as? NSDatePicker, isPicker(widget.kind) {
+                guard pickerHolds(widget.kind, value),
+                      Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
+                      Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
+                    return answerInvalid
+                }
+                if picker.isEnabled && pickerSeconds(picker, widget.kind) != value {
+                    picker.dateValue = Date(timeIntervalSince1970: TimeInterval(value))
                     queue(eventValue, id, value, 0)
                 }
                 return answerOk
@@ -3610,6 +3681,46 @@ private let kindEditableCombo: Int64 = 34
 private let kindSpin: Int64 = 35
 private let kindToolbar: Int64 = 36
 private let kindStatusBar: Int64 = 37
+private let kindDatePicker: Int64 = 38
+private let kindTimePicker: Int64 = 39
+private let kindDateTimePicker: Int64 = 40
+
+// The values a picker holds are its fields read as UTC (`hero_ui.h`): a date
+// picker's a whole day's seconds, a time picker's the seconds since midnight.
+private let secondsInDay: Int64 = 86400
+private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800]
+private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799]
+
+private func isPicker(_ kind: Int64) -> Bool {
+    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker
+}
+
+// The seconds a picker's date is, as its kind holds them: a date picker's
+// the day's, a time picker's those since midnight.
+private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
+    let whole = Int64(picker.dateValue.timeIntervalSince1970.rounded(.down))
+    let day = Int64((Double(whole) / Double(secondsInDay)).rounded(.down)) * secondsInDay
+    switch kind {
+    case kindDatePicker:
+        return day
+    case kindTimePicker:
+        return whole - day
+    default:
+        return whole
+    }
+}
+
+// Whether `value` is one a picker of `kind` holds.
+private func pickerHolds(_ kind: Int64, _ value: Int64) -> Bool {
+    switch kind {
+    case kindDatePicker:
+        return value % secondsInDay == 0 && value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
+    case kindTimePicker:
+        return value >= 0 && value < secondsInDay
+    default:
+        return value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
+    }
+}
 
 // The height of a status bar, in points: Finder's own.
 private let statusBarHeight: CGFloat = 22

@@ -97,6 +97,7 @@ use ui/internal/loop
 use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
+use ui/internal/pickers
 use ui/internal/render as drawing
 use ui/internal/session
 use ui/internal/sources
@@ -334,6 +335,12 @@ variant Kind
     toolbar
     # A bar across the foot of a window for a count or a state.
     status_bar
+    # A calendar day the person picks.
+    date_picker
+    # A time of day the person picks.
+    time_picker
+    # A day and a time of day the person picks.
+    date_time_picker
 
 # What `widget` is.
 #
@@ -909,6 +916,74 @@ function toolbar(@app: App, into: Widget) -> Widget?
 # (Windows and Linux, pending).
 function status_bar(@app: App, into: Widget) -> Widget?
     return bars.status_bar(@app, into: into)
+
+# A new date picker in `into`, as wxWidgets' `wxDatePickerCtrl`: the system's
+# control for a calendar day, showing the year, month and day of `at`. Its
+# value is `set_value`'s and `value_of`'s, in seconds: **the fields the control
+# shows read as UTC**, midnight of the day, a multiple of 86400, so no time
+# zone is involved and what the person picks is the same number everywhere.
+# `set_range` bounds the days the person may pick (year 1 to year 9999 until
+# set), `picked` gives the day as a `time.DateTime` and `set_picked` puts the
+# control at one, and a pick by the person is `.value_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `at`: the day shown; its hour, minute, second and nanosecond are ignored.
+#
+# Fails `closed`, `invalid` for a moment no calendar has or a year outside 1
+# to 9999, `failed`, `unsupported` where the system's arm draws none (Windows
+# and Linux, pending). See also `time_picker`, `date_time_picker`.
+function date_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_PICKER, at: at)
+
+# A new time picker in `into`, as wxWidgets' `wxTimePickerCtrl`: the system's
+# control for a time of day to the second, showing the hour, minute and
+# second of `at`. Its value is the seconds since midnight, 0 to 86399, and
+# the rest is as `date_picker`'s; `picked` gives the time on 1970-01-01.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the time shown; its year, month, day and nanosecond are ignored.
+#
+# Fails as `date_picker` does.
+function time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_TIME_PICKER, at: at)
+
+# A new date and time picker in `into`: the system's control for a day and a
+# time of day to the second, showing `at`. Its value is the seconds since
+# 1970-01-01T00:00:00 of the fields it shows, read as UTC, and the rest is as
+# `date_picker`'s.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the moment shown; its nanosecond is ignored.
+#
+# Fails as `date_picker` does.
+function date_time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_TIME_PICKER, at: at)
+
+# The moment picker `widget` shows now, as the program put it or the person
+# picked it: a date picker's at midnight, a time picker's on 1970-01-01.
+#
+# - `app`: the app holding it.
+# - `widget`: a date, time or date and time picker.
+#
+# Fails `closed`, `invalid` for a widget that is no picker.
+function picked(app: App, widget: Widget) -> time.DateTime?
+    return pickers.picked(app, widget: widget)
+
+# Puts picker `widget` at `at`, as `date_picker` does for a new one; no event
+# comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a date, time or date and time picker.
+# - `at`: the moment, within the picker's range.
+#
+# Fails `closed`, `invalid` for a widget that is no picker, a moment no
+# calendar has or one outside the picker's range, `failed`.
+function set_picked(@app: App, widget: Widget, at: time.DateTime) -> ()?
+    return pickers.set_picked(@app, widget: widget, at: at)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #

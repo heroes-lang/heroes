@@ -245,6 +245,10 @@ extern "hero_ui.h"
     constant HERO_UI_TOOLBAR: i64
     # A status bar.
     constant HERO_UI_STATUS_BAR: i64
+    # A date, a time and a date and time picked.
+    constant HERO_UI_DATE_PICKER: i64
+    constant HERO_UI_TIME_PICKER: i64
+    constant HERO_UI_DATE_TIME_PICKER: i64
     # Gives widget `id` the tip `text` shown over it: 0 once shown, or -1.
     #
     # - `app`: the app.

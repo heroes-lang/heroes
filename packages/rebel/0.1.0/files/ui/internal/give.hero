@@ -53,12 +53,17 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .toggle t =>
             _ = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")?
         .slide s =>
-            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN], what: "a slider, a spin or a split")?
+            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER], what: "a slider, a spin, a split or a picker")?
 
             if model.is_split(n.kind)
                 frames.divider_ok(s.value)?
             else if s.value < n.least || s.value > n.most
                 return fail(code: failure.INVALID, msg: f"the value {s.value} is outside {n.least} to {n.most}")
+            else if model.is_picker(n.kind) && !model.picker_holds(kind: n.kind, value: s.value)
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"the value {s.value} is no value a {model.kind_name(n.kind)} holds"
+                )
         .choose_menu m =>
             _ = check.node_kind(app, widget: m.item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
         .ask_close a =>

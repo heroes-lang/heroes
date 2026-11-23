@@ -1,0 +1,165 @@
+# The system's control for a calendar day, a time of day, or both, as
+# wxWidgets' `wxDatePickerCtrl` and `wxTimePickerCtrl` (`ui.date_picker`,
+# `ui.time_picker`, `ui.date_time_picker`). Each is a widget as a slider is:
+# its value is `ui.set_value`'s and `ui.value_of`'s, the bounds the person may
+# pick between `ui.set_range`'s, and a change by the person is
+# `.value_changed`, told once.
+#
+# **The value is the fields the control shows, read as UTC, in seconds**: no
+# time zone is involved, so what a person picks is the same number on every
+# system and in every zone. A date picker's is a whole day (midnight of it,
+# a multiple of 86400, negative before 1970), a time picker's the seconds
+# since midnight, a date and time picker's the seconds since
+# 1970-01-01T00:00:00. The program names a moment as `time.DateTime`, whose
+# hour, minute and second a time picker reads and whose year, month and day a
+# date picker reads, and is told it as one by `ui.picked`.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/makers
+use ui/internal/model
+
+# A new picker of `kind` in `into`, at `at` (`ui.date_picker` and the others).
+function picker(@app: ui.App, into: ui.Widget, kind: i64, at: time.DateTime) -> ui.Widget?
+    value = seconds_of(kind, at: at)?
+    return makers.ranged(
+        @app,
+        into: into,
+        kind: kind,
+        least: model.picker_least(kind),
+        most: model.picker_most(kind),
+        value: value
+    )
+
+# The value a picker of `kind` holds for `at`: a date picker's the day's, a
+# time picker's the seconds into the day the hour, minute and second make.
+function seconds_of(kind: i64, at: time.DateTime) -> i64?
+    whole = if kind == hero_ui.HERO_UI_TIME_PICKER
+        time.DateTime(year: 1970, month: 1, day: 1, hour: at.hour, minute: at.minute, second: at.second, nanosecond: 0)
+    else if kind == hero_ui.HERO_UI_DATE_PICKER
+        time.DateTime(year: at.year, month: at.month, day: at.day, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    else
+        time.DateTime(
+            year: at.year,
+            month: at.month,
+            day: at.day,
+            hour: at.hour,
+            minute: at.minute,
+            second: at.second,
+            nanosecond: 0
+        )
+
+    match time.from_date_time(whole)
+        .ok t  => return ok(time.unix_seconds(t))
+        .err e => return fail(code: failure.INVALID, msg: f"the moment asked for is no moment of the calendar: {e.msg}")
+
+# The moment a picker holding `value` shows: a time picker's on 1970-01-01.
+function date_time_of(value: i64) -> time.DateTime?
+    match time.from_unix(whole_seconds: value, extra_nanoseconds: 0)
+        .ok t  => return ok(time.to_date_time(t))
+        .err e => return fail(code: failure.FAILED, msg: f"the value {value} is no moment: {e.msg}")
+
+# The moment `widget`, a picker, shows now (`ui.picked`).
+function picked(app: ui.App, widget: ui.Widget) -> time.DateTime?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER], what: "a date, time or date and time picker")?
+    value = ui.value_of(app, widget: widget)?
+    return date_time_of(value)
+
+# Puts a picker at `at` (`ui.set_picked`).
+function set_picked(@app: ui.App, widget: ui.Widget, at: time.DateTime) -> ()?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER], what: "a date, time or date and time picker")?
+    value = seconds_of(n.kind, at: at)?
+    return ui.set_value(@app, widget: widget, value: value)
+
+test "date_picker, time_picker, date_time_picker: a value of the fields read as UTC, set and read as a moment and as seconds, the bounds the person picks between, refused for a value the kind does not hold, told when the person picks (catalogue CT42, CT43)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    at = time.DateTime(year: 2026, month: 11, day: 23, hour: 17, minute: 40, second: 9, nanosecond: 5)
+    day = ui.date_picker(@app, into: w, at: at).must()
+    clock = ui.time_picker(@app, into: w, at: at).must()
+    both = ui.date_time_picker(@app, into: w, at: at).must()
+    assert ui.kind_of(app, widget: day).must() == .date_picker
+    assert ui.kind_of(app, widget: clock).must() == .time_picker
+    assert ui.kind_of(app, widget: both).must() == .date_time_picker
+
+    # The day's midnight, the seconds into the day, the whole moment.
+    assert ui.value_of(app, widget: day).must() == 1795392000
+    assert ui.value_of(app, widget: clock).must() == 17 * 3600 + 40 * 60 + 9
+    assert ui.value_of(app, widget: both).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    assert ui.picked(app, widget: day).must() == time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert ui.picked(app, widget: clock).must() == time.DateTime(year: 1970, month: 1, day: 1, hour: 17, minute: 40, second: 9, nanosecond: 0)
+    ui.set_picked(
+        @app,
+        widget: day,
+        at: time.DateTime(year: 1969, month: 12, day: 31, hour: 23, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert ui.value_of(app, widget: day).must() == -86400
+
+    # What a kind holds, and no other.
+    assert fixture.code_of(ui.set_value(@app, widget: day, value: 3600)) == ui.INVALID
+    assert fixture.code_of(ui.set_value(@app, widget: clock, value: 86400)) == ui.INVALID
+    assert fixture.code_of(ui.set_value(@app, widget: clock, value: -1)) == ui.INVALID
+    assert fixture.code_of(ui.set_range(@app, widget: day, least: 0, most: 86401)) == ui.INVALID
+    assert fixture.code_of(ui.set_range(@app, widget: both, least: 10, most: 5)) == ui.INVALID
+    assert fixture.code_of(ui.date_picker(@app, into: w, at: time.DateTime(year: 2026, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0))) == ui.INVALID
+
+    # The bounds, a value outside them refused and the value held moved in.
+    ui.set_range(@app, widget: both, least: 1795392000, most: 1795392000 + 86400).must()
+    assert ui.value_of(app, widget: both).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    assert fixture.code_of(ui.set_value(@app, widget: both, value: 1795392000 - 1)) == ui.INVALID
+    ui.set_range(@app, widget: both, least: 1795392000, most: 1795392000 + 3600).must()
+    assert ui.value_of(app, widget: both).must() == 1795392000 + 3600
+
+    # The person's pick is told once.
+    ui.inject(@app, input: .slide(widget: clock, value: 3600)).must()
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .value_changed(widget: clock, value: 3600)
+    assert ui.value_of(app, widget: clock).must() == 3600
+    assert fixture.code_of(ui.inject(@app, input: .slide(widget: clock, value: 90000))) == ui.INVALID
+    ui.close(@app).must()
+
+test "date_picker, time_picker, date_time_picker: on the native side the system's own, its fields read as UTC whatever the zone, picked by the person and told once, bounded, and read back as the program set it (catalogue CT42, CT43)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Pick", width: 300, height: 200).must()
+    at = time.DateTime(year: 2026, month: 11, day: 23, hour: 17, minute: 40, second: 9, nanosecond: 0)
+    offered = ui.date_picker(@app, into: w, at: at)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    day = offered.must()
+    clock = ui.time_picker(@app, into: w, at: at).must()
+    both = ui.date_time_picker(@app, into: w, at: at).must()
+    assert ui.value_of(app, widget: day).must() == 1795392000
+    assert ui.value_of(app, widget: clock).must() == 17 * 3600 + 40 * 60 + 9
+    assert ui.value_of(app, widget: both).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    assert ui.rect_of(@app, widget: both).must().width > ui.rect_of(@app, widget: clock).must().width
+    ui.set_picked(
+        @app,
+        widget: both,
+        at: time.DateTime(year: 1969, month: 7, day: 20, hour: 20, minute: 17, second: 40, nanosecond: 0)
+    ).must()
+    assert ui.value_of(app, widget: both).must() == -14182940
+    assert ui.picked(app, widget: both).must() == time.DateTime(year: 1969, month: 7, day: 20, hour: 20, minute: 17, second: 40, nanosecond: 0)
+    assert fixture.code_of(ui.set_value(@app, widget: day, value: 3600)) == ui.INVALID
+    ui.set_range(@app, widget: clock, least: 3600, most: 7200).must()
+    assert ui.value_of(app, widget: clock).must() == 7200
+    assert fixture.code_of(ui.set_value(@app, widget: clock, value: 60)) == ui.INVALID
+
+    # A pick is told once with the fields' seconds, a program's set tells none.
+    ui.inject(@app, input: .slide(widget: clock, value: 5400)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: clock, value: 5400)
+    ui.set_value(@app, widget: day, value: 86400 * 365).must()
+    ui.inject(@app, input: .slide(widget: day, value: 86400 * 366)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: day, value: 86400 * 366)
+    assert ui.value_of(app, widget: day).must() == 86400 * 366
+    ui.destroy(@app, widget: day).must()
+    ui.close(@app).must()

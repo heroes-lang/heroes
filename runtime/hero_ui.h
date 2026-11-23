@@ -1434,4 +1434,37 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * bar below it. `hero_ui_set_visible` shows and hides it. */
 #define HERO_UI_STATUS_BAR 37
 
+/* -- A DATE, A TIME, A DATE AND TIME PICKED -------------------------------------
+ *
+ * wxWidgets' `wxDatePickerCtrl` and `wxTimePickerCtrl`: the system's control for
+ * a calendar day, a time of day, or both. Three kinds: `HERO_UI_DATE_PICKER`
+ * (a day), `HERO_UI_TIME_PICKER` (a time of day to the second) and
+ * `HERO_UI_DATE_TIME_PICKER` (a day and a time to the second). Each is a widget
+ * as a slider is: made in a box, its value `hero_ui_set_value`'s and
+ * `hero_ui_value`'s, the bounds the person may pick between
+ * `hero_ui_set_range`'s, and a change by the person is `HERO_UI_EVENT_VALUE`
+ * with the new value, told once, as a spin's. A program's `hero_ui_set_value`
+ * tells nothing; `hero_ui_inject` of `HERO_UI_EVENT_VALUE` gives the value as
+ * the person picked it, told only where it changes the value.
+ *
+ * **The value is the calendar's fields read as UTC, and no time zone is
+ * involved**: the seconds since 1970-01-01T00:00:00 of the year, month, day,
+ * hour, minute and second the control shows, so the person's wall-clock
+ * choice crosses the layer as the same number on every system and in every
+ * zone. A date picker's value is a whole number of days (a multiple of
+ * 86400, midnight, negative before 1970); a time picker's is the seconds
+ * since midnight, 0 to 86399; a date and time picker's is any value in its
+ * range. A value or a range end a kind does not hold (a date picker's with
+ * a time of day, a time picker's past a day) is `HERO_UI_INVALID`.
+ *
+ * The ranges until `hero_ui_set_range` bounds them: a date picker's year 1
+ * to year 9999 (-62135596800 to 253402214400), a time picker's 0 to 86399, a
+ * date and time picker's -62135596800 to 253402300799; the value 0 until
+ * set (the picker shows the epoch, or midnight). `hero_ui_set_range` moves a
+ * value outside the new range to its nearest end, and answers `INVALID` for
+ * ends the kind does not hold or turned over. */
+#define HERO_UI_DATE_PICKER 38
+#define HERO_UI_TIME_PICKER 39
+#define HERO_UI_DATE_TIME_PICKER 40
+
 #endif
