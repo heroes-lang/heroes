@@ -1,0 +1,311 @@
+# The bytes of a property list's events as a binary list, `bplist00`: the
+# events read last to first, a container taking the object numbers of the
+# objects it counts from the top of a stack of those made, so every object is
+# numbered after the objects it holds and the top object is the last. Each
+# distinct string, number, date and datum is made once and every place it
+# stands refers to it. No function follows the data with recursion.
+
+use bytes
+use plist
+use plist/internal/build
+use plist/internal/event
+use time
+use unicode
+
+# One object made: a scalar's whole bytes, or a container's marker and the
+# numbers of its objects, which wait for the size they are written in.
+record Made
+    # A scalar's bytes, or a container's marker and count.
+    head: [u8]
+    # A container's object numbers in the order the list writes them, a
+    # dictionary's keys before its values; empty for a scalar.
+    kids: [i64]
+
+# The `width` bytes of the non-negative `n`, most significant first.
+function uint_bytes(n: u64, width: i64) -> [u8]
+    low_first: [u8] @= []
+    rest: u64 @= n
+
+    for _ in range(from: 0, to: width)
+        low_first @ low_first.push(to_u8(rest % 256).must())
+        rest @ rest / 256
+
+    out: [u8] @= []
+
+    for k in range(from: 0, to: width)
+        out @ out.push(low_first[width - 1 - k])
+
+    return out
+
+# The bytes that write the non-negative integer `n` as an integer object: 1, 2,
+# 4 or 8 bytes by size, and 16 for what is past 2^63 - 1.
+function integer_bytes(n: u64) -> [u8]
+    if n <= 255
+        return bytes.concat([[0x10], uint_bytes(n, 1)])
+    else if n <= 65535
+        return bytes.concat([[0x11], uint_bytes(n, 2)])
+    else if n <= 4294967295
+        return bytes.concat([[0x12], uint_bytes(n, 4)])
+    else if n <= 9223372036854775807
+        return bytes.concat([[0x13], uint_bytes(n, 8)])
+    return bytes.concat([[0x14], uint_bytes(0, 8), uint_bytes(n, 8)])
+
+# The marker `base` and the count `n`: the count in the marker's low nibble
+# below 15, else 15 and an integer object after it.
+function marker_with(base: i64, n: i64) -> [u8]
+    if n < 15
+        return [to_u8(base + n).must()]
+    return bytes.concat([[to_u8(base + 15).must()], integer_bytes(to_u64(n).must())])
+
+# The seconds from 2001-01-01T00:00:00Z to `at`, as a real.
+function seconds_since_2001(at: time.Instant) -> f64
+    whole: i64 @= at.unix_nanoseconds / 1000000000
+    rest: i64 @= at.unix_nanoseconds % 1000000000
+
+    if rest < 0
+        whole @ whole - 1
+        rest @ rest + 1000000000
+    return to_f64(whole - 978307200) + to_f64(rest) / 1000000000.0
+
+# The bytes of a string object: ASCII where every character is, else UTF-16,
+# big endian, with a count of its units.
+function text_bytes(s: str) -> [u8]
+    ascii: bool @= true
+
+    for k in range(from: 0, to: s.len())
+        if s[k] >= 128
+            ascii @ false
+
+    if ascii
+        return bytes.concat([marker_with(base: 0x50, n: s.len()), bytes.from_text(s)])
+
+    body: [u8] @= []
+    units: i64 @= 0
+
+    for point in unicode.code_points(s)
+        for unit in unicode.to_utf16(point).must()
+            body @ bytes.concat([body, bytes.encode_u16_be(unit)])
+            units @ units + 1
+
+    return bytes.concat([marker_with(base: 0x60, n: units), body])
+
+# The bytes of a UID object, in the fewest of 1, 2, 4 and 8 bytes.
+function uid_bytes(n: u64) -> [u8]
+    width: i64 = if n <= 255
+        1
+    else if n <= 65535
+        2
+    else if n <= 4294967295
+        4
+    else
+        8
+    return bytes.concat([[to_u8(0x80 + width - 1).must()], uint_bytes(n, width)])
+
+# The key under which an object that may be shared is looked up: one text per
+# distinct scalar, empty for a container or a null, which are never shared.
+function share_key(e: event.Event, shape: [u8]) -> str
+    if e.kind == event.BOOLEAN || e.kind == event.UNSIGNED || e.kind == event.NEGATIVE || e.kind == event.REAL || e.kind == event.TEXT || e.kind == event.DATE || e.kind == event.DATA || e.kind == event.UID
+        return f"{e.kind}:{bytes.format_hex(shape)}"
+    return ""
+
+# The bytes of the scalar `e` as an object.
+function scalar_bytes(e: event.Event) -> [u8]
+    if e.kind == event.NIL_VALUE
+        return [0x00]
+    else if e.kind == event.BOOLEAN
+        if e.flag
+            return [0x09]
+        return [0x08]
+    else if e.kind == event.UNSIGNED
+        return integer_bytes(e.arg)
+    else if e.kind == event.NEGATIVE
+        return bytes.concat([[0x13], bytes.encode_i64_be(e.signed)])
+    else if e.kind == event.REAL
+        return bytes.concat([[0x23], bytes.encode_f64_be(e.number)])
+    else if e.kind == event.TEXT
+        return text_bytes(e.text)
+    else if e.kind == event.DATE
+        return bytes.concat([[0x33], bytes.encode_f64_be(seconds_since_2001(e.date))])
+    else if e.kind == event.DATA
+        return bytes.concat([marker_with(base: 0x40, n: e.data.len()), e.data])
+    return uid_bytes(e.arg)
+
+# The fewest bytes that hold `n`, 1 to 8.
+function width_of(n: i64) -> i64
+    width: i64 @= 1
+
+    while width < 8 && n >= 1 << 8 * width
+        width @ width + 1
+
+    return width
+
+# The binary list that writes `events`.
+function encode(events: [event.Event]) -> [u8]
+    objects: [Made] @= []
+    shared: {str: i64} @= {}
+
+    # The numbers of the objects made, the last event's first: a container
+    # takes its objects off the top, which holds `top` of them.
+    done: [i64] @= []
+    top: i64 @= 0
+    at: i64 @= events.len()
+
+    while at > 0
+        at @ at - 1
+        e = events[at]
+        count = event.children_of(e)
+        held: [i64] @= []
+
+        for k in range(from: 0, to: count)
+            held @ held.push(done[top - 1 - k])
+
+        top @ top - count
+        number: i64 @= objects.len()
+
+        if e.kind == event.LIST
+            objects @ objects.push(Made(head: marker_with(base: 0xa0, n: count), kids: held))
+        else if e.kind == event.DICT
+            entries = count / 2
+            kids: [i64] @= []
+
+            for k in range(from: 0, to: entries)
+                kids @ kids.push(held[2 * k])
+
+            for k in range(from: 0, to: entries)
+                kids @ kids.push(held[2 * k + 1])
+
+            objects @ objects.push(Made(head: marker_with(base: 0xd0, n: entries), kids: kids))
+        else
+            shape = scalar_bytes(e)
+            key = share_key(e: e, shape: shape)
+
+            match shared[key]
+                .ok earlier => number @ earlier
+                .err _ =>
+                    objects @ objects.push(Made(head: shape, kids: []))
+
+                    if key != ""
+                        shared[key] @ number
+
+        if top == done.len()
+            done @ done.push(number)
+        else
+            done[top] @ number
+        top @ top + 1
+
+    ref_size = width_of(objects.len() - 1)
+    parts: [[u8]] @= [bytes.from_text("bplist00")]
+    offsets: [i64] @= []
+    place: i64 @= 8
+
+    for made in objects
+        offsets @ offsets.push(place)
+        body: [u8] @= made.head
+
+        for kid in made.kids
+            body @ bytes.concat([body, uint_bytes(to_u64(kid).must(), ref_size)])
+
+        parts @ parts.push(body)
+        place @ place + body.len()
+
+    offset_size = width_of(place)
+
+    for offset in offsets
+        parts @ parts.push(uint_bytes(to_u64(offset).must(), offset_size))
+
+    trailer: [u8] @= [0, 0, 0, 0, 0, 0, to_u8(offset_size).must(), to_u8(ref_size).must()]
+    trailer @ bytes.concat(
+        [trailer, uint_bytes(to_u64(objects.len()).must(), 8), uint_bytes(to_u64(objects.len() - 1).must(), 8), uint_bytes(to_u64(place).must(), 8)]
+    )
+    parts @ parts.push(trailer)
+    return bytes.concat(parts)
+
+# The bytes of the object that `v` is alone: its list's header and trailer cut off.
+function object_of(v: plist.Value) -> [u8]
+    data = encode(build.events_of(v))
+    return data.slice(from: 8, to: data.len() - 32 - 1)
+
+test "integer_bytes: the widths at each edge, as plutil and plistlib write them"
+    assert integer_bytes(255) == [0x10, 255]
+    assert integer_bytes(256) == [0x11, 1, 0]
+    assert integer_bytes(65535) == [0x11, 255, 255]
+    assert integer_bytes(65536) == [0x12, 0, 1, 0, 0]
+    assert integer_bytes(4294967295) == [0x12, 255, 255, 255, 255]
+    assert integer_bytes(4294967296) == [0x13, 0, 0, 0, 1, 0, 0, 0, 0]
+    assert integer_bytes(9223372036854775807) == [0x13, 127, 255, 255, 255, 255, 255, 255, 255]
+    assert integer_bytes(9223372036854775808) == [0x14, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0, 0]
+    assert integer_bytes(0) == [0x10, 0]
+
+test "uint_bytes and width_of: most significant first, and the fewest bytes"
+    assert uint_bytes(258, 2) == [1, 2]
+    assert uint_bytes(258, 4) == [0, 0, 1, 2]
+    assert uint_bytes(0, 1) == [0]
+    assert width_of(0) == 1
+    assert width_of(255) == 1
+    assert width_of(256) == 2
+    assert width_of(65536) == 3
+    assert width_of(9223372036854775807) == 8
+
+test "marker_with: a count in the marker below 15, and after it from 15 on"
+    assert marker_with(base: 0x50, n: 0) == [0x50]
+    assert marker_with(base: 0x50, n: 14) == [0x5e]
+    assert marker_with(base: 0x50, n: 15) == [0x5f, 0x10, 15]
+    assert marker_with(base: 0xa0, n: 300) == [0xaf, 0x11, 1, 44]
+
+test "scalar_bytes: each kind as the references write it"
+    assert object_of(.nil_value) == [0x00]
+    assert object_of(.boolean(v: true)) == [0x09]
+    assert object_of(.boolean(v: false)) == [0x08]
+    assert object_of(.negative(v: -1)) == [0x13, 255, 255, 255, 255, 255, 255, 255, 255]
+    assert object_of(.negative(v: -9223372036854775808)) == [0x13, 128, 0, 0, 0, 0, 0, 0, 0]
+    assert object_of(.real(v: 1.5)) == [0x23, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0]
+    assert object_of(.real(v: -0.0)) == [0x23, 0x80, 0, 0, 0, 0, 0, 0, 0]
+    assert object_of(.uid(v: 5)) == [0x80, 5]
+    assert object_of(.uid(v: 256)) == [0x81, 1, 0]
+    assert object_of(.uid(v: 65536)) == [0x83, 0, 1, 0, 0]
+    assert object_of(.data(v: [1, 2, 3])) == [0x43, 1, 2, 3]
+    assert object_of(.data(v: [])) == [0x40]
+
+    epoch2001 = time.from_unix(whole_seconds: 978307200, extra_nanoseconds: 0).must()
+    assert object_of(.date(v: epoch2001)) == [0x33, 0, 0, 0, 0, 0, 0, 0, 0]
+    half = time.from_unix(whole_seconds: 978307200, extra_nanoseconds: 500000000).must()
+    assert object_of(.date(v: half)) == [0x33, 0x3f, 0xe0, 0, 0, 0, 0, 0, 0]
+    before = time.from_unix(whole_seconds: 978307199, extra_nanoseconds: 500000000).must()
+    assert object_of(.date(v: before)) == [0x33, 0xbf, 0xe0, 0, 0, 0, 0, 0, 0]
+
+test "text_bytes: ASCII where it all is, UTF-16 otherwise with a surrogate pair, and a long string"
+    assert object_of(.text(v: "hi")) == [0x52, 104, 105]
+    assert object_of(.text(v: "")) == [0x50]
+    assert object_of(.text(v: "é")) == [0x61, 0, 0xe9]
+    assert object_of(.text(v: "😀")) == [0x62, 0xd8, 0x3d, 0xde, 0x00]
+    twenty = object_of(.text(v: "abcdefghijklmnopqrst"))
+    assert twenty.slice(from: 0, to: 3) == [0x5f, 0x10, 20]
+
+test "encode: a string or a number standing in many places is one object, and the sizes grow with the list"
+    shared: plist.Value = .list(items: [.text(v: "a"), .text(v: "a"), .unsigned(v: 1), .unsigned(v: 1)])
+    data = encode(build.events_of(shared))
+    assert data[data.len() - 32 + 15] == 3
+    assert data[data.len() - 32 + 6] == 1 && data[data.len() - 32 + 7] == 1
+
+    items: [plist.Value] @= []
+
+    for k in range(from: 0, to: 300)
+        items @ items.push(.text(v: f"item {k}"))
+
+    big: plist.Value = .list(items: items)
+    wide = encode(build.events_of(big))
+    assert wide[wide.len() - 32 + 6] == 2 && wide[wide.len() - 32 + 7] == 2
+    assert plist.decode_binary(wide).must() == big
+
+test "encode: a list nested five thousand deep is written on a stack of this module's and read back"
+    v: plist.Value @= .boolean(v: true)
+
+    for _ in range(from: 0, to: 5000)
+        v @ .list(items: [v])
+
+    data = encode(build.events_of(v))
+    options = plist.DecodeOptions(max_depth: 20000, max_items: 20000, max_bytes: 100000000, duplicate_keys: false)
+
+    match plist.decode_with(data: data, options: options)
+        .ok got => assert build.events_of(got).len() == 5001
+        .err _  => assert false

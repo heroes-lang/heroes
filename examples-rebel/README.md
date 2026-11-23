@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-one packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-two packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -118,6 +118,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `math`, `time` |  |
+| 4 | `plist` | Apple property lists, the XML form and the binary form `bplist00`, read into a value and written: every integer from -2^63 to 2^64 - 1, dates, data, keyed archives' references, a path of keys and places; the old OpenStep text form and a crossing to JSON refused as not written yet | `bytes`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
 | 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `os`, `threads`, `time` | `hero_poll.h` |
 | 4 | `tls` | TLS client and server as an `io.Stream`, certificates checked by the system's own store: SChannel on Windows, Apple's Security framework on macOS, OpenSSL on Linux | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time` | `hero_tls.h` |
 | 4 | `log` | lines with a time and a level, to a stream | `io`, `json`, `strings`, `time` |  |

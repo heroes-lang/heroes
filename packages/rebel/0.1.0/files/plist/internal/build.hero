@@ -1,0 +1,181 @@
+# A value made from the events a reader wrote and the events of a value, each
+# in one loop on a stack of its own. The events stand in the order a document
+# holds them, each container's count before the objects it holds, so a value is
+# built by reading the events last to first, a container taking the objects it
+# counts from the top of the stack of those made, and a value is taken apart
+# by a stack of the objects still to write, the first of a container's on top.
+
+use plist
+use plist/internal/event
+use strings
+
+# The value `events` hold, which is one object and the objects it contains.
+# Fails `invalid` where a dictionary holds a key twice and `duplicates` refuses
+# it, the message naming the key.
+function value_of(events: [event.Event], duplicates: bool) -> plist.Value?
+    # Each object made, the last event first: a container takes its objects
+    # off the top of `done`, which holds `top` of them.
+    done: [plist.Value] @= []
+    top: i64 @= 0
+    at: i64 @= events.len()
+
+    while at > 0
+        at @ at - 1
+        e = events[at]
+        count = event.children_of(e)
+        held: [plist.Value] @= []
+
+        for k in range(from: 0, to: count)
+            held @ held.push(done[top - 1 - k])
+
+        made: plist.Value @= .nil_value
+
+        if e.kind == event.BOOLEAN
+            made @ .boolean(v: e.flag)
+        else if e.kind == event.UNSIGNED
+            made @ .unsigned(v: e.arg)
+        else if e.kind == event.NEGATIVE
+            made @ .negative(v: e.signed)
+        else if e.kind == event.REAL
+            made @ .real(v: e.number)
+        else if e.kind == event.TEXT
+            made @ .text(v: e.text)
+        else if e.kind == event.DATE
+            made @ .date(v: e.date)
+        else if e.kind == event.DATA
+            made @ .data(v: e.data)
+        else if e.kind == event.UID
+            made @ .uid(v: e.arg)
+        else if e.kind == event.LIST
+            made @ .list(items: held)
+        else if e.kind == event.DICT
+            entries: [plist.Entry] @= []
+            seen: {str: bool} @= {}
+
+            for k in range(from: 0, to: count / 2)
+                key = key_of(held[2 * k])
+
+                if !duplicates
+                    if seen[key].default(false)
+                        return fail(code: plist.INVALID, msg: f"{place(e)}the dictionary holds the key \"{key}\" twice")
+                    seen[key] @ true
+                entries @ entries.push(plist.Entry(key: key, value: held[2 * k + 1]))
+
+            made @ .dictionary(entries: entries)
+        top @ top - count
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    return ok(done[0])
+
+# The key a dictionary's key object holds: readers and `events_of` write only
+# strings there, so any other kind is an empty key a reader never makes.
+function key_of(v: plist.Value) -> str
+    match v
+        .text t       => return t.v
+        .nil_value    => return ""
+        .boolean _    => return ""
+        .unsigned _   => return ""
+        .negative _   => return ""
+        .real _       => return ""
+        .date _       => return ""
+        .data _       => return ""
+        .uid _        => return ""
+        .list _       => return ""
+        .dictionary _ => return ""
+
+# Where a dictionary's event stood in the document, as a message opens, or
+# nothing where it was made from a value.
+function place(e: event.Event) -> str
+    if e.at < 0
+        return ""
+    return f"at {e.at}: "
+
+# The events of `v`, in the order a document holds them: a container's event
+# with its count, then each of its objects in turn, a dictionary's key before
+# its value.
+function events_of(v: plist.Value) -> [event.Event]
+    events: [event.Event] @= []
+    waiting: [plist.Value] @= [v]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        children: [plist.Value] @= []
+
+        made = match waiting[top]
+            .nil_value  => event.of_kind(kind: event.NIL_VALUE, arg: 0)
+            .boolean b  => event.of_boolean(b.v)
+            .unsigned u => event.of_kind(kind: event.UNSIGNED, arg: u.v)
+            .negative n => integer_event(n.v)
+            .real r     => event.of_real(r.v)
+            .text t     => event.of_text(t.v)
+            .date d     => event.of_date(d.v)
+            .data d     => event.of_data(d.v)
+            .uid u      => event.of_kind(kind: event.UID, arg: u.v)
+            .list l =>
+                children @ l.items
+                event.of_kind(kind: event.LIST, arg: to_u64(l.items.len()).must())
+            .dictionary d =>
+                for entry in d.entries
+                    children @ children.push(.text(v: entry.key))
+                    children @ children.push(entry.value)
+
+                event.of_kind(kind: event.DICT, arg: to_u64(d.entries.len()).must())
+
+        events @ events.push(made)
+
+        for k in range(from: 0, to: children.len())
+            child = children[children.len() - 1 - k]
+
+            if top == waiting.len()
+                waiting @ waiting.push(child)
+            else
+                waiting[top] @ child
+            top @ top + 1
+
+    return events
+
+# The event of a `.negative`'s number: the integer it is, which is unsigned
+# where the number is not below 0.
+function integer_event(n: i64) -> event.Event
+    if n >= 0
+        return event.of_kind(kind: event.UNSIGNED, arg: to_u64(n).must())
+    return event.of_negative(n)
+
+test "value_of and events_of: a nested value goes out and comes back as it was"
+    v: plist.Value = .dictionary(
+        entries: [plist.Entry(key: "a", value: .list(items: [.unsigned(v: 1), .negative(v: -2), .real(v: 1.5)])), plist.Entry(key: "b", value: .dictionary(entries: [plist.Entry(key: "c", value: .boolean(v: true))])), plist.Entry(key: "d", value: .text(v: "é"))]
+    )
+    events = events_of(v)
+    assert events.len() == 12
+    assert events[0].kind == event.DICT && events[0].arg == 3
+    assert events[1].text == "a" && events[2].kind == event.LIST
+    got = value_of(events: events, duplicates: false).must()
+    assert got == v
+
+test "value_of: a scalar alone, an empty container, and a key twice"
+    assert value_of(events: [event.of_text("x")], duplicates: false).must() == .text(v: "x")
+    assert value_of(events: [event.of_kind(kind: event.LIST, arg: 0)], duplicates: false).must() == .list(items: [])
+    twice = [
+        event.of_kind(kind: event.DICT, arg: 2)
+        event.of_text("k")
+        event.of_boolean(true)
+        event.of_text("k")
+        event.of_boolean(false)
+    ]
+
+    match value_of(events: twice, duplicates: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && strings.contains(s: e.msg, substr: "\"k\" twice")
+
+    kept = value_of(events: twice, duplicates: true).must()
+    assert plist.member(dict: kept, key: "k").must() == .boolean(v: true)
+
+test "events_of: a negative that is not below 0 is written as the integer it is"
+    assert events_of(.negative(v: 5))[0].kind == event.UNSIGNED
+    assert events_of(.negative(v: -5))[0].signed == -5

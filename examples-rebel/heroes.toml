@@ -118,6 +118,7 @@ packages = [
     "path",
     "pdf",
     "pem",
+    "plist",
     "poll",
     "poll/hero_poll",
     "printing",

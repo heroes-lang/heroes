@@ -1,0 +1,671 @@
+# Apple property lists, the two forms every Apple platform reads: the XML form
+# of `PropertyList-1.0.dtd` and the binary form, `bplist00`. A document is read
+# into a value a program matches on and a value is written as either form, so
+# an `Info.plist`, a launchd job, a preferences file or a keyed archive is
+# read, changed and written without `plutil`. A list read and written again
+# loses nothing but the layout of its form.
+#
+# Nothing here follows the data with recursion: a document nested deep is read
+# and written on stacks this package holds, and `decode` reads no deeper than
+# `DEFAULT_MAX_DEPTH` and no more values than `DEFAULT_MAX_ITEMS` unless it is
+# asked to. A binary list is read as a graph of objects that refer to one
+# another by number: one that refers back to an object still being read fails
+# `invalid`, and one that shares objects is counted as the tree it makes, so
+# no document can make the reader grow without end.
+#
+# It reads only the two forms above, and a record is not filled from a list by
+# its field names, since the language has no reflection: a program reads each
+# field with `member` and writes each with the language's own `Record::field`
+# names (spec § 9). It reads no stream: `fs` and `io` read the bytes, and a
+# path is `value_at`'s.
+#
+# It fails `invalid` on a document that is not a property list of the form it
+# claims, on a dictionary that holds a key twice, and on a value of the wrong
+# kind; `not_text` on bytes that are not UTF-8; `does_not_fit` on a number or a
+# date past its type; `limit` on a document past the depth, the size or the
+# count of values its reading allows; `not_found` on a key or a place a value
+# does not hold; `unsupported` on a form or a value the other form cannot
+# hold, as a null in an XML list.
+#
+# Not written yet, each a `pending` block of its ledger: a list crossed to JSON
+# and back; the text form of NeXTSTEP and OpenStep, `{ key = value; }`.
+
+use bytes
+use plist/internal/binary_read
+use plist/internal/binary_write
+use plist/internal/build
+use plist/internal/event
+use plist/internal/samples
+use plist/internal/steps
+use plist/internal/xml_write
+use strings
+use time
+
+## The value
+
+# One property list value. A `match` on it answers all eleven cases.
+#
+# An integer is `unsigned` from 0 up and `negative` below 0, so the whole range
+# from -2^63 to 2^64 - 1 that both forms hold is exact; `int_of` answers one
+# that fits an `i64`, and `from_int` makes one. A dictionary is a list of
+# entries, so it keeps the order they were read or built in, and `==` compares
+# two dictionaries' entries in that order. A value built directly is written
+# as it is, `.negative` of a number that is not below 0 included, which is
+# written as the integer it is.
+variant Value
+    # A null: the binary form holds one, `<null>` in `plutil -p`, and the XML
+    # form has none, so `format_xml` refuses it.
+    nil_value
+    # `<false/>` or `<true/>`.
+    boolean
+        # The truth value.
+        v: bool
+    # An integer from 0 to 2^64 - 1.
+    unsigned
+        # The integer itself.
+        v: u64
+    # An integer below 0, down to -2^63.
+    negative
+        # The integer itself, below 0.
+        v: i64
+    # A real, `nan` and the infinities included, which both forms hold.
+    real
+        # The number.
+        v: f64
+    # A string: Unicode, as every `str` is. A string with a character XML
+    # cannot hold, a control character other than tab, line feed and carriage
+    # return, is held by the binary form alone.
+    text
+        # The characters themselves.
+        v: str
+    # A date, to the second in the XML form and to the nearest nanosecond in
+    # the binary one.
+    date
+        # The moment, in UTC.
+        v: time.Instant
+    # Data: bytes, base 64 in the XML form.
+    data
+        # The bytes.
+        v: [u8]
+    # A reference of a keyed archive, a number that names another object of
+    # the archive. The XML form writes it as the dictionary of the single key
+    # `CF$UID`, and reads one back.
+    uid
+        # The reference.
+        v: u64
+    # An array.
+    list
+        # Its values, in order.
+        items: [Value]
+    # A dictionary.
+    dictionary
+        # Its entries, in the order they were read or built; no two with one
+        # key.
+        entries: [Entry]
+
+# One entry of a dictionary: a key, always a string, and its value.
+record Entry
+    # The key.
+    key: str
+    # The value under it.
+    value: Value
+
+# The two forms a document is written in.
+variant Format
+    # The XML form, `<plist version="1.0">`, written in UTF-8 with the tabs and
+    # lines `plutil` writes.
+    xml
+    # The binary form, `bplist00`.
+    binary
+
+## Codes
+
+# The code of a document that is not a property list of the form it claims,
+# of a dictionary that holds a key twice, and of a value of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+# The code of bytes that are not UTF-8, where the XML form is read from them.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of an integer past what `int_of` holds, and of a date past a
+# `time.Instant`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a key a dictionary does not hold and of a place an array or a
+# path does not reach, which `member`, `item` and `value_at` fail with.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a value the form asked for cannot hold: a null in XML, a form a
+# version of the binary header names that this reading does not know.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a document past the depth, the size or the count of values its
+# reading allows.
+constant LIMIT: str
+    "limit"
+
+## Limits
+
+# The deepest nesting `decode` reads: a value that is no container is 1 deep,
+# `[]` is 1, `[[]]` is 2.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# The most values `decode` reads, counted as the tree they make: an object a
+# binary list refers to twice counts twice.
+constant DEFAULT_MAX_ITEMS: i64
+    4194304
+
+# The longest document `decode` reads, in bytes.
+constant DEFAULT_MAX_BYTES: i64
+    268435456
+
+## Reading
+
+# How a document is read: the limits and what a dictionary may hold.
+record DecodeOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
+    # A document nested deeper fails `limit`.
+    max_depth: i64
+    # The most values accepted, counted as `DEFAULT_MAX_ITEMS` counts them. A
+    # document that holds more fails `limit`.
+    max_items: i64
+    # The longest document accepted, in bytes. A longer one fails `limit`.
+    max_bytes: i64
+    # Whether a dictionary may hold one key twice, both entries then kept in
+    # order. Refused, it fails `invalid`.
+    duplicate_keys: bool
+
+# The options `decode` reads with: `DEFAULT_MAX_DEPTH`, `DEFAULT_MAX_ITEMS` and
+# `DEFAULT_MAX_BYTES`, and no key twice in a dictionary.
+function default_decode_options() -> DecodeOptions
+    return DecodeOptions(
+        max_depth: DEFAULT_MAX_DEPTH,
+        max_items: DEFAULT_MAX_ITEMS,
+        max_bytes: DEFAULT_MAX_BYTES,
+        duplicate_keys: false
+    )
+
+# The form `data` is written in: binary where it opens with `bplist`, XML
+# where it opens, after a byte order mark and white space, with `<`.
+#
+# - `data`: the bytes of a document; the empty list is neither form.
+#
+# Fails `invalid` where `data` opens with neither, the message saying what it
+# opens with. See also `decode`.
+function format_of(data: [u8]) -> Format?
+    if steps.has_binary_header(data)
+        return ok(.binary)
+
+    at: i64 @= 0
+
+    if data.len() >= 3 && data[0] == 0xef && data[1] == 0xbb && data[2] == 0xbf
+        at @ 3
+
+    while at < data.len() && (data[at] == 32 || data[at] == 9 || data[at] == 10 || data[at] == 13)
+        at @ at + 1
+
+    if at < data.len() && data[at] == 60
+        return ok(.xml)
+
+    if at >= data.len()
+        return fail(code: INVALID, msg: "no property list: the data is empty or white space")
+    return fail(
+        code: INVALID,
+        msg: f"no property list: the data opens with byte {data[at]}, neither `bplist` nor `<`"
+    )
+
+# The value a document holds, read as `default_decode_options` reads it, from
+# either form.
+#
+# - `data`: the bytes of a document, the XML form in UTF-8 or the binary
+#   form; `format_of` tells which.
+#
+# Fails `invalid` where `data` is no property list, the message naming the
+# line of an XML list or the byte of a binary one; `not_text` where an XML
+# list is not UTF-8; `unsupported` where an XML list names another encoding or
+# a binary one another version than `bplist00`; `does_not_fit` where a date
+# stands outside a `time.Instant` or an integer outside both integer cases;
+# `limit` where the document passes the limits.
+#
+# See also `decode_with`, `parse_xml`, `decode_binary`, `format_xml`.
+function decode(data: [u8]) -> Value?
+    return decode_with(data: data, options: default_decode_options())
+
+# The value a document holds, read as `options` asks.
+#
+# - `data`: the bytes of a document, as `decode` reads them.
+# - `options`: the limits and the dictionaries' keys; `default_decode_options()`
+#   gives `decode`'s.
+#
+# Fails as `decode` fails, `limit` at the limits `options` sets.
+#
+# See also `decode`.
+function decode_with(data: [u8], options: DecodeOptions) -> Value?
+    if data.len() > options.max_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"a document of {data.len()} bytes, past {options.max_bytes}, the most this reading allows"
+        )
+
+    form = format_of(data)?
+
+    made: [event.Event] = match form
+        .binary => binary_read.events(data: data, max_depth: options.max_depth, max_items: options.max_items)?
+        .xml    => steps.xml_events(data: data, options: options)?
+
+    return build.value_of(events: made, duplicates: options.duplicate_keys)
+
+# The value an XML property list writes.
+#
+# - `text`: the whole document, as `<?xml ... ?>`, its document type and
+#   `<plist version="1.0">` with one value in it; a byte order mark may open it.
+#
+# Fails `invalid` where `text` is not a property list, the message opening
+# `line L:`; `unsupported` where its declaration names another encoding;
+# `limit` as `decode` does. Read as `default_decode_options` reads. See also
+# `decode`, `format_xml`.
+function parse_xml(text: str) -> Value?
+    if text.len() > DEFAULT_MAX_BYTES
+        return fail(
+            code: LIMIT,
+            msg: f"a document of {text.len()} bytes, past {DEFAULT_MAX_BYTES}, the most this reading allows"
+        )
+    return steps.xml_value(text: text, options: default_decode_options())
+
+# The value a binary property list writes.
+#
+# - `data`: the whole document, from `bplist00` to the end of its trailer; the
+#   empty list is no document.
+#
+# Fails `invalid` where `data` is not a binary property list: it ends inside an
+# object, an object refers to another that does not exist or to one it
+# stands in, a dictionary's key is no string, a count passes what the bytes
+# could hold; the message opens `byte B:`. Fails `unsupported` where its header
+# names a version other than `00`, `limit` and `does_not_fit` as `decode` does.
+# Read as `default_decode_options` reads. See also `decode`, `encode_binary`.
+function decode_binary(data: [u8]) -> Value?
+    options = default_decode_options()
+
+    if !steps.has_binary_header(data)
+        return fail(code: INVALID, msg: "not a binary property list: the data does not open with `bplist`")
+
+    if data.len() > options.max_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"a document of {data.len()} bytes, past {options.max_bytes}, the most this reading allows"
+        )
+
+    made = binary_read.events(data: data, max_depth: options.max_depth, max_items: options.max_items)?
+    return build.value_of(events: made, duplicates: false)
+
+## Writing
+
+# `v` written as an XML property list, as `plutil -convert xml1` writes one:
+# the declaration, the document type, `<plist version="1.0">`, a tab for each
+# level, a date to the second in UTC, data in base 64 lines of 68 characters, a
+# real in 17 significant digits, `nan` and `+infinity`.
+#
+# - `v`: the value to write; a dictionary's entries stay in the order they
+#   stand.
+#
+# A date's fraction of a second is dropped, as `plutil` drops it. Fails
+# `unsupported` where `v` holds a null, which the XML form has no word for, or
+# a date outside the years 0 to 9999; fails `invalid` where `v` holds a string
+# with a character XML cannot hold, naming it, or a dictionary with a key
+# twice. See also `encode_binary`, `encode`.
+function format_xml(v: Value) -> str?
+    made = build.events_of(v)
+    return xml_write.document(made)
+
+# `v` written as a binary property list, `bplist00`: each distinct string,
+# number, date and datum once, however many times it stands, an integer in the
+# fewest bytes its size allows, a string in ASCII where it is, in UTF-16
+# otherwise.
+#
+# - `v`: the value to write.
+#
+# Fails `invalid` where `v` holds a dictionary with a key twice; `does_not_fit`
+# where the document would pass 2^32 objects. See also `format_xml`, `encode`.
+function encode_binary(v: Value) -> [u8]?
+    made = build.events_of(v)
+    return ok(binary_write.encode(made))
+
+# `v` written in `format`, an XML list as UTF-8 bytes.
+#
+# - `v`: the value to write.
+# - `format`: `.xml` is `format_xml`'s text as bytes, `.binary` is
+#   `encode_binary`'s.
+#
+# Fails as the function of `format` does. See also `format_xml`,
+# `encode_binary`.
+function encode(v: Value, format: Format) -> [u8]?
+    match format
+        .xml    => return ok(bytes.from_text(format_xml(v)?))
+        .binary => return encode_binary(v)
+
+## Building and asking
+
+# The integer `n`, in the case that holds it.
+#
+# - `n`: any `i64`; 0 and up is `.unsigned`, below 0 `.negative`.
+function from_int(n: i64) -> Value
+    if n < 0
+        return .negative(v: n)
+    return .unsigned(v: to_u64(n).must())
+
+# The `i64` an integer value holds.
+#
+# - `v`: the value asked.
+#
+# Fails `invalid` where `v` is no integer, and `does_not_fit` where it is an
+# integer past 2^63 - 1. See also `from_int`.
+function int_of(v: Value) -> i64?
+    match v
+        .unsigned u   => return to_i64(u.v)
+        .negative n   => return ok(n.v)
+        .nil_value    => return fail(code: INVALID, msg: "a null is no integer")
+        .boolean _    => return fail(code: INVALID, msg: "a boolean is no integer")
+        .real _       => return fail(code: INVALID, msg: "a real is no integer")
+        .text _       => return fail(code: INVALID, msg: "a string is no integer")
+        .date _       => return fail(code: INVALID, msg: "a date is no integer")
+        .data _       => return fail(code: INVALID, msg: "data is no integer")
+        .uid _        => return fail(code: INVALID, msg: "a UID is no integer")
+        .list _       => return fail(code: INVALID, msg: "an array is no integer")
+        .dictionary _ => return fail(code: INVALID, msg: "a dictionary is no integer")
+
+# The value `dict` holds under `key`.
+#
+# - `dict`: the value asked, a dictionary.
+# - `key`: the key, compared byte by byte; the first entry of that key answers.
+#
+# Fails `invalid` where `dict` is no dictionary and `not_found` where it holds
+# no entry of `key`. See also `item`, `value_at`.
+function member(dict: Value, key: str) -> Value?
+    match dict
+        .dictionary d =>
+            for entry in d.entries
+                if entry.key == key
+                    return ok(entry.value)
+
+            return fail(code: NOT_FOUND, msg: f"no key \"{key}\" in the dictionary")
+        .nil_value  => return fail(code: INVALID, msg: f"asked key \"{key}\" of a null, not of a dictionary")
+        .boolean _  => return fail(code: INVALID, msg: f"asked key \"{key}\" of a boolean, not of a dictionary")
+        .unsigned _ => return fail(code: INVALID, msg: f"asked key \"{key}\" of an integer, not of a dictionary")
+        .negative _ => return fail(code: INVALID, msg: f"asked key \"{key}\" of an integer, not of a dictionary")
+        .real _     => return fail(code: INVALID, msg: f"asked key \"{key}\" of a real, not of a dictionary")
+        .text _     => return fail(code: INVALID, msg: f"asked key \"{key}\" of a string, not of a dictionary")
+        .date _     => return fail(code: INVALID, msg: f"asked key \"{key}\" of a date, not of a dictionary")
+        .data _     => return fail(code: INVALID, msg: f"asked key \"{key}\" of data, not of a dictionary")
+        .uid _      => return fail(code: INVALID, msg: f"asked key \"{key}\" of a UID, not of a dictionary")
+        .list _     => return fail(code: INVALID, msg: f"asked key \"{key}\" of an array, not of a dictionary")
+
+# The value `list` holds at `index`.
+#
+# - `list`: the value asked, an array.
+# - `index`: the place, from 0.
+#
+# Fails `invalid` where `list` is no array and `not_found` where `index` is
+# below 0 or at least the array's length. See also `member`, `value_at`.
+function item(list: Value, index: i64) -> Value?
+    match list
+        .list l =>
+            if index < 0 || index >= l.items.len()
+                return fail(code: NOT_FOUND, msg: f"no place {index} in an array of {l.items.len()}")
+            return ok(l.items[index])
+        .nil_value    => return fail(code: INVALID, msg: f"asked place {index} of a null, not of an array")
+        .boolean _    => return fail(code: INVALID, msg: f"asked place {index} of a boolean, not of an array")
+        .unsigned _   => return fail(code: INVALID, msg: f"asked place {index} of an integer, not of an array")
+        .negative _   => return fail(code: INVALID, msg: f"asked place {index} of an integer, not of an array")
+        .real _       => return fail(code: INVALID, msg: f"asked place {index} of a real, not of an array")
+        .text _       => return fail(code: INVALID, msg: f"asked place {index} of a string, not of an array")
+        .date _       => return fail(code: INVALID, msg: f"asked place {index} of a date, not of an array")
+        .data _       => return fail(code: INVALID, msg: f"asked place {index} of data, not of an array")
+        .uid _        => return fail(code: INVALID, msg: f"asked place {index} of a UID, not of an array")
+        .dictionary _ => return fail(code: INVALID, msg: f"asked place {index} of a dictionary, not of an array")
+
+# The value at a path of keys and places, as `plutil -extract` takes one:
+# `CFBundleURLTypes.0.CFBundleURLSchemes`.
+#
+# - `root`: the value the path starts from.
+# - `path`: names separated by `.`; a name is a key where the value it is
+#   asked of is a dictionary and a place, in digits, where it is an array. The
+#   empty path is `root` itself. A key that holds a `.` is reached by `member`.
+#
+# Fails `invalid` where a name is asked of a value that is neither, or a place
+# is not digits, and `not_found` where a key or a place is absent; the message
+# names the step. See also `member`, `item`.
+function value_at(root: Value, path: str) -> Value?
+    if path == ""
+        return ok(root)
+
+    here: Value @= root
+
+    for name in strings.split(s: path, sep: ".")
+        step: Value @= .nil_value
+
+        match here
+            .list _ =>
+                index = steps.parse_place(name)?
+                step @ item(list: here, index: index)?
+            .dictionary _ => step @ member(dict: here, key: name)?
+            .nil_value => return fail(code: INVALID, msg: f"step \"{name}\" asks a null, not a dictionary or an array")
+            .boolean _ => return fail(
+                code: INVALID,
+                msg: f"step \"{name}\" asks a boolean, not a dictionary or an array"
+            )
+            .unsigned _ => return fail(
+                code: INVALID,
+                msg: f"step \"{name}\" asks an integer, not a dictionary or an array"
+            )
+            .negative _ => return fail(
+                code: INVALID,
+                msg: f"step \"{name}\" asks an integer, not a dictionary or an array"
+            )
+            .real _ => return fail(code: INVALID, msg: f"step \"{name}\" asks a real, not a dictionary or an array")
+            .text _ => return fail(code: INVALID, msg: f"step \"{name}\" asks a string, not a dictionary or an array")
+            .date _ => return fail(code: INVALID, msg: f"step \"{name}\" asks a date, not a dictionary or an array")
+            .data _ => return fail(code: INVALID, msg: f"step \"{name}\" asks data, not a dictionary or an array")
+            .uid _  => return fail(code: INVALID, msg: f"step \"{name}\" asks a UID, not a dictionary or an array")
+
+        here @ step
+
+    return ok(here)
+
+## Examples
+
+# An `Info.plist` read, a key asked, and the whole written as `plutil` writes it.
+test "decode: an XML list read and a key asked of it"
+    text = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\">\n<dict>\n\t<key>CFBundleName</key>\n\t<string>Rebel</string>\n\t<key>LSUIElement</key>\n\t<true/>\n</dict>\n</plist>\n"
+    v = decode(bytes.from_text(text)).must()
+    assert member(dict: v, key: "CFBundleName").must() == .text(v: "Rebel")
+    assert member(dict: v, key: "LSUIElement").must() == .boolean(v: true)
+
+# The options a program changes one field of, here the nesting it allows.
+test "decode_with: a list nested deeper than the options allow is refused"
+    options = DecodeOptions(max_depth: 2, max_items: 100, max_bytes: 1000, duplicate_keys: false)
+    deep = encode_binary(.list(items: [.list(items: [.list(items: [])])])).must()
+    assert decode_with(data: deep, options: default_decode_options()).must() == .list(items: [.list(items: [.list(items: [])])])
+
+    match decode_with(data: deep, options: options)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# The form of a document is told from its first bytes.
+test "format_of: binary by its mark, XML by its first tag"
+    assert format_of(bytes.from_text("bplist00")).must() == .binary
+    assert format_of(bytes.from_text("  \n<plist/>")).must() == .xml
+
+# A property list written as XML text and read back as the value it was.
+test "parse_xml: the text format_xml writes"
+    v: Value = .dictionary(entries: [Entry(key: "n", value: from_int(-3)), Entry(key: "ok", value: .boolean(v: false))])
+    assert parse_xml(format_xml(v).must()).must() == v
+
+# A list written in the binary form and read back.
+test "decode_binary: the bytes encode_binary writes"
+    v: Value = .list(items: [.text(v: "é"), .data(v: [1, 2]), .real(v: 0.5), .uid(v: 7), .nil_value])
+    assert decode_binary(encode_binary(v).must()).must() == v
+
+# A dictionary written as plutil writes it: tabs, a line to an element, the document type.
+test "format_xml: a small dictionary"
+    v: Value = .dictionary(entries: [Entry(key: "a", value: .list(items: [from_int(1), .real(v: 1.5)]))])
+    want = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>a</key>\n\t<array>\n\t\t<integer>1</integer>\n\t\t<real>1.5</real>\n\t</array>\n</dict>\n</plist>\n"
+    assert format_xml(v).must() == want
+
+# The binary form of a string, written once however often it stands.
+test "encode_binary: a header, the objects, the offsets and a trailer of 32 bytes"
+    data = encode_binary(.text(v: "hi")).must()
+    assert data.slice(from: 0, to: 8) == bytes.from_text("bplist00")
+    assert data[8] == 0x52 && data[9] == 0x68 && data[10] == 0x69
+    assert data.len() == 8 + 3 + 1 + 32
+
+# Either form from one call.
+test "encode: the XML form as UTF-8 bytes and the binary form"
+    v: Value = .text(v: "é")
+    assert decode(encode(v, .xml).must()).must() == v
+    assert steps.has_binary_header(encode(v, .binary).must())
+
+# An integer made from a number and given back as one.
+test "from_int: a number in the case that holds it, and int_of giving it back"
+    assert from_int(5) == .unsigned(v: 5)
+    assert from_int(-5) == .negative(v: -5)
+    assert int_of(from_int(-5)).must() == -5
+
+# A key asked of a dictionary, a place of an array.
+test "int_of: an integer that fits, one that does not, and a value of another kind"
+    assert int_of(.unsigned(v: 9223372036854775807)).must() == 9223372036854775807
+
+    match int_of(.unsigned(v: 9223372036854775808))
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match int_of(.text(v: "5"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A key asked of a dictionary.
+test "member: a key present, a key absent, and a value that is no dictionary"
+    d: Value = .dictionary(entries: [Entry(key: "k", value: from_int(1))])
+    assert member(dict: d, key: "k").must() == .unsigned(v: 1)
+
+    match member(dict: d, key: "z")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && strings.contains(s: e.msg, substr: "\"z\"")
+
+    match member(dict: .list(items: []), key: "k")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A place asked of an array.
+test "item: the first and last places, past the end, below 0, and a value that is no array"
+    xs: Value = .list(items: [from_int(7), from_int(8)])
+    assert item(list: xs, index: 0).must() == .unsigned(v: 7)
+    assert item(list: xs, index: 1).must() == .unsigned(v: 8)
+
+    for index in [2, -1]
+        match item(list: xs, index: index)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+    match item(list: .nil_value, index: 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A path through a dictionary and an array, as `plutil -extract` takes one.
+test "value_at: keys and places, the empty path, and the refusals"
+    schemes: Value = .list(items: [.text(v: "rebel")])
+    types: Value = .list(items: [.dictionary(entries: [Entry(key: "CFBundleURLSchemes", value: schemes)])])
+    root: Value = .dictionary(entries: [Entry(key: "CFBundleURLTypes", value: types)])
+    assert value_at(root: root, path: "CFBundleURLTypes.0.CFBundleURLSchemes.0").must() == .text(v: "rebel")
+    assert value_at(root: root, path: "").must() == root
+
+    for path in ["CFBundleURLTypes.1", "Nope", "CFBundleURLTypes.0.CFBundleURLSchemes.5"]
+        match value_at(root: root, path: path)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+    for path in ["CFBundleURLTypes.x", "CFBundleURLTypes..", "CFBundleURLTypes.0.CFBundleURLSchemes.0.deeper"]
+        match value_at(root: root, path: path)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+# The options `decode` reads with.
+test "default_decode_options: the limits and no key twice"
+    options = default_decode_options()
+    assert options.max_depth == DEFAULT_MAX_DEPTH && options.max_items == DEFAULT_MAX_ITEMS
+    assert options.max_bytes == DEFAULT_MAX_BYTES && !options.duplicate_keys
+
+test "format_of: no data, white space alone, a byte order mark, and another first byte"
+    empty: [u8] = []
+    blank: [u8] = [32, 10]
+
+    for data in [empty, blank]
+        match format_of(data)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    marked: [u8] = [0xef, 0xbb, 0xbf, 60]
+    assert format_of(marked).must() == .xml
+
+    match format_of(bytes.from_text("{}"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "byte 123")
+
+    match format_of(bytes.from_text("bplis"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "decode: the two lists plutil wrote, one value from either form"
+    from_xml = decode(bytes.from_text(samples.big_xml())).must()
+    assert from_xml == decode(samples.big_binary()).must()
+
+test "decode_with: a document past the bytes allowed, and a key twice allowed or not"
+    small = DecodeOptions(max_depth: 8, max_items: 8, max_bytes: 10, duplicate_keys: false)
+
+    match decode_with(data: samples.big_binary(), options: small)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    twice = bytes.from_text(
+        "<plist><dict><key>k</key><integer>1</integer><key>k</key><integer>2</integer></dict></plist>"
+    )
+
+    match decode(twice)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    options = DecodeOptions(max_depth: 8, max_items: 8, max_bytes: 1000, duplicate_keys: true)
+    kept = decode_with(data: twice, options: options).must()
+
+    match kept
+        .dictionary d => assert d.entries.len() == 2
+        .nil_value    => assert false
+        .boolean _    => assert false
+        .unsigned _   => assert false
+        .negative _   => assert false
+        .real _       => assert false
+        .text _       => assert false
+        .date _       => assert false
+        .data _       => assert false
+        .uid _        => assert false
+        .list _       => assert false
+
+test "decode_binary: the XML form refused, and a document past its limit"
+    match decode_binary(bytes.from_text("<plist/>"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "parse_xml: a text that is no property list, and a version it does not read"
+    for text in ["", "<plist/>", "<dict/>", "<plist><integer>1</integer><integer>2</integer></plist>", "<plist><key>k</key></plist>"]
+        match parse_xml(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match parse_xml("<plist version=\"2.0\"><true/></plist>")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED

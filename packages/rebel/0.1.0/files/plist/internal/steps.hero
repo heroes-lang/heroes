@@ -1,0 +1,55 @@
+# The small steps the face's functions share: the mark of the binary form, the
+# place a step of a path names, and the reading of an XML list into events or
+# into a value.
+
+use numbers
+use plist
+use plist/internal/build
+use plist/internal/event
+use plist/internal/xml_read
+use xml
+
+# Whether `data` opens with `bplist`, the mark of the binary form.
+#
+# - `data`: the bytes of a document.
+function has_binary_header(data: [u8]) -> bool
+    return data.len() >= 6 && data[0] == 0x62 && data[1] == 0x70 && data[2] == 0x6c && data[3] == 0x69 && data[4] == 0x73 && data[5] == 0x74
+
+# The place a step of a path names: digits, and nothing else.
+#
+# - `name`: the step.
+#
+# Fails `invalid` where `name` is not digits and `not_found` where they pass an `i64`.
+function parse_place(name: str) -> i64?
+    if name == ""
+        return fail(code: plist.INVALID, msg: "an empty step asks a place of an array")
+
+    at: i64 @= 0
+
+    while at < name.len()
+        if name[at] < 48 || name[at] > 57
+            return fail(code: plist.INVALID, msg: f"step \"{name}\" asks a place of an array, which is digits")
+        at @ at + 1
+
+    match numbers.parse_int(name)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: plist.NOT_FOUND, msg: f"no place {name} in an array")
+
+# The events of the XML list in `data`, read to `options`' limits.
+#
+# - `data`: the bytes of the XML text.
+# - `options`: the limits.
+function xml_events(data: [u8], options: plist.DecodeOptions) -> [event.Event]?
+    parse = xml.ParseOptions(max_depth: options.max_depth + 4, max_bytes: options.max_bytes)
+    doc = xml.decode(data, parse)?
+    return xml_read.events(doc: doc, max_depth: options.max_depth, max_items: options.max_items)
+
+# The value of the XML list in `text`, read to `options`' limits.
+#
+# - `text`: the XML text.
+# - `options`: the limits.
+function xml_value(text: str, options: plist.DecodeOptions) -> plist.Value?
+    parse = xml.ParseOptions(max_depth: options.max_depth + 4, max_bytes: options.max_bytes)
+    doc = xml.parse_with(text, parse)?
+    made = xml_read.events(doc: doc, max_depth: options.max_depth, max_items: options.max_items)?
+    return build.value_of(events: made, duplicates: options.duplicate_keys)
