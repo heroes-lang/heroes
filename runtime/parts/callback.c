@@ -38,6 +38,14 @@
  * a compiler bug* of a correct program was false (panel 257's ffi-pragmatist:
  * libpng's error path, 27 runs of 27).
  *
+ * LEAKSANITIZER, WHERE IT STANDS (Linux). It is a leak detector and the blocks
+ * those frames held are, to it, leaked: it would end the correct program with
+ * its own report (exit 1 under `--sanitize`, 3 of 3 on Linux arm64) after the
+ * gate above had rightly said nothing. Its documented hook for this,
+ * `__lsan_is_turned_off`, which it asks before it checks, answers the same
+ * question the gate answered: a program with a frame that never finished is
+ * not audited for leaks, by either.
+ *
  * WHAT THIS COSTS, said: a program in which a C jump abandoned a callback's
  * frame is not audited for a missing decref, as a program that calls `exit`
  * is not. Every other program is, as before.
@@ -67,3 +75,12 @@ static void hero_callback_thread_ends(void) {
 static int64_t hero_callbacks_unfinished(void) {
     return hero_callbacks_inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
 }
+
+#if defined(__linux__) && defined(__has_feature)
+#if __has_feature(address_sanitizer)
+/* LeakSanitizer's own hook (`sanitizer/lsan_interface.h`), a function the
+ * program may define: nonzero turns its check at the end of the process off. */
+int __lsan_is_turned_off(void);
+int __lsan_is_turned_off(void) { return hero_callbacks_unfinished() > 0; }
+#endif
+#endif
