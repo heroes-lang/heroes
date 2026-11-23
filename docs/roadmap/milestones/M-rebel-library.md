@@ -662,6 +662,37 @@ five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*
 - **Decision 2610, the register of the decisions this milestone invalidates, closes at the milestone's close**, its
   dated comments standing as the register.
 
+## The author's answers of 2026-11-23, about 23:00: where Rebel's folders stand, with three repositories in view
+
+Asked whether `generators/` and `examples-rebel/` belong beside `packages/rebel`, the author answered, meant as:
+*all of it inside one folder `rebel`; the index must not hold Rebel's files, only a pointer, a sort of link, saying
+how to fetch them; and this is for the future, since the index may one day be a repository of its own, as
+Homebrew's taps are, Rebel another with its generators, and Rebel's examples a third.* So, measured the same
+evening before the answer (nothing of `examples-rebel`, `generators` or `packages/rebel` is on `origin/main` yet,
+so no public history moves): the catalogue the specification states already has two entry forms, from an index
+(`version`, `sum`) and from git (`git`, `tag`, `commit`, `sum`), so the pointer needs **no new form**, and the
+compiler resolves Rebel through a `path` entry (`examples-rebel/heroes.toml`), the net, the site and the CI being
+what reads `packages/rebel` (28 files). The git form names no subfolder (searched in the specification,
+`docs/design.md` and `M-package-manager.md`, nothing found), so a git pointer needs the package at a repository's
+root: while Rebel is a folder of this repository the entry is a `path`, and it becomes a git entry the day the
+repository exists.
+
+The layout, made **once, at the round's end, by a script, after every lane has merged**:
+
+```
+rebel/library/0.1.0/files/   the package, today packages/rebel/0.1.0/files
+rebel/examples/              today examples-rebel, its reach programs in rebel/examples/reach/
+rebel/generators/            today generators
+packages/rebel/0.1.0/        the entry only: a catalogue entry, a path now, git, tag, commit and sum later
+```
+
+What the three future repositories ask of it, so that each folder can be lifted out as it stands: the folders
+depend on one another **only through catalogue entries**, never by a relative path into a sibling; every place of
+the net, the site and the CI that reads the library's folder reads it through one named constant, so a later split
+changes one line; the one generator that reads the examples (`rebel_index`, by the Rebel CI's own comment) is the
+seam, noted where it stands; and the instruments of the net that judge Rebel travel with Rebel when it leaves, the
+compiler's own net using no library (CLAUDE.md § 13).
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
