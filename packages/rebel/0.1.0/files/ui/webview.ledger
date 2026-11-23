@@ -95,7 +95,7 @@ capability webview/print  the page printed, through the system's print dialog or
   go      -
   rust    Webview::print
   python  -
-  note    catalogue WV09, its printing part (the context menu and the zoom are not offered); the outcome comes through the queue as a print dialog's does (ui/print-dialogs) and holds the settings the page was printed with; macOS by WebKit's own print operation of the web view run as a sheet of its window, GTK 4 by WebKitGTK 6.0's `WebKitPrintOperation`, Windows by `ICoreWebView2_16::Print` after the print dialog where it is asked for (`unsupported` where the WebView2 runtime predates that interface); the headless side has no printer, so a program under test injects the choice
+  note    catalogue WV09, its printing part (the context menu and the zoom are not offered); the outcome comes through the queue as a print dialog's does (ui/print-dialogs) and holds the settings the page was printed with; macOS by WebKit's own print operation of the web view run as a sheet of its window; Windows pending (`ICoreWebView2_16::Print` after the print dialog where it is asked for, `unsupported` where the WebView2 runtime predates that interface), Linux pending (WebKitGTK 6.0's `WebKitPrintOperation`), both answering `unsupported` meanwhile; the headless side has no printer, so a program under test injects the choice
 
 capability webview/devtools  the engine's developer tools
   heroes  pending
