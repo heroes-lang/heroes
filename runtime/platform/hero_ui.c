@@ -1911,7 +1911,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_CANVAS) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_CALENDAR) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2505,6 +2505,8 @@ static int64_t hero_ui_pointer_as_person(int64_t id, int64_t x, int64_t y, const
     return hero_ui_answered(hero_ui_arm_pointer(id, x, y, bytes[0], bytes[1], bytes[2], bytes[3]), "acting as the person's pointer", id);
 }
 
+static int64_t hero_ui_part_as_reader(int64_t id, int64_t part, int64_t act, uint64_t count);
+
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count) {
     char words[HERO_UI_WORDS_MOST];
 
@@ -2534,6 +2536,9 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     }
     if (kind == HERO_UI_EVENT_POINTER) {
         return hero_ui_pointer_as_person(id, value, second, text, count);
+    }
+    if (kind == HERO_UI_EVENT_PART) {
+        return hero_ui_part_as_reader(id, value, second, count);
     }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
@@ -2886,6 +2891,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a font button";
     case HERO_UI_CANVAS:
         return "making a drawing area";
+    case HERO_UI_CALENDAR:
+        return "making a month calendar";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
@@ -5350,3 +5357,221 @@ int64_t hero_ui_snapshot(hero_ui_app *app, int64_t id, void *rgba, uint64_t coun
     *height = rows;
     return columns * rows * 4;
 }
+
+/* -- A DRAWING AREA'S PARTS, READ BY A SCREEN READER ------------------------ */
+
+/* The bytes of a part's record before its name and description: the role,
+ * the states, `within`, the box's four reals, the three doubles and the two
+ * lengths (`hero_ui.h`). */
+#define HERO_UI_PART_FIXED 48
+
+/* The `double` the eight little-endian bytes at `at` are, and whether it
+ * is finite. */
+static bool hero_ui_double_at(const uint8_t *list, uint64_t at, double *real) {
+    uint64_t bits = 0;
+    double value;
+
+    for (int shift = 0; shift < 8; shift += 1) {
+        bits |= (uint64_t)list[at + (uint64_t)shift] << (8 * shift);
+    }
+    memcpy(&value, &bits, sizeof value);
+    *real = value;
+    return isfinite(value) != 0;
+}
+
+/* Whether the `count` bytes at `text` are UTF-8 of one line, no line break
+ * and no zero in it. */
+static bool hero_ui_part_line(const uint8_t *text, uint64_t count) {
+    return memchr(text, '\n', (size_t)count) == NULL && memchr(text, '\r', (size_t)count) == NULL && memchr(text, 0, (size_t)count) == NULL && hero_ui_is_utf8(text, count);
+}
+
+/* Whether the `count` bytes of `list` are parts (the records of A DRAWING
+ * AREA'S PARTS in `hero_ui.h`), said in `words` record by record where not. */
+static bool hero_ui_parts_checked(const uint8_t *list, uint64_t count, char *words, size_t size) {
+    uint64_t at = 0;
+    uint64_t number = 0;
+    bool focused = false;
+
+    while (at < count) {
+        uint8_t role;
+        uint8_t states;
+        uint64_t within;
+        uint64_t named;
+        uint64_t described;
+        float box[4];
+        double values[3];
+        bool ranged;
+
+        number += 1;
+        if (number > HERO_UI_PARTS_MOST) {
+            (void)snprintf(words, size, "the parts are more than %d", HERO_UI_PARTS_MOST);
+            return false;
+        }
+        if (count - at < HERO_UI_PART_FIXED) {
+            (void)snprintf(words, size, "part %llu, at byte %llu, is %d bytes before its words, and the list ends first", (unsigned long long)number, (unsigned long long)at, HERO_UI_PART_FIXED);
+            return false;
+        }
+        role = list[at];
+        states = list[at + 1];
+        within = (uint64_t)list[at + 2] | (uint64_t)list[at + 3] << 8;
+        named = (uint64_t)list[at + 44] | (uint64_t)list[at + 45] << 8;
+        described = (uint64_t)list[at + 46] | (uint64_t)list[at + 47] << 8;
+        if (role < HERO_UI_PART_GROUP || role > HERO_UI_PART_LINK) {
+            (void)snprintf(words, size, "part %llu has the role %u, none of HERO_UI_PART_GROUP to HERO_UI_PART_LINK", (unsigned long long)number, (unsigned)role);
+            return false;
+        }
+        if ((states & ~(HERO_UI_PART_FOCUSABLE | HERO_UI_PART_FOCUSED | HERO_UI_PART_CHECKED)) != 0) {
+            (void)snprintf(words, size, "part %llu has the states %u; they are HERO_UI_PART_FOCUSABLE, _FOCUSED and _CHECKED added", (unsigned long long)number, (unsigned)states);
+            return false;
+        }
+        if ((states & HERO_UI_PART_FOCUSED) != 0 && ((states & HERO_UI_PART_FOCUSABLE) == 0 || focused)) {
+            (void)snprintf(words, size, "part %llu is focused, and the one focused part is focusable and alone", (unsigned long long)number);
+            return false;
+        }
+        focused = focused || (states & HERO_UI_PART_FOCUSED) != 0;
+        if ((states & HERO_UI_PART_CHECKED) != 0 && role != HERO_UI_PART_CHECK_BOX && role != HERO_UI_PART_RADIO) {
+            (void)snprintf(words, size, "part %llu is checked, and only a check box and a radio button are", (unsigned long long)number);
+            return false;
+        }
+        if (within >= number) {
+            (void)snprintf(words, size, "part %llu is within part %llu, and a part is within the area (0) or an earlier part", (unsigned long long)number, (unsigned long long)within);
+            return false;
+        }
+        for (int i = 0; i < 4; i += 1) {
+            if (!hero_ui_real_at(list, at + 4 + 4 * (uint64_t)i, &box[i])) {
+                (void)snprintf(words, size, "part %llu has a box whose number %d is not finite", (unsigned long long)number, i + 1);
+                return false;
+            }
+        }
+        if (box[2] < 0.0f || box[3] < 0.0f) {
+            (void)snprintf(words, size, "part %llu has a box of width or height below 0", (unsigned long long)number);
+            return false;
+        }
+        for (int i = 0; i < 3; i += 1) {
+            if (!hero_ui_double_at(list, at + 20 + 8 * (uint64_t)i, &values[i])) {
+                (void)snprintf(words, size, "part %llu has a value, least or most that is not finite", (unsigned long long)number);
+                return false;
+            }
+        }
+        ranged = role == HERO_UI_PART_SLIDER || role == HERO_UI_PART_PROGRESS;
+        if (ranged && (!(values[1] < values[2]) || values[0] < values[1] || values[0] > values[2])) {
+            (void)snprintf(words, size, "part %llu is a slider or a progress bar whose least is not below its most or whose value is not between them", (unsigned long long)number);
+            return false;
+        }
+        if (!ranged && (values[0] != 0.0 || values[1] != 0.0 || values[2] != 0.0)) {
+            (void)snprintf(words, size, "part %llu has a value, least or most, and only a slider and a progress bar have them", (unsigned long long)number);
+            return false;
+        }
+        if (named == 0) {
+            (void)snprintf(words, size, "part %llu has no name, and a screen reader says every part by its name", (unsigned long long)number);
+            return false;
+        }
+        if (count - at - HERO_UI_PART_FIXED < named + described) {
+            (void)snprintf(words, size, "part %llu names %llu bytes of words, and the list ends first", (unsigned long long)number, (unsigned long long)(named + described));
+            return false;
+        }
+        if (!hero_ui_part_line(list + at + HERO_UI_PART_FIXED, named) || !hero_ui_part_line(list + at + HERO_UI_PART_FIXED + named, described)) {
+            (void)snprintf(words, size, "part %llu has a name or a description that is not UTF-8 of one line", (unsigned long long)number);
+            return false;
+        }
+        at += HERO_UI_PART_FIXED + named + described;
+    }
+    return true;
+}
+
+int64_t hero_ui_set_parts(hero_ui_app *app, int64_t id, const void *list, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && list == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "a drawing area's parts were counted and none given");
+    }
+    if (count > (uint64_t)HERO_UI_DRAWING_MOST) {
+        (void)snprintf(words, sizeof words, "parts of %llu bytes; the most is %d", (unsigned long long)count, HERO_UI_DRAWING_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (!hero_ui_parts_checked(list, count, words, sizeof words)) {
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_answered(hero_ui_arm_set_parts(id, list, (int64_t)count), "giving a drawing area its parts", id);
+}
+
+int64_t hero_ui_parts(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) {
+    int64_t length = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > (uint64_t)HERO_UI_DRAWING_MOST) {
+        count = (uint64_t)HERO_UI_DRAWING_MOST;
+    }
+    if (buffer == NULL) {
+        count = 0;
+    }
+    if (hero_ui_answered(hero_ui_arm_parts(id, buffer, (int64_t)count, &length), "reading a drawing area's parts", id) != 0) {
+        return -1;
+    }
+    return length;
+}
+
+/* A screen reader acting on a part (`HERO_UI_EVENT_PART` of `inject`): the
+ * number and the act checked before the arm, which knows the part's role. */
+static int64_t hero_ui_part_as_reader(int64_t id, int64_t part, int64_t act, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (!hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (part < 1 || part > HERO_UI_PARTS_MOST || act < HERO_UI_PART_PRESS || act > HERO_UI_PART_DECREASE || count != 0) {
+        (void)snprintf(words, sizeof words, "a screen reader's act %lld on part %lld: a part is 1 or more, an act HERO_UI_PART_PRESS to _DECREASE, and no text", (long long)act, (long long)part);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_answered(hero_ui_arm_part_act(id, part, act), "acting on a drawing area's part as a screen reader", id);
+}
+
+#if defined(__APPLE__)
+
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
+    return hero_ui_appkit_set_parts(id, list, count);
+}
+
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    return hero_ui_appkit_parts(id, buffer, count, length);
+}
+
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
+    return hero_ui_appkit_part_act(id, part, act);
+}
+
+#else
+
+/* THE PARTS' CALLS, which neither C arm offers yet: each refuses in words of
+ * its own (`hero_ui_refused`). An arm that offers them defines them in its
+ * own member (UI Automation's fragments on Win32, a `GtkAccessible` of the
+ * arm's on GTK 4), and its system leaves this block's condition. */
+
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
+    (void)id;
+    (void)list;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer offers a drawing area's parts to a screen reader on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    (void)id;
+    (void)buffer;
+    (void)count;
+    (void)length;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a drawing area's parts on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
+    (void)id;
+    (void)part;
+    (void)act;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer acts on a drawing area's part as a screen reader on macOS alone, and this system's arm has no such call");
+}
+
+#endif

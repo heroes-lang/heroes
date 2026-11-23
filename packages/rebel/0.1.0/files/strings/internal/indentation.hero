@@ -1,0 +1,114 @@
+# A text's lines indented by a prefix, or freed of the margin of spaces and
+# tabs they all share. A line ends at "\n", a "\r" before it ending the line
+# with it, and every end is written back as it stood, so a text keeps its
+# line ends whatever is done to its lines. A blank line holds white space
+# alone, Unicode's White_Space, which the package `unicode` answers.
+
+use strings/internal/trimming
+
+# A line of a text: what it holds, and the end that closes it, "\n", "\r\n",
+# or the empty text for a last line that has none.
+record Line
+    body: str
+    end: str
+
+# The lines of `s`, each with its end; the empty text has none.
+function lines_of(s: str) -> [Line]
+    out: [Line] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\n'
+            end: i64 @= at
+
+            if end > from && s[end - 1] == '\r'
+                end @ end - 1
+            out @ out.push(Line(body: s.slice(from: from, to: end), end: s.slice(from: end, to: at + 1)))
+            from @ at + 1
+        at @ at + 1
+
+    if from < s.len()
+        out @ out.push(Line(body: s.slice(from: from, to: s.len()), end: ""))
+    return out
+
+# Whether `body`, a line without its end, holds white space alone.
+function is_blank(body: str) -> bool
+    return trimming.trim(body).len() == 0
+
+# `s` with `prefix` before each line `accepts` accepts, given the line
+# without its end.
+function indent_where(s: str, prefix: str, accepts: (function(str) -> bool)) -> str
+    out: [str] @= []
+
+    for line in lines_of(s)
+        if accepts(line.body)
+            out @ out.push(prefix)
+        out @ out.push(line.body)
+        out @ out.push(line.end)
+
+    return out.join("")
+
+# Whether `body` is not blank: the lines `indent` writes its prefix before.
+function is_not_blank(body: str) -> bool
+    return !is_blank(body)
+
+# `s` with `prefix` before each line that is not blank.
+function indent(s: str, prefix: str) -> str
+    return indent_where(s: s, prefix: prefix, accepts: is_not_blank)
+
+# How many bytes the run of spaces and tabs at the start of `body` holds.
+function margin_of(body: str) -> i64
+    at: i64 @= 0
+
+    while at < body.len() && (body[at] == ' ' || body[at] == '\t')
+        at @ at + 1
+
+    return at
+
+# `s` with the run of spaces and tabs every line that is not blank begins
+# with taken from each, and every blank line emptied, its end kept.
+function dedent(s: str) -> str
+    lines = lines_of(s)
+    shared: str @= ""
+    seen: bool @= false
+
+    for line in lines
+        if !is_blank(line.body)
+            lead = line.body.slice(from: 0, to: margin_of(line.body))
+
+            if !seen
+                shared @ lead
+                seen @ true
+            else
+                same: i64 @= 0
+
+                while same < shared.len() && same < lead.len() && shared[same] == lead[same]
+                    same @ same + 1
+
+                shared @ shared.slice(from: 0, to: same)
+
+    out: [str] @= []
+
+    for line in lines
+        if !is_blank(line.body)
+            out @ out.push(line.body.slice(from: shared.len(), to: line.body.len()))
+        out @ out.push(line.end)
+
+    return out.join("")
+
+## Tests
+
+test "lines_of: no line, ends of both kinds, a last line with no end"
+    assert lines_of("").len() == 0
+    parts = lines_of("a\r\nb\n\nc")
+    assert parts.len() == 4
+    assert parts[0].body == "a" && parts[0].end == "\r\n"
+    assert parts[1].body == "b" && parts[1].end == "\n"
+    assert parts[2].body == "" && parts[2].end == "\n"
+    assert parts[3].body == "c" && parts[3].end == ""
+
+test "margin_of: none, spaces and tabs, a line of them alone"
+    assert margin_of("a") == 0
+    assert margin_of(" \t a") == 3
+    assert margin_of("  ") == 2

@@ -19,6 +19,7 @@ use ui/internal/frames
 use ui/internal/layout
 use ui/internal/menus
 use ui/internal/model
+use ui/internal/parts as area_parts
 use ui/internal/pickers
 use ui/internal/session
 use ui/internal/tables
@@ -58,7 +59,7 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .toggle t =>
             _ = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")?
         .slide s =>
-            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_COLOR_WELL], what: "a slider, a spin, a split, a picker or a colour well")?
+            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_CALENDAR, hero_ui.HERO_UI_COLOR_WELL], what: "a slider, a spin, a split, a picker, a calendar or a colour well")?
 
             if model.is_split(n.kind)
                 frames.divider_ok(s.value)?
@@ -92,6 +93,7 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .drop_files d        => drops.drop_ok(app, window: d.window, x: d.x, y: d.y, paths: d.paths)?
         .hand h              => session.hand_ok(app, what: h.what, items: h.items)?
         .point p => canvas_of.point_ok(app, widget: p.widget, phase: p.phase, x: p.x, y: p.y, button: p.button, clicks: p.clicks)?
+        .act_on_part a => area_parts.act_ok(app, widget: a.widget, number: a.part, act: a.act)?
         .send s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
             check.text_ok(text: s.text, one_line: false, what: "the text sent")?
@@ -152,6 +154,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .drop_files d                                                               => d.window.id
         .hand _                                                                     => 0
         .point p                                                                    => p.widget.id
+        .act_on_part a                                                              => a.widget.id
 
     if id == 0
         return true
@@ -306,6 +309,8 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             return [.files_dropped(window: d.window, x: d.x, y: d.y, paths: d.paths)]
         .hand h =>
             return session.handed(what: h.what, items: h.items)
+        .act_on_part a =>
+            return [.part_acted(widget: a.widget, part: a.part, act: a.act)]
         .point p =>
             return canvas_of.pointer_applied(
                 app,

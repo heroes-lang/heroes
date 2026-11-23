@@ -83,6 +83,9 @@ record Node
     margin: i64
     # An image's pixels, 8-bit RGBA, row after row.
     pixels: [u8]
+    # A drawing area's parts for a screen reader, the records `hero_ui.h`
+    # lays out.
+    parts: [u8]
     # A menu item's shortcut key, empty for none.
     key: str
     # The keys held with it, `HERO_UI_PRIMARY` and the rest added.
@@ -329,6 +332,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         min_height: 0,
         margin: 0,
         pixels: [],
+        parts: [],
         key: "",
         modifiers: 0,
         role: hero_ui.HERO_UI_ROLE_NONE,
@@ -572,10 +576,11 @@ function has_text(kind: i64) -> bool
 function has_range(kind: i64) -> bool
     return kind == hero_ui.HERO_UI_SLIDER || kind == hero_ui.HERO_UI_PROGRESS || kind == hero_ui.HERO_UI_SPIN || is_picker(kind)
 
-# Whether a node of `kind` is a picker of a day, a time of day or both, whose
-# value is the calendar's fields read as UTC, in seconds (`hero_ui.h`).
+# Whether a node of `kind` is a picker of a day, a time of day or both, or a
+# month's calendar, whose value is the calendar's fields read as UTC, in
+# seconds (`hero_ui.h`).
 function is_picker(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_DATE_PICKER || kind == hero_ui.HERO_UI_TIME_PICKER || kind == hero_ui.HERO_UI_DATE_TIME_PICKER
+    return kind == hero_ui.HERO_UI_DATE_PICKER || kind == hero_ui.HERO_UI_TIME_PICKER || kind == hero_ui.HERO_UI_DATE_TIME_PICKER || kind == hero_ui.HERO_UI_CALENDAR
 
 # The least value a picker of `kind` holds until its range is set: year 1,
 # and midnight for a time of day.
@@ -587,7 +592,7 @@ function picker_least(kind: i64) -> i64
 # The most value a picker of `kind` holds until its range is set: the last
 # day of year 9999, and a day's last second for a time of day.
 function picker_most(kind: i64) -> i64
-    if kind == hero_ui.HERO_UI_DATE_PICKER
+    if kind == hero_ui.HERO_UI_DATE_PICKER || kind == hero_ui.HERO_UI_CALENDAR
         return 253402214400
 
     if kind == hero_ui.HERO_UI_TIME_PICKER
@@ -595,12 +600,15 @@ function picker_most(kind: i64) -> i64
     return 253402300799
 
 # Whether a picker of `kind` holds `value`: a day's midnight for a date
-# picker, a second of a day for a time picker, any second of the years 1 to
+# picker and a calendar, a second of a day for a time picker, any second of the years 1 to
 # 9999 for both.
 function picker_holds(kind: i64, value: i64) -> bool
     if value < picker_least(kind) || value > picker_most(kind)
         return false
-    return kind != hero_ui.HERO_UI_DATE_PICKER || value % 86400 == 0
+
+    if kind == hero_ui.HERO_UI_DATE_PICKER || kind == hero_ui.HERO_UI_CALENDAR
+        return value % 86400 == 0
+    return true
 
 # The name a kind is told by in a message and drawn by as text.
 function kind_name(kind: i64) -> str
@@ -649,6 +657,7 @@ function kind_name(kind: i64) -> str
         "color_well"
         "font_button"
         "canvas"
+        "calendar"
     ]
 
     if kind < 0 || kind >= names.len()

@@ -1,0 +1,259 @@
+# A client's connection after its first key exchange: the transport, the
+# host key it was trusted by, the channels open on it, and the loop that
+# reads one message and hands it to its place (RFC 4253 § 11, RFC 4254).
+# A message for a channel is kept in that channel's buffers until the
+# program reads it, and a channel's window is opened again only as the
+# program reads, so a peer cannot fill the memory past the window it was
+# given. Keys are exchanged again when the server asks, and by the client
+# after `REKEY_BYTES` either way (RFC 4253 § 9).
+
+use net
+use ssh/internal/blobs
+use ssh/internal/kex
+use ssh/internal/transport
+use ssh/internal/wire
+use time
+
+## Codes
+
+# A message that is not what the protocol allows here.
+constant INVALID: str
+    "invalid"
+
+# The connection, or the channel, is closed.
+constant CLOSED: str
+    "closed"
+
+# The server refused what was asked.
+constant PERMISSION: str
+    "permission"
+
+# The bytes either direction carries before the client exchanges keys again:
+# 1 GiB, OpenSSH's own bound for a cipher of 128-bit blocks.
+constant REKEY_BYTES: i64
+    1073741824
+
+# The window a channel gives the server, and the most bytes the client
+# keeps for it unread: 2 MiB, as OpenSSH's own.
+constant WINDOW: i64
+    2097152
+
+# The largest packet of data a channel accepts: 32 KiB, as OpenSSH's own.
+constant MAX_DATA: i64
+    32768
+
+## A channel's state
+
+# One channel as this side keeps it (RFC 4254 § 5).
+record Channel
+    # This side's number for it.
+    local: i64
+    # The server's number for it, once it confirmed the open.
+    remote: i64
+    # Whether the server confirmed the open; a refusal is `refused`.
+    confirmed: bool
+    # The server's words where it refused the open, empty otherwise.
+    refused: str
+    # The bytes the server's window still takes from this side.
+    out_window: i64
+    # The largest packet of data the server takes.
+    out_packet: i64
+    # The bytes this side's window still takes from the server.
+    in_window: i64
+    # Data received and not read.
+    output: [u8]
+    # Extended data of type 1, the remote program's errors, not read.
+    errors: [u8]
+    # Whether the server sent EOF.
+    ended: bool
+    # Whether the server closed the channel.
+    closed: bool
+    # Whether this side sent CLOSE.
+    close_sent: bool
+    # The remote program's exit status, `not_found` until it is told.
+    status: i64?
+    # The signal that ended the remote program, `not_found` where none did.
+    signal: str?
+    # The answers to this side's requests that asked for one, in order:
+    # true for success.
+    answers: [bool]
+
+# A channel the server opened for a remote forward, not yet accepted.
+record Offered
+    # The server's number for it.
+    remote: i64
+    # Its window and largest packet.
+    window: i64
+    # Its largest packet.
+    packet: i64
+    # The address and port the connection reached on the server's side.
+    bound_host: str
+    # Its port there.
+    bound_port: i64
+    # Where the connection came from.
+    origin_host: str
+    # Its port.
+    origin_port: i64
+
+## The connection's state
+
+# A client's connection.
+record Session
+    # The transport.
+    t: transport.Transport
+    # How the host key was judged, kept for an exchange the server asks.
+    check: kex.Check
+    # The host key the first exchange trusted.
+    host_key: [u8]
+    # The signature algorithms the server's `server-sig-algs` names (RFC
+    # 8308 § 3.1); empty where it sent none.
+    server_sig_algs: [str]
+    # The text of the banners the server sent while signing in.
+    banner: str
+    # Whether a sign-in succeeded.
+    signed_in: bool
+    # The channels, open or closing.
+    channels: [Channel]
+    # The next number this side gives a channel.
+    next_local: i64
+    # The answers to this side's global requests, in order, each `ok` with
+    # the reply's bytes after its kind or failing `permission`.
+    global_answers: [[u8]?]
+    # Channels the server opened for a remote forward, waiting.
+    offered: [Offered]
+    # The remote forwards this side asked for, `host` and port as asked.
+    forwards: [str]
+
+## Messages
+
+# The next message for the connection's layer: transport messages handled
+# here (IGNORE, DEBUG, DISCONNECT, EXT_INFO, a KEXINIT), held ones first.
+function next(@s: Session) -> [u8]?
+    while true
+        if s.t.held.len() > 0
+            first = s.t.held[0]
+            s.t.held @ s.t.held.slice(from: 1, to: s.t.held.len())
+            return ok(first)
+        payload = transport.receive_packet(@s.t)?
+        kind = payload[0]
+
+        if kind == 1
+            return fail(code: CLOSED, msg: "the server disconnected: " + kex.reason_of(payload))
+
+        if kind == 2 || kind == 4
+            continue
+
+        if kind == 3
+            return fail(code: INVALID, msg: "the server did not know a message this client sent")
+
+        if kind == 7
+            read_ext_info(@s, payload: payload)?
+            continue
+
+        if kind == 20
+            exchange_again(@s, theirs: payload)?
+            continue
+
+        if s.t.incoming.carried > REKEY_BYTES
+            begin_exchange(@s)?
+        return ok(payload)
+
+# Sends `payload`, exchanging keys first where this direction is past
+# `REKEY_BYTES`.
+function send(@s: Session, payload: [u8] lent) -> ()?
+    if s.t.out.carried > REKEY_BYTES
+        begin_exchange(@s)?
+    return transport.send(@s.t, payload: payload)
+
+# The server's extensions (RFC 8308): `server-sig-algs` kept, the others
+# passed over.
+function read_ext_info(@s: Session, payload: [u8]) -> ()?
+    r @= wire.reader(payload)
+    _ = wire.take(@r, n: 1, what: "EXT_INFO")?
+    count = wire.read_u32(@r, what: "the count of extensions")?
+    at: i64 @= 0
+
+    while at < count
+        name = wire.read_text(@r, what: "an extension's name")?
+        value = wire.read_string(@r, what: "an extension's value")?
+
+        if name == "server-sig-algs"
+            v @= wire.reader(wire.string_of(value))
+            s.server_sig_algs @ wire.read_name_list(@v, what: "server-sig-algs")?
+        at @ at + 1
+
+    return ok()
+
+## Exchanging keys again
+
+# A key exchange the server began with `theirs`, its KEXINIT.
+function exchange_again(@s: Session, theirs: [u8]) -> ()?
+    mine = kex.kexinit(kexes: kex.kexes_of(s.check), host_keys: host_algorithms_for(s.host_key), offered: kex.ciphers_of(s.check))?
+    transport.send(@s.t, payload: mine)?
+    _ = kex.run(@s.t, check: s.check, mine: mine, theirs: theirs, first: false, pinned: s.host_key)?
+    return ok()
+
+# A key exchange this side begins: its KEXINIT sent, the messages that
+# arrive before the server's held for after.
+function begin_exchange(@s: Session) -> ()?
+    mine = kex.kexinit(kexes: kex.kexes_of(s.check), host_keys: host_algorithms_for(s.host_key), offered: kex.ciphers_of(s.check))?
+    transport.send(@s.t, payload: mine)?
+
+    while true
+        payload = transport.receive_packet(@s.t)?
+
+        if payload[0] == 20
+            _ = kex.run(@s.t, check: s.check, mine: mine, theirs: payload, first: false, pinned: s.host_key)?
+            return ok()
+
+        if payload[0] == 1
+            return fail(code: CLOSED, msg: "the server disconnected: " + kex.reason_of(payload))
+        s.t.held @ s.t.held.push(payload)
+
+# The host key algorithms of a later exchange: those of the trusted key's
+# type, so the server presents the same key.
+function host_algorithms_for(blob: [u8]) -> [str]
+    match blobs.parts_of(blob)
+        .err _ => return blobs.host_key_algorithms()
+        .ok parts =>
+            found: [str] @= []
+
+            for algorithm in blobs.host_key_algorithms()
+                if blobs.key_type_of(algorithm) == parts.key_type
+                    found @ found.push(algorithm)
+
+            return found
+
+## Waiting
+
+# `wait` in milliseconds as `net` counts a wait: `net.FOREVER` for
+# `time.max_duration()`, 0 for a span below a millisecond.
+function milliseconds_of(wait: time.Duration) -> i64
+    if wait == time.max_duration()
+        return net.FOREVER
+
+    if wait.nanoseconds < 0
+        return 0
+    return wait.nanoseconds / 1000000
+
+# Sets how long each read and write of `s` may wait, from now.
+function set_wait(@s: Session, wait_ms: i64) -> ()?
+    s.t.wait_ms @ wait_ms
+    return net.set_deadline(s.t.stream, deadline_ms: wait_ms)
+
+# Arms `s`'s wait again from now: each call of the face waits at most the
+# connection's wait.
+function rearm(s: Session lent) -> ()?
+    return net.set_deadline(s.t.stream, deadline_ms: s.t.wait_ms)
+
+## Closing
+
+# Closes `s`: a DISCONNECT sent where the transport still stands, then the
+# stream and the keys.
+function close(@s: Session) -> ()?
+    goodbye: [u8] @= [1]
+    wire.put_u32(@goodbye, n: 11)
+    wire.put_text(@goodbye, text: "closed by the client")
+    wire.put_text(@goodbye, text: "")
+    _ = transport.send(@s.t, payload: goodbye).is_err()
+    return transport.close(@s.t)

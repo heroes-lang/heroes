@@ -1,0 +1,187 @@
+# A connection made: the TCP connection, the version lines, the first key
+# exchange with its host key judged, and the `ssh-userauth` service asked
+# for, so a session handed on is one whose server is trusted and waits for
+# a sign-in. A failure on the way closes what was opened.
+
+use bytes
+use crypto/keypairs
+use net
+use numbers
+use os
+use ssh/internal/auth
+use ssh/internal/kex
+use ssh/internal/keyfile
+use ssh/internal/known
+use ssh/internal/session
+use ssh/internal/transport
+use strings
+
+## Codes
+
+# A message that is not what the handshake allows.
+constant INVALID: str
+    "invalid"
+
+# A session over a new connection to `check`'s host and port, its server
+# trusted by `check`, every read and write waiting at most `wait_ms`.
+function open(check: kex.Check, wait_ms: i64) -> session.Session?
+    conn = net.connect(check.host, port: check.port, deadline_ms: wait_ms)?
+    t @= transport.over(conn.stream, wait_ms: wait_ms)
+
+    match handshake(@t, check: check)
+        .err e =>
+            _ = transport.close(@t).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok host_key =>
+            none: [str] = []
+            channels: [session.Channel] = []
+            answers: [[u8]?] = []
+            offered: [session.Offered] = []
+            s @= session.Session(
+                t: t,
+                check: check,
+                host_key: host_key,
+                server_sig_algs: none,
+                banner: "",
+                signed_in: false,
+                channels: channels,
+                next_local: 0,
+                global_answers: answers,
+                offered: offered,
+                forwards: none
+            )
+
+            match auth.ask_service(@s)
+                .ok _ => return ok(s)
+                .err e =>
+                    _ = session.close(@s).is_err()
+                    return fail(code: e.code, msg: e.msg)
+
+# The version lines and the first key exchange on `t`: the host key's blob.
+# The server's KEXINIT is read before the client's is sent, which RFC 4253
+# § 7.1 allows since each side sends its own unasked: a server that speaks
+# nothing the client does is then told `unsupported` here, never a
+# connection it closed on reading the client's.
+function handshake(@t: transport.Transport, check: kex.Check lent) -> [u8]?
+    transport.exchange_versions(@t)?
+    types: [str] @= []
+
+    if check.known_hosts != ""
+        text = kex.known_hosts_text(check.known_hosts)?
+        types @ known.key_types_of(text: text, host: check.host, port: check.port)
+    host_keys @= check.host_keys
+
+    if host_keys.len() == 0
+        host_keys @ kex.host_key_order(types)
+    theirs = kex.next_message(@t, strict: false)?
+
+    if theirs[0] != 20
+        return fail(code: INVALID, msg: f"message {theirs[0]} where the server's KEXINIT was due")
+    mine = kex.kexinit(kexes: kex.kexes_of(check), host_keys: host_keys, offered: kex.ciphers_of(check))?
+    transport.send(@t, payload: mine)?
+    none: [u8] = []
+    return kex.run(@t, check: check, mine: mine, theirs: theirs, first: true, pinned: none)
+
+## Tests
+
+# An OpenSSH `sshd` run for the tests of `ssh` on 127.0.0.1: its port, the
+# user it lets in, and the folder holding its host keys `host_<type>.pub`,
+# the user's keys `id_<type>` and a `known_hosts` naming the server.
+record Server
+    # The port on 127.0.0.1.
+    port: i64
+    # The user signed in as.
+    user: str
+    # The folder.
+    dir: str
+
+# The server `REBEL_SSH_PORT`, `REBEL_SSH_USER` and `REBEL_SSH_DIR` name,
+# `not_found` where one is not set.
+function server() -> Server?
+    port = numbers.parse_int(os.env("REBEL_SSH_PORT")?)?
+    return ok(Server(port: port, user: os.env("REBEL_SSH_USER")?, dir: os.env("REBEL_SSH_DIR")?))
+
+# A session to `found`, its host key checked against the folder's
+# `known_hosts`, signed in with the folder's `id_ecdsa`.
+function signed_in(found: Server) -> session.Session?
+    none: [str] = []
+    check = kex.Check(
+        host: "127.0.0.1",
+        port: found.port,
+        known_hosts: found.dir + "/known_hosts",
+        add_unknown: false,
+        hashed: false,
+        kexes: none,
+        host_keys: none,
+        ciphers: none
+    )
+    s @= open(check, wait_ms: 10000)?
+    read = keyfile.parse(read_file(found.dir + "/id_ecdsa")?)?
+    key @= read.key
+    answer = auth.by_key(@s, user: found.user, key: key, blob: read.blob)
+    keypairs.close_private(@key)?
+    _ = answer?
+    return ok(s)
+
+# The blob a `.pub` file's line holds.
+function pub_blob(path: str) -> [u8]
+    line = read_file(path).must()
+    fields = strings.split(s: line, sep: " ")
+    return bytes.parse_base64(fields[1]).must()
+
+test "open: each key exchange, host key algorithm and cipher against OpenSSH's sshd, the host key the one its file holds"
+    match server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            kexes = ["curve25519-sha256", "curve25519-sha256@libssh.org", "ecdh-sha2-nistp256", "ecdh-sha2-nistp384"]
+            hosts = ["ssh-ed25519", "ecdsa-sha2-nistp256", "rsa-sha2-512", "rsa-sha2-256"]
+            files = ["host_ed25519.pub", "host_ecdsa.pub", "host_rsa.pub", "host_rsa.pub"]
+            sealing = ["aes128-gcm@openssh.com", "aes256-gcm@openssh.com"]
+
+            for exchange in kexes
+                for which in range(from: 0, to: 4)
+                    for cipher in sealing
+                        if strings.has_prefix(s: exchange, prefix: "curve") && !keypairs.is_available(.x25519)
+                            continue
+                        check = kex.Check(
+                            host: "127.0.0.1",
+                            port: found.port,
+                            known_hosts: "",
+                            add_unknown: false,
+                            hashed: false,
+                            kexes: [exchange, "kex-strict-c-v00@openssh.com"],
+                            host_keys: [hosts[which]],
+                            ciphers: [cipher]
+                        )
+                        s @= open(check, wait_ms: 10000).must()
+                        assert s.host_key == pub_blob(found.dir + "/" + files[which])
+                        assert s.t.strict
+                        session.close(@s).must()
+
+test "open: a cipher the server does not speak fails unsupported, naming both lists"
+    match server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            none: [str] = []
+            check = kex.Check(
+                host: "127.0.0.1",
+                port: found.port,
+                known_hosts: "",
+                add_unknown: false,
+                hashed: false,
+                kexes: none,
+                host_keys: none,
+                ciphers: ["aes192-gcm@example.org"]
+            )
+
+            match open(check, wait_ms: 10000)
+                .ok s =>
+                    closing @= s
+                    session.close(@closing).must()
+                    assert false
+                .err e =>
+                    assert e.code == kex.UNSUPPORTED
+                    assert strings.has_prefix(
+                        s: e.msg,
+                        prefix: "no cipher both sides speak: the client offers aes192-gcm@example.org, the server "
+                    )
