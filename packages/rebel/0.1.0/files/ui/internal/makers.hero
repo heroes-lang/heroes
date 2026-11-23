@@ -102,6 +102,18 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
         n.chosen @ [0]
     return added(@app, n: n)
 
+# A new separator (`ui.separator`), filling its box across.
+function separator(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_SEPARATOR,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.fill @ true
+    return added(@app, n: n)
+
 # A new text field whose text is masked (`ui.password_field`).
 function password_field(@app: ui.App, into: ui.Widget, text: str) -> ui.Widget?
     parent = boxed(app, into: into)?
@@ -354,3 +366,41 @@ test "set_span: a field across two columns of a form placed under its label and 
     # label in the first.
     assert notes_at.x == label_at.x && notes_at.y > field_at.y && field_at.x > label_at.x
     ui.close(@app).must()
+
+test "separator: across a column between two widgets, one point high and as wide as the column, down a row one point wide (catalogue LY12)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    above = ui.button(@app, into: shown, text: "Above the line").must()
+    line = ui.separator(@app, into: shown).must()
+    below = ui.button(@app, into: shown, text: "Below").must()
+    side = ui.row(@app, into: shown).must()
+    _ = ui.label(@app, into: side, text: "Left").must()
+    upright = ui.separator(@app, into: side).must()
+    _ = ui.label(@app, into: side, text: "Right").must()
+    assert ui.kind_of(app, widget: line).must() == .separator
+    at = ui.rect_of(@app, widget: line).must()
+    top = ui.rect_of(@app, widget: above).must()
+    bottom = ui.rect_of(@app, widget: below).must()
+    down = ui.rect_of(@app, widget: upright).must()
+    assert at.height == 1 && at.y > top.y && at.y < bottom.y && at.width >= top.width
+    assert down.width == 1 && down.height >= 1
+    ui.close(@app).must()
+
+test "separator: on the native side the system's line made and placed across its column (catalogue LY12)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.window(@app, title: "Line", width: 200, height: 100).must()
+    _ = ui.button(@app, into: shown, text: "Above").must()
+    made = ui.separator(@app, into: shown)
+    refusal = fixture.unsupported_words(made)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    line = made.must()
+    _ = ui.button(@app, into: shown, text: "Below").must()
+    at = ui.rect_of(@app, widget: line).must()
+    _ = ui.wait(@app, within: time.milliseconds(50).must()).is_err()
+    ui.close(@app).must()
+    assert at.height == 1 && at.width > 100

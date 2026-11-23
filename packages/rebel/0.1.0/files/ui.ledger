@@ -304,11 +304,12 @@ capability ui/picture  an image shown, from `image`'s pixels
   note    `image` decodes the file; an image of several resolutions, `Image.Append`'s, is one picture per resolution here
 
 capability ui/separator  a line between the widgets of a box
-  heroes  pending
+  heroes  ui.separator, ui.Kind.separator
   go      ui.NewHorizontalSeparator, ui.NewVerticalSeparator
   rust    -
   python  ttk.Separator
   wx      wxStaticLine
+  note    catalogue LY12; one point thick, filling its box across: along a column or a window, down a row; macOS by an `NSBox` of the separator kind, which draws along its longer side; Windows pending (a `STATIC` with `SS_ETCHEDHORZ` or `SS_ETCHEDVERT` by its rectangle), Linux pending (`GtkSeparator`, its orientation by its rectangle)
 
 capability ui/menus  a window's menu bar, its menus, their items and separators, each item's shortcut
   heroes  ui.menu, ui.menu_item, ui.menu_separator, ui.set_shortcut, ui.Shortcut, ui.Event.menu_chosen

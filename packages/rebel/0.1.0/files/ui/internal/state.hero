@@ -112,6 +112,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_TRAY
         return .tray
 
+    if code == hero_ui.HERO_UI_SEPARATOR
+        return .separator
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview

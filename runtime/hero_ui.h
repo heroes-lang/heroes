@@ -1261,4 +1261,11 @@ int64_t hero_ui_set_tip(hero_ui_app *app, int64_t id, const void *text, uint64_t
  * failure. */
 int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
 
+/* -- A SEPARATOR --------------------------------------------------------------
+ *
+ * wxWidgets' `wxStaticLine`: a thin line between the widgets of a box, the
+ * system's own, across a column or down a row, as its rectangle's longer
+ * side runs. */
+#define HERO_UI_SEPARATOR 32
+
 #endif

@@ -1891,7 +1891,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TRAY) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_SEPARATOR) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -1899,6 +1899,13 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
+#if !defined(__APPLE__)
+    /* The kinds after the tray no C arm makes yet: refused by name here,
+     * before an arm's `makes` that knows them not. */
+    if (kind > HERO_UI_TRAY) {
+        return hero_ui_elsewhere(hero_ui_making(kind));
+    }
+#endif
     if (!hero_ui_arm_makes(kind, parent)) {
         return hero_ui_elsewhere(hero_ui_making(kind));
     }
@@ -2558,6 +2565,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a context menu";
     case HERO_UI_TRAY:
         return "making a tray icon";
+    case HERO_UI_SEPARATOR:
+        return "making a separator";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:

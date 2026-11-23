@@ -105,6 +105,10 @@ function of(n: model.Node) -> [i64]
             return [FIELD, AREA_HEIGHT + CONTROL]
         return [wide, AREA_HEIGHT + CONTROL]
 
+    # A line one point thick, as long as its box gives it.
+    if k == hero_ui.HERO_UI_SEPARATOR
+        return [1, 1]
+
     if k == hero_ui.HERO_UI_LABEL
         lines = lines_of(n.text)
         return [widest(lines) * COLUMN, lines.len() * LINE]

@@ -429,6 +429,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     // draw.
     func viewOf(_ kind: Int64, _ widget: Native) -> NSView? {
         switch kind {
+        case kindSeparator:
+            // AppKit draws a separator along its longer side.
+            let line = NSBox(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+            line.boxType = .separator
+            return line
         case kindLabel:
             let label = NSTextField(labelWithString: "")
             label.maximumNumberOfLines = 0
@@ -1276,6 +1281,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
+        case kindSeparator:
+            return NSSize(width: 1, height: 1)
         case kindList, kindListMultiple:
             return NSSize(width: fieldWidth, height: areaHeight)
         case kindProgress, kindSlider:
@@ -3276,6 +3283,7 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 // `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
 private let kindContextMenu: Int64 = 30
 private let kindTray: Int64 = 31
+private let kindSeparator: Int64 = 32
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

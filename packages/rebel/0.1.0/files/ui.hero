@@ -319,6 +319,8 @@ variant Kind
     context_menu
     # An icon in the system's tray.
     tray
+    # A line between the widgets of a box.
+    separator
 
 # What `widget` is.
 #
@@ -829,6 +831,19 @@ function set_grid_stretch(@app: App, widget: Widget, columns: [i64], rows: [i64]
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function label(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_LABEL, text: text, items: [])
+
+# A new separator in `into`, as wxWidgets' `wxStaticLine`: the system's
+# thin line between the widgets of a box, across a column or a window and
+# down a row, filling its box that way.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid` where `into` holds no widgets, `unsupported`
+# where the system's arm makes none (Windows and Linux, pending).
+function separator(@app: App, into: Widget) -> Widget?
+    return makers.separator(@app, into: into)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
