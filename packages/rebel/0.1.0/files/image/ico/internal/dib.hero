@@ -1,0 +1,205 @@
+# The bitmap an icon or cursor holds in place of a PNG: a BITMAPINFOHEADER
+# without the file header, its height twice the image's, the colours of the
+# image (1, 4, 8, 24 or 32 bits) and then a 1-bit mask of the pixels that are
+# transparent. Rows are stored bottom up and padded to four bytes.
+
+use image
+
+# The two bytes of `d` at `at`, low byte first.
+function le16(d: [u8] lent, at: i64) -> i64
+    return to_i64(d[at]).must() | to_i64(d[at + 1]).must() << 8
+
+# The four bytes of `d` at `at`, low byte first.
+function le32(d: [u8] lent, at: i64) -> i64
+    return le16(d, at: at) | le16(d, at: at + 2) << 16
+
+# The four bytes of `d` at `at` as a signed number.
+function le32_signed(d: [u8] lent, at: i64) -> i64
+    v = le32(d, at: at)
+
+    if v >= 0x80000000
+        return v - 0x100000000
+    return v
+
+# What the header of a bitmap says.
+record Header
+    # The columns.
+    width: i64
+    # The rows of the image: half of what the header says.
+    height: i64
+    # The bits a pixel.
+    bits: i64
+    # The colours of the palette.
+    colors: i64
+    # Where the palette begins.
+    palette_at: i64
+    # Where the colours of the pixels begin.
+    pixels_at: i64
+
+# The header of `d`. Fails `invalid` for a header too short or a size no icon
+# holds, and `unsupported` for a compression or a depth beyond 1, 4, 8, 24
+# and 32.
+function header_of(d: [u8] lent) -> Header?
+    if d.len() < 40
+        return fail(code: image.INVALID, msg: f"a bitmap of {d.len()} bytes, where its header alone takes 40")
+    size = le32(d, at: 0)
+
+    if size < 40 || size > d.len()
+        return fail(code: image.INVALID, msg: f"a bitmap header of {size} bytes in an entry of {d.len()}")
+    width = le32_signed(d, at: 4)
+    rows = le32_signed(d, at: 8)
+    bits = le16(d, at: 14)
+    compression = le32(d, at: 16)
+    used = le32(d, at: 32)
+
+    if compression != 0
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"a bitmap coded as {compression} (run-length or bit fields): an icon's colours are stored plain"
+        )
+
+    if bits != 1 && bits != 4 && bits != 8 && bits != 24 && bits != 32
+        return fail(code: image.UNSUPPORTED, msg: f"a bitmap of {bits} bits a pixel: this reads 1, 4, 8, 24 and 32")
+
+    if width < 1 || rows < 2 || rows % 2 != 0
+        return fail(
+            code: image.INVALID,
+            msg: f"a bitmap of {width} columns and {rows} rows, where the rows are the image's twice"
+        )
+
+    top = if bits <= 8
+        1 << bits
+    else
+        0
+
+    if used > top && bits <= 8 || used > 256
+        return fail(code: image.INVALID, msg: f"{used} palette colours in a bitmap of {bits} bits")
+
+    colors = if bits <= 8 && used == 0
+        top
+    else
+        used
+    return ok(
+        Header(width: width, height: rows / 2, bits: bits, colors: colors, palette_at: size, pixels_at: size + colors * 4)
+    )
+
+# The bytes of one row of `width` pixels of `bits` bits, padded to four.
+function stride_of(width: i64, bits: i64) -> i64
+    return (width * bits + 31) / 32 * 4
+
+# The image of the bitmap `d` as RGBA, rows from the top. An alpha channel
+# that is not all zero is the transparency; otherwise the 1-bit mask is,
+# where it is there. Fails as `header_of` fails, and `invalid` where the
+# colours run past the entry or an index passes the palette.
+function image_of(d: [u8] lent, h: Header) -> image.Image?
+    stride = stride_of(width: h.width, bits: h.bits)
+
+    if h.pixels_at > d.len() || stride > (d.len() - h.pixels_at) / h.height
+        return fail(
+            code: image.INVALID,
+            msg: f"{h.height} rows of {stride} bytes from byte {h.pixels_at}, past the entry's {d.len()}"
+        )
+    mask_at = h.pixels_at + stride * h.height
+    mask_stride = stride_of(width: h.width, bits: 1)
+    masked = mask_at <= d.len() && mask_stride <= (d.len() - mask_at) / h.height
+    out: [u8] @= []
+    any_alpha @= false
+
+    if h.bits == 32
+        for i in range(from: 0, to: h.width * h.height)
+            row = i / h.width
+            col = i % h.width
+            at = h.pixels_at + (h.height - 1 - row) * stride + col * 4
+
+            if d[at + 3] != 0
+                any_alpha @ true
+
+    for row in range(from: 0, to: h.height)
+        base = h.pixels_at + (h.height - 1 - row) * stride
+        mask_row = mask_at + (h.height - 1 - row) * mask_stride
+
+        for col in range(from: 0, to: h.width)
+            r @= 0
+            g @= 0
+            b @= 0
+            a @= 255
+
+            if h.bits == 32
+                b @ to_i64(d[base + col * 4]).must()
+                g @ to_i64(d[base + col * 4 + 1]).must()
+                r @ to_i64(d[base + col * 4 + 2]).must()
+
+                if any_alpha
+                    a @ to_i64(d[base + col * 4 + 3]).must()
+            else if h.bits == 24
+                b @ to_i64(d[base + col * 3]).must()
+                g @ to_i64(d[base + col * 3 + 1]).must()
+                r @ to_i64(d[base + col * 3 + 2]).must()
+            else
+                bit = col * h.bits
+                index = to_i64(d[base + (bit >> 3)]).must() >> 8 - h.bits - (bit & 7) & (1 << h.bits) - 1
+
+                if index >= h.colors
+                    return fail(code: image.INVALID, msg: f"a pixel of colour {index} in a palette of {h.colors}")
+                entry = h.palette_at + index * 4
+                b @ to_i64(d[entry]).must()
+                g @ to_i64(d[entry + 1]).must()
+                r @ to_i64(d[entry + 2]).must()
+
+            if masked && (h.bits != 32 || !any_alpha)
+                if to_i64(d[mask_row + (col >> 3)]).must() >> 7 - (col & 7) & 1 == 1
+                    a @ 0
+            out @ out.push(to_u8(r).must())
+            out @ out.push(to_u8(g).must())
+            out @ out.push(to_u8(b).must())
+            out @ out.push(to_u8(a).must())
+
+    return image.from_pixels(width: h.width, height: h.height, format: .rgba, pixels: out)
+
+# `v` as `size` bytes, low byte first, added to `out`.
+function put(@out: [u8], v: i64, size: i64)
+    for k in range(from: 0, to: size)
+        out @ out.push(to_u8(v >> k * 8 & 255).must())
+
+# The bitmap of the RGBA image `img`: 32 bits a pixel, alpha straight, then the
+# mask that marks the pixels of alpha 0.
+function bitmap_of(img: image.Image lent) -> [u8]
+    stride = stride_of(width: img.width, bits: 32)
+    mask_stride = stride_of(width: img.width, bits: 1)
+    out: [u8] @= []
+    put(out: @out, v: 40, size: 4)
+    put(out: @out, v: img.width, size: 4)
+    put(out: @out, v: img.height * 2, size: 4)
+    put(out: @out, v: 1, size: 2)
+    put(out: @out, v: 32, size: 2)
+    put(out: @out, v: 0, size: 4)
+    put(out: @out, v: (stride + mask_stride) * img.height, size: 4)
+    put(out: @out, v: 0, size: 4)
+    put(out: @out, v: 0, size: 4)
+    put(out: @out, v: 0, size: 4)
+    put(out: @out, v: 0, size: 4)
+
+    for row in range(from: 0, to: img.height)
+        src = (img.height - 1 - row) * img.width * 4
+
+        for col in range(from: 0, to: img.width)
+            out @ out.push(img.pixels[src + col * 4 + 2])
+            out @ out.push(img.pixels[src + col * 4 + 1])
+            out @ out.push(img.pixels[src + col * 4])
+            out @ out.push(img.pixels[src + col * 4 + 3])
+
+    for row in range(from: 0, to: img.height)
+        src = (img.height - 1 - row) * img.width * 4
+        line: [u8] @= []
+
+        for _ in range(from: 0, to: mask_stride)
+            line @ line.push(0)
+
+        for col in range(from: 0, to: img.width)
+            if img.pixels[src + col * 4 + 3] == 0
+                line[col >> 3] @ to_u8(to_i64(line[col >> 3]).must() | 0x80 >> (col & 7)).must()
+
+        for b in line
+            out @ out.push(b)
+
+    return out

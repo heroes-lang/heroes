@@ -1,0 +1,20 @@
+# Reaches Rebel's `image/ico`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a 16 by 16 red icon as a PNG
+# entry, reads it back, and prints its size and the colour of its first pixel.
+
+use <rebel>/image
+use <rebel>/image/ico
+
+function main()
+    match image.from_pixels(width: 1, height: 1, format: .rgba, pixels: [200, 0, 0, 255])
+        .err e => print(e.code, ": ", e.msg)
+        .ok img =>
+            none: ico.Hotspot? = fail(code: ico.NOT_FOUND, msg: "an icon has no hot spot")
+            file = ico.Ico(kind: .icon, entries: [ico.Entry(image: img, storage: .png, bits: 32, hotspot: none)])
+
+            match ico.encode(file)
+                .err e => print(e.code, ": ", e.msg)
+                .ok bytes_out =>
+                    match ico.decode_image(bytes_out, image.default_limits())
+                        .err e   => print(e.code, ": ", e.msg)
+                        .ok back => print(back.width, " by ", back.height, ", red ", image.color_at(back, x: 0, y: 0).r)
