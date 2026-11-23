@@ -114,6 +114,136 @@ function set_picked_color(@app: ui.App, widget: ui.Widget, color: image.Color) -
     _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_COLOR_WELL], what: "a colour well")?
     return ui.set_value(@app, widget: widget, value: value_of_color(color))
 
+# The descriptor `<size>|<style>|<family>` a font button's text holds for
+# `font` (`hero_ui.h`).
+function font_text(font: ui.Font) -> str?
+    style = if font.bold && font.italic
+        "bi"
+    else if font.bold
+        "b"
+    else if font.italic
+        "i"
+    else
+        "-"
+
+    text = f"{font.size}|{style}|{font.family}"
+    _ = font_of_text(text)?
+    return ok(text)
+
+# The font a descriptor `text` names. Fails `invalid` for a size outside 1 to
+# 1024, a style of none of `-`, `b`, `i`, `bi`, an empty family or a line
+# break in one.
+function font_of_text(text: str) -> ui.Font?
+    cuts: [i64] @= []
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '|' && cuts.len() < 2
+            cuts @ cuts.push(at)
+
+    if cuts.len() < 2 || cuts[0] == 0 || cuts[0] > 4
+        return fail(
+            code: failure.INVALID,
+            msg: f"a font is `<size>|<style>|<family>`, a size from 1 to 1024, a style of -, b, i or bi and a family, and {text} is not"
+        )
+    size @= 0
+
+    for at in range(from: 0, to: cuts[0])
+        if text[at] < '0' || text[at] > '9'
+            return fail(code: failure.INVALID, msg: f"the size of a font is a whole number, and {text} gives none")
+        size @ size * 10 + to_i64(text[at]).must() - 48
+
+    style = text.slice(from: cuts[0] + 1, to: cuts[1])
+    family = text.slice(from: cuts[1] + 1, to: text.len())
+
+    if size < 1 || size > 1024
+        return fail(code: failure.INVALID, msg: f"the size of a font is 1 to 1024 points, and {size} was asked")
+
+    if style != "-" && style != "b" && style != "i" && style != "bi"
+        return fail(code: failure.INVALID, msg: f"the style of a font is -, b, i or bi, and {style} was asked")
+
+    if family.len() == 0
+        return fail(code: failure.INVALID, msg: "a font has a family, and none was given")
+    check.text_ok(text: family, one_line: true, what: "the family")?
+    return ok(
+        ui.Font(family: family, size: size, bold: style.len() > 0 && style[0] == 'b', italic: style == "i" || style == "bi")
+    )
+
+# A new font button in `into`, showing `font` (`ui.font_button`).
+function font_button(@app: ui.App, into: ui.Widget, font: ui.Font) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_FONT_BUTTON,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.text @ font_text(font)?
+    return makers.added(@app, n: n)
+
+# The font `widget`, a font button, shows now (`ui.picked_font`).
+function picked_font(app: ui.App, widget: ui.Widget) -> ui.Font?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_FONT_BUTTON], what: "a font button")?
+    return font_of_text(ui.text_of(app, widget: widget)?)
+
+# Puts a font button at `font` (`ui.set_picked_font`).
+function set_picked_font(@app: ui.App, widget: ui.Widget, font: ui.Font) -> ()?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_FONT_BUTTON], what: "a font button")?
+    return ui.set_text(@app, widget: widget, text: font_text(font)?)
+
+test "font_button: a font as one text, set and read as a font, refused for a size, a style or a family that is none, a pick told once as the text (catalogue CT46)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    face = ui.Font(family: "Menlo", size: 13, bold: true, italic: false)
+    button = ui.font_button(@app, into: w, font: face).must()
+    assert ui.kind_of(app, widget: button).must() == .font_button
+    assert ui.text_of(app, widget: button).must() == "13|b|Menlo"
+    assert ui.picked_font(app, widget: button).must() == face
+    ui.set_picked_font(
+        @app,
+        widget: button,
+        font: ui.Font(family: "Zapfino", size: 1024, bold: true, italic: true)
+    ).must()
+    assert ui.text_of(app, widget: button).must() == "1024|bi|Zapfino"
+    assert ui.picked_font(app, widget: button).must() == ui.Font(family: "Zapfino", size: 1024, bold: true, italic: true)
+    assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "Menlo", size: 0, bold: false, italic: false))) == ui.INVALID
+    assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "Menlo", size: 1025, bold: false, italic: false))) == ui.INVALID
+    assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "", size: 12, bold: false, italic: false))) == ui.INVALID
+    assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "A\nB", size: 12, bold: false, italic: false))) == ui.INVALID
+    assert fixture.code_of(ui.set_text(@app, widget: button, text: "12|x|Menlo")) == ui.INVALID
+    assert fixture.code_of(ui.set_text(@app, widget: button, text: "Menlo")) == ui.INVALID
+    assert fixture.code_of(ui.set_text(@app, widget: button, text: "12|b|")) == ui.INVALID
+    assert ui.text_of(app, widget: button).must() == "1024|bi|Zapfino"
+    ui.inject(@app, input: .type_text(widget: button, text: "14|-|Menlo")).must()
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .text_changed(widget: button, text: "14|-|Menlo")
+    assert ui.picked_font(app, widget: button).must() == ui.Font(family: "Menlo", size: 14, bold: false, italic: false)
+    assert fixture.code_of(ui.inject(@app, input: .type_text(widget: button, text: "junk"))) == ui.INVALID
+    ui.close(@app).must()
+
+test "font_button: on the native side the system's font button, its font read back as the system holds it, a family the system lacks refused, a pick told once and a program's set told none (catalogue CT46)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Font", width: 300, height: 200).must()
+    offered = ui.font_button(@app, into: w, font: ui.Font(family: "Menlo", size: 13, bold: true, italic: false))
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    button = offered.must()
+    assert ui.picked_font(app, widget: button).must() == ui.Font(family: "Menlo", size: 13, bold: true, italic: false)
+    ui.set_picked_font(@app, widget: button, font: ui.Font(family: "Menlo", size: 20, bold: true, italic: true)).must()
+    assert ui.text_of(app, widget: button).must() == "20|bi|Menlo"
+    assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "NoSuchFamilyHeroes", size: 12, bold: false, italic: false))) == ui.INVALID
+    assert ui.text_of(app, widget: button).must() == "20|bi|Menlo"
+    ui.inject(@app, input: .type_text(widget: button, text: "11|-|Menlo")).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: button, text: "11|-|Menlo")
+    assert ui.rect_of(@app, widget: button).must().width > 0
+    ui.destroy(@app, widget: button).must()
+    ui.close(@app).must()
+
 test "color_well: a colour as four bytes, set and read as a colour and as a number, a range refused, a value outside the bytes refused, told when the person picks (catalogue CT45)"
     app @= fixture.test_app()
     w = fixture.window_of(app)

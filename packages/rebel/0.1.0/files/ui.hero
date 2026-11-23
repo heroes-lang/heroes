@@ -343,6 +343,8 @@ variant Kind
     date_time_picker
     # A colour the person picks in the system's chooser.
     color_well
+    # A font the person picks in the system's chooser.
+    font_button
 
 # What `widget` is.
 #
@@ -1025,6 +1027,57 @@ function picked_color(app: App, widget: Widget) -> image.Color?
 # Fails `closed`, `invalid` for a widget that is no colour well, `failed`.
 function set_picked_color(@app: App, widget: Widget, color: image.Color) -> ()?
     return pickers.set_picked_color(@app, widget: widget, color: color)
+
+# What a font button shows: a family and a size in points, in bold or italic.
+record Font
+    # The family's name as the system lists it, one line and not empty.
+    family: str
+    # The size in points, 1 to 1024.
+    size: i64
+    # Whether the font is bold.
+    bold: bool
+    # Whether the font is italic.
+    italic: bool
+
+# A new font button in `into`, as wxWidgets' `wxFontPickerCtrl`: the system's
+# control that shows a font and opens the system's own font chooser to change
+# it. Its text is the font as one descriptor, `<size>|<style>|<family>` (`13|b|Menlo`;
+# the style `-`, `b`, `i` or `bi`), so `text_of` reads it and a pick by the
+# person is `.text_changed` with it, told once; `picked_font` gives it as a
+# `Font` and `set_picked_font` puts it at one. The text read back is the font
+# as the system holds it, so a style the family lacks reads back as the family
+# has it.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `font`: the font shown.
+#
+# Fails `closed`, `invalid` for a size outside 1 to 1024, an empty family or a
+# line break in it, and on the native side for a family the system does not
+# have, `failed`, `unsupported` where the system's arm draws none (Windows and
+# Linux, pending).
+function font_button(@app: App, into: Widget, font: Font) -> Widget?
+    return pickers.font_button(@app, into: into, font: font)
+
+# The font `widget` shows now, as the program put it or the person picked it.
+#
+# - `app`: the app holding it.
+# - `widget`: a font button.
+#
+# Fails `closed`, `invalid` for a widget that is no font button.
+function picked_font(app: App, widget: Widget) -> Font?
+    return pickers.picked_font(app, widget: widget)
+
+# Puts font button `widget` at `font`; no event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a font button.
+# - `font`: the font.
+#
+# Fails as `font_button` does, `invalid` for a widget that is no font button.
+function set_picked_font(@app: App, widget: Widget, font: Font) -> ()?
+    return pickers.set_picked_font(@app, widget: widget, font: font)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #

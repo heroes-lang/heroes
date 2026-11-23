@@ -350,6 +350,8 @@ private final class Native {
     var toolbar: NSToolbar?
     var keeper: ToolbarKeeper?
     var toolbarItem: NSToolbarItem?
+    // A font button's font.
+    var font: NSFont?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -373,6 +375,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     var widgets: [Int64: Native] = [:]
     var tables: [ObjectIdentifier: Int64] = [:]
     var words = ""
+    // The font button the font chooser answers to.
+    var fontOwner: Int64?
     var pushed = 0
     // Set while the program sets what would otherwise queue an event.
     var muted = false
@@ -590,6 +594,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindFontButton:
+            let button = NSButton(title: "", target: self, action: #selector(fontClicked(_:)))
+            button.bezelStyle = .rounded
+            button.tag = Int(widget.id)
+            let font = NSFont.systemFont(ofSize: 13)
+            widget.font = font
+            button.title = fontDescriptor(font)
+            return button
         case kindColorWell:
             let well = NSColorWell(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             well.color = colorOf(0)
@@ -944,6 +956,30 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventValue, Int64(sender.tag), spin.value, 0)
     }
 
+    // The font button pressed: the system's font chooser opens on its font, and
+    // what the person picks there comes back to `changeFont`.
+    @objc func fontClicked(_ sender: NSButton) {
+        guard let widget = widgets[Int64(sender.tag)], let font = widget.font else {
+            return
+        }
+        fontOwner = widget.id
+        let manager = NSFontManager.shared
+        manager.target = self
+        manager.action = #selector(changeFont(_:))
+        manager.setSelectedFont(font, isMultiple: false)
+        manager.orderFrontFontPanel(self)
+    }
+
+    @objc func changeFont(_ sender: NSFontManager?) {
+        guard let manager = sender, let id = fontOwner, let widget = widgets[id], let held = widget.font else {
+            return
+        }
+        let next = manager.convert(held)
+        widget.font = next
+        (widget.view as? NSButton)?.title = fontDescriptor(next)
+        queue(eventText, id, 0, 0)
+    }
+
     @objc func colorPicked(_ sender: NSColorWell) {
         queue(eventValue, Int64(sender.tag), colorValue(sender.color), 0)
     }
@@ -1099,6 +1135,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widget.window?.title = text
         case kindGroup:
             (widget.view as? NSBox)?.title = text
+        case kindFontButton:
+            guard let font = fontNamed(text, &words) else {
+                return answerInvalid
+            }
+            widget.font = font
+            (widget.view as? NSButton)?.title = fontDescriptor(font)
         case kindPage:
             if let tabs = widgets[widget.parent]?.view as? NSTabView {
                 for item in tabs.tabViewItems where item.view === widget.view {
@@ -1591,6 +1633,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let box = widget.view as? NSBox, widget.kind == kindGroup {
             return box.title
         }
+        if widget.kind == kindFontButton, let font = widget.font {
+            return fontDescriptor(font)
+        }
         return (widget.view as? NSTextField)?.stringValue
     }
 
@@ -1706,6 +1751,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             } else if let field = widget.view as? NSTextField, field.isEnabled {
                 field.stringValue = text
                 queue(eventText, id, 0, 0)
+            } else if widget.kind == kindFontButton, let button = widget.view as? NSButton, button.isEnabled {
+                guard let font = fontNamed(text, &words) else {
+                    return answerInvalid
+                }
+                if widget.font.map(fontDescriptor) != fontDescriptor(font) {
+                    widget.font = font
+                    button.title = fontDescriptor(font)
+                    queue(eventText, id, 0, 0)
+                }
             } else {
                 return answerInvalid
             }
@@ -3717,6 +3771,40 @@ private let kindDatePicker: Int64 = 38
 private let kindTimePicker: Int64 = 39
 private let kindDateTimePicker: Int64 = 40
 private let kindColorWell: Int64 = 41
+private let kindFontButton: Int64 = 42
+
+// A font as the layer's text holds it, `<size>|<style>|<family>` (`hero_ui.h`).
+private func fontDescriptor(_ font: NSFont) -> String {
+    let traits = NSFontManager.shared.traits(of: font)
+    let style = (traits.contains(.boldFontMask) ? "b" : "") + (traits.contains(.italicFontMask) ? "i" : "")
+    return "\(Int(font.pointSize.rounded()))|\(style.isEmpty ? "-" : style)|\(font.familyName ?? font.fontName)"
+}
+
+// The font a descriptor names, or nil with the words saying why not.
+private func fontNamed(_ text: String, _ words: inout String) -> NSFont? {
+    let parts = text.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false).map(String.init)
+    guard parts.count == 3, let size = Int(parts[0]), size >= 1, size <= 1024, ["-", "b", "i", "bi"].contains(parts[1]), !parts[2].isEmpty else {
+        words = "a font is `<size>|<style>|<family>` (a size from 1 to 1024, a style of -, b, i or bi, a family), and \(text) is not"
+        return nil
+    }
+    let manager = NSFontManager.shared
+    guard manager.availableFontFamilies.contains(parts[2]) else {
+        words = "the system has no font family named \(parts[2])"
+        return nil
+    }
+    var traits: NSFontTraitMask = []
+    if parts[1].contains("b") {
+        traits.insert(.boldFontMask)
+    }
+    if parts[1].contains("i") {
+        traits.insert(.italicFontMask)
+    }
+    guard let font = manager.font(withFamily: parts[2], traits: traits, weight: 5, size: CGFloat(size)) else {
+        words = "the system has no font of family \(parts[2]) at that size"
+        return nil
+    }
+    return font
+}
 
 // A colour well's value is its colour as four sRGB bytes, 0xRRGGBBAA.
 private func colorValue(_ color: NSColor) -> Int64 {

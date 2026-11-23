@@ -18,6 +18,7 @@ use ui/internal/frames
 use ui/internal/layout
 use ui/internal/menus
 use ui/internal/model
+use ui/internal/pickers
 use ui/internal/session
 use ui/internal/tables
 use ui/internal/trees
@@ -30,8 +31,11 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .click c =>
             _ = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_BUTTON], what: "a button")?
         .type_text t =>
-            n = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD, hero_ui.HERO_UI_TEXT_AREA, hero_ui.HERO_UI_EDITABLE_COMBO], what: "a text field, a text area or an editable combo box")?
+            n = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD, hero_ui.HERO_UI_TEXT_AREA, hero_ui.HERO_UI_EDITABLE_COMBO, hero_ui.HERO_UI_FONT_BUTTON], what: "a text field, a text area, an editable combo box or a font button")?
             check.text_ok(text: t.text, one_line: n.kind != hero_ui.HERO_UI_TEXT_AREA, what: "the text typed")?
+
+            if n.kind == hero_ui.HERO_UI_FONT_BUTTON
+                _ = pickers.font_of_text(t.text)?
         .choose c =>
             n = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_EDITABLE_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE], what: "a list, a combo box, a radio group, tabs, a table or a tree")?
 

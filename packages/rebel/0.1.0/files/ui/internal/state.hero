@@ -21,6 +21,7 @@ use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
+use ui/internal/pickers
 use ui/internal/sizes
 use ui/internal/trees
 
@@ -142,6 +143,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_COLOR_WELL
         return .color_well
 
+    if code == hero_ui.HERO_UI_FONT_BUTTON
+        return .font_button
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -228,6 +232,9 @@ function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
     n @= texted(app, widget: widget)?
     one_line = n.kind != hero_ui.HERO_UI_LABEL && n.kind != hero_ui.HERO_UI_TEXT_AREA
     check.text_ok(text: text, one_line: one_line, what: "the text")?
+
+    if n.kind == hero_ui.HERO_UI_FONT_BUTTON
+        _ = pickers.font_of_text(text)?
     n.text @ text
 
     if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO

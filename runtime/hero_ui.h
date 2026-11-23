@@ -1484,4 +1484,24 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * person pick the alpha too. */
 #define HERO_UI_COLOR_WELL 41
 
+/* -- A FONT PICKED ------------------------------------------------------------
+ *
+ * wxWidgets' `wxFontPickerCtrl`: the system's control that shows a font and
+ * opens the system's own font chooser to change it. `HERO_UI_FONT_BUTTON` is a
+ * widget with a text, `hero_ui_set_text`'s and `hero_ui_text`'s, which is the
+ * font as a descriptor `<size>|<style>|<family>`: the size in points, a whole
+ * number from 1 to 1024; the style `-`, `b` (bold), `i` (italic) or `bi`; the
+ * family's name as the system lists it, any bytes but a zero or a line break
+ * (`13|b|Menlo`), so a font crosses the layer as one text and a pick is one
+ * event. `hero_ui_set_text` answers `INVALID` with words for a descriptor that
+ * is not that shape and for a family the system does not have; the text read
+ * back is the font as the system holds it, so a style the family lacks reads
+ * back as the family has it (a family with no bold set `b` reads back `-`).
+ * A font the person picks in the chooser is `HERO_UI_EVENT_TEXT` for the
+ * widget, told once per pick, whose text `hero_ui_text` then reads; a program's
+ * `hero_ui_set_text` tells nothing and `hero_ui_inject` of `HERO_UI_EVENT_TEXT`
+ * gives the descriptor as the person picked it. The text is `13|-|` and the
+ * system's own font until set. */
+#define HERO_UI_FONT_BUTTON 42
+
 #endif
