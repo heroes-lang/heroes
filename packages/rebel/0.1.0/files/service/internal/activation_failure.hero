@@ -1,0 +1,94 @@
+# The one place a kind of the floor `service/hero_activation` becomes a code of
+# README § A4, with the words that say what was asked and what was found. The
+# floor's twin for the systemd and launchd half; `failure` is the Windows
+# half's. Private to the package (README § A2).
+
+use service/hero_activation
+use service/internal/failure
+
+# The layer's own words for the floor's last failure on this thread, "" where
+# it has none.
+function words() -> str
+    room: [u8] @= hero_activation.room(192)
+    length = hero_activation.last_message(@room)
+
+    if length <= 0 || length > 192
+        return ""
+
+    match room.slice(from: 0, to: length).validated_bytes()
+        .ok text => return text
+        .err _   => return ""
+
+# The code and the words for `kind`, one of `HERO_ACTIVATION_*`, the system's
+# number `os_error` and the layer's own `said`.
+function told(kind: i64, os_error: i64, said: str) -> failure.Told
+    if kind == hero_activation.HERO_ACTIVATION_INVALID
+        return failure.Told(
+            code: failure.INVALID,
+            why: with_said(said: said, fallback: "the layer refuses the argument")
+        )
+
+    if kind == hero_activation.HERO_ACTIVATION_UNSUPPORTED
+        return failure.Told(
+            code: failure.UNSUPPORTED,
+            why: with_said(said: said, fallback: "this system has no such thing")
+        )
+
+    if kind == hero_activation.HERO_ACTIVATION_NOT_FOUND
+        return failure.Told(code: failure.NOT_FOUND, why: with_said(said: said, fallback: "nothing is there"))
+
+    if kind == hero_activation.HERO_ACTIVATION_EXISTS
+        return failure.Told(code: failure.EXISTS, why: with_said(said: said, fallback: "it is there already"))
+
+    if kind == hero_activation.HERO_ACTIVATION_LIMIT
+        return failure.Told(
+            code: failure.LIMIT,
+            why: with_said(said: said, fallback: "the system has no more of what it needs")
+        )
+
+    if kind == hero_activation.HERO_ACTIVATION_DENIED
+        return failure.Told(code: failure.PERMISSION, why: "the system refuses this to the program")
+
+    if kind == hero_activation.HERO_ACTIVATION_TIMEOUT
+        return failure.Told(code: failure.TIMEOUT, why: "the time allowed ran out")
+    return failure.Told(
+        code: failure.FAILED,
+        why: f"the system refused: {failure.with_words(os_error: os_error, words: said)}"
+    )
+
+# What the layer said where it said something, else `fallback`.
+function with_said(said: str, fallback: str) -> str
+    if said == ""
+        return fallback
+    return said
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered. Called right after the floor's call,
+# before any other call of the floor on this thread, which would replace it.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_activation.last_error(), os_error: hero_activation.last_os_error(), said: words())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+test "told: every kind of the floor is a code of README § A4, and an unknown one is failed with its number"
+    assert told(kind: hero_activation.HERO_ACTIVATION_INVALID, os_error: 0, said: "").code == failure.INVALID
+    assert told(kind: hero_activation.HERO_ACTIVATION_UNSUPPORTED, os_error: 0, said: "").code == failure.UNSUPPORTED
+    assert told(kind: hero_activation.HERO_ACTIVATION_NOT_FOUND, os_error: 2, said: "").code == failure.NOT_FOUND
+    assert told(kind: hero_activation.HERO_ACTIVATION_EXISTS, os_error: 0, said: "").code == failure.EXISTS
+    assert told(kind: hero_activation.HERO_ACTIVATION_LIMIT, os_error: 0, said: "").code == failure.LIMIT
+    assert told(kind: hero_activation.HERO_ACTIVATION_DENIED, os_error: 13, said: "").code == failure.PERMISSION
+    assert told(kind: hero_activation.HERO_ACTIVATION_TIMEOUT, os_error: 0, said: "").code == failure.TIMEOUT
+    assert told(kind: hero_activation.HERO_ACTIVATION_OTHER, os_error: 5, said: "").code == failure.FAILED
+    assert told(kind: hero_activation.HERO_ACTIVATION_OTHER, os_error: 5, said: "").why == "the system refused: error number 5"
+    assert told(kind: 99, os_error: -1, said: "").code == failure.FAILED
+    assert told(kind: hero_activation.HERO_ACTIVATION_INVALID, os_error: 0, said: "LISTEN_PID is no number").why == "LISTEN_PID is no number"
+
+test "last: the floor's own failure, read right after its call, with what was asked first"
+    nothing: [u8] @= []
+    assert hero_activation.notify("", @nothing) == -1
+    r: ()? = last(asked: "notifying")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID || e.code == failure.UNSUPPORTED
+            assert e.msg.len() > 11

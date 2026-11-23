@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's two POSIX service-manager
+# protocols, `hero_activation.h`, so that `heroes test` on this file runs the
+# floor's own tests (spec § 12, § 13). It prints 1 where this system has
+# systemd's notice socket and 0 where it has none.
+
+use <rebel>/service/hero_activation
+
+function main()
+    print(hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_NOTIFY))

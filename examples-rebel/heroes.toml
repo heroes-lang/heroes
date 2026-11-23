@@ -139,6 +139,7 @@ packages = [
     "serial",
     "serial/hero_serial",
     "service",
+    "service/hero_activation",
     "service/hero_service",
     "sets",
     "sql",

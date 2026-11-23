@@ -1,0 +1,178 @@
+# What the face's `inherit` and `inherit_launchd` do: ask the floor to take the
+# descriptors a manager handed over into the socket table, and make each a
+# value of `net`, the program's own. Private to the package (README § A2).
+#
+# A socket the floor took is a number of the table's. This module takes it back
+# with a handle of its own and builds the face's record round it. A number that
+# names no socket is a thing the floor cannot give, so no failure stands after
+# the first socket is taken but the one `net.conn_of` may answer.
+
+use net
+use net/hero_net
+use os
+use service
+use service/hero_activation
+use service/internal/activation_failure
+use service/internal/failure
+use strings
+
+# The names `$LISTEN_FDNAMES` gives the `count` descriptors, colon-separated;
+# `unknown` for one it names none, as the manager's own reader does.
+#
+# - `count`: how many descriptors were handed over.
+function names_of(count: i64) -> [str]
+    return names_from(os.env("LISTEN_FDNAMES").default(""), count: count)
+
+# The first `count` names `text` lists, an empty one and any past the list
+# `unknown`.
+#
+# - `text`: what `$LISTEN_FDNAMES` holds, "" where it is not set.
+# - `count`: how many descriptors were handed over.
+function names_from(text: str, count: i64) -> [str]
+    given: [str] @= []
+
+    if text != ""
+        given @ strings.split(s: text, sep: ":")
+    names: [str] @= []
+
+    for i in range(from: 0, to: count)
+        if i < given.len() && given[i] != ""
+            names @ names.push(given[i])
+        else
+            names @ names.push("unknown")
+
+    return names
+
+# The address a socket the floor took stands on, `0.0.0.0` at port 0 where the
+# system will not say, which a socket it gave never does.
+#
+# - `s`: the socket, which stays the caller's.
+function address_of(s: hero_net.Socket) -> net.Address
+    text: [u8] @= hero_activation.room(hero_net.HERO_NET_ADDRESS_MOST.to_i64().must())
+    port: i64 @= 0
+    n = hero_net.local(s, @text, m: hero_net.HERO_NET_ADDRESS_MOST, @port)
+    nowhere = net.parse_host("0.0.0.0").must()
+
+    if n < 0
+        return net.Address(host: nowhere, port: 0)
+
+    match text.slice(from: 0, to: n).validated_bytes()
+        .err _ => return net.Address(host: nowhere, port: 0)
+        .ok said =>
+            match net.parse_host(said)
+                .ok host => return net.Address(host: host, port: port)
+                .err _   => return net.Address(host: nowhere, port: 0)
+
+# What the descriptor `d` is, in words.
+function words_of(d: i64) -> str
+    room: [u8] @= hero_activation.room(96)
+    n = hero_activation.describe(d, @room)
+
+    if n <= 0 || n > 96
+        return "a descriptor of a kind this package has no value for"
+
+    match room.slice(from: 0, to: n).validated_bytes()
+        .ok text => return text
+        .err _   => return "a descriptor of a kind this package has no value for"
+
+# The value the floor's entry `e` is.
+function handed_of(e: hero_activation.Entry) -> service.Handed?
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_OTHER
+        return ok(.other(words: words_of(e.descriptor)))
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_CONNECTION
+        c = net.conn_of(n: e.number, deadline_ms: net.FOREVER)?
+        return ok(.connection(conn: c))
+    s = hero_net.of(e.number)
+    here = address_of(s)
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_LISTENER
+        return ok(.listener(socket: net.Listener(socket: s, address: here)))
+    return ok(.datagram(socket: net.UdpSocket(socket: s, address: here)))
+
+# The entries as the face's values, named by `names`, in the floor's order.
+function inherited_of(entries: [hero_activation.Entry], names: [str]) -> [service.Inherited]?
+    made: [service.Inherited] @= []
+
+    for i in range(from: 0, to: entries.len())
+        made @ made.push(service.Inherited(name: names[i], handed: handed_of(entries[i])?))
+
+    return ok(made)
+
+# Room for `n` entries, as the floor writes them.
+function room_for(n: i64) -> [hero_activation.Entry]
+    entries: [hero_activation.Entry] @= []
+
+    for _ in range(from: 0, to: n)
+        entries @ entries.push(hero_activation.Entry(kind: 0, number: -1, descriptor: -1))
+
+    return entries
+
+# The sockets systemd handed this process.
+function inherit() -> [service.Inherited]?
+    if hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_INHERIT) == 0
+        return failure.of(
+            code: failure.UNSUPPORTED,
+            asked: "taking the descriptors handed over",
+            why: "only POSIX systems have systemd's socket activation, and this system is not one"
+        )
+    count = hero_activation.count()
+
+    if count < 0
+        return activation_failure.last(asked: "reading the descriptors handed over")
+
+    if count == 0
+        return ok([])
+    entries: [hero_activation.Entry] @= room_for(count)
+
+    if hero_activation.inherit(@entries) < 0
+        return activation_failure.last(asked: "taking the descriptors handed over")
+    return inherited_of(entries, names: names_of(count))
+
+# The sockets launchd hands the job under `name`.
+#
+# - `name`: the key under `Sockets` in the job's property list.
+function inherit_launchd(name: str) -> [service.Inherited]?
+    if hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_LAUNCHD) == 0
+        return failure.of(
+            code: failure.UNSUPPORTED,
+            asked: f"taking launchd's sockets \"{name}\"",
+            why: "only macOS has launchd, and this system is not macOS"
+        )
+    entries: [hero_activation.Entry] @= room_for(hero_activation.HERO_ACTIVATION_LAUNCHD_MOST)
+    got = hero_activation.launchd(name, @entries)
+
+    if got < 0
+        return activation_failure.last(asked: f"taking launchd's sockets \"{name}\"")
+    names: [str] @= []
+
+    for _ in range(from: 0, to: got)
+        names @ names.push(name)
+
+    return inherited_of(entries.slice(from: 0, to: got), names: names)
+
+test "names_from: names split at colons, `unknown` for an empty one and for any past the list, extra names ignored, none for no descriptor"
+    unknown: [str] = ["unknown", "unknown"]
+    assert names_from("", count: 0) == []
+    assert names_from("http", count: 0) == []
+    assert names_from("", count: 2) == unknown
+    assert names_from("http:dns", count: 2) == ["http", "dns"]
+    assert names_from("http", count: 3) == ["http", "unknown", "unknown"]
+    assert names_from("a::c", count: 3) == ["a", "unknown", "c"]
+    assert names_from("a:b:c", count: 2) == ["a", "b"]
+    assert names_from("connection", count: 1) == ["connection"]
+    assert names_from(":", count: 2) == unknown
+
+test "names_of: a test run is handed no names, so every descriptor is unknown"
+    if os.env("LISTEN_FDNAMES").is_err()
+        assert names_of(1) == ["unknown"]
+    else
+        skip_test(reason: "this test was started by a manager that names descriptors")
+
+test "room_for: as many entries as asked, each waiting for the floor to write it"
+    assert room_for(0).len() == 0
+    assert room_for(3).len() == 3
+    assert room_for(3)[2].number == -1
+
+test "words_of: a descriptor that is not open has words the package makes up, a file or a pipe the system's"
+    assert words_of(2147483647) == "a descriptor of a kind this package has no value for"

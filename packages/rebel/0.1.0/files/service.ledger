@@ -13,8 +13,22 @@
 # `runtime/platform/hero_service.c` follows. Only Windows has services: every
 # other system answers `unsupported`, by words, and its tests skip by them.
 # The Windows arm was run on the Windows box (`docs/platforms/windows/`) as the
-# commit that wrote this says; systemd's and launchd's
-# protocols (catalogue row H14) are no control of these.
+# commit that wrote this says. systemd's and launchd's protocols (catalogue
+# row H14) are the capabilities from `service/notify` on.
+#
+# The systemd and launchd half (catalogue row H14), each list read on
+# 2026-11-23: systemd's own pages `sd_notify(3)`, `sd_listen_fds(3)`,
+# `sd_watchdog_enabled(3)` and `sd_booted(3)` (freedesktop.org, the protocol
+# `runtime/platform/hero_activation.c` follows); Go's
+# `github.com/coreos/go-systemd/v22` `daemon` and `activation` (pkg.go.dev,
+# v22.7.0), the `go` lines of this half; Rust's `sd-notify` 0.5.0 and
+# `listenfd` 1.0.2 (docs.rs), its `rust` lines; Python's `systemd.daemon` of
+# python-systemd (freedesktop.org), its `python` lines, the standard library
+# having none of the three. launchd's `launch_activate_socket` is read from
+# this Mac's SDK header `launch.h`, which none of the three libraries binds.
+# systemd and launchd themselves are unrun here: this Mac has neither a
+# systemd host nor a Linux; the protocols run against sockets a program of the
+# test makes, and launchd's against a user agent `launchctl` bootstraps.
 
 capability service/start-as-service  the program is the service the Service Control Manager called
   heroes  service.start
@@ -119,7 +133,114 @@ capability service/manage  services installed, started, stopped, queried and rem
   python  -
   note    pending: the catalogue's row H15, a service installed (the system's own `sc create` does it by hand today); this package is the program's side of the protocol, a service's running and being controlled
 
+capability service/notify  a datagram of assignments sent to the manager's notice socket
+  heroes  service.notify
+  go      daemon.SdNotify
+  rust    sd_notify::notify
+  python  daemon.notify
+  note    one datagram of newline-separated assignments to the socket `$NOTIFY_SOCKET` names, a path or on Linux `@` and an abstract name; `vsock:` is `unsupported`. Sent never waiting, so a full queue is `limit`; absent `$NOTIFY_SOCKET` is `ok(false)` as Go's `(false, nil)`. Go, Rust and Python can unset the variable after use and Rebel never writes the environment, so that option is dropped (the manager's own pid check keeps a child's notices from being read as the parent's). Rust's `notify` takes a list of states as this does, Go's and Python's a string
+
+capability service/notify-lifecycle  the program ready, reloading and stopping
+  heroes  service.Notice, service.format_notices
+  go      daemon.SdNotifyReady, daemon.SdNotifyReloading, daemon.SdNotifyStopping, daemon.SdNotifyMonotonicUsec
+  rust    NotifyState
+  python  daemon.notify
+  note    `ready` is `READY=1`, `stopping` `STOPPING=1`, `reloading` `RELOADING=1` with the `MONOTONIC_USEC=` the page says goes with it, which `notify` writes from `CLOCK_MONOTONIC` (Go's `SdNotifyMonotonicUsec`); the string-building is pure, `format_notices`, so a program tests what it sends
+
+capability service/notify-status  a status line, an errno and a new main process
+  heroes  service.Notice
+  go      daemon.SdNotify
+  rust    NotifyState
+  python  daemon.notify
+  note    `STATUS=`, `ERRNO=` and `MAINPID=`; a status holds no control character, since a newline would start another assignment (refused `invalid`, never written), an errno is 1 to 4095 and a pid above zero
+
+capability service/notify-watchdog  the watchdog's keep-alive, its trigger, its timeout and a longer startup
+  heroes  service.Notice
+  go      daemon.SdNotifyWatchdog
+  rust    NotifyState
+  python  daemon.notify
+  note    `WATCHDOG=1`, `WATCHDOG=trigger` (reports an internal error, which the page says acts as a missed ping), `WATCHDOG_USEC=` and `EXTEND_TIMEOUT_USEC=`, each a `time.Duration` written in whole microseconds, a part of one counted as a whole one
+
+capability service/watchdog-timeout  whether a watchdog supervises the program, and its timeout
+  heroes  service.watchdog_timeout
+  go      daemon.SdWatchdogEnabled
+  rust    sd_notify::watchdog_enabled
+  python  -
+  note    `$WATCHDOG_USEC`, and `$WATCHDOG_PID` where it is set and names another process, which the page says ignores both; where none supervises it is `not_found` (Go answers `(0, nil)`, Rust false), a timeout of 0 `invalid`. The page says to send a keep-alive about every half of the timeout, which is the caller's
+
+capability service/notice-parse  the notices a datagram holds, the supervisor's half
+  heroes  service.parse_notices
+  go      -
+  rust    -
+  python  -
+  note    beyond the three libraries, which only send: what a program that supervises another reads of what `notify` sends, and what the tests of `format_notices` read back. A variable no case names is passed over as the manager's own reader passes over what it does not know
+
+capability service/is-booted  whether the system was booted with systemd
+  heroes  service.is_booted_by_systemd
+  go      -
+  rust    sd_notify::booted
+  python  daemon.booted
+  note    `sd_booted(3)`'s test, that `/run/systemd/system/` exists; Go's `daemon` offers none
+
+capability service/inherit  the sockets systemd handed the program, from descriptor 3
+  heroes  service.inherit
+  go      activation.Files, activation.FilesWithNames, activation.Listeners, activation.ListenersWithNames, activation.PacketConns
+  rust    sd_notify::listen_fds, sd_notify::listen_fds_with_names, ListenFd
+  python  daemon.listen_fds, daemon.listen_fds_with_names, daemon.LISTEN_FDS_START
+  note    `$LISTEN_PID` must name this process (a child that inherited the variables is handed none, as the page says), `$LISTEN_FDS` is the count, `$LISTEN_FDNAMES` the colon-separated names with `unknown` for none; each descriptor is set close-on-exec as the page says and non-blocking as the socket table needs. Taken once in the life of the process, a second call `exists`: the table owns the descriptors, and one closed and reused by another layer must never be adopted again. The environment is left as set (the unset option is dropped as in `service/notify`)
+
+capability service/inherit-kinds  each descriptor as the value it is
+  heroes  service.Handed
+  go      activation.Listeners, activation.PacketConns
+  rust    ListenFd
+  python  daemon.is_socket, daemon.is_socket_inet, daemon.is_fifo
+  note    the descriptor is asked what it is, never assumed: a listening TCP socket is a `net.Listener`, a connected one (`Accept=yes`) a `net.Conn`, a UDP socket a `net.UdpSocket`, IPv4 or IPv6, and anything else is `other`, left open, with words for what it is. Go fills a gap with nil and Python asks before it takes; a value here is never wrong for the descriptor it came from
+
+capability service/inherit-tls  listeners that speak TLS
+  heroes  refused: a listener's TLS is the program's own choice at accept, and `tls` wraps the connection it accepts, so a handed socket needs nothing of its own
+  go      activation.TLSListeners, activation.TLSListenersWithNames
+  rust    -
+  python  -
+  note    Go forces TLS on each accepted connection from a configuration; here a program takes the listener and wraps each connection it accepts with the `tls` package, the same one way as for a listener it made itself
+
+capability service/inherit-launchd  the sockets launchd hands a job
+  heroes  service.inherit_launchd
+  go      -
+  rust    -
+  python  -
+  note    `launch_activate_socket(name, &fds, &cnt)` of `launch.h`: the sockets the job's plist names under `Sockets`, handed over once (a second call is `exists`, EALREADY), a program no launchd job runs is `not_found` (ESRCH); each is adopted as systemd's are; more than 64 under one name is `limit`. None of the three libraries binds it
+
+capability service/inherit-local-sockets  Unix-domain sockets, FIFOs and special files handed over
+  heroes  pending
+  go      activation.Listeners, activation.PacketConns
+  rust    ListenFd
+  python  daemon.is_socket_unix, daemon.is_mq, daemon.is_fifo
+  note    pending: a descriptor that is a local socket, a FIFO or a file is `other` today, left open and told in words; adopting a local stream listener belongs to `ipc`'s table, a change to that package
+
+capability service/inherit-pidfd  the pidfd check of `$LISTEN_PIDFDID`
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    pending: from systemd 259 the manager also sets `$LISTEN_PIDFDID` and the page says the reader checks it against the process's pidfd inode; this package checks the pid alone, which the page's earlier protocol asks, and Linux alone has the pidfd
+
+capability service/notify-descriptors  descriptors stored with the manager and a barrier
+  heroes  refused: a program holds no raw descriptor, and passing one over a local socket (`SCM_RIGHTS`) is a descriptor a Heroes program cannot be trusted to hand over
+  go      -
+  rust    -
+  python  daemon.notify
+  note    `FDSTORE=1`, `FDSTOREREMOVE=1`, `FDNAME=`, `FDPOLL=0`, `BARRIER=1` and `MAINPIDFD=1` need descriptors sent beside the datagram; Python's `notify(fds=)` does it. `parse_notices` passes these variables over
+
+capability service/notify-other-variables  the notice variables of bus services and tuning
+  heroes  pending
+  go      -
+  rust    NotifyState
+  python  daemon.notify
+  note    pending: `BUSERROR=`, `VARLINKERROR=`, `EXIT_STATUS=` (the page says the manager does not consume it), `NOTIFYACCESS=` and `RESTART_RESET=1`, which the row did not ask for
+
 dropped
   go      svc.Handler (an interface of a callback, which the language has none of: the program's own loop calls `wait`), svc.ChangeRequest.CurrentStatus and .Context (the status and a raw handle of the system), svc.StatusHandle (a raw handle of the system, which the layer keeps)
   rust    define_windows_service! (a macro that writes the entry function a program hands the system: `start` does it), service_control_handler::register's closure and ServiceControlHandlerResult (the handler's return code, which the layer answers), ServiceStatusHandle (a raw token of the system, which the layer keeps), the crate's error types (`Error`, `ParseRawError`: a failure is a `T?` here)
-  python  -
+  go      daemon.SdNotifyReady and the other string constants (the cases of `service.Notice`, which cannot be misspelt), activation.TLSListenersWithNames (see `service/inherit-tls`)
+  rust    sd_notify::notify_and_unset_env, watchdog_enabled_and_unset_env, listen_fds_and_unset_env, listen_fds_with_names_and_unset_env (the environment is read and never written, README § A5), NotifyState (the cases of `service.Notice`)
+  python  daemon._listen_fds, daemon._is_fifo, daemon._is_socket, daemon._is_socket_unix, daemon._is_socket_inet, daemon._is_mq (the descriptor forms of the file-object functions, which a descriptor a program does not hold has no use for), daemon.is_socket_sockaddr (a check of what a socket is bound to, which `net.Listener`'s address tells)

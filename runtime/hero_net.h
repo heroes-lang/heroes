@@ -584,4 +584,31 @@ void hero_net_unhold(int64_t hold);
  * hears a signal cannot be made. */
 int64_t hero_net_when_stopped(void (*wake)(void));
 
+/* ADOPTING A DESCRIPTOR A MANAGER HANDED THE PROGRAM (M-rebel-library, 2026-11-23,
+ * for `hero_activation.h`): called from C of the layer alone, as the section
+ * above is. A descriptor is no number a Heroes program can be trusted to
+ * hand over, so no group binds it.
+ *
+ * The kinds `hero_net_adopt` writes. */
+#define HERO_NET_ADOPTED_LISTENER 1
+#define HERO_NET_ADOPTED_CONNECTION 2
+#define HERO_NET_ADOPTED_DATAGRAM 3
+
+/* The socket `descriptor` is (POSIX's `int`, the bits of Windows' `SOCKET`), a
+ * handle of the table that `hero_net_close` gives back, its kind in `*kind`:
+ * a stream socket that listens, a stream socket connected, or a datagram
+ * socket, each of IPv4 or IPv6. The descriptor is ASKED what it is, never
+ * assumed. On success the table owns the descriptor and closes it with the
+ * handle, set close-on-exec and non-blocking as every socket the table holds
+ * is; on failure NULL and the descriptor is untouched and still the caller's:
+ * `HERO_NET_INVALID` for a number no descriptor can be or one that names
+ * no socket (a file, say), `HERO_NET_NOT_OPEN` for a number that names
+ * nothing, `HERO_NET_UNSUPPORTED` for a socket of another family (a local
+ * one) or type, `HERO_NET_IN_USE` for one the table holds already, and
+ * `HERO_NET_LIMIT` when the table is full, which closes the descriptor. A
+ * stream socket neither listening nor connected is `HERO_NET_INVALID`.
+ * A datagram socket crosses to a thread and takes a deadline as `hero_net_udp`'s
+ * does. */
+hero_net_socket *hero_net_adopt(int64_t descriptor, int64_t *kind);
+
 #endif

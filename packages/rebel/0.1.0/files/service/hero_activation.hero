@@ -1,0 +1,358 @@
+# The platform layer's two POSIX service-manager protocols,
+# `hero_activation.h`, bound thin: one function per C function, in C's order,
+# each answering what C answers. Rebel's floor of `service`'s systemd and
+# launchd half (`examples-rebel/README.md` § A2): where a call fails it
+# answers -1, and `last_error` then names the kind, `last_os_error` the
+# system's number and `last_message` the layer's own words; no policy stands
+# here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. Systemd's notice and descriptors exist on POSIX
+# and launchd's sockets on Darwin; every other call answers
+# `HERO_ACTIVATION_UNSUPPORTED`. The sockets a manager hands over come as the
+# numbers of `net/hero_net`'s table, taken back through `hero_net.hero_net_of`.
+
+use bytes
+use fs
+use os
+use time
+
+extern "hero_activation.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_ACTIVATION_OK: i64
+    constant HERO_ACTIVATION_INVALID: i64
+    constant HERO_ACTIVATION_UNSUPPORTED: i64
+    constant HERO_ACTIVATION_NOT_FOUND: i64
+    constant HERO_ACTIVATION_EXISTS: i64
+    constant HERO_ACTIVATION_LIMIT: i64
+    constant HERO_ACTIVATION_DENIED: i64
+    constant HERO_ACTIVATION_TIMEOUT: i64
+    constant HERO_ACTIVATION_OTHER: i64
+    # What `has` is asked.
+    constant HERO_ACTIVATION_HAS_NOTIFY: i64
+    constant HERO_ACTIVATION_HAS_INHERIT: i64
+    constant HERO_ACTIVATION_HAS_LAUNCHD: i64
+    # The kinds of an entry.
+    constant HERO_ACTIVATION_ENTRY_LISTENER: i64
+    constant HERO_ACTIVATION_ENTRY_CONNECTION: i64
+    constant HERO_ACTIVATION_ENTRY_DATAGRAM: i64
+    constant HERO_ACTIVATION_ENTRY_OTHER: i64
+    # The most descriptors `$LISTEN_FDS` may say, the most sockets one name of
+    # launchd's may hold, and the most bytes of one notice.
+    constant HERO_ACTIVATION_MOST: i64
+    constant HERO_ACTIVATION_LAUNCHD_MOST: i64
+    constant HERO_ACTIVATION_NOTICE_MOST: i64
+    # One descriptor a manager handed over.
+    record Entry tag hero_activation_entry
+        kind: i64
+        number: i64
+        descriptor: i64
+    function hero_activation_has(what: i64) -> i64
+    function hero_activation_notify(name: cstr lent, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_activation_receive(path: cstr lent, within_ms: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_activation_count() -> i64
+    function hero_activation_monotonic_usec() -> i64
+    function hero_activation_count_for(pid_text: cstr lent, count_text: cstr lent, pid: i64) -> i64
+    function hero_activation_inherit(@entries: [Entry] counted_by n lent, n: u64) -> i64
+    function hero_activation_launchd(name: cstr lent, @entries: [Entry] counted_by n lent, n: u64) -> i64
+    function hero_activation_describe(descriptor: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_activation_last_error() -> i64
+    function hero_activation_last_os_error() -> i64
+    function hero_activation_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# 1 where this system has the protocol `what` names, 0 where it has not.
+function has(what: i64) -> i64
+    return hero_activation_has(what)
+
+# Sends `data` as one datagram to the local socket `name` names; 0, or -1.
+#
+# - `name`: a path, or `@` and a name on Linux.
+# - `data`: 1 to `HERO_ACTIVATION_NOTICE_MOST` bytes.
+function notify(name: str, @data: [u8]) -> i64
+    return hero_activation_notify(name.cstr(), @data, n: data.len().to_u64().must())
+
+# Makes a datagram socket at `path`, waits for one datagram and writes its
+# bytes into `buffer`, which the caller has sized; their count, or -1.
+#
+# - `path`: where the socket stands while the call waits.
+# - `within_ms`: how long to wait, 0 or more.
+# - `buffer`: room for the datagram, at least one byte.
+function receive(path: str, within_ms: i64, @buffer: [u8]) -> i64
+    return hero_activation_receive(path.cstr(), within_ms: within_ms, @buffer, n: buffer.len().to_u64().must())
+
+# How many descriptors the environment says were handed to this process, 0
+# for none; or -1.
+function count() -> i64
+    return hero_activation_count()
+
+# The machine's monotonic clock in whole microseconds; -1 where it has none.
+function monotonic_usec() -> i64
+    return hero_activation_monotonic_usec()
+
+# What `count` answers for the two texts a manager wrote and the pid asked
+# about, the environment left out; -1 for a text that is no number.
+#
+# - `pid_text`: what `$LISTEN_PID` holds.
+# - `count_text`: what `$LISTEN_FDS` holds.
+# - `pid`: the process the descriptors would be for.
+function count_for(pid_text: str, count_text: str, pid: i64) -> i64
+    return hero_activation_count_for(pid_text: pid_text.cstr(), count_text: count_text.cstr(), pid: pid)
+
+# Takes every descriptor handed over, once, into `entries`; their count, or -1.
+#
+# - `entries`: room for the count `count` answers, as many entries.
+function inherit(@entries: [Entry]) -> i64
+    return hero_activation_inherit(@entries, n: entries.len().to_u64().must())
+
+# Takes the sockets launchd names `name`; their count, or -1.
+#
+# - `name`: the key under `Sockets` in the job's property list.
+# - `entries`: room for `HERO_ACTIVATION_LAUNCHD_MOST` entries.
+function launchd(name: str, @entries: [Entry]) -> i64
+    return hero_activation_launchd(name.cstr(), @entries, n: entries.len().to_u64().must())
+
+# What the descriptor is, in words, written into `buffer`; their length, or 0.
+#
+# - `descriptor`: the descriptor's own number.
+# - `buffer`: room for the words, as many bytes as the caller sized.
+function describe(descriptor: i64, @buffer: [u8]) -> i64
+    return hero_activation_describe(descriptor, @buffer, n: buffer.len().to_u64().must())
+
+function last_error() -> i64
+    return hero_activation_last_error()
+
+function last_os_error() -> i64
+    return hero_activation_last_os_error()
+
+# The layer's own words for the last failure, written into `buffer`; their
+# length, 0 where there are none.
+function last_message(@buffer: [u8]) -> i64
+    return hero_activation_last_message(@buffer, n: buffer.len().to_u64().must())
+
+# Whether the tests run on a system with systemd's protocols.
+function on_posix() -> bool
+    match os.system()
+        .windows => return false
+        .darwin  => return true
+        .linux   => return true
+        .other   => return false
+
+# A folder of the machine's temporary place for one test's socket.
+function scratch(name: str) -> str
+    return fs.make_temp_dir(dir: "", pattern: "hero-activation-" + name + "-*").must()
+
+# Room for `n` bytes.
+function room(n: i64) -> [u8]
+    filled: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        filled @ filled.push(0)
+
+    return filled
+
+# What one wait for a datagram answers: its count, or the failure's kind, and
+# the bytes it wrote.
+record Got
+    # The count, or -1.
+    count: i64
+    # The kind `last_error` named after a failure.
+    kind: i64
+    # The datagram's bytes.
+    bytes: [u8]
+
+# The wait of one thread: a socket at `path` and `within_ms`.
+record Wait
+    path: str
+    within_ms: i64
+    # The bytes of room the datagram is received into.
+    room: i64
+
+# One datagram received at `w.path`, on the thread that calls it.
+function listen_once(w: Wait) -> Got
+    buffer: [u8] @= room(w.room)
+    got = receive(w.path, within_ms: w.within_ms, @buffer)
+    kind = last_error()
+
+    if got < 0
+        return Got(count: got, kind: kind, bytes: [])
+    return Got(count: got, kind: 0, bytes: buffer.slice(from: 0, to: got))
+
+# Whether `path` names a file or socket yet, for a test waiting for the
+# thread above to have made its socket.
+function stands(path: str) -> bool
+    match fs.exists(path)
+        .ok found => return found
+        .err _    => return false
+
+# 1 for true, for a comparison with what `has` answers.
+function wanted(on: bool) -> i64
+    if on
+        return 1
+    return 0
+
+# Whether the tests run on Darwin, where launchd is and abstract names are not.
+function on_darwin() -> bool
+    match os.system()
+        .darwin  => return true
+        .windows => return false
+        .linux   => return false
+        .other   => return false
+
+# The notice `text` as the bytes a datagram carries.
+function notice(text: str) -> [u8]
+    return bytes.from_text(text)
+
+# The text of bytes a test knows to be text.
+function text_of(b: [u8]) -> str
+    return bytes.to_text(b).must()
+
+# One datagram sent to `path` once a thread has made its socket there, and
+# what the thread received: the sender waits for the file a few seconds at
+# most, so a thread that never binds is a failure, never a hang.
+function round_trip(path: str, data: [u8], room_bytes: i64) -> Got
+    t = spawn(listen_once, Wait(path: path, within_ms: 10000, room: room_bytes)).must()
+    waited @= 0
+
+    while !stands(path) && waited < 500
+        time.sleep(time.milliseconds(10).must())
+        waited @ waited + 1
+
+    sending @= data
+    assert notify(path, @sending) == 0
+    return t.wait()
+
+test "hero_activation has: systemd's protocols stand on POSIX and launchd's on Darwin alone"
+    wants = wanted(on_posix())
+    assert has(HERO_ACTIVATION_HAS_NOTIFY) == wants
+    assert has(HERO_ACTIVATION_HAS_INHERIT) == wants
+    assert has(HERO_ACTIVATION_HAS_LAUNCHD) == wanted(on_darwin())
+    assert has(-1) == 0
+    assert has(3) == 0
+
+test "hero_activation notify: an empty name, no bytes, too many, and a path longer than an address are refused invalid"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    one: [u8] @= notice("READY=1\n")
+    assert notify("", @one) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    none: [u8] @= []
+    assert notify("/tmp/nobody", @none) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    big: [u8] @= room(HERO_ACTIVATION_NOTICE_MOST + 1)
+    assert notify("/tmp/nobody", @big) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    long = "/" + repeat("a", 200)
+    assert notify(long, @one) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+
+test "hero_activation notify: a path nothing listens at, a file that is no socket, a vsock name and an abstract one"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    root = scratch("refused")
+    one: [u8] @= notice("READY=1\n")
+    assert notify(root + "/absent", @one) == -1
+    assert last_error() == HERO_ACTIVATION_NOT_FOUND
+    write_file(path: root + "/file", text: "x").must()
+    assert notify(root + "/file", @one) == -1
+    assert last_error() == HERO_ACTIVATION_NOT_FOUND
+    assert notify("vsock:2:1234", @one) == -1
+    assert last_error() == HERO_ACTIVATION_UNSUPPORTED
+    assert notify("@heroes-nobody-listens-here", @one) == -1
+
+    if on_darwin()
+        assert last_error() == HERO_ACTIVATION_UNSUPPORTED
+    else
+        assert last_error() == HERO_ACTIVATION_NOT_FOUND
+    _ = fs.remove_all(root).is_err()
+
+test "hero_activation notify, receive: a datagram crosses a socket the test opens, whole and as sent"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    root = scratch("round")
+    text = "READY=1\nSTATUS=Serving é requests\nWATCHDOG=1\n"
+    got = round_trip(root + "/notify", notice(text), room_bytes: 256)
+    assert got.count == text.len()
+    assert text_of(got.bytes) == text
+    assert !stands(root + "/notify")
+    _ = fs.remove_all(root).is_err()
+
+test "hero_activation notify, receive: a datagram of one byte and one of a thousand arrive whole"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    root = scratch("sizes")
+    small = round_trip(root + "/small", [10], room_bytes: 8)
+    assert small.count == 1
+    assert small.bytes == [10]
+    thousand = room(1000)
+    wide = round_trip(root + "/wide", thousand, room_bytes: 1000)
+    assert wide.count == 1000
+    assert wide.bytes == thousand
+    _ = fs.remove_all(root).is_err()
+
+test "hero_activation receive: a wait that passes is timeout and leaves no socket, a path taken is exists, a negative wait invalid"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    root = scratch("waits")
+    late = listen_once(Wait(path: root + "/late", within_ms: 30, room: 16))
+    assert late.count == -1
+    assert late.kind == HERO_ACTIVATION_TIMEOUT
+    assert !stands(root + "/late")
+    write_file(path: root + "/taken", text: "x").must()
+    taken = listen_once(Wait(path: root + "/taken", within_ms: 30, room: 16))
+    assert taken.kind == HERO_ACTIVATION_EXISTS
+    assert stands(root + "/taken")
+    negative = listen_once(Wait(path: root + "/negative", within_ms: -1, room: 16))
+    assert negative.kind == HERO_ACTIVATION_INVALID
+    empty = listen_once(Wait(path: root + "/empty", within_ms: 30, room: 0))
+    assert empty.kind == HERO_ACTIVATION_INVALID
+    _ = fs.remove_all(root).is_err()
+
+test "hero_activation receive: a datagram longer than the buffer is limit, never cut in silence"
+    if !on_posix()
+        skip_test(reason: "this system has no local datagram sockets: every call answers unsupported")
+    root = scratch("short")
+    got = round_trip(root + "/short", notice("READY=1\nSTATUS=ten more\n"), room_bytes: 4)
+    assert got.count == -1
+    assert got.kind == HERO_ACTIVATION_LIMIT
+    _ = fs.remove_all(root).is_err()
+
+test "hero_activation count_for: the pid must be this process's, both texts digits, and no more than 4096"
+    if !on_posix()
+        skip_test(reason: "this system has no descriptors handed over")
+    assert count_for(pid_text: "42", count_text: "3", pid: 42) == 3
+    assert count_for(pid_text: "42", count_text: "0", pid: 42) == 0
+    assert count_for(pid_text: "42", count_text: "4096", pid: 42) == 4096
+    assert count_for(pid_text: "42", count_text: "3", pid: 43) == 0
+    assert count_for(pid_text: "7", count_text: "4097", pid: 7) == -1
+    assert last_error() == HERO_ACTIVATION_LIMIT
+    assert count_for(pid_text: "42", count_text: "", pid: 42) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert count_for(pid_text: "", count_text: "3", pid: 42) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert count_for(pid_text: "4x", count_text: "3", pid: 4) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert count_for(pid_text: "42", count_text: "-1", pid: 42) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert count_for(pid_text: "42", count_text: "+1", pid: 42) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert count_for(pid_text: "42", count_text: "99999999999999999999", pid: 42) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+
+test "hero_activation count, inherit: a test run is handed no descriptor, and room for none is room enough"
+    if !on_posix()
+        skip_test(reason: "this system has no descriptors handed over")
+
+    if os.env("LISTEN_PID").is_err()
+        assert count() == 0
+        nothing: [Entry] @= []
+        assert inherit(@nothing) == 0
+        assert inherit(@nothing) == 0
+    else
+        skip_test(reason: "this test was started by a manager that hands descriptors over")
+
+test "hero_activation describe: a descriptor that is not open is described by nothing"
+    words: [u8] @= room(64)
+    assert describe(-1, @words) == 0
+    assert describe(2147483648, @words) == 0

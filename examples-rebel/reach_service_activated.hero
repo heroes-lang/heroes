@@ -1,0 +1,68 @@
+# Takes the sockets a service manager handed it, tells the manager it is ready,
+# prints what it was handed, and serves the first of each kind it can: a
+# listener accepts one connection and writes `hello` to it, a UDP socket
+# answers one datagram with `hello`. The program the real run of `service`'s
+# systemd and launchd half drives: a launcher that makes the sockets, sets
+# `$LISTEN_PID`, `$LISTEN_FDS` and `$NOTIFY_SOCKET` and runs this built
+# (systemd's protocol, no argument), or `launchctl bootstrap` with a job whose
+# `Sockets` key names `heroes` and whose arguments are `launchd heroes`.
+# Run by hand it is handed nothing and says so: `heroes test` on this file runs
+# the package's tests (spec § 12).
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/net
+use <rebel>/service
+
+# One line saying what a manager handed over.
+function describe(h: service.Handed) -> str
+    match h
+        .listener l   => return f"listener {net.format_address(l.socket.address)}"
+        .connection c => return f"connection from {net.format_address(c.conn.remote)}"
+        .datagram d   => return f"datagram {net.format_address(d.socket.address)}"
+        .other o      => return f"other: {o.words}"
+
+# Serves one request on what was handed, where it is a socket of `net`, and
+# gives every socket back: a program that ends holding one is told by the
+# runtime's check.
+function serve(h: service.Handed)
+    match h
+        .listener l =>
+            listening @= l.socket
+            c = net.accept(listening, deadline_ms: 5000).must()
+            io.write(c.stream, bytes.from_text("hello\n")).must()
+            s @= c.stream
+            io.close(@s).must()
+            net.close_listener(@listening).must()
+        .datagram d =>
+            sock @= d.socket
+            got = net.receive(sock).must()
+            net.send_to(sock, bytes.from_text("hello"), to: got.sender).must()
+            net.close_udp(@sock).must()
+        .connection c =>
+            s @= c.conn.stream
+            io.write(s, bytes.from_text("hello\n")).must()
+            io.close(@s).must()
+        .other _ => print("left alone")
+
+function main()
+    given = args()
+    found: [service.Inherited] @= []
+
+    if given.len() == 2 && given[0] == "launchd"
+        found @ service.inherit_launchd(given[1]).must()
+    else
+        found @ service.inherit().must()
+
+    if found.len() == 0
+        print("handed nothing")
+        return
+
+    for item in found
+        print(item.name + ": " + describe(item.handed))
+
+    sent = service.notify([.ready, .status(text: "serving")]).must()
+    print(f"ready sent: {sent}")
+
+    for item in found
+        serve(item.handed)

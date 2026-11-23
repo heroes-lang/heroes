@@ -202,6 +202,9 @@ typedef int hero_net_len;
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/tcp.h>
+#if defined(__APPLE__)
+#include <netinet/tcp_fsm.h>
+#endif
 typedef int hero_net_fd;
 typedef socklen_t hero_net_len;
 #define HERO_NET_NO_FD (-1)
@@ -4611,6 +4614,131 @@ void hero_net_unhold(int64_t hold) {
     if (held) {
         (void)hero_net_done(slot);
     }
+}
+
+/* Whether a socket of the table holds `fd` already. Under the lock. */
+static bool hero_net_holds_fd(hero_net_fd fd) {
+    for (uint32_t at = 0; at < hero_net_fresh; at += 1) {
+        if (hero_net_slots[at].held && hero_net_slots[at].fd == fd) {
+            return true;
+        }
+    }
+    return false;
+}
+
+hero_net_socket *hero_net_adopt(int64_t descriptor, int64_t *kind) {
+    if (kind == NULL || descriptor < 0) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return NULL;
+    }
+#if defined(_WIN32)
+    if ((uint64_t)descriptor >= (uint64_t)INVALID_SOCKET) {
+#else
+    if (descriptor > INT64_C(2147483647)) {
+#endif
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return NULL;
+    }
+    if (!hero_net_started()) {
+        return NULL;
+    }
+    hero_net_fd fd = (hero_net_fd)descriptor;
+    int type = 0;
+    hero_net_len size = (hero_net_len)sizeof type;
+
+    /* What the descriptor is, asked of the system and never assumed: a
+     * number that names a file, or nothing, is refused whole and stays the
+     * caller's. */
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (char *)&type, &size) != 0) {
+        int64_t code = hero_net_os_code();
+#if defined(_WIN32)
+        bool absent = code == WSAENOTSOCK;
+#else
+        bool absent = code == EBADF;
+#endif
+        hero_net_fail(absent ? HERO_NET_NOT_OPEN : HERO_NET_INVALID, code);
+        return NULL;
+    }
+    struct sockaddr_storage where;
+    hero_net_len where_size = (hero_net_len)sizeof where;
+
+    memset(&where, 0, sizeof where);
+    if (getsockname(fd, (struct sockaddr *)&where, &where_size) != 0) {
+        hero_net_fail(HERO_NET_INVALID, hero_net_os_code());
+        return NULL;
+    }
+    int family = (int)where.ss_family;
+
+    if (family != AF_INET && family != AF_INET6) {
+        hero_net_fail(HERO_NET_UNSUPPORTED, 0);
+        return NULL;
+    }
+    int64_t found = 0;
+
+    if (type == SOCK_DGRAM) {
+        found = HERO_NET_ADOPTED_DATAGRAM;
+    } else if (type == SOCK_STREAM) {
+        int listening = 0;
+        hero_net_len listening_size = (hero_net_len)sizeof listening;
+
+        if (getsockopt(fd, SOL_SOCKET, SO_ACCEPTCONN, (char *)&listening, &listening_size) != 0) {
+#if defined(__APPLE__) && defined(TCP_CONNECTION_INFO)
+            /* Darwin has no SO_ACCEPTCONN (measured: error 42, protocol not
+             * available): its TCP connection state says a listener, state 1. */
+            struct tcp_connection_info state;
+            hero_net_len state_size = (hero_net_len)sizeof state;
+
+            memset(&state, 0, sizeof state);
+            if (getsockopt(fd, IPPROTO_TCP, TCP_CONNECTION_INFO, &state, &state_size) != 0) {
+                hero_net_fail(HERO_NET_INVALID, hero_net_os_code());
+                return NULL;
+            }
+            listening = state.tcpi_state == TCPS_LISTEN ? 1 : 0;
+#else
+            hero_net_fail(HERO_NET_INVALID, hero_net_os_code());
+            return NULL;
+#endif
+        }
+        if (listening != 0) {
+            found = HERO_NET_ADOPTED_LISTENER;
+        } else {
+            struct sockaddr_storage peer;
+            hero_net_len peer_size = (hero_net_len)sizeof peer;
+
+            /* A stream socket neither listening nor connected is none a
+             * program can use: refused rather than adopted to fail later. */
+            if (getpeername(fd, (struct sockaddr *)&peer, &peer_size) != 0) {
+                hero_net_fail(HERO_NET_INVALID, hero_net_os_code());
+                return NULL;
+            }
+            found = HERO_NET_ADOPTED_CONNECTION;
+        }
+    } else {
+        hero_net_fail(HERO_NET_UNSUPPORTED, 0);
+        return NULL;
+    }
+    hero_net_enter();
+    bool again = hero_net_holds_fd(fd);
+    hero_net_leave();
+
+    if (again) {
+        hero_net_fail(HERO_NET_IN_USE, 0);
+        return NULL;
+    }
+    /* The system's non-blocking flag is on the open file description, which
+     * the manager that handed the descriptor over shares: every socket a
+     * manager hands over is already non-blocking, as the table needs it. */
+    if (!hero_net_ready(fd) || !hero_net_blocking(fd, false)) {
+        return NULL;
+    }
+    hero_net_socket *handle = found == HERO_NET_ADOPTED_DATAGRAM ? hero_net_keep_datagram(fd, family) : hero_net_keep(fd);
+
+    if (handle == NULL) {
+        return NULL;
+    }
+    *kind = found;
+    hero_net_clear();
+    return handle;
 }
 
 int64_t hero_net_when_stopped(void (*wake)(void)) {
