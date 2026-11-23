@@ -1,0 +1,110 @@
+# The bits of a lossless WebP stream and the prefix codes read from them: bits
+# are taken from the least significant end of each byte, and a canonical code
+# is read one bit at a time, the first bit read being the first bit of the
+# code. A read past the end gives zero bits and sets `over`, which the
+# decoder checks where it can be cut short.
+
+use image
+
+# A stream of bits.
+record Bits
+    # The bytes.
+    data: [u8]
+    # The next bit, counted from the lowest bit of the first byte.
+    pos: i64
+    # Whether a read went past the end.
+    over: bool
+
+# The next `n` bits of `b`, 0 to 24, the first read the lowest.
+function read(@b: Bits, n: i64) -> i64
+    if n == 0
+        return 0
+
+    if b.pos + n > b.data.len() * 8
+        b.over @ true
+    at = b.pos >> 3
+    acc @= 0
+
+    for k in range(from: 0, to: 4)
+        byte = if at + k < b.data.len()
+            to_i64(b.data[at + k]).must()
+        else
+            0
+        acc @ acc | byte << 8 * k
+
+    v = acc >> (b.pos & 7) & (1 << n) - 1
+    b.pos @ b.pos + n
+    return v
+
+# A canonical prefix code.
+record Code
+    # How many symbols have each length, index 0 to 15.
+    counts: [i64]
+    # The symbols ordered by length and then by value.
+    symbols: [i64]
+    # The one symbol of a code that has only one, or -1: it takes no bits.
+    only: i64
+
+# The code of `lengths`, one code length (0 for unused) a symbol. Fails
+# `invalid` where the lengths oversubscribe the code or leave it incomplete,
+# or no symbol is used.
+function build(lengths: [i64] lent) -> Code?
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 16)
+        counts @ counts.push(0)
+
+    used @= 0
+    last @= -1
+
+    for s in range(from: 0, to: lengths.len())
+        if lengths[s] > 0
+            counts[lengths[s]] @ counts[lengths[s]] + 1
+            used @ used + 1
+            last @ s
+
+    if used == 0
+        return fail(code: image.INVALID, msg: "a prefix code that uses no symbol")
+
+    if used == 1
+        return ok(Code(counts: counts, symbols: [last], only: last))
+    left @= 1
+
+    for width in range(from: 1, to: 16)
+        left @ left * 2 - counts[width]
+
+        if left < 0
+            return fail(code: image.INVALID, msg: "a prefix code whose lengths oversubscribe it")
+
+    if left != 0
+        return fail(code: image.INVALID, msg: "a prefix code whose lengths leave it incomplete")
+    symbols: [i64] @= []
+
+    for width in range(from: 1, to: 16)
+        for s in range(from: 0, to: lengths.len())
+            if lengths[s] == width
+                symbols @ symbols.push(s)
+
+    return ok(Code(counts: counts, symbols: symbols, only: -1))
+
+# The next symbol of `c` read from `b`.
+function symbol(@b: Bits, c: Code lent) -> i64
+    if c.only >= 0
+        return c.only
+    code @= 0
+    first @= 0
+    index @= 0
+
+    for width in range(from: 1, to: 16)
+        code @ code | read(b: @b, n: 1)
+        count = c.counts[width]
+
+        if code - count < first
+            return c.symbols[index + (code - first)]
+        index @ index + count
+        first @ first + count
+        first @ first << 1
+        code @ code << 1
+
+    b.over @ true
+    return 0

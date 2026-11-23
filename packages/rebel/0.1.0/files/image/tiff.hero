@@ -1,0 +1,749 @@
+# TIFF read and written: every page of a file, classic or BigTIFF in either
+# byte order, in strips or tiles, coded by PackBits, LZW, Deflate (with the
+# horizontal predictor), Zstandard, JPEG or CCITT's fax codings, with 1 to 16
+# bits a sample as gray, RGB, a palette, CMYK or YCbCr (its chroma shared by
+# blocks of pixels), with an alpha channel, in one plane or several, and the
+# bits of a byte in either fill order; and written in every one of those
+# codings but JPEG, as strips or tiles, at 8 or 16 bits or at one bit a pixel.
+#
+# It does not convert or scale: that is `image`'s. It does not decode JPEG
+# 2000, LERC, LZMA, JBIG or WebP coding, samples of more than 16 bits or of
+# floating point, or CIE Lab: each fails `unsupported`, the message naming
+# it.
+#
+# **A file is not trusted.** `decode` checks every directory, count and offset
+# against the file's length, the size of every page against the caller's
+# `image.Limits` (the pixels of all pages together against `max_pixels`)
+# before it allocates, and inflates no strip past its own size, so a broken
+# or hostile file fails `invalid` or `limit` and never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: the directory's other
+# tags and the directories it points to.
+
+use bytes
+use image
+use image/tiff/internal/assemble
+use image/tiff/internal/expect
+use image/tiff/internal/fixtures
+use image/tiff/internal/ifd
+use image/tiff/internal/layout
+use image/tiff/internal/reader
+use image/tiff/internal/writer
+
+## Codes
+
+# The code of a value a page does not hold.
+constant NOT_FOUND: str
+    ifd.NOT_FOUND
+
+## Reading
+
+# How the strips or tiles of a page are coded.
+variant Compression
+    # Stored as they are.
+    none
+    # PackBits, byte runs.
+    packbits
+    # LZW, with TIFF's early change.
+    lzw
+    # Deflate, the zlib format (Adobe's compression 8, or 32946).
+    deflate
+    # Zstandard (50000).
+    zstd
+    # JPEG (7), each strip or tile a JPEG stream whose tables stand in the
+    # page's JPEGTables.
+    jpeg
+    # CCITT Modified Huffman: runs only, each row padded to a byte.
+    ccitt_rle
+    # CCITT Group 3 (T.4): rows after end-of-line codes.
+    ccitt_g3
+    # CCITT Group 4 (T.6): every row against the one before.
+    ccitt_g4
+    # Another compression, by its number in the Compression tag.
+    other
+        code: i64
+
+# The unit a resolution is given in.
+variant Unit
+    # No unit: only the ratio of the two numbers means anything.
+    none
+    # Pixels per inch.
+    inch
+    # Pixels per centimetre.
+    centimetre
+
+# How many pixels fit in a unit of length, across and down.
+record Resolution
+    # Pixels per unit across.
+    x: f64
+    # Pixels per unit down.
+    y: f64
+    # The unit.
+    unit: Unit
+
+# One page of a file: its pixels and what its directory says about it.
+record Page
+    # The pixels: gray, gray and alpha, RGB or RGBA, 8 or 16 bits a sample
+    # (a palette, CMYK and YCbCr page is RGB at 8 bits), as the file stores
+    # them: `orientation` says how to show them. Alpha is straight.
+    image: image.Image
+    # The Orientation tag, 1 to 8 (`image.apply_orientation` reads it); 1
+    # where the page gives none.
+    orientation: i64
+    # How the page's strips or tiles were coded.
+    compression: Compression
+    # Whether the page is a reduced-resolution copy of another one.
+    reduced: bool
+    # The resolution, absent where the page gives either direction's.
+    resolution: Resolution?
+    # ImageDescription, absent where the page has none.
+    description: str?
+    # Software, absent where the page has none.
+    software: str?
+    # DateTime, as the file writes it (`2026:11:23 17:10:10`), absent where
+    # the page has none.
+    date_time: str?
+    # The ICC profile, empty where the page has none.
+    icc: [u8]
+
+# A file read: its pages in order.
+record Tiff
+    # The pages, at least one.
+    pages: [Page]
+    # Whether the file is BigTIFF, with 8-byte offsets.
+    big: bool
+    # Whether its numbers are written most significant byte first.
+    big_endian: bool
+
+# The most directories `decode` follows in one file.
+constant MAX_PAGES: i64
+    reader.MAX_PAGES
+
+# The pages of the TIFF file `data`.
+#
+# - `data`: a whole TIFF file.
+# - `limits`: the largest image the caller allows, each page's size against
+#   `max_width` and `max_height` and the pixels of every page together
+#   against `max_pixels`; `image.default_limits` makes the usual ones.
+#
+# Fails `limit` where a page passes `limits`, before it is allocated, or the
+# file holds more than `MAX_PAGES` directories. Fails `invalid` where `data`
+# is not TIFF, the message naming what: a header, a directory or a value past
+# the end, a tag that contradicts another, a strip that does not decode to
+# its size. Fails `unsupported` for what the module comment lists. See also
+# `info_of`.
+function decode(data: [u8], limits: image.Limits) -> Tiff?
+    r = reader.read_all(data, limits)?
+    pages: [Page] @= []
+
+    for d in r.pages
+        resolution: Resolution? = match d.resolution
+            .err e => fail(code: e.code, msg: e.msg)
+            .ok v =>
+                unit: Unit = if v.unit == 2
+                    .inch
+                else if v.unit == 3
+                    .centimetre
+                else
+                    .none
+                ok(Resolution(x: v.x, y: v.y, unit: unit))
+
+        pages @ pages.push(
+            Page(image: d.image, orientation: d.l.orientation, compression: compression_of(d.l.compression), reduced: d.reduced, resolution: resolution, description: d.description, software: d.software, date_time: d.date_time, icc: d.icc)
+        )
+
+    return ok(Tiff(pages: pages, big: r.header.big, big_endian: r.header.big_endian))
+
+# The first page of `data`, its pixels alone.
+#
+# - `data`: a whole TIFF file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The pixels are as the file stores them: `Page.orientation` says how to
+# show them, and later pages are `decode`'s. Fails as `decode` fails, for the
+# first page alone. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    return ok(decode(data, limits: limits)?.pages[0].image)
+
+# The `Compression` that the Compression tag's number `code` names.
+#
+# - `code`: the tag's value: 1 none, 2 CCITT Modified Huffman, 3 Group 3, 4
+#   Group 4, 5 LZW, 7 JPEG, 8 or 32946 Deflate, 32773 PackBits, 50000
+#   Zstandard; any other number is `other`.
+#
+# See also `Page.compression`.
+function compression_of(code: i64) -> Compression
+    return match code
+        1         => .none
+        32773     => .packbits
+        5         => .lzw
+        8 | 32946 => .deflate
+        50000     => .zstd
+        7         => .jpeg
+        2         => .ccitt_rle
+        3         => .ccitt_g3
+        4         => .ccitt_g4
+        _         => .other(code: code)
+
+# What the first page of a file says about itself, read from its directory
+# without decoding a pixel.
+record Info
+    # The columns of the first page.
+    width: i64
+    # The rows of the first page.
+    height: i64
+    # The bits of a sample of the first page, 1 to 16.
+    bits: i64
+    # The samples a pixel of the first page holds.
+    samples: i64
+    # How the first page is coded.
+    compression: Compression
+    # How many directories the file chains, at most `MAX_PAGES`.
+    pages: i64
+    # Whether the file is BigTIFF.
+    big: bool
+
+# The first page's size and layout and the number of pages of `data`, read from
+# the directories alone.
+#
+# - `data`: a TIFF file, or at least its header and directories.
+#
+# Fails `invalid` and `unsupported` as `decode` does on the first directory's
+# tags, and `invalid` where a later directory runs past the end or the chain
+# loops. See also `decode`.
+function info_of(data: [u8]) -> Info?
+    h = ifd.header_of(data)?
+    first = ifd.directory_at(data, h: h, offset: h.first)?
+    wide = image.Limits(
+        max_width: 9223372036854775807,
+        max_height: 9223372036854775807,
+        max_pixels: 9223372036854775807
+    )
+    l = layout.layout_of(data, h: h, entries: first.entries, limits: wide)?
+    count @= 1
+    seen: [i64] @= [h.first]
+    next @= first.next
+
+    while next != 0
+        if count >= reader.MAX_PAGES
+            return fail(code: image.LIMIT, msg: f"more than {reader.MAX_PAGES} directories in one file")
+
+        for s in seen
+            if s == next
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the directory at byte {next} is reached twice: a loop in the chain"
+                )
+
+        seen @ seen.push(next)
+        next @ ifd.directory_at(data, h: h, offset: next)?.next
+        count @ count + 1
+
+    return ok(
+        Info(width: l.width, height: l.height, bits: l.bits, samples: l.spp, compression: compression_of(l.compression), pages: count, big: h.big)
+    )
+
+## Writing
+
+# How many bits a pixel is written in.
+variant Depth
+    # As the image holds them: 8 or 16 bits a sample.
+    natural
+    # One bit a pixel: gray from `threshold` up is white, the rest black. The
+    # fax codings take this and nothing else.
+    bilevel
+        threshold: i64
+
+# How `encode` writes a file.
+record EncodeOptions
+    # How the strips or tiles are coded: `none`, `packbits`, `lzw`, `deflate`,
+    # `zstd`, `ccitt_rle`, `ccitt_g3` or `ccitt_g4`.
+    compression: Compression
+    # Whether each sample is written as its difference from the pixel before
+    # (predictor 2), which makes photographs and smooth images smaller under
+    # `lzw`, `deflate` and `zstd`.
+    predictor: bool
+    # The rows of a strip; 0 for about 8 KiB of rows.
+    rows_per_strip: i64
+    # The columns of a tile, a multiple of 16, or 0 to write strips.
+    tile_width: i64
+    # The rows of a tile, a multiple of 16, or 0 to write strips.
+    tile_height: i64
+    # Whether numbers are written most significant byte first (`MM`).
+    big_endian: bool
+    # Whether the file is BigTIFF, with 8-byte offsets, for files past 4 GiB.
+    big: bool
+    # The bits of a pixel.
+    depth: Depth
+    # For `ccitt_g3`: whether every fourth row is one-dimensional and the
+    # others two-dimensional.
+    two_dimensional: bool
+    # For `ccitt_g3`: whether each end-of-line code ends on a byte boundary.
+    byte_aligned_eol: bool
+
+# The options that `encode` takes unless the caller changes them: strips of
+# about 8 KiB, uncompressed, in little-endian order, one file of classic
+# TIFF.
+#
+# See also `encode`.
+function default_encode_options() -> EncodeOptions
+    return EncodeOptions(
+        compression: .none,
+        predictor: false,
+        rows_per_strip: 0,
+        tile_width: 0,
+        tile_height: 0,
+        big_endian: false,
+        big: false,
+        depth: .natural,
+        two_dimensional: false,
+        byte_aligned_eol: false
+    )
+
+# The pages `pages` as a TIFF file.
+#
+# - `pages`: at least one page; each `image` is gray, gray with alpha, RGB or
+#   RGBA, 8 or 16 bits a sample, 1 pixel a side at least. Alpha is written as
+#   unassociated. Its `orientation`, `reduced`, `resolution`, `description`,
+#   `software`, `date_time` and `icc` are written; its `compression` is not:
+#   `options` chooses it.
+# - `options`: `default_encode_options` makes the usual ones.
+#
+# The same pages answer the same bytes every time. Fails `invalid` where
+# `pages` is empty, a page has a side of 0 or an `orientation` outside 1 to 8,
+# the tiles are not a multiple of 16 or only one side is given, the
+# predictor is asked of a coding that has none (it is defined for `lzw`,
+# `deflate` and `zstd`), a fax coding is asked of a page without `bilevel`,
+# or a `bilevel` threshold is outside 0 to 255. Fails `unsupported` for
+# `jpeg` and `other`. Fails `limit` where a classic file would pass 4 GiB. Aborts where
+# an image is not valid. See also `decode`.
+function encode(pages: [Page], options: EncodeOptions) -> [u8]?
+    if pages.len() == 0
+        return fail(code: image.INVALID, msg: "a TIFF file holds one page at least")
+
+    code = match options.compression
+        .none      => 1
+        .packbits  => 32773
+        .lzw       => 5
+        .deflate   => 8
+        .zstd      => 50000
+        .ccitt_rle => 2
+        .ccitt_g3  => 3
+        .ccitt_g4  => 4
+        .jpeg      => return fail(code: image.UNSUPPORTED, msg: "JPEG strips are not written")
+        .other o   => return fail(code: image.UNSUPPORTED, msg: f"compression {o.code} is not written")
+
+    if options.predictor && code != 5 && code != 8 && code != 50000
+        return fail(code: image.INVALID, msg: "the predictor is written with lzw, deflate and zstd only")
+
+    if options.tile_width == 0 != (options.tile_height == 0) || options.tile_width % 16 != 0 || options.tile_height % 16 != 0 || options.tile_width < 0 || options.tile_height < 0
+        return fail(
+            code: image.INVALID,
+            msg: f"tiles of {options.tile_width} by {options.tile_height}: both sides are a multiple of 16, or both 0 for strips"
+        )
+
+    if options.rows_per_strip < 0
+        return fail(code: image.INVALID, msg: f"{options.rows_per_strip} rows a strip")
+
+    threshold = match options.depth
+        .natural   => -1
+        .bilevel b => b.threshold
+
+    if threshold > 255 || options.depth != .natural && threshold < 0
+        return fail(code: image.INVALID, msg: f"a bilevel threshold of {threshold}, where 0 to 255 is read")
+    images: [image.Image] @= []
+    metas: [writer.Meta] @= []
+
+    for p in pages
+        assert image.is_valid(p.image)
+
+        if p.image.width < 1 || p.image.height < 1
+            return fail(code: image.INVALID, msg: f"a page of {p.image.width} by {p.image.height} pixels")
+
+        if p.orientation < 1 || p.orientation > 8
+            return fail(code: image.INVALID, msg: f"an orientation of {p.orientation}, where 1 to 8 are defined")
+        images @ images.push(p.image)
+
+        resolution: reader.Resolution? = match p.resolution
+            .err e => fail(code: e.code, msg: e.msg)
+            .ok v =>
+                unit = match v.unit
+                    .none       => 1
+                    .inch       => 2
+                    .centimetre => 3
+
+                ok(reader.Resolution(x: v.x, y: v.y, unit: unit))
+
+        metas @ metas.push(
+            writer.Meta(orientation: p.orientation, reduced: p.reduced, resolution: resolution, description: p.description, software: p.software, date_time: p.date_time, icc: p.icc)
+        )
+
+    s = writer.Settings(
+        compression: code,
+        predictor: options.predictor,
+        rows_per_strip: options.rows_per_strip,
+        tile_width: options.tile_width,
+        tile_height: options.tile_height,
+        big_endian: options.big_endian,
+        big: options.big,
+        threshold: threshold,
+        two_d: options.two_dimensional,
+        fill: options.byte_aligned_eol
+    )
+    return assemble.file_of(images, metas: metas, s: s)
+
+# `img` as a one-page TIFF file, no other tag written but its size, samples
+# and coding.
+#
+# - `img`: as `encode` takes a page's image.
+# - `options`: as `encode` takes them.
+#
+# Fails as `encode` fails. See also `encode`.
+function encode_image(img: image.Image, options: EncodeOptions) -> [u8]?
+    page = Page(
+        image: img,
+        orientation: 1,
+        compression: options.compression,
+        reduced: false,
+        resolution: fail(code: NOT_FOUND, msg: "none"),
+        description: fail(code: NOT_FOUND, msg: "none"),
+        software: fail(code: NOT_FOUND, msg: "none"),
+        date_time: fail(code: NOT_FOUND, msg: "none"),
+        icc: []
+    )
+    return encode([page], options: options)
+
+## Tests
+
+test "decode: every file libtiff laid out or converted, pixel for pixel"
+    for s in fixtures.readable()
+        t = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert t.pages.len() == 1
+        assert expect.differs(s, t.pages[0].image) == ""
+
+test "decode: every fax coding, one-dimensional and two-dimensional, every code word, both photometrics"
+    for s in fixtures.fax()
+        t = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert expect.differs(s, t.pages[0].image) == ""
+
+test "decode: the byte order and the size of a file are told"
+    files = fixtures.readable()
+    big = decode(bytes.parse_hex(files[1].file).must(), image.default_limits()).must()
+    assert big.big && big.big_endian
+    little = decode(bytes.parse_hex(files[0].file).must(), image.default_limits()).must()
+    assert !little.big && !little.big_endian
+    assert little.pages[0].compression == .none
+
+test "decode: the pages of a file, each with its own size and format"
+    t = decode(bytes.parse_hex(fixtures.two_pages()).must(), image.default_limits()).must()
+    assert t.pages.len() == 2
+    assert t.pages[0].image.width == 7 && t.pages[0].image.height == 5 && t.pages[0].image.format == .gray
+    assert image.color_at(t.pages[0].image, x: 3, y: 2).r == 103
+    assert t.pages[1].image.width == 9 && t.pages[1].image.height == 6 && t.pages[1].image.format == .rgb
+    first = decode_image(bytes.parse_hex(fixtures.two_pages()).must(), image.default_limits()).must()
+    assert first == t.pages[0].image
+
+test "decode: the compression of each page is named"
+    for s in fixtures.readable()
+        t = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+
+        if s.name == "rgb8_lzw"
+            assert t.pages[0].compression == .lzw
+
+        if s.name == "rgb8_zip_pred"
+            assert t.pages[0].compression == .deflate
+
+        if s.name == "rgb8_packbits"
+            assert t.pages[0].compression == .packbits
+
+        if s.name == "rgb8_zstd"
+            assert t.pages[0].compression == .zstd
+
+test "encode and decode: every format, every coding and layout, back as written"
+    formats: [image.Format] = [.gray, .gray_alpha, .rgb, .rgba, .gray16, .gray_alpha16, .rgb16, .rgba16]
+    codings: [Compression] = [.none, .packbits, .lzw, .deflate, .zstd]
+    seed @= 1
+
+    for f in formats
+        img = expect.noisy(width: 19, height: 23, format: f, seed: seed)
+        seed @ seed + 1
+
+        for c in codings
+            for predictor in [false, true]
+                for shape in range(from: 0, to: 4)
+                    o @= default_encode_options()
+                    o.compression @ c
+                    o.predictor @ predictor && c != .none && c != .packbits
+                    o.big_endian @ shape % 2 == 1
+                    o.big @ shape >= 2
+
+                    if shape == 1
+                        o.tile_width @ 16
+                        o.tile_height @ 16
+
+                    if shape == 3
+                        o.rows_per_strip @ 5
+                    bytes_out = encode_image(img, options: o).must()
+                    back = decode(bytes_out, image.default_limits()).must()
+                    assert back.pages.len() == 1
+                    assert back.pages[0].image == img
+                    assert back.pages[0].compression == c
+                    assert back.big == o.big && back.big_endian == o.big_endian
+
+test "encode and decode: every fax coding over every bilevel fixture, back as the threshold leaves it"
+    codings: [Compression] = [.ccitt_rle, .ccitt_g3, .ccitt_g3, .ccitt_g3, .ccitt_g3, .ccitt_g4]
+    files = fixtures.fax()
+
+    for si in range(from: 0, to: files.len())
+        t = decode(bytes.parse_hex(files[si].file).must(), image.default_limits()).must()
+
+        for ci in range(from: 0, to: codings.len())
+            o @= default_encode_options()
+            o.compression @ codings[ci]
+            o.depth @ .bilevel(threshold: 128)
+            o.two_dimensional @ ci == 2 || ci == 4
+            o.byte_aligned_eol @ ci == 3 || ci == 4
+            o.rows_per_strip @ 7
+            back = decode(encode_image(t.pages[0].image, options: o).must(), image.default_limits()).must()
+            assert back.pages[0].image == t.pages[0].image
+            assert back.pages[0].compression == codings[ci]
+
+test "encode and decode: a bilevel page of any other coding, and a colour page thresholded"
+    img = expect.noisy(width: 21, height: 9, format: .rgb, seed: 5)
+    o @= default_encode_options()
+    o.depth @ .bilevel(threshold: 100)
+    gray = image.convert(img, to: .gray)
+
+    plain: [Compression] = [.none, .packbits, .lzw, .deflate, .zstd]
+
+    for c in plain
+        o.compression @ c
+        back = decode(encode_image(img, options: o).must(), image.default_limits()).must()
+        assert back.pages[0].image.format == .gray
+
+        for i in range(from: 0, to: gray.pixels.len())
+            want: u8 = if gray.pixels[i] >= 100
+                255
+            else
+                0
+            assert back.pages[0].image.pixels[i] == want
+
+test "encode: the pages and what each says are read back, and the same pages answer the same bytes"
+    first = expect.noisy(width: 7, height: 5, format: .gray, seed: 2)
+    second = expect.noisy(width: 9, height: 4, format: .rgba16, seed: 3)
+    page_one = Page(
+        image: first,
+        orientation: 6,
+        compression: .none,
+        reduced: true,
+        resolution: ok(Resolution(x: 300.0, y: 150.5, unit: .inch)),
+        description: ok("a scan"),
+        software: ok("rebel"),
+        date_time: ok("2026:11:23 17:10:10"),
+        icc: [1, 2, 3, 4, 5]
+    )
+    page_two = Page(
+        image: second,
+        orientation: 1,
+        compression: .none,
+        reduced: false,
+        resolution: ok(Resolution(x: 28.0, y: 28.0, unit: .centimetre)),
+        description: fail(code: NOT_FOUND, msg: "none"),
+        software: fail(code: NOT_FOUND, msg: "none"),
+        date_time: fail(code: NOT_FOUND, msg: "none"),
+        icc: []
+    )
+    o = default_encode_options()
+    written = encode([page_one, page_two], options: o).must()
+    assert written == encode([page_one, page_two], options: o).must()
+    back = decode(written, image.default_limits()).must()
+    assert back.pages.len() == 2
+    assert back.pages[0].image == first && back.pages[1].image == second
+    assert back.pages[0].orientation == 6 && back.pages[0].reduced && !back.pages[1].reduced
+    assert back.pages[0].resolution.must().x == 300.0 && back.pages[0].resolution.must().y == 150.5
+    assert back.pages[0].resolution.must().unit == .inch && back.pages[1].resolution.must().unit == .centimetre
+    assert back.pages[0].description.must() == "a scan" && back.pages[0].software.must() == "rebel"
+    assert back.pages[0].date_time.must() == "2026:11:23 17:10:10"
+    assert back.pages[0].icc == [1, 2, 3, 4, 5] && back.pages[1].icc == []
+    assert back.pages[1].description.is_err() && back.pages[1].software.is_err()
+
+test "encode: what no file can hold is refused, each with its code"
+    img = expect.noisy(width: 4, height: 4, format: .gray, seed: 1)
+    o = default_encode_options()
+    assert encode([], options: o).is_err()
+
+    for bad in range(from: 0, to: 6)
+        w @= default_encode_options()
+
+        if bad == 0
+            w.predictor @ true
+        else if bad == 1
+            w.tile_width @ 16
+        else if bad == 2
+            w.tile_width @ 10
+            w.tile_height @ 16
+        else if bad == 3
+            w.compression @ .ccitt_g4
+        else if bad == 4
+            w.depth @ .bilevel(threshold: 300)
+        else
+            w.rows_per_strip @ -1
+
+        match encode_image(img, options: w)
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+    unwritten: [Compression] = [.jpeg, .other(code: 34712)]
+
+    for c in unwritten
+        w @= default_encode_options()
+        w.compression @ c
+
+        match encode_image(img, options: w)
+            .ok _  => assert false
+            .err e => assert e.code == image.UNSUPPORTED
+
+    match encode_image(image.Image(width: 0, height: 3, format: .gray, pixels: []), options: o)
+        .ok _  => assert false
+        .err e => assert e.code == image.INVALID
+
+test "decode: every prefix of a file is refused or read, and no changed byte aborts"
+    for name in ["rgb8_lzw", "rgb8_zip_pred", "palette8_packbits", "rgb8_tiles", "fax_g4_mid_rows_w", "fax_g3_2d_fill_mid_b", "jpeg_tiles", "ycbcr_2x2"]
+        for s in expect.every_sample()
+            if s.name == name
+                file = bytes.parse_hex(s.file).must()
+
+                for n in range(from: 0, to: file.len())
+                    _ = match decode(file.slice(from: 0, to: n), image.default_limits())
+                        .ok _  => 0
+                        .err _ => 1
+
+                for i in range(from: 0, to: file.len())
+                    changed @= file
+                    changed[i] @ to_u8(255 - to_i64(file[i]).must()).must()
+
+                    _ = match decode(changed, image.default_limits())
+                        .ok _  => 0
+                        .err _ => 1
+
+test "decode: limits, and what is not TIFF"
+    files = fixtures.readable()
+    file = bytes.parse_hex(files[0].file).must()
+    tight = image.Limits(max_width: 100, max_height: 100, max_pixels: 10)
+
+    match decode(file, tight)
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT
+
+    junk: [[u8]] = [
+        []
+        [1, 2, 3]
+        [0x49, 0x49, 0x2b, 0x00, 8, 0, 0, 0]
+        [0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8]
+        bytes.from_text("GIF89a not a tiff")
+    ]
+
+    for bad in junk
+        match decode(bad, image.default_limits())
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+test "decode: a compression it does not read is refused as unsupported, naming it"
+    img = expect.noisy(width: 5, height: 3, format: .gray, seed: 4)
+    file = encode_image(img, options: default_encode_options()).must()
+    at @= -1
+
+    for i in range(from: 0, to: file.len() - 9)
+        if file[i] == 3 && file[i + 1] == 1 && file[i + 2] == 3 && file[i + 3] == 0 && file[i + 4] == 1 && file[i + 8] == 1
+            at @ i + 8
+
+    assert at > 0
+
+    for code in [0x8798, 6, 34925, 50001, 99]
+        changed @= file
+        changed[at] @ to_u8(code & 255).must()
+        changed[at + 1] @ to_u8(code >> 8).must()
+
+        match decode(changed, image.default_limits())
+            .ok _ => assert false
+            .err e =>
+                assert e.code == image.UNSUPPORTED
+                assert e.msg.len() > 10
+
+test "info_of: the size and layout of the first page and the page count, nothing decoded"
+    pages = fixtures.two_pages()
+    i = info_of(bytes.parse_hex(pages).must()).must()
+    assert i.width == 7 && i.height == 5 && i.bits == 8 && i.samples == 1 && i.pages == 2 && !i.big
+    assert i.compression == .none
+
+    for s in fixtures.fax()
+        if s.name == "fax_g4_every_code"
+            j = info_of(bytes.parse_hex(s.file).must()).must()
+            assert j.width == 2600 && j.bits == 1 && j.compression == .ccitt_g4 && j.pages == 1
+
+    match info_of([1, 2, 3, 4, 5, 6, 7, 8])
+        .ok _  => assert false
+        .err e => assert e.code == image.INVALID
+
+test "default_encode_options: strips, no coding, little-endian, classic"
+    o = default_encode_options()
+    assert o.compression == .none && !o.predictor && !o.big && !o.big_endian
+    assert o.tile_width == 0 && o.rows_per_strip == 0 && o.depth == .natural
+
+## Examples
+
+# A page written as TIFF and read back.
+test "decode: the pages of a file and their pixels"
+    img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [200, 100, 50, 0, 0, 0]).must()
+    file = encode_image(img, options: default_encode_options()).must()
+    t = decode(file, image.default_limits()).must()
+    assert t.pages.len() == 1
+    assert t.pages[0].image == img
+
+# The first page's pixels alone.
+test "decode_image: the image of a file"
+    img = image.from_pixels(width: 2, height: 1, format: .gray, pixels: [10, 250]).must()
+    file = encode_image(img, options: default_encode_options()).must()
+    assert decode_image(file, image.default_limits()).must() == img
+
+# A file's size and coding read without its pixels.
+test "info_of: the size, depth and coding of a file"
+    img = image.blank(width: 30, height: 20, format: .gray16).must()
+    o @= default_encode_options()
+    o.compression @ .deflate
+    i = info_of(encode_image(img, options: o).must()).must()
+    assert i.width == 30 && i.height == 20 && i.bits == 16 && i.samples == 1
+    assert i.compression == .deflate && i.pages == 1
+
+# The tag's number turned into a coding.
+test "compression_of: LZW, and a number that names none"
+    assert compression_of(5) == .lzw
+    assert compression_of(34712) == .other(code: 34712)
+
+# The usual options of writing.
+test "default_encode_options: strips, no coding, classic and little-endian"
+    o = default_encode_options()
+    assert o.compression == .none && !o.big && !o.big_endian
+
+# Two pages written in one file.
+test "encode: a gray page and an RGB page"
+    first = image.blank(width: 3, height: 3, format: .gray).must()
+    second = image.blank(width: 2, height: 4, format: .rgb).must()
+    pages: [Page] = [
+        Page(image: first, orientation: 1, compression: .none, reduced: false, resolution: fail(code: NOT_FOUND, msg: "none"), description: ok("first"), software: fail(code: NOT_FOUND, msg: "none"), date_time: fail(code: NOT_FOUND, msg: "none"), icc: [])
+        Page(image: second, orientation: 1, compression: .none, reduced: false, resolution: fail(code: NOT_FOUND, msg: "none"), description: fail(code: NOT_FOUND, msg: "none"), software: fail(code: NOT_FOUND, msg: "none"), date_time: fail(code: NOT_FOUND, msg: "none"), icc: [])
+    ]
+    t = decode(encode(pages, options: default_encode_options()).must(), image.default_limits()).must()
+    assert t.pages.len() == 2 && t.pages[0].description.must() == "first"
+    assert t.pages[1].image.width == 2
+
+# A smooth image written with LZW and the predictor, which makes it smaller.
+test "encode_image: LZW with the horizontal predictor"
+    img = expect.noisy(width: 16, height: 16, format: .rgb, seed: 9)
+    o @= default_encode_options()
+    o.compression @ .lzw
+    o.predictor @ true
+    assert decode_image(encode_image(img, options: o).must(), image.default_limits()).must() == img

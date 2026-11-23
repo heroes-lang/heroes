@@ -1,0 +1,165 @@
+# A lossless stream for a picture of RGBA bytes: the transforms chosen, the
+# header, and the entropy-coded images in the order the decoder reads them.
+
+use image/webp/internal/pack
+use image/webp/internal/transforms
+use image/webp/internal/write
+
+# The ARGB values of the RGBA bytes `px`, one a pixel.
+function argb_of(px: [u8] lent) -> [i64]
+    out: [i64] @= []
+
+    for i in range(from: 0, to: px.len() / 4)
+        out @ out.push(
+            to_i64(px[i * 4 + 3]).must() << 24 | to_i64(px[i * 4]).must() << 16 | to_i64(px[i * 4 + 1]).must() << 8 | to_i64(px[i * 4 + 2]).must()
+        )
+
+    return out
+
+# The cost of predicting the pixels of the block at (`bx`, `by`) by `mode`:
+# the sum of the residuals, each channel's as its distance from 0 around 256.
+function block_cost(px: [u8] lent, width: i64, height: i64, bits: i64, bx: i64, by: i64, mode: i64) -> i64
+    cost @= 0
+    side = 1 << bits
+
+    for y in range(from: by * side, to: min_of(a: height, b: (by + 1) * side))
+        for x in range(from: bx * side, to: min_of(a: width, b: (bx + 1) * side))
+            if x > 0 && y > 0
+                p = transforms.guess(px, x: x, y: y, width: width, mode: mode)
+
+                for c in range(from: 0, to: 4)
+                    r = to_i64(px[(y * width + x) * 4 + c]).must() - (p >> 24 - 8 * c & 255) + 128 & 255
+                    cost @ cost + transforms.abs_of(r - 128)
+
+    return cost
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The stream of the picture `px`, `width` by `height`, `alpha_used` saying
+# whether any alpha differs from 255.
+function stream_of(px: [u8] lent, width: i64, height: i64, alpha_used: bool) -> [u8]
+    w @= pack.Writer(out: [], acc: 0, have: 0)
+    pack.put(w: @w, v: 0x2f, n: 8)
+    pack.put(w: @w, v: width - 1, n: 14)
+    pack.put(w: @w, v: height - 1, n: 14)
+
+    flag = if alpha_used
+        1
+    else
+        0
+    pack.put(w: @w, v: flag, n: 1)
+    pack.put(w: @w, v: 0, n: 3)
+    pix = argb_of(px)
+    seen: {i64: i64} @= {}
+    table: [i64] @= []
+
+    for v in pix
+        if seen[v].is_err() && table.len() <= 256
+            seen[v] @ table.len()
+            table @ table.push(v)
+
+    if table.len() <= 256
+        colors = table.len()
+        pack.put(w: @w, v: 1, n: 1)
+        pack.put(w: @w, v: 3, n: 2)
+        pack.put(w: @w, v: colors - 1, n: 8)
+        deltas: [i64] @= []
+
+        for i in range(from: 0, to: colors)
+            if i == 0
+                deltas @ deltas.push(table[0])
+            else
+                a = table[i]
+                b = table[i - 1]
+                d @= 0
+
+                for shift in [24, 16, 8, 0]
+                    d @ d | ((a >> shift & 255) - (b >> shift & 255) + 256) % 256 << shift
+
+                deltas @ deltas.push(d)
+
+        write.put_image(w: @w, pix: deltas, width: colors, main: false, copies: false)
+
+        bits = if colors > 16
+            0
+        else if colors > 4
+            1
+        else if colors > 2
+            2
+        else
+            3
+        size = 8 >> bits
+        packed_width = width + (1 << bits) - 1 >> bits
+        packed: [i64] @= []
+
+        for y in range(from: 0, to: height)
+            for px_x in range(from: 0, to: packed_width)
+                word @= 0
+
+                for k in range(from: 0, to: 1 << bits)
+                    x = px_x * (1 << bits) + k
+
+                    if x < width
+                        word @ word | seen[pix[y * width + x]].must() << k * size
+
+                packed @ packed.push(0xff000000 | word << 8)
+
+        pack.put(w: @w, v: 0, n: 1)
+        write.put_image(w: @w, pix: packed, width: packed_width, main: true, copies: true)
+        return pack.finished(w: @w)
+    green: [u8] @= []
+
+    for i in range(from: 0, to: px.len() / 4)
+        g = to_i64(px[i * 4 + 1]).must()
+        green @ green.push(to_u8((to_i64(px[i * 4]).must() - g + 256) % 256).must())
+        green @ green.push(px[i * 4 + 1])
+        green @ green.push(to_u8((to_i64(px[i * 4 + 2]).must() - g + 256) % 256).must())
+        green @ green.push(px[i * 4 + 3])
+
+    bits = 5
+    across = width + 31 >> bits
+    down = height + 31 >> bits
+    modes: [i64] @= []
+
+    for by in range(from: 0, to: down)
+        for bx in range(from: 0, to: across)
+            best @= 0
+            best_cost @= block_cost(green, width: width, height: height, bits: bits, bx: bx, by: by, mode: 0)
+
+            for mode in range(from: 1, to: 14)
+                cost = block_cost(green, width: width, height: height, bits: bits, bx: bx, by: by, mode: mode)
+
+                if cost < best_cost
+                    best @ mode
+                    best_cost @ cost
+
+            modes @ modes.push(0xff000000 | best << 8)
+
+    pack.put(w: @w, v: 1, n: 1)
+    pack.put(w: @w, v: 2, n: 2)
+    pack.put(w: @w, v: 1, n: 1)
+    pack.put(w: @w, v: 0, n: 2)
+    pack.put(w: @w, v: bits - 2, n: 3)
+    write.put_image(w: @w, pix: modes, width: across, main: false, copies: false)
+    residual: [i64] @= []
+
+    for y in range(from: 0, to: height)
+        for x in range(from: 0, to: width)
+            mode = modes[(y >> bits) * across + (x >> bits)] >> 8 & 255
+            p = transforms.guess(green, x: x, y: y, width: width, mode: mode)
+            channels: [i64] @= []
+
+            for c in range(from: 0, to: 4)
+                channels @ channels.push(
+                    (to_i64(green[(y * width + x) * 4 + c]).must() - (p >> 24 - 8 * c & 255) + 256) % 256
+                )
+
+            residual @ residual.push(channels[3] << 24 | channels[0] << 16 | channels[1] << 8 | channels[2])
+
+    pack.put(w: @w, v: 0, n: 1)
+    write.put_image(w: @w, pix: residual, width: width, main: true, copies: true)
+    return pack.finished(w: @w)

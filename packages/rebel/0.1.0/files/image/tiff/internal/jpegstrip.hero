@@ -1,0 +1,44 @@
+# A JPEG strip or tile of a TIFF page: the page's tables, which its strips leave
+# out, put in front of the strip's own segments, then decoded as a JPEG file.
+
+use image
+use image/jpeg
+use image/tiff/internal/layout
+
+# The pixels of a JPEG strip or tile of `columns` by `rows` pixels: the
+# page's tables, which its strips leave out, put in front of the strip's own
+# segments, then decoded as a whole JPEG file. Fails `invalid` where the
+# stream does not make that picture, and `unsupported` as `image/jpeg` does.
+function jpeg_raw(src: [u8] lent, l: layout.Layout, columns: i64, rows: i64) -> [u8]?
+    joined: [u8] @= []
+
+    if l.jpeg_tables.len() > 0
+        t = l.jpeg_tables
+
+        if t.len() < 4 || t[0] != 0xff || t[1] != 0xd8 || t[t.len() - 2] != 0xff || t[t.len() - 1] != 0xd9
+            return fail(code: image.INVALID, msg: "JPEGTables that are not a stream of tables from SOI to EOI")
+
+        if src.len() < 2 || src[0] != 0xff || src[1] != 0xd8
+            return fail(code: image.INVALID, msg: "a JPEG strip that does not begin with SOI")
+        joined @ t.slice(from: 0, to: t.len() - 2)
+
+        for i in range(from: 2, to: src.len())
+            joined @ joined.push(src[i])
+    else
+        joined @ src.slice(from: 0, to: src.len())
+    own = image.Limits(max_width: columns, max_height: rows, max_pixels: columns * rows)
+    pic = jpeg.decode(joined, own)?.image
+
+    comps = if pic.format == .gray
+        1
+    else if pic.format == .rgb
+        3
+    else
+        0
+
+    if comps != l.spp || pic.width != columns || pic.height != rows
+        return fail(
+            code: image.INVALID,
+            msg: f"a JPEG strip of {pic.width} by {pic.height} pixels and {comps} components, where {columns} by {rows} pixels and {l.spp} samples are due"
+        )
+    return ok(pic.pixels)

@@ -1,0 +1,235 @@
+# What one image file directory says about how its page is stored, read and
+# checked: the size, the samples, the compression, and where the strips or
+# tiles stand. Nothing here reads pixel data.
+
+use image
+use image/tiff/internal/ifd
+use image/tiff/internal/pixels
+
+# The tags of a page that its decoding needs.
+record Layout
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The bits of every sample, 1 to 16.
+    bits: i64
+    # The samples a pixel holds.
+    spp: i64
+    # PhotometricInterpretation.
+    photometric: i64
+    # Compression.
+    compression: i64
+    # PlanarConfiguration: 1 the samples of a pixel together, 2 one plane
+    # after another.
+    planar: i64
+    # Predictor: 1 none, 2 horizontal differencing.
+    predictor: i64
+    # FillOrder: 1 the high bit of a byte first, 2 the low one.
+    fill_order: i64
+    # The rows of a strip, at most the image's height; 0 where tiles are used.
+    rows_per_strip: i64
+    # The columns of a tile, 0 where strips are used.
+    tile_width: i64
+    # The rows of a tile, 0 where strips are used.
+    tile_height: i64
+    # Where each strip or tile begins.
+    offsets: [i64]
+    # How many bytes each holds.
+    counts: [i64]
+    # ExtraSamples, one entry for every sample after the colours.
+    extra: [i64]
+    # The ColorMap, empty where the page has none.
+    palette: [i64]
+    # ReferenceBlackWhite, six numbers, or empty.
+    refs: [i64]
+    # YCbCrSubSampling: the columns and the rows of pixels that share a
+    # colour sample.
+    sub_h: i64
+    sub_v: i64
+    # JPEGTables, empty where the page has none.
+    jpeg_tables: [u8]
+    # T4Options or T6Options, whichever the compression reads.
+    fax_options: i64
+    # The Orientation tag, 1 to 8.
+    orientation: i64
+
+# The values of `tag` as whole numbers, or `fallback` where the page has none.
+function ints_or(data: [u8] lent, h: ifd.Header, entries: [ifd.Entry] lent, tag: i64, fallback: [i64]) -> [i64]?
+    match ifd.entry_of(entries, tag: tag)
+        .err _ => return ok(fallback)
+        .ok e  => return ifd.ints_of(data, h: h, e: e)
+
+# ReferenceBlackWhite as six whole numbers, each rational rounded down, or an
+# empty list where the page has none or not six.
+function reference_of(data: [u8] lent, h: ifd.Header, entries: [ifd.Entry] lent) -> [i64]
+    out: [i64] @= []
+
+    match ifd.entry_of(entries, tag: 532)
+        .err _ => return out
+        .ok e =>
+            r = ifd.rationals_of(data, h: h, e: e)
+
+            if r.len() != 12
+                return out
+
+            for i in range(from: 0, to: 6)
+                if r[2 * i + 1] == 0
+                    return []
+                out @ out.push(r[2 * i] / r[2 * i + 1])
+
+            return out
+
+# The layout of the page whose entries are `entries`, checked against
+# `limits`. Fails `invalid` for tags that contradict each other or the file,
+# `limit` for a page past `limits`, and `unsupported`, saying what, for what
+# this reader does not decode.
+function layout_of(data: [u8] lent, h: ifd.Header, entries: [ifd.Entry] lent, limits: image.Limits) -> Layout?
+    width = ifd.int_or(data, h: h, entries: entries, tag: 256, fallback: 0)?
+    height = ifd.int_or(data, h: h, entries: entries, tag: 257, fallback: 0)?
+
+    if width < 1 || height < 1
+        return fail(code: image.INVALID, msg: f"a page of {width} by {height} pixels")
+    image.check_limits(limits, width: width, height: height)?
+    spp = ifd.int_or(data, h: h, entries: entries, tag: 277, fallback: 1)?
+
+    if spp < 1 || spp > 64
+        return fail(code: image.INVALID, msg: f"{spp} samples a pixel")
+    bits_list = ints_or(data, h: h, entries: entries, tag: 258, fallback: [1])?
+    bits = bits_list[0]
+
+    for b in bits_list
+        if b != bits
+            return fail(
+                code: image.UNSUPPORTED,
+                msg: f"samples of different widths, {bits} and {b} bits: no `image` format holds them"
+            )
+
+    if bits < 1 || bits > 16
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"samples of {bits} bits: `image` holds 8 and 16 bits a sample, so this reads 1 to 16 and no more"
+        )
+    formats = ints_or(data, h: h, entries: entries, tag: 339, fallback: [1])?
+
+    for f in formats
+        if f != 1 && f != 4
+            return fail(
+                code: image.UNSUPPORTED,
+                msg: f"SampleFormat {f}, signed or floating-point samples: `image` holds unsigned whole numbers"
+            )
+
+    photometric = ifd.int_or(data, h: h, entries: entries, tag: 262, fallback: -1)?
+
+    if photometric < 0
+        return fail(code: image.INVALID, msg: "a page with no PhotometricInterpretation")
+
+    if photometric > 6
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"PhotometricInterpretation {photometric} (CIE Lab, a colour filter array or linear raw data): this reads 0 to 6"
+        )
+    colors = pixels.colors_of(photometric)
+
+    if spp < colors
+        return fail(
+            code: image.INVALID,
+            msg: f"{spp} samples a pixel, too few for photometric {photometric}, which holds {colors}"
+        )
+
+    if photometric == 6 && bits != 8
+        return fail(code: image.UNSUPPORTED, msg: f"YCbCr samples of {bits} bits: this reads 8")
+    compression = ifd.int_or(data, h: h, entries: entries, tag: 259, fallback: 1)?
+    planar = ifd.int_or(data, h: h, entries: entries, tag: 284, fallback: 1)?
+
+    if planar != 1 && planar != 2
+        return fail(code: image.INVALID, msg: f"PlanarConfiguration {planar}")
+    predictor = ifd.int_or(data, h: h, entries: entries, tag: 317, fallback: 1)?
+
+    if predictor != 1 && predictor != 2
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"Predictor {predictor}: this reads 1 (none) and 2 (horizontal differencing), not the floating-point one"
+        )
+    fill_order = ifd.int_or(data, h: h, entries: entries, tag: 266, fallback: 1)?
+
+    if fill_order != 1 && fill_order != 2
+        return fail(code: image.INVALID, msg: f"FillOrder {fill_order}")
+    extra = ints_or(data, h: h, entries: entries, tag: 338, fallback: [])?
+    sub = ints_or(data, h: h, entries: entries, tag: 530, fallback: [2, 2])?
+
+    if sub.len() != 2 || sub[0] != 1 && sub[0] != 2 && sub[0] != 4 || sub[1] != 1 && sub[1] != 2 && sub[1] != 4
+        return fail(code: image.INVALID, msg: "YCbCrSubSampling that is not 1, 2 or 4 each way")
+    palette = ints_or(data, h: h, entries: entries, tag: 320, fallback: [])?
+    refs = reference_of(data, h: h, entries: entries)
+    orientation = ifd.int_or(data, h: h, entries: entries, tag: 274, fallback: 1)?
+
+    if photometric == 3 && palette.len() < 3 * (1 << bits)
+        return fail(
+            code: image.INVALID,
+            msg: f"a palette of {palette.len()} entries, where 3 times {1 << bits} are due"
+        )
+
+    tables: [u8] = match ifd.entry_of(entries, tag: 347)
+        .err _ => []
+        .ok e  => data.slice(from: e.at, to: e.at + e.count)
+
+    options_tag = if compression == 4
+        293
+    else
+        292
+    fax_options = ifd.int_or(data, h: h, entries: entries, tag: options_tag, fallback: 0)?
+    tiled = ifd.has_tag(entries, tag: 322)
+    tile_width @= 0
+    tile_height @= 0
+    rows_per_strip @= 0
+    offsets: [i64] @= []
+    counts: [i64] @= []
+
+    if tiled
+        tile_width @ ifd.int_or(data, h: h, entries: entries, tag: 322, fallback: 0)?
+        tile_height @ ifd.int_or(data, h: h, entries: entries, tag: 323, fallback: 0)?
+
+        if tile_width < 1 || tile_height < 1
+            return fail(code: image.INVALID, msg: f"tiles of {tile_width} by {tile_height} pixels")
+        image.check_limits(limits, width: tile_width, height: tile_height)?
+        offsets @ ints_or(data, h: h, entries: entries, tag: 324, fallback: [])?
+        counts @ ints_or(data, h: h, entries: entries, tag: 325, fallback: [])?
+    else
+        rows_per_strip @ ifd.int_or(data, h: h, entries: entries, tag: 278, fallback: height)?
+
+        if rows_per_strip < 1
+            return fail(code: image.INVALID, msg: f"{rows_per_strip} rows a strip")
+
+        if rows_per_strip > height
+            rows_per_strip @ height
+        offsets @ ints_or(data, h: h, entries: entries, tag: 273, fallback: [])?
+        counts @ ints_or(data, h: h, entries: entries, tag: 279, fallback: [])?
+    chunks = chunk_count(
+        width: width,
+        height: height,
+        tile_width: tile_width,
+        tile_height: tile_height,
+        rows_per_strip: rows_per_strip
+    )
+
+    planes = if planar == 2
+        spp
+    else
+        1
+    due = chunks * planes
+
+    if offsets.len() < due || counts.len() < due
+        return fail(
+            code: image.INVALID,
+            msg: f"{offsets.len()} strip or tile offsets and {counts.len()} counts, where {due} of each are due"
+        )
+    return ok(
+        Layout(width: width, height: height, bits: bits, spp: spp, photometric: photometric, compression: compression, planar: planar, predictor: predictor, fill_order: fill_order, rows_per_strip: rows_per_strip, tile_width: tile_width, tile_height: tile_height, offsets: offsets, counts: counts, extra: extra, palette: palette, refs: refs, sub_h: sub[0], sub_v: sub[1], jpeg_tables: tables, fax_options: fax_options, orientation: orientation)
+    )
+
+# How many strips or tiles one plane of a page holds.
+function chunk_count(width: i64, height: i64, tile_width: i64, tile_height: i64, rows_per_strip: i64) -> i64
+    if tile_width > 0
+        return (width + tile_width - 1) / tile_width * ((height + tile_height - 1) / tile_height)
+    return (height + rows_per_strip - 1) / rows_per_strip

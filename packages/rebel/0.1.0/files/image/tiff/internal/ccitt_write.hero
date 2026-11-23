@@ -1,0 +1,225 @@
+# CCITT bilevel coding written: a row's colour changes turned into the run
+# codes of T.4 and the two-dimensional modes of T.4 and T.6, for Modified
+# Huffman, Group 3 and Group 4 strips.
+
+use image/tiff/internal/ccitt
+use image/tiff/internal/ccitt_codes
+use image/tiff/internal/lzw
+
+# The code words of a colour and the extended ones, as numbers: each a value
+# and the bits it takes.
+record Codes
+    # The terminating codes, runs 0 to 63.
+    terminating: [str]
+    # The makeup codes, runs 64 to 1728.
+    makeup: [str]
+    # The makeup codes of runs 1792 to 2560.
+    extended: [str]
+
+# The code words of `colour`.
+function codes_of(colour: i64) -> Codes
+    if colour == 0
+        return Codes(
+            terminating: ccitt_codes.white_terminating(),
+            makeup: ccitt_codes.white_makeup(),
+            extended: ccitt_codes.extended_makeup()
+        )
+    return Codes(
+        terminating: ccitt_codes.black_terminating(),
+        makeup: ccitt_codes.black_makeup(),
+        extended: ccitt_codes.extended_makeup()
+    )
+
+# Writes the bits of the text `code` to `out`.
+function put_code(@out: [u8], @acc: i64, @have: i64, code: str)
+    lzw.put(out: @out, acc: @acc, have: @have, code: ccitt.value_of(code), width: code.len())
+
+# Writes a run of `colour`: makeup codes for each 2560 and then the multiple
+# of 64 left, and the terminating code.
+function put_run(@out: [u8], @acc: i64, @have: i64, run: i64, c: Codes lent)
+    left @= run
+
+    while left >= 2560
+        put_code(out: @out, acc: @acc, have: @have, code: c.extended[12])
+        left @ left - 2560
+
+    if left >= 1792
+        put_code(out: @out, acc: @acc, have: @have, code: c.extended[(left - 1792) / 64])
+        left @ left % 64
+    else if left >= 64
+        put_code(out: @out, acc: @acc, have: @have, code: c.makeup[left / 64 - 1])
+        left @ left % 64
+    put_code(out: @out, acc: @acc, have: @have, code: c.terminating[left])
+
+# The changes of the row whose bytes are `row` (1 bits black) and `width` pixels wide.
+function changes_of(row: [u8] lent, width: i64) -> [i64]
+    changes: [i64] @= []
+    last @= 0
+
+    for x in range(from: 0, to: width)
+        bit = to_i64(row[x >> 3]).must() >> 7 - (x & 7) & 1
+
+        if bit != last
+            changes @ changes.push(x)
+            last @ bit
+
+    return changes
+
+# A one-dimensional row: its runs, white first.
+function put_row_1d(@out: [u8], @acc: i64, @have: i64, changes: [i64] lent, width: i64, white: Codes lent, black: Codes lent)
+    x @= 0
+    colour @= 0
+    k @= 0
+
+    while x < width
+        end = if k < changes.len()
+            changes[k]
+        else
+            width
+
+        if colour == 0
+            put_run(out: @out, acc: @acc, have: @have, run: end - x, c: white)
+        else
+            put_run(out: @out, acc: @acc, have: @have, run: end - x, c: black)
+        x @ end
+        k @ k + 1
+        colour @ 1 - colour
+
+# A two-dimensional row against `ref`, the changes of the row above.
+function put_row_2d(@out: [u8], @acc: i64, @have: i64, changes: [i64] lent, ref: [i64] lent, width: i64, white: Codes lent, black: Codes lent)
+    a0 @= -1
+    colour @= 0
+    bi @= 0
+    ai @= 0
+
+    while a0 < width
+        coding_low = if ai > 3
+            ai - 3
+        else
+            0
+        ai @ ccitt.first_b(changes, a0: a0, colour: colour, from: coding_low)
+
+        a1 = if ai < changes.len()
+            changes[ai]
+        else
+            width
+
+        a2 = if ai + 1 < changes.len()
+            changes[ai + 1]
+        else
+            width
+
+        low = if bi > 3
+            bi - 3
+        else
+            0
+        bi @ ccitt.first_b(ref, a0: a0, colour: colour, from: low)
+
+        b1 = if bi < ref.len()
+            ref[bi]
+        else
+            width
+
+        b2 = if bi + 1 < ref.len()
+            ref[bi + 1]
+        else
+            width
+
+        if b2 < a1
+            put_code(out: @out, acc: @acc, have: @have, code: "0001")
+            a0 @ b2
+        else if a1 - b1 <= 3 && b1 - a1 <= 3
+            names = ["0000010", "000010", "010", "1", "011", "000011", "0000011"]
+            put_code(out: @out, acc: @acc, have: @have, code: names[a1 - b1 + 3])
+            a0 @ a1
+            colour @ 1 - colour
+        else
+            put_code(out: @out, acc: @acc, have: @have, code: "001")
+
+            start = if a0 < 0
+                0
+            else
+                a0
+
+            if colour == 0
+                put_run(out: @out, acc: @acc, have: @have, run: a1 - start, c: white)
+                put_run(out: @out, acc: @acc, have: @have, run: a2 - a1, c: black)
+            else
+                put_run(out: @out, acc: @acc, have: @have, run: a1 - start, c: black)
+                put_run(out: @out, acc: @acc, have: @have, run: a2 - a1, c: white)
+            a0 @ a2
+
+# Writes an end-of-line code, `fill` zero bits first so that it ends on a byte
+# boundary, then the tag bit of a Group 3 strip that mixes dimensions where
+# `tag` is 0 or 1 (1 where the row after is one-dimensional).
+function put_eol(@out: [u8], @acc: i64, @have: i64, fill: bool, tag: i64)
+    if fill
+        zeros = (8 - (have + 12) % 8) % 8
+
+        if zeros > 0
+            lzw.put(out: @out, acc: @acc, have: @have, code: 0, width: zeros)
+    lzw.put(out: @out, acc: @acc, have: @have, code: 1, width: 12)
+
+    if tag >= 0
+        lzw.put(out: @out, acc: @acc, have: @have, code: tag, width: 1)
+
+# `rows` rows of `width` pixels from `raw`, bits of 1 for black, coded as
+# compression `kind` (2, 3 or 4). `two_d` and `fill` are Group 3's options: a
+# two-dimensional strip codes every fourth row alone, and a filled strip
+# starts each end-of-line code so that it ends on a byte boundary.
+function encode(raw: [u8] lent, kind: i64, width: i64, rows: i64, two_d: bool, fill: bool) -> [u8]
+    out: [u8] @= []
+    acc @= 0
+    have @= 0
+    white = codes_of(0)
+    black = codes_of(1)
+    ref: [i64] @= []
+    row_bytes = (width + 7) / 8
+
+    for r in range(from: 0, to: rows)
+        changes = changes_of(raw.slice(from: r * row_bytes, to: (r + 1) * row_bytes), width: width)
+        alone = kind != 4 && (!two_d || r % 4 == 0)
+
+        if kind == 3
+            tag = if !two_d
+                -1
+            else if alone
+                1
+            else
+                0
+            put_eol(out: @out, acc: @acc, have: @have, fill: fill, tag: tag)
+
+        if kind == 4 || !alone
+            put_row_2d(
+                out: @out,
+                acc: @acc,
+                have: @have,
+                changes: changes,
+                ref: ref,
+                width: width,
+                white: white,
+                black: black
+            )
+        else
+            put_row_1d(out: @out, acc: @acc, have: @have, changes: changes, width: width, white: white, black: black)
+
+        if kind == 2 && have > 0
+            lzw.put(out: @out, acc: @acc, have: @have, code: 0, width: 8 - have)
+        ref @ changes
+
+    if kind == 4
+        lzw.put(out: @out, acc: @acc, have: @have, code: 1, width: 12)
+        lzw.put(out: @out, acc: @acc, have: @have, code: 1, width: 12)
+
+    if kind == 3
+        end_tag = if two_d
+            1
+        else
+            -1
+
+        for _ in range(from: 0, to: 6)
+            put_eol(out: @out, acc: @acc, have: @have, fill: fill, tag: end_tag)
+
+    if have > 0
+        lzw.put(out: @out, acc: @acc, have: @have, code: 0, width: 8 - have)
+    return out

@@ -1,0 +1,21 @@
+# Reaches Rebel's `image/tiff`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a small image as an LZW-coded TIFF,
+# reads it back, and prints its size and the colour of its first pixel.
+
+use <rebel>/image
+use <rebel>/image/tiff
+
+function main()
+    match image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [200, 100, 50, 0, 0, 0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok img =>
+            o @= tiff.default_encode_options()
+            o.compression @ .lzw
+            o.predictor @ true
+
+            match tiff.encode_image(img, options: o)
+                .err e => print(e.code, ": ", e.msg)
+                .ok file =>
+                    match tiff.decode_image(file, image.default_limits())
+                        .err e   => print(e.code, ": ", e.msg)
+                        .ok back => print(back.width, " by ", back.height, ", red ", image.color_at(back, x: 0, y: 0).r)

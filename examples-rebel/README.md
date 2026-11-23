@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-six packages, in layers. **A package may use any package of a layer below
+A hundred and seventy packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -90,6 +90,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
 | 2 | `image/colorspace` | a colour in HSV, HLS, CMYK, YCbCr and YIQ and back, and an image split into the planes of a space and merged again; Lab is pending | `image`, `math` |  |
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
+| 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
@@ -99,6 +100,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists`, `math` |  |
 | 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `strings`, `unicode`, `unicode/segment` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
+| 3 | `image/text` | text drawn into an image: a line set in a `font`, kerned and spaced, its outline filled anti-aliased through `image/vector`, measured, cut into lines and aligned in a width | `bytes`, `font`, `image`, `image/vector`, `unicode` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `html`, `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |
@@ -165,6 +167,8 @@ package moves its row in the same change. There is no cycle.
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
+| 5 | `image/ico` | ICO and CUR read and written: every image of an icon or cursor (PNG and bitmap entries of 1, 4, 8, 24 and 32 bits with their masks) as RGBA, a cursor's hot spot; written with PNG or 32-bit bitmap entries | `bytes`, `hash`, `image`, `image/png` |  |
+| 5 | `image/tiff` | TIFF read and written: every page of a file, in strips or tiles, coded by PackBits, LZW, Deflate, Zstandard, JPEG or the fax codings, 1 to 16 bits a sample as gray, RGB, a palette, CMYK or YCbCr, with alpha; written in every coding but JPEG, classic or BigTIFF, as strips or tiles, or as one bit a pixel | `bytes`, `compress`, `compress/zstd`, `hash`, `image`, `image/colorspace`, `image/jpeg` |  |
 | 5 | `pdf` | PDF documents written (text in the standard fonts and in embedded TrueType fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `font`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |

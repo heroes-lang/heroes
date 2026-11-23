@@ -1,0 +1,71 @@
+# The ledger of `image/text`: what Go's `golang.org/x/image/font` and
+# `font/opentype` (`Drawer`, `DrawString`, `MeasureString`), Python's Pillow
+# (`ImageFont`, `ImageDraw.text`, `textbbox`, `textlength`, `multiline_text`)
+# and Java's `java.awt.font` (`TextLayout`, `GlyphVector`) let a program do to
+# draw text into an image, one block per capability, and what Rebel answers.
+# Go's x/image is not part of Go's standard library and is not on this machine,
+# Pillow is not installed and Java's names are those of its documentation: their
+# lines are the names the catalogue gives, unread by `go doc`, `dir()` or
+# `javap`, a question rather than a measurement. Rust's standard library has
+# no text drawing: `-` in its lines.
+#
+# No second rasteriser is on this machine to give the pixels of a glyph, so the
+# tests hold what the definitions give: the ink of a letter has the area its
+# outline encloses (the shoelace sum over the outline, computed in the test
+# apart from the rasteriser), stands on the baseline row and spans the glyph's
+# own box scaled to the size, a line drawn in two pieces ends as one drawn
+# whole, and the same outline filled apart gives the same pixels. The font is
+# Noto Sans Regular 2.015 cut to 29 glyphs (SIL Open Font License 1.1).
+
+capability text/measure  the room a line takes: its width and the heights above and below its baseline
+  heroes  image/text.measure, image/text.Measure
+  go      font.MeasureString, font.Drawer.MeasureString, Face.Metrics, Face.GlyphAdvance
+  rust    -
+  python  ImageFont.getlength, ImageFont.getbbox, ImageFont.getmetrics, ImageDraw.textlength, ImageDraw.textbbox
+  note    the width is the advances of the glyphs, the kerning of the `kern` table where asked and the spacing between letters; the heights are the font's ascent and descent at the size
+
+capability text/draw  a line filled into an image
+  heroes  image/text.draw, image/text.style, image/text.Style
+  go      font.Drawer.DrawString, font.Drawer.Dot, opentype.NewFace
+  rust    -
+  python  ImageDraw.text
+  note    the baseline row and the pen's column are given, the glyphs anti-aliased by their alpha over what is there and cut by the image's edge; the answer is how far the pen travelled, where Go's Drawer moves its own `Dot`
+
+capability text/outline  the outline of a line as a path
+  heroes  image/text.outline
+  go      -
+  rust    -
+  python  ImageFont.getmask2, ImageFont.FreeTypeFont.font.render
+  note    the path is `image/vector`'s, so a program strokes it (a Pillow `stroke_width`), turns it, scales it or fills it with a rule of its own
+
+capability text/block  text cut into lines and aligned in a width
+  heroes  image/text.wrap, image/text.draw_block, image/text.Align
+  go      -
+  rust    -
+  python  ImageDraw.multiline_text, ImageDraw.multiline_textbbox, ImageDraw.text (align, spacing)
+  note    paragraphs at line feeds, words at spaces, a word wider than the line cut between characters, left, centre and right alignment and a factor on the font's line height
+
+capability text/missing  a character the font cannot show
+  heroes  image/text.Style: notdef
+  go      font.Face.GlyphAdvance (not ok)
+  rust    -
+  python  ImageFont.getmask (the notdef box)
+  note    `not_found` naming the character, before a pixel changes, or the font's own `.notdef` where the style asks for it
+
+capability text/shaping  complex-script shaping and right-to-left text
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageFont.Layout.RAQM, ImageDraw.text (direction, features, language)
+  note    the order of right-to-left text, the joined forms of Arabic, ligatures and GPOS pair adjustments (see `font/layout`) wait for a shaper; Latin, Greek and Cyrillic set left to right are complete
+
+capability text/hinting  glyphs fitted to the pixel grid, and the sub-pixel positions of LCD text
+  heroes  refused: the outlines are filled as the font draws them at its size, which is what Go's `font.HintingNone` and a plotter want; a rasteriser that runs the font's instructions is `font/hinting`'s refusal
+  go      font.HintingNone, font.HintingVertical, font.HintingFull
+  rust    -
+  python  ImageFont.Layout, FreeTypeFont (layout_engine)
+  note    -
+
+dropped
+  go      font.Face as an interface and its Close: a font is a value here, parsed by `font.parse`
+  python  ImageFont.load_default, ImageFont.truetype by path or by name: the bytes and the system's fonts are `font`'s; ImageFont.TransposedFont: turn the image after drawing

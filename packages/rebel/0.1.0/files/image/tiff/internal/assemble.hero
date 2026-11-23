@@ -1,0 +1,240 @@
+# The layout of a written file: the header, each page's coded pieces, then
+# its directory with the values that do not fit in an entry, the directories
+# chained by their next-directory offsets.
+
+use image
+use image/tiff/internal/writer
+
+# The bytes of one directory that begins at `at`, its entries in `fields`
+# (tags ascending), the next-directory offset 0.
+function directory_bytes(fields: [writer.Field] lent, at: i64, big: bool, big_endian: bool) -> [u8]
+    head = if big
+        8
+    else
+        2
+
+    entry = if big
+        20
+    else
+        12
+
+    inline = if big
+        8
+    else
+        4
+
+    word = if big
+        8
+    else
+        4
+    extra_at = at + head + fields.len() * entry + word
+    out: [u8] @= []
+    values: [u8] @= []
+    writer.put_int(out: @out, v: fields.len(), size: head, big_endian: big_endian)
+
+    for f in fields
+        writer.put_int(out: @out, v: f.tag, size: 2, big_endian: big_endian)
+        writer.put_int(out: @out, v: f.kind, size: 2, big_endian: big_endian)
+        writer.put_int(out: @out, v: f.count, size: word, big_endian: big_endian)
+
+        if f.bytes.len() <= inline
+            for b in f.bytes
+                out @ out.push(b)
+
+            for _ in range(from: 0, to: inline - f.bytes.len())
+                out @ out.push(0)
+        else
+            if (extra_at + values.len()) % 2 == 1
+                values @ values.push(0)
+            writer.put_int(out: @out, v: extra_at + values.len(), size: word, big_endian: big_endian)
+
+            for b in f.bytes
+                values @ values.push(b)
+
+    writer.put_int(out: @out, v: 0, size: word, big_endian: big_endian)
+
+    for b in values
+        out @ out.push(b)
+
+    return out
+
+# The fields of the page whose pixels are `img`, cut as `ch` says and stored at
+# `offsets`, in tag order.
+function fields_of(img: image.Image lent, meta: writer.Meta lent, s: writer.Settings lent, ch: writer.Chunks lent, offsets: [i64] lent) -> [writer.Field]
+    be = s.big_endian
+
+    offset_kind = if s.big
+        16
+    else
+        4
+    counts: [i64] @= []
+
+    for p in ch.pieces
+        counts @ counts.push(p.len())
+
+    photometric = if ch.bits == 1 && s.compression >= 2 && s.compression <= 4
+        0
+    else if ch.spp <= 2
+        1
+    else
+        2
+    fields: [writer.Field] @= []
+
+    if meta.reduced
+        fields @ fields.push(writer.ints_field(tag: 254, kind: 4, values: [1], big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 256, kind: 4, values: [img.width], big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 257, kind: 4, values: [img.height], big_endian: be))
+    bits_list: [i64] @= []
+
+    for _ in range(from: 0, to: ch.spp)
+        bits_list @ bits_list.push(ch.bits)
+
+    fields @ fields.push(writer.ints_field(tag: 258, kind: 3, values: bits_list, big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 259, kind: 3, values: [s.compression], big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 262, kind: 3, values: [photometric], big_endian: be))
+
+    match meta.description
+        .ok d  => fields @ fields.push(writer.text_field(tag: 270, text: d))
+        .err _ => _ = 0
+
+    if s.tile_width == 0
+        fields @ fields.push(writer.ints_field(tag: 273, kind: offset_kind, values: offsets, big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 274, kind: 3, values: [meta.orientation], big_endian: be))
+    fields @ fields.push(writer.ints_field(tag: 277, kind: 3, values: [ch.spp], big_endian: be))
+
+    if s.tile_width == 0
+        fields @ fields.push(writer.ints_field(tag: 278, kind: 4, values: [ch.rows_per_strip], big_endian: be))
+        fields @ fields.push(writer.ints_field(tag: 279, kind: offset_kind, values: counts, big_endian: be))
+
+    match meta.resolution
+        .ok r =>
+            fields @ fields.push(writer.rational_field(tag: 282, value: r.x, big_endian: be))
+            fields @ fields.push(writer.rational_field(tag: 283, value: r.y, big_endian: be))
+        .err _ => _ = 0
+
+    fields @ fields.push(writer.ints_field(tag: 284, kind: 3, values: [1], big_endian: be))
+
+    if s.compression == 3
+        fields @ fields.push(writer.ints_field(tag: 292, kind: 4, values: [group3_options(s)], big_endian: be))
+
+    if s.compression == 4
+        fields @ fields.push(writer.ints_field(tag: 293, kind: 4, values: [0], big_endian: be))
+
+    match meta.resolution
+        .ok r  => fields @ fields.push(writer.ints_field(tag: 296, kind: 3, values: [r.unit], big_endian: be))
+        .err _ => _ = 0
+
+    match meta.software
+        .ok t  => fields @ fields.push(writer.text_field(tag: 305, text: t))
+        .err _ => _ = 0
+
+    match meta.date_time
+        .ok t  => fields @ fields.push(writer.text_field(tag: 306, text: t))
+        .err _ => _ = 0
+
+    if s.predictor
+        fields @ fields.push(writer.ints_field(tag: 317, kind: 3, values: [2], big_endian: be))
+
+    if s.tile_width > 0
+        fields @ fields.push(writer.ints_field(tag: 322, kind: 4, values: [s.tile_width], big_endian: be))
+        fields @ fields.push(writer.ints_field(tag: 323, kind: 4, values: [s.tile_height], big_endian: be))
+        fields @ fields.push(writer.ints_field(tag: 324, kind: offset_kind, values: offsets, big_endian: be))
+        fields @ fields.push(writer.ints_field(tag: 325, kind: offset_kind, values: counts, big_endian: be))
+
+    if ch.bits > 1 && (ch.spp == 2 || ch.spp == 4)
+        fields @ fields.push(writer.ints_field(tag: 338, kind: 3, values: [2], big_endian: be))
+
+    if meta.icc.len() > 0
+        fields @ fields.push(
+            writer.Field(tag: 34675, kind: 7, count: meta.icc.len(), bytes: meta.icc.slice(from: 0, to: meta.icc.len()))
+        )
+    return fields
+
+# T4Options: bit 0 for mixed dimensions, bit 2 for byte-aligned end-of-line codes.
+function group3_options(s: writer.Settings lent) -> i64
+    v @= 0
+
+    if s.two_d
+        v @ v | 1
+
+    if s.fill
+        v @ v | 4
+    return v
+
+# The file holding `pages` and what each says, written as `s` says. Fails
+# `limit` where a classic file would pass 4 GiB.
+function file_of(pages: [image.Image] lent, metas: [writer.Meta] lent, s: writer.Settings lent) -> [u8]?
+    out: [u8] @= []
+    be = s.big_endian
+
+    order: u8 = if be
+        'M'
+    else
+        'I'
+
+    version = if s.big
+        43
+    else
+        42
+
+    head = if s.big
+        8
+    else
+        2
+
+    entry = if s.big
+        20
+    else
+        12
+    out @ out.push(order)
+    out @ out.push(order)
+    writer.put_int(out: @out, v: version, size: 2, big_endian: be)
+
+    if s.big
+        writer.put_int(out: @out, v: 8, size: 2, big_endian: be)
+        writer.put_int(out: @out, v: 0, size: 2, big_endian: be)
+        writer.put_int(out: @out, v: 0, size: 8, big_endian: be)
+    else
+        writer.put_int(out: @out, v: 0, size: 4, big_endian: be)
+
+    link @= if s.big
+        8
+    else
+        4
+    word = link
+
+    for i in range(from: 0, to: pages.len())
+        ch = writer.chunks_of(pages[i], s: s)?
+        offsets: [i64] @= []
+
+        for p in ch.pieces
+            offsets @ offsets.push(out.len())
+
+            for b in p
+                out @ out.push(b)
+
+            if out.len() % 2 == 1
+                out @ out.push(0)
+
+        at = out.len()
+        fields = fields_of(pages[i], meta: metas[i], s: s, ch: ch, offsets: offsets)
+        block = directory_bytes(fields, at: at, big: s.big, big_endian: be)
+
+        if !s.big && at + block.len() > 0xffffffff
+            return fail(code: image.LIMIT, msg: "a classic TIFF file would pass 4 GiB: ask for BigTIFF")
+        patch(out: @out, at: link, v: at, size: word, big_endian: be)
+
+        for b in block
+            out @ out.push(b)
+
+        link @ at + head + fields.len() * entry
+
+    return ok(out)
+
+# Writes `v` of `size` bytes over the bytes of `out` at `at`.
+function patch(@out: [u8], at: i64, v: i64, size: i64, big_endian: bool)
+    scratch: [u8] @= []
+    writer.put_int(out: @scratch, v: v, size: size, big_endian: big_endian)
+
+    for k in range(from: 0, to: size)
+        out[at + k] @ scratch[k]

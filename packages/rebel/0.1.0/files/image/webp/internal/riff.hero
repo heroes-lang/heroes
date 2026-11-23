@@ -1,0 +1,94 @@
+# The RIFF container of a WebP file: its chunks, and the fields of the ones
+# the extended format adds (VP8X, ANIM, ANMF).
+
+use bytes
+use image
+
+# One chunk: a four-letter tag and its payload, the padding byte dropped.
+record Chunk
+    # The tag, such as `VP8L`.
+    tag: str
+    # The payload.
+    data: [u8]
+
+# The two bytes of `d` at `at`, low byte first.
+function le16(d: [u8] lent, at: i64) -> i64
+    return to_i64(d[at]).must() | to_i64(d[at + 1]).must() << 8
+
+# The three bytes of `d` at `at`, low byte first.
+function le24(d: [u8] lent, at: i64) -> i64
+    return le16(d, at: at) | to_i64(d[at + 2]).must() << 16
+
+# The four bytes of `d` at `at`, low byte first.
+function le32(d: [u8] lent, at: i64) -> i64
+    return le24(d, at: at) | to_i64(d[at + 3]).must() << 24
+
+# The four bytes of `d` at `at` as text.
+function tag_at(d: [u8] lent, at: i64) -> str
+    return bytes.to_text_lossy(d.slice(from: at, to: at + 4))
+
+# The chunks of `d` from byte `from` to byte `end`. Fails `invalid` where a
+# chunk runs past `end`.
+function chunks_in(d: [u8] lent, from: i64, end: i64) -> [Chunk]?
+    out: [Chunk] @= []
+    at @= from
+
+    while at + 8 <= end
+        size = le32(d, at: at + 4)
+
+        if size > end - at - 8
+            return fail(
+                code: image.INVALID,
+                msg: f"a chunk of {size} bytes at byte {at} that passes the end of its parent"
+            )
+        out @ out.push(Chunk(tag: tag_at(d, at: at), data: d.slice(from: at + 8, to: at + 8 + size)))
+        at @ at + 8 + size + size % 2
+
+    return ok(out)
+
+# The chunks of `data`, a whole WebP file, in order. Fails `invalid` where it
+# does not begin as RIFF and WEBP, a chunk runs past the file, or the file
+# is shorter than its RIFF size says.
+function chunks_of(data: [u8] lent) -> [Chunk]?
+    if data.len() < 12 || tag_at(data, at: 0) != "RIFF" || tag_at(data, at: 8) != "WEBP"
+        return fail(code: image.INVALID, msg: "the data does not begin as a WebP file: RIFF, a size, WEBP")
+    size = le32(data, at: 4)
+
+    if size < 4 || size + 8 > data.len()
+        return fail(code: image.INVALID, msg: f"a RIFF size of {size} in a file of {data.len()} bytes")
+    out = chunks_in(data, from: 12, end: size + 8)?
+
+    if out.len() == 0
+        return fail(code: image.INVALID, msg: "a WebP file with no chunk")
+    return ok(out)
+
+# `v` as `size` bytes, low byte first, added to `out`.
+function put(@out: [u8], v: i64, size: i64)
+    for k in range(from: 0, to: size)
+        out @ out.push(to_u8(v >> k * 8 & 255).must())
+
+# `payload` as a chunk of tag `tag`, padded to an even length, added to `out`.
+function put_chunk(@out: [u8], tag: str, payload: [u8] lent)
+    for i in range(from: 0, to: 4)
+        out @ out.push(tag[i])
+
+    put(out: @out, v: payload.len(), size: 4)
+
+    for b in payload
+        out @ out.push(b)
+
+    if payload.len() % 2 == 1
+        out @ out.push(0)
+
+# The chunks of `body`, already written, as a RIFF file.
+function file_of(body: [u8] lent) -> [u8]
+    out: [u8] @= bytes.from_text("RIFF")
+    put(out: @out, v: body.len() + 4, size: 4)
+
+    for b in bytes.from_text("WEBP")
+        out @ out.push(b)
+
+    for b in body
+        out @ out.push(b)
+
+    return out

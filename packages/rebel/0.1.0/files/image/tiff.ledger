@@ -1,0 +1,107 @@
+# The ledger of `image/tiff`: what libtiff (4.7.2, this Mac's, its `tiff.h`,
+# `tiffio.h` and manual pages read on 2026-11-23), Go's `golang.org/x/image/tiff`
+# and `golang.org/x/image/ccitt`, Python's Pillow (its TIFF plugin) and Java's
+# `javax.imageio.plugins.tiff` let a program do with TIFF, one block per
+# capability, and what Rebel answers. Go's x/image is not part of Go's
+# standard library and is not on this machine, Pillow is not installed and
+# Java's names are those of its documentation: their lines are the names the
+# catalogue gives, unread by `go doc`, `dir()` or `javap`, a question rather
+# than a measurement. Rust's standard library has no TIFF: `-` in its lines.
+#
+# The expected values of the tests are libtiff's: files laid out by a small
+# TIFF writer and converted by libtiff 4.7.2's `tiffcp` (compressions, tiles,
+# planes, predictors, fill orders, BigTIFF, byte order) and read back by its
+# `tiff2rgba`, run on 2026-11-23, or known by construction; the CMYK, YCbCr and
+# JPEG pixels are `tiff2rgba`'s answer to the same file, which converts by its
+# own tables and the libjpeg of this machine, so those cases hold a slack in
+# levels. Every file `encode` writes in every coding, tile and plane layout
+# was read by `tiffinfo` without a warning and by `tiff2rgba` to the same
+# pixels, on 2026-11-23, outside the tests.
+
+capability tiff/decode  every page of a TIFF file read
+  heroes  image/tiff.decode, image/tiff.Tiff, image/tiff.Page
+  go      tiff.Decode, tiff.DecodeConfig
+  rust    -
+  python  Image.open, TiffImagePlugin.TiffImageFile, Image.seek, Image.n_frames
+  note    libtiff: TIFFOpenMem-equivalents TIFFOpen, TIFFReadDirectory, TIFFSetDirectory, TIFFReadRGBAImage. classic and BigTIFF, either byte order, every directory of the chain (a loop is refused); each page is gray, gray with alpha, RGB or RGBA at 8 or 16 bits a sample, a palette, CMYK and YCbCr turned to RGB at 8 bits; alpha is straight, associated alpha made straight; an extra sample marked unspecified after the colours is alpha as Go and Pillow read it (libtiff's reader takes it as associated)
+
+capability tiff/decode-image  the first page alone
+  heroes  image/tiff.decode_image
+  go      tiff.Decode
+  rust    -
+  python  Image.open
+  note    libtiff: TIFFReadRGBAImage. one call of the shape every format of `image` has
+
+capability tiff/info  the size, samples and coding of the first page and the page count, nothing decoded
+  heroes  image/tiff.info_of, image/tiff.Info
+  go      tiff.DecodeConfig
+  rust    -
+  python  Image.open (lazy), Image.n_frames
+  note    libtiff: TIFFGetField, TIFFNumberOfDirectories
+
+capability tiff/compressions  the codings of strips and tiles
+  heroes  image/tiff.Compression: none, PackBits, LZW, Deflate (8 and 32946), Zstandard, JPEG, CCITT Modified Huffman, Group 3 and Group 4
+  go      tiff.Decode (Uncompressed, LZW, Deflate, PackBits), ccitt.NewReader
+  rust    -
+  python  TiffImagePlugin (raw, tiff_lzw, tiff_adobe_deflate, packbits, tiff_ccitt, tiff_jpeg, jpeg, zstd)
+  note    libtiff: COMPRESSION_NONE, COMPRESSION_LZW, COMPRESSION_ADOBE_DEFLATE, COMPRESSION_DEFLATE, COMPRESSION_PACKBITS, COMPRESSION_ZSTD, COMPRESSION_JPEG, COMPRESSION_CCITTRLE, COMPRESSION_CCITTFAX3, COMPRESSION_CCITTFAX4. the fax codings read to the pixel of libtiff's own files for every code word of T.4 (every run length 0 to 63, every multiple of 64 to 2560, both colours), one- and two-dimensional Group 3 with and without byte-aligned end-of-line codes, and either photometric; JPEG strips are put together with the page's JPEGTables and decoded by `image/jpeg`; a damaged fax row is `invalid`, not skipped as libtiff skips it
+
+capability tiff/layouts  how the samples are stored
+  heroes  image/tiff.decode
+  go      tiff.Decode
+  rust    -
+  python  TiffImagePlugin
+  note    libtiff: TIFFReadEncodedStrip, TIFFReadEncodedTile, TIFFTAG_PLANARCONFIG, TIFFTAG_PREDICTOR, TIFFTAG_FILLORDER. strips and tiles, one plane or several, the horizontal predictor at 8 and 16 bits, 1 to 16 bits a sample (a sample of fewer or more than 8 bits scaled to 8 or 16, rounded; 1, 2 and 4 bits exact), WhiteIsZero, a palette's 16-bit entries cut to their high byte as libtiff does, YCbCr with its chroma shared by 1, 2 or 4 pixels each way and ReferenceBlackWhite, a fill order of 2, a transparency mask read as gray
+
+capability tiff/metadata  what a page says about itself
+  heroes  image/tiff.Page: orientation, reduced, resolution, description, software, date_time, icc
+  go      -
+  rust    -
+  python  TiffImagePlugin.ImageFileDirectory_v2, Image.info
+  note    libtiff: TIFFTAG_ORIENTATION, TIFFTAG_XRESOLUTION, TIFFTAG_RESOLUTIONUNIT, TIFFTAG_IMAGEDESCRIPTION, TIFFTAG_SOFTWARE, TIFFTAG_DATETIME, TIFFTAG_ICCPROFILE, TIFFTAG_SUBFILETYPE. the orientation is reported, not applied (`image.apply_orientation` applies it), as `image/jpeg` does; the other tags of a directory (Artist, Make, Model, the EXIF, GPS and SubIFD directories) are not read, see `tiff/other-tags`
+
+capability tiff/other-tags  the directory's other tags and the directories it points to
+  heroes  pending
+  go      -
+  rust    -
+  python  TiffImagePlugin.ImageFileDirectory_v2, Image.getexif
+  note    libtiff: TIFFGetField, TIFFReadEXIFDirectory, TIFFReadGPSDirectory, TIFFTAG_SUBIFD
+
+capability tiff/limits  a file that claims a huge image refused before it is allocated
+  heroes  image/tiff.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    libtiff: TIFFSetWarningHandler (none). every page's size and the pixels of all pages together, the strip and tile sizes, the directories (at most `MAX_PAGES`), every count and offset against the file's length, and every strip inflated to its own size at most; the test cuts a file at every length and changes every byte of eight of them: none aborts
+
+capability tiff/encode  an image or several pages written as TIFF
+  heroes  image/tiff.encode, image/tiff.encode_image, image/tiff.EncodeOptions
+  go      tiff.Encode, tiff.EncodeMulti, tiff.Options
+  rust    -
+  python  Image.save(format="TIFF"), save_all
+  note    libtiff: TIFFWriteEncodedStrip, TIFFWriteEncodedTile, TIFFWriteDirectory. gray, gray with alpha, RGB and RGBA at 8 and 16 bits, alpha unassociated; uncompressed, PackBits, LZW, Deflate and Zstandard, each with the predictor where TIFF defines it; strips of a chosen height or tiles of a multiple of 16; either byte order; classic or BigTIFF; the same pages answer the same bytes
+
+capability tiff/encode-bilevel  a page written at one bit a pixel and the fax codings
+  heroes  image/tiff.encode with image/tiff.Depth.bilevel
+  go      -
+  rust    -
+  python  Image.save(format="TIFF", compression="group4")
+  note    libtiff: COMPRESSION_CCITTFAX4, COMPRESSION_CCITTFAX3, GROUP3OPT_2DENCODING, GROUP3OPT_FILLBITS. a gray level from a threshold up is white; Modified Huffman, Group 3 (one- or two-dimensional, byte-aligned end-of-line codes or not, with the return to control) and Group 4 with its end of block; written as WhiteIsZero with black as 1 bits for the fax codings, BlackIsZero otherwise
+
+capability tiff/encode-jpeg  JPEG strips written
+  heroes  refused: `unsupported`, `image/jpeg.encode` writes whole JFIF files and a TIFF strip holds the abbreviated stream beside the page's JPEGTables, which a caller who wants a JPEG in a TIFF gets by cutting that file, so no format reads a file this package could write and no other can
+  go      -
+  rust    -
+  python  Image.save(format="TIFF", compression="jpeg")
+  note    libtiff: COMPRESSION_JPEG
+
+capability tiff/not-decoded  what a TIFF can hold that `image` has no form for
+  heroes  refused: `unsupported`, each named in its message: floating-point, signed and 32-bit or 64-bit samples (`image` holds unsigned whole numbers of 8 and 16 bits, and a scientific raster would lose its meaning); CIE Lab, ICC Lab, colour filter arrays and linear raw data (PhotometricInterpretation 8 to 10, 32803, 34892); old-style JPEG (compression 6), JPEG 2000, JBIG, LERC, LZMA, WebP, PixarLog, SGILog and word-aligned CCITT RLE (32771); LZW of the pre-1988 form, least significant bit first with no early change; the floating-point predictor (Predictor 3); CCITT uncompressed mode, which no fax writer produces; YCbCr with its chroma subsampled and stored in planes; samples of different widths in one pixel (5-6-5 and the like)
+  go      -
+  rust    -
+  python  -
+  note    libtiff reads most of these through its own codecs; none is written by a program that gives an image to `image`
+
+dropped
+  go      tiff.Options.Predictor as a Go enumeration: a bool here; Go's CompressionType values `Uncompressed`, `Deflate`, `LZW`: `Compression`'s cases
+  python  TiffImagePlugin.ImageFileDirectory_v2 as a mutable mapping of tags: a directory here is read into a `Page` of its useful fields, and a program that needs every tag reads the file with libtiff

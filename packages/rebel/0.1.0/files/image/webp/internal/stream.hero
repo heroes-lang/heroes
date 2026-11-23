@@ -1,0 +1,111 @@
+# A lossless stream as a whole: the 5-byte header, the transforms read before
+# the picture and undone after it, in reverse.
+
+use image
+use image/webp/internal/lossless
+use image/webp/internal/prefix
+use image/webp/internal/transforms
+
+# One transform read from the stream.
+record Transform
+    # 0 predictor, 1 cross-colour, 2 subtract green, 3 colour index.
+    kind: i64
+    # The block size's bits for 0 and 1, the pixels' packing for 3.
+    bits: i64
+    # The transform's own image, RGBA bytes: the predictors, the elements, or
+    # the colour table.
+    data: [u8]
+    # The width of the picture the transform works on.
+    width: i64
+
+# A lossless picture decoded.
+record Decoded
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The stream's hint that alpha is used.
+    alpha_used: bool
+    # The pixels, RGBA, four bytes each, rows from the top.
+    pixels: [u8]
+
+# The header of a lossless stream: its width, height and alpha hint. Fails
+# `invalid` where it does not begin with the signature byte and a version of 0.
+function header_of(data: [u8] lent) -> Decoded?
+    if data.len() < 5
+        return fail(code: image.INVALID, msg: f"{data.len()} bytes of lossless data, where its header takes 5")
+    b @= prefix.Bits(data: data.slice(from: 0, to: 5), pos: 0, over: false)
+
+    if prefix.read(b: @b, n: 8) != lossless.SIGNATURE
+        return fail(code: image.INVALID, msg: "a lossless stream that does not begin with 0x2f")
+    width = prefix.read(b: @b, n: 14) + 1
+    height = prefix.read(b: @b, n: 14) + 1
+    alpha = prefix.read(b: @b, n: 1)
+    version = prefix.read(b: @b, n: 3)
+
+    if version != 0
+        return fail(code: image.INVALID, msg: f"a lossless version of {version}, where 0 is defined")
+    return ok(Decoded(width: width, height: height, alpha_used: alpha == 1, pixels: []))
+
+# The picture in `data`, within `limits`. Fails `invalid`, and `limit` for a
+# size past `limits`.
+function decode(data: [u8] lent, limits: image.Limits) -> Decoded?
+    h = header_of(data)?
+    image.check_limits(limits, width: h.width, height: h.height)?
+    b @= prefix.Bits(data: data.slice(from: 0, to: data.len()), pos: 40, over: false)
+    xsize @= h.width
+    done: [Transform] @= []
+    seen: [bool] @= [false, false, false, false]
+
+    while prefix.read(b: @b, n: 1) == 1
+        kind = prefix.read(b: @b, n: 2)
+
+        if seen[kind]
+            return fail(code: image.INVALID, msg: f"transform {kind} used twice")
+        seen[kind] @ true
+
+        if kind == 0 || kind == 1
+            bits = prefix.read(b: @b, n: 3) + 2
+            side = 1 << bits
+            blocks = lossless.read_image(b: @b, width: xsize + side - 1 >> bits, height: h.height + side - 1 >> bits, main: false)?
+            done @ done.push(Transform(kind: kind, bits: bits, data: blocks, width: xsize))
+        else if kind == 2
+            done @ done.push(Transform(kind: 2, bits: 0, data: [], width: xsize))
+        else
+            colors = prefix.read(b: @b, n: 8) + 1
+            table @= lossless.read_image(b: @b, width: colors, height: 1, main: false)?
+
+            for i in range(from: 4, to: colors * 4)
+                table[i] @ to_u8(to_i64(table[i]).must() + to_i64(table[i - 4]).must() & 255).must()
+
+            bits = if colors > 16
+                0
+            else if colors > 4
+                1
+            else if colors > 2
+                2
+            else
+                3
+            done @ done.push(Transform(kind: 3, bits: bits, data: table, width: xsize))
+            xsize @ xsize + (1 << bits) - 1 >> bits
+
+    px @= lossless.read_image(b: @b, width: xsize, height: h.height, main: true)?
+
+    if b.over
+        return fail(code: image.INVALID, msg: "a lossless stream that ends before its last pixel")
+    k @= done.len() - 1
+
+    while k >= 0
+        t = done[k]
+
+        if t.kind == 0
+            transforms.undo_predictor(px: @px, modes: t.data, width: t.width, height: h.height, bits: t.bits)
+        else if t.kind == 1
+            transforms.undo_cross_color(px: @px, elements: t.data, width: t.width, height: h.height, bits: t.bits)
+        else if t.kind == 2
+            transforms.undo_subtract_green(px: @px, count: t.width * h.height)
+        else
+            px @ transforms.undo_color_index(packed: px, table: t.data, width: t.width, height: h.height, bits: t.bits)
+        k @ k - 1
+
+    return ok(Decoded(width: h.width, height: h.height, alpha_used: h.alpha_used, pixels: px))

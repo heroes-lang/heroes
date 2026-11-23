@@ -1,0 +1,308 @@
+# A lossless WebP stream written: the picture's transforms (a colour index
+# where it has 256 colours or fewer, otherwise green subtracted and each
+# block predicted), its pixels cut into literals and copies of earlier pixels,
+# and Huffman codes for what is left.
+
+use image/webp/internal/pack
+
+# The cells' distance codes: the step, as a distance, of each of the 120 codes.
+function plane_codes(width: i64) -> {i64: i64}
+    codes: {i64: i64} @= {}
+    cells: [i64] @= []
+
+    for y in range(from: 0, to: 8)
+        for x in range(from: -7, to: 9)
+            if y > 0 || x > 0
+                cells @ cells.push((x * x + y * y) * 10000 + (7 - y) * 100 + (8 - x))
+
+    at @= 1
+
+    for k in sort(cells)
+        step @= 8 - k % 100 + (7 - k / 100 % 100) * width
+
+        if step < 1
+            step @ 1
+
+        if codes[step].is_err()
+            codes[step] @ at
+        at @ at + 1
+
+    return codes
+
+# The prefix and the extra bits of a length or distance value `v`, 1 or more:
+# `prefix`, then the number of extra bits, then their value, as three numbers.
+function split_value(v: i64) -> [i64]
+    if v <= 4
+        return [v - 1, 0, 0]
+    d = v - 1
+    top @= 0
+
+    while d >> top + 1 > 0
+        top @ top + 1
+
+    second = d >> top - 1 & 1
+    extra = top - 1
+    return [2 * top + second, extra, d & (1 << extra) - 1]
+
+# The tokens that stand for the pixels `pix` (an ARGB value a pixel) of an
+# image `width` wide: a literal is its value, a copy is `-(1 + (length << 22 |
+# distance code))`.
+function tokens_of(pix: [i64] lent, width: i64, copies: bool) -> [i64]
+    out: [i64] @= []
+    total = pix.len()
+    plane = plane_codes(width)
+    head: [i64] @= []
+    chain: [i64] @= []
+
+    if copies
+        for _ in range(from: 0, to: 65536)
+            head @ head.push(-1)
+
+        for _ in range(from: 0, to: total)
+            chain @ chain.push(-1)
+    i @= 0
+
+    while i < total
+        best_len @= 0
+        best_dist @= 0
+
+        if copies && i + 2 < total
+            h = (pix[i] * 31 + pix[i + 1]) * 31 + pix[i + 2]
+            slot = (h ^ h >> 15) & 65535
+            at @= head[slot]
+            tries @= 0
+
+            while at >= 0 && tries < 24 && i - at <= 1048576
+                n @= 0
+
+                while i + n < total && n < 4096 && pix[at + n] == pix[i + n]
+                    n @ n + 1
+
+                if n > best_len
+                    best_len @ n
+                    best_dist @ i - at
+                at @ chain[at]
+                tries @ tries + 1
+
+        if best_len >= 3
+            code = plane[best_dist].default(best_dist + 120)
+            out @ out.push(0 - (1 + (best_len << 22 | code)))
+
+            for k in range(from: 0, to: best_len)
+                if copies && i + k + 2 < total
+                    h = (pix[i + k] * 31 + pix[i + k + 1]) * 31 + pix[i + k + 2]
+                    slot = (h ^ h >> 15) & 65535
+                    chain[i + k] @ head[slot]
+                    head[slot] @ i + k
+
+            i @ i + best_len
+        else
+            out @ out.push(pix[i])
+
+            if copies && i + 2 < total
+                h = (pix[i] * 31 + pix[i + 1]) * 31 + pix[i + 2]
+                slot = (h ^ h >> 15) & 65535
+                chain[i] @ head[slot]
+                head[slot] @ i
+            i @ i + 1
+
+    return out
+
+# The order the code lengths of the code-length code are written in.
+function length_order() -> [i64]
+    return [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+# Writes the prefix code of `lengths` to `w`: a simple code where two symbols
+# below 256 or fewer are used, a normal one otherwise.
+function put_code(@w: pack.Writer, lengths: [i64] lent)
+    used: [i64] @= []
+
+    for s in range(from: 0, to: lengths.len())
+        if lengths[s] > 0
+            used @ used.push(s)
+
+    if used.len() == 0 || used.len() <= 2 && used[used.len() - 1] < 256
+        pack.put(w: @w, v: 1, n: 1)
+
+        first = if used.len() == 0
+            0
+        else
+            used[0]
+
+        two = if used.len() == 2
+            1
+        else
+            0
+
+        wide = if first > 1
+            1
+        else
+            0
+        pack.put(w: @w, v: two, n: 1)
+        pack.put(w: @w, v: wide, n: 1)
+
+        if first > 1
+            pack.put(w: @w, v: first, n: 8)
+        else
+            pack.put(w: @w, v: first, n: 1)
+
+        if used.len() == 2
+            pack.put(w: @w, v: used[1], n: 8)
+        return
+    tokens: [i64] @= []
+    extras: [i64] @= []
+    at @= 0
+    last @= 8
+
+    while at < lengths.len()
+        run @= 1
+
+        while at + run < lengths.len() && lengths[at + run] == lengths[at]
+            run @ run + 1
+
+        v = lengths[at]
+
+        if v == 0 && run >= 3
+            take = if run > 138
+                138
+            else
+                run
+
+            if take >= 11
+                tokens @ tokens.push(18)
+                extras @ extras.push(take - 11)
+            else
+                tokens @ tokens.push(17)
+                extras @ extras.push(take - 3)
+            at @ at + take
+        else if v != 0 && v == last && run >= 3
+            take = if run > 6
+                6
+            else
+                run
+            tokens @ tokens.push(16)
+            extras @ extras.push(take - 3)
+            at @ at + take
+        else
+            tokens @ tokens.push(v)
+            extras @ extras.push(0)
+
+            if v != 0
+                last @ v
+            at @ at + 1
+
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 19)
+        counts @ counts.push(0)
+
+    for t in tokens
+        counts[t] @ counts[t] + 1
+
+    inner = pack.lengths_of(counts, limit: 7)
+    codes = pack.codes_of(inner)
+    order = length_order()
+    needed @= 4
+
+    for i in range(from: 0, to: 19)
+        if inner[order[i]] > 0 && i + 1 > needed
+            needed @ i + 1
+
+    pack.put(w: @w, v: 0, n: 1)
+    pack.put(w: @w, v: needed - 4, n: 4)
+
+    for i in range(from: 0, to: needed)
+        pack.put(w: @w, v: inner[order[i]], n: 3)
+
+    pack.put(w: @w, v: 0, n: 1)
+
+    for k in range(from: 0, to: tokens.len())
+        t = tokens[k]
+        pack.put(w: @w, v: codes[t], n: inner[t])
+
+        if t == 16
+            pack.put(w: @w, v: extras[k], n: 2)
+        else if t == 17
+            pack.put(w: @w, v: extras[k], n: 3)
+        else if t == 18
+            pack.put(w: @w, v: extras[k], n: 7)
+
+# The bits a symbol `s` takes under `lengths`: none where the code has the one
+# symbol, which a reader takes without looking at a bit.
+function bits_of(lengths: [i64] lent, only: bool, s: i64) -> i64
+    if only
+        return 0
+    return lengths[s]
+
+# The counts of `n` symbols, all zero.
+function zeros(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# Writes one entropy-coded image, `pix` its ARGB values `width` to a row, to
+# `w`: no colour cache, no groups, five Huffman codes and then the tokens.
+function put_image(@w: pack.Writer, pix: [i64] lent, width: i64, main: bool, copies: bool)
+    pack.put(w: @w, v: 0, n: 1)
+
+    if main
+        pack.put(w: @w, v: 0, n: 1)
+    tokens = tokens_of(pix, width: width, copies: copies)
+    green @= zeros(280)
+    red @= zeros(256)
+    blue @= zeros(256)
+    alpha @= zeros(256)
+    dist @= zeros(40)
+
+    for t in tokens
+        if t >= 0
+            green[t >> 8 & 255] @ green[t >> 8 & 255] + 1
+            red[t >> 16 & 255] @ red[t >> 16 & 255] + 1
+            blue[t & 255] @ blue[t & 255] + 1
+            alpha[t >> 24 & 255] @ alpha[t >> 24 & 255] + 1
+        else
+            body = 0 - t - 1
+            length = split_value(body >> 22)
+            far = split_value(body & 4194303)
+            green[256 + length[0]] @ green[256 + length[0]] + 1
+            dist[far[0]] @ dist[far[0]] + 1
+
+    lg = pack.lengths_of(green, limit: 15)
+    lr = pack.lengths_of(red, limit: 15)
+    lb = pack.lengths_of(blue, limit: 15)
+    la = pack.lengths_of(alpha, limit: 15)
+    ld = pack.lengths_of(dist, limit: 15)
+
+    for l in [lg, lr, lb, la, ld]
+        put_code(w: @w, lengths: l)
+
+    one_g = pack.has_one_symbol(lg)
+    one_r = pack.has_one_symbol(lr)
+    one_b = pack.has_one_symbol(lb)
+    one_a = pack.has_one_symbol(la)
+    one_d = pack.has_one_symbol(ld)
+    cg = pack.codes_of(lg)
+    cr = pack.codes_of(lr)
+    cb = pack.codes_of(lb)
+    ca = pack.codes_of(la)
+    cd = pack.codes_of(ld)
+
+    for t in tokens
+        if t >= 0
+            g = t >> 8 & 255
+            pack.put(w: @w, v: cg[g], n: bits_of(lg, only: one_g, s: g))
+
+            pack.put(w: @w, v: cr[t >> 16 & 255], n: bits_of(lr, only: one_r, s: t >> 16 & 255))
+            pack.put(w: @w, v: cb[t & 255], n: bits_of(lb, only: one_b, s: t & 255))
+            pack.put(w: @w, v: ca[t >> 24 & 255], n: bits_of(la, only: one_a, s: t >> 24 & 255))
+        else
+            body = 0 - t - 1
+            length = split_value(body >> 22)
+            far = split_value(body & 4194303)
+            pack.put(w: @w, v: cg[256 + length[0]], n: bits_of(lg, only: one_g, s: 256 + length[0]))
+            pack.put(w: @w, v: length[2], n: length[1])
+            pack.put(w: @w, v: cd[far[0]], n: bits_of(ld, only: one_d, s: far[0]))
+            pack.put(w: @w, v: far[2], n: far[1])

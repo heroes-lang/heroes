@@ -1,0 +1,98 @@
+# What a test asks of a drawn image and of a path, with no help from the
+# rasteriser under test: where the ink is, how much of it there is, and the
+# area a path encloses by the shoelace sum over its flattened curves.
+
+use image
+use image/vector
+
+# The box of the pixels of `img` whose alpha is above 0: left, top, right and
+# bottom columns and rows, inclusive; empty where there are none.
+function bounds_of(img: image.Image lent) -> [i64]
+    left @= img.width
+    top @= img.height
+    right @= -1
+    bottom @= -1
+
+    for y in range(from: 0, to: img.height)
+        for x in range(from: 0, to: img.width)
+            if image.color_at(img, x: x, y: y).a > 0
+                if x < left
+                    left @ x
+
+                if x > right
+                    right @ x
+
+                if y < top
+                    top @ y
+
+                if y > bottom
+                    bottom @ y
+
+    if right < 0
+        return []
+    return [left, top, right, bottom]
+
+# The total alpha of `img` in whole pixels: 255 counts as 1.
+function coverage_of(img: image.Image lent) -> f64
+    total @= 0.0
+
+    for y in range(from: 0, to: img.height)
+        for x in range(from: 0, to: img.width)
+            total @ total + to_f64(image.color_at(img, x: x, y: y).a) / 255.0
+
+    return total
+
+# The area the contours of `path` enclose, curves cut into 64 straight pieces, the signed
+# areas of the contours added, so that a hole, turning the other way, is
+# taken out: the glyphs of the test font have no overlapping contours.
+function area_of(path: [vector.Segment] lent) -> f64
+    total @= 0.0
+    sum @= 0.0
+    start_x @= 0.0
+    start_y @= 0.0
+    x @= 0.0
+    y @= 0.0
+
+    for s in path
+        match s
+            .move m =>
+                start_x @ m.x
+                start_y @ m.y
+                x @ m.x
+                y @ m.y
+                sum @ 0.0
+            .line l =>
+                sum @ sum + x * l.y - l.x * y
+                x @ l.x
+                y @ l.y
+            .quad q =>
+                for k in range(from: 1, to: 65)
+                    t = to_f64(k) / 64.0
+                    u = 1.0 - t
+                    px = u * u * x + 2.0 * u * t * q.control_x + t * t * q.x
+                    py = u * u * y + 2.0 * u * t * q.control_y + t * t * q.y
+                    sum @ sum + x * py - px * y
+                    x @ px
+                    y @ py
+            .cubic c =>
+                for k in range(from: 1, to: 65)
+                    t = to_f64(k) / 64.0
+                    u = 1.0 - t
+                    px = u * u * u * x + 3.0 * u * u * t * c.control1_x + 3.0 * u * t * t * c.control2_x + t * t * t * c.x
+                    py = u * u * u * y + 3.0 * u * u * t * c.control1_y + 3.0 * u * t * t * c.control2_y + t * t * t * c.y
+                    sum @ sum + x * py - px * y
+                    x @ px
+                    y @ py
+            .close =>
+                sum @ sum + x * start_y - start_x * y
+                total @ total + sum / 2.0
+                x @ start_x
+                y @ start_y
+
+    return abs_f(total)
+
+# `v` without its sign.
+function abs_f(v: f64) -> f64
+    if v < 0.0
+        return -v
+    return v

@@ -1,0 +1,82 @@
+# What a test asks of an image read from a file of `fixtures`: the format a
+# sample names, and the first difference between its pixels and an image's,
+# worded.
+
+use bytes
+use hash
+use image
+use image/tiff/internal/fixtures
+
+# The format `name` spells, as `image.Format`'s cases are.
+function format_named(name: str) -> image.Format
+    return match name
+        "gray"         => .gray
+        "gray_alpha"   => .gray_alpha
+        "rgb"          => .rgb
+        "rgba"         => .rgba
+        "gray16"       => .gray16
+        "gray_alpha16" => .gray_alpha16
+        "rgb16"        => .rgb16
+        _              => .rgba16
+
+# An empty text where `img` is what `s` says its file holds, else the first
+# difference: the size, the format, the CRC-32 of the pixels, or the first
+# byte of them more than `s.slack` apart, with both values.
+function differs(s: fixtures.Sample, img: image.Image) -> str
+    if img.width != s.width || img.height != s.height
+        return f"{s.name}: {img.width} by {img.height} pixels, where {s.width} by {s.height} are due"
+
+    if img.format != format_named(s.format)
+        return f"{s.name}: a format other than {s.format}"
+
+    if s.crc != 0
+        got = to_i64(hash.crc32(img.pixels)).must()
+
+        if got != s.crc
+            return f"{s.name}: the pixels' CRC-32 is {got}, where {s.crc} is due"
+        return ""
+    want = bytes.parse_hex(s.pixels).must()
+
+    if want.len() != img.pixels.len()
+        return f"{s.name}: {img.pixels.len()} bytes of pixels, where {want.len()} are due"
+
+    for i in range(from: 0, to: want.len())
+        a = to_i64(want[i]).must()
+        b = to_i64(img.pixels[i]).must()
+
+        if a - b > s.slack || b - a > s.slack
+            return f"{s.name}: byte {i} is {b}, where {a} is due (slack {s.slack})"
+
+    return ""
+
+# An image of `width` by `height` pixels of `format` whose samples come from a
+# linear congruential generator seeded with `seed`, with runs of equal samples
+# so that every coding has something to shorten.
+function noisy(width: i64, height: i64, format: image.Format, seed: i64) -> image.Image
+    n = width * height * image.pixel_bytes_of(format)
+    out: [u8] @= []
+    v @= seed
+    run @= 0
+    held @= 0
+
+    for _ in range(from: 0, to: n)
+        if run == 0
+            v @ (v * 1103515245 + 12345) % 2147483648
+            held @ v / 65536 % 256
+            run @ 1 + v / 256 % 5
+        run @ run - 1
+        out @ out.push(to_u8(held).must())
+
+    return image.from_pixels(width: width, height: height, format: format, pixels: out).must()
+
+# Every sample of `fixtures`, the colour and gray files then the fax ones.
+function every_sample() -> [fixtures.Sample]
+    out: [fixtures.Sample] @= []
+
+    for s in fixtures.readable()
+        out @ out.push(s)
+
+    for s in fixtures.fax()
+        out @ out.push(s)
+
+    return out
