@@ -4315,12 +4315,12 @@ static const char hero_ui_hand_magic[8] = {'H', 'E', 'R', 'O', 'U', 'I', '1', '\
 /* The seconds a hand-over's peer has for each read and write. */
 #define HERO_UI_HAND_SECONDS 5
 
-static int hero_ui_instance_lock = -1;
-static int hero_ui_instance_listener = -1;
-static dispatch_source_t hero_ui_instance_source;
+static _Atomic int hero_ui_instance_lock = -1;
+static _Atomic int hero_ui_instance_listener = -1;
+static _Atomic(dispatch_source_t) hero_ui_instance_source;
 /* Counted up at each claim's end, so a hand-over read for an earlier claim
  * is dropped. */
-static uint64_t hero_ui_instance_era;
+static _Atomic uint64_t hero_ui_instance_era;
 
 /* One hand-over being read: the connection, the identity it must name, the
  * claim's era, and what was read. */
@@ -4426,8 +4426,8 @@ static void hero_ui_hand_told(void *context) {
         }
         hero_ui_dialog_told(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, hand->arguments, (int64_t)hand->count);
     }
-    free(hand->arguments);
-    free(hand);
+    hero_layer_free(hand->arguments);
+    hero_layer_free(hand);
 }
 
 /* On a queue of its own: reads one hand-over, answers its peer, and hands
@@ -4454,7 +4454,7 @@ static void hero_ui_hand_read(void *context) {
         good = hand->count <= HERO_UI_TEXT_MOST;
     }
     if (good && hand->count > 0) {
-        hand->arguments = malloc(hand->count);
+        hand->arguments = hero_layer_alloc(hand->count);
         good = hand->arguments != NULL && hero_ui_whole(hand->socket, hand->arguments, hand->count, false);
         if (good) {
             uint32_t start = 0;
@@ -4475,8 +4475,8 @@ static void hero_ui_hand_read(void *context) {
     }
     (void)close(hand->socket);
     if (!good) {
-        free(hand->arguments);
-        free(hand);
+        hero_layer_free(hand->arguments);
+        hero_layer_free(hand);
         return;
     }
     dispatch_async_f(dispatch_get_main_queue(), hand, hero_ui_hand_told);
@@ -4497,9 +4497,9 @@ static void hero_ui_instance_accept(void *context) {
         }
         hero_ui_hand_socket(socket_id);
         (void)fcntl(socket_id, F_SETFL, fcntl(socket_id, F_GETFL) & ~O_NONBLOCK);
-        hand = calloc(1, sizeof *hand);
+        hand = hero_layer_alloc_zero(1, sizeof *hand);
         if (hand == NULL || getpeereid(socket_id, &user, &group) != 0 || user != geteuid()) {
-            free(hand);
+            hero_layer_free(hand);
             (void)close(socket_id);
             continue;
         }
@@ -4586,8 +4586,8 @@ static void hero_ui_hand_own(void *context) {
     hero_ui_own_hand *own = context;
 
     (void)hero_ui_hand_to(own->path, own->identity, own->arguments, own->count);
-    free(own->arguments);
-    free(own);
+    hero_layer_free(own->arguments);
+    hero_layer_free(own);
 }
 
 int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
@@ -4596,16 +4596,16 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
     if (hero_ui_instance_listener < 0) {
         return hero_ui_claim_refused(HERO_UI_INVALID, "this process holds no claim of its identity to hand arguments to");
     }
-    own = calloc(1, sizeof *own);
-    if (own == NULL || (count > 0 && (own->arguments = malloc((size_t)count)) == NULL)) {
+    own = hero_layer_alloc_zero(1, sizeof *own);
+    if (own == NULL || (count > 0 && (own->arguments = hero_layer_alloc((size_t)count)) == NULL)) {
         if (own != NULL) {
-            free(own);
+            hero_layer_free(own);
         }
         return HERO_UI_LIMIT;
     }
     if (!hero_ui_instance_path(hero_ui_identity, ".sock", own->path, sizeof own->path)) {
-        free(own->arguments);
-        free(own);
+        hero_layer_free(own->arguments);
+        hero_layer_free(own);
         return hero_ui_claim_refused(HERO_UI_OTHER, "the claim's local socket has no path");
     }
     (void)snprintf(own->identity, sizeof own->identity, "%s", hero_ui_identity);

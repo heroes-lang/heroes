@@ -1506,8 +1506,9 @@ function set_drop(@app: App, widget: Widget, on: bool) -> ()?
 # - `text`: the tip, its lines kept.
 #
 # Fails `closed`, `invalid` for a window, a box, a menu or a timer, or a
-# zero byte; `unsupported` where the system's arm shows no tip (Windows and
-# Linux, pending), `failed`. See also `tip_of`.
+# zero byte; `unsupported` where the system's arm shows no tip over what
+# it is asked (a menu item's, on Windows, which draws none), `failed`. See
+# also `tip_of`.
 function set_tip(@app: App, widget: Widget, text: str) -> ()?
     return state.set_tip(@app, widget: widget, text: text)
 

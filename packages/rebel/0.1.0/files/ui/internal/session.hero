@@ -333,11 +333,20 @@ test "claim_instance: on the native side the one instance claimed through its lo
     opened = handed_of_waiting(@app)
 
     # A system that keeps the claim but opens nothing as its own request
-    # tells it when the wait gives the input (defect 2698's shape).
+    # tells it when the wait gives the input (defect 2698's shape); what it
+    # claims is asserted before that refusal is read, and its claim given
+    # up and taken again before the case skips.
     opened_refusal = fixture.unsupported_words(opened)
+    assert before == []
+    assert first && again
+    assert late == [.handed(what: .arguments, items: ["--line", "", "b c.txt"])]
 
     if opened_refusal != ""
         ui.close(@app).must()
+        reclaimed @= ui.open(.native).must()
+        ui.set_identity(@reclaimed, identifier: identity, name: "Rebel Case").must()
+        assert ui.claim_instance(@reclaimed, arguments: []).must()
+        ui.close(@reclaimed).must()
         skip_test(reason: opened_refusal)
     files = opened.must()
     ui.inject(@app, input: .hand(what: .addresses, items: ["rebel-case://a/b?c", "rebel-case://d"])).must()
@@ -348,8 +357,6 @@ test "claim_instance: on the native side the one instance claimed through its lo
     ui.set_identity(@reopened, identifier: identity, name: "Rebel Case").must()
     claimed_again = ui.claim_instance(@reopened, arguments: []).must()
     ui.close(@reopened).must()
-    assert before == []
-    assert first && again && claimed_again
-    assert late == [.handed(what: .arguments, items: ["--line", "", "b c.txt"])]
+    assert claimed_again
     assert files == [.handed(what: .files, items: ["/usr/bin/true", "/usr/lib"])]
     assert addresses == [.handed(what: .addresses, items: ["rebel-case://a/b?c"]), .handed(what: .addresses, items: ["rebel-case://d"])]
