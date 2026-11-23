@@ -1,0 +1,1596 @@
+# Sound for a program: frames of samples held in memory, converted between
+# encodings, channel counts and rates, read from WAV files and written to them;
+# and the system's devices, listed with their formats, a sound played on one
+# and frames recorded from one, paused, resumed, stopped and its end told, a
+# stream waited on in a `poll.Set`, the microphone's permission asked, and the
+# system's beep. A `Sound` is its `Format` and its bytes, interleaved frames of
+# little-endian samples, so a WAV file read and written back keeps every
+# sample's bits; a `Stream` converts what the program writes or reads to its
+# device's own format as it goes.
+#
+# **How each system is reached** (`hero_audio.h`): CoreAudio's AudioQueue on
+# macOS, the microphone allowed by the person through AVFoundation's own
+# dialog; WASAPI's shared mode on Windows; PulseAudio's library on Linux,
+# opened when first asked, which PipeWire's server answers as PulseAudio's
+# does, every call answering `unsupported` where neither library nor server is
+# there. The null device (`null_device`) plays and records the same on every
+# system with no hardware.
+#
+# What it does NOT do: decode a compressed format (MP3, AAC, FLAC, Vorbis),
+# each a codec's work; mix several sounds into one, which is `to_samples`, a
+# sum and `from_samples`; edit a sound by its frames, which is the built-in
+# `slice` over `Sound.data` at a frame's bytes, `width_of` times the channels.
+#
+# It fails with `invalid`, `not_found`, `permission`, `limit`, `timeout`,
+# `stopped`, `closed`, `unsupported` and `failed` (README § A4), and
+# `read_wav` and `write_wav` as `fs` does.
+
+use audio/hero_audio
+use audio/internal/check
+use audio/internal/failure
+use audio/internal/listing
+use audio/internal/mix
+use audio/internal/resample
+use audio/internal/samples
+use audio/internal/streams
+use audio/internal/wav
+use audio/internal/wav_stream
+use audio/internal/wav_write
+use fs
+use io
+use math
+use net
+use poll
+use time
+
+## Codes
+
+# The code of an argument the call refuses: a format whose rate, channels or
+# channel mask is out of its range, a sound whose bytes are no whole number of
+# frames, bytes that are no WAV file, a length below zero. Every function
+# that takes a `Format` or a `Sound` fails with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a WAV file of a kind this package does not read: a compressed
+# encoding, RIFX, a float of another width; and of a machine with no sound
+# system this package reaches. `decode_wav`, `read_wav`, `system`, `devices`,
+# `open` and `beep` fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a device that is not there: `default_output` and
+# `default_input` where the system names none, `open` where an identifier
+# names no device.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a microphone the person refused this program, or has not been
+# asked for: `open` and `ask_permission` fail with it.
+constant PERMISSION: str
+    "permission"
+
+# The code of a stream past what the layer holds, or a system with no
+# memory, thread or descriptor left: `open`, `open_with`, `play` and `add_to`
+# fail with it.
+constant LIMIT: str
+    "limit"
+
+# The code of a wait whose limit passed: `write`, `finish`, `read`, `wait`
+# and `ask_permission` fail with it.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a wait the program's stop ended: `write`, `read`, `wait` and
+# `ask_permission` fail with it.
+constant STOPPED: str
+    "stopped"
+
+# The code of a stream that is closed, has ended, or whose device went away:
+# every function that takes a `Stream` fails with it.
+constant CLOSED: str
+    "closed"
+
+# The code of a refusal of the system's that no other code names, its words
+# in the message: every function that reaches a device fails with it.
+constant FAILED: str
+    "failed"
+
+## Sounds
+
+# The most frames a second a format may have, the largest `i32`: past every
+# rate a device runs at and every rate a radio's recording is kept at.
+constant MAX_RATE: i64
+    2147483647
+
+# The most channels a frame may have, the most a WAV file can say.
+constant MAX_CHANNELS: i64
+    65535
+
+# How one sample is written as bytes, little-endian.
+variant Encoding
+    # Unsigned 8-bit integers, silence at 128, as WAV keeps 8-bit samples.
+    pcm8
+    # Signed 16-bit integers.
+    pcm16
+    # Signed 24-bit integers in 3 bytes.
+    pcm24
+    # Signed 32-bit integers.
+    pcm32
+    # IEEE 754 32-bit floats, silence at 0, full scale at -1 and 1.
+    float32
+    # IEEE 754 64-bit floats.
+    float64
+
+# What the frames of a sound are: the encoding of a sample, the rate and the
+# channels of a frame, and where each channel's speaker stands.
+record Format
+    # How each sample is written.
+    encoding: Encoding
+    # Frames a second, 1 to `MAX_RATE`.
+    rate: i64
+    # Channels of a frame, 1 to `MAX_CHANNELS`, each a sample.
+    channels: i64
+    # The speakers the channels feed, as WAVE_FORMAT_EXTENSIBLE's channel
+    # mask writes them (front left 1, front right 2, front centre 4, low
+    # frequency 8, back left 16, back right 32, and on to bit 17): the
+    # channels in order stand at its set bits, lowest first. 0 says nothing,
+    # and is read as the layout Windows gives that many channels; 0 to
+    # 2^32 - 1.
+    speakers: i64
+
+# A sound held whole in memory: its format, and its frames one after another,
+# each its channels' samples in order. Built directly, or by `from_samples`,
+# `silence`, `tone`, `decode_wav` and the conversions; every function that
+# reads one checks it first.
+record Sound
+    # What the frames are.
+    format: Format
+    # The frames' bytes: a whole number of frames, each `width_of` the
+    # encoding times the channels.
+    data: [u8]
+
+# The bytes one sample of `encoding` takes.
+#
+# - `encoding`: the encoding.
+#
+# 1 for `pcm8`, 2, 3 and 4 for the other integers, 4 and 8 for the floats.
+# See also `frames_of`.
+function width_of(encoding: Encoding) -> i64
+    return samples.width(encoding)
+
+# The frames of `s`: its bytes divided by a frame's.
+#
+# - `s`: the sound; a format of no channels holds no frame.
+#
+# Bytes past the last whole frame are not counted. See also `duration_of`.
+function frames_of(s: Sound) -> i64
+    if s.format.channels < 1
+        return 0
+    return s.data.len() / (width_of(s.format.encoding) * s.format.channels)
+
+# How long `s` plays at its rate: its frames over its rate, cut to the
+# nanosecond below.
+#
+# - `s`: the sound; a rate below 1 plays for no time.
+#
+# Past about 292 years the duration is `time.max_duration`. See also
+# `frames_of`.
+function duration_of(s: Sound) -> time.Duration
+    rate = s.format.rate
+
+    if rate < 1
+        return time.nanoseconds(0)
+    frames = frames_of(s)
+    seconds = math.multiply_clamped(a: frames / rate, b: 1000000000)
+    rest = frames % rate * 1000000000 / rate
+    return time.nanoseconds(math.add_clamped(a: seconds, b: rest))
+
+# The samples of `s`, interleaved as its frames hold them, each a number from
+# -1 to 1: an integer sample divided by 2 to the power of its bits less one,
+# around its zero, so the most negative is exactly -1 and the most positive one
+# step short of 1; a float as it stands, past 1, a NaN or an infinity included.
+#
+# - `s`: the sound.
+#
+# Fails `invalid` where `s`'s format or bytes are, as `Sound` says. See also
+# `from_samples`.
+function to_samples(s: Sound) -> [f64]?
+    check.valid_sound(s, asked: "reading a sound's samples")?
+    return ok(samples.all_of(s.data, encoding: s.format.encoding))
+
+# A sound of `format` whose samples are `values`, interleaved, written as
+# `format.encoding` writes them: an integer encoding takes the nearest step,
+# ties to the even one, a value past -1 or 1 held there and a NaN silent; a
+# float takes the value as it stands, `float32` rounded to the nearest.
+#
+# - `format`: the sound's format.
+# - `values`: the samples, a whole number of frames of `format.channels`;
+#   none is a sound of no frames.
+#
+# Fails `invalid` where `format` is, or where `values` is no whole number of
+# frames. See also `to_samples`.
+function from_samples(format: Format, values: [f64]) -> Sound?
+    asked = "making a sound from samples"
+    check.valid_format(format, asked: asked)?
+
+    if values.len() % format.channels != 0
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: {values.len()} samples are no whole number of frames of {format.channels} channels"
+        )
+    return ok(Sound(format: format, data: samples.bytes_of(values, encoding: format.encoding)))
+
+# `s` with its samples written in `encoding`, each as `from_samples` writes it.
+#
+# - `s`: the sound.
+# - `encoding`: the encoding wanted; `s`'s own answers `s` itself.
+#
+# Fails `invalid` where `s` is, as `Sound` says. See also `to_format`.
+function to_encoding(s: Sound, encoding: Encoding) -> Sound?
+    check.valid_sound(s, asked: "converting a sound's encoding")?
+
+    if s.format.encoding == encoding
+        return ok(s)
+    format = Format(
+        encoding: encoding,
+        rate: s.format.rate,
+        channels: s.format.channels,
+        speakers: s.format.speakers
+    )
+    return from_samples(format, values: samples.all_of(s.data, encoding: s.format.encoding))
+
+# `s` with frames of `channels` channels, frame for frame: the mean of every
+# channel where one is asked; the one channel in each where `s` has one; a
+# fold where two are asked of more, each channel taken by where its speaker
+# stands (`Format.speakers`), the front pair whole, a centre and the surrounds
+# 3 dB down into the side they stand on, both sides for one in the middle,
+# the low-frequency channel left out, and the whole scaled so a frame full in
+# every channel stays full; and else each channel kept in its place, a channel
+# added silent and one past the count left out.
+#
+# - `s`: the sound.
+# - `channels`: the channels wanted, 1 to `MAX_CHANNELS`; `s`'s own answers
+#   `s` itself.
+#
+# The channel mask is kept where the count is, and 0 otherwise. Fails
+# `invalid` where `s` or `channels` is. See also `to_format`.
+function to_channels(s: Sound, channels: i64) -> Sound?
+    asked = "converting a sound's channels"
+    check.valid_sound(s, asked: asked)?
+
+    if s.format.channels == channels
+        return ok(s)
+    format = Format(encoding: s.format.encoding, rate: s.format.rate, channels: channels, speakers: 0)
+    check.valid_format(format, asked: asked)?
+    values = mix.remixed(
+        samples.all_of(s.data, encoding: s.format.encoding),
+        from: s.format.channels,
+        to: channels,
+        mask: s.format.speakers
+    )
+    return from_samples(format, values: values)
+
+# `s` at `rate` frames a second, by band-limited interpolation: a sinc under a
+# Kaiser window, its cutoff at 95% of the lower rate's Nyquist frequency, so
+# what the new rate cannot hold is let go, never folded back. Frame `n` stands
+# at the time `n` frames of the new rate begin, and there are as many as begin
+# before `s` ends.
+#
+# - `s`: the sound.
+# - `rate`: the rate wanted, 1 to `MAX_RATE`; `s`'s own answers `s` itself.
+#
+# The edges are read as silence before and after, so the first and last
+# frames of a constant sound taper. Its cost is about 34 multiplications a
+# sample where the rate rises, and that times the ratio where it falls.
+# Fails `invalid` where `s` or `rate` is. See also `to_format`.
+function to_rate(s: Sound, rate: i64) -> Sound?
+    asked = "converting a sound's rate"
+    check.valid_sound(s, asked: asked)?
+
+    if s.format.rate == rate
+        return ok(s)
+    format = Format(
+        encoding: s.format.encoding,
+        rate: rate,
+        channels: s.format.channels,
+        speakers: s.format.speakers
+    )
+    check.valid_format(format, asked: asked)?
+    values = resample.whole_of(
+        samples.all_of(s.data, encoding: s.format.encoding),
+        from: s.format.rate,
+        to: rate,
+        channels: s.format.channels
+    )
+    return from_samples(format, values: values)
+
+# `s` in `format`: its channels as `to_channels` makes them, then its rate as
+# `to_rate` does, then its encoding, every step on the samples as numbers, so
+# no step rounds to an integer between two others; and `format`'s channel mask.
+#
+# - `s`: the sound.
+# - `format`: the format wanted.
+#
+# Fails `invalid` where `s` or `format` is. See also `to_encoding`,
+# `to_channels`, `to_rate`.
+function to_format(s: Sound, format: Format) -> Sound?
+    asked = "converting a sound's format"
+    check.valid_sound(s, asked: asked)?
+    check.valid_format(format, asked: asked)?
+    values @= samples.all_of(s.data, encoding: s.format.encoding)
+
+    if s.format.channels != format.channels
+        values @ mix.remixed(values, from: s.format.channels, to: format.channels, mask: s.format.speakers)
+
+    if s.format.rate != format.rate
+        values @ resample.whole_of(values, from: s.format.rate, to: format.rate, channels: format.channels)
+    return from_samples(format, values: values)
+
+# A sound of `format` that is silent for `length`: every sample zero, 128
+# for `pcm8`.
+#
+# - `format`: its format.
+# - `length`: how long, rounded to the nearest frame; zero is no frame.
+#
+# Fails `invalid` where `format` or `length` is, or where the frames pass
+# what an `i64` counts. Aborts where the memory cannot hold the sound, as a
+# list grown past it does. See also `tone`.
+function silence(format: Format, length: time.Duration) -> Sound?
+    asked = "making silence"
+    check.valid_format(format, asked: asked)?
+    frames = check.frames_in(length, rate: format.rate, asked: asked)?
+    zero: [f64] @= []
+
+    for _ in range(from: 0, to: frames * format.channels)
+        zero @ zero.push(0.0)
+
+    return from_samples(format, values: zero)
+
+# A sound of `format` that is a sine of `hz` for `length`, the same in every
+# channel, starting at zero and rising: frame `k` is `amplitude` times the
+# sine of 2 pi `hz` `k` over the rate.
+#
+# - `format`: its format.
+# - `hz`: the frequency, zero or more and finite; past half the rate it
+#   folds back, as a sine sampled does.
+# - `amplitude`: the peak, 0 to 1.
+# - `length`: how long, rounded to the nearest frame.
+#
+# Fails `invalid` where `format`, `hz`, `amplitude` or `length` is, or where
+# the frames pass what an `i64` counts. Aborts where the memory cannot hold
+# the sound, as a list grown past it does. See also `silence`.
+function tone(format: Format, hz: f64, amplitude: f64, length: time.Duration) -> Sound?
+    asked = "making a tone"
+    check.valid_format(format, asked: asked)?
+
+    if math.is_nan(hz) || hz < 0.0 || math.is_inf(hz)
+        return fail(code: INVALID, msg: f"{asked}: {hz} Hz, where a finite frequency of zero or more is taken")
+
+    if math.is_nan(amplitude) || amplitude < 0.0 || amplitude > 1.0
+        return fail(code: INVALID, msg: f"{asked}: an amplitude of {amplitude}, where 0 to 1 is taken")
+    frames = check.frames_in(length, rate: format.rate, asked: asked)?
+    values: [f64] @= []
+    step = math.TAU * hz / to_f64(format.rate)
+
+    for k in range(from: 0, to: frames)
+        x = amplitude * math.sin(step * to_f64(k))
+
+        for _ in range(from: 0, to: format.channels)
+            values @ values.push(x)
+
+    return from_samples(format, values: values)
+
+## WAV
+
+# The sound the WAV file `data` holds: integer PCM of 1 to 32 bits a sample,
+# in the fewest whole bytes that hold them, and IEEE floats of 32 and 64 bits,
+# any number of channels, under a plain `fmt ` chunk or WAVE_FORMAT_EXTENSIBLE,
+# in a RIFF or an RF64 file. The chunks may stand in any order, and every one
+# but `fmt ` and `data` is passed over.
+#
+# - `data`: the file's bytes.
+#
+# The sound keeps the file's bytes as they stand. A `data` chunk that says
+# more than the file holds is read to the file's end, as one whose size a
+# writer never went back to fill (2^32 - 1); a frame cut short at its end is
+# left out. Samples of fewer bits than their bytes keep their bytes, the bits
+# below the valid ones zero as WAV writes them.
+#
+# Fails `invalid` where `data` is no WAV file or says a rate, channel count or
+# block size no format takes; `unsupported` where it is RIFX or a compressed
+# or float encoding this package does not read, its tag named. See also
+# `encode_wav`, `read_wav`.
+function decode_wav(data: [u8]) -> Sound?
+    return wav.decoded(data)
+
+# The bytes of a WAV file holding `s`: a plain `fmt ` chunk for 8 and 16-bit
+# integers and for floats in one or two channels with no channel mask,
+# WAVE_FORMAT_EXTENSIBLE for the rest, as Microsoft asks; a `fact` chunk with
+# the frame count for floats and the extensible form; RF64 where the file
+# would pass what a 32-bit size holds.
+#
+# - `s`: the sound.
+#
+# Fails `invalid` where `s` is, as `Sound` says. See also `decode_wav`,
+# `write_wav`.
+function encode_wav(s: Sound) -> [u8]?
+    check.valid_sound(s, asked: "writing a WAV file")?
+    return ok(wav_write.encoded(s, wide: false))
+
+# The sound the WAV file at `path` holds, as `decode_wav` reads it.
+#
+# - `path`: the file.
+#
+# Fails as `fs.read_bytes` does where the file cannot be read, and as
+# `decode_wav` does on what it holds. See also `write_wav`.
+function read_wav(path: str) -> Sound?
+    return decode_wav(fs.read_bytes(path)?)
+
+# Writes `s` as a WAV file at `path`, as `encode_wav` makes it, replacing the
+# file that stood there.
+#
+# - `path`: the file.
+# - `s`: the sound.
+#
+# Fails as `encode_wav` does on `s`, and as `fs.write_bytes` does where the
+# file cannot be written. See also `read_wav`.
+function write_wav(path: str, s: Sound) -> ()?
+    return fs.write_bytes(path, data: encode_wav(s)?)
+
+## WAV a piece at a time
+
+# A WAV file read from a stream a piece at a time: its frames' format and how
+# many are still to come, the stream standing at the next. Made by
+# `wav_reader` alone.
+record WavReader
+    # The stream read, the caller's, who closes it.
+    stream: io.Stream
+    # The format of the file's frames.
+    format: Format
+    # The frames the file's data chunk still holds; -1 where the file gives
+    # no size, as a writer that never went back leaves it, and it is read to
+    # the stream's end.
+    frames_left: i64
+
+# A WAV file written to a stream a piece at a time: its frames' format and
+# how many were written. Made by `wav_writer` alone; `finish_wav` writes its
+# sizes.
+record WavWriter
+    # The stream written, the caller's, who closes it after `finish_wav`.
+    stream: io.Stream
+    # The format of the frames written.
+    format: Format
+    # The frames written so far.
+    frames: i64
+
+# A reader of the WAV file `s` holds, its chunks read in order up to its
+# first frame, so its frames are read as the program asks, by `read_frames`.
+#
+# - `s`: a stream at the file's first byte, which may be a pipe: nothing is
+#   read twice and nothing sought; the caller closes it.
+#
+# Reads what `decode_wav` reads, but a file whose data chunk comes before its
+# `fmt ` chunk, which a stream cannot go back for. Fails `invalid` where the
+# file is no WAV file, or that one, or ends inside its header;
+# `unsupported` as `decode_wav` does; and where `io.read` fails, with its
+# code. See also `read_frames`, `decode_wav`.
+function wav_reader(s: io.Stream) -> WavReader?
+    return wav_stream.reader_of(s)
+
+# Up to `frames` of the next frames of `r`, fewer where the file ends first,
+# none once it has.
+#
+# - `r`: the reader; its stream and its count move on.
+# - `frames`: the most frames, 0 or more.
+#
+# A frame cut short at the file's end is left out, as `decode_wav` leaves
+# it. Fails `invalid` where `frames` is below 0, and where `io.read` fails,
+# with its code. See also `wav_reader`.
+function read_frames(@r: WavReader, frames: i64) -> Sound?
+    return wav_stream.frames_of(@r, frames: frames)
+
+# A writer of a WAV file of `format` on `s`, its header written with its sizes
+# unknown, which a reader reads to the end, until `finish_wav` writes them.
+#
+# - `s`: a stream at its first byte, which `finish_wav` seeks back to; the
+#   caller closes it.
+# - `format`: the format of the frames to come.
+#
+# The header keeps 28 bytes in a `JUNK` chunk where RF64 puts its `ds64`, so
+# a file that passes 4 GiB becomes RF64 in the same room (EBU Tech 3306).
+# Fails `invalid` where `format` is, and where `io.write` fails, with its
+# code. See also `write_frames`, `finish_wav`.
+function wav_writer(s: io.Stream, format: Format) -> WavWriter?
+    return wav_stream.writer_of(s, format: format)
+
+# Writes the frames of `s` after those `w` wrote.
+#
+# - `w`: the writer; its count moves on.
+# - `s`: frames of `w`'s format.
+#
+# Fails `invalid` where `s` is invalid or of another format, and where
+# `io.write` fails, with its code. See also `finish_wav`.
+function write_frames(@w: WavWriter, s: Sound) -> ()?
+    return wav_stream.written(@w, sound: s)
+
+# Finishes the file `w` wrote: its pad byte, and its header written again
+# with its sizes, as RF64 where 32 bits cannot hold them; the stream is left
+# at its end.
+#
+# - `w`: the writer; nothing should be written with it after.
+#
+# Fails where `io.write` or `io.seek` fails, with its code: a stream that
+# cannot seek, a pipe, keeps the sizes unknown, which `decode_wav` and
+# `wav_reader` read to the end. See also `wav_writer`.
+function finish_wav(w: WavWriter) -> ()?
+    return wav_stream.finished(w)
+
+## Devices
+
+# The identifier of the null device, which `null_device` gives.
+constant NULL_DEVICE: str
+    "heroes:null"
+
+# Which way a device's frames go.
+variant Direction
+    # The device plays them: speakers, headphones, a line out.
+    output
+    # The device records them: a microphone, a line in.
+    input
+
+# A device of the system's, or the null device, as `devices` lists it. A
+# device that both plays and records is listed once for each direction.
+record Device
+    # The system's identifier, which names it while it is plugged in:
+    # CoreAudio's device UID, WASAPI's endpoint identifier, PulseAudio's
+    # sink or source name.
+    id: str
+    # Its name for a person.
+    name: str
+    # Whether it plays or records.
+    direction: Direction
+    # Whether it is the system's default of its direction.
+    is_default: bool
+    # The rate, channels and encoding the system mixes in for it, which a
+    # stream on it runs at; no channel mask.
+    format: Format
+
+# The name of the sound system this machine's devices are reached through:
+# "CoreAudio" on macOS, "WASAPI" on Windows, and on Linux "PulseAudio" or
+# "PipeWire", as the server reached names itself.
+#
+# Fails `unsupported` where the machine has none this package reaches (a
+# Linux with neither library nor server), `failed` where it refused.
+# See also `devices`.
+function system() -> str?
+    room: [u8] @= []
+
+    for _ in range(from: 0, to: 64)
+        room @ room.push(0)
+
+    n = hero_audio.system(@room, n: 64)
+
+    if n < 0 || n > 64
+        return failure.last(asked: "asking which sound system this machine has")
+    return ok(room.slice(from: 0, to: n).validated_bytes().default(""))
+
+# Every output and input device the system has, each with the format it runs
+# at, in the system's order. The null device is not among them.
+#
+# Empty where the system has no device. Fails `unsupported` and `failed` as
+# `system` does. See also `default_output`, `default_input`.
+function devices() -> [Device]?
+    return listing.listed()
+
+# The device the system plays on when nothing else is asked.
+#
+# Fails `not_found` where it has none, and as `devices` does. See also
+# `default_input`.
+function default_output() -> Device?
+    return streams.default_of(.output)
+
+# The device the system records from when nothing else is asked.
+#
+# Fails `not_found` where it has none, and as `devices` does. See also
+# `default_output`.
+function default_input() -> Device?
+    return streams.default_of(.input)
+
+# The null device of `direction` at `format`: an output that plays nothing,
+# at its stream's rate, and an input that records a sine of 440 Hz at half
+# the full scale in every channel, frame `k` being 0.5 times the sine of 2 pi
+# 440 `k` over the rate, rounded to an `f32`. The same on every system and
+# with no hardware, so a test plays and records through it.
+#
+# - `direction`: which way.
+# - `format`: what it runs at; its encoding and channel mask are not read.
+#
+# See also `devices`.
+function null_device(direction: Direction, format: Format) -> Device
+    return Device(id: NULL_DEVICE, name: "the null device", direction: direction, is_default: false, format: format)
+
+## Streams
+
+# The span of frames a stream holds between the program and the device when
+# `open` makes it: half a second.
+constant BUFFER_MS: i64
+    500
+
+# Frames on their way to a device or from one: an output plays the sounds the
+# program writes, an input records the sounds the program reads. It is an
+# address, as an `io.Stream` is: every copy reaches the same device's stream,
+# and `close` empties the place it is handed; `write`, `finish` and `read`
+# carry the rate conversion and the frames not yet handed to the device in
+# the place they are handed, so a program keeps one place for each stream.
+# Made by `open`, `open_with` and `play` alone; one nobody closes is told when
+# `main` returns.
+record Stream
+    # The floor's stream, `nullptr` once `close` has emptied this place.
+    handle: hero_audio.Stream
+    # The device it runs on, whose format the frames take there.
+    device: Device
+    # The format of the sounds the program writes or reads.
+    format: Format
+    # The device's floats converted and not yet taken by the device, for an
+    # output; none for an input.
+    pending: [f32]
+    # The rate conversion between the program's rate and the device's,
+    # carried from one call to the next.
+    rates: resample.Resampler
+
+# What a stream is doing.
+variant State
+    # Playing or recording.
+    running
+    # Paused by `pause`: it keeps its frames.
+    paused
+    # Ended: an output finished and played out, or a stream stopped.
+    ended
+    # Its device went away: unplugged, or taken by another program.
+    lost
+
+# A stream on `device` of sounds of `format`, started, holding `BUFFER_MS` of
+# frames between the program and the device.
+#
+# - `device`: a device `devices` listed, a default, or `null_device`'s; its
+#   direction makes an output or an input.
+# - `format`: the format of the sounds the program writes to it or reads
+#   from it, converted to and from the device's own.
+#
+# Fails as `open_with` does. See also `play`, `close`.
+function open(device: Device, format: Format) -> Stream?
+    return open_with(device, format: format, buffer: time.milliseconds(BUFFER_MS).must())
+
+# A stream as `open` makes it, holding `buffer` of frames between the program
+# and the device: a longer one plays on through a program's pause and records
+# on while it does not read, and a shorter one plays a written sound sooner.
+#
+# - `device`: as `open` takes it.
+# - `format`: as `open` takes it.
+# - `buffer`: the span held, at least one frame of the device's rate.
+#
+# Fails `invalid` where `format` is or `buffer` is below one frame, or the
+# device's format is not one this layer runs (1 to 768000 frames a second, 1
+# to 64 channels); `limit` where `buffer` holds more frames than a stream
+# holds (2^28, and 2^29 samples); `not_found` where the device is not there;
+# `permission` where it records and the person refused the microphone or has
+# not been asked (`ask_permission` asks them); `unsupported` where this
+# machine has no sound system this package reaches; `failed` where the system
+# refused. See also `open`.
+function open_with(device: Device, format: Format, buffer: time.Duration) -> Stream?
+    asked = f"opening a stream on \"{device.name}\""
+    check.valid_format(format, asked: asked)?
+    room = check.frames_in(buffer, rate: device.format.rate, asked: asked)?
+    return streams.opened(device, format: format, room: room, asked: asked)
+
+# An output on `device` playing `s` whole, finished, so its end is told once
+# it has played: `wait` waits for it, `pause`, `resume` and `stop` change it,
+# and `close` ends it.
+#
+# - `device`: an output.
+# - `s`: the sound, converted to the device's format as `open` converts.
+#
+# Its room holds the whole sound, so a sound of more frames than a stream
+# holds (2^28 at the device's rate, and 2^29 samples) fails `limit`; a longer
+# one is played by `open` and `write`. Fails `invalid` where `device` is an
+# input or `s` is invalid, and as `open_with` does. See also `open`.
+function play(device: Device, s: Sound) -> Stream?
+    asked = f"playing a sound on \"{device.name}\""
+    check.valid_sound(s, asked: asked)?
+    length = time.nanoseconds(math.add_clamped(a: duration_of(s).nanoseconds, b: 1000000000))
+    stream @= open_with(device, format: s.format, buffer: length)?
+
+    match streams.played(@stream, s: s, asked: asked)
+        .ok _ => return ok(stream)
+        .err e =>
+            # The stream is the call's own: its closing fails only where it is
+            # closed already, and the failure told is the play's.
+            match close(@stream)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# Writes `s` to the output `s`'s device, converted to its format, waiting up
+# to `limit` for room as the device plays.
+#
+# - `stream`: an output; what it carries moves on.
+# - `s`: the next frames, of the stream's own format.
+# - `limit`: the longest to wait for room; zero queues what fits now.
+#
+# Frames converted and not yet taken when `limit` passes stay in the stream
+# and go first at the next `write` or `finish`. Fails `timeout` then;
+# `invalid` where `stream` is an input or `s` is not of its format or is
+# invalid; `closed` where the stream is closed, has ended, or its device went
+# away; `stopped` where the stop was asked before any frame was taken. See
+# also `finish`, `read`.
+function write(@stream: Stream, s: Sound, limit: time.Duration) -> ()?
+    return streams.written(@stream, s: s, limit: limit)
+
+# Says that no more sounds will be written to the output `stream`: the frames
+# it still holds are handed to the device, waiting up to `limit` for room,
+# and its end is told once the device has played them.
+#
+# - `stream`: an output; what it carries is handed on.
+# - `limit`: the longest to wait for room.
+#
+# Fails `timeout` where frames are still held when `limit` passes, which a
+# later `finish` hands on; and as `write` does. See also `wait`.
+function finish(@stream: Stream, limit: time.Duration) -> ()?
+    return streams.finished(@stream, limit: limit)
+
+# The frames the input `stream` has recorded since the last read, as a sound
+# of its format, waiting up to `limit` for the first.
+#
+# - `stream`: an input; what it carries moves on.
+# - `limit`: the longest to wait; zero answers what is there now.
+#
+# A sound of no frames may come while the rate conversion fills. Fails
+# `timeout` where nothing was recorded when `limit` passed; `closed` once the
+# stream has stopped and every frame was read, or its device went away;
+# `invalid` where `stream` is an output; `stopped`. See also `write`.
+function read(@stream: Stream, limit: time.Duration) -> Sound?
+    return streams.recorded(@stream, limit: limit)
+
+# Waits up to `limit` for `stream` to end: an output finished and played
+# out, or a stream stopped.
+#
+# - `stream`: the stream.
+# - `limit`: the longest to wait.
+#
+# Fails `timeout` where it had not ended; `closed` where it is closed or its
+# device went away; `stopped`. See also `finish`.
+function wait(stream: Stream, limit: time.Duration) -> ()?
+    asked = f"waiting for the stream on \"{stream.device.name}\" to end"
+
+    if limit.nanoseconds < 0
+        return fail(code: INVALID, msg: f"{asked}: a limit is zero or more")
+
+    if hero_audio.wait(stream.handle, limit_ns: limit.nanoseconds) < 0
+        return failure.last(asked: asked)
+    return ok()
+
+# Pauses `stream`: it keeps its frames, an output plays nothing and an input
+# records nothing until `resume`.
+#
+# - `stream`: the stream; paused already, nothing changes.
+#
+# Fails `closed` where it is closed, has ended or lost its device; `failed`
+# where the system refused. See also `resume`.
+function pause(stream: Stream) -> ()?
+    if hero_audio.pause(stream.handle) < 0
+        return failure.last(asked: f"pausing the stream on \"{stream.device.name}\"")
+    return ok()
+
+# Resumes `stream` where `pause` left it.
+#
+# - `stream`: the stream; running already, nothing changes.
+#
+# Fails as `pause` does. See also `pause`.
+function resume(stream: Stream) -> ()?
+    if hero_audio.resume(stream.handle) < 0
+        return failure.last(asked: f"resuming the stream on \"{stream.device.name}\"")
+    return ok()
+
+# Stops `stream` at once: an output drops the frames it holds and an input
+# records no more, its frames still read. It has then ended.
+#
+# - `stream`: the stream; ended already, nothing changes.
+#
+# Fails `closed` where it is closed. See also `close`.
+function stop(stream: Stream) -> ()?
+    if hero_audio.stop(stream.handle) < 0
+        return failure.last(asked: f"stopping the stream on \"{stream.device.name}\"")
+    return ok()
+
+# Sets the gain every sample of `stream` is multiplied by on its way.
+#
+# - `stream`: the stream.
+# - `volume`: 0 to 1, 1 being as written or recorded, 0 silence.
+#
+# Fails `invalid` where `volume` is outside 0 to 1 or no number, `closed`
+# where the stream is closed. See also `pause`.
+function set_volume(stream: Stream, volume: f64) -> ()?
+    if hero_audio.set_volume(stream.handle, volume: volume) < 0
+        return failure.last(asked: f"setting the volume of the stream on \"{stream.device.name}\" to {volume}")
+    return ok()
+
+# What `stream` is doing.
+#
+# - `stream`: the stream.
+#
+# Fails `closed` where it is closed. See also `wait`.
+function state_of(stream: Stream) -> State?
+    n = hero_audio.state(stream.handle)
+
+    if n < 0
+        return failure.last(asked: f"asking the state of the stream on \"{stream.device.name}\"")
+
+    if n == hero_audio.HERO_AUDIO_PAUSED
+        return ok(.paused)
+
+    if n == hero_audio.HERO_AUDIO_DONE
+        return ok(.ended)
+
+    if n == hero_audio.HERO_AUDIO_GONE
+        return ok(.lost)
+    return ok(.running)
+
+# How much of `stream` the device has taken (an output) or given (an input)
+# since it opened, at the device's rate: what has been played or recorded,
+# silence played for want of frames not counted.
+#
+# - `stream`: the stream.
+#
+# Fails `closed` where it is closed. See also `dropped_of`.
+function position_of(stream: Stream) -> time.Duration?
+    n = hero_audio.position(stream.handle)
+
+    if n < 0
+        return failure.last(asked: f"asking the position of the stream on \"{stream.device.name}\"")
+    rate = stream.device.format.rate
+    seconds = math.multiply_clamped(a: n / rate, b: 1000000000)
+    return ok(time.nanoseconds(math.add_clamped(a: seconds, b: n % rate * 1000000000 / rate)))
+
+# The frames, at the device's rate, an input dropped because the program did
+# not read them in time, or an output played as silence while running with
+# nothing written and not finished.
+#
+# - `stream`: the stream.
+#
+# Fails `closed` where it is closed. See also `position_of`.
+function dropped_of(stream: Stream) -> i64?
+    n = hero_audio.dropped(stream.handle)
+
+    if n < 0
+        return failure.last(asked: f"asking what the stream on \"{stream.device.name}\" dropped")
+    return ok(n)
+
+# Closes `stream` and empties the place it is handed: the device's stream
+# ended, an output's frames not yet played dropped.
+#
+# - `stream`: the stream; every copy of it is closed.
+#
+# Fails `closed` where it was closed already. See also `stop`.
+function close(@stream: Stream) -> ()?
+    asked = f"closing the stream on \"{stream.device.name}\""
+
+    if stream.handle == nullptr
+        return fail(code: CLOSED, msg: f"{asked}: it is closed already")
+    answer = hero_audio.close(@stream.handle)
+    stream.handle @ nullptr
+
+    if answer < 0
+        return failure.last(asked: asked)
+    return ok()
+
+# Adds `stream` to the set `set` and answers the entry's key: a wait on the
+# set tells the key readable while an output has room for a frame or an
+# input holds one, and once either has ended.
+#
+# - `set`: the set; `poll.remove` takes the stream out, and closing the set
+#   closes nothing of the stream.
+# - `stream`: the stream, which stays the program's and is closed with
+#   `close`.
+#
+# The set waits on a pipe the stream rings on Darwin and Linux, and on a
+# datagram socket of the loopback on Windows, whose readiness waits on
+# sockets alone; there a datagram from another program can make the key
+# readable when the stream is not ready.
+#
+# Fails `closed` where the set or the stream is closed, `limit` where the set
+# holds the most entries it was made for or no pipe or socket can be made.
+# See also `poll.wait`.
+function add_to(set: poll.Set, stream: Stream) -> i64?
+    asked = f"adding the stream on \"{stream.device.name}\" to a set"
+    name = f"the stream on \"{stream.device.name}\""
+    bell = hero_audio.bell_stream(stream.handle)
+
+    if bell != nullptr
+        return poll.add_stream(set, s: io.Stream(handle: bell, borrowed: true, name: name), interest: .read)
+
+    if hero_audio.last_error() != hero_audio.HERO_AUDIO_UNSUPPORTED
+        return failure.last(asked: asked)
+    socket = hero_audio.bell_socket(stream.handle)
+
+    if socket == nullptr
+        return failure.last(asked: asked)
+
+    # Its port is not asked: a set reads the socket alone.
+    loopback = net.Address(host: net.loopback_v4(), port: 0)
+    return poll.add_udp(set, u: net.UdpSocket(socket: socket, address: loopback), interest: .read)
+
+## The microphone and the beep
+
+# Asks whether this program may record from a microphone, and where the
+# person has not been asked yet, asks them, the system showing its own dialog,
+# waiting up to `limit` for their answer.
+#
+# - `limit`: the longest to wait for the person; zero asks nothing and
+#   answers what was answered before.
+#
+# Only macOS asks here; on Windows and Linux it answers at once, and their
+# refusal comes from `open`. Fails `permission` where the person refused, a
+# policy forbids it, or, with a limit of zero, they were never asked, its
+# words saying which; `timeout` where they were asked and had not answered;
+# `stopped`. See also `open`.
+function ask_permission(limit: time.Duration) -> ()?
+    if limit.nanoseconds < 0
+        return fail(code: INVALID, msg: "asking for the microphone: a limit is zero or more")
+
+    if hero_audio.permission(limit.nanoseconds) < 0
+        return failure.last(asked: "asking for the microphone")
+    return ok()
+
+# Sounds the system's alert, the one the person chose where the system lets
+# them, and answers without waiting for it to end.
+#
+# Fails `unsupported` where this machine has no sound system this package
+# reaches, `failed` where it refused. See also `play`.
+function beep() -> ()?
+    if hero_audio.beep() < 0
+        return failure.last(asked: "sounding the system's alert")
+    return ok()
+
+## Tests
+
+test "width_of, frames_of and duration_of: every encoding, no frame, a cut frame, a rate of none"
+    widths: [i64] = [1, 2, 3, 4, 4, 8]
+    every: [Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for i in range(from: 0, to: 6)
+        assert width_of(every[i]) == widths[i]
+
+    stereo = Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0)
+    assert frames_of(Sound(format: stereo, data: [])) == 0
+    assert frames_of(Sound(format: stereo, data: [0, 0, 0, 0, 0, 0])) == 1
+    none = Format(encoding: .pcm16, rate: 0, channels: 0, speakers: 0)
+    assert frames_of(Sound(format: none, data: [0, 0])) == 0
+    assert duration_of(Sound(format: none, data: [0, 0])).nanoseconds == 0
+    third = Sound(format: Format(encoding: .pcm8, rate: 3, channels: 1, speakers: 0), data: [128])
+    assert duration_of(third).nanoseconds == 333333333
+
+test "to_samples and from_samples: a sound refused for its rate, channels, mask or bytes"
+    bad: [Format] = [
+        Format(encoding: .pcm16, rate: 0, channels: 1, speakers: 0)
+        Format(encoding: .pcm16, rate: MAX_RATE + 1, channels: 1, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: 0, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: MAX_CHANNELS + 1, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: -1)
+        Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 4294967296)
+    ]
+
+    for f in bad
+        match to_samples(Sound(format: f, data: []))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        assert from_samples(f, values: []).is_err()
+
+    mono = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    assert to_samples(Sound(format: mono, data: [0, 0, 0])).is_err()
+    assert from_samples(Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0), values: [0.0]).is_err()
+    assert to_samples(Sound(format: mono, data: [])).must().len() == 0
+
+test "to_encoding: every pair of encodings over minus one, zero and a half, and its own kept"
+    every: [Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for from in every
+        s = from_samples(Format(encoding: from, rate: 8000, channels: 1, speakers: 0), values: [-1.0, 0.0, 0.5]).must()
+
+        for to in every
+            assert to_samples(to_encoding(s, encoding: to).must()).must() == [-1.0, 0.0, 0.5]
+
+test "to_channels and to_rate: a count or a rate out of range refused, the same one answering the sound"
+    s = from_samples(Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0), values: [0.5]).must()
+    assert to_channels(s, channels: 0).is_err() && to_channels(s, channels: MAX_CHANNELS + 1).is_err()
+    assert to_rate(s, rate: 0).is_err() && to_rate(s, rate: MAX_RATE + 1).is_err()
+    assert to_channels(s, channels: 1).must() == s && to_rate(s, rate: 8000).must() == s
+
+test "silence and tone: a length below zero, a frequency or an amplitude out of range refused"
+    f = Format(encoding: .float32, rate: 8000, channels: 2, speakers: 0)
+    assert silence(f, length: time.nanoseconds(-1)).is_err()
+    assert silence(f, length: time.nanoseconds(0)).must().data.len() == 0
+    widest = Format(encoding: .float32, rate: MAX_RATE, channels: 2, speakers: 0)
+    assert silence(widest, length: time.max_duration()).is_err()
+    long = time.seconds(1).must()
+    assert tone(f, hz: -1.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 1.0 / 0.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 0.0 / 0.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 440.0, amplitude: 1.5, length: long).is_err()
+    assert tone(f, hz: 440.0, amplitude: 0.0 / 0.0, length: long).is_err()
+    half = tone(
+        Format(encoding: .pcm8, rate: 4, channels: 1, speakers: 0),
+        hz: 1.0,
+        amplitude: 1.0,
+        length: long
+    ).must()
+    assert half.data == [128, 255, 128, 0]
+
+test "to_format: channels, rate and encoding at once, the mask taken from the format"
+    s = from_samples(Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0), values: [0.5, 0.5, 0.5]).must()
+    wanted = Format(encoding: .float32, rate: 16000, channels: 2, speakers: 3)
+    out = to_format(s, format: wanted).must()
+    assert out.format == wanted && frames_of(out) == 6
+    assert to_format(s, format: Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)).must() == s
+
+test "open: an output of the null device in a format out of range, a buffer of no frame or past a stream's room"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    bad = Format(encoding: .float32, rate: 0, channels: 1, speakers: 0)
+    assert open(null_device(.output, format: f), format: bad).is_err()
+
+    match open(null_device(.output, format: bad), format: f)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match open_with(null_device(.output, format: f), format: f, buffer: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match open_with(null_device(.output, format: f), format: f, buffer: time.seconds(40000).must())
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    nowhere = Device(id: "heroes:nowhere", name: "nowhere", direction: .output, is_default: false, format: f)
+
+    match open(nowhere, format: f)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+
+test "write and read: a stream of the wrong direction, a sound of another format, a limit below zero"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    out @= open(null_device(.output, format: f), format: f).must()
+    other = silence(
+        Format(encoding: .pcm16, rate: 16000, channels: 1, speakers: 0),
+        length: time.milliseconds(1).must()
+    ).must()
+
+    match write(@out, s: other, limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    one = silence(f, length: time.milliseconds(1).must()).must()
+    assert write(@out, s: one, limit: time.nanoseconds(-1)).is_err()
+    assert read(@out, limit: time.nanoseconds(0)).is_err()
+    close(@out).must()
+    assert close(@out).is_err()
+    inp @= open(null_device(.input, format: f), format: f).must()
+
+    match write(@inp, s: one, limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert finish(@inp, limit: time.nanoseconds(0)).is_err()
+    close(@inp).must()
+
+test "write and finish: a sound at another rate than the device's, every frame converted and played to the end"
+    device = Format(encoding: .float32, rate: 48000, channels: 2, speakers: 0)
+    f = Format(encoding: .pcm16, rate: 44100, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: device), format: f).must()
+    tenth = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100).must()).must()
+    write(@s, s: tenth, limit: time.seconds(2).must()).must()
+    finish(@s, limit: time.seconds(2).must()).must()
+    wait(s, limit: time.seconds(3).must()).must()
+    assert state_of(s).must() == .ended
+    assert position_of(s).must().nanoseconds == 100000000
+    close(@s).must()
+
+test "write: the room full and a limit of zero, the rest kept for the next write; stop drops it"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(10).must()).must()
+    pause(s).must()
+
+    match write(@s, s: silence(f, length: time.milliseconds(30).must()).must(), limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    assert s.pending.len() == 160
+    stop(s).must()
+    assert state_of(s).must() == .ended
+
+    match write(@s, s: silence(f, length: time.milliseconds(1).must()).must(), limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@s).must()
+
+test "read: the null input's sine at another rate and channel count, converted as it is recorded"
+    device = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    f = Format(encoding: .float32, rate: 16000, channels: 2, speakers: 0)
+    s @= open(null_device(.input, format: device), format: f).must()
+    got: [f64] @= []
+
+    while got.len() < 4000
+        for x in to_samples(read(@s, limit: time.seconds(1).must()).must()).must()
+            got @ got.push(x)
+
+    stop(s).must()
+
+    for k in range(from: 200, to: 1800)
+        exact = 0.5 * math.sin(math.TAU * 440.0 * to_f64(k) / 16000.0)
+        assert math.abs(got[2 * k] - exact) < 0.01
+        assert got[2 * k] == got[2 * k + 1]
+
+    close(@s).must()
+
+test "set_volume and state_of: a volume out of range refused, a paused stream told paused"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+
+    match set_volume(s, volume: 2.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert set_volume(s, volume: 0.0 / 0.0).is_err()
+    pause(s).must()
+    assert state_of(s).must() == .paused
+    resume(s).must()
+    assert state_of(s).must() == .running
+    close(@s).must()
+
+test "play: a tenth of a second of 440 Hz on this machine's default output, played to its end"
+    device = match default_output()
+        .ok d => d
+        .err e =>
+            skip_test(reason: f"no default output: {e.msg}")
+            return
+
+    f = Format(encoding: .pcm16, rate: 44100, channels: 1, speakers: 0)
+    s @= play(device, s: tone(f, hz: 440.0, amplitude: 0.2, length: time.milliseconds(100).must()).must()).must()
+    wait(s, limit: time.seconds(5).must()).must()
+    assert state_of(s).must() == .ended
+    close(@s).must()
+
+test "read: a few frames recorded from this machine's default input"
+    device = match default_input()
+        .ok d => d
+        .err e =>
+            skip_test(reason: f"no default input: {e.msg}")
+            return
+
+    match ask_permission(time.nanoseconds(0))
+        .ok _ => _ = 0
+        .err e =>
+            skip_test(reason: f"the microphone is not allowed: {e.msg}")
+            return
+
+    f = Format(encoding: .pcm16, rate: 16000, channels: 1, speakers: 0)
+    s @= open(device, format: f).must()
+    frames @= 0
+
+    while frames < 160
+        frames @ frames + frames_of(read(@s, limit: time.seconds(2).must()).must())
+
+    stop(s).must()
+    close(@s).must()
+    assert frames >= 160
+
+test "NULL_DEVICE: the floor's identifier"
+    assert NULL_DEVICE == hero_audio.NULL_DEVICE
+
+test "wav_writer, write_frames and finish_wav: pieces written read back whole, as RIFF and pieces"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/pieces.wav"
+    f = Format(encoding: .pcm24, rate: 8000, channels: 3, speakers: 0)
+    whole = tone(f, hz: 300.0, amplitude: 0.5, length: time.milliseconds(5).must()).must()
+    out @= fs.create(path).must()
+    w @= wav_writer(out, format: f).must()
+    write_frames(@w, s: Sound(format: f, data: whole.data.slice(from: 0, to: 9 * 11))).must()
+    write_frames(@w, s: Sound(format: f, data: whole.data.slice(from: 9 * 11, to: whole.data.len()))).must()
+    finish_wav(w).must()
+    io.close(@out).must()
+    assert read_wav(path).must() == whole
+    inp @= fs.open(path).must()
+    r @= wav_reader(inp).must()
+    assert r.format == f && r.frames_left == 40
+    got: [u8] @= []
+
+    while r.frames_left > 0
+        for b in read_frames(@r, frames: 7).must().data
+            got @ got.push(b)
+
+    assert got == whole.data
+    assert frames_of(read_frames(@r, frames: 7).must()) == 0
+    assert read_frames(@r, frames: -1).is_err()
+    io.close(@inp).must()
+    fs.remove_all(dir).must()
+
+test "wav_reader: a file never finished read to its end, and one whose data comes before its fmt refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/open.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    out @= fs.create(path).must()
+    w @= wav_writer(out, format: f).must()
+    write_frames(@w, s: from_samples(f, values: [0.5, -0.5, 0.25]).must()).must()
+    io.close(@out).must()
+    assert to_samples(read_wav(path).must()).must() == [0.5, -0.5, 0.25]
+    inp @= fs.open(path).must()
+    r @= wav_reader(inp).must()
+    assert r.frames_left == -1
+    assert frames_of(read_frames(@r, frames: 100).must()) == 3
+    io.close(@inp).must()
+    late = dir + "/late.wav"
+    fs.write_bytes(
+        late,
+        data: [82, 73, 70, 70, 36, 0, 0, 0, 87, 65, 86, 69, 100, 97, 116, 97, 2, 0, 0, 0, 0, 0, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 64, 31, 0, 0, 128, 62, 0, 0, 2, 0, 16, 0]
+    ).must()
+    assert !decode_wav(fs.read_bytes(late).must()).is_err()
+    again @= fs.open(late).must()
+
+    match wav_reader(again)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.close(@again).must()
+    fs.remove_all(dir).must()
+
+## Examples
+
+# How many bytes a sample takes in each encoding.
+test "width_of: a 16-bit sample and a 64-bit float"
+    assert width_of(.pcm16) == 2
+    assert width_of(.float64) == 8
+
+# How many frames a sound holds.
+test "frames_of: two frames of stereo 16-bit samples"
+    stereo = Format(encoding: .pcm16, rate: 44100, channels: 2, speakers: 0)
+    assert frames_of(Sound(format: stereo, data: [0, 0, 0, 0, 0, 0, 0, 0])) == 2
+
+# How long a sound plays.
+test "duration_of: 4000 frames at 8000 a second are half a second"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(500).must()).must()
+    assert frames_of(s) == 4000
+    assert duration_of(s).nanoseconds == 500000000
+
+# A sound's samples as numbers from -1 to 1.
+test "to_samples: 16-bit samples at their ends and their middle"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = Sound(format: f, data: [0, 128, 0, 0, 0, 64])
+    assert to_samples(s).must() == [-1.0, 0.0, 0.5]
+
+# A sound made from samples a program computed.
+test "from_samples: three samples written as 16-bit integers"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    assert from_samples(f, values: [-1.0, 0.0, 0.5]).must().data == [0, 128, 0, 0, 0, 64]
+
+# A sound's samples in another encoding.
+test "to_encoding: 16-bit samples made 8-bit"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [-1.0, 0.0, 0.5]).must()
+    assert to_encoding(s, encoding: .pcm8).must().data == [0, 128, 192]
+
+# A mono sound made stereo, and back.
+test "to_channels: one channel copied into two, and two averaged into one"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [0.5, -0.25]).must()
+    stereo = to_channels(s, channels: 2).must()
+    assert to_samples(stereo).must() == [0.5, 0.5, -0.25, -0.25]
+    assert to_channels(stereo, channels: 1).must() == s
+
+# A sound at another rate.
+test "to_rate: a tenth of a second at 8000 frames a second made 44100"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100).must()).must()
+    faster = to_rate(s, rate: 44100).must()
+    assert faster.format.rate == 44100
+    assert frames_of(faster) == 4410
+
+# A sound converted to what a device takes.
+test "to_format: mono 16-bit at 8000 made stereo floats at 48000"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(10).must()).must()
+    device = Format(encoding: .float32, rate: 48000, channels: 2, speakers: 3)
+    out = to_format(s, format: device).must()
+    assert out.format == device
+    assert frames_of(out) == 480
+
+# Silence of a given length.
+test "silence: a hundredth of a second of 8-bit silence"
+    f = Format(encoding: .pcm8, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(10).must()).must()
+    assert s.data.len() == 80
+    assert s.data[0] == 128
+
+# A test tone.
+test "tone: a sine of 2 Hz sampled 8 times a second"
+    f = Format(encoding: .float64, rate: 8, channels: 1, speakers: 0)
+    s = tone(f, hz: 2.0, amplitude: 0.5, length: time.milliseconds(500).must()).must()
+    values = to_samples(s).must()
+    assert values.len() == 4
+    assert values[0] == 0.0 && math.abs(values[1] - 0.5) < 0.000000000001
+
+# A WAV file read from its bytes.
+test "decode_wav: the WAV of two 16-bit samples written and read back"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [0.25, -0.25]).must()
+    assert decode_wav(encode_wav(s).must()).must() == s
+
+# A sound written as a WAV file's bytes.
+test "encode_wav: a 16-bit mono file is 44 bytes of header and its samples"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    file = encode_wav(from_samples(f, values: [0.5]).must()).must()
+    assert file.len() == 46
+    assert file.slice(from: 0, to: 4) == [82, 73, 70, 70]
+
+# A WAV file read from a path.
+test "read_wav: a tone written to a file and read back"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/tone.wav"
+    f = Format(encoding: .pcm24, rate: 48000, channels: 2, speakers: 0)
+    s = tone(f, hz: 1000.0, amplitude: 0.25, length: time.milliseconds(5).must()).must()
+    write_wav(path, s: s).must()
+    assert read_wav(path).must() == s
+    fs.remove_all(dir).must()
+
+# A sound written to a WAV file at a path.
+test "write_wav: a second of silence written, its size the header's 44 bytes and its frames'"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/quiet.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    write_wav(path, s: silence(f, length: time.seconds(1).must()).must()).must()
+    assert fs.read_bytes(path).must().len() == 16044
+    fs.remove_all(dir).must()
+
+# Which sound system a program's devices are reached through.
+test "system: a name on a machine that has one"
+    match system()
+        .ok name => assert name.len() > 0
+        .err e   => assert e.code == UNSUPPORTED || e.code == FAILED
+
+# The devices a program may play on and record from.
+test "devices: each one's direction and the format it runs at"
+    match devices()
+        .ok listed =>
+            for d in listed
+                assert d.id.len() > 0 && d.format.rate > 0 && d.format.channels > 0
+        .err e => assert e.code == UNSUPPORTED || e.code == FAILED
+
+# The device a program plays on when the person chose none.
+test "default_output: an output, where the machine has one"
+    match default_output()
+        .ok d  => assert d.direction == .output && d.is_default
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED || e.code == FAILED
+
+# The device a program records from when the person chose none.
+test "default_input: an input, where the machine has one"
+    match default_input()
+        .ok d  => assert d.direction == .input && d.is_default
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED || e.code == FAILED
+
+# A device with no hardware, for a test.
+test "null_device: an output at 48000 frames a second in stereo"
+    d = null_device(.output, format: Format(encoding: .float32, rate: 48000, channels: 2, speakers: 0))
+    assert d.id == NULL_DEVICE && d.direction == .output && !d.is_default
+
+# A stream of the program's sounds to a device.
+test "open: an output on the null device, closed"
+    f = Format(encoding: .pcm16, rate: 44100, channels: 2, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    assert state_of(s).must() == .running
+    close(@s).must()
+
+# A stream holding less than `open` gives it, so a sound starts sooner.
+test "open_with: an output holding a twentieth of a second"
+    f = Format(encoding: .float32, rate: 48000, channels: 1, speakers: 0)
+    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(50).must()).must()
+    close(@s).must()
+
+# A whole sound played.
+test "play: a twentieth of a second of a tone, played to its end"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s @= play(
+        null_device(.output, format: f),
+        s: tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(50).must()).must()
+    ).must()
+    wait(s, limit: time.seconds(2).must()).must()
+    close(@s).must()
+
+# Frames written as the program makes them.
+test "write: two pieces of a tone, then finished"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    piece = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(20).must()).must()
+    write(@s, s: piece, limit: time.seconds(1).must()).must()
+    write(@s, s: piece, limit: time.seconds(1).must()).must()
+    finish(@s, limit: time.seconds(1).must()).must()
+    close(@s).must()
+
+# The end of a stream told once its last frame has played.
+test "finish: the end told after the last frame"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    write(@s, s: silence(f, length: time.milliseconds(30).must()).must(), limit: time.seconds(1).must()).must()
+    finish(@s, limit: time.seconds(1).must()).must()
+    wait(s, limit: time.seconds(2).must()).must()
+    assert state_of(s).must() == .ended
+    close(@s).must()
+
+# What an input recorded.
+test "read: the null input's frames as 16-bit samples"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.input, format: f), format: f).must()
+    got = read(@s, limit: time.seconds(1).must()).must()
+    assert got.format == f && frames_of(got) > 0
+    close(@s).must()
+
+# A program waiting for its sound to end.
+test "wait: a limit of zero on a stream still playing"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+
+    match wait(s, limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    close(@s).must()
+
+# A stream held still.
+test "pause: a paused stream told paused"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    pause(s).must()
+    assert state_of(s).must() == .paused
+    close(@s).must()
+
+# A paused stream going on.
+test "resume: running again after a pause"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    pause(s).must()
+    resume(s).must()
+    assert state_of(s).must() == .running
+    close(@s).must()
+
+# A stream ended at once.
+test "stop: ended at once, its frames dropped"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    write(@s, s: silence(f, length: time.milliseconds(100).must()).must(), limit: time.seconds(1).must()).must()
+    stop(s).must()
+    assert state_of(s).must() == .ended
+    close(@s).must()
+
+# A stream played at half its loudness.
+test "set_volume: half"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    set_volume(s, volume: 0.5).must()
+    close(@s).must()
+
+# What a stream is doing.
+test "state_of: running once opened"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.input, format: f), format: f).must()
+    assert state_of(s).must() == .running
+    close(@s).must()
+
+# How much a stream has played.
+test "position_of: a stream that has played nothing yet"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    pause(s).must()
+    assert position_of(s).must().nanoseconds == 0
+    close(@s).must()
+
+# What a stream dropped.
+test "dropped_of: none from a stream paused at once"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.input, format: f), format: f).must()
+    pause(s).must()
+    assert dropped_of(s).must() == 0
+    close(@s).must()
+
+# A stream ended and given back.
+test "close: a stream closed twice is closed"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.output, format: f), format: f).must()
+    close(@s).must()
+
+    match close(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+# A stream waited on beside sockets and timers.
+test "add_to: an input told ready once it has recorded a frame"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= open(null_device(.input, format: f), format: f).must()
+    set @= poll.make(most: 4).must()
+    key = add_to(set, stream: s).must()
+    ready = poll.wait(set, limit: time.seconds(2).must()).must()
+    assert ready.len() == 1 && ready[0].key == key && ready[0].readable
+    poll.close(@set).must()
+    close(@s).must()
+
+# Whether the program may record, asking nothing.
+test "ask_permission: a limit of zero asks no person"
+    match ask_permission(time.nanoseconds(0))
+        .ok _  => _ = 0
+        .err e => assert e.code == PERMISSION || e.code == FAILED
+
+# The system's alert.
+test "beep: the alert sounded, or no sound system told"
+    match beep()
+        .ok _  => _ = 0
+        .err e => assert e.code == UNSUPPORTED || e.code == FAILED
+
+# A long WAV file read a piece at a time.
+test "wav_reader: the format and the frames of a file, before any is read"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/a.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0)
+    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    s @= fs.open(path).must()
+    r = wav_reader(s).must()
+    assert r.format == f && r.frames_left == 80
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# The next frames of a WAV file.
+test "read_frames: a file of 80 frames read 50 at a time"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/b.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    s @= fs.open(path).must()
+    r @= wav_reader(s).must()
+    assert frames_of(read_frames(@r, frames: 50).must()) == 50
+    assert frames_of(read_frames(@r, frames: 50).must()) == 30
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# A WAV file begun on a stream.
+test "wav_writer: the header of a 16-bit mono file"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    s @= fs.create(dir + "/c.wav").must()
+    w = wav_writer(s, format: Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)).must()
+    assert w.frames == 0
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# Frames written as they are made.
+test "write_frames: a hundredth of a second written twice"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    s @= fs.create(dir + "/d.wav").must()
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    w @= wav_writer(s, format: f).must()
+    piece = silence(f, length: time.milliseconds(10).must()).must()
+    write_frames(@w, s: piece).must()
+    write_frames(@w, s: piece).must()
+    assert w.frames == 160
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# A WAV file written a piece at a time, finished.
+test "finish_wav: the sizes written, so the file reads as any other"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/e.wav"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= fs.create(path).must()
+    w @= wav_writer(s, format: f).must()
+    write_frames(@w, s: from_samples(f, values: [0.5, 0.25]).must()).must()
+    finish_wav(w).must()
+    io.close(@s).must()
+    assert to_samples(read_wav(path).must()).must() == [0.5, 0.25]
+    fs.remove_all(dir).must()

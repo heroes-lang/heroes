@@ -181,7 +181,7 @@ int pipe2(int ends[2], int flags);
 
 /* A handle carries this table's tag, a slot and a life in one pointer's 64
  * bits: `HERO_HANDLE_TAG(HERO_HANDLE_TAG_PROC) | (life <<
- * HERO_PROC_INDEX_BITS) | (index + 1)`, the tag in bits 58 to 61
+ * HERO_PROC_INDEX_BITS) | (index + 1)`, the tag in bits 57 to 61
  * (`hero_handle_tag.h`), so no handle is NULL and none is another member's
  * (2026-11-16: a socket and a stream at one slot and life were one value
  * until then, which the runtime's set of ended handles mistook). */

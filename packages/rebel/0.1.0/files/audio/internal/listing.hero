@@ -1,0 +1,126 @@
+# The devices the layer lists, read: `hero_audio_devices`' bytes, seven fields
+# a device each ended by a zero byte (its direction, `default` or nothing, its
+# identifier, its name, its rate, its channels and its encoding), made
+# `audio.Device` values. A device whose fields this reader does not take is
+# left out rather than guessed at.
+
+use audio
+use audio/hero_audio
+use audio/internal/failure
+
+# The fields of `bytes`, each ended by a zero byte; bytes after the last zero
+# are no field.
+#
+# - `bytes`: the list.
+function fields_of(bytes: [u8] lent) -> [str]
+    out: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < bytes.len()
+        if bytes[i] == 0
+            out @ out.push(bytes.slice(from: start, to: i).validated_bytes().default(""))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# The number `text` writes in decimal, or -1 where it is no such number of at
+# most 9 digits.
+#
+# - `text`: the field.
+function number_of(text: str) -> i64
+    if text.len() == 0 || text.len() > 9
+        return -1
+    n @= 0
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        if c < '0' || c > '9'
+            return -1
+        n @ n * 10 + to_i64(c - '0').must()
+
+    return n
+
+# The encoding the layer names `name`, or the failure where it names none.
+#
+# - `name`: one of `float32`, `float64`, `pcm8`, `pcm16`, `pcm24`, `pcm32`.
+function encoding_named(name: str) -> audio.Encoding?
+    return match name
+        "float32" => ok(.float32)
+        "float64" => ok(.float64)
+        "pcm8"    => ok(.pcm8)
+        "pcm16"   => ok(.pcm16)
+        "pcm24"   => ok(.pcm24)
+        "pcm32"   => ok(.pcm32)
+        _         => fail(code: audio.INVALID, msg: f"no encoding named \"{name}\"")
+
+# The devices of the list `bytes`, in its order.
+#
+# - `bytes`: what `hero_audio_devices` wrote.
+function devices_of(bytes: [u8] lent) -> [audio.Device]
+    fields = fields_of(bytes)
+    out: [audio.Device] @= []
+    at @= 0
+
+    while at + 7 <= fields.len()
+        rate = number_of(fields[at + 4])
+        channels = number_of(fields[at + 5])
+
+        match encoding_named(fields[at + 6])
+            .ok encoding =>
+                if rate > 0 && channels > 0 && fields[at + 2] != ""
+                    direction: audio.Direction = if fields[at] == "input"
+                        .input
+                    else
+                        .output
+                    out @ out.push(
+                        audio.Device(id: fields[at + 2], name: fields[at + 3], direction: direction, is_default: fields[at + 1] == "default", format: audio.Format(encoding: encoding, rate: rate, channels: channels, speakers: 0))
+                    )
+            .err _ => _ = 0
+
+        at @ at + 7
+
+    return out
+
+# Every device the system lists, the buffer grown to what the layer answers.
+function listed() -> [audio.Device]?
+    room @= 4096
+
+    while true
+        buffer: [u8] @= []
+
+        for _ in range(from: 0, to: room)
+            buffer @ buffer.push(0)
+
+        n = hero_audio.devices(@buffer, n: to_u64(room).must())
+
+        if n < 0
+            return failure.last(asked: "listing the sound devices")
+
+        if n <= room
+            return ok(devices_of(buffer.slice(from: 0, to: n)))
+        room @ n
+
+test "devices_of: two devices, a field cut short and an unknown encoding left out"
+    text = "output\u{1}default\u{1}spk\u{1}Speakers\u{1}48000\u{1}2\u{1}float32\u{1}input\u{1}\u{1}mic\u{1}Mic\u{1}16000\u{1}1\u{1}pcm16\u{1}input\u{1}\u{1}odd\u{1}Odd\u{1}8000\u{1}1\u{1}alaw\u{1}output\u{1}"
+    bytes: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        byte: u8 = if c == 1
+            0
+        else
+            c
+        bytes @ bytes.push(byte)
+
+    got = devices_of(bytes)
+    assert got.len() == 2
+    assert got[0].id == "spk" && got[0].is_default && got[0].direction == .output && got[0].format.rate == 48000
+    assert got[1].name == "Mic" && !got[1].is_default && got[1].direction == .input && got[1].format.encoding == .pcm16
+
+test "number_of: digits alone, of at most 9"
+    assert number_of("48000") == 48000
+    assert number_of("") == -1 && number_of("4a") == -1 && number_of("1234567890") == -1

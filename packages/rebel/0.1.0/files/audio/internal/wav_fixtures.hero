@@ -1,0 +1,90 @@
+# WAV files built by hand for the tests of the reader and the writer: a
+# RIFF around chunks, a chunk, the two `fmt ` bodies, the bytes of a hex text.
+
+use audio/internal/samples
+use audio/internal/wav
+use audio/internal/wav_write
+use bytes
+
+# The bytes `hex` spells, for the tests' files.
+#
+# - `hex`: an even number of hexadecimal digits.
+function from_hex(hex: str) -> [u8]
+    return bytes.parse_hex(hex).must()
+
+# A RIFF file of `chunks`, its size written.
+#
+# - `chunks`: the chunks after `WAVE`, whole.
+function riff(chunks: [u8]) -> [u8]
+    out: [u8] @= []
+    wav_write.put_id(@out, id: "RIFF")
+    samples.put(@out, value: chunks.len() + 4, count: 4)
+    wav_write.put_id(@out, id: "WAVE")
+
+    for b in chunks
+        out @ out.push(b)
+
+    return out
+
+# A chunk of `id` holding `body`, padded to an even length.
+#
+# - `id`: four ASCII characters.
+# - `body`: what it holds.
+function chunk(id: str, body: [u8]) -> [u8]
+    out: [u8] @= []
+    wav_write.put_id(@out, id: id)
+    samples.put(@out, value: body.len(), count: 4)
+
+    for b in body
+        out @ out.push(b)
+
+    if body.len() % 2 == 1
+        out @ out.push(0)
+    return out
+
+# The two lists one after the other.
+#
+# - `a`: the first.
+# - `b`: the second.
+function joined(a: [u8], b: [u8]) -> [u8]
+    out @= a
+
+    for x in b
+        out @ out.push(x)
+
+    return out
+
+# A plain `fmt ` chunk's 16 bytes.
+#
+# - `tag`: the format tag.
+# - `channels`: the channels.
+# - `rate`: the rate.
+# - `align`: the bytes of a frame.
+# - `bits`: the bits of a sample.
+function fmt(tag: i64, channels: i64, rate: i64, align: i64, bits: i64) -> [u8]
+    out: [u8] @= []
+    samples.put(@out, value: tag, count: 2)
+    samples.put(@out, value: channels, count: 2)
+    samples.put(@out, value: rate, count: 4)
+    samples.put(@out, value: rate * align, count: 4)
+    samples.put(@out, value: align, count: 2)
+    samples.put(@out, value: bits, count: 2)
+    return out
+
+# An extensible `fmt ` chunk's 40 bytes, of 24-bit samples in 3 bytes.
+#
+# - `channels`: the channels.
+# - `valid`: the valid bits.
+# - `mask`: the channel mask.
+# - `sub`: the sub-format's tag.
+function extensible(channels: i64, valid: i64, mask: i64, sub: i64) -> [u8]
+    out @= fmt(tag: wav.EXTENSIBLE, channels: channels, rate: 48000, align: 3 * channels, bits: 24)
+    samples.put(@out, value: 22, count: 2)
+    samples.put(@out, value: valid, count: 2)
+    samples.put(@out, value: mask, count: 4)
+    samples.put(@out, value: sub, count: 2)
+
+    for b in wav.guid_tail()
+        out @ out.push(b)
+
+    return out

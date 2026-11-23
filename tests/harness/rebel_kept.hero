@@ -33,6 +33,10 @@ constant CHARACTER_AND_TEXT: str
 constant EACH_ITS_GRAMMAR: str
     "each answers for its own grammar or format (JSON, jq, JSONPath, SemVer, YAML; MQTT's and NATS's subjects; HTTP's and PDF's dates; GraphQL's and JSON-RPC's requests over HTTP; the standard's quoted identifier and MySQL's): one meaning, by design"
 
+# Each package names the one service of the machine it reaches.
+constant NAMES_ITS_SYSTEM: str
+    "the name of the service of this machine each package reaches, one meaning in every package as README § A3 asks: the keychain's or keyring's for `keyring`, the sound system's for `audio`"
+
 # Each client reads its own service's environment.
 constant EACH_ITS_SERVICE: str
     "each client reads its own service's variables from the environment, by design"
@@ -182,6 +186,7 @@ function kept() -> [Kept]
         Kept(check: "twins", key: "remove_all in fs, keyring", why: TWO_MEANINGS)
         Kept(check: "twins", key: "set_deadline in ipc, tls", why: EACH_ITS_STREAM)
         Kept(check: "twins", key: "skippable_frame in compress/lz4, compress/zstd", why: ONE_API_BY_DESIGN)
+        Kept(check: "twins", key: "system in audio, keyring", why: NAMES_ITS_SYSTEM)
         Kept(check: "twins", key: "to_casefold in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "to_lower in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "to_title in strings, unicode", why: CHARACTER_AND_TEXT)

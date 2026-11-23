@@ -1,0 +1,209 @@
+# WAV read and written a piece at a time through an `io.Stream`, for
+# `audio.wav_reader`, `read_frames`, `wav_writer`, `write_frames` and
+# `finish_wav`: the reader takes the chunks up to the data in order, as a
+# stream gives them, and the frames after as the program asks; the writer
+# writes a header whose sizes say unknown, with a `JUNK` chunk of 28 bytes
+# reserved where RF64 puts its `ds64` (EBU Tech 3306's own way), and its
+# frames, and at the end goes back to write the sizes, as RF64 where 32 bits
+# cannot hold them. Every size a file gives is bounded before it is read.
+
+use audio
+use audio/internal/check
+use audio/internal/samples
+use audio/internal/wav
+use audio/internal/wav_write
+use io
+use math
+
+# The most bytes a `fmt ` or `ds64` chunk is read whole at: past every form
+# either takes.
+constant HEAD_MOST: i64
+    65536
+
+# The bytes a piece of a skipped chunk or of frames is read in.
+constant PIECE: i64
+    65536
+
+# Exactly `n` bytes of `s`, a stream that ends first failing `invalid` as a
+# WAV file cut short.
+#
+# - `s`: the stream.
+# - `n`: the bytes.
+# - `what`: what is read, a reader's words.
+function exact(s: io.Stream, n: i64, what: str) -> [u8]?
+    match io.read_exact(s, n: n)
+        .ok bytes => return ok(bytes)
+        .err e =>
+            if e.code == audio.CLOSED
+                return fail(code: audio.INVALID, msg: f"not a WAV file this package reads: it ends inside {what}")
+            return fail(code: e.code, msg: e.msg)
+
+# Reads and drops `n` bytes of `s`.
+#
+# - `s`: the stream.
+# - `n`: the bytes.
+# - `what`: the chunk passed over.
+function skipped(s: io.Stream, n: i64, what: str) -> ()?
+    left @= n
+
+    while left > 0
+        piece = exact(s, n: math.min_i64(a: left, b: PIECE), what: what)?
+        left @ left - piece.len()
+
+    return ok()
+
+# A reader of the WAV file `s` holds, its chunks read up to the first byte of
+# its frames.
+#
+# - `s`: the stream, at the file's first byte.
+function reader_of(s: io.Stream) -> audio.WavReader?
+    head = exact(s, n: 12, what: "its RIFF header")?
+    wide = wav.is_id(head, at: 0, id: "RF64") || wav.is_id(head, at: 0, id: "BW64")
+
+    if wav.is_id(head, at: 0, id: "RIFX")
+        return fail(
+            code: audio.UNSUPPORTED,
+            msg: "the file is RIFX, the big-endian form of RIFF, which this package does not read"
+        )
+
+    if !wide && !wav.is_id(head, at: 0, id: "RIFF") || !wav.is_id(head, at: 8, id: "WAVE")
+        return fail(
+            code: audio.INVALID,
+            msg: "not a WAV file this package reads: it does not begin with RIFF or RF64 and WAVE"
+        )
+    wide_size @= -1
+    found: wav.Layout? @= fail(code: audio.INVALID, msg: "no fmt chunk")
+    seen @= false
+
+    while true
+        chunk = exact(s, n: 8, what: "a chunk's header")?
+        size = samples.unsigned_at(chunk, at: 4, count: 4)
+        padded = size + size % 2
+
+        if wav.is_id(chunk, at: 0, id: "data")
+            layout = match found
+                .ok l => l
+                .err _ => return fail(
+                    code: audio.INVALID,
+                    msg: "not a WAV file this package reads as a stream: its data comes before its fmt chunk, which `decode_wav` reads whole"
+                )
+
+            align = samples.width(layout.encoding) * layout.channels
+
+            bytes = if size == wav.UNKNOWN_SIZE
+                wide_size
+            else
+                size
+
+            frames_left = if bytes < 0
+                -1
+            else
+                bytes / align
+            format = audio.Format(
+                encoding: layout.encoding,
+                rate: layout.rate,
+                channels: layout.channels,
+                speakers: layout.speakers
+            )
+            return ok(audio.WavReader(stream: s, format: format, frames_left: frames_left))
+
+        if wav.is_id(chunk, at: 0, id: "fmt ") || wide && !seen && wav.is_id(chunk, at: 0, id: "ds64")
+            if size > HEAD_MOST
+                return fail(
+                    code: audio.INVALID,
+                    msg: f"not a WAV file this package reads: a head chunk of {size} bytes"
+                )
+            body = exact(s, n: padded, what: "its fmt or ds64 chunk")?
+
+            if wav.is_id(chunk, at: 0, id: "ds64")
+                if size < 28
+                    return fail(
+                        code: audio.INVALID,
+                        msg: "not a WAV file this package reads: a ds64 chunk of fewer than 28 bytes"
+                    )
+                wide_size @ wav.size64_at(body, at: 8)
+            else
+                found @ ok(wav.layout_of(body, at: 0, size: size)?)
+        else
+            skipped(s, n: padded, what: "a chunk it passes over")?
+        seen @ true
+
+# Up to `frames` frames of `r`, fewer at its end, none once it has ended.
+#
+# - `r`: the reader, whose count of frames left moves on.
+# - `frames`: the most frames, 0 or more.
+function frames_of(@r: audio.WavReader, frames: i64) -> audio.Sound?
+    check.valid_format(r.format, asked: "reading a WAV file's frames")?
+
+    if frames < 0
+        return fail(
+            code: audio.INVALID,
+            msg: f"reading a WAV file's frames: {frames} frames asked, where 0 or more are taken"
+        )
+    align = samples.width(r.format.encoding) * r.format.channels
+
+    wanted = if r.frames_left >= 0
+        math.min_i64(a: frames, b: r.frames_left)
+    else
+        frames
+    data: [u8] @= []
+    ended @= false
+
+    while !ended && data.len() < wanted * align
+        piece = io.read(r.stream, n: math.min_i64(a: wanted * align - data.len(), b: PIECE))?
+
+        if piece.len() == 0
+            ended @ true
+
+        for b in piece
+            data @ data.push(b)
+
+    whole = data.len() - data.len() % align
+    got = whole / align
+
+    if ended
+        r.frames_left @ 0
+    else if r.frames_left >= 0
+        r.frames_left @ r.frames_left - got
+    return ok(audio.Sound(format: r.format, data: data.slice(from: 0, to: whole)))
+
+# A writer of a WAV file of `format` on `s`, its header written, its sizes
+# unknown until `finished`.
+#
+# - `s`: the stream, at its first byte.
+# - `format`: the frames' format.
+function writer_of(s: io.Stream, format: audio.Format) -> audio.WavWriter?
+    check.valid_format(format, asked: "writing a WAV file")?
+    io.write(s, data: wav_write.header_of(format, data_len: -1, frames: 0, wide: false, reserve: true))?
+    return ok(audio.WavWriter(stream: s, format: format, frames: 0))
+
+# The frames of `sound` written after those `w` wrote.
+#
+# - `w`: the writer, whose count of frames moves on.
+# - `sound`: frames of `w`'s format.
+function written(@w: audio.WavWriter, sound: audio.Sound) -> ()?
+    asked = "writing frames of a WAV file"
+    check.valid_sound(sound, asked: asked)?
+
+    if sound.format != w.format
+        return fail(code: audio.INVALID, msg: f"{asked}: the frames are of another format than the writer's")
+    io.write(w.stream, data: sound.data)?
+    w.frames @ w.frames + audio.frames_of(sound)
+    return ok()
+
+# The file `w` wrote finished: its pad byte, and its header written again
+# with its sizes, as RF64 where 32 bits cannot hold them.
+#
+# - `w`: the writer.
+function finished(w: audio.WavWriter) -> ()?
+    align = samples.width(w.format.encoding) * w.format.channels
+    data_len = w.frames * align
+
+    if data_len % 2 == 1
+        io.write(w.stream, data: [0])?
+    head = wav_write.header_of(w.format, data_len: data_len, frames: w.frames, wide: false, reserve: true)
+    end = io.seek(w.stream, offset: 0, from: .current)?
+    _ = io.seek(w.stream, offset: 0, from: .start)?
+    io.write(w.stream, data: head)?
+    _ = io.seek(w.stream, offset: end, from: .start)?
+    return ok()
