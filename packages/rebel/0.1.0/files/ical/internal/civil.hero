@@ -1,0 +1,203 @@
+# The calendar arithmetic the values and the recurrence rules share, on whole
+# days since 1970-01-01 and on seconds of the wall clock, so that no date
+# needs a `time.Instant` and the years 1 to 9999 an iCalendar date may name
+# are all reached.
+
+use time
+
+# The seconds of a day.
+constant DAY_SECONDS: i64
+    86400
+
+# A day of the calendar.
+record Day
+    # The year, from 1.
+    year: i64
+    # The month, 1 to 12.
+    month: i64
+    # The day of the month, from 1.
+    day: i64
+
+# The number of days from 1970-01-01 to `year`-`month`-`day`, negative before
+# it, on the proleptic Gregorian calendar.
+#
+# - `year`: the year, 1 or more.
+# - `month`: 1 to 12.
+# - `day`: 1 to the month's last day.
+function days_from_civil(year: i64, month: i64, day: i64) -> i64
+    shifted = if month <= 2
+        year - 1
+    else
+        year
+    era = shifted / 400
+    year_of_era = shifted - era * 400
+
+    month_index = if month > 2
+        month - 3
+    else
+        month + 9
+    day_of_year = (153 * month_index + 2) / 5 + day - 1
+    day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year
+    return era * 146097 + day_of_era - 719468
+
+# The day `days` after 1970-01-01, the inverse of `days_from_civil`.
+#
+# - `days`: the count of days, so that the year falls in 1 to 9999.
+function civil_from_days(days: i64) -> Day
+    z = days + 719468
+    era = z / 146097
+    day_of_era = z - era * 146097
+    year_of_era = (day_of_era - day_of_era / 1460 + day_of_era / 36524 - day_of_era / 146096) / 365
+    day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100)
+    month_index = (5 * day_of_year + 2) / 153
+    day = day_of_year - (153 * month_index + 2) / 5 + 1
+
+    month = if month_index < 10
+        month_index + 3
+    else
+        month_index - 9
+    year = year_of_era + era * 400
+
+    if month <= 2
+        return Day(year: year + 1, month: month, day: day)
+    return Day(year: year, month: month, day: day)
+
+# The weekday of a day, 0 for Monday to 6 for Sunday.
+#
+# - `days`: days since 1970-01-01, which was a Thursday.
+function weekday_index(days: i64) -> i64
+    return ((days + 3) % 7 + 7) % 7
+
+# The number of a weekday, 0 for Monday to 6 for Sunday.
+#
+# - `day`: the weekday.
+function number_of(day: time.Weekday) -> i64
+    return match day
+        .monday    => 0
+        .tuesday   => 1
+        .wednesday => 2
+        .thursday  => 3
+        .friday    => 4
+        .saturday  => 5
+        .sunday    => 6
+
+# The weekday a number from 0 to 6 names, Monday being 0; any other number
+# is read modulo 7.
+#
+# - `n`: the number.
+function weekday_of(n: i64) -> time.Weekday
+    return match (n % 7 + 7) % 7
+        0 => .monday
+        1 => .tuesday
+        2 => .wednesday
+        3 => .thursday
+        4 => .friday
+        5 => .saturday
+        _ => .sunday
+
+# The two-letter name RFC 5545 gives a weekday, `MO` to `SU`.
+#
+# - `day`: the weekday.
+function code_of(day: time.Weekday) -> str
+    return match day
+        .monday    => "MO"
+        .tuesday   => "TU"
+        .wednesday => "WE"
+        .thursday  => "TH"
+        .friday    => "FR"
+        .saturday  => "SA"
+        .sunday    => "SU"
+
+# The weekday a two-letter code names.
+#
+# - `code`: `MO` to `SU`.
+#
+# Fails `not_found` where it is none of them.
+function weekday_named(code: str) -> time.Weekday?
+    return match code
+        "MO" => ok(.monday)
+        "TU" => ok(.tuesday)
+        "WE" => ok(.wednesday)
+        "TH" => ok(.thursday)
+        "FR" => ok(.friday)
+        "SA" => ok(.saturday)
+        "SU" => ok(.sunday)
+        _    => fail(code: "not_found", msg: f"\"{code}\" is no weekday: MO, TU, WE, TH, FR, SA or SU")
+
+# The number of days of a month.
+#
+# - `year`: the year.
+# - `month`: 1 to 12.
+function month_length(year: i64, month: i64) -> i64
+    return time.days_in_month(year: year, month: month).must()
+
+# Floor division of `a` by a positive `b`.
+#
+# - `a`: any number.
+# - `b`: the divisor, above 0.
+function floor_div(a: i64, b: i64) -> i64
+    if a >= 0
+        return a / b
+    return -((-a + b - 1) / b)
+
+# The remainder of `a` divided by a positive `b`, never negative.
+#
+# - `a`: any number.
+# - `b`: the divisor, above 0.
+function floor_mod(a: i64, b: i64) -> i64
+    return a - floor_div(a: a, b: b) * b
+
+# The seconds of the wall clock since 1970-01-01T00:00:00 of a date and time.
+#
+# - `dt`: the fields, a date of the years 1 to 9999 and a time of day.
+function local_seconds(dt: time.DateTime) -> i64
+    return days_from_civil(year: dt.year, month: dt.month, day: dt.day) * DAY_SECONDS + dt.hour * 3600 + dt.minute * 60 + dt.second
+
+# The fields of a wall clock reading `n` seconds after 1970-01-01T00:00:00.
+#
+# - `n`: the seconds, so that the year falls in 1 to 9999.
+function date_time_of(n: i64) -> time.DateTime
+    days = floor_div(a: n, b: DAY_SECONDS)
+    rest = n - days * DAY_SECONDS
+    day = civil_from_days(days)
+    return time.DateTime(
+        year: day.year,
+        month: day.month,
+        day: day.day,
+        hour: rest / 3600,
+        minute: rest % 3600 / 60,
+        second: rest % 60,
+        nanosecond: 0
+    )
+
+test "days_from_civil and civil_from_days: the days of Python's date ordinals, the ends of the years 1 and 9999, and every day of a century back and forth"
+    assert days_from_civil(year: 1970, month: 1, day: 1) == 0 && days_from_civil(year: 2000, month: 3, day: 1) == 11017
+    assert days_from_civil(year: 1, month: 1, day: 1) == -719162 && days_from_civil(year: 9999, month: 12, day: 31) == 2932896
+    assert days_from_civil(year: 1969, month: 12, day: 31) == -1 && days_from_civil(year: 2024, month: 2, day: 29) == 19782
+    assert days_from_civil(year: 1600, month: 3, day: 1) == -135080
+    assert civil_from_days(-719162) == Day(year: 1, month: 1, day: 1) && civil_from_days(2932896) == Day(year: 9999, month: 12, day: 31)
+
+    for d in range(from: -36000, to: 36000)
+        c = civil_from_days(d)
+        assert days_from_civil(year: c.year, month: c.month, day: c.day) == d
+
+test "weekday_index, number_of, weekday_of, code_of and weekday_named: Monday is 0, 1970-01-01 a Thursday, 2026-11-23 a Monday, and a day before 1970"
+    assert weekday_index(0) == 3 && weekday_index(days_from_civil(year: 2026, month: 11, day: 23)) == 0
+    assert weekday_index(-719162) == 0 && weekday_index(-1) == 2 && weekday_index(-7) == 3
+
+    for n in range(from: 0, to: 7)
+        assert number_of(weekday_of(n)) == n && weekday_named(code_of(weekday_of(n))).must() == weekday_of(n)
+
+    assert weekday_of(7) == .monday && weekday_of(-1) == .sunday
+
+    match weekday_named("XX")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "floor_div, floor_mod, local_seconds and date_time_of: the divisions toward minus infinity, and a reading before 1970 back and forth"
+    assert floor_div(a: -1, b: 86400) == -1 && floor_div(a: -86400, b: 86400) == -1 && floor_div(a: -86401, b: 86400) == -2 && floor_div(a: 86399, b: 86400) == 0
+    assert floor_mod(a: -1, b: 60) == 59 && floor_mod(a: -60, b: 60) == 0 && floor_mod(a: 61, b: 60) == 1
+    dt = time.DateTime(year: 1948, month: 2, day: 29, hour: 23, minute: 59, second: 58, nanosecond: 0)
+    assert date_time_of(local_seconds(dt)) == dt
+    assert local_seconds(time.DateTime(year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 1, nanosecond: 0)) == 1
+    assert local_seconds(time.DateTime(year: 1969, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)) == -1

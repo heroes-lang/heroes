@@ -1,0 +1,1197 @@
+# iCalendar (RFC 5545), the format every calendar program imports and exports,
+# and the content lines it shares with vCard (RFC 6350). A document is read into
+# its components and lines, and into events, to-dos and journal entries with
+# their alarms, their zones and their recurrence rules, which are worked out
+# into the occurrences that fall in a window; and a calendar built by a program
+# is written as a document other calendars read. A calendar read and written
+# again loses nothing but the order of its lines: a property the records do not
+# model stays as a line.
+#
+# It does not speak the calendar protocols, CalDAV (RFC 4791) and iTIP
+# (RFC 5546), which carry a calendar over a network and answer an invitation,
+# and `net` and `http` carry what it makes; contacts are `ical/vcard`'s. It reads
+# the Gregorian calendar only, RFC 7529's other calendar systems being refused
+# by words. Nothing here follows the data with recursion: a document nested
+# past `MAX_DEPTH` fails `limit`.
+#
+# It fails `invalid` on a document that is not what RFC 5545 says, a value that
+# is malformed or a part of a rule a frequency does not allow; `not_text` on
+# bytes that are not UTF-8; `not_found` on a TZID no zone answers to;
+# `does_not_fit` on a moment outside an `Instant`; `limit` on a document nested
+# too deep or a window that holds more occurrences than asked for;
+# `unsupported` on RFC 7529's rule parts and on an event whose recurrence the
+# package does not expand.
+#
+# Not written yet, each a `pending` block of its ledger: free and busy time,
+# `VFREEBUSY` read into periods and computed from a calendar; the invitations
+# of RFC 5546, replying to a `REQUEST` and merging a `REPLY`; a period in an
+# `RDATE`, `start/end` or `start/duration`; a `RECURRENCE-ID` with
+# `RANGE=THISANDFUTURE`, an override that changes a series from an occurrence on.
+
+use bytes
+use ical/internal/agenda
+use ical/internal/content
+use ical/internal/escapes
+use ical/internal/moments
+use ical/internal/reading
+use ical/internal/rules
+use ical/internal/timezones
+use ical/internal/tree
+use ical/internal/window
+use ical/internal/writing
+use strings
+use time
+
+## Content lines
+
+# A parameter of a content line: `TZID=Europe/Rome`, `PARTSTAT=ACCEPTED`.
+record Param
+    # The parameter's name, upper-cased where it is read.
+    name: str
+    # Its values, at least one: `TYPE=WORK,VOICE` holds two.
+    values: [str]
+
+# One content line: a property with its parameters and its value.
+record Line
+    # The group a vCard line is written under, `item1` of `item1.TEL`.
+    group: str?
+    # The property's name, upper-cased where it is read.
+    name: str
+    # Its parameters, in the order they were written.
+    params: [Param]
+    # Its value as the line holds it, still escaped.
+    value: str
+
+# A component: `BEGIN:VEVENT` up to its `END:VEVENT`.
+record Component
+    # The component's name, upper-cased where it is read.
+    name: str
+    # Its own lines, in order.
+    lines: [Line]
+    # The components it holds, in order.
+    children: [Component]
+
+## Codes
+
+# The code of a document that is not what the format says.
+constant INVALID: str
+    "invalid"
+
+# The code of bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of a name or a value that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a document nested deeper than `MAX_DEPTH`.
+constant LIMIT: str
+    "limit"
+
+# The code of a form this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a number past its type.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+## Limits
+
+# The deepest nesting of components a document may have, a `VCALENDAR` inside nothing and a `VALARM` inside a `VEVENT` being three.
+constant MAX_DEPTH: i64
+    16
+
+## Reading and writing
+
+# The content lines of a document, unfolded and parsed, with no regard for
+# `BEGIN` and `END`: what a vCard or a line-based format needs.
+#
+# - `text`: the document. A line ends at CRLF, LF or CR, and a break followed by
+#   a space or a tab is a fold. Empty lines are left out.
+#
+# Names are upper-cased where they are read. Fails `invalid` where a line has no
+# name, no colon, a parameter with no value or an unclosed quote, or a control
+# character, naming the physical line. See also `format_lines`, `parse`.
+function parse_lines(text: str) -> [Line]?
+    return content.parse_all(bytes.from_text(text))
+
+# The lines written, folded at 75 octets, each ending in CRLF.
+#
+# - `lines`: the lines, in the order to write them. Text values are escaped by
+#   `escape_value` before they stand in `value`.
+#
+# A fold never cuts a character. A parameter value is quoted where it holds a
+# comma, a semicolon or a colon and is written with RFC 6868's carets for a quote,
+# a line break and a caret.
+# Fails `invalid` where a name is no name (letters, digits, `-` and `_`), a
+# parameter has no value, or a value or parameter value holds a control character.
+# See also `parse_lines`.
+function format_lines(lines: [Line]) -> str?
+    return content.format_all(lines)
+
+# The components of a document: each `BEGIN` up to its `END`, with the lines and
+# the components between them.
+#
+# - `text`: the document: a `VCALENDAR`, or many `VCARD`s.
+#
+# Fails `invalid` for a line outside every component, an `END` that closes another
+# component, a `BEGIN` with no name or a document that ends inside a component,
+# `limit` past `MAX_DEPTH`, and as `parse_lines` does. See also `decode`, `format`.
+function parse(text: str) -> [Component]?
+    return tree.parse_all(bytes.from_text(text))
+
+# The components of a document read from bytes.
+#
+# - `data`: the document, with or without a byte order mark. Folds may cut a
+#   character, so the lines are joined before they are read as UTF-8.
+#
+# Fails `not_text` where a line is no UTF-8 once unfolded, and as `parse` does.
+# See also `encode`.
+function decode(data: [u8]) -> [Component]?
+    return tree.parse_all(data)
+
+# The components written as a document, each line folded, each ending in CRLF.
+#
+# - `components`: the components, in the order to write them.
+#
+# Fails `invalid` where a component's name is no name, and as `format_lines`
+# does. See also `parse`, `encode`.
+function format(components: [Component]) -> str?
+    return tree.format_all(components)
+
+# The components written as bytes.
+#
+# - `components`: the components, in the order to write them.
+#
+# Fails as `format` does. See also `decode`.
+function encode(components: [Component]) -> [u8]?
+    return ok(bytes.from_text(tree.format_all(components)?))
+
+# `s` escaped as the value of a `TEXT` property: a backslash, a semicolon and a
+# comma take a backslash before them, and a line break is written `\n`.
+#
+# - `s`: the text; a tab and any line break, CRLF, LF or CR, are allowed.
+#
+# Fails `invalid` where `s` holds another control character, which a content line
+# cannot carry. See also `unescape_value`.
+function escape_value(s: str) -> str?
+    return escapes.escape(s)
+
+# The text a `TEXT` value holds: `\n` and `\N` read as a line feed, and a
+# backslash before another character read as that character.
+#
+# - `s`: the value as the line holds it.
+#
+# See also `escape_value`.
+function unescape_value(s: str) -> str
+    return escapes.unescape(s)
+
+## Dates, times and spans
+
+# A length of time as RFC 5545 writes it: weeks, or days with hours, minutes
+# and seconds. A day is the calendar's day here, so moved from a moment that
+# has a zone it keeps the wall clock across a change of offset, and only the
+# hours, minutes and seconds are exact time.
+record Span
+    # Whether the span runs backwards, `-PT15M`.
+    negative: bool
+    # The weeks, 0 or more.
+    weeks: i64
+    # The days, 0 or more.
+    days: i64
+    # The hours, 0 or more.
+    hours: i64
+    # The minutes, 0 or more.
+    minutes: i64
+    # The seconds, 0 or more.
+    seconds: i64
+
+# A date or a moment, as RFC 5545 says a property holds one.
+variant When
+    # A day with no time, `VALUE=DATE`: an all-day event.
+    date
+        # The year, 1 to 9999.
+        year: i64
+        # The month, 1 to 12.
+        month: i64
+        # The day of the month.
+        day: i64
+    # A wall-clock reading with no zone, `19980118T230000`: the same reading
+    # wherever it is read.
+    floating
+        # The reading, its nanosecond 0.
+        local: time.DateTime
+    # A moment in UTC, `19980118T230000Z`.
+    utc
+        # The instant.
+        at: time.Instant
+    # A wall-clock reading in a zone, `TZID=America/New_York:19980119T020000`.
+    zoned
+        # The reading, its nanosecond 0.
+        local: time.DateTime
+        # The zone, whose name is the TZID.
+        zone: time.Zone
+
+# The moments a line holds, `DTSTART`, `DUE`, `EXDATE`, `RDATE` or any other
+# of dates or date-times, one for each comma-separated value.
+#
+# - `line`: the line; its `VALUE` and `TZID` parameters say how to read it.
+# - `zones`: the zones the calendar defines with VTIMEZONE, searched before
+#   the IANA database.
+#
+# Fails `invalid` for a value that is no date or date-time or names a moment
+# that does not exist, `not_found` for a TZID no zone answers to,
+# `does_not_fit` for a UTC moment outside an `Instant` and `unsupported` for a
+# `VALUE` that is neither.
+function whens_of(line: Line, zones: [time.Zone]) -> [When]?
+    return moments.whens_of(line: line, zones: zones)
+
+# The moment a line holds.
+#
+# - `line`: the line, as `whens_of` reads it.
+# - `zones`: the zones the calendar defines.
+#
+# Fails as `whens_of` does, and `invalid` where the line holds more than one.
+function when_of(line: Line, zones: [time.Zone]) -> When?
+    found = moments.whens_of(line: line, zones: zones)?
+
+    if found.len() != 1
+        return fail(code: INVALID, msg: f"{line.name} holds {found.len()} values where one was expected")
+    return ok(found[0])
+
+# The line a moment is written as.
+#
+# - `name`: the property's name, `DTSTART`.
+# - `when`: the moment.
+#
+# Fails `invalid` where a year is outside 1 to 9999 and the name is no name.
+function when_line(name: str, when: When) -> Line?
+    return ok(
+        Line(group: fail(code: NOT_FOUND, msg: "no group"), name: name, params: moments.when_params(when), value: moments.when_text(when)?)
+    )
+
+# The span `P15DT5H0M20S` or `-PT15M` writes.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is not a duration of RFC 5545.
+function parse_span(s: str) -> Span?
+    return moments.parse_span(s)
+
+# The text of a span.
+#
+# - `span`: the span.
+function format_span(span: Span) -> str
+    return moments.span_text(span)
+
+# A moment moved by a span.
+#
+# - `when`: the moment.
+# - `span`: the span, which runs backwards where it is negative.
+#
+# Fails `invalid` where a date is moved by a part of a day and
+# `does_not_fit` where the result is outside an `Instant`.
+function add_span(when: When, span: Span) -> When?
+    return moments.move(when: when, span: span, sign: 1)
+
+# The instant a moment is.
+#
+# - `when`: the moment.
+# - `floating`: the zone a floating reading and a date are taken in; a date is
+#   its midnight.
+#
+# Fails `does_not_fit` where the moment is outside an `Instant`.
+function instant_of(when: When, floating: time.Zone) -> time.Instant?
+    return moments.instant_of(when: when, floating: floating)
+
+## Recurrence rules
+
+# How often a rule repeats: the unit of its periods.
+variant Freq
+    # Every `interval` seconds.
+    secondly
+    # Every `interval` minutes.
+    minutely
+    # Every `interval` hours.
+    hourly
+    # Every `interval` days.
+    daily
+    # Every `interval` weeks, which begin on the rule's `week_start`.
+    weekly
+    # Every `interval` months.
+    monthly
+    # Every `interval` years.
+    yearly
+
+# One entry of a rule's `by_day`.
+variant DayRule
+    # Every such weekday of the period.
+    every
+        # The weekday.
+        day: time.Weekday
+    # The `n`th such weekday of the month, or of the year in a yearly rule
+    # that names no month: 1 for the first, -1 for the last.
+    nth
+        # The weekday.
+        day: time.Weekday
+        # The place, 1 to 53 or -1 to -53.
+        n: i64
+
+# Where a rule ends.
+variant End
+    # It never ends: an expansion is bounded by the window asked for.
+    forever
+    # After `n` occurrences, the first being counted where it matches the rule.
+    count
+        # The number of occurrences, 1 or more.
+        n: i64
+    # At a date or a moment, which an occurrence may equal.
+    until
+        # The last moment; a date, a floating reading or a UTC moment.
+        when: When
+
+# A recurrence rule, the value of `RRULE` (RFC 5545 section 3.3.10).
+record Recur
+    # The unit of the periods.
+    freq: Freq
+    # How many units apart the periods are, 1 or more.
+    interval: i64
+    # Where the rule ends.
+    end: End
+    # The seconds of the minute, 0 to 60; empty for the start's own.
+    by_second: [i64]
+    # The minutes of the hour, 0 to 59; empty for the start's own.
+    by_minute: [i64]
+    # The hours of the day, 0 to 23; empty for the start's own.
+    by_hour: [i64]
+    # The weekdays, with their places where the rule is monthly or yearly.
+    by_day: [DayRule]
+    # The days of the month, 1 to 31 or -1 to -31 from the end.
+    by_month_day: [i64]
+    # The days of the year, 1 to 366 or -1 to -366 from the end.
+    by_year_day: [i64]
+    # The weeks of the year, 1 to 53 or -1 to -53, a yearly rule's.
+    by_week_no: [i64]
+    # The months, 1 to 12.
+    by_month: [i64]
+    # Which of a period's occurrences to keep, 1 to 366 or -1 to -366.
+    by_set_pos: [i64]
+    # The day a week begins on, which weeks and week numbers count from.
+    week_start: time.Weekday
+
+# A rule that repeats at `freq` and names nothing else: every period, forever,
+# the weeks beginning on Monday.
+#
+# - `freq`: the unit of the periods.
+function recur(freq: Freq) -> Recur
+    return Recur(
+        freq: freq,
+        interval: 1,
+        end: .forever,
+        by_second: [],
+        by_minute: [],
+        by_hour: [],
+        by_day: [],
+        by_month_day: [],
+        by_year_day: [],
+        by_week_no: [],
+        by_month: [],
+        by_set_pos: [],
+        week_start: .monday
+    )
+
+# The rule `FREQ=WEEKLY;BYDAY=MO,WE` writes.
+#
+# - `s`: the value of an `RRULE`.
+#
+# Fails `invalid` where `s` is not a rule, repeats a part, names no `FREQ`, has
+# a number outside its range, gives both `COUNT` and `UNTIL`, or a part its
+# frequency does not allow (RFC 5545 section 3.3.10), and `unsupported` for
+# `RSCALE`, `SKIP` and a leap month, which RFC 7529 adds.
+function parse_recur(s: str) -> Recur?
+    return rules.parse(s)
+
+# The text of a rule.
+#
+# - `rule`: the rule.
+#
+# Fails `invalid` where the rule is not one `parse_recur` would read.
+function format_recur(rule: Recur) -> str?
+    return rules.format(rule)
+
+# The occurrences of a rule that fall in a window.
+#
+# - `rule`: the rule.
+# - `start`: the first moment of the recurrence set, `DTSTART`: the rule's own
+#   occurrences begin at it, and a start that the rule does not match is
+#   not one of them.
+# - `after`: the window's first instant, which an occurrence may equal.
+# - `before`: the window's end, which no occurrence reaches.
+# - `floating`: the zone a floating start and a date are taken in, the
+#   viewer's; a date is its midnight there.
+# - `max`: the most occurrences to answer.
+#
+# The occurrences come in order, each of the start's own kind (a date, a
+# floating reading, a UTC moment, or a reading in the start's zone, which keeps
+# its wall-clock time across a change of offset), and an occurrence whose
+# reading a change of offset skipped is placed as RFC 5545 section 3.3.5
+# says: at the offset that held before the gap.
+#
+# Fails `limit` where the window holds more than `max` occurrences or needs
+# millions of periods to be searched, and `does_not_fit` where a moment is
+# outside an `Instant`.
+function expand(rule: Recur, start: When, after: time.Instant, before: time.Instant, floating: time.Zone, max: i64) -> [When]?
+    return window.between(rule: rule, start: start, after: after, before: before, floating: floating, max: max)
+
+## Calendars
+
+# A person or a place named by a calendar address: an `ORGANIZER`, an
+# `ATTENDEE`, a `CONTACT`.
+record Person
+    # The calendar address, usually `mailto:ana@example.org`.
+    address: str
+    # The common name, the `CN` parameter.
+    name: str?
+    # Every other parameter of the line as it was read, `ROLE`, `PARTSTAT`,
+    # `RSVP`, `CUTYPE`, `SENT-BY`; written back as they stand.
+    params: [Param]
+
+# The status of an event, a to-do or a journal entry; each component allows
+# some of the cases, and a component read or written with another is `invalid`.
+variant Status
+    # An event not yet agreed.
+    tentative
+    # An event agreed.
+    confirmed
+    # Any component called off.
+    cancelled
+    # A to-do not yet begun.
+    needs_action
+    # A to-do done.
+    completed
+    # A to-do begun.
+    in_process
+    # A journal entry not yet final.
+    draft
+    # A journal entry final.
+    final
+
+# When an alarm sounds.
+variant Trigger
+    # A span from the start or the end of the component it belongs to, which
+    # runs backwards where it is negative: `-PT15M` is fifteen minutes before.
+    relative
+        # The span.
+        span: Span
+        # Whether it counts from the component's end (`RELATED=END`) and not
+        # from its start.
+        from_end: bool
+    # A moment in UTC.
+    absolute
+        # The instant.
+        at: time.Instant
+
+# A reminder, `VALARM`, inside an event or a to-do.
+record Alarm
+    # What the alarm does: `AUDIO`, `DISPLAY` or `EMAIL`, or a token of another.
+    action: str
+    # When it sounds.
+    trigger: Trigger
+    # The text shown or mailed.
+    description: str?
+    # The subject of the mail.
+    summary: str?
+    # How many more times it repeats after the first, with `duration` between.
+    repeat: i64?
+    # The span between repeats.
+    duration: Span?
+    # The people it is mailed to.
+    attendees: [Person]
+    # The lines the record does not model, as read.
+    extra: [Line]
+
+# An event, `VEVENT`. The two of `uid` and `stamp` RFC 5545 requires are
+# `T?` so that a calendar without them is still read; `event` makes one with
+# both.
+record Event
+    # The `UID` that names the event across copies and changes.
+    uid: str?
+    # `DTSTAMP`, when this version was made.
+    stamp: time.Instant?
+    # `CREATED`.
+    created: time.Instant?
+    # `LAST-MODIFIED`.
+    modified: time.Instant?
+    # `SEQUENCE`, the revision.
+    sequence: i64?
+    # `DTSTART`.
+    start: When?
+    # `DTEND`, never held with `duration`.
+    end: When?
+    # `DURATION`, never held with `end`.
+    duration: Span?
+    # `SUMMARY`, the title.
+    summary: str?
+    # `DESCRIPTION`.
+    description: str?
+    # `LOCATION`.
+    location: str?
+    # `URL`.
+    url: str?
+    # `STATUS`.
+    status: Status?
+    # `CLASS`, `PUBLIC`, `PRIVATE` or `CONFIDENTIAL`, upper-cased.
+    access: str?
+    # `TRANSP`, `OPAQUE` or `TRANSPARENT`, upper-cased.
+    transparency: str?
+    # `PRIORITY`, 0 to 9.
+    priority: i64?
+    # `CATEGORIES`, every value of every such line.
+    categories: [str]
+    # `ORGANIZER`.
+    organizer: Person?
+    # Every `ATTENDEE`.
+    attendees: [Person]
+    # Every `RRULE`.
+    rules: [Recur]
+    # Every moment of the `RDATE` lines.
+    rdates: [When]
+    # Every moment of the `EXDATE` lines.
+    exdates: [When]
+    # `RECURRENCE-ID`: the occurrence of the series an overriding event replaces.
+    recurrence_id: When?
+    # The `VALARM`s.
+    alarms: [Alarm]
+    # The lines the record does not model, `GEO`, `ATTACH`, `RELATED-TO`, `X-` and the rest, as read.
+    extra: [Line]
+    # The components inside it that are no alarm, as read.
+    children: [Component]
+
+# A to-do, `VTODO`.
+record Todo
+    # `UID`.
+    uid: str?
+    # `DTSTAMP`.
+    stamp: time.Instant?
+    # `CREATED`.
+    created: time.Instant?
+    # `LAST-MODIFIED`.
+    modified: time.Instant?
+    # `SEQUENCE`.
+    sequence: i64?
+    # `DTSTART`.
+    start: When?
+    # `DUE`, never held with `duration`.
+    due: When?
+    # `DURATION`, never held with `due`.
+    duration: Span?
+    # `COMPLETED`, when it was done.
+    completed: time.Instant?
+    # `PERCENT-COMPLETE`, 0 to 100.
+    percent: i64?
+    # `SUMMARY`.
+    summary: str?
+    # `DESCRIPTION`.
+    description: str?
+    # `LOCATION`.
+    location: str?
+    # `URL`.
+    url: str?
+    # `STATUS`.
+    status: Status?
+    # `CLASS`.
+    access: str?
+    # `PRIORITY`, 0 to 9.
+    priority: i64?
+    # `CATEGORIES`.
+    categories: [str]
+    # `ORGANIZER`.
+    organizer: Person?
+    # Every `ATTENDEE`.
+    attendees: [Person]
+    # Every `RRULE`.
+    rules: [Recur]
+    # Every moment of the `RDATE` lines.
+    rdates: [When]
+    # Every moment of the `EXDATE` lines.
+    exdates: [When]
+    # `RECURRENCE-ID`.
+    recurrence_id: When?
+    # The `VALARM`s.
+    alarms: [Alarm]
+    # The lines the record does not model.
+    extra: [Line]
+    # The components inside it that are no alarm.
+    children: [Component]
+
+# A journal entry, `VJOURNAL`.
+record Journal
+    # `UID`.
+    uid: str?
+    # `DTSTAMP`.
+    stamp: time.Instant?
+    # `CREATED`.
+    created: time.Instant?
+    # `LAST-MODIFIED`.
+    modified: time.Instant?
+    # `SEQUENCE`.
+    sequence: i64?
+    # `DTSTART`.
+    start: When?
+    # `SUMMARY`.
+    summary: str?
+    # The first `DESCRIPTION`; the others stay in `extra`.
+    description: str?
+    # `STATUS`.
+    status: Status?
+    # `CLASS`.
+    access: str?
+    # `CATEGORIES`.
+    categories: [str]
+    # `ORGANIZER`.
+    organizer: Person?
+    # Every `ATTENDEE`.
+    attendees: [Person]
+    # Every `RRULE`.
+    rules: [Recur]
+    # Every moment of the `RDATE` lines.
+    rdates: [When]
+    # Every moment of the `EXDATE` lines.
+    exdates: [When]
+    # `RECURRENCE-ID`.
+    recurrence_id: When?
+    # The lines the record does not model.
+    extra: [Line]
+    # The components inside it.
+    children: [Component]
+
+# A calendar, `VCALENDAR`, with the events, to-dos and journal entries it holds.
+record Calendar
+    # `PRODID`, the program that made it.
+    product_id: str
+    # `VERSION`, `2.0`.
+    version: str
+    # `CALSCALE`, `GREGORIAN` where it is given.
+    scale: str?
+    # `METHOD`, `PUBLISH`, `REQUEST`, `REPLY` and the rest of RFC 5546, upper-cased.
+    method: str?
+    # The events, in order.
+    events: [Event]
+    # The to-dos, in order.
+    todos: [Todo]
+    # The journal entries, in order.
+    journals: [Journal]
+    # The zones its `VTIMEZONE`s define, made when it was read; they are not
+    # written back, the `VTIMEZONE`s themselves being in `others`.
+    zones: [time.Zone]
+    # The calendar's lines the record does not model, `X-WR-CALNAME` and the
+    # rest, as read.
+    extra: [Line]
+    # The components the record does not model, `VTIMEZONE` and `VFREEBUSY`
+    # among them, as read.
+    others: [Component]
+
+# The calendar a `VCALENDAR` component holds.
+#
+# - `c`: the component, as `parse` reads it.
+#
+# Fails `invalid` where `c` is no `VCALENDAR`, it has no `PRODID` or `VERSION`,
+# an event holds both `DTEND` and `DURATION` or a to-do both `DUE` and `DURATION`,
+# a value is malformed or a status is not one the component allows, `not_found` for a TZID
+# that no `VTIMEZONE` of the calendar and no zone of the IANA database answers
+# to, and as `whens_of`, `parse_recur` and `parse_span` do.
+function calendar_from(c: Component) -> Calendar?
+    if c.name != "VCALENDAR"
+        return fail(code: INVALID, msg: f"{c.name} is no VCALENDAR")
+    return reading.calendar_from(c)
+
+# The calendar a document holds.
+#
+# - `text`: the document: one `VCALENDAR`.
+#
+# Fails `invalid` where there is not exactly one `VCALENDAR`, and as `parse` and `calendar_from` do.
+function parse_calendar(text: str) -> Calendar?
+    return decode_calendar(bytes.from_text(text))
+
+# The calendar a document holds, read from bytes.
+#
+# - `data`: the document.
+#
+# Fails as `parse_calendar` does, and `not_text` as `decode` does.
+function decode_calendar(data: [u8]) -> Calendar?
+    parts = decode(data)?
+
+    if parts.len() != 1
+        return fail(code: INVALID, msg: f"the document holds {parts.len()} components where one VCALENDAR was expected")
+    return calendar_from(parts[0])
+
+# The zone a `VTIMEZONE` component defines.
+#
+# - `c`: the component.
+#
+# Fails `invalid` where it is none, or has no `TZID` or no observance, or one is malformed.
+function zone_from(c: Component) -> time.Zone?
+    if c.name != "VTIMEZONE"
+        return fail(code: INVALID, msg: f"{c.name} is no VTIMEZONE")
+    return timezones.zone_from(c)
+
+# A `VTIMEZONE` that defines `zone`, one observance for each change of offset
+# between two years.
+#
+# - `zone`: the zone, the name being the TZID the events hold.
+# - `from_year`: the first year whose changes are written.
+# - `to_year`: the last.
+#
+# Fails `invalid` where the years are outside 1 to 9999 or reversed.
+function timezone_component(zone: time.Zone, from_year: i64, to_year: i64) -> Component?
+    return timezones.component_of(zone: zone, from_year: from_year, to_year: to_year)
+
+# One occurrence of an event: a moment it takes place.
+record Occurrence
+    # The event; for an occurrence of a series, the series' own event, and
+    # for one that an overriding event replaced, the overriding event.
+    event: Event
+    # Where this occurrence starts, of the kind the event's `start` is.
+    start: When
+    # The instant it starts.
+    start_at: time.Instant
+    # The instant it ends: its start plus the event's `DURATION`, or the
+    # length from its `start` to its `end`, a day for a date start and nothing for a moment with neither.
+    end_at: time.Instant
+
+# The occurrences of a calendar's events that overlap a window, in order of
+# start. A series is expanded from its start, its `RDATE`s and its rules, less
+# its `EXDATE`s; an event with a `RECURRENCE-ID` replaces the occurrence of the
+# series with the same `UID` that has that start, and is placed at its own.
+# An event with no `DTSTART` is not placed.
+#
+# - `cal`: the calendar.
+# - `after`: the window's first instant: an occurrence that ends after it overlaps.
+# - `before`: the window's end: an occurrence that starts before it overlaps.
+# - `floating`: the zone a floating reading and a date are read in; a date is its midnight there.
+# - `max`: the most occurrences to answer.
+#
+# Fails `limit` where the window holds more than `max` and as `expand` does.
+function occurrences(cal: Calendar, after: time.Instant, before: time.Instant, floating: time.Zone, max: i64) -> [Occurrence]?
+    return agenda.of_calendar(cal: cal, after: after, before: before, floating: floating, max: max)
+
+# The component of a calendar.
+#
+# - `cal`: the calendar.
+#
+# Fails `invalid` where an event holds both `end` and `duration` (or a to-do `due` and `duration`), a component has a status it cannot have, a value cannot be written, or a name is no name.
+function calendar_to(cal: Calendar) -> Component?
+    return writing.calendar_to(cal)
+
+# The calendar written as a document.
+#
+# - `cal`: the calendar.
+#
+# Fails as `calendar_to` and `format` do.
+function format_calendar(cal: Calendar) -> str?
+    return format([calendar_to(cal)?])
+
+# The calendar written as bytes.
+#
+# - `cal`: the calendar.
+#
+# Fails as `format_calendar` does.
+function encode_calendar(cal: Calendar) -> [u8]?
+    return ok(bytes.from_text(format_calendar(cal)?))
+
+# A person with an address and nothing else.
+#
+# - `address`: the calendar address, `mailto:ana@example.org`.
+function person(address: str) -> Person
+    return Person(address: address, name: fail(code: NOT_FOUND, msg: "not set"), params: [])
+
+# An event with a `UID`, a stamp and a start, and nothing else; a program sets
+# the fields it needs on it, `e.summary @ ok("Lunch")`.
+#
+# - `uid`: the event's identity, unique across calendars.
+# - `stamp`: when this version was made, the program's clock.
+# - `start`: the start.
+function event(uid: str, stamp: time.Instant, start: When) -> Event
+    nothing = "not set"
+    return Event(
+        uid: ok(uid),
+        stamp: ok(stamp),
+        created: fail(code: NOT_FOUND, msg: nothing),
+        modified: fail(code: NOT_FOUND, msg: nothing),
+        sequence: fail(code: NOT_FOUND, msg: nothing),
+        start: ok(start),
+        end: fail(code: NOT_FOUND, msg: nothing),
+        duration: fail(code: NOT_FOUND, msg: nothing),
+        summary: fail(code: NOT_FOUND, msg: nothing),
+        description: fail(code: NOT_FOUND, msg: nothing),
+        location: fail(code: NOT_FOUND, msg: nothing),
+        url: fail(code: NOT_FOUND, msg: nothing),
+        status: fail(code: NOT_FOUND, msg: nothing),
+        access: fail(code: NOT_FOUND, msg: nothing),
+        transparency: fail(code: NOT_FOUND, msg: nothing),
+        priority: fail(code: NOT_FOUND, msg: nothing),
+        categories: [],
+        organizer: fail(code: NOT_FOUND, msg: nothing),
+        attendees: [],
+        rules: [],
+        rdates: [],
+        exdates: [],
+        recurrence_id: fail(code: NOT_FOUND, msg: nothing),
+        alarms: [],
+        extra: [],
+        children: []
+    )
+
+# A to-do with a `UID` and a stamp and nothing else.
+#
+# - `uid`: the to-do's identity.
+# - `stamp`: when this version was made.
+function todo(uid: str, stamp: time.Instant) -> Todo
+    nothing = "not set"
+    return Todo(
+        uid: ok(uid),
+        stamp: ok(stamp),
+        created: fail(code: NOT_FOUND, msg: nothing),
+        modified: fail(code: NOT_FOUND, msg: nothing),
+        sequence: fail(code: NOT_FOUND, msg: nothing),
+        start: fail(code: NOT_FOUND, msg: nothing),
+        due: fail(code: NOT_FOUND, msg: nothing),
+        duration: fail(code: NOT_FOUND, msg: nothing),
+        completed: fail(code: NOT_FOUND, msg: nothing),
+        percent: fail(code: NOT_FOUND, msg: nothing),
+        summary: fail(code: NOT_FOUND, msg: nothing),
+        description: fail(code: NOT_FOUND, msg: nothing),
+        location: fail(code: NOT_FOUND, msg: nothing),
+        url: fail(code: NOT_FOUND, msg: nothing),
+        status: fail(code: NOT_FOUND, msg: nothing),
+        access: fail(code: NOT_FOUND, msg: nothing),
+        priority: fail(code: NOT_FOUND, msg: nothing),
+        categories: [],
+        organizer: fail(code: NOT_FOUND, msg: nothing),
+        attendees: [],
+        rules: [],
+        rdates: [],
+        exdates: [],
+        recurrence_id: fail(code: NOT_FOUND, msg: nothing),
+        alarms: [],
+        extra: [],
+        children: []
+    )
+
+# A journal entry with a `UID`, a stamp and a start.
+#
+# - `uid`: the entry's identity.
+# - `stamp`: when this version was made.
+# - `start`: the day or moment it is about.
+function journal(uid: str, stamp: time.Instant, start: When) -> Journal
+    nothing = "not set"
+    return Journal(
+        uid: ok(uid),
+        stamp: ok(stamp),
+        created: fail(code: NOT_FOUND, msg: nothing),
+        modified: fail(code: NOT_FOUND, msg: nothing),
+        sequence: fail(code: NOT_FOUND, msg: nothing),
+        start: ok(start),
+        summary: fail(code: NOT_FOUND, msg: nothing),
+        description: fail(code: NOT_FOUND, msg: nothing),
+        status: fail(code: NOT_FOUND, msg: nothing),
+        access: fail(code: NOT_FOUND, msg: nothing),
+        categories: [],
+        organizer: fail(code: NOT_FOUND, msg: nothing),
+        attendees: [],
+        rules: [],
+        rdates: [],
+        exdates: [],
+        recurrence_id: fail(code: NOT_FOUND, msg: nothing),
+        extra: [],
+        children: []
+    )
+
+# An alarm that does `action` at `trigger`, with nothing else.
+#
+# - `action`: `AUDIO`, `DISPLAY` or `EMAIL`.
+# - `trigger`: when it sounds.
+function alarm(action: str, trigger: Trigger) -> Alarm
+    nothing = "not set"
+    return Alarm(
+        action: action,
+        trigger: trigger,
+        description: fail(code: NOT_FOUND, msg: nothing),
+        summary: fail(code: NOT_FOUND, msg: nothing),
+        repeat: fail(code: NOT_FOUND, msg: nothing),
+        duration: fail(code: NOT_FOUND, msg: nothing),
+        attendees: [],
+        extra: []
+    )
+
+# A calendar of version 2.0 holding nothing.
+#
+# - `product_id`: the program that makes it, `-//Example Corp//Planner 1.0//EN`.
+function calendar(product_id: str) -> Calendar
+    nothing = "not set"
+    return Calendar(
+        product_id: product_id,
+        version: "2.0",
+        scale: fail(code: NOT_FOUND, msg: nothing),
+        method: fail(code: NOT_FOUND, msg: nothing),
+        events: [],
+        todos: [],
+        journals: [],
+        zones: [],
+        extra: [],
+        others: []
+    )
+
+## Examples
+
+# A document with a folded line, its components and the document written again.
+test "parse: a calendar with a folded line, read and written again"
+    text = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Lunch\\, with\r\n  Ana\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    parts = parse(text).must()
+    assert parts.len() == 1
+    assert parts[0].children[0].lines[0].value == "Lunch\\, with Ana"
+    assert format(parts).must() == "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Lunch\\, with Ana\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+
+# A document read from bytes, a byte order mark skipped.
+test "decode: bytes with a byte order mark"
+    data = bytes.concat([[0xef, 0xbb, 0xbf], bytes.from_text("BEGIN:VCARD\r\nFN:Ana\r\nEND:VCARD\r\n")])
+    assert decode(data).must()[0].name == "VCARD"
+
+# The components written as bytes.
+test "encode: a component written as bytes"
+    parts = parse("BEGIN:VCARD\r\nFN:Ana\r\nEND:VCARD\r\n").must()
+    assert encode(parts).must() == bytes.from_text("BEGIN:VCARD\r\nFN:Ana\r\nEND:VCARD\r\n")
+
+# The lines of a document, with a parameter that holds a comma between quotes.
+test "parse_lines: a line with parameters"
+    lines = parse_lines("ATTENDEE;CN=\"Doe, Jane\";ROLE=CHAIR:mailto:jane@example.org\r\n").must()
+    assert lines[0].name == "ATTENDEE"
+    assert lines[0].params[0] == Param(name: "CN", values: ["Doe, Jane"])
+    assert lines[0].value == "mailto:jane@example.org"
+
+# A line written, its parameter quoted for the comma it holds.
+test "format_lines: a parameter quoted where it needs it"
+    line = Line(
+        group: fail(code: NOT_FOUND, msg: "none"),
+        name: "ATTENDEE",
+        params: [Param(name: "CN", values: ["Doe, Jane"])],
+        value: "mailto:jane@example.org"
+    )
+    assert format_lines([line]).must() == "ATTENDEE;CN=\"Doe, Jane\":mailto:jane@example.org\r\n"
+
+# A document with two components at its top, as a vCard file has.
+test "format: components written in order"
+    first = Component(name: "VCARD", lines: [], children: [])
+    assert format([first, first]).must() == "BEGIN:VCARD\r\nEND:VCARD\r\nBEGIN:VCARD\r\nEND:VCARD\r\n"
+
+# Text escaped for a line and read back.
+test "escape_value: a comma, a semicolon and a line break"
+    assert escape_value("a,b;c\nd").must() == "a\\,b\\;c\\nd"
+
+# The text an escaped value holds.
+test "unescape_value: a value read"
+    assert unescape_value("Team\\, one\\nTwo") == "Team, one\nTwo"
+
+# A date, a UTC moment and a moment in a zone read from lines.
+test "whens_of: a date, a moment and a list"
+    zone = time.fixed_zone(name: "X", offset: time.hours(1).must()).must()
+    line = Line(
+        group: fail(code: NOT_FOUND, msg: "none"),
+        name: "EXDATE",
+        params: [Param(name: "TZID", values: ["X"])],
+        value: "20261104T093000,20261105T093000"
+    )
+    found = whens_of(line: line, zones: [zone]).must()
+    assert found.len() == 2
+    assert found[1] == .zoned(local: time.DateTime(year: 2026, month: 11, day: 5, hour: 9, minute: 30, second: 0, nanosecond: 0), zone: zone)
+
+# One moment read from a line.
+test "when_of: an all-day date"
+    line = Line(
+        group: fail(code: NOT_FOUND, msg: "none"),
+        name: "DTSTART",
+        params: [Param(name: "VALUE", values: ["DATE"])],
+        value: "20261125"
+    )
+    assert when_of(line: line, zones: []).must() == .date(year: 2026, month: 11, day: 25)
+
+# A moment written as a line.
+test "when_line: a UTC moment"
+    line = when_line(name: "DTSTART", when: .utc(at: time.date(year: 2026, month: 11, day: 25).must())).must()
+    assert line.value == "20261125T000000Z"
+    assert line.params.len() == 0
+
+# A duration read.
+test "parse_span: days and a time"
+    s = parse_span("P15DT5H0M20S").must()
+    assert s.days == 15 && s.hours == 5 && s.seconds == 20 && !s.negative
+
+# A duration written.
+test "format_span: weeks, and a negative time"
+    assert format_span(parse_span("P2W").must()) == "P2W"
+    assert format_span(parse_span("-PT15M").must()) == "-PT15M"
+
+# A day added to a moment in a zone keeps the wall clock across a change of offset.
+test "add_span: a day across the end of daylight saving time"
+    rome = time.load_zone("Europe/Rome").must()
+    start: When = .zoned(
+        local: time.DateTime(year: 2026, month: 10, day: 24, hour: 9, minute: 0, second: 0, nanosecond: 0),
+        zone: rome
+    )
+    moved = add_span(when: start, span: parse_span("P2D").must()).must()
+    assert moved == .zoned(local: time.DateTime(year: 2026, month: 10, day: 26, hour: 9, minute: 0, second: 0, nanosecond: 0), zone: rome)
+
+# The instant a reading is in its zone.
+test "instant_of: a reading in Rome in winter"
+    rome = time.load_zone("Europe/Rome").must()
+    w: When = .zoned(
+        local: time.DateTime(year: 2026, month: 12, day: 1, hour: 9, minute: 0, second: 0, nanosecond: 0),
+        zone: rome
+    )
+    assert time.unix_seconds(instant_of(when: w, floating: time.utc_zone()).must()) == time.unix_seconds(time.date(year: 2026, month: 12, day: 1).must()) + 8 * 3600
+
+# A rule that names only its frequency.
+test "recur: every week"
+    r = recur(.weekly)
+    assert r.interval == 1 && r.end == .forever && format_recur(r).must() == "FREQ=WEEKLY"
+
+# A rule read.
+test "parse_recur: the last Sunday of October"
+    r = parse_recur("FREQ=MONTHLY;INTERVAL=2;BYDAY=-1SU;COUNT=3").must()
+    assert r.interval == 2 && r.by_day == [.nth(day: .sunday, n: -1)] && r.end == .count(n: 3)
+
+# A rule written.
+test "format_recur: a rule read and written"
+    assert format_recur(parse_recur("FREQ=WEEKLY;BYDAY=MO,WE;COUNT=3").must()).must() == "FREQ=WEEKLY;COUNT=3;BYDAY=MO,WE"
+
+# The occurrences of a weekly rule in a window.
+test "expand: three Mondays"
+    start: When = .floating(
+        local: time.DateTime(year: 2026, month: 11, day: 2, hour: 9, minute: 0, second: 0, nanosecond: 0)
+    )
+    after = time.date(year: 2026, month: 11, day: 1).must()
+    before = time.date(year: 2026, month: 11, day: 20).must()
+    found = expand(
+        rule: parse_recur("FREQ=WEEKLY").must(),
+        start: start,
+        after: after,
+        before: before,
+        floating: time.utc_zone(),
+        max: 10
+    ).must()
+    assert found.len() == 3
+
+# A calendar made and written: an event with an alarm.
+test "calendar: a calendar with an event, written and read again"
+    stamp = time.date(year: 2026, month: 11, day: 1).must()
+    start: When = .utc(at: time.date(year: 2026, month: 11, day: 25).must())
+    e @= event(uid: "lunch@example.org", stamp: stamp, start: start)
+    e.summary @ ok("Lunch, with Ana")
+    e.alarms @ [alarm(action: "DISPLAY", trigger: .relative(span: parse_span("-PT15M").must(), from_end: false))]
+    cal @= calendar("-//Example Corp//Planner 1.0//EN")
+    cal.events @ [e]
+    text = format_calendar(cal).must()
+    assert strings.contains(s: text, substr: "SUMMARY:Lunch\\, with Ana\r\n")
+    assert parse_calendar(text).must().events[0] == e
+
+# An event with the fields a calendar shows.
+test "event: a UID, a stamp and a start"
+    e = event(uid: "a@b", stamp: time.epoch(), start: .date(year: 2026, month: 11, day: 25))
+    assert e.uid == ok("a@b") && e.summary.is_err() && e.attendees.len() == 0
+
+# A to-do with a due date.
+test "todo: a to-do written with its due date"
+    t @= todo(uid: "t@b", stamp: time.epoch())
+    t.due @ ok(.date(year: 2026, month: 11, day: 30))
+    t.status @ ok(.needs_action)
+    cal @= calendar("-//Example//EN")
+    cal.todos @ [t]
+    text = format_calendar(cal).must()
+    assert strings.contains(s: text, substr: "DUE;VALUE=DATE:20261130\r\n") && strings.contains(s: text, substr: "STATUS:NEEDS-ACTION\r\n")
+
+# A journal entry.
+test "journal: an entry about a day"
+    j = journal(uid: "j@b", stamp: time.epoch(), start: .date(year: 2026, month: 11, day: 1))
+    assert j.start == ok(.date(year: 2026, month: 11, day: 1)) && j.status.is_err()
+
+# An alarm fifteen minutes before.
+test "alarm: a display alarm"
+    a = alarm(action: "DISPLAY", trigger: .relative(span: parse_span("-PT15M").must(), from_end: false))
+    assert a.action == "DISPLAY" && a.description.is_err()
+
+# A person with an address.
+test "person: an address and no name"
+    p = person("mailto:ana@example.org")
+    assert p.address == "mailto:ana@example.org" && p.name.is_err()
+
+# A calendar read from a component, and a calendar document read.
+test "calendar_from: a calendar component"
+    parts = parse(
+        "BEGIN:VCALENDAR\r\nPRODID:-//X//EN\r\nVERSION:2.0\r\nBEGIN:VTODO\r\nUID:t\r\nSUMMARY:Pay\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+    ).must()
+    cal = calendar_from(parts[0]).must()
+    assert cal.todos[0].summary == ok("Pay") && cal.product_id == "-//X//EN"
+
+# A document of one calendar.
+test "parse_calendar: a document with an event"
+    cal = parse_calendar(
+        "BEGIN:VCALENDAR\r\nPRODID:-//X//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:e\r\nDTSTART;VALUE=DATE:20261125\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    ).must()
+    assert cal.events[0].start == ok(.date(year: 2026, month: 11, day: 25))
+
+# The same read from bytes.
+test "decode_calendar: bytes with an event"
+    cal = decode_calendar(
+        bytes.from_text("BEGIN:VCALENDAR\r\nPRODID:-//X//EN\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n")
+    ).must()
+    assert cal.events.len() == 0
+
+# A calendar made into a component.
+test "calendar_to: a calendar's component"
+    c = calendar_to(calendar("-//X//EN")).must()
+    assert c.name == "VCALENDAR" && c.lines[1].value == "2.0"
+
+# A calendar written as a document and as bytes.
+test "format_calendar: a calendar written"
+    assert format_calendar(calendar("-//X//EN")).must() == "BEGIN:VCALENDAR\r\nPRODID:-//X//EN\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n"
+
+# The bytes of a calendar.
+test "encode_calendar: a calendar as bytes"
+    assert encode_calendar(calendar("-//X//EN")).must() == bytes.from_text("BEGIN:VCALENDAR\r\nPRODID:-//X//EN\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n")
+
+# The zone a VTIMEZONE defines, found by its offsets.
+test "zone_from: a zone with one standard time and one daylight time"
+    parts = parse(
+        "BEGIN:VTIMEZONE\r\nTZID:Mine\r\nBEGIN:STANDARD\r\nDTSTART:19701025T030000\r\nTZOFFSETFROM:+0200\r\nTZOFFSETTO:+0100\r\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19700329T020000\r\nTZOFFSETFROM:+0100\r\nTZOFFSETTO:+0200\r\nRRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE\r\n"
+    ).must()
+    zone = zone_from(parts[0]).must()
+    summer = time.offset_at(zone: zone, t: time.date(year: 2026, month: 7, day: 1).must())
+    winter = time.offset_at(zone: zone, t: time.date(year: 2026, month: 1, day: 1).must())
+    assert zone.name == "Mine" && summer.from_utc == time.hours(2).must() && winter.from_utc == time.hours(1).must()
+
+# A zone of the database written as a VTIMEZONE and read back as the same offsets.
+test "timezone_component: the changes of Rome in 2026"
+    rome = time.load_zone("Europe/Rome").must()
+    c = timezone_component(zone: rome, from_year: 2026, to_year: 2026).must()
+    assert c.name == "VTIMEZONE" && c.children.len() == 2
+    back = zone_from(c).must()
+    july = time.date(year: 2026, month: 7, day: 1).must()
+    assert time.offset_at(zone: back, t: july).from_utc == time.hours(2).must()
+
+# The occurrences of a calendar's event in a window.
+test "occurrences: a daily event over three days"
+    start: When = .utc(at: time.date(year: 2026, month: 11, day: 2).must())
+    e @= event(uid: "d@b", stamp: time.epoch(), start: start)
+    e.rules @ [parse_recur("FREQ=DAILY").must()]
+    cal @= calendar("-//X//EN")
+    cal.events @ [e]
+    found = occurrences(
+        cal: cal,
+        after: time.date(year: 2026, month: 11, day: 5).must(),
+        before: time.date(year: 2026, month: 11, day: 8).must(),
+        floating: time.utc_zone(),
+        max: 10
+    ).must()
+    assert found.len() == 3

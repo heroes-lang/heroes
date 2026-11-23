@@ -1,0 +1,256 @@
+# The values of single properties, read from a line and written to one: text,
+# numbers, moments in UTC, people, statuses and alarm triggers. Each reader
+# names the property in a failure, so that a message says which line of which
+# component is wrong.
+
+use ical
+use ical/internal/escapes
+use ical/internal/moments
+use numbers
+use strings
+use time
+
+# A line with a name, parameters and a value and no group.
+#
+# - `name`: the property's name.
+# - `params`: its parameters.
+# - `value`: its value, escaped as the type says.
+function line_of(name: str, params: [ical.Param], value: str) -> ical.Line
+    return ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: name, params: params, value: value)
+
+# The text of a `TEXT` property.
+#
+# - `line`: the line.
+function text_of(line: ical.Line) -> str
+    return escapes.unescape(line.value)
+
+# A `TEXT` property written.
+#
+# - `name`: the property's name.
+# - `text`: the text.
+#
+# Fails `invalid` where `text` holds a control character.
+function text_line(name: str, text: str) -> ical.Line?
+    return ok(line_of(name: name, params: [], value: escapes.escape(text)?))
+
+# The number an `INTEGER` property holds.
+#
+# - `line`: the line.
+#
+# Fails `invalid` where the value is no integer.
+function integer_of(line: ical.Line) -> i64?
+    match numbers.parse_int(strings.trim_prefix(s: strings.trim(line.value), prefix: "+"))
+        .ok n  => return ok(n)
+        .err _ => return fail(code: ical.INVALID, msg: f"{line.name} holds \"{line.value}\", which is no integer")
+
+# A moment in UTC an instant-valued property holds. A reading with no zone is taken as UTC, a date as its midnight in UTC, a reading with a zone as the instant it is.
+#
+# - `line`: the line.
+# - `zones`: the zones the calendar defines.
+#
+# Fails as `ical.when_of` does.
+function stamp_of(line: ical.Line, zones: [time.Zone]) -> time.Instant?
+    when = moments.whens_of(line: line, zones: zones)?
+
+    if when.len() != 1
+        return fail(code: ical.INVALID, msg: f"{line.name} holds {when.len()} values where one was expected")
+    return moments.instant_of(when: when[0], floating: time.utc_zone())
+
+# An instant written as a UTC date-time line.
+#
+# - `name`: the property's name.
+# - `at`: the instant.
+function stamp_line(name: str, at: time.Instant) -> ical.Line
+    return line_of(name: name, params: [], value: moments.clock_text(time.to_date_time(at)) + "Z")
+
+# The person a line names.
+#
+# - `line`: an `ORGANIZER`, `ATTENDEE` or `CONTACT` line.
+function person_of(line: ical.Line) -> ical.Person
+    name: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    rest: [ical.Param] @= []
+
+    for p in line.params
+        if p.name == "CN" && p.values.len() > 0 && name.is_err()
+            name @ ok(p.values[0])
+        else
+            rest @ rest.push(p)
+
+    return ical.Person(address: line.value, name: name, params: rest)
+
+# A person written as a line.
+#
+# - `name`: the property's name.
+# - `person`: the person.
+function person_line(name: str, person: ical.Person) -> ical.Line
+    params: [ical.Param] @= []
+
+    match person.name
+        .ok n  => params @ params.push(ical.Param(name: "CN", values: [n]))
+        .err _ => _ = 0
+
+    for p in person.params
+        params @ params.push(p)
+
+    return line_of(name: name, params: params, value: person.address)
+
+# The status a name writes.
+#
+# - `name`: the value of a `STATUS` line.
+#
+# Fails `invalid` where it is none of the statuses.
+function status_named(name: str) -> ical.Status?
+    return match strings.to_upper_ascii(strings.trim(name))
+        "TENTATIVE"    => ok(.tentative)
+        "CONFIRMED"    => ok(.confirmed)
+        "CANCELLED"    => ok(.cancelled)
+        "NEEDS-ACTION" => ok(.needs_action)
+        "COMPLETED"    => ok(.completed)
+        "IN-PROCESS"   => ok(.in_process)
+        "DRAFT"        => ok(.draft)
+        "FINAL"        => ok(.final)
+        _ => fail(
+            code: ical.INVALID,
+            msg: f"STATUS:{name} is none of TENTATIVE, CONFIRMED, CANCELLED, NEEDS-ACTION, COMPLETED, IN-PROCESS, DRAFT and FINAL"
+        )
+
+# The name of a status.
+#
+# - `status`: the status.
+function status_name(status: ical.Status) -> str
+    return match status
+        .tentative    => "TENTATIVE"
+        .confirmed    => "CONFIRMED"
+        .cancelled    => "CANCELLED"
+        .needs_action => "NEEDS-ACTION"
+        .completed    => "COMPLETED"
+        .in_process   => "IN-PROCESS"
+        .draft        => "DRAFT"
+        .final        => "FINAL"
+
+# Whether a component named `kind` allows `status`.
+#
+# - `kind`: `VEVENT`, `VTODO` or `VJOURNAL`.
+# - `status`: the status.
+function allows(kind: str, status: ical.Status) -> bool
+    return match status
+        .cancelled                               => true
+        .tentative | .confirmed                  => kind == "VEVENT"
+        .needs_action | .completed | .in_process => kind == "VTODO"
+        .draft | .final                          => kind == "VJOURNAL"
+
+# The values of a `CATEGORIES` line.
+#
+# - `line`: the line.
+function categories_of(line: ical.Line) -> [str]
+    out: [str] @= []
+
+    for piece in escapes.split_commas(line.value)
+        out @ out.push(escapes.unescape(piece))
+
+    return out
+
+# A `CATEGORIES` line.
+#
+# - `values`: the categories.
+#
+# Fails `invalid` where one holds a control character.
+function categories_line(values: [str]) -> ical.Line?
+    shown: [str] @= []
+
+    for v in values
+        shown @ shown.push(escapes.escape(v)?)
+
+    return ok(line_of(name: "CATEGORIES", params: [], value: shown.join(",")))
+
+# An alarm's trigger.
+#
+# - `line`: the `TRIGGER` line.
+#
+# Fails `invalid` where the value is no duration and no UTC date-time as its `VALUE` says.
+function trigger_of(line: ical.Line) -> ical.Trigger?
+    kind = match moments.param_value(line: line, name: "VALUE")
+        .ok v  => strings.to_upper_ascii(v)
+        .err _ => "DURATION"
+
+    if kind == "DATE-TIME"
+        clock = moments.parse_clock(strings.trim(line.value))?
+
+        if !clock.utc
+            return fail(code: ical.INVALID, msg: "an absolute TRIGGER is a UTC date-time")
+        return ok(.absolute(at: time.from_date_time(clock.fields)?))
+
+    if kind != "DURATION"
+        return fail(code: ical.INVALID, msg: f"TRIGGER has the value type {kind}")
+    span = moments.parse_span(strings.trim(line.value))?
+
+    related = match moments.param_value(line: line, name: "RELATED")
+        .ok v  => strings.to_upper_ascii(v)
+        .err _ => "START"
+
+    return ok(.relative(span: span, from_end: related == "END"))
+
+# A trigger written.
+#
+# - `trigger`: the trigger.
+function trigger_line(trigger: ical.Trigger) -> ical.Line
+    return match trigger
+        .relative r =>
+            params: [ical.Param] @= []
+
+            if r.from_end
+                params @ params.push(ical.Param(name: "RELATED", values: ["END"]))
+            line_of(name: "TRIGGER", params: params, value: moments.span_text(r.span))
+        .absolute a => line_of(
+            name: "TRIGGER",
+            params: [ical.Param(name: "VALUE", values: ["DATE-TIME"])],
+            value: moments.clock_text(time.to_date_time(a.at)) + "Z"
+        )
+
+test "status_named, status_name and allows: every status both ways, lower case read, a name that is none, and which component allows which"
+    for name in ["TENTATIVE", "CONFIRMED", "CANCELLED", "NEEDS-ACTION", "COMPLETED", "IN-PROCESS", "DRAFT", "FINAL"]
+        assert status_name(status_named(name).must()) == name
+
+    assert status_named(" in-process ").must() == .in_process
+
+    match status_named("BUSY")
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    assert allows(kind: "VEVENT", status: .confirmed) && !allows(kind: "VEVENT", status: .needs_action) && allows(kind: "VTODO", status: .completed)
+    assert allows(kind: "VJOURNAL", status: .final) && !allows(kind: "VJOURNAL", status: .tentative) && allows(kind: "VEVENT", status: .cancelled)
+
+test "trigger_of and trigger_line: a span before the start, one after the end, an absolute moment, and what is neither"
+    before = trigger_of(line_of(name: "TRIGGER", params: [], value: "-PT15M")).must()
+    assert before == .relative(span: ical.Span(negative: true, weeks: 0, days: 0, hours: 0, minutes: 15, seconds: 0), from_end: false)
+    after = trigger_of(
+        line_of(name: "TRIGGER", params: [ical.Param(name: "RELATED", values: ["END"])], value: "PT5M")
+    ).must()
+    assert trigger_line(after).params[0].values == ["END"] && trigger_line(after).value == "PT5M"
+    absolute = trigger_of(
+        line_of(name: "TRIGGER", params: [ical.Param(name: "VALUE", values: ["DATE-TIME"])], value: "19970317T133000Z")
+    ).must()
+    assert absolute == .absolute(at: time.from_unix(whole_seconds: 858605400, extra_nanoseconds: 0).must()) && trigger_line(absolute).value == "19970317T133000Z"
+
+    for bad in [line_of(name: "TRIGGER", params: [ical.Param(name: "VALUE", values: ["DATE-TIME"])], value: "19970317T133000"), line_of(name: "TRIGGER", params: [ical.Param(name: "VALUE", values: ["DATE"])], value: "19970317"), line_of(name: "TRIGGER", params: [], value: "soon")]
+        match trigger_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "person_of, person_line, categories_of, categories_line, integer_of and text_line: a common name taken out and put back first, categories with escaped commas, a plus sign, and a control character"
+    p = person_of(
+        line_of(name: "ATTENDEE", params: [ical.Param(name: "ROLE", values: ["CHAIR"]), ical.Param(name: "CN", values: ["Ann"])], value: "mailto:a@b")
+    )
+    assert p.name == ok("Ann") && p.params == [ical.Param(name: "ROLE", values: ["CHAIR"])]
+    assert person_line(name: "ATTENDEE", person: p).params[0].name == "CN"
+    assert categories_of(line_of(name: "CATEGORIES", params: [], value: "WORK,Team\\, one,")) == ["WORK", "Team, one", ""]
+    assert categories_line(["a,b", "c"]).must().value == "a\\,b,c"
+    assert integer_of(line_of(name: "SEQUENCE", params: [], value: "+2")).must() == 2 && integer_of(line_of(name: "SEQUENCE", params: [], value: "-3")).must() == -3
+
+    match integer_of(line_of(name: "SEQUENCE", params: [], value: "two"))
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    match text_line(name: "SUMMARY", text: "a\u{7}b")
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID

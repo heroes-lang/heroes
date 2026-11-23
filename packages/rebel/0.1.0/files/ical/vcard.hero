@@ -1,0 +1,281 @@
+# vCard (RFC 6350, and RFC 2426's version 3.0): a contact read from and written
+# as the `VCARD` components of a document, over the content lines `ical` reads
+# and writes. A card is read into the fields a program asks for, the names,
+# the telephones, the addresses and the rest, and everything it does not model
+# stays as a line, so a card read and written again loses nothing but the order
+# of its lines. It reads versions 3.0 and 4.0 and writes them, and no other
+# form of a contact, `hCard` or `jCard` or the XML form.
+#
+# It fails `invalid` on a document that is not a vCard, with no `VERSION` or one
+# that is neither 3.0 nor 4.0; `unsupported` on version 2.1, whose parameters
+# have no name and whose text is quoted-printable; `not_text` on bytes that
+# are not UTF-8; `limit` on a document nested past `ical.MAX_DEPTH`.
+#
+# Not written yet, each a `pending` block of its ledger: photos, keys and
+# sounds read into bytes; a vCard 4.0 `KIND` of group with its `MEMBER`s as a
+# list of cards; a card converted from version 3.0 to 4.0 and back.
+
+use bytes
+use ical
+use ical/vcard/internal/convert
+
+## The card
+
+# A property with a text value: a telephone number, an address, a title, a note.
+record Field
+    # The group the property was written under, `item1` of `item1.TEL`: Apple's
+    # contacts keep a label for a property in another property of its group.
+    group: str?
+    # The value, its escapes read.
+    value: str
+    # The `TYPE` parameter's values, `work`, `home`, `cell`: every `TYPE=` of the line, each list cut at its commas.
+    types: [str]
+    # The other parameters as written: `PREF=1`, `VALUE=uri`, `PID`, `LABEL`.
+    params: [ical.Param]
+
+# The name, `N`: five lists of values, each possibly empty.
+record Name
+    # The group it was written under.
+    group: str?
+    # The family names.
+    family: [str]
+    # The given names.
+    given: [str]
+    # The additional names.
+    additional: [str]
+    # The honorific prefixes, `Dr.`.
+    prefixes: [str]
+    # The honorific suffixes, `Jr.`.
+    suffixes: [str]
+    # The parameters as written.
+    params: [ical.Param]
+
+# An address, `ADR`: seven lists of values, each possibly empty.
+record Address
+    # The group it was written under.
+    group: str?
+    # The `TYPE` values, `work`, `home`.
+    types: [str]
+    # The post office box.
+    po_box: [str]
+    # The extended address, an apartment or a suite.
+    extended: [str]
+    # The street address.
+    street: [str]
+    # The locality, a city.
+    locality: [str]
+    # The region, a state or a province.
+    region: [str]
+    # The postal code.
+    postal_code: [str]
+    # The country.
+    country: [str]
+    # The other parameters as written: `LABEL`, `GEO`, `PREF`.
+    params: [ical.Param]
+
+# An organization, `ORG`: a name and the units under it.
+record Organization
+    # The group it was written under.
+    group: str?
+    # The organization's name.
+    name: str
+    # The units under it, the largest first.
+    units: [str]
+    # The parameters as written.
+    params: [ical.Param]
+
+# A contact, `VCARD`.
+record Card
+    # The vCard version, `3.0` or `4.0`.
+    version: str
+    # The formatted names, `FN`: the name a program shows.
+    formatted_names: [Field]
+    # The structured name, `N`.
+    name: Name?
+    # The nicknames, `NICKNAME`: one field for each value of a line that lists several.
+    nicknames: [Field]
+    # The birthday, `BDAY`, as its text: `19960415`, `1996-04-15`, `--0415`, or any other text 4.0 allows.
+    birthday: Field?
+    # The telephones, `TEL`.
+    telephones: [Field]
+    # The email addresses, `EMAIL`.
+    emails: [Field]
+    # The addresses, `ADR`.
+    addresses: [Address]
+    # The organizations, `ORG`.
+    organizations: [Organization]
+    # The titles, `TITLE`.
+    titles: [Field]
+    # The roles, `ROLE`.
+    roles: [Field]
+    # The web addresses, `URL`.
+    urls: [Field]
+    # The notes, `NOTE`.
+    notes: [Field]
+    # The categories of the `CATEGORIES` lines that have no group and no parameter, each value.
+    categories: [str]
+    # The `UID`, where its line has no group and no parameter.
+    uid: str?
+    # The `REV`, the time of the last change, as written, where its line has no group and no parameter.
+    revision: str?
+    # The lines the record does not hold whole: `PHOTO`, `GEO`, `KIND`, `X-` properties, a `CATEGORIES` with a group, and the rest, as read.
+    extra: [ical.Line]
+
+## Codes
+
+# The code of a document that is not a vCard, or has no usable `VERSION`.
+constant INVALID: str
+    "invalid"
+
+# The code of a version this package does not read, 2.1.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of a document nested past `ical.MAX_DEPTH`.
+constant LIMIT: str
+    "limit"
+
+## Reading and writing
+
+# The cards of a document: every `VCARD` at its top.
+#
+# - `text`: the document.
+#
+# Fails `invalid` where a component of the document is no `VCARD` or a card has no
+# `VERSION` of 3.0 or 4.0, `unsupported` for version 2.1, and as `ical.parse` does.
+function parse_cards(text: str) -> [Card]?
+    return decode_cards(bytes.from_text(text))
+
+# The cards of a document read from bytes.
+#
+# - `data`: the document, with or without a byte order mark.
+#
+# Fails as `parse_cards` does, and `not_text` where the bytes are no UTF-8.
+function decode_cards(data: [u8]) -> [Card]?
+    out: [Card] @= []
+
+    for c in ical.decode(data)?
+        out @ out.push(convert.card_from(c)?)
+
+    return ok(out)
+
+# The cards written as a document.
+#
+# - `contacts`: the cards, in order.
+#
+# Fails `invalid` where a card's version is none of 3.0 and 4.0 or a value holds a
+# control character.
+function format_cards(contacts: [Card]) -> str?
+    parts: [ical.Component] @= []
+
+    for item in contacts
+        parts @ parts.push(card_to(item)?)
+
+    return ical.format(parts)
+
+# The cards written as bytes.
+#
+# - `contacts`: the cards.
+#
+# Fails as `format_cards` does.
+function encode_cards(contacts: [Card]) -> [u8]?
+    return ok(bytes.from_text(format_cards(contacts)?))
+
+# The card a `VCARD` component holds.
+#
+# - `c`: the component.
+#
+# Fails `invalid` where `c` is no `VCARD` or has no `VERSION` of 3.0 or 4.0,
+# and `unsupported` for 2.1.
+function card_from(c: ical.Component) -> Card?
+    return convert.card_from(c)
+
+# The component of a card.
+#
+# - `contact`: the card.
+#
+# Fails as `format_cards` does.
+function card_to(contact: Card) -> ical.Component?
+    return convert.card_to(contact)
+
+# A card of version 4.0 with a formatted name and nothing else; a program adds
+# what it has, `c.telephones @ [field("+39 06 1234567")]`.
+#
+# - `formatted_name`: the name to show.
+function card(formatted_name: str) -> Card
+    nothing = "not set"
+    return Card(
+        version: "4.0",
+        formatted_names: [field(formatted_name)],
+        name: fail(code: ical.NOT_FOUND, msg: nothing),
+        nicknames: [],
+        birthday: fail(code: ical.NOT_FOUND, msg: nothing),
+        telephones: [],
+        emails: [],
+        addresses: [],
+        organizations: [],
+        titles: [],
+        roles: [],
+        urls: [],
+        notes: [],
+        categories: [],
+        uid: fail(code: ical.NOT_FOUND, msg: nothing),
+        revision: fail(code: ical.NOT_FOUND, msg: nothing),
+        extra: []
+    )
+
+# A property with a value and nothing else.
+#
+# - `value`: the value.
+function field(value: str) -> Field
+    return Field(group: fail(code: ical.NOT_FOUND, msg: "no group"), value: value, types: [], params: [])
+
+## Examples
+
+# A card read from a document, its telephone's types and group told apart.
+test "parse_cards: a card with a structured name and a telephone with a label"
+    text = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Ana Rossi\r\nN:Rossi;Ana;Maria,Luisa;Dr.;\r\nitem1.TEL;TYPE=cell,pref:+39 333 1234567\r\nitem1.X-ABLabel:Mobile\r\nEND:VCARD\r\n"
+    found = parse_cards(text).must()
+    assert found.len() == 1 && found[0].name.must().additional == ["Maria", "Luisa"] && found[0].name.must().suffixes.len() == 0
+    assert found[0].telephones[0].group == ok("item1") && found[0].telephones[0].types == ["cell", "pref"]
+    assert found[0].extra.len() == 1
+
+# The same read from bytes.
+test "decode_cards: two cards in one file"
+    data = bytes.from_text(
+        "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:A\r\nEND:VCARD\r\nBEGIN:VCARD\r\nVERSION:4.0\r\nFN:B\r\nEND:VCARD\r\n"
+    )
+    assert decode_cards(data).must().len() == 2
+
+# A card made and written.
+test "format_cards: a card with an email, written"
+    c @= card("Ana Rossi")
+    c.emails @ [field("ana@example.org")]
+    assert format_cards([c]).must() == "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:Ana Rossi\r\nEMAIL:ana@example.org\r\nEND:VCARD\r\n"
+
+# The same as bytes.
+test "encode_cards: a card as bytes"
+    assert encode_cards([card("A")]).must() == bytes.from_text("BEGIN:VCARD\r\nVERSION:4.0\r\nFN:A\r\nEND:VCARD\r\n")
+
+# A component read as a card.
+test "card_from: a VCARD component"
+    parts = ical.parse("BEGIN:VCARD\r\nVERSION:4.0\r\nFN:A\r\nORG:ABC;Sales\r\nEND:VCARD\r\n").must()
+    c = card_from(parts[0]).must()
+    assert c.organizations[0].name == "ABC" && c.organizations[0].units == ["Sales"]
+
+# A card made into a component.
+test "card_to: the lines of a card"
+    c = card_to(card("A")).must()
+    assert c.name == "VCARD" && c.lines[0].name == "VERSION" && c.lines[1].value == "A"
+
+# A card with a formatted name.
+test "card: a card of version 4.0"
+    assert card("A").version == "4.0" && card("A").formatted_names[0].value == "A"
+
+# A field with a value.
+test "field: a value alone"
+    assert field("x").value == "x" && field("x").types.len() == 0

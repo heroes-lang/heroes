@@ -1,0 +1,286 @@
+# The occurrences of a calendar's events in a window: each event's recurrence
+# set (its start, its `RDATE`s and its rules, less its `EXDATE`s) worked out
+# with the engine the rules use, an occurrence that an overriding event
+# replaces left out and the overriding event placed where its own start is.
+
+use ical
+use ical/internal/civil
+use ical/internal/moments
+use ical/internal/samples
+use ical/internal/window
+use lists
+use time
+
+# How long an event lasts, in the calendar's days and in exact seconds.
+record Length
+    # Whole days, which keep the wall clock across a change of offset.
+    days: i64
+    # Seconds of exact time after the days.
+    seconds: i64
+
+# How long `e` lasts.
+#
+# - `e`: the event, which holds a start.
+# - `start`: its start.
+# - `floating`: the zone a floating reading and a date are read in.
+#
+# Where it holds a `DURATION` that; else where its start and end are both dates
+# the days between them; else the exact time between the two instants; else a
+# day for a date and nothing for a moment.
+function length_of(e: ical.Event, start: ical.When, floating: time.Zone) -> Length?
+    match e.duration
+        .ok d =>
+            sign = if d.negative
+                -1
+            else
+                1
+            return ok(Length(days: sign * moments.span_days(d), seconds: sign * moments.span_seconds(d)))
+        .err _ => _ = 0
+
+    match e.end
+        .ok end =>
+            match start
+                .date s =>
+                    match end
+                        .date t => return ok(
+                            Length(days: civil.days_from_civil(year: t.year, month: t.month, day: t.day) - civil.days_from_civil(year: s.year, month: s.month, day: s.day), seconds: 0)
+                        )
+                        .floating _ => _ = 0
+                        .utc _      => _ = 0
+                        .zoned _    => _ = 0
+                .floating _ => _ = 0
+                .utc _      => _ = 0
+                .zoned _    => _ = 0
+
+            a = moments.instant_of(when: start, floating: floating)?
+            b = moments.instant_of(when: end, floating: floating)?
+            return ok(Length(days: 0, seconds: time.unix_seconds(b) - time.unix_seconds(a)))
+        .err _ => _ = 0
+
+    return match start
+        .date _     => ok(Length(days: 1, seconds: 0))
+        .floating _ => ok(Length(days: 0, seconds: 0))
+        .utc _      => ok(Length(days: 0, seconds: 0))
+        .zoned _    => ok(Length(days: 0, seconds: 0))
+
+# The moment a length after `w` is.
+#
+# - `w`: the moment.
+# - `length`: the length.
+function end_of(w: ical.When, length: Length) -> ical.When?
+    negative = length.days < 0 || length.seconds < 0
+
+    sign = if negative
+        -1
+    else
+        1
+    span = ical.Span(
+        negative: negative,
+        weeks: 0,
+        days: sign * length.days,
+        hours: 0,
+        minutes: 0,
+        seconds: sign * length.seconds
+    )
+    return moments.move(when: w, span: span, sign: 1)
+
+# An occurrence of an event.
+#
+# - `e`: the event.
+# - `w`: the start of this occurrence.
+# - `length`: how long the event lasts.
+# - `floating`: the zone a floating reading and a date are read in.
+function occurrence_at(e: ical.Event, w: ical.When, length: Length, floating: time.Zone) -> ical.Occurrence?
+    start_at = moments.instant_of(when: w, floating: floating)?
+    finish = end_of(w: w, length: length)?
+    return ok(
+        ical.Occurrence(event: e, start: w, start_at: start_at, end_at: moments.instant_of(when: finish, floating: floating)?)
+    )
+
+# Whether the occurrence overlaps the window: it starts before the window's end
+# and ends after its beginning, or starts in it.
+#
+# - `o`: the occurrence.
+# - `after`: the window's first instant.
+# - `before`: the window's end.
+function overlaps(o: ical.Occurrence, after: time.Instant, before: time.Instant) -> bool
+    if !time.is_before(a: o.start_at, b: before)
+        return false
+    return time.is_after(a: o.end_at, b: after) || !time.is_before(a: o.start_at, b: after)
+
+# Whether the occurrence `a` comes before `b`: by start, then by end.
+#
+# - `a`: an occurrence.
+# - `b`: another.
+function occurrence_before(a: ical.Occurrence, b: ical.Occurrence) -> bool
+    if a.start_at != b.start_at
+        return time.is_before(a: a.start_at, b: b.start_at)
+    return time.is_before(a: a.end_at, b: b.end_at)
+
+# The occurrences of one event in a window.
+#
+# - `e`: the event.
+# - `skipped`: the instants of the occurrences an overriding event replaces.
+# - `after`: the window's first instant.
+# - `before`: the window's end.
+# - `floating`: the zone a floating reading and a date are read in.
+# - `max`: the most occurrences to answer.
+#
+# Fails `unsupported` where the event holds a recurrence the package does not expand and `limit` past `max`.
+function of_event(e: ical.Event, skipped: [time.Instant], after: time.Instant, before: time.Instant, floating: time.Zone, max: i64) -> [ical.Occurrence]?
+    for line in e.extra
+        if line.name == "EXRULE" || line.name == "RDATE" || line.name == "RECURRENCE-ID"
+            return fail(
+                code: ical.UNSUPPORTED,
+                msg: f"the event holds a {line.name} line this package does not expand (a period, a rule that removes, or a range of a changed series)"
+            )
+
+    start = match e.start
+        .ok s  => s
+        .err _ => return ok([])
+
+    length = length_of(e: e, start: start, floating: floating)?
+    reach = time.seconds(length.days * civil.DAY_SECONDS + length.seconds + civil.DAY_SECONDS)?
+
+    if reach.nanoseconds < 0
+        return fail(code: ical.UNSUPPORTED, msg: "an event that ends before it starts has no occurrences to place")
+    early = time.add(t: after, d: time.negate(reach)?)?
+    starts: [ical.When] @= [start]
+
+    for w in e.rdates
+        starts @ starts.push(w)
+
+    for rule in e.rules
+        for w in window.between(rule: rule, start: start, after: early, before: before, floating: floating, max: max + 1)?
+            starts @ starts.push(w)
+
+    out: [ical.Occurrence] @= []
+    taken: [time.Instant] @= []
+
+    for w in starts
+        at = moments.instant_of(when: w, floating: floating)?
+        gone: bool @= false
+
+        for x in e.exdates
+            if moments.instant_of(when: x, floating: floating)? == at
+                gone @ true
+
+        for x in skipped
+            if x == at
+                gone @ true
+
+        for t in taken
+            if t == at
+                gone @ true
+
+        if gone
+            continue
+        taken @ taken.push(at)
+        o = occurrence_at(e: e, w: w, length: length, floating: floating)?
+
+        if overlaps(o: o, after: after, before: before)
+            out @ out.push(o)
+
+            if out.len() > max
+                return fail(code: ical.LIMIT, msg: f"the window holds more than {max} occurrences")
+
+    return ok(out)
+
+# The occurrences of a calendar's events in a window, in order.
+#
+# - `cal`: the calendar.
+# - `after`: the window's first instant.
+# - `before`: the window's end.
+# - `floating`: the zone a floating reading and a date are read in.
+# - `max`: the most occurrences to answer.
+#
+# Fails as `of_event` does.
+function of_calendar(cal: ical.Calendar, after: time.Instant, before: time.Instant, floating: time.Zone, max: i64) -> [ical.Occurrence]?
+    out: [ical.Occurrence] @= []
+
+    # The instants of the occurrences an overriding event replaces, by `UID`.
+    replaced: {str: [time.Instant]} @= {}
+    nobody: [time.Instant] = []
+
+    for o in cal.events
+        match o.recurrence_id
+            .ok r =>
+                match o.uid
+                    .ok uid =>
+                        was = replaced[uid].default(nobody)
+                        replaced[uid] @ lists.concat(xs: was, then: [moments.instant_of(when: r, floating: floating)?])
+                    .err _ => _ = 0
+            .err _ => _ = 0
+
+    for e in cal.events
+        match e.recurrence_id
+            .ok _ =>
+                for o in of_event(e: e, skipped: [], after: after, before: before, floating: floating, max: max)?
+                    out @ out.push(o)
+            .err _ =>
+                skipped = match e.uid
+                    .ok uid => replaced[uid].default(nobody)
+                    .err _  => nobody
+
+                for o in of_event(e: e, skipped: skipped, after: after, before: before, floating: floating, max: max)?
+                    out @ out.push(o)
+
+    if out.len() > max
+        return fail(code: ical.LIMIT, msg: f"the window holds more than {max} occurrences")
+    return ok(lists.sort_by(xs: out, less: occurrence_before))
+
+# The instant of a UTC reading.
+#
+# - `text`: `YYYYMMDDTHHMMSS`.
+function utc_instant(text: str) -> time.Instant
+    return moments.instant_of(when: window.sample_when(text: text, zone: "Z"), floating: time.utc_zone()).must()
+
+# An instant as `YYYYMMDDTHHMMSSZ`.
+#
+# - `at`: the instant.
+function instant_text(at: time.Instant) -> str
+    return moments.clock_text(time.to_date_time(at)) + "Z"
+
+# The sample calendar, read.
+function sample_calendar() -> ical.Calendar
+    return ical.parse_calendar(samples.calendar_lines().join("\r\n") + "\r\n").must()
+
+test "of_calendar: the events of a calendar placed in a window, as python-icalendar and recurring-ical-events place them"
+    cal = sample_calendar()
+    found = of_calendar(
+        cal: cal,
+        after: utc_instant("20261101T000000"),
+        before: utc_instant("20261205T000000"),
+        floating: time.utc_zone(),
+        max: 1000
+    ).must()
+    rows: [str] @= []
+
+    for o in found
+        rows @ rows.push(instant_text(o.start_at) + " " + instant_text(o.end_at) + " " + o.event.uid.must())
+
+    expected = samples.calendar_agenda()
+
+    if rows != expected
+        for r in rows
+            print("got      ", r)
+
+        for r in expected
+            print("expected ", r)
+    assert rows == expected
+
+test "of_calendar: a window that overlaps an occurrence only by its end, and a limit that is passed"
+    cal = sample_calendar()
+    inside = of_calendar(
+        cal: cal,
+        after: utc_instant("20261126T120000"),
+        before: utc_instant("20261126T130000"),
+        floating: time.utc_zone(),
+        max: 10
+    ).must()
+    assert inside.len() == 1
+    assert inside[0].event.uid.must() == "holiday@example.org"
+
+    match of_calendar(cal: cal, after: utc_instant("20261101T000000"), before: utc_instant("20261205T000000"), floating: time.utc_zone(), max: 3)
+        .ok _  => assert false
+        .err e => assert e.code == ical.LIMIT

@@ -1,0 +1,141 @@
+# The ledger of `ical`: what RFC 5545 lets a program do with a calendar, one
+# block per capability, and what Rebel answers. None of the three libraries
+# holds iCalendar: Go 1.27.4's `go list std` names no package for it, Rust 1.100's
+# `std` documentation has no page that mentions it, and Python 3.15.2's
+# `sys.stdlib_module_names` holds only `calendar`, which prints months and is
+# `time`'s ledger's, so every `go`, `rust` and `python` line is `-` (all run
+# 2026-11-23). The libraries a program uses instead, fetched and read on
+# 2026-11-23, are the references the tests are held to: Python's
+# `icalendar` 7.3.2 (`Calendar`, `Event`, `Todo`, `Journal`, `FreeBusy`,
+# `Alarm`, `Timezone`, `Parameters`, `vDuration`, `vRecur`,
+# `icalendar.parser.Contentline`), `recurring-ical-events` 3.8.2
+# (`recurring_ical_events.of(calendar).between`), `python-dateutil` 2.9.0.post0
+# (`dateutil.rrule.rrule`, `rruleset`, `rrulestr`) and Go's `emersion/go-ical`
+# (`ical.Decoder`, `ical.Encoder`, `ical.Calendar`, `ical.Component`,
+# `ical.Event`, `ical.Prop`) and `teambition/rrule-go` (`rrule.RRule`,
+# `rrule.Set`, `rrule.StrToRRule`, `rrule.StrToRRuleSet`).
+#
+# Expansion of a rule is held to `dateutil.rrule` over sixty-six rules, those of
+# RFC 5545 section 3.8.5.3 first, and the placing of a calendar's events to
+# `recurring-ical-events` over a calendar of every kind; `icalendar` read the
+# calendar this package wrote and found the same properties but for two of form
+# (an `EXDATE` of two moments is written as two lines, and a rule's parts in
+# another order), and the same events in the same places. Where they disagree this package decides, and the
+# block says so: `dateutil` raises on a `BYSECOND` of 60 and this package reads
+# it and never makes it; `dateutil` ends a rule whose `UNTIL` is a date at that
+# date's midnight and this package keeps the whole day; `icalendar` unescapes a
+# comma in a parameter value and RFC 5545 has no escape there (RFC 6868's carets
+# are read, as `icalendar` 7 does); `icalendar` writes a duration of weeks as
+# days and this package as weeks.
+
+capability ical/content-lines  a document read as its content lines, unfolded, and lines written folded at 75 octets
+  heroes  ical.parse_lines, ical.format_lines, ical.Line, ical.Param
+  go      -
+  rust    -
+  python  -
+  note    `icalendar.parser.Contentline` and `go-ical`'s decoder read the same lines. A line ends at CRLF, LF or CR, a fold may cut a character (the lines are joined as bytes and then read as UTF-8) and names are upper-cased where read. A parameter value with RFC 6868's carets is read and written, a quoted one holds a comma, a semicolon and a colon, a group (`item1.TEL`) is kept for vCard. Folding is by octets, 75 and then 74 after the space, never inside a character, as `icalendar` folds
+
+capability ical/components  a document read as nested components, `BEGIN` to `END`, and written
+  heroes  ical.parse, ical.decode, ical.format, ical.encode, ical.Component
+  go      -
+  rust    -
+  python  -
+  note    each direction runs in one loop on a stack of its own, so a document nested past `MAX_DEPTH` (16) fails `limit` and none reaches the machine's stack; a calendar of ten thousand events is read and written in one pass. A byte order mark is skipped
+
+capability ical/text  a `TEXT` value escaped and read back
+  heroes  ical.escape_value, ical.unescape_value
+  go      -
+  rust    -
+  python  -
+  note    the four escapes of RFC 5545 section 3.3.11 and `\N`; a backslash before another character is read as that character
+
+capability ical/dates-and-times  the dates, floating readings, UTC moments and readings in a zone that a property holds, and the instant each is
+  heroes  ical.whens_of, ical.when_of, ical.when_line, ical.instant_of, ical.When
+  go      -
+  rust    -
+  python  -
+  note    `VALUE=DATE`, a floating `20261102T093000`, `...Z` and `TZID=` are four cases of one variant, so a program cannot take a floating reading for an instant. A reading in a gap or a fold is placed as RFC 5545 section 3.3.5 says, which is `time.Disambiguation.compatible` and Python's `fold=0` (the instants 1173598200 and 1194154200 are Python's). A TZID is looked for among the calendar's own `VTIMEZONE`s and then the IANA database and fails `not_found` by words otherwise. A leap second 60 is refused (`invalid`), an instant here not counting them; moments outside 1677 to 2262 fail `does_not_fit` where an instant is asked for
+
+capability ical/durations  a duration read, written and added to a moment
+  heroes  ical.parse_span, ical.format_span, ical.add_span, ical.Span
+  go      -
+  rust    -
+  python  -
+  note    the days of a span are the calendar's: added to a reading in a zone they keep its wall clock across a change of offset (Python's wall-clock arithmetic, 2026-03-28T09:00 in Rome plus one day is 2026-03-29T09:00), and the hours, minutes and seconds are exact (plus 24 hours is 10:00). `P1W2D` is read as `icalendar` reads it, `P1DT` is refused where `icalendar` reads it
+
+capability ical/recurrence-rules  an `RRULE` read, checked and written
+  heroes  ical.recur, ical.parse_recur, ical.format_recur, ical.Recur, ical.Freq, ical.DayRule, ical.End
+  go      -
+  rust    -
+  python  -
+  note    `COUNT` and `UNTIL` are cases of one variant, so both cannot be held. A rule is checked against RFC 5545 section 3.3.10 where it is read and where it is written, so a rule a program builds is held to it: ranges, which parts a frequency allows, a place in `BYDAY` only for a monthly or yearly rule without `BYWEEKNO`. The parts are written in the order `icalendar`'s `vRecur` writes them; lower case is read; a part this package does not know is `invalid`
+
+capability ical/recurrence-expansion  the occurrences of a rule that fall in a window
+  heroes  ical.expand
+  go      -
+  rust    -
+  python  -
+  note    worked out on the wall clock of the start with the RFC's table of what each `BY` part does for each frequency, then `BYSETPOS`, then the count; held to `dateutil.rrule` over sixty-six cases (the rules of RFC 5545 section 3.8.5.3 in America/New_York, and leap days, week numbers, negative days, `BYSETPOS`, years before 1970, a gap and a fold of New_York and Rome, windows decades from the start). `BYWEEKNO` with no `BYDAY` takes every day of the week, as `dateutil` and rrule.js do. A window is bounded by a count of occurrences (`limit`) and of periods searched, so a rule that selects nothing, or a second-by-second rule over a century, ends; a window far from the start skips whole periods without losing one. RFC 7529's `RSCALE`, `SKIP` and leap months fail `unsupported`
+
+capability ical/calendars  a calendar read into events, to-dos, journal entries and alarms, and written
+  heroes  ical.calendar_from, ical.parse_calendar, ical.decode_calendar, ical.calendar_to, ical.format_calendar, ical.encode_calendar, ical.calendar, ical.event, ical.todo, ical.journal, ical.alarm, ical.person, ical.Calendar, ical.Event, ical.Todo, ical.Journal, ical.Alarm, ical.Person, ical.Status, ical.Trigger
+  go      -
+  rust    -
+  python  -
+  note    a property the records do not model, an `X-` property, a second `SUMMARY` and a `RDATE` of periods stay as lines (`extra`), so a calendar read and written again reads as the same calendar; a malformed value is refused with the component and property named. `DTEND` with `DURATION`, `DUE` with `DURATION` and a status the component cannot have are `invalid` both ways. The reference libraries' accessors are keys of a dictionary, these are typed fields; `UID` and `DTSTAMP` are `T?` so that a calendar without them is read, and the makers take both
+
+capability ical/timezones  a `VTIMEZONE` read as a `time.Zone`, and a zone written as a `VTIMEZONE`
+  heroes  ical.zone_from, ical.timezone_component
+  go      -
+  rust    -
+  python  -
+  note    each observance's `RRULE` and `RDATE`s are expanded with the same engine from its start to 2255, on the wall clock of the offset before it. A calendar whose events say `TZID=Customized Time Zone` and define it is placed as `recurring-ical-events` places it. A zone is written as one observance for each change of offset between two years the program chooses, and read back as the same offsets
+
+capability ical/agenda  the occurrences of a calendar's events in a window, with the dates removed and the overridden ones replaced
+  heroes  ical.occurrences, ical.Occurrence
+  go      -
+  rust    -
+  python  -
+  note    `EXDATE`, `RDATE` and the rules, and an event with a `RECURRENCE-ID` replacing the occurrence of its series that has that start and standing at its own, as `recurring_ical_events` places them over a calendar with all of these. An occurrence overlapping the window counts; an event with no `DTSTART` is not placed
+
+capability ical/free-busy  free and busy time, `VFREEBUSY` read into periods and computed from a calendar
+  heroes  pending: a `VFREEBUSY` is read only as a component (`Calendar.others`); its periods and the busy time of a calendar's events are not yet computed
+  go      -
+  rust    -
+  python  -
+  note    `icalendar.FreeBusy`
+
+capability ical/invitations  the invitations of RFC 5546, replying to a `REQUEST` and merging a `REPLY`
+  heroes  pending: `METHOD` and `ATTENDEE`'s `PARTSTAT` are read and written, and no function answers a request or merges a reply
+  go      -
+  rust    -
+  python  -
+  note    iTIP is a protocol over a calendar; the calendar is whole
+
+capability ical/rdate-periods  a period in an `RDATE`, `start/end` or `start/duration`
+  heroes  pending: the line stays in `Event.extra` and `occurrences` fails `unsupported` for an event that holds one
+  go      -
+  rust    -
+  python  -
+  note    `icalendar.vPeriod`
+
+capability ical/range  a `RECURRENCE-ID` with `RANGE=THISANDFUTURE`, an override that changes a series from an occurrence on
+  heroes  pending: the line stays in `Event.extra` and `occurrences` fails `unsupported` for an event that holds one
+  go      -
+  rust    -
+  python  -
+  note    none of the references was run on it
+
+capability ical/exrule  `EXRULE`, a rule that removes occurrences
+  heroes  refused: RFC 5545 section 3.8.5.2 deprecates it ("SHOULD NOT"), every calendar since 2009 writes `EXDATE`; the line stays in `Event.extra` and `occurrences` fails `unsupported` for an event that holds one
+  go      -
+  rust    -
+  python  -
+  note    `dateutil.rrule.rruleset.exrule` takes one
+
+capability ical/other-calendars  RFC 7529's calendar systems, `RSCALE` and `SKIP`
+  heroes  refused: only the Gregorian calendar is read, and a rule that names another fails `unsupported` by words, because working in the Hebrew or the Chinese calendar needs tables no package here holds
+  go      -
+  rust    -
+  python  -
+  note    `dateutil.rrule` raises `ValueError` on `RSCALE` and on a leap month (`BYMONTH=5L`), run 2026-11-23

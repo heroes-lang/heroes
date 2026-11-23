@@ -1,0 +1,143 @@
+# The value types of RFC 5545 section 3.3 that are text: TEXT with its escapes,
+# and the lists a property writes with commas. Nothing else in the package
+# reads a value's characters.
+
+use ical
+use strings
+
+# Whether `c`, a byte, is a control character a TEXT value cannot hold: any
+# below a space but the tab, the line feed and the carriage return, and DEL.
+#
+# - `c`: the byte.
+function is_unwritable(c: u8) -> bool
+    return c < 32 && c != 9 && c != 10 && c != 13 || c == 127
+
+# `s` as the text of a property value: a backslash, a semicolon and a comma
+# escaped with a backslash, and a line break, CRLF, LF or CR, written `\n`.
+#
+# - `s`: any text but one with a control character other than a tab or a
+#   line break.
+#
+# Fails `invalid` where `s` holds such a control character, which a content
+# line cannot carry.
+function escape(s: str) -> str?
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        c = s[at]
+
+        if is_unwritable(c)
+            return fail(
+                code: ical.INVALID,
+                msg: f"text holds a control character (byte {c}) at byte {at}, which a content line cannot carry"
+            )
+
+        if c == 92 || c == 59 || c == 44 || c == 10 || c == 13
+            out @ out.push(s.slice(from: from, to: at))
+
+            if c == 10
+                out @ out.push("\\n")
+            else if c == 13
+                if !(at + 1 < s.len() && s[at + 1] == 10)
+                    out @ out.push("\\n")
+            else
+                out @ out.push("\\")
+                out @ out.push(s.slice(from: at, to: at + 1))
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return ok(out.join(""))
+
+# The text a property value holds: `\n` and `\N` a line feed, and `\\`, `\;`
+# and `\,` the character after the backslash. A backslash before any other
+# character is read as that character, and a lone one at the end stays.
+#
+# - `s`: the value as the line holds it.
+function unescape(s: str) -> str
+    if !strings.contains(s: s, substr: "\\")
+        return s
+
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 92 && at + 1 < s.len()
+            out @ out.push(s.slice(from: from, to: at))
+            n = s[at + 1]
+
+            if n == 110 || n == 78
+                out @ out.push("\n")
+                from @ at + 2
+                at @ at + 2
+            else
+                from @ at + 1
+                at @ at + 2
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# The pieces of `s` between its commas, a comma after a backslash belonging
+# to the piece, the escapes left as they stand.
+#
+# - `s`: the value of a property that holds a list.
+function split_commas(s: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 92
+            at @ at + 2
+        else if s[at] == 44
+            out @ out.push(s.slice(from: from, to: at))
+            at @ at + 1
+            from @ at
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+# The pieces of `s` between its semicolons, as `split_commas` cuts at commas.
+#
+# - `s`: the value of a property that holds a structured value.
+function split_semicolons(s: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 92
+            at @ at + 2
+        else if s[at] == 59
+            out @ out.push(s.slice(from: from, to: at))
+            at @ at + 1
+            from @ at
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+test "escape: the four escapes, a line break of every kind, nothing to escape, and a control character"
+    assert escape("a,b;c\\d").must() == "a\\,b" + "\\" + ";c\\\\d"
+    assert escape("one\r\ntwo\rthree\nfour").must() == "one\\ntwo\\nthree\\nfour"
+    assert escape("").must() == "" && escape("tab\there é").must() == "tab\there é"
+
+    match escape("a\u{1}b")
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+test "unescape: the escapes, both cases of n, an unknown escape and a backslash at the end"
+    assert unescape("a\\,b" + "\\" + ";c\\\\d\\ne\\Nf") == "a,b;c\\d\ne\nf"
+    assert unescape("x\\y") == "xy" && unescape("end\\") == "end\\" && unescape("plain") == "plain"
+
+test "split_commas and split_semicolons: an escaped separator stays, empty pieces stay"
+    assert split_commas("a,b\\,c,,d") == ["a", "b\\,c", "", "d"]
+    assert split_commas("") == [""] && split_semicolons("a;b" + "\\" + ";c;") == ["a", "b" + "\\" + ";c", ""]

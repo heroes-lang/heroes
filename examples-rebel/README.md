@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-three packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-five packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -144,6 +144,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |
+| 4 | `ical` | iCalendar (RFC 5545): documents read as lines and components and written folded; events, to-dos, journal entries and alarms read into records; dates, floating readings and zones as one variant; `VTIMEZONE`s read as zones and zones written; recurrence rules read, checked and expanded over a window, held to `dateutil`; a calendar's occurrences with their exceptions and overrides; free and busy time, invitations, period dates and ranges not written yet | `bytes`, `lists`, `numbers`, `strings`, `time` |  |
 | 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -169,6 +170,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |
 | 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time` |  |
 | 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `os`, `poll`, `printing`, `time`, `unicode/segment` | `hero_ui.h` |
+| 5 | `ical/vcard` | vCard 3.0 and 4.0 (RFC 6350, 2426): contacts read into names, telephones, addresses and the rest with their groups and types, written; every line a record does not hold kept; version 2.1, photos and keys as bytes, groups of cards and the conversion between versions refused or not written yet | `bytes`, `ical`, `strings` |  |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `strings`, `threads`, `time`, `tls` |  |

@@ -1,0 +1,222 @@
+# Components: the lines of a document gathered between their `BEGIN` and
+# `END`, and written out again. Both directions run in one loop on a stack of
+# their own, so the depth of a document never reaches the machine's stack, and
+# a document nested past `ical.MAX_DEPTH` is refused.
+
+use bytes
+use ical
+use ical/internal/content
+
+# A component being read: its name, what it holds so far and the line it began on.
+record Open
+    # The component's name.
+    name: str
+    # Its own lines so far.
+    lines: [ical.Line]
+    # The components it has closed so far.
+    children: [ical.Component]
+
+# Adds a line to a list the caller owns, which an `@` parameter reaches without
+# copying it, as pushing through a field or an index would.
+#
+# - `lines`: the list.
+# - `line`: the line.
+function add_line(@lines: [ical.Line], line: ical.Line)
+    lines @ lines.push(line)
+
+# Adds a component to a list the caller owns, without copying it.
+#
+# - `children`: the list.
+# - `made`: the component.
+function add_component(@children: [ical.Component], made: ical.Component)
+    children @ children.push(made)
+
+# The components `data` holds, each with the lines and components between its
+# `BEGIN` and its `END`.
+#
+# - `data`: the document's bytes, with or without a byte order mark.
+#
+# Fails `invalid` for a line outside every component, an `END` that closes
+# another component than the one open, a `BEGIN` or `END` with no name or a
+# document that ends inside a component, `limit` past `ical.MAX_DEPTH` and as
+# `content.parse_all` does.
+function parse_all(data: [u8]) -> [ical.Component]?
+    body = if bytes.has_prefix(s: data, prefix: [0xef, 0xbb, 0xbf])
+        data.slice(from: 3, to: data.len())
+    else
+        data
+    parsed = content.parse_all(body)?
+    done: [ical.Component] @= []
+    stack: [Open] @= []
+    top: i64 @= 0
+
+    for line in parsed
+        if line.name == "BEGIN" && line.params.len() == 0
+            if top >= ical.MAX_DEPTH
+                return fail(
+                    code: ical.LIMIT,
+                    msg: f"components nested more than {ical.MAX_DEPTH} deep at BEGIN:{line.value}"
+                )
+
+            if line.value == ""
+                return fail(code: ical.INVALID, msg: "BEGIN with no component name")
+            open_one(@stack, @top, Open(name: content.upper(line.value), lines: [], children: []))
+        else if line.name == "END" && line.params.len() == 0
+            if top == 0
+                return fail(code: ical.INVALID, msg: f"END:{line.value} closes no component")
+            closing = stack[top - 1]
+
+            if closing.name != content.upper(line.value)
+                return fail(code: ical.INVALID, msg: f"END:{line.value} closes BEGIN:{closing.name}")
+            top @ top - 1
+            made = ical.Component(name: closing.name, lines: closing.lines, children: closing.children)
+
+            if top == 0
+                done @ done.push(made)
+            else
+                add_component(@stack[top - 1].children, made)
+        else
+            if top == 0
+                return fail(code: ical.INVALID, msg: f"the property {line.name} stands outside every component")
+            add_line(@stack[top - 1].lines, line)
+
+    if top > 0
+        return fail(code: ical.INVALID, msg: f"the document ends inside BEGIN:{stack[top - 1].name}")
+    return ok(done)
+
+# Opens a component on the stack at `top`, over what stood there, so that
+# closing one is a count and not a copy of the frames below it, which hold the
+# components closed so far.
+#
+# - `stack`: the stack's places.
+# - `top`: how many places hold an open component; it grows by one.
+# - `frame`: the component opened.
+function open_one(@stack: [Open], @top: i64, frame: Open)
+    if top < stack.len()
+        stack[top] @ frame
+    else
+        stack @ stack.push(frame)
+    top @ top + 1
+
+# Puts a component on the stack at `top`, over what stood there, so that
+# taking one off is a count and not a copy of the list.
+#
+# - `items`: the stack's places.
+# - `top`: how many places hold a live entry; it grows by one.
+# - `c`: the component.
+# - `closing`: whether the entry stands for the end of `c`.
+function put(@items: [Entry], @top: i64, c: ical.Component, closing: bool)
+    entry = Entry(component: c, closing: closing)
+
+    if top < items.len()
+        items[top] @ entry
+    else
+        items @ items.push(entry)
+    top @ top + 1
+
+# What is still to write: a component to open, or the end of one that is open.
+record Entry
+    # The component.
+    component: ical.Component
+    # Whether what is left of it is its `END`.
+    closing: bool
+
+# The lines of `components` in the order a document holds them: each
+# component's `BEGIN`, its own lines, its children, its `END`.
+#
+# - `components`: the components, in the order to write them.
+#
+# Fails `invalid` where a component's name is no name, and as `content.format_line` does.
+function flatten(components: [ical.Component]) -> [ical.Line]?
+    out: [ical.Line] @= []
+    items: [Entry] @= []
+    top: i64 @= 0
+    at: i64 @= components.len()
+
+    while at > 0
+        at @ at - 1
+        put(@items, @top, components[at], false)
+
+    while top > 0
+        top @ top - 1
+        entry = items[top]
+        c = entry.component
+
+        if !content.is_name(c.name)
+            return fail(code: ical.INVALID, msg: f"\"{c.name}\" is no component name: letters, digits, `-` and `_`")
+
+        if entry.closing
+            out @ out.push(plain(name: "END", value: c.name))
+        else
+            out @ out.push(plain(name: "BEGIN", value: c.name))
+            put(@items, @top, c, true)
+            k: i64 @= c.children.len()
+
+            while k > 0
+                k @ k - 1
+                put(@items, @top, c.children[k], false)
+
+            for line in c.lines
+                out @ out.push(line)
+
+    return ok(out)
+
+# A line with a name and a value and nothing else.
+#
+# - `name`: the name.
+# - `value`: the value.
+function plain(name: str, value: str) -> ical.Line
+    return ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: name, params: [], value: value)
+
+# The document `components` make, folded, each line ending in CRLF.
+#
+# - `components`: the components.
+#
+# Fails as `flatten` does.
+function format_all(components: [ical.Component]) -> str?
+    return content.format_all(flatten(components)?)
+
+test "parse_all and format_all: nested components, a byte order mark, and the document written again"
+    text = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nBEGIN:VALARM\r\nACTION:AUDIO\r\nEND:VALARM\r\nEND:VEVENT\r\nBEGIN:VTODO\r\nEND:VTODO\r\nEND:VCALENDAR\r\nBEGIN:VCARD\r\nEND:VCARD\r\n"
+    parts = parse_all(bytes.concat([[0xef, 0xbb, 0xbf], bytes.from_text(text)])).must()
+    assert parts.len() == 2 && parts[0].children.len() == 2 && parts[0].children[0].children[0].name == "VALARM"
+    assert format_all(parts).must() == text
+
+test "parse_all: a line outside a component, an end that closes another, a missing end, and nothing"
+    for bad in ["X:1\r\n", "BEGIN:A\r\nEND:B\r\n", "BEGIN:A\r\n", "END:A\r\n", "BEGIN:\r\nEND:\r\n"]
+        match parse_all(bytes.from_text(bad))
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+    assert parse_all([]).must().len() == 0
+
+test "parse_all: components nested to the limit are read, one deeper is refused with limit"
+    names = range(from: 0, to: ical.MAX_DEPTH + 1)
+    deep: [str] @= []
+
+    for k in names
+        deep @ deep.push(f"BEGIN:C{k}\r\n")
+
+    ok_text @= deep.slice(from: 0, to: ical.MAX_DEPTH).join("")
+
+    for k in range(from: 0, to: ical.MAX_DEPTH)
+        ok_text @ ok_text + f"END:C{ical.MAX_DEPTH - 1 - k}\r\n"
+
+    assert parse_all(bytes.from_text(ok_text)).must().len() == 1
+
+    match parse_all(bytes.from_text(deep.join("")))
+        .ok _  => assert false
+        .err e => assert e.code == ical.LIMIT
+
+test "flatten and format_all: a component named with a space is refused, and ten thousand children are written in one pass"
+    match format_all([ical.Component(name: "A B", lines: [], children: [])])
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    kids: [ical.Component] @= []
+
+    for _ in range(from: 0, to: 10000)
+        kids @ kids.push(ical.Component(name: "VEVENT", lines: [plain(name: "UID", value: "x")], children: []))
+
+    text = format_all([ical.Component(name: "VCALENDAR", lines: [], children: kids)]).must()
+    assert parse_all(bytes.from_text(text)).must()[0].children.len() == 10000

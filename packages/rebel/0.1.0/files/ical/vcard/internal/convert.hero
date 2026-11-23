@@ -1,0 +1,332 @@
+# A vCard read from the lines of a `VCARD` component and written back as them.
+# A property the record models and can hold whole is read into its field; a
+# property it cannot, one a second time where a single one is meant, one with a
+# group or parameters where the field has no place for them, and every property
+# it does not model, stays in `extra`, so a card read and written again loses
+# nothing but the order of its lines.
+
+use ical
+use ical/internal/escapes
+use ical/vcard
+use ical/vcard/internal/fields
+use strings
+
+# Whether a line has neither a group nor a parameter, so that a bare field holds it whole.
+#
+# - `line`: the line.
+function is_plain(line: ical.Line) -> bool
+    return line.group.is_err() && line.params.len() == 0
+
+# The name `N` writes.
+#
+# - `line`: the `N` line.
+function name_of(line: ical.Line) -> vcard.Name
+    parts = fields.components_of(value: line.value, count: 5)
+    return vcard.Name(
+        group: line.group,
+        family: parts[0],
+        given: parts[1],
+        additional: parts[2],
+        prefixes: parts[3],
+        suffixes: parts[4],
+        params: line.params
+    )
+
+# The address `ADR` writes.
+#
+# - `line`: the `ADR` line.
+function address_of(line: ical.Line) -> vcard.Address
+    parts = fields.components_of(value: line.value, count: 7)
+    return vcard.Address(
+        group: line.group,
+        types: fields.types_of(line),
+        po_box: parts[0],
+        extended: parts[1],
+        street: parts[2],
+        locality: parts[3],
+        region: parts[4],
+        postal_code: parts[5],
+        country: parts[6],
+        params: fields.other_params(line)
+    )
+
+# The organization `ORG` writes: its name, then its units.
+#
+# - `line`: the `ORG` line.
+function organization_of(line: ical.Line) -> vcard.Organization
+    pieces = escapes.split_semicolons(line.value)
+    units: [str] @= []
+
+    for k in range(from: 1, to: pieces.len())
+        units @ units.push(escapes.unescape(pieces[k]))
+
+    return vcard.Organization(group: line.group, name: escapes.unescape(pieces[0]), units: units, params: line.params)
+
+# The card a `VCARD` component holds.
+#
+# - `c`: the component.
+#
+# Fails `invalid` where `c` is no `VCARD` or has no `VERSION` of 3.0 or 4.0,
+# and `unsupported` where its version is 2.1.
+function card_from(c: ical.Component) -> vcard.Card?
+    if c.name != "VCARD"
+        return fail(code: ical.INVALID, msg: f"{c.name} is no VCARD")
+    version: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    card @= vcard.card("")
+    card.formatted_names @ []
+
+    for line in c.lines
+        n = line.name
+
+        if n == "VERSION" && version.is_err()
+            version @ ok(strings.trim(line.value))
+        else if n == "FN"
+            card.formatted_names @ card.formatted_names.push(fields.field_of(line))
+        else if n == "N" && card.name.is_err()
+            card.name @ ok(name_of(line))
+        else if n == "NICKNAME"
+            for piece in escapes.split_commas(line.value)
+                card.nicknames @ card.nicknames.push(fields.field_of_piece(line: line, piece: piece))
+        else if n == "BDAY" && card.birthday.is_err()
+            card.birthday @ ok(fields.field_of(line))
+        else if n == "TEL"
+            card.telephones @ card.telephones.push(fields.field_of(line))
+        else if n == "EMAIL"
+            card.emails @ card.emails.push(fields.field_of(line))
+        else if n == "ADR"
+            card.addresses @ card.addresses.push(address_of(line))
+        else if n == "ORG"
+            card.organizations @ card.organizations.push(organization_of(line))
+        else if n == "TITLE"
+            card.titles @ card.titles.push(fields.field_of(line))
+        else if n == "ROLE"
+            card.roles @ card.roles.push(fields.field_of(line))
+        else if n == "URL"
+            card.urls @ card.urls.push(fields.field_of(line))
+        else if n == "NOTE"
+            card.notes @ card.notes.push(fields.field_of(line))
+        else if n == "CATEGORIES" && is_plain(line)
+            for v in escapes.split_commas(line.value)
+                card.categories @ card.categories.push(escapes.unescape(v))
+        else if n == "UID" && card.uid.is_err() && is_plain(line)
+            card.uid @ ok(escapes.unescape(line.value))
+        else if n == "REV" && card.revision.is_err() && is_plain(line)
+            card.revision @ ok(strings.trim(line.value))
+        else
+            card.extra @ card.extra.push(line)
+
+    v = match version
+        .ok v  => v
+        .err _ => return fail(code: ical.INVALID, msg: "the VCARD has no VERSION")
+
+    if v == "2.1"
+        return fail(
+            code: ical.UNSUPPORTED,
+            msg: "vCard 2.1 is not read: its parameters with no name and its quoted-printable text are not RFC 6350's or RFC 2426's"
+        )
+
+    if v != "3.0" && v != "4.0"
+        return fail(code: ical.INVALID, msg: f"VERSION:{v} is none of 3.0 and 4.0")
+    card.version @ v
+    return ok(card)
+
+# The component of a card.
+#
+# - `card`: the card.
+#
+# Fails `invalid` where its version is none of 3.0 and 4.0, or a value holds a
+# control character.
+function card_to(card: vcard.Card) -> ical.Component?
+    if card.version != "3.0" && card.version != "4.0"
+        return fail(code: ical.INVALID, msg: f"the card's version {card.version} is none of 3.0 and 4.0")
+    lines: [ical.Line] @= []
+    lines @ lines.push(
+        fields.line_of(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "VERSION", params: [], value: card.version)
+    )
+
+    for f in card.formatted_names
+        lines @ lines.push(fields.line_of_field(name: "FN", f: f)?)
+
+    match card.name
+        .ok n =>
+            parts = fields.value_of_components([n.family, n.given, n.additional, n.prefixes, n.suffixes])?
+            lines @ lines.push(fields.line_of(group: n.group, name: "N", params: n.params, value: parts))
+        .err _ => _ = 0
+
+    for f in card.nicknames
+        lines @ lines.push(fields.line_of_field(name: "NICKNAME", f: f)?)
+
+    match card.birthday
+        .ok f  => lines @ lines.push(fields.line_of_field(name: "BDAY", f: f)?)
+        .err _ => _ = 0
+
+    for f in card.telephones
+        lines @ lines.push(fields.line_of_field(name: "TEL", f: f)?)
+
+    for f in card.emails
+        lines @ lines.push(fields.line_of_field(name: "EMAIL", f: f)?)
+
+    for a in card.addresses
+        parts = fields.value_of_components([a.po_box, a.extended, a.street, a.locality, a.region, a.postal_code, a.country])?
+        lines @ lines.push(
+            fields.line_of(group: a.group, name: "ADR", params: fields.params_of(types: a.types, params: a.params), value: parts)
+        )
+
+    for o in card.organizations
+        shown: [str] @= [escapes.escape(o.name)?]
+
+        for u in o.units
+            shown @ shown.push(escapes.escape(u)?)
+
+        lines @ lines.push(fields.line_of(group: o.group, name: "ORG", params: o.params, value: shown.join(";")))
+
+    for f in card.titles
+        lines @ lines.push(fields.line_of_field(name: "TITLE", f: f)?)
+
+    for f in card.roles
+        lines @ lines.push(fields.line_of_field(name: "ROLE", f: f)?)
+
+    for f in card.urls
+        lines @ lines.push(fields.line_of_field(name: "URL", f: f)?)
+
+    for f in card.notes
+        lines @ lines.push(fields.line_of_field(name: "NOTE", f: f)?)
+
+    if card.categories.len() > 0
+        shown: [str] @= []
+
+        for v in card.categories
+            shown @ shown.push(escapes.escape(v)?)
+
+        lines @ lines.push(
+            fields.line_of(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "CATEGORIES", params: [], value: shown.join(","))
+        )
+
+    match card.uid
+        .ok u  => lines @ lines.push(
+            fields.line_of(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "UID", params: [], value: escapes.escape(u)?)
+        )
+        .err _ => _ = 0
+
+    match card.revision
+        .ok r  => lines @ lines.push(
+            fields.line_of(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "REV", params: [], value: r)
+        )
+        .err _ => _ = 0
+
+    for line in card.extra
+        lines @ lines.push(line)
+
+    return ok(ical.Component(name: "VCARD", lines: lines, children: []))
+
+# The lines of a card made of the examples of RFC 6350 section 6 and an Apple-style group, whose fields python's vobject 0.9.9 (run 2026-11-23) reads as the tests below say.
+function sample_lines() -> [str]
+    return [
+        "BEGIN:VCARD"
+        "VERSION:4.0"
+        "FN:Mr. John Q. Public\\, Esq."
+        "N:Stevenson;John;Philip,Paul;Dr.;Jr.,M.D.,A.C.P."
+        "NICKNAME:Jim,Jimmie"
+        "BDAY:19960415"
+        "ADR;LABEL=\"Mr. John Q. Public, Esq.\\nMail Drop: TNE QB\\n123 Main Street\":;;123 Main Street;Any Town;CA;91921-1234;U.S.A."
+        "TEL;VALUE=uri;PREF=1;TYPE=\"voice,home\":tel:+1-555-555-5555;ext=5555"
+        "item1.TEL;TYPE=cell:+39 333 1234567"
+        "item1.X-ABLabel:Mobile"
+        "EMAIL;TYPE=work:jqpublic@xyz.example.com"
+        "ORG:ABC\\, Inc.;North American Division;Marketing"
+        "TITLE:Research Scientist"
+        "ROLE:Project Leader"
+        "CATEGORIES:INTERNET,IETF,INDUSTRY,INFORMATION TECHNOLOGY"
+        "NOTE:This fax number is operational 0800 to 1715 EST\\, Mon-Fri.\\nSecond line"
+        "URL:http://example.org/restaurant.french/~chezchic.html"
+        "UID:urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+        "REV:20261101T080000Z"
+        "PHOTO;ENCODING=b;TYPE=JPEG:/9j/4AAQSkZJRg=="
+        "X-CUSTOM;X-P=1:keep"
+        "END:VCARD"
+    ]
+
+# The sample as a document.
+function sample_text() -> str
+    return sample_lines().join("\r\n") + "\r\n"
+
+test "card_from: the examples of RFC 6350 read as vobject reads them, the group, the types of a quoted list, and the lines it holds whole kept"
+    c = vcard.parse_cards(sample_text()).must()[0]
+    assert c.version == "4.0" && c.formatted_names[0].value == "Mr. John Q. Public, Esq."
+    n = c.name.must()
+    assert n.family == ["Stevenson"] && n.given == ["John"] && n.additional == ["Philip", "Paul"] && n.prefixes == ["Dr."] && n.suffixes == ["Jr.", "M.D.", "A.C.P."]
+    assert c.nicknames.len() == 2 && c.nicknames[0].value == "Jim" && c.nicknames[1].value == "Jimmie" && c.birthday.must().value == "19960415"
+    a = c.addresses[0]
+    assert a.street == ["123 Main Street"] && a.locality == ["Any Town"] && a.region == ["CA"] && a.postal_code == ["91921-1234"] && a.country == ["U.S.A."]
+    assert a.po_box.len() == 0 && a.extended.len() == 0 && a.params[0].name == "LABEL"
+    assert c.telephones.len() == 2 && c.telephones[0].value == "tel:+1-555-555-5555;ext=5555" && c.telephones[0].types == ["voice", "home"]
+    assert c.telephones[0].params.len() == 2 && c.telephones[1].group == ok("item1") && c.telephones[1].types == ["cell"]
+    assert c.emails[0].types == ["work"] && c.organizations[0].name == "ABC, Inc." && c.organizations[0].units == ["North American Division", "Marketing"]
+    assert c.titles[0].value == "Research Scientist" && c.roles[0].value == "Project Leader"
+    assert c.categories == ["INTERNET", "IETF", "INDUSTRY", "INFORMATION TECHNOLOGY"]
+    assert c.notes[0].value == "This fax number is operational 0800 to 1715 EST, Mon-Fri.\nSecond line"
+    assert c.urls[0].value == "http://example.org/restaurant.french/~chezchic.html" && c.uid == ok("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+    assert c.revision == ok("20261101T080000Z") && c.extra.len() == 3 && c.extra[0].name == "X-ABLABEL" && c.extra[1].name == "PHOTO" && c.extra[2].params[0].name == "X-P"
+
+test "card_to and parse_cards: a card written and read again is the same card, and the lines it holds whole come back as they were"
+    c = vcard.parse_cards(sample_text()).must()[0]
+    again = vcard.parse_cards(vcard.format_cards([c]).must()).must()[0]
+    assert again == c
+    assert strings.contains(s: vcard.format_cards([c]).must(), substr: "item1.TEL;TYPE=cell:+39 333 1234567\r\n")
+    assert strings.contains(
+        s: vcard.format_cards([c]).must(),
+        substr: "TEL;TYPE=voice,home;VALUE=uri;PREF=1:tel:+1-555-555-5555;ext=5555\r\n"
+    )
+    assert strings.contains(
+        s: vcard.format_cards([c]).must(),
+        substr: "ORG:ABC\\, Inc.;North American Division;Marketing\r\n"
+    )
+
+test "card_from: versions 3.0 and 4.0 are read, 2.1 is unsupported, and a missing or odd version, a component that is no card, and a foreign line are told"
+    assert vcard.parse_cards("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:A\r\nTEL;TYPE=WORK;TYPE=VOICE:1\r\nEND:VCARD\r\n").must()[0].telephones[0].types == ["WORK", "VOICE"]
+
+    match vcard.parse_cards("BEGIN:VCARD\r\nVERSION:2.1\r\nFN:A\r\nEND:VCARD\r\n")
+        .ok _  => assert false
+        .err e => assert e.code == ical.UNSUPPORTED
+
+    for bad in ["BEGIN:VCARD\r\nFN:A\r\nEND:VCARD\r\n", "BEGIN:VCARD\r\nVERSION:5.0\r\nEND:VCARD\r\n", "BEGIN:VEVENT\r\nEND:VEVENT\r\n", "FN:A\r\n"]
+        match vcard.parse_cards(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+    assert vcard.parse_cards("").must().len() == 0
+
+test "card_from: a second N, a CATEGORIES with a group, a UID with a parameter, an ORG with one part and an empty address stay whole"
+    text = "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:A\r\nN:One;;;;\r\nN:Two;;;;\r\ng.CATEGORIES:x\r\nUID;PID=1.1:u\r\nORG:Solo\r\nADR:;;;;;;\r\nEND:VCARD\r\n"
+    c = vcard.parse_cards(text).must()[0]
+    assert c.name.must().family == ["One"] && c.extra.len() == 3 && c.extra[0].value == "Two;;;;"
+    assert c.organizations[0].units.len() == 0 && c.addresses[0].street.len() == 0 && c.categories.len() == 0 && c.uid.is_err()
+    assert vcard.parse_cards(vcard.format_cards([c]).must()).must()[0] == c
+
+test "card_to: a version that is none, and a value with a control character, are refused; escapes are written"
+    bad @= vcard.card("A")
+    bad.version @ "2.1"
+
+    match vcard.card_to(bad)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    c @= vcard.card("Rossi, Ana; the \"first\"")
+    c.notes @ [vcard.field("one\ntwo")]
+    text = vcard.format_cards([c]).must()
+    assert strings.contains(s: text, substr: "FN:Rossi\\, Ana\\; the \"first\"\r\n") && strings.contains(s: text, substr: "NOTE:one\\ntwo\r\n")
+    assert vcard.parse_cards(text).must()[0] == c
+    c.notes @ [vcard.field("a\u{1}b")]
+
+    match vcard.card_to(c)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+test "card_from: an Apple URL with a backslash before its colon is read as the address, written as it is; a VALUE=uri telephone keeps its semicolon and a list of nicknames is cut"
+    text = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:A\r\nURL;TYPE=pref:http\\://www.example.com/a,b\r\nTEL;VALUE=uri:tel:+1-555;ext=5\r\nNICKNAME:Jim,Jim\\,my\r\nEND:VCARD\r\n"
+    c = vcard.parse_cards(text).must()[0]
+    assert c.urls[0].value == "http://www.example.com/a,b" && c.urls[0].types == ["pref"]
+    assert c.telephones[0].value == "tel:+1-555;ext=5" && c.nicknames.len() == 2 && c.nicknames[1].value == "Jim,my"
+    out = vcard.format_cards([c]).must()
+    assert strings.contains(s: out, substr: "URL;TYPE=pref:http://www.example.com/a,b\r\n") && strings.contains(s: out, substr: "TEL;VALUE=uri:tel:+1-555;ext=5\r\n")
+    assert strings.contains(s: out, substr: "NICKNAME:Jim\r\nNICKNAME:Jim\\,my\r\n")
