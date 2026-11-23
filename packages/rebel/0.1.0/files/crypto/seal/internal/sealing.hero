@@ -115,6 +115,94 @@ function open(key: hero_crypto.Key, sealed: [u8], associated: [u8]) -> [u8]?
         return failure.last(asked: asked)
     return ok(out)
 
+# A key of the algorithm `name` names from `secret`'s bytes that counts its
+# nonces from `nonce` by the floor's rule `counting` and works the floor's
+# `way`; the cells that lent the secret and the nonce are overwritten before
+# this answers.
+function from_secret_counted(name: str, secret: [u8], nonce: [u8], counting: i64, way: i64) -> hero_crypto.Key?
+    asked = "making an " + name + " key that counts its nonces from " + to_str(secret.len()) + " bytes"
+
+    if secret.len() != size_of(name)
+        return failure.of(code: failure.INVALID, asked: asked, why: "the key is " + to_str(size_of(name)) + " bytes")
+
+    if nonce.len() != 12
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "the first nonce is 12 bytes, not " + to_str(nonce.len())
+        )
+    cell: [u8] @= secret
+    first: [u8] @= nonce
+    made = hero_crypto.from_secret_counted(
+        kind: kind_of(name),
+        secret: @cell,
+        count: length_u64(cell),
+        nonce: @first,
+        nonce_count: length_u64(first),
+        counting: counting,
+        way: way
+    )
+    wiped(@cell)
+    wiped(@first)
+
+    if made == nullptr
+        return failure.last(asked: asked)
+    return ok(made)
+
+# `text` sealed under the counted `key` with `associated` and its next
+# record's nonce: the ciphertext and the tag. The text's cell is overwritten
+# once sealed.
+function seal_counted(key: hero_crypto.Key, text: [u8], associated: [u8]) -> [u8]?
+    asked = "sealing a record of " + to_str(text.len()) + " bytes"
+
+    if key == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+    plain: [u8] @= text
+    beside: [u8] @= associated
+    out: [u8] @= []
+    written = hero_crypto.seal_counted(
+        key,
+        text: @plain,
+        text_count: length_u64(plain),
+        associated: @beside,
+        associated_count: length_u64(beside),
+        buffer: @out,
+        count: length_u64(plain) + hero_crypto.HERO_CRYPTO_TAG_BYTES
+    )
+    wiped(@plain)
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
+# The text of the record `sealed`, its ciphertext and tag, opened under the
+# counted `key` with `associated` and the record's nonce; never a byte of it
+# where its tag does not hold.
+function open_counted(key: hero_crypto.Key, sealed: [u8], associated: [u8]) -> [u8]?
+    asked = "opening a sealed record of " + to_str(sealed.len()) + " bytes"
+
+    if key == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the key is closed")
+
+    if sealed.len() < 16
+        return failure.of(code: failure.INVALID, asked: asked, why: "a sealed record holds a tag of 16 at the least")
+    held: [u8] @= sealed
+    beside: [u8] @= associated
+    out: [u8] @= []
+    written = hero_crypto.open_counted(
+        key,
+        sealed: @held,
+        sealed_count: length_u64(held),
+        associated: @beside,
+        associated_count: length_u64(beside),
+        buffer: @out,
+        count: length_u64(held) - 16
+    )
+
+    if written < 0
+        return failure.last(asked: asked)
+    return ok(out)
+
 # Closes the key in the caller's place and empties the place.
 function close(@key: hero_crypto.Key) -> ()?
     if key == nullptr

@@ -42,8 +42,17 @@
 # `libcrypto.so.3`) and `failed` (the system failed, its words in the
 # message).
 #
-# Not written yet, each a `pending` block of its ledger: nonces counted by the
-# key, for protocols whose peer computes them (TLS, QUIC records); AES-GCM-SIV,
+# **A counted key computes its nonces instead**, for a protocol whose peer
+# computes each record's nonce from a first one both sides derived: SSH's
+# AES-GCM (RFC 5647 § 7.1) and TLS 1.3's records (RFC 8446 § 5.3).
+# `from_secret_counted` makes one that works one way, sealing or opening, as
+# each direction of such a protocol has a key of its own; `seal_counted` and
+# `open_counted` take it and write no nonce, the key holding how many
+# records it has spent a nonce on, so no nonce crosses from the program and
+# none is used twice. `seal` and `open` refuse a counted key, and the counted
+# calls any other.
+#
+# Not written yet, each a `pending` block of its ledger: AES-GCM-SIV,
 # AES-SIV, AES-OCB3, AES-CCM and XChaCha20-Poly1305.
 
 use bytes
@@ -199,6 +208,51 @@ function from_secret(algorithm: Algorithm, secret: [u8]) -> Key?
 function close(@key: Key) -> ()?
     return sealing.close(@key.handle)
 
+# How a counted key makes the nonce of record n, counting from 0, from the
+# first record's.
+variant Counting
+    # The first nonce with n added to its last 8 bytes read as a big-endian
+    # number, modulo 2^64, its first 4 kept: SSH's AES-GCM, RFC 5647 § 7.1.
+    incremented
+    # The first nonce XOR n written as 12 big-endian bytes: TLS 1.3, RFC 8446
+    # § 5.3, and QUIC.
+    xored
+
+# Which way a counted key works.
+variant Way
+    # It seals, by `seal_counted` alone.
+    sealing
+    # It opens, by `open_counted` alone.
+    opening
+
+# A key of `algorithm` made from `secret` that computes every record's nonce
+# from `first_nonce` by `counting` and works the one `way`: what a protocol
+# derives for one direction of a connection.
+#
+# - `algorithm`: the cipher the key seals or opens with.
+# - `secret`: `key_size(algorithm)` bytes, copied into C once; the cell that
+#   lent them is overwritten before the call answers.
+# - `first_nonce`: the first record's nonce, `NONCE_BYTES` bytes, as the
+#   protocol derived it.
+# - `counting`: how the nonce of each later record is made from it.
+# - `way`: `.sealing` for the direction the program writes, `.opening` for
+#   the one it reads.
+#
+# The key is the caller's to close. Fails `invalid` where `secret` or
+# `first_nonce` is of another length, `unsupported` where `is_available` is
+# false. See also `seal_counted`, `open_counted`, `from_secret`.
+function from_secret_counted(algorithm: Algorithm, secret: [u8], first_nonce: [u8], counting: Counting, way: Way) -> Key?
+    rule = match counting
+        .incremented => hero_crypto.HERO_CRYPTO_COUNT_INCREMENTED
+        .xored       => hero_crypto.HERO_CRYPTO_COUNT_XORED
+
+    direction = match way
+        .sealing => hero_crypto.HERO_CRYPTO_SEALING
+        .opening => hero_crypto.HERO_CRYPTO_OPENING
+
+    handle = sealing.from_secret_counted(name: format_algorithm(algorithm), secret: secret, nonce: first_nonce, counting: rule, way: direction)?
+    return ok(Key(handle: handle, algorithm: algorithm))
+
 ## Sealing and opening
 
 # `text` sealed under `key`, with `associated` authenticated beside it and
@@ -232,6 +286,44 @@ function seal(key: Key, text: [u8], associated: [u8]) -> [u8]?
 # where `key` is closed. See also `seal`.
 function open(key: Key, sealed: [u8], associated: [u8]) -> [u8]?
     return sealing.open(key: key.handle, sealed: sealed, associated: associated)
+
+## Counted records
+
+# `text` sealed under the counted `key` with `associated` and the nonce of
+# its next record: the ciphertext, as long as `text`, and a tag of
+# `TAG_BYTES`, no nonce before them, since the peer computes it.
+#
+# - `key`: a key made by `from_secret_counted` with `.sealing`, which stays
+#   open; its next record's nonce is spent.
+# - `text`: the bytes to seal, empty or up to 4294967040.
+# - `associated`: bytes `open_counted` must be given the same, such as the
+#   record's header; empty for none. They are not in the answer.
+#
+# Fails `invalid` for a key not counted or made `.opening`, or a text past
+# its bound; `closed` where `key` is closed; `limit` past 2^64 - 1 records,
+# where the nonces would come round. The text crosses to C in one copy the call overwrites. See also
+# `open_counted`, `seal`.
+function seal_counted(key: Key, text: [u8], associated: [u8]) -> [u8]?
+    return sealing.seal_counted(key: key.handle, text: text, associated: associated)
+
+# The text of the next record `sealed`, its ciphertext and tag, opened
+# under the counted `key` with `associated` and that record's nonce.
+#
+# - `key`: a key made by `from_secret_counted` with `.opening`, which stays
+#   open; the record's nonce is spent whether it opens or not, so the next
+#   call takes the record after it and no record is tried twice under one
+#   nonce: a protocol ends its connection at the first that does not open.
+# - `sealed`: the ciphertext and the tag of 16 bytes, as `seal_counted` or
+#   the peer wrote them.
+# - `associated`: the same associated data the record was sealed with.
+#
+# Fails `invalid` where the tag does not hold (the bytes changed, cut, out
+# of their order, or sealed under another key or with other associated
+# data), and then nothing of the text is told; `invalid` for fewer than
+# `TAG_BYTES` bytes or a key not counted or made `.sealing`; `closed`;
+# `limit` past 2^64 - 1 records. See also `seal_counted`, `open`.
+function open_counted(key: Key, sealed: [u8], associated: [u8]) -> [u8]?
+    return sealing.open_counted(key: key.handle, sealed: sealed, associated: associated)
 
 ## Tests
 
@@ -314,6 +406,228 @@ test "from_secret: RFC 8439's key opens RFC 8439's sealed bytes, and a key of 31
     assert bytes.to_text(text).must() == "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it."
     close(@key).must()
 
+test "from_secret_counted, seal_counted and open_counted: AES-128-GCM's records 0 to 2 from a first nonce two below the counter's wrap, incremented and xored, as Python's cryptography 50.0.2 seals them"
+    if !is_available(.aes_128_gcm)
+        assert from_secret_counted(
+            .aes_128_gcm,
+            secret: bytes.repeated([1], n: 16),
+            first_nonce: bytes.repeated([1], n: 12),
+            counting: .incremented,
+            way: .sealing
+        ).is_err()
+        return
+    secret: [u8] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    first: [u8] = [160, 161, 162, 163, 255, 255, 255, 255, 255, 255, 255, 254]
+    texts: [[u8]] = [[], bytes.from_text("one"), bytes.from_text("the third record")]
+    besides: [[u8]] = [[0, 0, 0, 16], [], bytes.from_text("len")]
+    first_two: [[u8]] = [
+        [19, 247, 165, 229, 226, 188, 37, 90, 90, 167, 72, 96, 229, 209, 18, 11]
+        [191, 93, 23, 160, 189, 227, 78, 198, 10, 73, 22, 60, 22, 70, 159, 240, 200, 98, 233]
+    ]
+    incremented_third: [u8] = [
+        254
+        53
+        171
+        189
+        51
+        231
+        93
+        29
+        55
+        230
+        88
+        70
+        18
+        165
+        9
+        196
+        175
+        233
+        238
+        240
+        203
+        40
+        247
+        25
+        50
+        175
+        99
+        170
+        48
+        107
+        217
+        168
+    ]
+    xored_third: [u8] = [
+        254
+        119
+        14
+        219
+        123
+        189
+        162
+        153
+        255
+        138
+        242
+        103
+        237
+        220
+        54
+        174
+        27
+        237
+        232
+        110
+        115
+        118
+        157
+        56
+        173
+        109
+        40
+        59
+        150
+        162
+        240
+        49
+    ]
+    rules: [Counting] = [.incremented, .xored]
+
+    for rule in rules
+        sealer @= from_secret_counted(
+            .aes_128_gcm,
+            secret: secret,
+            first_nonce: first,
+            counting: rule,
+            way: .sealing
+        ).must()
+        opener @= from_secret_counted(
+            .aes_128_gcm,
+            secret: secret,
+            first_nonce: first,
+            counting: rule,
+            way: .opening
+        ).must()
+
+        third = match rule
+            .incremented => incremented_third
+            .xored       => xored_third
+
+        wanted: [[u8]] = [first_two[0], first_two[1], third]
+        which: i64 @= 0
+
+        while which < 3
+            sealed = seal_counted(key: sealer, text: texts[which], associated: besides[which]).must()
+            assert sealed == wanted[which]
+            assert open_counted(key: opener, sealed: sealed, associated: besides[which]).must() == texts[which]
+            which @ which + 1
+
+        close(@sealer).must()
+        close(@opener).must()
+
+test "seal_counted and open_counted: a record out of its order, a changed byte and other associated data do not open and spend their nonce, the next call taking the record after; each way refuses the other's call and the uncounted calls"
+    if !is_available(.aes_256_gcm)
+        return
+    secret = bytes.repeated([7], n: 32)
+    first = bytes.repeated([9], n: 12)
+    sealer @= from_secret_counted(
+        .aes_256_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .incremented,
+        way: .sealing
+    ).must()
+    opener @= from_secret_counted(
+        .aes_256_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .incremented,
+        way: .opening
+    ).must()
+    zero = seal_counted(key: sealer, text: [1], associated: []).must()
+    one = seal_counted(key: sealer, text: [2], associated: []).must()
+    assert open_counted(key: opener, sealed: one, associated: []).is_err()
+    assert open_counted(key: opener, sealed: one, associated: []).must() == [2]
+    assert open_counted(key: opener, sealed: zero, associated: []).is_err()
+    assert zero.len() == 17
+
+    match open_counted(key: sealer, sealed: zero, associated: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match seal_counted(key: opener, text: [1], associated: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert seal(key: sealer, text: [1], associated: []).is_err()
+    assert open(key: opener, sealed: bytes.repeated([0], n: 28), associated: []).is_err()
+    close(@sealer).must()
+    close(@opener).must()
+
+    plain @= generate(.aes_256_gcm).must()
+    assert seal_counted(key: plain, text: [1], associated: []).is_err()
+    assert open_counted(key: plain, sealed: bytes.repeated([0], n: 16), associated: []).is_err()
+    close(@plain).must()
+
+    again @= from_secret_counted(
+        .aes_256_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .incremented,
+        way: .opening
+    ).must()
+    changed @= zero
+    changed[0] @ 255 - changed[0]
+    assert open_counted(key: again, sealed: changed, associated: []).is_err()
+    assert open_counted(key: again, sealed: one, associated: [5]).is_err()
+    close(@again).must()
+
+test "from_secret_counted, seal_counted and open_counted: a first nonce of 11 bytes, a secret of 31, fewer than 16 sealed bytes, and ChaCha20-Poly1305 xored as Python's cryptography 50.0.2 seals it"
+    match from_secret_counted(.chacha20_poly1305, secret: bytes.repeated([1], n: 32), first_nonce: bytes.repeated([1], n: 11), counting: .xored, way: .sealing)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "making an chacha20_poly1305 key that counts its nonces from 32 bytes: the first nonce is 12 bytes, not 11"
+
+    match from_secret_counted(.chacha20_poly1305, secret: bytes.repeated([1], n: 31), first_nonce: bytes.repeated([1], n: 12), counting: .xored, way: .sealing)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    if !is_available(.chacha20_poly1305)
+        return
+    secret: [u8] @= []
+    at: i64 @= 0
+
+    while at < 32
+        secret @ secret.push(to_u8(at).must())
+        at @ at + 1
+
+    first: [u8] = [160, 161, 162, 163, 255, 255, 255, 255, 255, 255, 255, 254]
+    sealer @= from_secret_counted(
+        .chacha20_poly1305,
+        secret: secret,
+        first_nonce: first,
+        counting: .xored,
+        way: .sealing
+    ).must()
+    opener @= from_secret_counted(
+        .chacha20_poly1305,
+        secret: secret,
+        first_nonce: first,
+        counting: .xored,
+        way: .opening
+    ).must()
+    _ = seal_counted(key: sealer, text: [], associated: []).must()
+    assert seal_counted(key: sealer, text: bytes.from_text("chacha"), associated: []).must() == [46, 41, 48, 247, 209, 142, 59, 189, 26, 202, 145, 80, 52, 144, 157, 226, 58, 97, 85, 226, 171, 139]
+
+    match open_counted(key: opener, sealed: bytes.repeated([0], n: 15), associated: [])
+        .ok _  => assert false
+        .err e => assert e.msg == "opening a sealed record of 15 bytes: a sealed record holds a tag of 16 at the least"
+
+    close(@sealer).must()
+    close(@opener).must()
+
 ## Examples
 
 # A message sealed under a new key, bound to its header, and opened again.
@@ -375,3 +689,73 @@ test "generate: a key where the platform offers it"
     if is_available(.chacha20_poly1305)
         key @= generate(.chacha20_poly1305).must()
         close(@key).must()
+
+# The two ends of one direction of a connection: the writer's key seals
+# record after record and the reader's opens them in their order, neither
+# sending a nonce.
+test "seal_counted: records sealed by one end and opened by the other"
+    if !is_available(.aes_128_gcm)
+        return
+    secret = bytes.repeated([3], n: 16)
+    first = bytes.repeated([5], n: 12)
+    writer @= from_secret_counted(
+        .aes_128_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .incremented,
+        way: .sealing
+    ).must()
+    reader @= from_secret_counted(
+        .aes_128_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .incremented,
+        way: .opening
+    ).must()
+    hello = seal_counted(key: writer, text: bytes.from_text("hello"), associated: [0, 0, 0, 5]).must()
+    world = seal_counted(key: writer, text: bytes.from_text("world"), associated: [0, 0, 0, 5]).must()
+    assert bytes.to_text(open_counted(key: reader, sealed: hello, associated: [0, 0, 0, 5]).must()).must() == "hello"
+    assert bytes.to_text(open_counted(key: reader, sealed: world, associated: [0, 0, 0, 5]).must()).must() == "world"
+    close(@writer).must()
+    close(@reader).must()
+
+# A record replayed after the one that followed it does not open, its nonce
+# spent.
+test "open_counted: a record opened twice is refused the second time"
+    if !is_available(.aes_128_gcm)
+        return
+    secret = bytes.repeated([3], n: 16)
+    first = bytes.repeated([5], n: 12)
+    writer @= from_secret_counted(
+        .aes_128_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .xored,
+        way: .sealing
+    ).must()
+    reader @= from_secret_counted(
+        .aes_128_gcm,
+        secret: secret,
+        first_nonce: first,
+        counting: .xored,
+        way: .opening
+    ).must()
+    sealed = seal_counted(key: writer, text: [1, 2, 3], associated: []).must()
+    assert open_counted(key: reader, sealed: sealed, associated: []).must() == [1, 2, 3]
+    assert open_counted(key: reader, sealed: sealed, associated: []).is_err()
+    close(@writer).must()
+    close(@reader).must()
+
+# A key for the direction a program reads, its nonces counted as TLS 1.3
+# counts them.
+test "from_secret_counted: a reading key counted as TLS 1.3 counts"
+    if !is_available(.aes_256_gcm)
+        return
+    key @= from_secret_counted(
+        .aes_256_gcm,
+        secret: bytes.repeated([8], n: 32),
+        first_nonce: bytes.repeated([1], n: 12),
+        counting: .xored,
+        way: .opening
+    ).must()
+    close(@key).must()
