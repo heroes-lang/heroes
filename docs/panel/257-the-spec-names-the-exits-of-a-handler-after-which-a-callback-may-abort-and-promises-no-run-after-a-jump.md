@@ -240,3 +240,96 @@ measurement, as § Where the seats disagree says. **The blind reading's ceiling*
 (`257-briefs/blind/registration.md`), allowed by the author up to 20; the run keeps the registered plan and stops
 itself before 19.50. The sentence lands with the runtime lane's repairs (defects 2704 to 2707) and the four spec
 pins re-measured at the landing; the reading's scoring is appended beneath with its date.
+
+## The blind seat's run, 2026-11-23
+
+Added 2026-11-23 by the session that scored the blind seat, started by the coordinator of M-rebel-library; every
+number below is a command's, each named in `257-reports/llm-ergonomist-blind.md`, the seat's report of the run (the
+blinding key is `257-reports/blind-key.md`, every answer whole `257-reports/llm-ergonomist-blind-answers.tar.xz`).
+**Corrected here, underneath, the lines above that this run falsifies**: the head's *"the llm-ergonomist
+**registered and not run**"* and *"**provisional on the blind reading**, which is owed"*, § The question's *"**What it
+gave up**: no blind reader said which program a reader of the sentence expects to run, because **no paid run is
+authorized**"*, **R5**'s title and body *"The blind reading is registered and not run"* with its plan (*"0.60 USD a
+session, 1.00 the verdict, 12.00 USD the ceiling, an expectation of 7.0 (5.2 to 11.3)"*), § Predictions to score's
+*"the blind run"* in the warden's and the coordinator's rows (scored below), and § What this sitting files and owes'
+*"**Owed to the author**: the blind reading (R5)"*: the author authorized it at the ratification (issue 2703, closed
+16:07:33Z, up to 20 USD), and it was run, as follows. *"No `claude -p`, no paid run"* in § How the sitting went stands for
+the sitting's own day; the reading ran after it.
+
+**The registered run.** 31 sessions (t1, seven programs, and t2, three designs and one abort to read, each with the arms
+`now`, `adopted` (R1's sentence) and `rival` (x1, the positive clause), five sessions per cell, and the verdict),
+2026-11-23 17:23:45 to 17:53:41, from the session holding the author's word, by the area's `run.sh`: **31 of 31 a
+success** by the three fields, `claude-opus-5-5` alone, **6.297764 USD** of the author's 20 (the registered ceiling 12.00
+and the runner's 19.50 never near; the verdict's cap 1.20 and the ceiling were amended before any session, in
+`registration-runner.md`); `scan.py` over 32 transcripts, prompt-alone=NO 0, git-status=LEAK 0, claude-md-or-memory=YES
+0; `reads.py`, 0 sessions with a path outside their folder; **0 voided**. Every registered file of every folder, read
+again by sha256: **31 folders, 268 files, 0 differences**; the three arms reproduce from `828567a30` and the sitting's
+two diffs. The seats had no compiler, so a session's *runs* is its own reading; the scoring session ran no session and
+spent nothing, and was not blind in fact (the outcomes were written by letter, sha256 `f95ed68e30c6b3e3...`, after the
+answers). The key is the landed builds' rows the seats measured (`critic-reports.md:66-84`), **not re-run here**, plus the
+frozen runtime's seven programs, run twice each by the scorer.
+
+**The counts, right of 5, by the landed key.** t1 `now` **5, 5, 5, 0, 5, 5** on p1 to p6; `adopted` **5, 5, 5, 5, 5, 5**;
+`rival` **5, 5, 5, 5, 5, 5**. **p7 splits** on the landed builds (Darwin refuses it, Linux runs it until defect 2702,
+open): `now` 0 / 5, `adopted` 5 / 0, `rival` 5 / 0 on Darwin's / Linux's row, so D1 rests on p4 alone, as the registration
+says. t2 question 1 (A runs, B aborts, C runs): **5, 5, 5 in each arm**, B included in `now`, because the task's own words
+carry it. Question 3, whose mistake B's abort is (the key *neither*): `now` 0 *neither* and 5 *the library's C*; `adopted`
+**1 and 4**; `rival` **2 and 3**; 0 of 15 blame the Heroes program. **D1 holds** (`adopted` p4 5 of 5, `now` p4 0 of 5; p7
+out). **D2 holds** (p1, p2, p3, p5 fall by 0). **D3 fails for `adopted`, `rival` and `now` alike**, as the coordinator
+registered. The three rules do not separate `adopted` from `rival` on any cell: **they favour `adopted`, the resolution
+as ratified, by leaving it standing, and not the rival.** What the sentence did: **15 of 15 abort sentences written under
+`adopted` carry its words** (*"not seen to end"*, *"from inside one"*), against 0 of 5 under `now`; **10 of 10 readers of
+`adopted` and `rival` took *"may abort"* as *aborts*** and none wrote RUNS on p4 or p7, so no reader chose a platform
+difference for p7, which is Darwin's verdict and wrong on Linux until 2702.
+
+**The predictions this run settles** (the warden's, registered 11:47, and the coordinator's, in `registration.md`, before
+any session; per cell in the report). The warden registered nothing for `adopted` or `rival`, so its `now` row scores
+directly and its `w26` and `w27` rows as neighbours:
+
+| prediction | registered | counted | score |
+|---|---|---|---|
+| warden, t1 `now` p1 to p7 | 5, 5, 4, **1**, 5, 5, **1** | 5, 5, 5, **0**, 5, 5, 0 (Darwin) / 5 (Linux) | hit on four; p3, p4 miss inside; p7 inside on Darwin's row, outside on Linux's |
+| warden, t2 `now` Q1 A, B, C; Q3 *neither* and *the library's C* | 5, **3**, 5; 4; 1 | 5, 5, 5; **0; 5** | A, C hit; B inside; **Q3 both outside their ranges** |
+| warden, D1 and D2 (the neighbour `w26`) | hold | hold | hit |
+| warden, D3 *holds for every text*; *if it fails it fails for all arms alike* | holds | fails for all three | miss on the call, hit on the clause |
+| warden, the first leak (`now` reads B off the task's words) | named | `now` B 5 of 5 | borne out |
+| warden, the spend of the 30 graded | 7.2 (5.5-9.5) | 6.005413 | inside; the verdict 0.292351 against 0.3 to 0.5, just under |
+| coordinator, t1 `now` p4 / p7 | **1 (0-3)** / **1 (0-3)** | 0 / 0 (Darwin), 5 (Linux) | miss inside / inside, outside on Linux's row |
+| coordinator, t1 `adopted` p4 / p7 | **4 (3-5)** / **4 (2-5)** | 5 / 5 (Darwin), 0 (Linux) | miss inside / inside, outside on Linux's row |
+| coordinator, t2 Q1 A and C, every arm | 4 (3-5) | 5, six cells | six misses, inside |
+| coordinator, t2 Q1 B `now` / `adopted` | 1 (0-3) / 4 (2-5) | 5 / 5 | **outside** / inside |
+| coordinator, t2 Q3 *neither* under `adopted` | 2 (1-4) | 1 | miss inside |
+| coordinator, D1 and D2 hold; **D3 fails for `adopted` and `rival` alike** | hold; fails | hold; fails | **hit on all three** |
+| coordinator, the run: 31 sessions, 0 voided, 7.0 USD (5.2-11.3) | 31, 0, 7.0 | 31, 0, 6.297764 | hit; the spend inside, the point missed |
+
+The predictions missed **low where the readers were all right** (4 against 5 on `adopted` p1 to p4, on Q1 A and C) and
+**high where they were wrong** (`now` p4, 1 against 0; Q3 *neither*, 4 and 2 against 0 and 1): not panels 254's and 256's
+*"every count missed low"*.
+
+**The resolution's rows, one by one: no row is reopened.** R1's *"may abort"* after the four exits was read by `adopted`
+on t1 (p1, p2, p3, p5 RUNS, p4 and p6 ABORTS: 0 of 5 wrong on each) and t2 (A, B, C: 0 of 5), and its *what it is told*
+(*"not seen to end"*, *"from inside one"*) by 15 of 15 abort sentences. **p7 on Linux's row is the one cell the readers
+got wrong (5 of 5)**: not a misreading of the sentence (it says *may*), but the landed Linux build running what the Darwin
+build refuses until 2702; the registration puts p7 out of D1 while it splits, and a reader of this record should re-score
+that cell when 2702 lands. R2 (the positive clause withheld) is not moved: the `rival`'s clause changed no reader where
+`adopted` was already at 5 of 5, and the programs that falsify it on Darwin (`fp3`, `n6`, route A) are in no task. R3 and
+R4 are not readers' rows. R5 was this run.
+
+**The verdict's findings.** The A/B verdict (0.292351 USD) approves, on a real `spec-B` (R1's sentence, not a shorter text,
+unlike panel 256's). **It read none of the 30 reports** it was handed: its tool for a folder answered *EISDIR*, it guessed
+six names, and says its verdict *"rests on my own experiment only"* (20 `Read` calls, `reads.out`). Its answers agree with
+the counts: under A, `p4` and `p7` and design B run; under B they abort; its answer for question 3 is *neither*. One of its
+three conditions for objecting is met: *"the runtime actually runs p4 or p7 on some platform"*: the landed Linux build runs
+p7; the sitting wrote *may* for that reason.
+
+**What the run could not show.** A build (every *runs* is a reading); a message (t2 prints the shortened words); the
+sentence's effect on design B (the task's words carry it: `now` 5 of 5; **one run worth its price, unrun**: t2 without the
+message, 15 sessions, 2.753001 USD by this run's three t2 cells, an inference for a changed task); the verdict over the
+reports (**one session worth its price, unrun**: the brief naming the 30 files, cap 1.20, 0.5 to 1.0 USD an inference);
+Linux x86-64 and Windows; the Darwin falsifiers of the positive clause; and blame: **12 of 15 readers say the library's C
+is at fault, 9 of them for the reason that `swapcontext` is not async-signal-safe**, which `ffi-pragmatist.md:357` does not
+contradict, so a later sitting on a clause on blame starts from the readers' facts and not from the key's *neither*. One
+model, five readers per cell, one run.
+
+**The run confirms R1's sentence (D1 on p4 and D2 hold, D3 fails for it and for the rival alike), does not favour the
+rival (the positive clause changed no cell), and reopens no row of the resolution.**
