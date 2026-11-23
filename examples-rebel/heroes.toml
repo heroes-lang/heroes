@@ -48,6 +48,7 @@ packages = [
     "html",
     "html/sanitize",
     "http",
+    "http/hero_proxy",
     "http/suffixes",
     "http2",
     "i18n",

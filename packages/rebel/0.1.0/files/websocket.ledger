@@ -249,11 +249,12 @@ capability keepalive  pings on a clock of the library's own, and a connection cl
   rust    -
   python  websockets.asyncio.client.ClientConnection.keepalive, websockets.asyncio.client.ClientConnection.start_keepalive, websockets.asyncio.server.ServerConnection.keepalive, websockets.asyncio.server.ServerConnection.start_keepalive, websockets.asyncio.connection.Connection.keepalive, websockets.asyncio.connection.Connection.start_keepalive, websockets.sync.client.ClientConnection.keepalive, websockets.sync.client.ClientConnection.start_keepalive, websockets.sync.server.ServerConnection.keepalive, websockets.sync.server.ServerConnection.start_keepalive, websockets.sync.connection.Connection.keepalive, websockets.sync.connection.Connection.start_keepalive
 
-capability proxy  a connection through an HTTP proxy's CONNECT tunnel
-  heroes  refused: http has no proxy (its face says so); a program that makes the tunnel itself calls client_over over it
+capability proxy  a connection through a proxy: an HTTP proxy's CONNECT tunnel, or a SOCKS proxy's
+  heroes  websocket.Client (its `proxy`, an `http.Proxy`), http.tunnel
   go      -
   rust    -
   python  websockets.InvalidProxy, websockets.InvalidProxyMessage, websockets.InvalidProxyStatus, websockets.ProxyError, websockets.exceptions.InvalidProxy, websockets.exceptions.ProxyError, websockets.exceptions.InvalidProxyMessage, websockets.exceptions.InvalidProxyStatus
+  note    added 2026-11-23. A `ws://` URL goes through the proxy `Proxy.http` names and a `wss://` URL through `Proxy.https`, as a browser does, a tunnel to the server's own host and port either way (`CONNECT`, or the SOCKS 4, 4a, 5 or 5h handshake of a `socks4://`, `socks4a://`, `socks5://` or `socks5h://` proxy), TLS begun over it for `wss` with the server's name checked; `Proxy.bypass` and the loopback addresses go direct. macOS's TLS does not begin over a stream the program holds (`tls.client_over`), so there a `wss://` URL through a proxy fails `unsupported` and says why; `ws://` goes through on every platform. A proxy that refuses the tunnel fails `failed` with its status. `http.proxy_from_env` and `http.proxy_from_system` make the `Proxy`; the usual client uses none
 
 capability reconnect  a client that connects again after a failure, waiting longer each time
   heroes  refused: a program loops on connect itself; a library loop would hold its state behind a closure

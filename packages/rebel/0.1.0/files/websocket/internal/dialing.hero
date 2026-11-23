@@ -1,7 +1,10 @@
 # The stream a client's connection travels on, made for a `ws://` or
-# `wss://` URL: a TCP connection or TLS, its opening handshake given what is
-# left of the time allowed.
+# `wss://` URL: a TCP connection or TLS, directly or through the proxy the
+# client's `Proxy` names for it (a tunnel opened at `CONNECT` or by SOCKS, TLS
+# begun over it for `wss`), its opening handshake given what is left of the
+# time allowed.
 
+use http
 use io
 use net
 use time
@@ -18,13 +21,30 @@ constant TIMEOUT: str
 # - `u`: a `ws://` or `wss://` URL.
 # - `deadline_ms`: the milliseconds allowed, 0 for no limit.
 # - `secure`: what a TLS client trusts and offers.
+# - `proxy`: the proxies; a `ws://` URL is sent through the one for `http://`
+#   and a `wss://` URL through the one for `https://`, a tunnel to the server
+#   in either case, since a proxy that is handed no request of its own has
+#   nothing else to pass on, and no proxy is used where `proxy` names none for
+#   the URL or its bypass names its host.
 #
-# Fails `timeout` where the time runs out, and as `url.port_of`,
-# `net.connect_timeout` and `tls.connect` fail.
-function opened(u: url.Url, deadline: time.Duration, secure: tls.Client) -> io.Stream?
+# Fails `timeout` where the time runs out, `unsupported` where `wss://` is to
+# go through a proxy on a platform whose TLS does not begin over a tunnel
+# (macOS), and as `url.port_of`, `http.tunnel`, `net.connect_timeout` and
+# `tls.connect` fail.
+function opened(u: url.Url, deadline: time.Duration, secure: tls.Client, proxy: http.Proxy) -> io.Stream?
     port = url.port_of(u)?
     began = time.mark()?
     bounded = deadline != time.max_duration()
+    asked @= u
+
+    asked.scheme @ if u.scheme == "wss"
+        "https"
+    else
+        "http"
+
+    match http.proxy_for(proxy, target: asked)
+        .ok via => return tunnelled(u, via: via, port: port, deadline: deadline, secure: secure, began: began)
+        .err _  => _ = 0
 
     if u.scheme == "wss"
         stream @= tls.connect(host: u.host, port: port, deadline: deadline, client: secure)?.stream
@@ -54,6 +74,38 @@ function opened(u: url.Url, deadline: time.Duration, secure: tls.Client) -> io.S
                 return fail(code: e.code, msg: e.msg)
     return ok(conn.stream)
 
+# A stream to `u`'s host and port through the proxy `via`: the tunnel the
+# proxy opens (`http.tunnel`), TLS begun over it for `wss` with the server's
+# name checked, and what is left of `deadline` then every read's and write's.
+# Fails `unsupported` where the platform's TLS begins none over a stream the
+# program holds, as on macOS, and as `http.tunnel`, `tls.client_over` and
+# `left_of` fail.
+function tunnelled(u: url.Url, via: str, port: i64, deadline: time.Duration, secure: tls.Client, began: time.Mark) -> io.Stream?
+    stream @= http.tunnel(proxy: via, host: u.host, port: port, deadline: deadline)?
+
+    if u.scheme == "wss"
+        stream @ match tls.client_over(@stream, host: u.host, client: secure)
+            .ok s => s
+            .err e =>
+                ended(@stream)
+                return fail(
+                    code: e.code,
+                    msg: f"connecting to wss://{u.host} through a proxy: TLS over the proxy's tunnel is begun by `tls.client_over` ({e.msg})"
+                )
+
+    if deadline != time.max_duration()
+        match left_of(began, deadline: deadline)
+            .ok left =>
+                match tls.set_deadline(stream, deadline: left)
+                    .ok _ => _ = 0
+                    .err e =>
+                        ended(@stream)
+                        return fail(code: e.code, msg: e.msg)
+            .err e =>
+                ended(@stream)
+                return fail(code: e.code, msg: e.msg)
+    return ok(stream)
+
 # What is left of `deadline` since `began`, above zero.
 #
 # Fails `timeout` where nothing is left.
@@ -80,7 +132,8 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     stream @= opened(
         url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
         deadline: time.seconds(5).must(),
-        secure: tls.Client(roots: "", protocols: [])
+        secure: tls.Client(roots: "", protocols: []),
+        proxy: http.no_proxy()
     ).must()
     accepted = net.accept(l, deadline_ms: 5_000).must()
     io.write(accepted.stream, data: [7]).must()
@@ -93,8 +146,31 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     assert opened(
         url.parse("ws://127.0.0.1:1/").must(),
         deadline: time.seconds(1).must(),
-        secure: tls.Client(roots: "", protocols: [])
+        secure: tls.Client(roots: "", protocols: []),
+        proxy: http.no_proxy()
     ).is_err()
+
+test "opened: a proxy for another scheme is not used, and one that is unreachable fails"
+    nothing @= http.no_proxy()
+    nothing.http @ "http://127.0.0.1:1"
+    target = url.parse("ws://example.test:8080/chat").must()
+    assert opened(
+        target,
+        deadline: time.seconds(1).must(),
+        secure: tls.Client(roots: "", protocols: []),
+        proxy: nothing
+    ).is_err()
+    only_https @= http.no_proxy()
+    only_https.https @ "http://127.0.0.1:1"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    direct @= opened(
+        url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
+        deadline: time.seconds(5).must(),
+        secure: tls.Client(roots: "", protocols: []),
+        proxy: only_https
+    ).must()
+    ended(@direct)
+    net.close_listener(@l).must()
 
 test "left_of: what is left of the time, and none"
     began = time.mark().must()
