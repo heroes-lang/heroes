@@ -2751,6 +2751,23 @@ test "open_udp_shared: two sockets stand on one port, and a socket that asks for
 
     close_udp(@alone).must()
 
+test "open_udp_shared: a port held alone is refused to a socket that asks it shared, and the reverse, on the address of every kind"
+    for host in ["0.0.0.0", "127.0.0.1"]
+        alone @= open_udp(host, port: 0).must()
+
+        match open_udp_shared(host, port: alone.address.port)
+            .ok _  => assert false
+            .err e => assert e.code == EXISTS
+
+        close_udp(@alone).must()
+        a @= open_udp_shared(host, port: 0).must()
+
+        match open_udp(host, port: a.address.port)
+            .ok _  => assert false
+            .err e => assert e.code == EXISTS
+
+        close_udp(@a).must()
+
 test "open_udp_shared: a socket of IPv6 stands beside one of IPv4 on the same port, and an address of no port is refused"
     four @= open_udp_shared("0.0.0.0", port: 0).must()
     six = open_udp_shared("::", port: four.address.port)
