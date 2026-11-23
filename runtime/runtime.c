@@ -164,6 +164,12 @@
  * `hero_abort`, by place.c's place line and by os.c's `hero_args_set`. */
 #include "parts/calls.c"
 
+/* The callbacks C is inside, counted: how many thunks were entered and have
+ * not returned, which a C jump over a Heroes frame leaves above zero and the
+ * leak gate reads at the end (defect 2704). Needs nothing; before `sigguard.c`,
+ * whose thunk entry begins the count. */
+#include "parts/callback.c"
+
 /* No Heroes code inside a signal handler (panel 247's R1, defect 2494): the
  * question every thunk asks first, the delivery's address it is asked against,
  * and the one stop every refusal of a signal's re-entrance ends through, which
@@ -387,8 +393,9 @@
  * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
  * `.swift`); the header every web view's arm and `hero_ui.c` share,
  * `platform/hero_ui_web.h`, and the one `hero_ui.c` shares with its two C
- * arms, `platform/hero_ui_arm.h`, and the Win32 arm's table of the events its
- * wait watches, `platform/hero_ui_win32_watch.h`; and Monocypher's, which
+ * arms, `platform/hero_ui_arm.h`, the Win32 arm's table of the events its
+ * wait watches, `platform/hero_ui_win32_watch.h`, and the pure half of its
+ * pickers, `platform/hero_ui_win32_pickers.h`; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -439,6 +446,8 @@
 #include "platform/hero_proc.c"
 #include "hero_procs.h"
 #include "platform/hero_procs.c"
+#include "hero_proxy.h"
+#include "platform/hero_proxy.c"
 #include "hero_serial.h"
 #include "platform/hero_serial.c"
 #include "hero_sys.h"
@@ -476,6 +485,7 @@
 #include "hero_ui_win32.h"
 #include "platform/hero_ui_win32.c"
 #include "platform/hero_ui_win32_watch.h"
+#include "platform/hero_ui_win32_pickers.h"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #include "hero_service.h"

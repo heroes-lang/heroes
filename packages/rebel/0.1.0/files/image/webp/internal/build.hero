@@ -1,0 +1,110 @@
+# A WebP file written: the lossless stream of each frame in its chunk, and for
+# an animation or a file with metadata the extended format's VP8X header and
+# the chunks around the frames.
+
+use image/webp/internal/encode
+use image/webp/internal/riff
+
+# One frame to write.
+record Place
+    # The pixels, RGBA, four bytes each.
+    pixels: [u8]
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The column of the left edge, even.
+    x: i64
+    # The row of the top edge, even.
+    y: i64
+    # The time it shows, in milliseconds.
+    duration: i64
+    # Whether it replaces what is under it.
+    replaces: bool
+    # Whether its rectangle is cleared after it.
+    clears: bool
+
+# The stream of the frame `f`: its pixels as the lossless coding writes them.
+function stream_of(f: Place lent) -> [u8]
+    used @= false
+
+    for i in range(from: 0, to: f.width * f.height)
+        if f.pixels[i * 4 + 3] != 255
+            used @ true
+
+    return encode.stream_of(f.pixels, width: f.width, height: f.height, alpha_used: used)
+
+# The file holding `frames` on a canvas of `width` by `height`.
+function file_of(width: i64, height: i64, frames: [Place] lent, animated: bool, loops: i64, background: [i64] lent, icc: [u8] lent, exif: [u8] lent, xmp: [u8] lent) -> [u8]
+    body: [u8] @= []
+
+    if !animated && frames.len() == 1 && icc.len() == 0 && exif.len() == 0 && xmp.len() == 0
+        riff.put_chunk(out: @body, tag: "VP8L", payload: stream_of(frames[0]))
+        return riff.file_of(body)
+    flags @= 0
+    alpha @= false
+
+    for f in frames
+        for i in range(from: 0, to: f.width * f.height)
+            if f.pixels[i * 4 + 3] != 255
+                alpha @ true
+
+    if icc.len() > 0
+        flags @ flags | 0x20
+
+    if alpha
+        flags @ flags | 0x10
+
+    if exif.len() > 0
+        flags @ flags | 0x08
+
+    if xmp.len() > 0
+        flags @ flags | 0x04
+
+    if animated
+        flags @ flags | 0x02
+    head: [u8] @= []
+    riff.put(out: @head, v: flags, size: 1)
+    riff.put(out: @head, v: 0, size: 3)
+    riff.put(out: @head, v: width - 1, size: 3)
+    riff.put(out: @head, v: height - 1, size: 3)
+    riff.put_chunk(out: @body, tag: "VP8X", payload: head)
+
+    if icc.len() > 0
+        riff.put_chunk(out: @body, tag: "ICCP", payload: icc)
+
+    if animated
+        info: [u8] @= []
+        riff.put(out: @info, v: background[2], size: 1)
+        riff.put(out: @info, v: background[1], size: 1)
+        riff.put(out: @info, v: background[0], size: 1)
+        riff.put(out: @info, v: background[3], size: 1)
+        riff.put(out: @info, v: loops, size: 2)
+        riff.put_chunk(out: @body, tag: "ANIM", payload: info)
+
+        for f in frames
+            part: [u8] @= []
+            riff.put(out: @part, v: f.x / 2, size: 3)
+            riff.put(out: @part, v: f.y / 2, size: 3)
+            riff.put(out: @part, v: f.width - 1, size: 3)
+            riff.put(out: @part, v: f.height - 1, size: 3)
+            riff.put(out: @part, v: f.duration, size: 3)
+            bits @= 0
+
+            if f.clears
+                bits @ bits | 1
+
+            if f.replaces
+                bits @ bits | 2
+            riff.put(out: @part, v: bits, size: 1)
+            riff.put_chunk(out: @part, tag: "VP8L", payload: stream_of(f))
+            riff.put_chunk(out: @body, tag: "ANMF", payload: part)
+    else
+        riff.put_chunk(out: @body, tag: "VP8L", payload: stream_of(frames[0]))
+
+    if exif.len() > 0
+        riff.put_chunk(out: @body, tag: "EXIF", payload: exif)
+
+    if xmp.len() > 0
+        riff.put_chunk(out: @body, tag: "XMP ", payload: xmp)
+    return riff.file_of(body)

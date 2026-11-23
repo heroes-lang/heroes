@@ -1,0 +1,275 @@
+# A lossless WebP stream (the VP8L chunk's payload): its header, its
+# transforms, and the entropy-coded images that they and the picture are
+# made of, decoded to RGBA bytes.
+
+use image
+use image/webp/internal/prefix
+
+# The signature byte of a lossless stream.
+constant SIGNATURE: i64
+    0x2f
+
+# The most groups of prefix codes one picture may name: a block image that
+# names more is a file made to allocate.
+constant MAX_GROUPS: i64
+    16384
+
+# The order the code lengths of the code-length code are written in.
+function length_order() -> [i64]
+    return [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+# The distance codes 1 to 120 as steps across and down, nearest first: the
+# cells with y 0 to 7 and x -7 to 8 that are not behind the pixel, ordered by
+# squared length, then by larger y, then by larger x; two numbers a cell.
+function neighbours() -> [i64]
+    cells: [i64] @= []
+
+    for y in range(from: 0, to: 8)
+        for x in range(from: -7, to: 9)
+            if y > 0 || x > 0
+                cells @ cells.push((x * x + y * y) * 10000 + (7 - y) * 100 + (8 - x))
+
+    out: [i64] @= []
+
+    for k in sort(cells)
+        out @ out.push(8 - k % 100)
+        out @ out.push(7 - k / 100 % 100)
+
+    return out
+
+# The five prefix codes of one group.
+record Group
+    # Green, the length codes and the colour cache's.
+    green: prefix.Code
+    # Red.
+    red: prefix.Code
+    # Blue.
+    blue: prefix.Code
+    # Alpha.
+    alpha: prefix.Code
+    # Distances.
+    dist: prefix.Code
+
+# `n` zeros as a list of numbers.
+function zeros(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# A prefix code over `size` symbols read from `b`, simple or normal. Fails
+# `invalid` where the stream does not hold one.
+function read_code(@b: prefix.Bits, size: i64) -> prefix.Code?
+    lengths @= zeros(size)
+
+    if prefix.read(b: @b, n: 1) == 1
+        count = prefix.read(b: @b, n: 1) + 1
+        wide = prefix.read(b: @b, n: 1)
+
+        first_bits = if wide == 1
+            8
+        else
+            1
+        first = prefix.read(b: @b, n: first_bits)
+
+        if first >= size
+            return fail(code: image.INVALID, msg: f"a prefix code with symbol {first} in an alphabet of {size}")
+        lengths[first] @ 1
+
+        if count == 2
+            second = prefix.read(b: @b, n: 8)
+
+            if second >= size
+                return fail(code: image.INVALID, msg: f"a prefix code with symbol {second} in an alphabet of {size}")
+            lengths[second] @ 1
+        return prefix.build(lengths)
+    needed = 4 + prefix.read(b: @b, n: 4)
+    order = length_order()
+    inner @= zeros(19)
+
+    for i in range(from: 0, to: needed)
+        inner[order[i]] @ prefix.read(b: @b, n: 3)
+
+    shape = prefix.build(inner)?
+    budget @= size
+
+    if prefix.read(b: @b, n: 1) == 1
+        bits = 2 + 2 * prefix.read(b: @b, n: 3)
+        budget @ 2 + prefix.read(b: @b, n: bits)
+
+        if budget > size
+            return fail(code: image.INVALID, msg: f"a prefix code that names {budget} symbols in an alphabet of {size}")
+    at @= 0
+    last @= 8
+
+    while at < size && budget > 0
+        budget @ budget - 1
+        token = prefix.symbol(b: @b, c: shape)
+
+        if token < 16
+            lengths[at] @ token
+            at @ at + 1
+
+            if token != 0
+                last @ token
+        else
+            times @= 0
+            used @= 0
+
+            if token == 16
+                times @ 3 + prefix.read(b: @b, n: 2)
+                used @ last
+            else if token == 17
+                times @ 3 + prefix.read(b: @b, n: 3)
+            else
+                times @ 11 + prefix.read(b: @b, n: 7)
+
+            if at + times > size
+                return fail(code: image.INVALID, msg: "a run of code lengths that passes the alphabet")
+
+            for _ in range(from: 0, to: times)
+                lengths[at] @ used
+                at @ at + 1
+
+        if b.over
+            return fail(code: image.INVALID, msg: "a prefix code that runs past the end of the stream")
+
+    return prefix.build(lengths)
+
+# The value a length or distance prefix `p` stands for, with its extra bits.
+function copy_value(@b: prefix.Bits, p: i64) -> i64
+    if p < 4
+        return p + 1
+    extra = p - 2 >> 1
+    offset = 2 + (p & 1) << extra
+    return offset + prefix.read(b: @b, n: extra) + 1
+
+# The slot of the colour `argb` in a cache of `bits` bits.
+function slot_of(argb: i64, bits: i64) -> i64
+    return (argb * 0x1e35a7bd & 0xffffffff) >> 32 - bits
+
+# The pixels of one entropy-coded image of `width` by `height` read from `b`
+# as RGBA bytes. `main` says whether it is the picture, which may hold
+# several groups of codes chosen by a block image. Fails `invalid` where the
+# stream is cut, a code names no pixel, or a copy reaches before the first
+# pixel or past the last.
+function read_image(@b: prefix.Bits, width: i64, height: i64, main: bool) -> [u8]?
+    cache_bits @= 0
+
+    if prefix.read(b: @b, n: 1) == 1
+        cache_bits @ prefix.read(b: @b, n: 4)
+
+        if cache_bits < 1 || cache_bits > 11
+            return fail(code: image.INVALID, msg: f"a colour cache of {cache_bits} bits, where 1 to 11 are defined")
+    meta_bits @= 0
+    meta_width @= 0
+    meta: [u8] @= []
+    group_count @= 1
+
+    if main && prefix.read(b: @b, n: 1) == 1
+        meta_bits @ prefix.read(b: @b, n: 3) + 2
+        meta_width @ width + (1 << meta_bits) - 1 >> meta_bits
+        meta_height = height + (1 << meta_bits) - 1 >> meta_bits
+        meta @ read_image(b: @b, width: meta_width, height: meta_height, main: false)?
+
+        for i in range(from: 0, to: meta_width * meta_height)
+            g = to_i64(meta[i * 4]).must() << 8 | to_i64(meta[i * 4 + 1]).must()
+
+            if g + 1 > group_count
+                group_count @ g + 1
+
+    cache_size = if cache_bits > 0
+        1 << cache_bits
+    else
+        0
+    groups: [Group] @= []
+
+    if group_count > MAX_GROUPS
+        return fail(code: image.LIMIT, msg: f"{group_count} groups of prefix codes, past the {MAX_GROUPS} read")
+
+    for _ in range(from: 0, to: group_count)
+        if b.over
+            return fail(code: image.INVALID, msg: "a lossless stream that ends inside its prefix codes")
+        green = read_code(b: @b, size: 256 + 24 + cache_size)?
+        red = read_code(b: @b, size: 256)?
+        blue = read_code(b: @b, size: 256)?
+        alpha = read_code(b: @b, size: 256)?
+        dist = read_code(b: @b, size: 40)?
+        groups @ groups.push(Group(green: green, red: red, blue: blue, alpha: alpha, dist: dist))
+
+    steps = neighbours()
+    cache @= zeros(cache_size)
+    px: [u8] @= []
+    total = width * height
+    pos @= 0
+
+    while pos < total
+        if b.over
+            return fail(code: image.INVALID, msg: "a lossless stream that ends before its last pixel")
+        x = pos % width
+        y = pos / width
+
+        which = if meta_bits > 0
+            to_i64(meta[((y >> meta_bits) * meta_width + (x >> meta_bits)) * 4]).must() << 8 | to_i64(meta[((y >> meta_bits) * meta_width + (x >> meta_bits)) * 4 + 1]).must()
+        else
+            0
+        s = prefix.symbol(b: @b, c: groups[which].green)
+
+        if s < 256
+            r = prefix.symbol(b: @b, c: groups[which].red)
+            bl = prefix.symbol(b: @b, c: groups[which].blue)
+            a = prefix.symbol(b: @b, c: groups[which].alpha)
+            px @ px.push(to_u8(r).must())
+            px @ px.push(to_u8(s).must())
+            px @ px.push(to_u8(bl).must())
+            px @ px.push(to_u8(a).must())
+
+            if cache_bits > 0
+                argb = a << 24 | r << 16 | s << 8 | bl
+                cache[slot_of(argb: argb, bits: cache_bits)] @ argb
+            pos @ pos + 1
+        else if s < 280
+            length = copy_value(b: @b, p: s - 256)
+            dp = prefix.symbol(b: @b, c: groups[which].dist)
+            code = copy_value(b: @b, p: dp)
+            dist @= code - 120
+
+            if code <= 120
+                dist @ steps[(code - 1) * 2] + steps[(code - 1) * 2 + 1] * width
+
+                if dist < 1
+                    dist @ 1
+
+            if dist > pos || pos + length > total
+                return fail(
+                    code: image.INVALID,
+                    msg: f"a copy of {length} pixels from {dist} back at pixel {pos} of {total}"
+                )
+
+            for k in range(from: 0, to: length)
+                from_at = (pos + k - dist) * 4
+
+                for c in range(from: 0, to: 4)
+                    px @ px.push(px[from_at + c])
+
+                if cache_bits > 0
+                    at = (pos + k) * 4
+                    argb = to_i64(px[at + 3]).must() << 24 | to_i64(px[at]).must() << 16 | to_i64(px[at + 1]).must() << 8 | to_i64(px[at + 2]).must()
+                    cache[slot_of(argb: argb, bits: cache_bits)] @ argb
+
+            pos @ pos + length
+        else
+            index = s - 280
+
+            if index >= cache_size
+                return fail(code: image.INVALID, msg: f"a colour cache index of {index} in a cache of {cache_size}")
+            argb = cache[index]
+            px @ px.push(to_u8(argb >> 16 & 255).must())
+            px @ px.push(to_u8(argb >> 8 & 255).must())
+            px @ px.push(to_u8(argb & 255).must())
+            px @ px.push(to_u8(argb >> 24 & 255).must())
+            pos @ pos + 1
+
+    return ok(px)

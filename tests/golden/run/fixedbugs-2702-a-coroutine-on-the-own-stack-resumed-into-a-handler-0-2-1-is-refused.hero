@@ -14,7 +14,8 @@
 # re-enters a handler, and a landing at or below an entry resumes it.
 # Refused, in words that say what the runtime knows: the handler had not been
 # seen to end, or had switched to another context and had not been seen to
-# switch back.
+# switch back, or C had jumped onto a coroutine's stack, where the runtime
+# cannot tell whether that jump left the handler (defect 2705).
 extern "fixedbugs-2702-own-stack-coroutines-resumed-handlers-and-unseen-saves.h"
     function ax_run(onstack: i32, stack: i32, unseen: i32, cb: (function(i64) -> i64)) -> i64
 

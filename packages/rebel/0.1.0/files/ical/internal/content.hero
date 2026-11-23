@@ -1,0 +1,465 @@
+# Content lines, the layer iCalendar (RFC 5545 section 3.1) and vCard (RFC 6350
+# section 3.2) share: a document is read as the lines it unfolds to, each a
+# name, parameters and a value, and written folded at 75 octets. A document
+# comes from outside, so every byte that is not a line of the grammar is
+# refused with the number of the physical line it starts on, and nothing
+# here follows the data with recursion.
+
+use bytes
+use ical
+use strings
+
+# A line of the document after unfolding, with the number of the physical line
+# it starts on.
+record Raw
+    # The physical line the logical line starts on, from 1.
+    number: i64
+    # The bytes of the line, its breaks and its folds removed.
+    data: [u8]
+
+# The logical lines of `data`: a line ends at CRLF, LF or CR, and a break
+# followed by one space or tab is a fold, which takes the break and that one
+# character away. Empty lines are left out. Folding by octets may cut a
+# character, so the lines stay bytes until they are joined.
+#
+# - `data`: the document's bytes, no byte order mark.
+function unfold(data: [u8]) -> [Raw]
+    lines: [Raw] @= []
+    current: [u8] @= []
+    first: i64 @= 1
+    physical: i64 @= 1
+    at: i64 @= 0
+
+    while at < data.len()
+        b = data[at]
+
+        if b == 13 || b == 10
+            at @ at + 1
+
+            if b == 13 && at < data.len() && data[at] == 10
+                at @ at + 1
+            physical @ physical + 1
+
+            if at < data.len() && (data[at] == 32 || data[at] == 9)
+                at @ at + 1
+            else
+                if current.len() > 0
+                    lines @ lines.push(Raw(number: first, data: current))
+                current @ []
+                first @ physical
+        else
+            current @ current.push(b)
+            at @ at + 1
+
+    if current.len() > 0
+        lines @ lines.push(Raw(number: first, data: current))
+    return lines
+
+# Whether `b` is a character the grammar refuses inside a line: a control
+# character other than the tab, or DEL.
+#
+# - `b`: the byte.
+function is_control(b: u8) -> bool
+    return b < 32 && b != 9 || b == 127
+
+# Whether `b` may be part of a property's or a parameter's name: a letter, a
+# digit, `-` or `_`.
+#
+# - `b`: the byte.
+function is_name_byte(b: u8) -> bool
+    return b >= 97 && b <= 122 || b >= 65 && b <= 90 || b >= 48 && b <= 57 || b == 45 || b == 95
+
+# `s` upper-cased where it is ASCII.
+#
+# - `s`: the name.
+function upper(s: str) -> str
+    return strings.to_upper_ascii(s)
+
+# A parameter value with RFC 6868's carets read back: `^n` a line feed, `^^` a
+# caret and `^'` a double quote. A caret followed by anything else stays.
+#
+# - `s`: the text between the quotes, or an unquoted value.
+function unescape_param(s: str) -> str
+    if !strings.contains(s: s, substr: "^")
+        return s
+
+    out: [str] @= []
+    at: i64 @= 0
+    from: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 94 && at + 1 < s.len() && (s[at + 1] == 110 || s[at + 1] == 94 || s[at + 1] == 39)
+            out @ out.push(s.slice(from: from, to: at))
+            n = s[at + 1]
+
+            if n == 110
+                out @ out.push("\n")
+            else if n == 94
+                out @ out.push("^")
+            else
+                out @ out.push("\"")
+            at @ at + 2
+            from @ at
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# A parameter value written with RFC 6868's carets: a line feed `^n`, a double
+# quote `^'` and a caret `^^`.
+#
+# - `s`: the value, which holds no control character but a line feed, a
+#   carriage return and a tab.
+function escape_param(s: str) -> str
+    out: [str] @= []
+    at: i64 @= 0
+    from: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == 94 || b == 34 || b == 10 || b == 13
+            out @ out.push(s.slice(from: from, to: at))
+
+            if b == 94
+                out @ out.push("^^")
+            else if b == 34
+                out @ out.push("^'")
+            else if b == 10
+                out @ out.push("^n")
+            else if !(at + 1 < s.len() && s[at + 1] == 10)
+                out @ out.push("^n")
+            at @ at + 1
+            from @ at
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# The content line of the text `s`, read from `number`, which names the
+# physical line in a message.
+#
+# - `s`: one unfolded line.
+# - `number`: the physical line it starts on.
+#
+# Fails `invalid` where the line has no name, no colon, a parameter with no
+# value or an unclosed quote, and where it holds a control character.
+function parse_line(s: str, number: i64) -> ical.Line?
+    n = s.len()
+    at: i64 @= 0
+
+    for k in range(from: 0, to: n)
+        if is_control(s[k])
+            return fail(code: ical.INVALID, msg: f"line {number}: a control character (byte {s[k]}) at byte {k}")
+
+    while at < n && (is_name_byte(s[at]) || s[at] == 46)
+        at @ at + 1
+
+    if at == 0
+        return fail(code: ical.INVALID, msg: f"line {number}: no property name at its start")
+
+    head = s.slice(from: 0, to: at)
+    group: str? @= none_group()
+    name: str @= head
+
+    match strings.split_once(s: head, sep: ".")
+        .ok halves =>
+            if halves.before == "" || halves.after == ""
+                return fail(
+                    code: ical.INVALID,
+                    msg: f"line {number}: the name \"{head}\" has an empty group or an empty name"
+                )
+            group @ ok(halves.before)
+            name @ halves.after
+        .err _ => _ = 0
+
+    params: [ical.Param] @= []
+
+    while at < n && s[at] == 59
+        at @ at + 1
+        start = at
+
+        while at < n && is_name_byte(s[at])
+            at @ at + 1
+
+        if at == start || at >= n || s[at] != 61
+            return fail(code: ical.INVALID, msg: f"line {number}: a parameter of \"{name}\" has no name or no `=`")
+
+        pname = upper(s.slice(from: start, to: at))
+        at @ at + 1
+        values: [str] @= []
+
+        while true
+            if at < n && s[at] == 34
+                close = quote_end(s: s, from: at + 1)
+
+                match close
+                    .ok e =>
+                        values @ values.push(unescape_param(s.slice(from: at + 1, to: e)))
+                        at @ e + 1
+                    .err _ => return fail(
+                        code: ical.INVALID,
+                        msg: f"line {number}: the quote of parameter {pname} is never closed"
+                    )
+            else
+                begin = at
+
+                while at < n && s[at] != 44 && s[at] != 59 && s[at] != 58 && s[at] != 34
+                    at @ at + 1
+
+                if at < n && s[at] == 34
+                    return fail(
+                        code: ical.INVALID,
+                        msg: f"line {number}: a quote inside the unquoted value of parameter {pname}"
+                    )
+                values @ values.push(unescape_param(s.slice(from: begin, to: at)))
+
+            if at < n && s[at] == 44
+                at @ at + 1
+            else
+                break
+
+        params @ params.push(ical.Param(name: pname, values: values))
+
+    if at >= n || s[at] != 58
+        return fail(code: ical.INVALID, msg: f"line {number}: \"{name}\" has no `:` before its value")
+    return ok(ical.Line(group: group, name: upper(name), params: params, value: s.slice(from: at + 1, to: n)))
+
+# The group of a line with none, spelled once so a reader sees the choice.
+function none_group() -> str?
+    return fail(code: ical.NOT_FOUND, msg: "no group")
+
+# Where the quote opened before `from` closes.
+#
+# - `s`: the line.
+# - `from`: the byte after the opening quote.
+#
+# Fails `not_found` where it never closes.
+function quote_end(s: str, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < s.len()
+        if s[at] == 34
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: ical.NOT_FOUND, msg: "no closing quote")
+
+# Every line of `data`, parsed.
+#
+# - `data`: the document's bytes.
+#
+# Fails `not_text` for a line that is no UTF-8 once unfolded and as `parse_line` does.
+function parse_all(data: [u8]) -> [ical.Line]?
+    out: [ical.Line] @= []
+
+    for raw in unfold(data)
+        text = match bytes.to_text(raw.data)
+            .ok t  => t
+            .err _ => return fail(code: ical.NOT_TEXT, msg: f"line {raw.number}: bytes that are not UTF-8")
+
+        out @ out.push(parse_line(s: text, number: raw.number)?)
+
+    return ok(out)
+
+# Whether `name` is a name a line may be written with.
+#
+# - `name`: a property's or a parameter's name.
+function is_name(name: str) -> bool
+    if name == ""
+        return false
+
+    for k in range(from: 0, to: name.len())
+        if !is_name_byte(name[k])
+            return false
+
+    return true
+
+# Whether the value of a parameter needs its quotes: it holds a character that
+# ends an unquoted value.
+#
+# - `s`: the value.
+function needs_quotes(s: str) -> bool
+    return strings.contains_any(s: s, set: ",;:")
+
+# One line written as text, its parameters in order, not folded.
+#
+# - `line`: the line.
+#
+# Fails `invalid` where a name is no name, a parameter holds no value, and
+# where a value or a parameter's value holds a control character.
+function format_line(line: ical.Line) -> str?
+    if !is_name(line.name)
+        return fail(code: ical.INVALID, msg: f"\"{line.name}\" is no property name: letters, digits, `-` and `_`")
+
+    head: [str] @= []
+
+    match line.group
+        .ok g =>
+            if !is_name(g)
+                return fail(code: ical.INVALID, msg: f"\"{g}\" is no group name: letters, digits, `-` and `_`")
+            head @ head.push(g)
+            head @ head.push(".")
+        .err _ => _ = 0
+
+    head @ head.push(line.name)
+
+    for p in line.params
+        if !is_name(p.name)
+            return fail(code: ical.INVALID, msg: f"\"{p.name}\" is no parameter name: letters, digits, `-` and `_`")
+
+        if p.values.len() == 0
+            return fail(code: ical.INVALID, msg: f"parameter {p.name} of {line.name} holds no value")
+        head @ head.push(";")
+        head @ head.push(p.name)
+        head @ head.push("=")
+        shown: [str] @= []
+
+        for v in p.values
+            for k in range(from: 0, to: v.len())
+                if is_control(v[k]) && v[k] != 10 && v[k] != 13
+                    return fail(
+                        code: ical.INVALID,
+                        msg: f"parameter {p.name} of {line.name} holds a control character (byte {v[k]})"
+                    )
+
+            written = escape_param(v)
+
+            if needs_quotes(v)
+                shown @ shown.push(f"\"{written}\"")
+            else
+                shown @ shown.push(written)
+
+        head @ head.push(shown.join(","))
+
+    for k in range(from: 0, to: line.value.len())
+        if is_control(line.value[k])
+            return fail(
+                code: ical.INVALID,
+                msg: f"the value of {line.name} holds a control character (byte {line.value[k]}): text is written with `ical.escape_text`"
+            )
+
+    head @ head.push(":")
+    head @ head.push(line.value)
+    return ok(head.join(""))
+
+# `s` cut into the pieces a folded line holds: the first of at most 75 octets,
+# each after it of at most 74, a space beginning it, and no cut inside a
+# character. The pieces are joined by CRLF and a space.
+#
+# - `s`: one line, no break.
+function fold_line(s: str) -> str
+    n = s.len()
+
+    if n <= 75
+        return s
+
+    pieces: [str] @= []
+    at: i64 @= 0
+    room: i64 @= 75
+
+    while at < n
+        end: i64 @= at + room
+
+        if end >= n
+            end @ n
+        else
+            while to_i64(s[end]).must() & 0xc0 == 0x80
+                end @ end - 1
+        pieces @ pieces.push(s.slice(from: at, to: end))
+        at @ end
+        room @ 74
+
+    return pieces.join("\r\n ")
+
+# Every line written, folded, each ending in CRLF.
+#
+# - `lines`: the lines.
+#
+# Fails as `format_line` does.
+function format_all(lines: [ical.Line]) -> str?
+    out: [str] @= []
+
+    for line in lines
+        out @ out.push(fold_line(format_line(line)?))
+        out @ out.push("\r\n")
+
+    return ok(out.join(""))
+
+test "unfold: CRLF, LF and CR breaks, tab and space folds, empty lines, and a character cut by a fold"
+    raw = unfold(bytes.from_text("A:1\r\nB:2\nC:3\rD:4\r\n\r\nE:5\r\n  six\r\nF:7\r\n\tseven\r\n"))
+    texts: [str] @= []
+
+    for r in raw
+        texts @ texts.push(bytes.to_text(r.data).must())
+
+    assert texts == ["A:1", "B:2", "C:3", "D:4", "E:5 six", "F:7seven"]
+    assert raw[4].number == 6
+    cut = unfold([0x58, 0x3a, 0xc3, 0x0d, 0x0a, 0x20, 0xa9])
+    assert bytes.to_text(cut[0].data).must() == "X:é"
+    assert unfold([]).len() == 0 && unfold([0x0d, 0x0a]).len() == 0
+
+test "parse_line: parameters, quotes, colons in a value, RFC 6868 carets, lower-case names and a group, as python-icalendar reads them"
+    a = parse_line(s: "DTSTART;TZID=Europe/Rome:20261102T093000", number: 1).must()
+    assert a.name == "DTSTART" && a.params == [ical.Param(name: "TZID", values: ["Europe/Rome"])] && a.value == "20261102T093000"
+    b = parse_line(s: "ATTENDEE;CN=\"Doe, J: x\";ROLE=REQ-PARTICIPANT:mailto:a@b", number: 1).must()
+    assert b.params[0].values == ["Doe, J: x"] && b.params[1].values == ["REQ-PARTICIPANT"] && b.value == "mailto:a@b"
+    c = parse_line(s: "X-FOO;A=1,2;B=\"q\":v:with:colons", number: 1).must()
+    assert c.params[0].values == ["1", "2"] && c.params[1].values == ["q"] && c.value == "v:with:colons"
+    d = parse_line(s: "ATTENDEE;CN=a^'b^nc^^d^x:mailto:x", number: 1).must()
+    assert d.params[0].values == ["a\"b\nc^d^x"]
+    e = parse_line(s: "attendee;cn=Ann:mailto:x", number: 1).must()
+    assert e.name == "ATTENDEE" && e.params[0].name == "CN"
+    f = parse_line(s: "item1.TEL;TYPE=work:+39 06 1", number: 1).must()
+    assert f.group == ok("item1") && f.name == "TEL"
+    g = parse_line(s: "NOTE:", number: 1).must()
+    assert g.value == "" && g.group.is_err()
+
+test "parse_line: a line without a name, a colon, a parameter's value, a closed quote, or with a control character"
+    for bad in [":x", "SUMMARY", "A;B:x", "A;=x:y", "A;B=\"x:y", "A;B=x\"y:z", "A:x\u{1}y", "item1.:x", ".A:x", "A;B"]
+        match parse_line(s: bad, number: 7)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID && strings.contains(s: e.msg, substr: "line 7")
+
+test "format_line: quotes where a parameter value needs them, carets for what it cannot hold, and a group"
+    line = ical.Line(
+        group: ok("g"),
+        name: "ATTENDEE",
+        params: [ical.Param(name: "CN", values: ["a\"b\nc^d", "x;y"]), ical.Param(name: "ROLE", values: ["CHAIR"])],
+        value: "mailto:x"
+    )
+    assert format_line(line).must() == "g.ATTENDEE;CN=a^'b^nc^^d,\"x;y\";ROLE=CHAIR:mailto:x"
+
+test "format_line: a name that is none, a parameter with no value, a control character in a value"
+    ok_line = ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "X", params: [], value: "v")
+    assert format_line(ok_line).must() == "X:v"
+
+    for bad in [ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "", params: [], value: "v"), ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "A B", params: [], value: "v"), ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "X", params: [ical.Param(name: "P", values: [])], value: "v"), ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "X", params: [], value: "a\nb"), ical.Line(group: fail(code: ical.NOT_FOUND, msg: "no group"), name: "X", params: [ical.Param(name: "P", values: ["a\u{1}"])], value: "v"), ical.Line(group: ok("a b"), name: "X", params: [], value: "v")]
+        match format_line(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "fold_line: 75 octets, then 74 after a space, never inside a character, as python-icalendar folds"
+    x = repeat("X", 200)
+    assert fold_line(x) == repeat("X", 75) + "\r\n " + repeat("X", 74) + "\r\n " + repeat("X", 51)
+    assert fold_line(repeat("X", 75)) == repeat("X", 75)
+    assert fold_line("SUMMARY:" + repeat("é", 60)) == "SUMMARY:" + repeat("é", 33) + "\r\n " + repeat("é", 27)
+    assert fold_line("SUMMARY:" + repeat("é", 37)) == "SUMMARY:" + repeat("é", 33) + "\r\n " + repeat("é", 4)
+    assert fold_line("日本語") == "日本語"
+
+test "parse_all and format_all: a long value folded and read back, and bytes that are no text"
+    long = ical.Line(
+        group: fail(code: ical.NOT_FOUND, msg: "no group"),
+        name: "DESCRIPTION",
+        params: [],
+        value: repeat("日本語 ", 100)
+    )
+    text = format_all([long]).must()
+    assert strings.has_suffix(s: text, suffix: "\r\n") && strings.contains(s: text, substr: "\r\n ")
+    assert parse_all(bytes.from_text(text)).must() == [long]
+
+    match parse_all([0x58, 0x3a, 0xff, 0x0a])
+        .ok _  => assert false
+        .err e => assert e.code == ical.NOT_TEXT && strings.contains(s: e.msg, substr: "line 1")

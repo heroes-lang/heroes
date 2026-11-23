@@ -1,0 +1,419 @@
+# ICO and CUR read and written: the directory of images that Windows keeps
+# an icon or a cursor in, each stored as a PNG or as a bitmap with a mask,
+# every one an RGBA image here, with a cursor's hot spot.
+#
+# It does not convert or scale: that is `image`'s. A bitmap holds 1, 4, 8, 24
+# or 32 bits a pixel; one that is run-length coded or uses bit fields fails
+# `unsupported`.
+#
+# **A file is not trusted.** `decode` checks the directory, every entry's
+# offset and size and every row against the file's length, and the size of
+# every image against the caller's `image.Limits` (the pixels of all the
+# images together against `max_pixels`) before it allocates, so a broken or
+# hostile file fails `invalid` or `limit` and never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use hash
+use image
+use image/ico/internal/dib
+use image/ico/internal/fixtures
+use image/png
+
+## Codes
+
+# The code of a value an entry does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## Reading
+
+# What a file holds.
+variant Kind
+    # An icon (`.ico`): images of several sizes of one picture.
+    icon
+    # A cursor (`.cur`): images with a hot spot each.
+    cursor
+
+# How an entry's image is stored.
+variant Storage
+    # As a PNG file.
+    png
+    # As a bitmap of 32 bits a pixel with a 1-bit mask, which every version of
+    # Windows reads.
+    bmp
+
+# The pixel of a cursor's image that points.
+record Hotspot
+    # The column, from the left.
+    x: i64
+    # The row, from the top.
+    y: i64
+
+# One image of an icon or cursor.
+record Entry
+    # The pixels, RGBA at 8 bits a sample, alpha straight.
+    image: image.Image
+    # How the file stored them.
+    storage: Storage
+    # The bits a pixel of the stored form: a bitmap's depth (1, 4, 8, 24 or
+    # 32), or what the directory says of a PNG.
+    bits: i64
+    # The hot spot of a cursor's image; absent for an icon's.
+    hotspot: Hotspot?
+
+# An icon or cursor file read.
+record Ico
+    # Whether it is an icon or a cursor.
+    kind: Kind
+    # The images, in the order of the directory, at least one.
+    entries: [Entry]
+
+# The most images one file holds: the directory's count is 16 bits.
+constant MAX_ENTRIES: i64
+    65535
+
+# The signature a PNG file begins with.
+constant PNG_SIGNATURE: [u8]
+    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+
+# The icon or cursor `data` holds.
+#
+# - `data`: a whole `.ico` or `.cur` file.
+# - `limits`: the largest image the caller allows, each against `max_width`
+#   and `max_height` and all of them together against `max_pixels`;
+#   `image.default_limits` makes the usual ones.
+#
+# A bitmap entry's pixels are as Windows draws them: its alpha channel where it
+# has one that is not all zero, else its mask, a masked pixel transparent. Fails `limit`
+# where an image passes `limits`, before it is allocated. Fails `invalid`
+# where `data` is no ICO or CUR, the message naming what: a directory or an
+# entry past the end, a bitmap header that does not fit its entry, a palette index past
+# the palette. Fails `unsupported` for a bitmap that is not plain 1, 4, 8, 24 or 32 bits.
+# See also `decode_image` and `encode`.
+function decode(data: [u8], limits: image.Limits) -> Ico?
+    if data.len() < 6 || dib.le16(data, at: 0) != 0
+        return fail(
+            code: image.INVALID,
+            msg: "the data does not begin as an icon directory: two zero bytes, then a type"
+        )
+    type = dib.le16(data, at: 2)
+    count = dib.le16(data, at: 4)
+
+    if type != 1 && type != 2
+        return fail(code: image.INVALID, msg: f"an icon directory of type {type}, where 1 is an icon and 2 a cursor")
+
+    if count < 1 || 6 + 16 * count > data.len()
+        return fail(code: image.INVALID, msg: f"{count} directory entries in a file of {data.len()} bytes")
+    entries: [Entry] @= []
+    budget @= limits.max_pixels
+
+    for i in range(from: 0, to: count)
+        at = 6 + 16 * i
+        size = dib.le32(data, at: at + 8)
+        offset = dib.le32(data, at: at + 12)
+
+        if size < 1 || offset > data.len() || size > data.len() - offset
+            return fail(
+                code: image.INVALID,
+                msg: f"entry {i} stands at byte {offset} for {size} bytes, past the {data.len()} of the file"
+            )
+        body = data.slice(from: offset, to: offset + size)
+        own = image.Limits(max_width: limits.max_width, max_height: limits.max_height, max_pixels: budget)
+        first = dib.le16(data, at: at + 4)
+        second = dib.le16(data, at: at + 6)
+
+        spot: Hotspot? = if type == 2
+            ok(Hotspot(x: first, y: second))
+        else
+            fail(code: NOT_FOUND, msg: "an icon has no hot spot")
+
+        entry: Entry = if body.len() >= 8 && body.slice(from: 0, to: 8) == PNG_SIGNATURE
+            pic = png.decode_image(body, own)?
+            Entry(image: image.convert(pic, to: .rgba), storage: .png, bits: second, hotspot: spot)
+        else
+            h = dib.header_of(body)?
+            image.check_limits(own, width: h.width, height: h.height)?
+            Entry(image: dib.image_of(body, h: h)?, storage: .bmp, bits: h.bits, hotspot: spot)
+        budget @ budget - entry.image.width * entry.image.height
+        entries @ entries.push(entry)
+
+    kind: Kind = if type == 1
+        .icon
+    else
+        .cursor
+    return ok(Ico(kind: kind, entries: entries))
+
+# The largest image of the icon or cursor `data` holds, alone.
+#
+# - `data`: a whole `.ico` or `.cur` file.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The largest is the one with the most pixels, the first of equals. Fails as
+# `decode` fails. See also `decode`.
+function decode_image(data: [u8], limits: image.Limits) -> image.Image?
+    f = decode(data, limits: limits)?
+    best @= 0
+
+    for i in range(from: 1, to: f.entries.len())
+        if f.entries[i].image.width * f.entries[i].image.height > f.entries[best].image.width * f.entries[best].image.height
+            best @ i
+
+    return ok(f.entries[best].image)
+
+## Writing
+
+# The file holding `ico`: a directory, then each image as its entry says.
+#
+# - `ico`: at least one entry and at most `MAX_ENTRIES`; each image 1 to 256
+#   pixels a side, in any format, written as RGBA at 8 bits; a cursor's
+#   entries give their `hotspot` inside the image, an icon's give none that is
+#   written.
+#
+# The same file answers the same bytes every time. Fails `invalid` where
+# `ico` has no entry or too many, an image is empty or past 256 by 256, a hot
+# spot is outside its image, or the file would pass 4 GiB. Aborts where an
+# image is not valid. See also `decode`.
+function encode(ico: Ico) -> [u8]?
+    n = ico.entries.len()
+
+    if n < 1 || n > MAX_ENTRIES
+        return fail(code: image.INVALID, msg: f"{n} entries, where 1 to {MAX_ENTRIES} are held")
+
+    kind_code = match ico.kind
+        .icon   => 1
+        .cursor => 2
+
+    out: [u8] @= []
+    dib.put(out: @out, v: 0, size: 2)
+    dib.put(out: @out, v: kind_code, size: 2)
+    dib.put(out: @out, v: n, size: 2)
+    bodies: [[u8]] @= []
+    offset @= 6 + 16 * n
+
+    for e in ico.entries
+        assert image.is_valid(e.image)
+        w = e.image.width
+        h = e.image.height
+
+        if w < 1 || h < 1 || w > 256 || h > 256
+            return fail(code: image.INVALID, msg: f"an image of {w} by {h} pixels, where 1 to 256 a side are held")
+        rgba = image.convert(e.image, to: .rgba)
+
+        body = match e.storage
+            .png => png.encode(rgba, png.default_encode_options())?
+            .bmp => dib.bitmap_of(rgba)
+
+        spot = match e.hotspot
+            .ok s  => s
+            .err _ => Hotspot(x: 0, y: 0)
+
+        if kind_code == 2 && (spot.x < 0 || spot.x >= w || spot.y < 0 || spot.y >= h)
+            return fail(code: image.INVALID, msg: f"a hot spot at {spot.x}, {spot.y} outside an image of {w} by {h}")
+
+        if offset + body.len() > 0xffffffff
+            return fail(code: image.INVALID, msg: "a file that would pass 4 GiB")
+        dib.put(out: @out, v: w % 256, size: 1)
+        dib.put(out: @out, v: h % 256, size: 1)
+        dib.put(out: @out, v: 0, size: 1)
+        dib.put(out: @out, v: 0, size: 1)
+
+        planes = if kind_code == 2
+            spot.x
+        else
+            1
+
+        depth = if kind_code == 2
+            spot.y
+        else
+            32
+        dib.put(out: @out, v: planes, size: 2)
+        dib.put(out: @out, v: depth, size: 2)
+        dib.put(out: @out, v: body.len(), size: 4)
+        dib.put(out: @out, v: offset, size: 4)
+        offset @ offset + body.len()
+        bodies @ bodies.push(body)
+
+    for body in bodies
+        for b in body
+            out @ out.push(b)
+
+    return ok(out)
+
+## Tests
+
+test "decode: every file of every storage, pixel for pixel, with the hot spot of a cursor"
+    for s in fixtures.readable()
+        f = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert f.entries.len() == s.pics.len()
+        assert f.kind == .cursor == s.cursor
+
+        for i in range(from: 0, to: s.pics.len())
+            e = f.entries[i]
+            assert e.image.width == s.pics[i].width && e.image.height == s.pics[i].height
+            assert e.image.format == .rgba
+
+            if s.pics[i].crc != 0
+                assert to_i64(hash.crc32(e.image.pixels)).must() == s.pics[i].crc
+            else
+                assert e.image.pixels == bytes.parse_hex(s.pics[i].pixels).must()
+
+            if s.cursor
+                assert e.hotspot.must().x == 5 && e.hotspot.must().y == 3
+            else
+                assert e.hotspot.is_err()
+
+test "decode: the storage and depth of each entry of a file of three"
+    for s in fixtures.readable()
+        if s.name == "multi"
+            f = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+            assert f.entries[0].storage == .bmp && f.entries[0].bits == 32
+            assert f.entries[1].storage == .bmp && f.entries[1].bits == 24
+            assert f.entries[2].storage == .png
+            big = decode_image(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+            assert big.width == 48
+
+        if s.name == "png_256"
+            f = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+            assert f.entries[0].storage == .png && f.entries[0].image.width == 256
+
+test "encode and decode: every format and both storages, back as RGBA, and a cursor's hot spot"
+    formats: [image.Format] = [.gray, .gray_alpha, .rgb, .rgba, .gray16, .rgba16]
+    storages: [Storage] = [.png, .bmp]
+    seed @= 1
+
+    for f in formats
+        for st in storages
+            n = 13 * 9 * image.pixel_bytes_of(f)
+            pixels: [u8] @= []
+            v @= seed
+
+            for _ in range(from: 0, to: n)
+                v @ (v * 1103515245 + 12345) % 2147483648
+                pixels @ pixels.push(to_u8(v / 65536 % 256).must())
+
+            seed @ seed + 1
+            img = image.from_pixels(width: 13, height: 9, format: f, pixels: pixels).must()
+            hot: Hotspot? = ok(Hotspot(x: 12, y: 8))
+            none: Hotspot? = fail(code: NOT_FOUND, msg: "none")
+            icon = Ico(kind: .icon, entries: [Entry(image: img, storage: st, bits: 32, hotspot: none)])
+            back = decode(encode(icon).must(), image.default_limits()).must()
+            assert back.kind == .icon && back.entries.len() == 1
+            assert back.entries[0].image == image.convert(img, to: .rgba)
+            assert back.entries[0].storage == st
+            cursor = Ico(kind: .cursor, entries: [Entry(image: img, storage: st, bits: 32, hotspot: hot)])
+            again = decode(encode(cursor).must(), image.default_limits()).must()
+            assert again.kind == .cursor && again.entries[0].hotspot.must().x == 12 && again.entries[0].hotspot.must().y == 8
+
+test "encode: the same file answers the same bytes, and a 256 by 256 image takes the byte 0"
+    img = image.blank(width: 256, height: 256, format: .rgba).must()
+    none: Hotspot? = fail(code: NOT_FOUND, msg: "none")
+    ico = Ico(kind: .icon, entries: [Entry(image: img, storage: .png, bits: 32, hotspot: none)])
+    file = encode(ico).must()
+    assert file == encode(ico).must()
+    assert file[6] == 0 && file[7] == 0
+
+test "encode: what an icon cannot hold is refused as invalid"
+    none: Hotspot? = fail(code: NOT_FOUND, msg: "none")
+    assert encode(Ico(kind: .icon, entries: [])).is_err()
+    big = image.blank(width: 257, height: 8, format: .rgba).must()
+    assert encode(Ico(kind: .icon, entries: [Entry(image: big, storage: .png, bits: 32, hotspot: none)])).is_err()
+    small = image.blank(width: 4, height: 4, format: .rgba).must()
+    outside: Hotspot? = ok(Hotspot(x: 4, y: 0))
+    assert encode(
+        Ico(kind: .cursor, entries: [Entry(image: small, storage: .bmp, bits: 32, hotspot: outside)])
+    ).is_err()
+    assert encode(
+        Ico(kind: .icon, entries: [Entry(image: image.blank(width: 0, height: 4, format: .rgba).must(), storage: .bmp, bits: 32, hotspot: none)])
+    ).is_err()
+
+test "decode: every prefix of a file is refused or read, and no changed byte aborts"
+    for name in ["multi", "dib8_mask", "dib24_13x9", "cursor"]
+        for s in fixtures.readable()
+            if s.name == name
+                file = bytes.parse_hex(s.file).must()
+
+                for n in range(from: 0, to: file.len())
+                    _ = match decode(file.slice(from: 0, to: n), image.default_limits())
+                        .ok _  => 0
+                        .err _ => 1
+
+                for i in range(from: 0, to: file.len())
+                    changed @= file
+                    changed[i] @ to_u8(255 - to_i64(file[i]).must()).must()
+
+                    _ = match decode(changed, image.default_limits())
+                        .ok _  => 0
+                        .err _ => 1
+
+test "decode: limits, a compression and a depth it does not read, and what is no icon"
+    for s in fixtures.readable()
+        if s.name == "multi"
+            file = bytes.parse_hex(s.file).must()
+            tight = image.Limits(max_width: 100, max_height: 100, max_pixels: 1000)
+
+            match decode(file, tight)
+                .ok _  => assert false
+                .err e => assert e.code == image.LIMIT
+
+        if s.name == "dib8_mask"
+            file = bytes.parse_hex(s.file).must()
+            at = 6 + 16
+            compressed @= file
+            compressed[at + 16] @ 1
+
+            match decode(compressed, image.default_limits())
+                .ok _  => assert false
+                .err e => assert e.code == image.UNSUPPORTED
+
+            deep @= file
+            deep[at + 14] @ 16
+
+            match decode(deep, image.default_limits())
+                .ok _  => assert false
+                .err e => assert e.code == image.UNSUPPORTED
+
+    junk: [[u8]] = [
+        []
+        [0, 0, 1]
+        [0, 0, 3, 0, 1, 0]
+        [0, 0, 1, 0, 0, 0]
+        [1, 0, 1, 0, 1, 0]
+        bytes.from_text("BM not an icon at all")
+    ]
+
+    for bad in junk
+        match decode(bad, image.default_limits())
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+## Examples
+
+# An icon written with a PNG image and read back.
+test "decode: the images of an icon file"
+    img = image.from_pixels(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 0]).must()
+    none: Hotspot? = fail(code: NOT_FOUND, msg: "none")
+    file = encode(Ico(kind: .icon, entries: [Entry(image: img, storage: .png, bits: 32, hotspot: none)])).must()
+    f = decode(file, image.default_limits()).must()
+    assert f.kind == .icon && f.entries.len() == 1
+    assert f.entries[0].image == img
+
+# The largest image of a file of two sizes.
+test "decode_image: the larger of two images"
+    small = image.blank(width: 16, height: 16, format: .rgba).must()
+    large = image.blank(width: 32, height: 32, format: .rgba).must()
+    none: Hotspot? = fail(code: NOT_FOUND, msg: "none")
+    file = encode(
+        Ico(kind: .icon, entries: [Entry(image: small, storage: .bmp, bits: 32, hotspot: none), Entry(image: large, storage: .png, bits: 32, hotspot: none)])
+    ).must()
+    assert decode_image(file, image.default_limits()).must().width == 32
+
+# A cursor written with its hot spot.
+test "encode: a cursor with a hot spot, as a bitmap"
+    img = image.blank(width: 16, height: 16, format: .rgba).must()
+    spot: Hotspot? = ok(Hotspot(x: 3, y: 4))
+    file = encode(Ico(kind: .cursor, entries: [Entry(image: img, storage: .bmp, bits: 32, hotspot: spot)])).must()
+    f = decode(file, image.default_limits()).must()
+    assert f.kind == .cursor && f.entries[0].hotspot.must().y == 4

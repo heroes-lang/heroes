@@ -1,0 +1,458 @@
+# Recurrence rules read from and written as the text of an `RRULE`, and the
+# checks RFC 5545 section 3.3.10 puts on which parts a frequency allows and in
+# what range each holds, which a rule built by a program is held to as well.
+
+use ical
+use ical/internal/civil
+use ical/internal/moments
+use numbers
+use strings
+use time
+
+# The integers a list of numbers writes.
+#
+# - `part`: the rule part's name, for a message.
+# - `text`: the comma-separated numbers, each with an optional sign.
+#
+# Fails `invalid` where a piece is no integer.
+function parse_numbers(part: str, text: str) -> [i64]?
+    out: [i64] @= []
+
+    for piece in strings.split(s: text, sep: ",")
+        body = strings.trim_prefix(s: piece, prefix: "+")
+
+        match numbers.parse_int(body)
+            .ok n  => out @ out.push(n)
+            .err _ => return fail(code: ical.INVALID, msg: f"{part} holds \"{piece}\", which is no integer")
+
+    return ok(out)
+
+# The entries a `BYDAY` writes: `MO`, `2TU`, `-1SU`.
+#
+# - `text`: the comma-separated entries.
+#
+# Fails `invalid` where an entry is no weekday code with an optional place.
+function parse_day_rules(text: str) -> [ical.DayRule]?
+    out: [ical.DayRule] @= []
+
+    for piece in strings.split(s: text, sep: ",")
+        entry = strings.to_upper_ascii(strings.trim(piece))
+
+        if entry.len() < 2
+            return fail(code: ical.INVALID, msg: f"BYDAY holds \"{piece}\", which is no weekday")
+
+        day = match civil.weekday_named(entry.slice(from: entry.len() - 2, to: entry.len()))
+            .ok d => d
+            .err _ => return fail(
+                code: ical.INVALID,
+                msg: f"BYDAY holds \"{piece}\", which does not end in a weekday: MO, TU, WE, TH, FR, SA or SU"
+            )
+
+        place = entry.slice(from: 0, to: entry.len() - 2)
+
+        if place == ""
+            out @ out.push(.every(day: day))
+        else
+            body = strings.trim_prefix(s: place, prefix: "+")
+
+            match numbers.parse_int(body)
+                .ok n  => out @ out.push(.nth(day: day, n: n))
+                .err _ => return fail(code: ical.INVALID, msg: f"BYDAY holds \"{piece}\", whose place is no integer")
+
+    return ok(out)
+
+# The frequency a name writes.
+#
+# - `name`: `SECONDLY` to `YEARLY`, in upper case.
+#
+# Fails `invalid` where it is none of them.
+function parse_freq(name: str) -> ical.Freq?
+    return match name
+        "SECONDLY" => ok(.secondly)
+        "MINUTELY" => ok(.minutely)
+        "HOURLY"   => ok(.hourly)
+        "DAILY"    => ok(.daily)
+        "WEEKLY"   => ok(.weekly)
+        "MONTHLY"  => ok(.monthly)
+        "YEARLY"   => ok(.yearly)
+        _ => fail(
+            code: ical.INVALID,
+            msg: f"FREQ={name} is none of SECONDLY, MINUTELY, HOURLY, DAILY, WEEKLY, MONTHLY and YEARLY"
+        )
+
+# The name of a frequency.
+#
+# - `freq`: the frequency.
+function freq_name(freq: ical.Freq) -> str
+    return match freq
+        .secondly => "SECONDLY"
+        .minutely => "MINUTELY"
+        .hourly   => "HOURLY"
+        .daily    => "DAILY"
+        .weekly   => "WEEKLY"
+        .monthly  => "MONTHLY"
+        .yearly   => "YEARLY"
+
+# The rule `s` writes.
+#
+# - `s`: the text of an `RRULE`.
+#
+# Fails as `ical.parse_recur` does.
+function parse(s: str) -> ical.Recur?
+    freq: ical.Freq? @= fail(code: ical.INVALID, msg: "the rule has no FREQ")
+    interval: i64 @= 1
+    end: ical.End @= .forever
+    ended: bool @= false
+    by_second: [i64] @= []
+    by_minute: [i64] @= []
+    by_hour: [i64] @= []
+    by_day: [ical.DayRule] @= []
+    by_month_day: [i64] @= []
+    by_year_day: [i64] @= []
+    by_week_no: [i64] @= []
+    by_month: [i64] @= []
+    by_set_pos: [i64] @= []
+    week_start: time.Weekday @= .monday
+    seen: [str] @= []
+
+    for piece in strings.split(s: s, sep: ";")
+        if piece == ""
+            continue
+
+        halves = match strings.split_once(s: piece, sep: "=")
+            .ok h  => h
+            .err _ => return fail(code: ical.INVALID, msg: f"the rule part \"{piece}\" has no `=`")
+
+        name = strings.to_upper_ascii(strings.trim(halves.before))
+        value = strings.trim(halves.after)
+
+        for earlier in seen
+            if earlier == name
+                return fail(code: ical.INVALID, msg: f"the rule names {name} twice")
+
+        seen @ seen.push(name)
+
+        if name == "FREQ"
+            freq @ ok(parse_freq(strings.to_upper_ascii(value))?)
+        else if name == "INTERVAL"
+            interval @ parse_one(part: name, text: value)?
+        else if name == "COUNT"
+            if ended
+                return fail(code: ical.INVALID, msg: "the rule gives both COUNT and UNTIL")
+            ended @ true
+            end @ .count(n: parse_one(part: name, text: value)?)
+        else if name == "UNTIL"
+            if ended
+                return fail(code: ical.INVALID, msg: "the rule gives both COUNT and UNTIL")
+            ended @ true
+            end @ .until(when: parse_until(value)?)
+        else if name == "BYSECOND"
+            by_second @ parse_numbers(part: name, text: value)?
+        else if name == "BYMINUTE"
+            by_minute @ parse_numbers(part: name, text: value)?
+        else if name == "BYHOUR"
+            by_hour @ parse_numbers(part: name, text: value)?
+        else if name == "BYDAY"
+            by_day @ parse_day_rules(value)?
+        else if name == "BYMONTHDAY"
+            by_month_day @ parse_numbers(part: name, text: value)?
+        else if name == "BYYEARDAY"
+            by_year_day @ parse_numbers(part: name, text: value)?
+        else if name == "BYWEEKNO"
+            by_week_no @ parse_numbers(part: name, text: value)?
+        else if name == "BYMONTH"
+            if strings.contains(s: value, substr: "L")
+                return fail(code: ical.UNSUPPORTED, msg: "BYMONTH with a leap month (RFC 7529) is not read")
+            by_month @ parse_numbers(part: name, text: value)?
+        else if name == "BYSETPOS"
+            by_set_pos @ parse_numbers(part: name, text: value)?
+        else if name == "WKST"
+            week_start @ match civil.weekday_named(strings.to_upper_ascii(value))
+                .ok d  => d
+                .err _ => return fail(code: ical.INVALID, msg: f"WKST={value} is no weekday")
+        else if name == "RSCALE" || name == "SKIP"
+            return fail(code: ical.UNSUPPORTED, msg: f"{name} (RFC 7529) is not read: only the Gregorian calendar is")
+        else
+            return fail(code: ical.INVALID, msg: f"the rule part {name} is none of those RFC 5545 defines")
+
+    chosen = match freq
+        .ok f  => f
+        .err e => return fail(code: ical.INVALID, msg: e.msg)
+
+    rule = ical.Recur(
+        freq: chosen,
+        interval: interval,
+        end: end,
+        by_second: by_second,
+        by_minute: by_minute,
+        by_hour: by_hour,
+        by_day: by_day,
+        by_month_day: by_month_day,
+        by_year_day: by_year_day,
+        by_week_no: by_week_no,
+        by_month: by_month,
+        by_set_pos: by_set_pos,
+        week_start: week_start
+    )
+    check(rule)?
+    return ok(rule)
+
+# The one integer a part writes.
+#
+# - `part`: the part's name.
+# - `text`: its value.
+#
+# Fails `invalid` where it is no integer.
+function parse_one(part: str, text: str) -> i64?
+    match numbers.parse_int(text)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: ical.INVALID, msg: f"{part}={text} is no integer")
+
+# The date or moment an `UNTIL` writes.
+#
+# - `text`: the value.
+#
+# Fails `invalid` as a date or date-time does.
+function parse_until(text: str) -> ical.When?
+    if text.len() == 8
+        day = moments.parse_date(text)?
+        return ok(.date(year: day.year, month: day.month, day: day.day))
+
+    clock = moments.parse_clock(text)?
+
+    if clock.utc
+        return ok(.utc(at: time.from_date_time(clock.fields)?))
+    return ok(.floating(local: clock.fields))
+
+# Whether every number of `xs` is in the range, or its negative, 0 never.
+#
+# - `xs`: the numbers.
+# - `high`: the largest absolute value.
+function within_signed(xs: [i64], high: i64) -> bool
+    for x in xs
+        if x == 0 || x > high || x < -high
+            return false
+
+    return true
+
+# Whether every number of `xs` is from `low` to `high`.
+#
+# - `xs`: the numbers.
+# - `low`: the smallest.
+# - `high`: the largest.
+function within(xs: [i64], low: i64, high: i64) -> bool
+    for x in xs
+        if x < low || x > high
+            return false
+
+    return true
+
+# Checks a rule against RFC 5545 section 3.3.10.
+#
+# - `rule`: the rule.
+#
+# Fails `invalid` where a number is outside its range, a part is one the
+# frequency does not allow, or the end is a zoned moment.
+function check(rule: ical.Recur) -> ()?
+    f = rule.freq
+
+    if rule.interval < 1
+        return fail(code: ical.INVALID, msg: f"INTERVAL={rule.interval} must be 1 or more")
+
+    match rule.end
+        .forever => _ = 0
+        .count c =>
+            if c.n < 1
+                return fail(code: ical.INVALID, msg: f"COUNT={c.n} must be 1 or more")
+        .until u =>
+            match u.when
+                .zoned _ => return fail(
+                    code: ical.INVALID,
+                    msg: "UNTIL is a date, a floating reading or a UTC moment, never one with a TZID"
+                )
+                .date _     => _ = 0
+                .floating _ => _ = 0
+                .utc _      => _ = 0
+
+    if !within(xs: rule.by_second, low: 0, high: 60)
+        return fail(code: ical.INVALID, msg: "BYSECOND holds a number outside 0 to 60")
+
+    if !within(xs: rule.by_minute, low: 0, high: 59)
+        return fail(code: ical.INVALID, msg: "BYMINUTE holds a number outside 0 to 59")
+
+    if !within(xs: rule.by_hour, low: 0, high: 23)
+        return fail(code: ical.INVALID, msg: "BYHOUR holds a number outside 0 to 23")
+
+    if !within(xs: rule.by_month, low: 1, high: 12)
+        return fail(code: ical.INVALID, msg: "BYMONTH holds a number outside 1 to 12")
+
+    if !within_signed(xs: rule.by_month_day, high: 31)
+        return fail(code: ical.INVALID, msg: "BYMONTHDAY holds a number outside 1 to 31 and -1 to -31")
+
+    if !within_signed(xs: rule.by_year_day, high: 366)
+        return fail(code: ical.INVALID, msg: "BYYEARDAY holds a number outside 1 to 366 and -1 to -366")
+
+    if !within_signed(xs: rule.by_week_no, high: 53)
+        return fail(code: ical.INVALID, msg: "BYWEEKNO holds a number outside 1 to 53 and -1 to -53")
+
+    if !within_signed(xs: rule.by_set_pos, high: 366)
+        return fail(code: ical.INVALID, msg: "BYSETPOS holds a number outside 1 to 366 and -1 to -366")
+
+    yearly = f == .yearly
+    monthly = f == .monthly
+
+    if rule.by_week_no.len() > 0 && !yearly
+        return fail(code: ical.INVALID, msg: "BYWEEKNO is for a yearly rule")
+
+    if rule.by_year_day.len() > 0 && (f == .daily || f == .weekly || monthly)
+        return fail(code: ical.INVALID, msg: "BYYEARDAY is not for a daily, weekly or monthly rule")
+
+    if rule.by_month_day.len() > 0 && f == .weekly
+        return fail(code: ical.INVALID, msg: "BYMONTHDAY is not for a weekly rule")
+
+    for d in rule.by_day
+        match d
+            .every _ => _ = 0
+            .nth n =>
+                if n.n == 0 || n.n > 53 || n.n < -53
+                    return fail(code: ical.INVALID, msg: f"BYDAY holds a place {n.n}, outside 1 to 53 and -1 to -53")
+
+                if !(yearly || monthly)
+                    return fail(
+                        code: ical.INVALID,
+                        msg: "BYDAY holds a place, which only a monthly or a yearly rule allows"
+                    )
+
+                if yearly && rule.by_week_no.len() > 0
+                    return fail(code: ical.INVALID, msg: "BYDAY holds a place in a yearly rule that has BYWEEKNO")
+
+    return ok()
+
+# `xs` written as comma-separated integers.
+#
+# - `xs`: the numbers.
+function join_numbers(xs: [i64]) -> str
+    shown: [str] @= []
+
+    for x in xs
+        shown @ shown.push(to_str(x))
+
+    return shown.join(",")
+
+# The text of a rule.
+#
+# - `rule`: the rule.
+#
+# Fails as `check` does.
+function format(rule: ical.Recur) -> str?
+    check(rule)?
+    out: [str] @= [f"FREQ={freq_name(rule.freq)}"]
+
+    match rule.end
+        .forever => _ = 0
+        .count c => out @ out.push(f"COUNT={c.n}")
+        .until u => out @ out.push("UNTIL=" + moments.when_text(u.when)?)
+
+    if rule.interval != 1
+        out @ out.push(f"INTERVAL={rule.interval}")
+
+    if rule.by_second.len() > 0
+        out @ out.push("BYSECOND=" + join_numbers(rule.by_second))
+
+    if rule.by_minute.len() > 0
+        out @ out.push("BYMINUTE=" + join_numbers(rule.by_minute))
+
+    if rule.by_hour.len() > 0
+        out @ out.push("BYHOUR=" + join_numbers(rule.by_hour))
+
+    if rule.by_day.len() > 0
+        days: [str] @= []
+
+        for d in rule.by_day
+            shown = match d
+                .every e => civil.code_of(e.day)
+                .nth n   => f"{n.n}" + civil.code_of(n.day)
+
+            days @ days.push(shown)
+
+        out @ out.push("BYDAY=" + days.join(","))
+
+    if rule.by_month_day.len() > 0
+        out @ out.push("BYMONTHDAY=" + join_numbers(rule.by_month_day))
+
+    if rule.by_year_day.len() > 0
+        out @ out.push("BYYEARDAY=" + join_numbers(rule.by_year_day))
+
+    if rule.by_week_no.len() > 0
+        out @ out.push("BYWEEKNO=" + join_numbers(rule.by_week_no))
+
+    if rule.by_month.len() > 0
+        out @ out.push("BYMONTH=" + join_numbers(rule.by_month))
+
+    if rule.by_set_pos.len() > 0
+        out @ out.push("BYSETPOS=" + join_numbers(rule.by_set_pos))
+
+    if rule.week_start != .monday
+        out @ out.push("WKST=" + civil.code_of(rule.week_start))
+    return ok(out.join(";"))
+
+test "parse and format: a rule read and written in the order of python-icalendar, lower case read, a trailing semicolon, a plus sign"
+    assert format(parse("FREQ=WEEKLY;BYDAY=MO,WE;COUNT=3").must()).must() == "FREQ=WEEKLY;COUNT=3;BYDAY=MO,WE"
+    assert format(parse("FREQ=MONTHLY;BYDAY=-1SU;UNTIL=20261231T000000Z").must()).must() == "FREQ=MONTHLY;UNTIL=20261231T000000Z;BYDAY=-1SU"
+    assert format(parse("freq=daily;interval=2;").must()).must() == "FREQ=DAILY;INTERVAL=2"
+    assert format(parse("FREQ=YEARLY;BYDAY=+2MO,-1fr;WKST=SU;BYSETPOS=-1;BYMONTH=1,2").must()).must() == "FREQ=YEARLY;BYDAY=2MO,-1FR;BYMONTH=1,2;BYSETPOS=-1;WKST=SU"
+    assert format(parse("FREQ=DAILY;UNTIL=20261231").must()).must() == "FREQ=DAILY;UNTIL=20261231"
+    assert parse("FREQ=SECONDLY;BYSECOND=60").must().by_second == [60]
+
+test "parse: what is no rule, a part that is repeated, both ends, a number out of range, a part a frequency does not allow"
+    for bad in ["", "FREQ=", "BYDAY=MO", "FREQ=DAILY;FREQ=DAILY", "FREQ=DAILY;COUNT=2;UNTIL=20261231", "FREQ=DAILY;COUNT=0", "FREQ=DAILY;INTERVAL=0", "FREQ=WEEKLY;BYMONTHDAY=1", "FREQ=DAILY;BYDAY=1MO", "FREQ=YEARLY;BYWEEKNO=1;BYDAY=1MO", "FREQ=DAILY;BYYEARDAY=1", "FREQ=MONTHLY;BYWEEKNO=1", "FREQ=DAILY;BYHOUR=24", "FREQ=DAILY;BYMINUTE=60", "FREQ=DAILY;BYSECOND=61", "FREQ=DAILY;BYMONTH=0", "FREQ=DAILY;BYMONTH=13", "FREQ=MONTHLY;BYMONTHDAY=0", "FREQ=MONTHLY;BYMONTHDAY=32", "FREQ=YEARLY;BYYEARDAY=367", "FREQ=DAILY;BYSETPOS=0", "FREQ=MONTHLY;BYDAY=54MO", "FREQ=DAILY;X=1", "FREQ=SOMETIMES", "FREQ=DAILY;BYDAY=XX", "FREQ=DAILY;BYDAY=", "FREQ=DAILY;UNTIL=2026", "FREQ=DAILY;COUNT=x", "FREQ=DAILY;WKST=XX", "FREQ=DAILY;INTERVAL"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+    for unsupported in ["FREQ=DAILY;RSCALE=GREGORIAN", "FREQ=DAILY;SKIP=OMIT", "FREQ=YEARLY;BYMONTH=5L"]
+        match parse(unsupported)
+            .ok _  => assert false
+            .err e => assert e.code == ical.UNSUPPORTED
+
+test "format: a rule built by a program is held to the same checks, and a zoned end is refused"
+    bad = ical.Recur(
+        freq: .daily,
+        interval: 0,
+        end: .forever,
+        by_second: [],
+        by_minute: [],
+        by_hour: [],
+        by_day: [],
+        by_month_day: [],
+        by_year_day: [],
+        by_week_no: [],
+        by_month: [],
+        by_set_pos: [],
+        week_start: .monday
+    )
+
+    match format(bad)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    zone = time.utc_zone()
+    zoned = ical.Recur(
+        freq: .daily,
+        interval: 1,
+        end: .until(when: .zoned(local: time.DateTime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), zone: zone)),
+        by_second: [],
+        by_minute: [],
+        by_hour: [],
+        by_day: [],
+        by_month_day: [],
+        by_year_day: [],
+        by_week_no: [],
+        by_month: [],
+        by_set_pos: [],
+        week_start: .monday
+    )
+
+    match format(zoned)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID

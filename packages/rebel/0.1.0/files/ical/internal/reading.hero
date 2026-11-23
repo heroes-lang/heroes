@@ -1,0 +1,457 @@
+# The typed components, read from the components of a document. A property
+# the record models is read into its field, the first of a single-valued one
+# and every one of a repeated one; a single-valued property written twice
+# keeps its later lines, and a property the record does not model, in
+# `extra`, so that nothing a document holds is lost. A value that is
+# malformed is refused, naming the component and the property.
+
+use ical
+use ical/internal/moments
+use ical/internal/props
+use ical/internal/samples
+use ical/internal/timezones
+use strings
+use time
+
+# What the properties every dated component shares are read into.
+record Common
+    # `UID`.
+    uid: str?
+    # `DTSTAMP`.
+    stamp: time.Instant?
+    # `CREATED`.
+    created: time.Instant?
+    # `LAST-MODIFIED`.
+    modified: time.Instant?
+    # `SEQUENCE`.
+    sequence: i64?
+    # `DTSTART`.
+    start: ical.When?
+    # `SUMMARY`.
+    summary: str?
+    # `DESCRIPTION`.
+    description: str?
+    # `LOCATION`.
+    location: str?
+    # `URL`.
+    url: str?
+    # `STATUS`.
+    status: ical.Status?
+    # `CLASS`.
+    access: str?
+    # `PRIORITY`.
+    priority: i64?
+    # `CATEGORIES`.
+    categories: [str]
+    # `ORGANIZER`.
+    organizer: ical.Person?
+    # Every `ATTENDEE`.
+    attendees: [ical.Person]
+    # Every `RRULE`.
+    rules: [ical.Recur]
+    # Every `RDATE`.
+    rdates: [ical.When]
+    # Every `EXDATE`.
+    exdates: [ical.When]
+    # `RECURRENCE-ID`.
+    recurrence_id: ical.When?
+    # The lines nothing here models.
+    extra: [ical.Line]
+
+# A `Common` with nothing read.
+function empty_common() -> Common
+    nothing = "not set"
+    return Common(
+        uid: fail(code: ical.NOT_FOUND, msg: nothing),
+        stamp: fail(code: ical.NOT_FOUND, msg: nothing),
+        created: fail(code: ical.NOT_FOUND, msg: nothing),
+        modified: fail(code: ical.NOT_FOUND, msg: nothing),
+        sequence: fail(code: ical.NOT_FOUND, msg: nothing),
+        start: fail(code: ical.NOT_FOUND, msg: nothing),
+        summary: fail(code: ical.NOT_FOUND, msg: nothing),
+        description: fail(code: ical.NOT_FOUND, msg: nothing),
+        location: fail(code: ical.NOT_FOUND, msg: nothing),
+        url: fail(code: ical.NOT_FOUND, msg: nothing),
+        status: fail(code: ical.NOT_FOUND, msg: nothing),
+        access: fail(code: ical.NOT_FOUND, msg: nothing),
+        priority: fail(code: ical.NOT_FOUND, msg: nothing),
+        categories: [],
+        organizer: fail(code: ical.NOT_FOUND, msg: nothing),
+        attendees: [],
+        rules: [],
+        rdates: [],
+        exdates: [],
+        recurrence_id: fail(code: ical.NOT_FOUND, msg: nothing),
+        extra: []
+    )
+
+# The properties of `lines` that every dated component shares, read into
+# `Common`; a line that is not one of them is handed back to the caller in `rest`.
+record Shared
+    # What was read.
+    common: Common
+    # The lines that are none of the shared properties, in order.
+    rest: [ical.Line]
+
+# Reads the shared properties of `lines`.
+#
+# - `kind`: the component's name, for a message.
+# - `lines`: the component's own lines.
+# - `zones`: the zones the calendar defines.
+#
+# Fails `invalid` for a malformed value, a status the component does not allow, and as the readers do.
+function read_shared(kind: str, lines: [ical.Line], zones: [time.Zone]) -> Shared?
+    c @= empty_common()
+    rest: [ical.Line] @= []
+
+    for line in lines
+        name = line.name
+
+        if name == "UID" && c.uid.is_err()
+            c.uid @ ok(props.text_of(line))
+        else if name == "DTSTAMP" && c.stamp.is_err()
+            c.stamp @ ok(on_failure(kind: kind, line: line, got: props.stamp_of(line: line, zones: zones))?)
+        else if name == "CREATED" && c.created.is_err()
+            c.created @ ok(on_failure(kind: kind, line: line, got: props.stamp_of(line: line, zones: zones))?)
+        else if name == "LAST-MODIFIED" && c.modified.is_err()
+            c.modified @ ok(on_failure(kind: kind, line: line, got: props.stamp_of(line: line, zones: zones))?)
+        else if name == "SEQUENCE" && c.sequence.is_err()
+            c.sequence @ ok(on_failure(kind: kind, line: line, got: props.integer_of(line))?)
+        else if name == "DTSTART" && c.start.is_err()
+            c.start @ ok(on_failure(kind: kind, line: line, got: ical.when_of(line: line, zones: zones))?)
+        else if name == "SUMMARY" && c.summary.is_err()
+            c.summary @ ok(props.text_of(line))
+        else if name == "DESCRIPTION" && c.description.is_err()
+            c.description @ ok(props.text_of(line))
+        else if name == "LOCATION" && c.location.is_err() && kind != "VJOURNAL"
+            c.location @ ok(props.text_of(line))
+        else if name == "URL" && c.url.is_err() && kind != "VJOURNAL"
+            c.url @ ok(strings.trim(line.value))
+        else if name == "STATUS" && c.status.is_err()
+            status = on_failure(kind: kind, line: line, got: props.status_named(line.value))?
+
+            if !props.allows(kind: kind, status: status)
+                return fail(code: ical.INVALID, msg: f"{kind} STATUS:{line.value}: not a status of {kind}")
+            c.status @ ok(status)
+        else if name == "CLASS" && c.access.is_err()
+            c.access @ ok(strings.to_upper_ascii(strings.trim(line.value)))
+        else if name == "PRIORITY" && c.priority.is_err() && kind != "VJOURNAL"
+            c.priority @ ok(on_failure(kind: kind, line: line, got: props.integer_of(line))?)
+        else if name == "CATEGORIES"
+            for v in props.categories_of(line)
+                c.categories @ c.categories.push(v)
+        else if name == "ORGANIZER" && c.organizer.is_err()
+            c.organizer @ ok(props.person_of(line))
+        else if name == "ATTENDEE"
+            c.attendees @ c.attendees.push(props.person_of(line))
+        else if name == "RRULE"
+            c.rules @ c.rules.push(on_failure(kind: kind, line: line, got: ical.parse_recur(line.value))?)
+        else if name == "RDATE" && !is_period(line)
+            for w in on_failure(kind: kind, line: line, got: ical.whens_of(line: line, zones: zones))?
+                c.rdates @ c.rdates.push(w)
+        else if name == "EXDATE"
+            for w in on_failure(kind: kind, line: line, got: ical.whens_of(line: line, zones: zones))?
+                c.exdates @ c.exdates.push(w)
+        else if name == "RECURRENCE-ID" && c.recurrence_id.is_err() && !has_range(line)
+            c.recurrence_id @ ok(on_failure(kind: kind, line: line, got: ical.when_of(line: line, zones: zones))?)
+        else
+            rest @ rest.push(line)
+
+    return ok(Shared(common: c, rest: rest))
+
+# Whether the line is an `RDATE` of periods, which stays in `extra`.
+#
+# - `line`: the line.
+function is_period(line: ical.Line) -> bool
+    return match moments.param_value(line: line, name: "VALUE")
+        .ok v  => strings.to_upper_ascii(v) == "PERIOD"
+        .err _ => false
+
+# Whether the line has a `RANGE`, which stays in `extra`.
+#
+# - `line`: the line.
+function has_range(line: ical.Line) -> bool
+    return match moments.param_value(line: line, name: "RANGE")
+        .ok _  => true
+        .err _ => false
+
+# A value read, its failure told with the component and the property.
+#
+# - `kind`: the component's name.
+# - `line`: the property.
+# - `got`: what reading it answered.
+function on_failure<T>(kind: str, line: ical.Line, got: T?) -> T?
+    match got
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: f"{kind} {line.name}: {e.msg}")
+
+# The alarm a `VALARM` holds.
+#
+# - `c`: the component.
+#
+# Fails `invalid` where there is no `ACTION` or no `TRIGGER`, or one is malformed.
+function alarm_from(c: ical.Component) -> ical.Alarm?
+    action: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    trigger: ical.Trigger? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    description: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    summary: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    repeats: i64? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    duration: ical.Span? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    attendees: [ical.Person] @= []
+    extra: [ical.Line] @= []
+
+    for line in c.lines
+        if line.name == "ACTION" && action.is_err()
+            action @ ok(strings.to_upper_ascii(strings.trim(line.value)))
+        else if line.name == "TRIGGER" && trigger.is_err()
+            trigger @ ok(on_failure(kind: "VALARM", line: line, got: props.trigger_of(line))?)
+        else if line.name == "DESCRIPTION" && description.is_err()
+            description @ ok(props.text_of(line))
+        else if line.name == "SUMMARY" && summary.is_err()
+            summary @ ok(props.text_of(line))
+        else if line.name == "REPEAT" && repeats.is_err()
+            repeats @ ok(on_failure(kind: "VALARM", line: line, got: props.integer_of(line))?)
+        else if line.name == "DURATION" && duration.is_err()
+            duration @ ok(on_failure(kind: "VALARM", line: line, got: ical.parse_span(strings.trim(line.value)))?)
+        else if line.name == "ATTENDEE"
+            attendees @ attendees.push(props.person_of(line))
+        else
+            extra @ extra.push(line)
+
+    act = match action
+        .ok a  => a
+        .err _ => return fail(code: ical.INVALID, msg: "a VALARM has no ACTION")
+
+    trig = match trigger
+        .ok t  => t
+        .err _ => return fail(code: ical.INVALID, msg: "a VALARM has no TRIGGER")
+
+    return ok(
+        ical.Alarm(action: act, trigger: trig, description: description, summary: summary, repeat: repeats, duration: duration, attendees: attendees, extra: extra)
+    )
+
+# The alarms and the other components inside `c`.
+record Inside
+    # The alarms.
+    alarms: [ical.Alarm]
+    # The components that are no alarm.
+    others: [ical.Component]
+
+# What is inside an event or a to-do.
+#
+# - `c`: the component.
+function inside_of(c: ical.Component) -> Inside?
+    alarms: [ical.Alarm] @= []
+    others: [ical.Component] @= []
+
+    for child in c.children
+        if child.name == "VALARM"
+            alarms @ alarms.push(alarm_from(child)?)
+        else
+            others @ others.push(child)
+
+    return ok(Inside(alarms: alarms, others: others))
+
+# The one of `a` and `b`, a span or a moment, that a component holds, refusing both.
+#
+# - `kind`: the component's name.
+# - `end_name`: the end property's name, `DTEND` or `DUE`.
+# - `end`: the end read.
+# - `duration`: the `DURATION` read.
+function exclusive(kind: str, end_name: str, end: ical.When?, duration: ical.Span?) -> ()?
+    if !end.is_err() && !duration.is_err()
+        return fail(code: ical.INVALID, msg: f"{kind} holds both {end_name} and DURATION")
+    return ok()
+
+# The event a `VEVENT` holds.
+#
+# - `c`: the component.
+# - `zones`: the zones the calendar defines.
+#
+# Fails `invalid` where the event holds both `DTEND` and `DURATION`.
+function event_from(c: ical.Component, zones: [time.Zone]) -> ical.Event?
+    shared = read_shared(kind: "VEVENT", lines: c.lines, zones: zones)?
+    end: ical.When? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    duration: ical.Span? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    transparency: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    extra: [ical.Line] @= []
+
+    for line in shared.rest
+        if line.name == "DTEND" && end.is_err()
+            end @ ok(on_failure(kind: "VEVENT", line: line, got: ical.when_of(line: line, zones: zones))?)
+        else if line.name == "DURATION" && duration.is_err()
+            duration @ ok(on_failure(kind: "VEVENT", line: line, got: ical.parse_span(strings.trim(line.value)))?)
+        else if line.name == "TRANSP" && transparency.is_err()
+            transparency @ ok(strings.to_upper_ascii(strings.trim(line.value)))
+        else
+            extra @ extra.push(line)
+
+    exclusive(kind: "VEVENT", end_name: "DTEND", end: end, duration: duration)?
+    inside = inside_of(c)?
+    k = shared.common
+    return ok(
+        ical.Event(uid: k.uid, stamp: k.stamp, created: k.created, modified: k.modified, sequence: k.sequence, start: k.start, end: end, duration: duration, summary: k.summary, description: k.description, location: k.location, url: k.url, status: k.status, access: k.access, transparency: transparency, priority: k.priority, categories: k.categories, organizer: k.organizer, attendees: k.attendees, rules: k.rules, rdates: k.rdates, exdates: k.exdates, recurrence_id: k.recurrence_id, alarms: inside.alarms, extra: extra, children: inside.others)
+    )
+
+# The to-do a `VTODO` holds.
+#
+# - `c`: the component.
+# - `zones`: the zones the calendar defines.
+#
+# Fails `invalid` where the to-do holds both `DUE` and `DURATION`.
+function todo_from(c: ical.Component, zones: [time.Zone]) -> ical.Todo?
+    shared = read_shared(kind: "VTODO", lines: c.lines, zones: zones)?
+    due: ical.When? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    duration: ical.Span? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    completed: time.Instant? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    percent: i64? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    extra: [ical.Line] @= []
+
+    for line in shared.rest
+        if line.name == "DUE" && due.is_err()
+            due @ ok(on_failure(kind: "VTODO", line: line, got: ical.when_of(line: line, zones: zones))?)
+        else if line.name == "DURATION" && duration.is_err()
+            duration @ ok(on_failure(kind: "VTODO", line: line, got: ical.parse_span(strings.trim(line.value)))?)
+        else if line.name == "COMPLETED" && completed.is_err()
+            completed @ ok(on_failure(kind: "VTODO", line: line, got: props.stamp_of(line: line, zones: zones))?)
+        else if line.name == "PERCENT-COMPLETE" && percent.is_err()
+            percent @ ok(on_failure(kind: "VTODO", line: line, got: props.integer_of(line))?)
+        else
+            extra @ extra.push(line)
+
+    exclusive(kind: "VTODO", end_name: "DUE", end: due, duration: duration)?
+    inside = inside_of(c)?
+    k = shared.common
+    return ok(
+        ical.Todo(uid: k.uid, stamp: k.stamp, created: k.created, modified: k.modified, sequence: k.sequence, start: k.start, due: due, duration: duration, completed: completed, percent: percent, summary: k.summary, description: k.description, location: k.location, url: k.url, status: k.status, access: k.access, priority: k.priority, categories: k.categories, organizer: k.organizer, attendees: k.attendees, rules: k.rules, rdates: k.rdates, exdates: k.exdates, recurrence_id: k.recurrence_id, alarms: inside.alarms, extra: extra, children: inside.others)
+    )
+
+# The journal entry a `VJOURNAL` holds.
+#
+# - `c`: the component.
+# - `zones`: the zones the calendar defines.
+function journal_from(c: ical.Component, zones: [time.Zone]) -> ical.Journal?
+    shared = read_shared(kind: "VJOURNAL", lines: c.lines, zones: zones)?
+    k = shared.common
+    return ok(
+        ical.Journal(uid: k.uid, stamp: k.stamp, created: k.created, modified: k.modified, sequence: k.sequence, start: k.start, summary: k.summary, description: k.description, status: k.status, access: k.access, categories: k.categories, organizer: k.organizer, attendees: k.attendees, rules: k.rules, rdates: k.rdates, exdates: k.exdates, recurrence_id: k.recurrence_id, extra: shared.rest, children: c.children)
+    )
+
+# The calendar a `VCALENDAR` holds.
+#
+# - `c`: the component.
+#
+# Fails `invalid` where it has no `PRODID` or no `VERSION`, a `VTIMEZONE` is malformed, and as the readers do.
+function calendar_from(c: ical.Component) -> ical.Calendar?
+    zones: [time.Zone] @= []
+    others: [ical.Component] @= []
+
+    for child in c.children
+        if child.name == "VTIMEZONE"
+            zones @ zones.push(timezones.zone_from(child)?)
+            others @ others.push(child)
+
+    product: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    version: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    scale: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    method: str? @= fail(code: ical.NOT_FOUND, msg: "not set")
+    extra: [ical.Line] @= []
+
+    for line in c.lines
+        if line.name == "PRODID" && product.is_err()
+            product @ ok(props.text_of(line))
+        else if line.name == "VERSION" && version.is_err()
+            version @ ok(strings.trim(line.value))
+        else if line.name == "CALSCALE" && scale.is_err()
+            scale @ ok(strings.to_upper_ascii(strings.trim(line.value)))
+        else if line.name == "METHOD" && method.is_err()
+            method @ ok(strings.to_upper_ascii(strings.trim(line.value)))
+        else
+            extra @ extra.push(line)
+
+    events: [ical.Event] @= []
+    todos: [ical.Todo] @= []
+    journals: [ical.Journal] @= []
+
+    for child in c.children
+        if child.name == "VEVENT"
+            events @ events.push(event_from(c: child, zones: zones)?)
+        else if child.name == "VTODO"
+            todos @ todos.push(todo_from(c: child, zones: zones)?)
+        else if child.name == "VJOURNAL"
+            journals @ journals.push(journal_from(c: child, zones: zones)?)
+        else if child.name != "VTIMEZONE"
+            others @ others.push(child)
+
+    prod = match product
+        .ok p  => p
+        .err _ => return fail(code: ical.INVALID, msg: "the VCALENDAR has no PRODID")
+
+    ver = match version
+        .ok v  => v
+        .err _ => return fail(code: ical.INVALID, msg: "the VCALENDAR has no VERSION")
+
+    return ok(
+        ical.Calendar(product_id: prod, version: ver, scale: scale, method: method, events: events, todos: todos, journals: journals, zones: zones, extra: extra, others: others)
+    )
+
+test "calendar_from: the fields of the sample calendar as python-icalendar reads them, the lines it does not model kept, and the zone its VTIMEZONE defines"
+    cal = ical.parse_calendar(samples.calendar_lines().join("\r\n") + "\r\n").must()
+    assert cal.product_id == "-//Rebel//ical tests//EN" && cal.version == "2.0" && cal.scale == ok("GREGORIAN") && cal.method == ok("PUBLISH")
+    assert cal.extra.len() == 1 && cal.extra[0].name == "X-WR-CALNAME" && props.text_of(cal.extra[0]) == "Team, Ops"
+    assert cal.events.len() == 5 && cal.todos.len() == 1 && cal.journals.len() == 1 && cal.others.len() == 1
+    e = cal.events[0]
+    assert e.summary == ok("Daily stand-up, with a very long title that has to be folded across several lines because it is longer than seventy-five octets")
+    assert e.description == ok("Line one\nLine two; with semicolon") && e.location == ok("Room 4")
+    assert e.organizer.must().name == ok("Doe, Jane") && e.organizer.must().address == "mailto:jane@example.org"
+    assert e.attendees.len() == 2 && e.attendees[0].name == ok("Ann") && e.attendees[0].params.len() == 2 && e.attendees[1].name.is_err()
+    assert e.categories == ["WORK", "Team, one"] && e.status == ok(.confirmed) && e.access == ok("PUBLIC") && e.transparency == ok("OPAQUE")
+    assert e.priority == ok(5) && e.sequence == ok(2) && e.rules.len() == 1 && e.exdates.len() == 2
+    assert e.extra.len() == 1 && e.extra[0].name == "X-CUSTOM" && e.extra[0].params[0].name == "X-P"
+    assert e.alarms.len() == 1 && e.alarms[0].action == "DISPLAY" && e.alarms[0].trigger == .relative(span: ical.Span(negative: true, weeks: 0, days: 0, hours: 0, minutes: 15, seconds: 0), from_end: false)
+    assert cal.events[1].recurrence_id.is_err() == false
+    assert cal.events[3].duration == ok(ical.Span(negative: false, weeks: 0, days: 0, hours: 1, minutes: 30, seconds: 0)) && cal.events[3].rdates.len() == 1
+    assert cal.todos[0].due == ok(.date(year: 2026, month: 11, day: 30)) && cal.todos[0].percent == ok(40) && cal.todos[0].status == ok(.in_process)
+    assert cal.journals[0].description == ok("Met the team.")
+    assert cal.zones.len() == 1 && cal.zones[0].name == "Customized Time Zone"
+    winter = time.offset_at(zone: cal.zones[0], t: time.date(year: 2026, month: 1, day: 15).must())
+    summer = time.offset_at(zone: cal.zones[0], t: time.date(year: 2026, month: 7, day: 15).must())
+    assert winter.from_utc == time.hours(1).must() && summer.from_utc == time.hours(2).must() && summer.abbreviation == "CEST"
+
+test "calendar_from: a document written again reads as the same calendar"
+    cal = ical.parse_calendar(samples.calendar_lines().join("\r\n") + "\r\n").must()
+    again = ical.parse_calendar(ical.format_calendar(cal).must()).must()
+    assert again == cal
+
+test "event_from: both ends, a status the component cannot have, a malformed moment, a repeated property, an absent UID, a period in RDATE, and a missing PRODID"
+    nothing: str? = fail(code: ical.NOT_FOUND, msg: "no group")
+    stamp = props.line_of(name: "DTSTAMP", params: [], value: "20261101T080000Z")
+
+    for bad in [[props.line_of(name: "DTEND", params: [], value: "20261102T090000Z"), props.line_of(name: "DURATION", params: [], value: "PT1H")], [props.line_of(name: "STATUS", params: [], value: "NEEDS-ACTION")], [props.line_of(name: "STATUS", params: [], value: "BUSY")], [props.line_of(name: "DTSTART", params: [], value: "20261302T090000")], [props.line_of(name: "DTSTART", params: [ical.Param(name: "TZID", values: ["No/Such"])], value: "20261102T090000")], [props.line_of(name: "SEQUENCE", params: [], value: "two")], [props.line_of(name: "RRULE", params: [], value: "FREQ=SOMETIMES")]]
+        match event_from(c: ical.Component(name: "VEVENT", lines: bad, children: []), zones: [])
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID || e.code == ical.NOT_FOUND
+
+    twice = event_from(
+        c: ical.Component(name: "VEVENT", lines: [props.line_of(name: "SUMMARY", params: [], value: "one"), props.line_of(name: "SUMMARY", params: [], value: "two"), stamp], children: []),
+        zones: []
+    ).must()
+    assert twice.summary == ok("one") && twice.extra.len() == 1 && twice.extra[0].value == "two" && twice.uid.is_err()
+    period = props.line_of(
+        name: "RDATE",
+        params: [ical.Param(name: "VALUE", values: ["PERIOD"])],
+        value: "20261102T090000Z/PT1H"
+    )
+    kept = event_from(c: ical.Component(name: "VEVENT", lines: [period], children: []), zones: []).must()
+    assert kept.rdates.len() == 0 && kept.extra == [period]
+    lonely = ical.Component(
+        name: "VCALENDAR",
+        lines: [props.line_of(name: "VERSION", params: [], value: "2.0")],
+        children: []
+    )
+
+    match ical.calendar_from(lonely)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID && strings.contains(s: e.msg, substr: "PRODID")
+
+    assert nothing.is_err()

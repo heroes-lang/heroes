@@ -1,0 +1,495 @@
+# A TCP connection made through a SOCKS proxy: the bytes the proxy is sent to
+# be told where to connect, and the answer read, by RFC 1928 (SOCKS 5), RFC
+# 1929 (its user name and password) and the SOCKS 4 and 4a protocol of Ying-Da
+# Lee and Oliver Smith (the page "SOCKS 4A: A Simple Extension to SOCKS 4").
+# After the answer the stream is the connection to the target and nothing of
+# the handshake stays on it: every read here is exact, none reads past a reply.
+
+use bytes
+use http/internal/canned
+use http/internal/syntax
+use io
+use net
+use strings
+use threads
+
+# The code of a proxy that refused or answered what the protocol does not say.
+constant FAILED: str
+    "failed"
+
+# The code of a proxy that refused the user and the password it was given.
+constant PERMISSION: str
+    "permission"
+
+# The code of a target the protocol has no form for.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# Which SOCKS a proxy's scheme names.
+record Dialect
+    # 4 or 5.
+    version: i64
+    # Whether the proxy is sent the target's name and resolves it (`socks4a`,
+    # `socks5h`), or the program resolves it and sends an address (`socks4`,
+    # `socks5`).
+    named: bool
+
+# The dialect `scheme` names: `socks4`, `socks4a`, `socks5` and `socks5h`, in
+# any case. Fails `not_found` for another scheme.
+function dialect_of(scheme: str) -> Dialect?
+    match strings.to_lower_ascii(scheme)
+        "socks4"  => return ok(Dialect(version: 4, named: false))
+        "socks4a" => return ok(Dialect(version: 4, named: true))
+        "socks5"  => return ok(Dialect(version: 5, named: false))
+        "socks5h" => return ok(Dialect(version: 5, named: true))
+        _         => return fail(code: "not_found", msg: f"{scheme} is no SOCKS scheme")
+
+# Connects `s`, a stream to a SOCKS proxy, to `host` at `port` by the proxy's
+# CONNECT: the target's name sent where `dialect.named`, else an address the
+# program resolved (the first IPv4 address of a name where it has one, else
+# the first). `user` and `password` are the proxy's: SOCKS 5 sends them where
+# both are not empty and the proxy asks (a proxy that asks none of them is
+# sent none), SOCKS 4 sends `user` as its user id and has no password.
+#
+# Fails `invalid` where the host is empty or holds a zero byte, a name past
+# 255 bytes, a user or a password past 255 bytes, or a port outside 1 to
+# 65535; `unsupported` where SOCKS 4 is asked for an IPv6 address; `not_found`
+# where the program resolves a name and the resolver knows none; `permission`
+# where the proxy refuses the user and the password; `failed` where it
+# refuses the connection or answers what the protocol does not say, its own
+# words in the message; and as `io.read_exact` and `io.write` fail.
+function tunnel(s: io.Stream, dialect: Dialect, host: str, port: i64, user: str, password: str) -> ()?
+    if host == "" || has_zero(host)
+        return fail(
+            code: syntax.INVALID,
+            msg: "connecting through a SOCKS proxy: the target's host is empty or holds a zero byte"
+        )
+
+    if port < 1 || port > 65_535
+        return fail(code: syntax.INVALID, msg: f"connecting through a SOCKS proxy: the port {port} is not 1 to 65535")
+
+    if dialect.version == 4
+        return tunnel4(s, dialect: dialect, host: host, port: port, user: user)
+    return tunnel5(s, dialect: dialect, host: host, port: port, user: user, password: password)
+
+# Whether `s` holds a zero byte, which no field of a request may.
+function has_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+# The two bytes of `port`, the high one first.
+function port_bytes(port: i64) -> [u8]
+    return [to_u8(port >> 8 & 255).must(), to_u8(port & 255).must()]
+
+# `out` followed by `more`.
+function appended(@out: [u8], more: [u8] lent)
+    for b in more
+        out @ out.push(b)
+
+## SOCKS 5
+
+# The greeting: version 5 and the methods offered, "no authentication" and,
+# where the program holds a user and a password, "user name and password".
+function hello5(with_password: bool) -> [u8]
+    if with_password
+        return [5, 2, 0, 2]
+    return [5, 1, 0]
+
+# The user name and password request of RFC 1929: version 1 and each as a
+# length and its bytes, each 1 to 255 bytes. Fails `invalid` on an empty
+# user or password and past 255 bytes of either.
+function password5(user: str, password: str) -> [u8]?
+    who = bytes.from_text(user)
+    secret = bytes.from_text(password)
+
+    if who.len() == 0 || who.len() > 255 || secret.len() == 0 || secret.len() > 255
+        return fail(
+            code: syntax.INVALID,
+            msg: "the proxy's user and password: each must be 1 to 255 bytes (RFC 1929)"
+        )
+    out: [u8] @= [1, to_u8(who.len()).must()]
+    appended(out: @out, more: who)
+    out @ out.push(to_u8(secret.len()).must())
+    appended(out: @out, more: secret)
+    return ok(out)
+
+# The address type and the address of `host` as RFC 1928 § 5 writes them: a
+# domain as its length and its bytes where `named`, else the address, the
+# literal's own or the one the resolver gives. Fails as `tunnel` does for the
+# host.
+function target5(host: str, named: bool) -> [u8]?
+    literal = net.parse_host(host)
+
+    match literal
+        .ok a  => return ok(address5(a))
+        .err _ => _ = 0
+
+    if named
+        name = bytes.from_text(host)
+
+        if name.len() > 255
+            return fail(
+                code: syntax.INVALID,
+                msg: f"the target's name is {name.len()} bytes, past the 255 a SOCKS 5 request holds"
+            )
+        out: [u8] @= [3, to_u8(name.len()).must()]
+        appended(out: @out, more: name)
+        return ok(out)
+    found = net.lookup(host)?
+
+    for a in found
+        if a.bytes.len() == 4
+            return ok(address5(a))
+
+    return ok(address5(found[0]))
+
+# The address type and the bytes of `a`: 1 and four, or 4 and sixteen.
+function address5(a: net.Host) -> [u8]
+    out: [u8] @= []
+
+    if a.bytes.len() == 4
+        out @ out.push(1)
+    else
+        out @ out.push(4)
+    appended(out: @out, more: a.bytes)
+    return out
+
+# The CONNECT request for `host` at `port`.
+function connect5(host: str, port: i64, named: bool) -> [u8]?
+    out: [u8] @= [5, 1, 0]
+    appended(out: @out, more: target5(host, named: named)?)
+    appended(out: @out, more: port_bytes(port))
+    return ok(out)
+
+# What a reply code of RFC 1928 § 6 says.
+function reason5(code: u8) -> str
+    match to_i64(code).must()
+        1 => return "general SOCKS server failure"
+        2 => return "connection not allowed by ruleset"
+        3 => return "network unreachable"
+        4 => return "host unreachable"
+        5 => return "connection refused"
+        6 => return "TTL expired"
+        7 => return "command not supported"
+        8 => return "address type not supported"
+        _ => return f"reply code {code}"
+
+# `n` bytes of `s`, a failure said as the step `step`'s.
+function taken(s: io.Stream, n: i64, step: str) -> [u8]?
+    match io.read_exact(s, n: n)
+        .ok b  => return ok(b)
+        .err e => return fail(code: e.code, msg: f"{step}: {e.msg}")
+
+# `data` written to `s`, a failure said as the step `step`'s.
+function given(s: io.Stream, data: [u8] lent, step: str) -> ()?
+    match io.write(s, data: data)
+        .ok _  => return ok()
+        .err e => return fail(code: e.code, msg: f"{step}: {e.msg}")
+
+function tunnel5(s: io.Stream, dialect: Dialect, host: str, port: i64, user: str, password: str) -> ()?
+    asked = user != "" && password != ""
+    step = f"connecting to {host}:{port} through a SOCKS 5 proxy"
+    request = connect5(host, port: port, named: dialect.named)?
+    given(s, data: hello5(with_password: asked), step: step)?
+    chosen = taken(s, n: 2, step: step)?
+
+    if chosen[0] != 5
+        return fail(code: FAILED, msg: f"{step}: the proxy answered version {chosen[0]}, not 5")
+
+    match to_i64(chosen[1]).must()
+        0 => _ = 0
+        2 =>
+            if !asked
+                return fail(
+                    code: PERMISSION,
+                    msg: f"{step}: the proxy asks for a user name and a password and none was given"
+                )
+            given(s, data: password5(user: user, password: password)?, step: step)?
+            verdict = taken(s, n: 2, step: step)?
+
+            if verdict[1] != 0
+                return fail(code: PERMISSION, msg: f"{step}: the proxy refused the user name and the password")
+        255 => return fail(code: FAILED, msg: f"{step}: the proxy accepts none of the methods offered")
+        _   => return fail(code: FAILED, msg: f"{step}: the proxy chose the method {chosen[1]}, which was not offered")
+
+    given(s, data: request, step: step)?
+    head = taken(s, n: 4, step: step)?
+
+    if head[0] != 5
+        return fail(code: FAILED, msg: f"{step}: the proxy answered version {head[0]}, not 5")
+
+    if head[1] != 0
+        return fail(code: FAILED, msg: f"{step}: the proxy answered {reason5(head[1])}")
+
+    tail: i64 = match to_i64(head[3]).must()
+        1 => 6
+        4 => 18
+        3 => to_i64(taken(s, n: 1, step: step)?[0]).must() + 2
+        _ => return fail(
+            code: FAILED,
+            msg: f"{step}: the proxy answered the address type {head[3]}, which RFC 1928 does not have"
+        )
+
+    _ = taken(s, n: tail, step: step)?
+    return ok()
+
+## SOCKS 4 and 4a
+
+# The CONNECT request of SOCKS 4: version 4, command 1, the port, the IPv4
+# address, the user id and a zero; for 4a (`named`, and `host` no address) the
+# address 0.0.0.1, and after the user id's zero the name and another zero.
+# Fails `unsupported` for an IPv6 address, as `tunnel` fails for the rest.
+function connect4(host: str, port: i64, user: str, named: bool) -> [u8]?
+    who = bytes.from_text(user)
+
+    if has_zero(user)
+        return fail(code: syntax.INVALID, msg: "the proxy's user id holds a zero byte")
+    out: [u8] @= [4, 1]
+    appended(out: @out, more: port_bytes(port))
+    literal = net.parse_host(host)
+    suffix: [u8] @= []
+
+    match literal
+        .ok a =>
+            if a.bytes.len() != 4
+                return fail(code: UNSUPPORTED, msg: f"SOCKS 4 carries IPv4 addresses alone, and {host} is IPv6")
+            appended(out: @out, more: a.bytes)
+        .err _ =>
+            if named
+                appended(out: @out, more: [0, 0, 0, 1])
+                suffix @ bytes.from_text(host)
+
+                if suffix.len() > 255
+                    return fail(
+                        code: syntax.INVALID,
+                        msg: f"the target's name is {suffix.len()} bytes, past the 255 a SOCKS 4a request holds"
+                    )
+            else
+                found = net.lookup(host)?
+                chosen: [u8] @= []
+
+                for a in found
+                    if a.bytes.len() == 4 && chosen.len() == 0
+                        chosen @ a.bytes
+
+                if chosen.len() == 0
+                    return fail(
+                        code: UNSUPPORTED,
+                        msg: f"SOCKS 4 carries IPv4 addresses alone, and {host} has none: socks4a sends the name"
+                    )
+                appended(out: @out, more: chosen)
+
+    appended(out: @out, more: who)
+    out @ out.push(0)
+
+    if suffix.len() > 0
+        appended(out: @out, more: suffix)
+        out @ out.push(0)
+    return ok(out)
+
+# What a result code of SOCKS 4 says.
+function reason4(code: u8) -> str
+    match to_i64(code).must()
+        91 => return "request rejected or failed"
+        92 => return "request rejected: the proxy cannot reach an identd on this host"
+        93 => return "request rejected: the identd reports another user id"
+        _  => return f"result code {code}"
+
+function tunnel4(s: io.Stream, dialect: Dialect, host: str, port: i64, user: str) -> ()?
+    step = f"connecting to {host}:{port} through a SOCKS 4 proxy"
+    request = connect4(host: host, port: port, user: user, named: dialect.named)?
+    given(s, data: request, step: step)?
+    answer = taken(s, n: 8, step: step)?
+
+    if answer[0] != 0
+        return fail(code: FAILED, msg: f"{step}: the proxy answered version {answer[0]}, not 0")
+
+    if answer[1] != 90
+        return fail(code: FAILED, msg: f"{step}: the proxy answered {reason4(answer[1])}")
+    return ok()
+
+## Tests
+
+# A stream connected to the stand-in `t` listens on.
+function dialled(t: canned.Started) -> io.Stream
+    return net.connect("127.0.0.1", port: t.port, deadline_ms: 5_000).must().stream
+
+# The chunks the stand-in `t` read, as hex, and its failures as `EXC code`.
+function read_by(@t: canned.Started) -> [str]
+    return strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+
+# What `tunnel` to `host` at `port` answers, as `ok`, or `code: message`.
+function told_of(s: io.Stream, dialect: Dialect, host: str, port: i64, user: str, password: str) -> str
+    match tunnel(s, dialect: dialect, host: host, port: port, user: user, password: password)
+        .ok _  => return "ok"
+        .err e => return e.code + ": " + e.msg
+
+test "dialect_of: the four schemes in any case, and no other"
+    assert dialect_of("socks5").must() == Dialect(version: 5, named: false)
+    assert dialect_of("SOCKS5h").must() == Dialect(version: 5, named: true)
+    assert dialect_of("socks4").must() == Dialect(version: 4, named: false)
+    assert dialect_of("Socks4A").must() == Dialect(version: 4, named: true)
+    assert dialect_of("socks").is_err()
+    assert dialect_of("http").is_err()
+    assert dialect_of("").is_err()
+
+test "hello5 and password5: the methods offered, RFC 1929's request, and an empty or past 255 bytes refused"
+    assert hello5(with_password: false) == [5, 1, 0]
+    assert hello5(with_password: true) == [5, 2, 0, 2]
+    assert bytes.format_hex(password5(user: "u", password: "p").must()) == "0101750170"
+    assert bytes.format_hex(password5(user: "Aladdin", password: "open sesame").must()) == "010741" + "6c616464696e0b6f70656e20736573616d65"
+    assert password5(user: "", password: "p").is_err()
+    assert password5(user: "u", password: "").is_err()
+    assert password5(user: repeat("u", 256), password: "p").is_err()
+    assert password5(user: "u", password: repeat("p", 256)).is_err()
+    assert password5(user: repeat("u", 255), password: repeat("p", 255)).must().len() == 513
+
+test "connect5: a name, an IPv4 and an IPv6 address as curl 8.7.1 sends them, a name resolved here, and the limits"
+    assert bytes.format_hex(connect5("example.test", port: 8080, named: true).must()) == "050100030c6578616d706c652e746573741f90"
+    assert bytes.format_hex(connect5("192.0.2.7", port: 8080, named: false).must()) == "05010001c00002071f90"
+    assert bytes.format_hex(connect5("192.0.2.7", port: 8080, named: true).must()) == "05010001c00002071f90"
+    assert bytes.format_hex(connect5("2001:db8::1", port: 8080, named: false).must()) == "0501000420010db80000000000000000000000011f90"
+    assert strings.has_prefix(
+        s: bytes.format_hex(connect5("localhost", port: 80, named: false).must()),
+        prefix: "050100017f00"
+    )
+    assert bytes.format_hex(connect5("a", port: 65_535, named: true).must()) == "050100030161ffff"
+    assert connect5(repeat("a", 255), port: 1, named: true).must().len() == 262
+    assert connect5(repeat("a", 256), port: 1, named: true).is_err()
+
+test "connect4: IPv4, 4a's name after the user id, a user id, a name resolved here, and what SOCKS 4 cannot carry"
+    assert bytes.format_hex(connect4(host: "192.0.2.7", port: 8080, user: "", named: false).must()) == "04011f90c000020700"
+    assert bytes.format_hex(connect4(host: "192.0.2.7", port: 8080, user: "", named: true).must()) == "04011f90c000020700"
+    assert bytes.format_hex(connect4(host: "192.0.2.7", port: 8080, user: "bob", named: false).must()) == "04011f90c0000207626f6200"
+    assert bytes.format_hex(connect4(host: "example.test", port: 8080, user: "", named: true).must()) == "04011f9000000001006578616d706c652e7465737400"
+    assert bytes.format_hex(connect4(host: "localhost", port: 80, user: "", named: false).must()) == "040100507f00000100"
+    assert connect4(host: "2001:db8::1", port: 80, user: "", named: true).is_err()
+    assert connect4(host: "2001:db8::1", port: 80, user: "", named: false).is_err()
+    assert connect4(host: "example.test", port: 80, user: "", named: false).is_err()
+    assert connect4(host: repeat("a", 256), port: 80, user: "", named: true).is_err()
+
+test "tunnel: an empty host and a port outside 1 to 65535 refused before a byte is sent"
+    t @= canned.start_steps(["t"])
+    s @= dialled(t)
+    dialect = dialect_of("socks5h").must()
+    assert strings.has_prefix(
+        s: told_of(s, dialect: dialect, host: "", port: 80, user: "", password: ""),
+        prefix: "invalid"
+    )
+    assert strings.has_prefix(
+        s: told_of(s, dialect: dialect, host: "a", port: 0, user: "", password: ""),
+        prefix: "invalid"
+    )
+    assert strings.has_prefix(
+        s: told_of(s, dialect: dialect, host: "a", port: 65_536, user: "", password: ""),
+        prefix: "invalid"
+    )
+    io.close(@s).must()
+    assert read_by(@t)[0] == ""
+
+test "tunnel: SOCKS 5 with no user, the reply read to its last byte and the target's bytes left on the stream"
+    t @= canned.start_steps(["r3", "w0500", "r19", "w05000001" + "7f0000011f90", "t"])
+    s @= dialled(t)
+    assert told_of(s, dialect: dialect_of("socks5h").must(), host: "example.test", port: 8080, user: "", password: "") == "ok"
+    io.write(s, data: [112, 105, 110, 103]).must()
+    seen = read_by(@t)
+    io.close(@s).must()
+    assert seen == ["050100", "050100030c6578616d706c652e746573741f90", "70696e67"]
+
+test "tunnel: SOCKS 5 with a user and a password the proxy asks for"
+    t @= canned.start_steps(["r4", "w0502", "r5", "w0100", "r10", "w05000001" + "7f0000011f90", "t"])
+    s @= dialled(t)
+    assert told_of(s, dialect: dialect_of("socks5").must(), host: "192.0.2.7", port: 8080, user: "u", password: "p") == "ok"
+    io.write(s, data: [1]).must()
+    seen = read_by(@t)
+    io.close(@s).must()
+    assert seen == ["05020002", "0101750170", "05010001c00002071f90", "01"]
+
+test "tunnel: SOCKS 5 answers a domain and an IPv6 address as its bound address, each read whole"
+    named @= canned.start_steps(["r3", "w0500", "r19", "w05000003" + "0461626364" + "1f90", "t"])
+    s @= dialled(named)
+    assert told_of(s, dialect: dialect_of("socks5h").must(), host: "example.test", port: 8080, user: "", password: "") == "ok"
+    io.write(s, data: [1]).must()
+    assert read_by(@named)[2] == "01"
+    io.close(@s).must()
+    six @= canned.start_steps(["r3", "w0500", "r19", "w05000004" + "00000000000000000000000000000001" + "1f90", "t"])
+    s2 @= dialled(six)
+    assert told_of(s2, dialect: dialect_of("socks5h").must(), host: "example.test", port: 8080, user: "", password: "") == "ok"
+    io.write(s2, data: [2]).must()
+    assert read_by(@six)[2] == "02"
+    io.close(@s2).must()
+
+test "tunnel: SOCKS 5 refused by a reply code, by no method, by the password, by a wrong version and by an early close"
+    code @= canned.start_steps(["r3", "w0500", "r19", "w05050001" + "000000000000"])
+    s1 @= dialled(code)
+    said = told_of(s1, dialect: dialect_of("socks5h").must(), host: "example.test", port: 8080, user: "", password: "")
+    assert strings.has_prefix(s: said, prefix: "failed: ") && strings.contains(s: said, substr: "connection refused")
+    io.close(@s1).must()
+    _ = read_by(@code)
+    none @= canned.start_steps(["r3", "w05ff"])
+    s2 @= dialled(none)
+    said2 = told_of(s2, dialect: dialect_of("socks5h").must(), host: "a", port: 1, user: "", password: "")
+    assert strings.has_prefix(s: said2, prefix: "failed: ") && strings.contains(s: said2, substr: "none of the methods")
+    io.close(@s2).must()
+    _ = read_by(@none)
+    unasked @= canned.start_steps(["r3", "w0502"])
+    s3 @= dialled(unasked)
+    said3 = told_of(s3, dialect: dialect_of("socks5h").must(), host: "a", port: 1, user: "", password: "")
+    assert strings.has_prefix(s: said3, prefix: "permission: ") && strings.contains(s: said3, substr: "none was given")
+    io.close(@s3).must()
+    _ = read_by(@unasked)
+    wrong @= canned.start_steps(["r4", "w0502", "r5", "w0101"])
+    s4 @= dialled(wrong)
+    said4 = told_of(s4, dialect: dialect_of("socks5h").must(), host: "a", port: 1, user: "u", password: "p")
+    assert strings.has_prefix(s: said4, prefix: "permission: ") && strings.contains(s: said4, substr: "refused the user name")
+    io.close(@s4).must()
+    _ = read_by(@wrong)
+    old @= canned.start_steps(["r3", "w0400"])
+    s5 @= dialled(old)
+    assert strings.has_prefix(
+        s: told_of(s5, dialect: dialect_of("socks5h").must(), host: "a", port: 1, user: "", password: ""),
+        prefix: "failed: "
+    )
+    io.close(@s5).must()
+    _ = read_by(@old)
+    early @= canned.start_steps(["r3", "w0500", "r7", "w0500"])
+    s6 @= dialled(early)
+    assert strings.has_prefix(
+        s: told_of(s6, dialect: dialect_of("socks5h").must(), host: "a", port: 1, user: "", password: ""),
+        prefix: "closed: "
+    )
+    io.close(@s6).must()
+    _ = read_by(@early)
+
+test "tunnel: SOCKS 4 and 4a, the answer's eight bytes read and a refusal said"
+    granted @= canned.start_steps(["r9", "w005a0050" + "01020304", "t"])
+    s @= dialled(granted)
+    assert told_of(s, dialect: dialect_of("socks4").must(), host: "192.0.2.7", port: 8080, user: "", password: "") == "ok"
+    io.write(s, data: [9]).must()
+    assert read_by(@granted) == ["04011f90c000020700", "09"]
+    io.close(@s).must()
+    named @= canned.start_steps(["r22", "w005a0050" + "00000000"])
+    s2 @= dialled(named)
+    assert told_of(s2, dialect: dialect_of("socks4a").must(), host: "example.test", port: 8080, user: "", password: "ignored") == "ok"
+    assert read_by(@named) == ["04011f9000000001006578616d706c652e7465737400"]
+    io.close(@s2).must()
+    no @= canned.start_steps(["r9", "w005b0050" + "00000000"])
+    s3 @= dialled(no)
+    said = told_of(s3, dialect: dialect_of("socks4").must(), host: "192.0.2.7", port: 8080, user: "", password: "")
+    assert strings.has_prefix(s: said, prefix: "failed: ") && strings.contains(s: said, substr: "rejected or failed")
+    io.close(@s3).must()
+    _ = read_by(@no)
+    odd @= canned.start_steps(["r9", "w045a0050" + "00000000"])
+    s4 @= dialled(odd)
+    assert strings.has_prefix(
+        s: told_of(s4, dialect: dialect_of("socks4").must(), host: "192.0.2.7", port: 8080, user: "", password: ""),
+        prefix: "failed: "
+    )
+    io.close(@s4).must()
+    _ = read_by(@odd)

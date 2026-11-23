@@ -1,0 +1,145 @@
+# The values of vCard properties (RFC 6350 sections 3.4 and 6): text with its
+# escapes, the structured values `N`, `ADR` and `ORG` cut at their semicolons
+# and commas, and the `TYPE` parameter that every typed property carries. The
+# escapes and the content lines are `ical`'s: a vCard is read and written
+# through the same lines an iCalendar is.
+
+use ical
+use ical/internal/escapes
+use ical/vcard
+use strings
+
+# The `TYPE` values of a line: the values of every `TYPE` parameter, each cut
+# at its commas, which a quoted list `TYPE="voice,home"` holds.
+#
+# - `line`: the line.
+function types_of(line: ical.Line) -> [str]
+    out: [str] @= []
+
+    for p in line.params
+        if p.name == "TYPE"
+            for v in p.values
+                for piece in escapes.split_commas(v)
+                    out @ out.push(piece)
+
+    return out
+
+# The parameters of a line other than `TYPE`, in order.
+#
+# - `line`: the line.
+function other_params(line: ical.Line) -> [ical.Param]
+    out: [ical.Param] @= []
+
+    for p in line.params
+        if p.name != "TYPE"
+            out @ out.push(p)
+
+    return out
+
+# Whether a value is a URI and not text: its line says `VALUE=uri`.
+#
+# - `params`: the parameters.
+function is_uri(params: [ical.Param]) -> bool
+    for p in params
+        if p.name == "VALUE"
+            for v in p.values
+                if strings.equals_ignoring_case_ascii(a: v, b: "uri")
+                    return true
+
+    return false
+
+# A property with a text value read; a value that says `VALUE=uri` is kept as written.
+#
+# - `line`: the line.
+function field_of(line: ical.Line) -> vcard.Field
+    value = if is_uri(line.params)
+        line.value
+    else
+        escapes.unescape(line.value)
+    return vcard.Field(group: line.group, value: value, types: types_of(line), params: other_params(line))
+
+# A property with a text value read from the piece of a list the line holds.
+#
+# - `line`: the line, which gives the group, the types and the parameters.
+# - `piece`: one value of the list, its escapes not yet read.
+function field_of_piece(line: ical.Line, piece: str) -> vcard.Field
+    return vcard.Field(
+        group: line.group,
+        value: escapes.unescape(piece),
+        types: types_of(line),
+        params: other_params(line)
+    )
+
+# The parameters of a typed property written: `TYPE` first, then the rest.
+#
+# - `types`: the types.
+# - `params`: the other parameters.
+function params_of(types: [str], params: [ical.Param]) -> [ical.Param]
+    out: [ical.Param] @= []
+
+    if types.len() > 0
+        out @ out.push(ical.Param(name: "TYPE", values: types))
+
+    for p in params
+        out @ out.push(p)
+
+    return out
+
+# A line with a name and a value, a group and parameters.
+#
+# - `group`: the group, if any.
+# - `name`: the property's name.
+# - `params`: the parameters.
+# - `value`: the value as the line holds it.
+function line_of(group: str?, name: str, params: [ical.Param], value: str) -> ical.Line
+    return ical.Line(group: group, name: name, params: params, value: value)
+
+# A property with a text value written; a `URL` and a value that says `VALUE=uri` are written as they are, which a URI's own characters need.
+#
+# - `name`: the property's name.
+# - `f`: the field.
+#
+# Fails `invalid` where the value holds a control character.
+function line_of_field(name: str, f: vcard.Field) -> ical.Line?
+    value = if name == "URL" || is_uri(f.params)
+        f.value
+    else
+        escapes.escape(f.value)?
+    return ok(line_of(group: f.group, name: name, params: params_of(types: f.types, params: f.params), value: value))
+
+# The components of a structured value: each between semicolons, each a list of
+# values between commas, escapes read, an empty component an empty list.
+#
+# - `value`: the value as the line holds it.
+# - `count`: how many components the property has; the last takes the rest if there are more, and a short value is padded.
+function components_of(value: str, count: i64) -> [[str]]
+    pieces = escapes.split_semicolons(value)
+    out: [[str]] @= []
+
+    for k in range(from: 0, to: count)
+        values: [str] @= []
+
+        if k < pieces.len() && pieces[k] != ""
+            for v in escapes.split_commas(pieces[k])
+                values @ values.push(escapes.unescape(v))
+        out @ out.push(values)
+
+    return out
+
+# A structured value written.
+#
+# - `parts`: the components, each a list of values.
+#
+# Fails `invalid` where a value holds a control character.
+function value_of_components(parts: [[str]]) -> str?
+    shown: [str] @= []
+
+    for values in parts
+        escaped: [str] @= []
+
+        for v in values
+            escaped @ escaped.push(escapes.escape(v)?)
+
+        shown @ shown.push(escaped.join(","))
+
+    return ok(shown.join(";"))

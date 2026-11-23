@@ -436,18 +436,32 @@ capability server/compressed  a response compressed where the client accepts it
   note    gzip, else deflate (zlib), by RFC 9110 § 12.5.3's weights (`q=0` refuses, `*` accepts any); `Vary: Accept-Encoding` written either way; only where the program asks
 
 capability client/proxy  a request sent through a proxy
-  heroes  http.Proxy, http.Client, http.no_proxy, http.proxy_from_env, http.proxy_for
+  heroes  http.Proxy, http.Client, http.no_proxy, http.proxy_from_env, http.proxy_for, http.tunnel
   go      net/http.ProxyFromEnvironment, net/http.ProxyURL, net/http.Transport.Proxy
   rust    -
   python  urllib.request.ProxyHandler, getproxies, getproxies_environment, proxy_bypass, proxy_bypass_environment, requests' proxies, requests.exceptions.ProxyError, requests.Session.rebuild_proxies, trust_env
   note    added 2026-11-17. An `http://` request is written to the proxy with its whole URL as its target (RFC 9112 § 3.2.2), an `https://` one through a tunnel opened at `CONNECT` (RFC 9110 § 9.3.6) with TLS over it by `tls.client_over`, the server's own name checked and no byte of the request shown to the proxy; a refused tunnel fails `failed` with the proxy's status, as requests' ProxyError. `tls.client_over` is `unsupported` on macOS, whose TLS runs only over a connection Network.framework makes, so on macOS an `https://` request through a proxy fails `unsupported` and says why, where `tls.connect_after`'s exchange before TLS cannot serve, since it checks the certificate against the host it connects to, the proxy. A proxy's user and password are sent as `Proxy-Authorization: Basic`; an `https://` or SOCKS proxy is `unsupported`. The environment is read only by `proxy_from_env`, the lower case variable first as curl and Python read it (Go reads the capitals first), `HTTP_PROXY` not read under CGI (httpoxy) as Go and Python refuse it; `NO_PROXY` as Go reads it, names, `.`-names, addresses, networks and ports, `localhost` and loopback always direct as Go sends them. Proxied requests run on this Mac against a proxy of the tests' own (the absolute-form target, the credentials, a 407, a tunnel then TLS refused `unsupported`); through a real proxy, and an `https://` one on Linux and Windows: unrun. macOS's system proxy settings (`getproxies_macosx_sysconf`, `proxy_bypass_macosx_sysconf`) are not read: a program reads them as it reads the environment, by its own choice
 
+capability client/proxy-socks  a request sent through a SOCKS proxy
+  heroes  http.Proxy (a `socks4://`, `socks4a://`, `socks5://` or `socks5h://` proxy), http.tunnel
+  go      net/http.Transport.Proxy (a `socks5` or `socks5h` URL, as `go doc net/http.Transport` says)
+  rust    -
+  python  -
+  note    added 2026-11-23. RFC 1928 and 1929 (SOCKS 5: "no authentication", or user name and password where both are given and the proxy asks) and the SOCKS 4 and 4a protocol, CONNECT alone (BIND and UDP ASSOCIATE are no request this package sends), written from the documents and compared byte for byte with curl 8.7.1's own for the same targets (a name, an IPv4 and an IPv6 address, a user and a password). `socks5` and `socks4` resolve the target's name here and send an address (the first IPv4 address, else the first), `socks5h` and `socks4a` send the name; Go treats `socks5` as `socks5h` (its Transport.Proxy documents it) where curl and PySocks keep the two apart, and so do these. SOCKS 5's GSSAPI method is not offered. Python's urllib has no SOCKS and `requests` needs PySocks, which this Mac lacks, so `python` is `-`. The reply is read to its last byte and nothing of the handshake stays on the stream. A SOCKS 4 target that is an IPv6 address fails `unsupported`; the proxy's refusal fails `failed` with its words, and a refused user and password `permission`
+
 capability client/proxy-system-settings  the proxies the system's own settings name, macOS's and Windows'
-  heroes  pending
+  heroes  http.proxy_from_system
   go      -
   rust    -
   python  urllib.request.getproxies_macosx_sysconf, urllib.request.proxy_bypass_macosx_sysconf, urllib.request.getproxies_registry and urllib.request.proxy_bypass_registry (Windows alone)
-  note    macOS's SystemConfiguration and Windows' registry need doors of C; the environment's are read
+  note    added 2026-11-23. macOS: `SCDynamicStoreCopyProxies` (the HTTP, HTTPS and SOCKS proxies, the exception list, hosts with no dot); Windows: `WinHttpGetIEProxyConfigForCurrentUser` (the proxy list and the bypass list, `<local>` included), found in winhttp.dll at the call; both in the C member `hero_proxy.c`, which writes the platform's own keys as text and decides nothing. Where the environment names a proxy it wins, as in Python; on Linux and the other systems it is all there is. A setting that names a script (PAC) or discovery (WPAD) is JavaScript or a network search this package does not run: it fails `unsupported` where no proxy is named beside it, and the named one is used otherwise. A SOCKS proxy of the settings serves the schemes with no proxy of their own: SOCKS 5 on macOS (CFNetwork's SOCKS version; no SOCKS proxy is set on this Mac to confirm it, unrun) and SOCKS 4 for Windows' `socks=` (Microsoft's page names none, unrun). The exception lists are read as patterns (`*.local`, `192.168.*`, `169.254/16`), and Python 3.15.2's `_proxy_bypass_macosx_sysconf` answered the same for `*.local`, `169.254/16`, `192.168.*`, `10/8` and a name with no dot (it compares names with their case, which this does not). The Windows arm is compiled for Windows by zig on this Mac and unrun: the box did not answer
+
+capability client/streaming-open  a request sent and the head of its answer read on a connection of its own, through the client's proxy, the body left on it
+  heroes  http.open_stream, http.Opened
+  go      net/http.Client.Do (the Response's Body read as it comes)
+  rust    -
+  python  requests' stream argument
+  note    added 2026-11-23. HTTP/1.1 alone, also over TLS; no `Accept-Encoding`, no cookie and no redirect: a 3xx is answered as it came; the client's deadline bounds the connection and the head and is taken away after it, so a body is waited for as long as the program lets it (`tls.set_deadline` on the reader's stream). The body is read by `body_reader` and `read_piece`, as `client/streaming-read` says
 
 capability client/streaming-read  a response's body read as it comes, not held whole
   heroes  http.read_response_head, http.BodyReader, http.body_reader, http.read_piece

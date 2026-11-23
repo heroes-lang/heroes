@@ -1,0 +1,17 @@
+# Fixed 2026-11-23, defect 2706, lane-jmp-fixes (panel 257 ffi-pragmatist's `fp3`, here without
+# its dependence on the compiler's frame layout): a helper hands `makecontext` a local array of its
+# frame and returns without ever switching to the context; later the same thread saves a point
+# with `sigsetjmp` in frames that occupy that memory, a signal is raised 300 KiB below it, the
+# handler `siglongjmp`s back and the program is called. Correct C.
+# Symptom: refused in the words of S at `-O0` and under `--sanitize`, run at `-O2` (one byte of
+# frame layout decided), on Darwin and, since step 118a, on Linux.
+# Cause and fix: as the first case of defect 2706; here no switch ever entered the range.
+extern "fixedbugs-2706-reused-stacks.h"
+    function rs_case(run: i64, depth: i64, down: i64, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("result ", rs_case(run: 0, depth: 5, down: 150, cb: answer))

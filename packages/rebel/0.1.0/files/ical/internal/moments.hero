@@ -1,0 +1,545 @@
+# The date, date-time and duration values of RFC 5545 sections 3.3.4 to 3.3.6,
+# read from a line and written back, and the arithmetic on them that the
+# components and the recurrence rules need.
+
+use ical
+use ical/internal/civil
+use numbers
+use strings
+use time
+
+# The number the `count` digits of `s` from `from` write.
+#
+# - `s`: the text.
+# - `from`: where the digits begin.
+# - `count`: how many digits there are.
+#
+# Fails `invalid` where `s` holds fewer, or a character that is no digit.
+function digits(s: str, from: i64, count: i64) -> i64?
+    if from + count > s.len()
+        return fail(code: ical.INVALID, msg: f"\"{s}\" is too short: {count} digits were expected at byte {from}")
+
+    n: i64 @= 0
+
+    for k in range(from: from, to: from + count)
+        if s[k] < 48 || s[k] > 57
+            return fail(code: ical.INVALID, msg: f"\"{s}\" holds a character that is no digit at byte {k}")
+        n @ n * 10 + to_i64(s[k]).must() - 48
+
+    return ok(n)
+
+# The date `YYYYMMDD` writes.
+#
+# - `s`: the eight digits.
+#
+# Fails `invalid` where `s` is not eight digits or names a day that does not exist.
+function parse_date(s: str) -> civil.Day?
+    if s.len() != 8
+        return fail(code: ical.INVALID, msg: f"the date \"{s}\" is not YYYYMMDD")
+
+    year = digits(s: s, from: 0, count: 4)?
+    month = digits(s: s, from: 4, count: 2)?
+    day = digits(s: s, from: 6, count: 2)?
+
+    if year < 1 || month < 1 || month > 12 || day < 1 || day > civil.month_length(year: year, month: month)
+        return fail(code: ical.INVALID, msg: f"the date \"{s}\" names a day that does not exist")
+    return ok(civil.Day(year: year, month: month, day: day))
+
+# A date and time read from the text, before its zone is known.
+record Clock
+    # The fields, the nanosecond 0.
+    fields: time.DateTime
+    # Whether the text ended in `Z`.
+    utc: bool
+
+# The date and time `YYYYMMDDTHHMMSS`, with or without a final `Z`, writes.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is not that, names a moment that does not exist or a
+# leap second, which an instant of this library cannot hold.
+function parse_clock(s: str) -> Clock?
+    utc = strings.has_suffix(s: s, suffix: "Z")
+
+    body = if utc
+        s.slice(from: 0, to: s.len() - 1)
+    else
+        s
+
+    if body.len() != 15 || body[8] != 84
+        return fail(code: ical.INVALID, msg: f"the date-time \"{s}\" is not YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ")
+
+    day = parse_date(body.slice(from: 0, to: 8))?
+    hour = digits(s: body, from: 9, count: 2)?
+    minute = digits(s: body, from: 11, count: 2)?
+    second = digits(s: body, from: 13, count: 2)?
+
+    if hour > 23 || minute > 59 || second > 59
+        return fail(
+            code: ical.INVALID,
+            msg: f"the date-time \"{s}\" names a time that does not exist (a leap second 60 is not held)"
+        )
+    return ok(
+        Clock(fields: time.DateTime(year: day.year, month: day.month, day: day.day, hour: hour, minute: minute, second: second, nanosecond: 0), utc: utc)
+    )
+
+# The zone a TZID names.
+#
+# - `name`: the TZID.
+# - `zones`: the zones the calendar defines, searched first.
+#
+# Fails `not_found` where no zone of the calendar and no zone of the IANA
+# database has the name.
+function zone_named(name: str, zones: [time.Zone]) -> time.Zone?
+    for z in zones
+        if z.name == name
+            return ok(z)
+
+    match time.load_zone(name)
+        .ok z => return ok(z)
+        .err _ => return fail(
+            code: ical.NOT_FOUND,
+            msg: f"TZID \"{name}\" is no zone the calendar defines with a VTIMEZONE and no zone of the IANA database"
+        )
+
+# The first value of the parameter `name` of `line`.
+#
+# - `line`: the line.
+# - `name`: the parameter's name, upper case.
+function param_value(line: ical.Line, name: str) -> str?
+    for p in line.params
+        if p.name == name && p.values.len() > 0
+            return ok(p.values[0])
+
+    return fail(code: ical.NOT_FOUND, msg: f"{line.name} has no parameter {name}")
+
+# The moment a value text writes, read as `kind` says.
+#
+# - `text`: one value of the line.
+# - `tzid`: the line's `TZID`, where it has one.
+# - `is_date`: whether `VALUE=DATE` was given, or the text is eight digits.
+# - `zones`: the zones the calendar defines.
+function when_of_text(text: str, tzid: str?, is_date: bool, zones: [time.Zone]) -> ical.When?
+    if is_date
+        day = parse_date(text)?
+        return ok(.date(year: day.year, month: day.month, day: day.day))
+
+    clock = parse_clock(text)?
+
+    if clock.utc
+        return ok(.utc(at: time.from_date_time(clock.fields)?))
+
+    match tzid
+        .ok name => return ok(.zoned(local: clock.fields, zone: zone_named(name: name, zones: zones)?))
+        .err _   => return ok(.floating(local: clock.fields))
+
+# The moments a line holds, one for each comma-separated value.
+#
+# - `line`: the line: its `VALUE` and `TZID` parameters say how to read it.
+# - `zones`: the zones the calendar defines.
+function whens_of(line: ical.Line, zones: [time.Zone]) -> [ical.When]?
+    kind = match param_value(line: line, name: "VALUE")
+        .ok v  => strings.to_upper_ascii(v)
+        .err _ => ""
+
+    tzid = param_value(line: line, name: "TZID")
+    out: [ical.When] @= []
+
+    for piece in strings.split(s: line.value, sep: ",")
+        text = strings.trim(piece)
+        is_date = kind == "DATE" || kind == "" && text.len() == 8
+
+        if kind != "" && kind != "DATE" && kind != "DATE-TIME"
+            return fail(
+                code: ical.UNSUPPORTED,
+                msg: f"{line.name} has the value type {kind}, which is not a date or a date-time"
+            )
+
+        if kind == "DATE-TIME" && text.len() == 8
+            return fail(code: ical.INVALID, msg: f"{line.name} says VALUE=DATE-TIME and holds the date \"{text}\"")
+        out @ out.push(when_of_text(text: text, tzid: tzid, is_date: is_date, zones: zones)?)
+
+    return ok(out)
+
+# The two digits of `n`, padded with a zero.
+#
+# - `n`: from 0 to 99.
+function two(n: i64) -> str
+    return strings.pad_zeros(s: to_str(n), width: 2)
+
+# `YYYYMMDD` for a day.
+#
+# - `year`: from 1 to 9999.
+# - `month`: 1 to 12.
+# - `day`: 1 to 31.
+function date_text(year: i64, month: i64, day: i64) -> str
+    return strings.pad_zeros(s: to_str(year), width: 4) + two(month) + two(day)
+
+# `YYYYMMDDTHHMMSS` for fields.
+#
+# - `dt`: the fields.
+function clock_text(dt: time.DateTime) -> str
+    return date_text(year: dt.year, month: dt.month, day: dt.day) + "T" + two(dt.hour) + two(dt.minute) + two(dt.second)
+
+# The value text of a moment and the parameters it needs.
+#
+# - `when`: the moment.
+#
+# Fails `invalid` where a year is outside 1 to 9999.
+function when_text(when: ical.When) -> str?
+    return match when
+        .date d =>
+            if d.year < 1 || d.year > 9999
+                return fail(code: ical.INVALID, msg: f"the year {d.year} cannot be written in four digits")
+            ok(date_text(year: d.year, month: d.month, day: d.day))
+        .floating f =>
+            if f.local.year < 1 || f.local.year > 9999
+                return fail(code: ical.INVALID, msg: f"the year {f.local.year} cannot be written in four digits")
+            ok(clock_text(f.local))
+        .utc u => ok(clock_text(time.to_date_time(u.at)) + "Z")
+        .zoned z =>
+            if z.local.year < 1 || z.local.year > 9999
+                return fail(code: ical.INVALID, msg: f"the year {z.local.year} cannot be written in four digits")
+            ok(clock_text(z.local))
+
+# The parameters that tell a reader how to read the value of `when`.
+#
+# - `when`: the moment.
+function when_params(when: ical.When) -> [ical.Param]
+    return match when
+        .date _     => [ical.Param(name: "VALUE", values: ["DATE"])]
+        .floating _ => []
+        .utc _      => []
+        .zoned z    => [ical.Param(name: "TZID", values: [z.zone.name])]
+
+# The seconds of the wall clock a moment reads, in the zone it names; a floating
+# moment and a date read in UTC, a date as its midnight.
+#
+# - `when`: the moment.
+function wall_seconds(when: ical.When) -> i64
+    return match when
+        .date d     => civil.days_from_civil(year: d.year, month: d.month, day: d.day) * civil.DAY_SECONDS
+        .floating f => civil.local_seconds(f.local)
+        .utc u      => time.unix_seconds(u.at)
+        .zoned z    => civil.local_seconds(z.local)
+
+# The instant a moment is.
+#
+# - `when`: the moment.
+# - `floating`: the zone a floating moment and a date are read in.
+#
+# Fails `does_not_fit` where the moment is outside an `Instant`.
+function instant_of(when: ical.When, floating: time.Zone) -> time.Instant?
+    return match when
+        .utc u      => ok(u.at)
+        .zoned z    => time.from_date_time_in(dt: z.local, zone: z.zone, choice: .compatible)
+        .floating f => time.from_date_time_in(dt: f.local, zone: floating, choice: .compatible)
+        .date d => time.from_date_time_in(
+            dt: time.DateTime(year: d.year, month: d.month, day: d.day, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            zone: floating,
+            choice: .compatible
+        )
+
+# The moment of the same kind that reads `local` seconds of the wall clock: a
+# date keeps its day, a zoned moment its zone, a UTC moment is the instant that
+# many seconds after 1970 and fails where that is outside an `Instant`.
+#
+# - `like`: the moment that gives the kind and the zone.
+# - `local`: the seconds of the wall clock.
+function like_at(like: ical.When, local: i64) -> ical.When?
+    fields = civil.date_time_of(local)
+
+    return match like
+        .date _     => ok(.date(year: fields.year, month: fields.month, day: fields.day))
+        .floating _ => ok(.floating(local: fields))
+        .utc _      => ok(.utc(at: time.from_date_time(fields)?))
+        .zoned z    => ok(.zoned(local: fields, zone: z.zone))
+
+# The span `[+-]P...` writes.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is not a duration, holds no number, repeats a unit
+# or writes the units out of order.
+function parse_span(s: str) -> ical.Span?
+    negative = strings.has_prefix(s: s, prefix: "-")
+
+    start = if negative || strings.has_prefix(s: s, prefix: "+")
+        1
+    else
+        0
+
+    if start >= s.len() || s[start] != 80
+        return fail(code: ical.INVALID, msg: f"the duration \"{s}\" does not begin with P")
+
+    weeks: i64 @= 0
+    days: i64 @= 0
+    hours: i64 @= 0
+    minutes: i64 @= 0
+    seconds: i64 @= 0
+    at: i64 @= start + 1
+    in_time: bool @= false
+    seen: i64 @= 0
+    last_unit: i64 @= 0
+
+    if at >= s.len()
+        return fail(code: ical.INVALID, msg: f"the duration \"{s}\" holds no number")
+
+    while at < s.len()
+        if s[at] == 84
+            if in_time
+                return fail(code: ical.INVALID, msg: f"the duration \"{s}\" has two T")
+            in_time @ true
+            last_unit @ 3
+            at @ at + 1
+
+            if at >= s.len()
+                return fail(code: ical.INVALID, msg: f"the duration \"{s}\" has a T and no time")
+        else
+            begin = at
+
+            while at < s.len() && s[at] >= 48 && s[at] <= 57
+                at @ at + 1
+
+            if at == begin || at >= s.len() || at - begin > 12
+                return fail(
+                    code: ical.INVALID,
+                    msg: f"the duration \"{s}\" has no number, or no unit, or a number too long, at byte {begin}"
+                )
+            n = numbers.parse_int(s.slice(from: begin, to: at))?
+            unit = s[at]
+
+            rank = match unit
+                87 => 1
+                68 => 2
+                72 => 4
+                77 => 5
+                83 => 6
+                _  => 0
+
+            if rank == 0 || in_time && rank < 4 || !in_time && rank > 3 || rank <= last_unit
+                return fail(
+                    code: ical.INVALID,
+                    msg: f"the duration \"{s}\" holds the unit {s.slice(from: at, to: at + 1)} in a place it cannot stand"
+                )
+            last_unit @ rank
+            seen @ seen + 1
+
+            if rank == 1
+                weeks @ n
+            else if rank == 2
+                days @ n
+            else if rank == 4
+                hours @ n
+            else if rank == 5
+                minutes @ n
+            else
+                seconds @ n
+            at @ at + 1
+
+    if seen == 0
+        return fail(code: ical.INVALID, msg: f"the duration \"{s}\" holds no number")
+    return ok(ical.Span(negative: negative, weeks: weeks, days: days, hours: hours, minutes: minutes, seconds: seconds))
+
+# The text of a span: `P1W` where only weeks are held, else days and a time,
+# `-` first where it runs backwards, and `PT0S` for none.
+#
+# - `span`: the span.
+function span_text(span: ical.Span) -> str
+    out: [str] @= []
+
+    if span.negative
+        out @ out.push("-")
+    out @ out.push("P")
+
+    if span.weeks > 0 && span.days == 0 && span.hours == 0 && span.minutes == 0 && span.seconds == 0
+        out @ out.push(f"{span.weeks}W")
+        return out.join("")
+
+    if span.weeks > 0
+        out @ out.push(f"{span.weeks}W")
+
+    if span.days > 0
+        out @ out.push(f"{span.days}D")
+
+    if span.hours > 0 || span.minutes > 0 || span.seconds > 0
+        out @ out.push("T")
+
+        if span.hours > 0
+            out @ out.push(f"{span.hours}H")
+
+        if span.minutes > 0
+            out @ out.push(f"{span.minutes}M")
+
+        if span.seconds > 0
+            out @ out.push(f"{span.seconds}S")
+
+    if out.len() == 1 || span.negative && out.len() == 2
+        out @ out.push("T0S")
+    return out.join("")
+
+# The days a span holds: weeks and days, never negative.
+#
+# - `span`: the span.
+function span_days(span: ical.Span) -> i64
+    return span.weeks * 7 + span.days
+
+# The seconds a span holds apart from its days, never negative.
+#
+# - `span`: the span.
+function span_seconds(span: ical.Span) -> i64
+    return span.hours * 3600 + span.minutes * 60 + span.seconds
+
+# `when` moved by `span`: the days of a span are the calendar's, so a zoned
+# moment keeps its wall clock across them, and the rest of the span is exact
+# time.
+#
+# - `when`: the moment.
+# - `span`: the span.
+# - `sign`: 1 to move forwards, -1 backwards, and a span written negative reverses it.
+#
+# Fails `invalid` where a date is moved by a part of a day and `does_not_fit` where the result is outside an `Instant`.
+function move(when: ical.When, span: ical.Span, sign: i64) -> ical.When?
+    direction = if span.negative
+        -sign
+    else
+        sign
+    days = direction * span_days(span)
+    exact = direction * span_seconds(span)
+
+    return match when
+        .date d =>
+            if exact != 0
+                return fail(code: ical.INVALID, msg: "a date cannot be moved by a part of a day")
+            like_at(
+                like: when,
+                local: (civil.days_from_civil(year: d.year, month: d.month, day: d.day) + days) * civil.DAY_SECONDS
+            )
+        .floating f => like_at(like: when, local: civil.local_seconds(f.local) + days * civil.DAY_SECONDS + exact)
+        .utc u =>
+            moved = time.add(t: u.at, d: time.seconds(days * civil.DAY_SECONDS + exact)?)?
+            ok(.utc(at: moved))
+        .zoned z =>
+            shifted = time.DateTime(
+                year: z.local.year,
+                month: z.local.month,
+                day: z.local.day,
+                hour: z.local.hour,
+                minute: z.local.minute,
+                second: z.local.second,
+                nanosecond: 0
+            )
+            base = civil.local_seconds(shifted) + days * civil.DAY_SECONDS
+            at = time.from_date_time_in(dt: civil.date_time_of(base), zone: z.zone, choice: .compatible)?
+            moved = time.add(t: at, d: time.seconds(exact)?)?
+            ok(.zoned(local: time.to_date_time_in(t: moved, zone: z.zone), zone: z.zone))
+
+test "parse_date and parse_clock: the edges of the calendar, a leap day, the wrong lengths and characters, a leap second"
+    assert parse_date("20240229").must() == civil.Day(year: 2024, month: 2, day: 29)
+    assert parse_date("00010101").must() == civil.Day(year: 1, month: 1, day: 1)
+
+    for bad in ["20230229", "00000101", "20241301", "20240100", "2024022", "202402290", "2024-02-29", "2024022a", ""]
+        match parse_date(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+    c = parse_clock("20261102T093000Z").must()
+    assert c.utc && c.fields.hour == 9 && c.fields.minute == 30 && c.fields.nanosecond == 0
+    assert !parse_clock("20261102T235959").must().utc
+
+    for bad in ["20261102T240000", "20261102T096000", "20261102T093060", "20261102 093000", "20261102T0930", "20261102t093000", "20261102T093000z"]
+        match parse_clock(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "whens_of: the kinds of a value, a zone no one names, a type that is no moment, and a date-time that is a date"
+    rome = time.load_zone("Europe/Rome").must()
+    nothing: str? = fail(code: ical.NOT_FOUND, msg: "no group")
+    zoned = ical.Line(
+        group: nothing,
+        name: "DTSTART",
+        params: [ical.Param(name: "TZID", values: ["Europe/Rome"])],
+        value: "20261201T090000"
+    )
+    w = whens_of(line: zoned, zones: []).must()
+    assert w == [.zoned(local: time.DateTime(year: 2026, month: 12, day: 1, hour: 9, minute: 0, second: 0, nanosecond: 0), zone: rome)]
+    assert time.unix_seconds(instant_of(when: w[0], floating: time.utc_zone()).must()) == 1796112000
+    utc = ical.Line(
+        group: nothing,
+        name: "DTSTART",
+        params: [ical.Param(name: "TZID", values: ["No/Such"])],
+        value: "20261201T090000Z"
+    )
+    assert whens_of(line: utc, zones: []).must().len() == 1
+
+    for bad in [ical.Line(group: nothing, name: "DTSTART", params: [ical.Param(name: "TZID", values: ["No/Such"])], value: "20261201T090000"), ical.Line(group: nothing, name: "DTSTART", params: [ical.Param(name: "VALUE", values: ["DATE-TIME"])], value: "20261201"), ical.Line(group: nothing, name: "DTSTART", params: [ical.Param(name: "VALUE", values: ["PERIOD"])], value: "20261201T090000Z/PT1H"), ical.Line(group: nothing, name: "DTSTART", params: [], value: "tomorrow")]
+        match whens_of(line: bad, zones: [])
+            .ok _  => assert false
+            .err e => assert e.code == ical.NOT_FOUND || e.code == ical.INVALID || e.code == ical.UNSUPPORTED
+
+    custom = time.fixed_zone(name: "No/Such", offset: time.hours(5).must()).must()
+    assert whens_of(line: ical.Line(group: nothing, name: "DTSTART", params: [ical.Param(name: "TZID", values: ["No/Such"])], value: "20261201T090000"), zones: [custom]).must().len() == 1
+
+test "parse_span and span_text: the forms, the signs, and what is not a duration, as python-icalendar reads the durations"
+    assert span_days(parse_span("P15DT5H0M20S").must()) == 15 && span_seconds(parse_span("P15DT5H0M20S").must()) == 5 * 3600 + 20
+    assert parse_span("P1W").must().weeks == 1 && span_days(parse_span("P1W2D").must()) == 9
+    assert parse_span("-PT15M").must().negative && span_seconds(parse_span("+PT1H30M").must()) == 5400
+    assert span_text(parse_span("PT0S").must()) == "PT0S" && span_text(parse_span("P0D").must()) == "PT0S"
+    assert span_text(parse_span("-P1DT2H3M4S").must()) == "-P1DT2H3M4S" && span_text(parse_span("P7D").must()) == "P7D"
+
+    for bad in ["", "P", "PT", "1D", "P1", "P1DT", "PT1D", "P1H", "P1D1W", "PT1S1M", "P1DT1H1H", "P99999999999999D", "P-1D", "PTT1H", "P1.5D"]
+        match parse_span(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "move: a date by weeks, a part of a day refused, and a zone's wall clock across the changes of offset, as python's wall-clock arithmetic does"
+    rome = time.load_zone("Europe/Rome").must()
+    d: ical.When = .date(year: 2026, month: 12, day: 28)
+    assert move(when: d, span: parse_span("P1W").must(), sign: 1).must() == .date(year: 2027, month: 1, day: 4)
+    assert move(when: d, span: parse_span("P1W").must(), sign: -1).must() == .date(year: 2026, month: 12, day: 21)
+
+    match move(when: d, span: parse_span("PT1H").must(), sign: 1)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    spring: ical.When = .zoned(
+        local: time.DateTime(year: 2026, month: 3, day: 28, hour: 9, minute: 0, second: 0, nanosecond: 0),
+        zone: rome
+    )
+    assert move(when: spring, span: parse_span("P1D").must(), sign: 1).must() == .zoned(local: time.DateTime(year: 2026, month: 3, day: 29, hour: 9, minute: 0, second: 0, nanosecond: 0), zone: rome)
+    assert move(when: spring, span: parse_span("PT24H").must(), sign: 1).must() == .zoned(local: time.DateTime(year: 2026, month: 3, day: 29, hour: 10, minute: 0, second: 0, nanosecond: 0), zone: rome)
+    autumn: ical.When = .zoned(
+        local: time.DateTime(year: 2026, month: 10, day: 24, hour: 9, minute: 0, second: 0, nanosecond: 0),
+        zone: rome
+    )
+    assert move(when: autumn, span: parse_span("P2D").must(), sign: 1).must() == .zoned(local: time.DateTime(year: 2026, month: 10, day: 26, hour: 9, minute: 0, second: 0, nanosecond: 0), zone: rome)
+    assert move(when: autumn, span: parse_span("PT48H").must(), sign: 1).must() == .zoned(local: time.DateTime(year: 2026, month: 10, day: 26, hour: 8, minute: 0, second: 0, nanosecond: 0), zone: rome)
+
+test "instant_of: a reading in a gap and in a fold are placed as RFC 5545 section 3.3.5 says, as python's fold=0 places them"
+    ny = time.load_zone("America/New_York").must()
+    utc = time.utc_zone()
+    gap: ical.When = .zoned(
+        local: time.DateTime(year: 2007, month: 3, day: 11, hour: 2, minute: 30, second: 0, nanosecond: 0),
+        zone: ny
+    )
+    repeated: ical.When = .zoned(
+        local: time.DateTime(year: 2007, month: 11, day: 4, hour: 1, minute: 30, second: 0, nanosecond: 0),
+        zone: ny
+    )
+    assert time.unix_seconds(instant_of(when: gap, floating: utc).must()) == 1173598200
+    assert time.unix_seconds(instant_of(when: repeated, floating: utc).must()) == 1194154200
+    day: ical.When = .date(year: 2026, month: 12, day: 1)
+    rome = time.load_zone("Europe/Rome").must()
+    assert time.unix_seconds(instant_of(when: day, floating: rome).must()) == 1796112000 - 9 * 3600
+
+test "when_text and when_params: each kind written, and a year that has no four digits refused"
+    zone = time.fixed_zone(name: "X/Y", offset: time.hours(1).must()).must()
+    local = time.DateTime(year: 2026, month: 11, day: 2, hour: 9, minute: 5, second: 7, nanosecond: 0)
+    assert when_text(.date(year: 2026, month: 11, day: 2)).must() == "20261102" && when_params(.date(year: 2026, month: 11, day: 2))[0].values == ["DATE"]
+    assert when_text(.floating(local: local)).must() == "20261102T090507" && when_params(.floating(local: local)).len() == 0
+    assert when_text(.zoned(local: local, zone: zone)).must() == "20261102T090507" && when_params(.zoned(local: local, zone: zone))[0] == ical.Param(name: "TZID", values: ["X/Y"])
+    assert when_text(.utc(at: time.epoch())).must() == "19700101T000000Z"
+
+    match when_text(.date(year: 10000, month: 1, day: 1))
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID

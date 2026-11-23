@@ -1,0 +1,321 @@
+# A TIFF file written: each page cut into strips or tiles, the samples put in
+# the file's byte order, the predictor applied, each piece coded, and the
+# directories laid out after the data, classic or BigTIFF.
+
+use compress
+use compress/zstd
+use image
+use image/tiff/internal/ccitt_write
+use image/tiff/internal/lzw
+use image/tiff/internal/packbits
+use image/tiff/internal/reader
+
+# How a file is written.
+record Settings
+    # The Compression tag: 1, 2, 3, 4, 5, 8, 32773 or 50000.
+    compression: i64
+    # Whether samples are written as their difference from the pixel before.
+    predictor: bool
+    # The rows of a strip; 0 for about 8 KiB of rows.
+    rows_per_strip: i64
+    # The columns and rows of a tile, both 0 for strips.
+    tile_width: i64
+    tile_height: i64
+    # Whether numbers are written most significant byte first.
+    big_endian: bool
+    # Whether the file is BigTIFF.
+    big: bool
+    # The gray level from which a pixel is white in a bilevel page, or -1
+    # to keep 8 and 16 bits.
+    threshold: i64
+    # Group 3's options: mixed dimensions, and byte-aligned end-of-line codes.
+    two_d: bool
+    fill: bool
+
+# What a page says beside its pixels.
+record Meta
+    # Orientation, 1 to 8.
+    orientation: i64
+    # Whether the page is a reduced copy.
+    reduced: bool
+    # The resolution, in the reader's record.
+    resolution: reader.Resolution?
+    # The texts, where the page has them.
+    description: str?
+    software: str?
+    date_time: str?
+    # The ICC profile, empty for none.
+    icc: [u8]
+
+# One entry of a directory, its value serialised in the file's byte order.
+record Field
+    # The tag.
+    tag: i64
+    # The field type.
+    kind: i64
+    # The values.
+    count: i64
+    # The bytes of the values.
+    bytes: [u8]
+
+# `v` in `size` bytes, in the file's byte order, added to `out`.
+function put_int(@out: [u8], v: i64, size: i64, big_endian: bool)
+    for k in range(from: 0, to: size)
+        shift = if big_endian
+            (size - 1 - k) * 8
+        else
+            k * 8
+        out @ out.push(to_u8(v >> shift & 255).must())
+
+# The field of `tag` holding the whole numbers `values` as `kind` (3 short, 4
+# long, 16 long long).
+function ints_field(tag: i64, kind: i64, values: [i64] lent, big_endian: bool) -> Field
+    size = match kind
+        3 => 2
+        4 => 4
+        _ => 8
+
+    bytes: [u8] @= []
+
+    for v in values
+        put_int(out: @bytes, v: v, size: size, big_endian: big_endian)
+
+    return Field(tag: tag, kind: kind, count: values.len(), bytes: bytes)
+
+# The ASCII field of `tag` holding `text` and a zero byte.
+function text_field(tag: i64, text: str) -> Field
+    bytes: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        bytes @ bytes.push(text[i])
+
+    bytes @ bytes.push(0)
+    return Field(tag: tag, kind: 2, count: bytes.len(), bytes: bytes)
+
+# The rational field of `tag` holding `value` over 1000.
+function rational_field(tag: i64, value: f64, big_endian: bool) -> Field
+    bytes: [u8] @= []
+
+    shown = if value != value || value < 0.001
+        1
+    else if value > 4000000.0
+        4000000000
+    else
+        to_i64(value * 1000.0 + 0.5).must()
+    put_int(out: @bytes, v: shown, size: 4, big_endian: big_endian)
+    put_int(out: @bytes, v: 1000, size: 4, big_endian: big_endian)
+    return Field(tag: tag, kind: 5, count: 1, bytes: bytes)
+
+# The rows of `img` from `y0` to `y1` and columns from `x0` to `x1` as the
+# bytes of a chunk `columns` wide: 8 or 16 bits a sample, the pad past the
+# image zero.
+function plain_rows(img: image.Image lent, x0: i64, y0: i64, columns: i64, rows: i64, big_endian: bool) -> [u8]
+    pixel = image.pixel_bytes_of(img.format)
+    wide = image.bits_of(img.format) == 16
+    out: [u8] @= []
+    take @= columns
+
+    if x0 + take > img.width
+        take @ img.width - x0
+
+    for r in range(from: 0, to: rows)
+        y = y0 + r
+
+        for x in range(from: 0, to: columns)
+            if y < img.height && x < take
+                at = (y * img.width + x0 + x) * pixel
+
+                if wide && !big_endian
+                    for s in range(from: 0, to: pixel / 2)
+                        out @ out.push(img.pixels[at + s * 2 + 1])
+                        out @ out.push(img.pixels[at + s * 2])
+                else
+                    for b in range(from: 0, to: pixel)
+                        out @ out.push(img.pixels[at + b])
+            else
+                for _ in range(from: 0, to: pixel)
+                    out @ out.push(0)
+
+    return out
+
+# The rows of the gray image `img` as bilevel bytes: a bit is set where the
+# pixel is white (`white_set`) or where it is black, the pad zero.
+function bilevel_rows(img: image.Image lent, x0: i64, y0: i64, columns: i64, rows: i64, threshold: i64, white_set: bool) -> [u8]
+    out: [u8] @= []
+    row_bytes = (columns + 7) / 8
+
+    for r in range(from: 0, to: rows)
+        y = y0 + r
+        base = out.len()
+
+        for _ in range(from: 0, to: row_bytes)
+            out @ out.push(0)
+
+        for x in range(from: 0, to: columns)
+            if y < img.height && x0 + x < img.width
+                white = to_i64(img.pixels[y * img.width + x0 + x]).must() >= threshold
+
+                if white == white_set
+                    out[base + (x >> 3)] @ to_u8(to_i64(out[base + (x >> 3)]).must() | 0x80 >> (x & 7)).must()
+
+    return out
+
+# The number of `raw` at `at` of `size` bytes in the file's byte order.
+function number_in(raw: [u8] lent, at: i64, size: i64, big_endian: bool) -> i64
+    v @= 0
+
+    for k in range(from: 0, to: size)
+        shift = if big_endian
+            (size - 1 - k) * 8
+        else
+            k * 8
+        v @ v | to_i64(raw[at + k]).must() << shift
+
+    return v
+
+# `raw` with every row of `row_bytes` bytes replaced by the differences between
+# its samples and those `comps` before, modulo 2^8 or 2^16 in the file's byte
+# order.
+function with_predictor(raw: [u8] lent, row_bytes: i64, comps: i64, bits: i64, big_endian: bool) -> [u8]
+    out: [u8] @= []
+    size = bits / 8
+
+    for r in range(from: 0, to: raw.len() / row_bytes)
+        base = r * row_bytes
+
+        for j in range(from: 0, to: row_bytes / size)
+            v = number_in(raw, at: base + j * size, size: size, big_endian: big_endian)
+
+            before = if j >= comps
+                number_in(raw, at: base + (j - comps) * size, size: size, big_endian: big_endian)
+            else
+                0
+            put_int(out: @out, v: v - before & (1 << bits) - 1, size: size, big_endian: big_endian)
+
+    return out
+
+# `raw`, `rows` rows of `columns` pixels, coded as `s.compression` says.
+function coded(raw: [u8] lent, s: Settings, columns: i64, rows: i64, row_bytes: i64) -> [u8]?
+    if s.compression == 1
+        return ok(raw.slice(from: 0, to: raw.len()))
+
+    if s.compression == 32773
+        return ok(packbits.encode(raw, row_bytes: row_bytes, rows: rows))
+
+    if s.compression == 5
+        return ok(lzw.encode(raw))
+
+    if s.compression == 8
+        return compress.compress(raw, compress.default_options(.zlib))
+
+    if s.compression == 50000
+        return zstd.compress(raw, zstd.default_options())
+    return ok(ccitt_write.encode(raw, kind: s.compression, width: columns, rows: rows, two_d: s.two_d, fill: s.fill))
+
+# The chunks of a page, coded, and the layout they are in.
+record Chunks
+    # The coded bytes of every strip or tile, in order.
+    pieces: [[u8]]
+    # The rows of a strip, 0 for tiles.
+    rows_per_strip: i64
+    # The bits of a sample, 1, 8 or 16.
+    bits: i64
+    # The samples a pixel.
+    spp: i64
+
+# The page `img` cut and coded as `s` says. Fails `invalid` where the
+# settings do not fit the image, and as `compress.compress` fails.
+function chunks_of(img: image.Image lent, s: Settings) -> Chunks?
+    bilevel = s.threshold >= 0
+    fax = s.compression >= 2 && s.compression <= 4
+
+    if fax && !bilevel
+        return fail(
+            code: image.INVALID,
+            msg: "fax coding holds one bit a pixel: ask for a bilevel page with a threshold"
+        )
+
+    base = if bilevel
+        image.convert(img, to: .gray)
+    else
+        img
+
+    bits = if bilevel
+        1
+    else
+        image.bits_of(img.format)
+
+    spp = if bilevel
+        1
+    else
+        image.channels_of(img.format)
+
+    if s.predictor && bits == 1
+        return fail(
+            code: image.INVALID,
+            msg: "the horizontal predictor is defined for 8 and 16 bits a sample, not for a bilevel page"
+        )
+    tiles = s.tile_width > 0
+
+    columns = if tiles
+        s.tile_width
+    else
+        img.width
+    full_row = (img.width * spp * bits + 7) / 8
+
+    rps @= if tiles
+        0
+    else if s.rows_per_strip > 0
+        s.rows_per_strip
+    else
+        8192 / full_row
+
+    if !tiles && rps < 1
+        rps @ 1
+
+    if rps > img.height
+        rps @ img.height
+
+    rows_in = if tiles
+        s.tile_height
+    else
+        rps
+
+    across = if tiles
+        (img.width + columns - 1) / columns
+    else
+        1
+    down = (img.height + rows_in - 1) / rows_in
+    pieces: [[u8]] @= []
+
+    for k in range(from: 0, to: across * down)
+        x0 = if tiles
+            k % across * columns
+        else
+            0
+
+        y0 = if tiles
+            k / across * rows_in
+        else
+            k * rows_in
+
+        rows = if tiles
+            rows_in
+        else if y0 + rows_in > img.height
+            img.height - y0
+        else
+            rows_in
+
+        raw = if bilevel
+            bilevel_rows(base, x0: x0, y0: y0, columns: columns, rows: rows, threshold: s.threshold, white_set: !fax)
+        else
+            plain_rows(base, x0: x0, y0: y0, columns: columns, rows: rows, big_endian: s.big_endian)
+        row_bytes = (columns * spp * bits + 7) / 8
+
+        prepared = if s.predictor
+            with_predictor(raw, row_bytes: row_bytes, comps: spp, bits: bits, big_endian: s.big_endian)
+        else
+            raw
+        pieces @ pieces.push(coded(prepared, s: s, columns: columns, rows: rows, row_bytes: row_bytes)?)
+
+    return ok(Chunks(pieces: pieces, rows_per_strip: rps, bits: bits, spp: spp))

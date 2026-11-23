@@ -1,0 +1,29 @@
+# Fixed 2026-11-23, defect 2705, lane-jmp-fixes (panel 257's ffi-pragmatist,
+# § 6 and § 7, `as_0`; the critic's § 4): a signal-driven scheduler's handler
+# hands the thread to a coroutine by a `siglongjmp` into the coroutine's saved
+# point, the coroutine's stack an array of the runner's frame, and the
+# coroutine calls the program's function. Correct C, refused: the runtime
+# followed the jump and judged it, and a jump onto a coroutine's stack proves
+# no handler on the thread's own stack left.
+# Symptom: the refusal said *either C called it from inside that handler, or C
+# left the handler in a way this runtime does not follow (an inline
+# `__builtin_longjmp`, a C++ exception, a jump inside a system library)*, three
+# causes the program has none of: a reader looked for an inline jump and found a
+# `siglongjmp` of the C library.
+# Cause: one set of words served every refusal of an entry no jump was known to
+# have left, whatever the runtime had seen.
+# Fix: a `longjmp`, `siglongjmp` or `_longjmp` onto a stack a context switch had
+# entered and none saw end, which does not leave the handler, marks it (`unsure`
+# 3, `HERO_SIGNAL_ONSTACK`), and the refusal says that: the jump went onto a
+# coroutine's stack, where the runtime cannot tell it from a jump onto frames
+# the handler itself switched to. Every set of words still says the handler was
+# not seen to end or that C called the function from inside one (spec § 13).
+extern "fixedbugs-2702-contexts-and-saves-a-handler-switches.h"
+    function nr_asecond(save: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("as_0: ", nr_asecond(save: 0, cb: answer))

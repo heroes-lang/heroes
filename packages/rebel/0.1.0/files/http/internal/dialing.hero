@@ -1,0 +1,316 @@
+# The connection a request goes on, made directly or through a proxy and left
+# ready for the request's bytes: through an HTTP proxy an `http://` request
+# written with its whole URL as its target (RFC 9112 § 3.2.2, absolute-form),
+# and any other a tunnel the proxy opens at `CONNECT` (RFC 9110 § 9.3.6) or
+# at a SOCKS proxy's CONNECT, with TLS begun over the tunnel and the server's
+# name checked, as `tls.client_over` begins it where the platform's TLS
+# offers that. `proxying` chooses the proxy; this module speaks to it.
+
+use http/internal/policy
+use http/internal/proxying
+use http/internal/read
+use http/internal/socks
+use http/internal/streaming
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use io
+use net
+use time
+use tls
+
+# The code of a proxy that refused, or answered otherwise than a tunnel.
+constant FAILED: str
+    "failed"
+
+# A connection a request was written on, and the head of its answer.
+record Open
+    # The connection's reader, standing at the answer's body.
+    reader: io.Reader
+    # The answer's head.
+    head: wire.Head
+    # Whether the connection carries nothing after the answer.
+    closing: bool
+
+# A connection ready for `data`, a request written as bytes.
+record Carried
+    # The connection, to the proxy or the server or through a tunnel.
+    stream: io.Stream
+    # The request's bytes.
+    data: [u8]
+
+# The connection a request of `method` for `target` goes on: direct where
+# `proxy` is "", else through it, and a response read from it by HTTP/1.1
+# alone, which a stream read piece by piece needs. Fails `unsupported` for a
+# scheme other than `http` and `https`, `invalid` for no host or a port that
+# is no number from 1 to 65535, `failed` where the proxy refuses the tunnel
+# (its status or its words in the message), `unsupported` where the platform's
+# TLS begins no TLS over a stream the program holds, as on macOS, and as
+# `write.request`, `proxying.place_of`, `net.connect` and `tls.connect` fail.
+function carry(proxy: str, scheme: str, host: str, port: str, deadline_ms: i64, roots: str, method: str, target: str, host_value: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> Carried?
+    secure = syntax.same_name(a: scheme, b: "https")
+
+    if !secure && !syntax.same_name(a: scheme, b: "http")
+        return fail(
+            code: policy.UNSUPPORTED,
+            msg: f"sending a request to {scheme}://{host}: only http:// and https:// are spoken here"
+        )
+
+    if host == ""
+        return fail(code: syntax.INVALID, msg: "sending a request: its URL names no host")
+    number: i64 @= policy.default_port(scheme)
+
+    if port != ""
+        number @ syntax.decimal(s: port, what: "reading the URL's port")?
+
+        if number < 1 || number > 65_535
+            return fail(code: syntax.INVALID, msg: f"sending a request: the port {port} is not 1 to 65535")
+
+    if proxy == ""
+        data = write.request(method: method, target: target, host: host_value, fields: fields, content: content, closing: true)?
+        stream = policy.connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots, protocols: ["http/1.1"])?
+        return ok(Carried(stream: stream, data: data))
+    place = proxying.place_of(proxy)?
+
+    if place.scheme == "http" && !secure
+        asked: [wire.Field] @= fields
+
+        for f in proxying.credentials_of(place)
+            asked @ asked.push(f)
+
+        data = write.request(method: method, target: "http://" + host_value + target, host: host_value, fields: asked, content: content, closing: true)?
+        stream = net.connect(place.host, port: place.port, deadline_ms: plain_ms(deadline_ms))?.stream
+        return ok(Carried(stream: stream, data: data))
+    data = write.request(method: method, target: target, host: host_value, fields: fields, content: content, closing: true)?
+    began = time.mark()
+    inner @= tunnel(place, host: host, port: number, deadline_ms: deadline_ms, bounds: bounds)?
+
+    if !secure
+        return ok(Carried(stream: inner, data: data))
+
+    secured @= match tls.client_over(@inner, host: host, client: tls.Client(roots: roots, protocols: ["http/1.1"]))
+        .ok s => s
+        .err e =>
+            shut(@inner)
+
+            why = if e.code == policy.UNSUPPORTED
+                f"sending a request to https://{host} through the proxy {place.host}: TLS over the proxy's tunnel is begun by `tls.client_over`, which this platform's TLS does not offer ({e.msg})"
+            else
+                e.msg
+            return fail(code: e.code, msg: why)
+
+    if deadline_ms > 0
+        left = deadline_ms - policy.spent_ms(began)
+
+        if left <= 0
+            shut(@secured)
+            return fail(
+                code: policy.TIMEOUT,
+                msg: f"sending a request to {host} through a proxy: its {deadline_ms} ms ran out before the request"
+            )
+
+        match tls.set_deadline(secured, deadline: policy.tls_deadline(left)?)
+            .ok _ => _ = 0
+            .err e =>
+                shut(@secured)
+                return fail(code: e.code, msg: e.msg)
+    return ok(Carried(stream: secured, data: data))
+
+# `deadline_ms` as `net.connect` takes it: 0, no limit here, is `net.FOREVER`.
+function plain_ms(deadline_ms: i64) -> i64
+    if deadline_ms == 0
+        return net.FOREVER
+    return deadline_ms
+
+# The response to a request of `method` for `target` sent through the proxy
+# `proxy` and read whole, its connection closed after. Fails as `carry` does,
+# and as `policy.talk` does.
+function exchange(proxy: str, scheme: str, host: str, port: str, deadline_ms: i64, roots: str, method: str, target: str, host_value: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> read.Message?
+    c = carry(proxy: proxy, scheme: scheme, host: host, port: port, deadline_ms: deadline_ms, roots: roots, method: method, target: target, host_value: host_value, fields: fields, content: content, bounds: bounds)?
+    reader @= io.reader(c.stream)
+    answer = policy.talk(@reader, data: c.data, method: method, bounds: bounds)
+    shut(@reader.stream)
+    return answer
+
+# The request of `carry` written and the head of its answer read, the body
+# left on the connection, which the caller closes; closed here where either
+# fails. The connection's deadline is taken away once the head is read, so a
+# body is waited for as long as the caller lets it. Fails as `carry` does and
+# as `streaming.response_head` does.
+function open(proxy: str, scheme: str, host: str, port: str, deadline_ms: i64, roots: str, method: str, target: str, host_value: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> Open?
+    c = carry(proxy: proxy, scheme: scheme, host: host, port: port, deadline_ms: deadline_ms, roots: roots, method: method, target: target, host_value: host_value, fields: fields, content: content, bounds: bounds)?
+    reader @= io.reader(c.stream)
+
+    match io.write(reader.stream, data: c.data)
+        .ok _ => _ = 0
+        .err e =>
+            shut(@reader.stream)
+            return fail(code: e.code, msg: e.msg)
+
+    match streaming.response_head(@reader, method: method, bounds: bounds)
+        .err e =>
+            shut(@reader.stream)
+            return fail(code: e.code, msg: e.msg)
+        .ok m =>
+            match tls.set_deadline(reader.stream, deadline: time.max_duration())
+                .ok _ => return ok(Open(reader: reader, head: m.head, closing: m.closing))
+                .err e =>
+                    shut(@reader.stream)
+                    return fail(code: e.code, msg: e.msg)
+
+# A TCP connection to `host` at `port` through the proxy `place`, which is
+# a tunnel the proxy opened: `CONNECT` for an HTTP proxy, the SOCKS
+# handshake for a SOCKS one. The stream carries the target's bytes and
+# nothing of the proxy's. Fails as `carry` does.
+function tunnel(place: proxying.Place, host: str, port: i64, deadline_ms: i64, bounds: wire.Bounds) -> io.Stream?
+    stream @= net.connect(place.host, port: place.port, deadline_ms: plain_ms(deadline_ms))?.stream
+
+    if place.scheme == "http"
+        authority = proxying.authority_of(host, port: port)
+        knock = write.request(
+            method: "CONNECT",
+            target: authority,
+            host: authority,
+            fields: proxying.credentials_of(place),
+            content: [],
+            closing: false
+        )
+        return opened(stream: stream, knock: knock, target: authority, proxy: place, bounds: bounds)
+
+    dialect = match socks.dialect_of(place.scheme)
+        .ok d => d
+        .err e =>
+            shut(@stream)
+            return fail(code: e.code, msg: e.msg)
+
+    match socks.tunnel(stream, dialect: dialect, host: host, port: port, user: place.user, password: place.password)
+        .ok _ => return ok(stream)
+        .err e =>
+            shut(@stream)
+            return fail(code: e.code, msg: f"{e.msg} (the proxy {place.host}:{place.port})")
+
+# The tunnel `stream` to the proxy opens at the `CONNECT` `knock`: the
+# stream itself once a 2xx answers it, nothing read past the answer's head.
+# Fails `failed` with the proxy's status where it answers otherwise, and as
+# reading fails; the stream is closed on every failure.
+function opened(stream: io.Stream, knock: [u8]?, target: str, proxy: proxying.Place, bounds: wire.Bounds) -> io.Stream?
+    reader @= io.reader(stream)
+
+    sent: ()? = match knock
+        .ok data => io.write(reader.stream, data: data)
+        .err e   => fail(code: e.code, msg: e.msg)
+
+    head: wire.Head? = match sent
+        .ok _  => read.final_head(@reader, bounds: bounds)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    match head
+        .err e =>
+            shut(@reader.stream)
+            return fail(code: e.code, msg: f"opening a tunnel to {target} through the proxy {proxy.host}: {e.msg}")
+        .ok h =>
+            if h.status < 200 || h.status > 299
+                shut(@reader.stream)
+                return fail(
+                    code: FAILED,
+                    msg: f"the proxy {proxy.host}:{proxy.port} answered {h.status} {h.reason} to CONNECT {target}"
+                )
+
+            if io.buffered(reader).len() > 0
+                shut(@reader.stream)
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"the proxy {proxy.host}:{proxy.port} sent bytes after its answer to CONNECT {target}"
+                )
+            return ok(reader.stream)
+
+# Closes `s`, a failure to close being no news to a caller already failing.
+function shut(@s: io.Stream)
+    match io.close(@s)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+## Tests
+
+test "carry: a scheme that is not http, no host, a port outside 1 to 65535 and a proxy that is not spoken, before a connection is made"
+    bounds = wire.Bounds(head_bytes: 65_536, field_count: 100, body_bytes: 1_048_576)
+    asked = carry(
+        proxy: "",
+        scheme: "ftp",
+        host: "a",
+        port: "",
+        deadline_ms: 1_000,
+        roots: "",
+        method: "GET",
+        target: "/",
+        host_value: "a",
+        fields: [],
+        content: [],
+        bounds: bounds
+    )
+    assert asked.is_err()
+    none = carry(
+        proxy: "",
+        scheme: "http",
+        host: "",
+        port: "",
+        deadline_ms: 1_000,
+        roots: "",
+        method: "GET",
+        target: "/",
+        host_value: "",
+        fields: [],
+        content: [],
+        bounds: bounds
+    )
+    assert none.is_err()
+    low = carry(
+        proxy: "",
+        scheme: "http",
+        host: "a",
+        port: "0",
+        deadline_ms: 1_000,
+        roots: "",
+        method: "GET",
+        target: "/",
+        host_value: "a",
+        fields: [],
+        content: [],
+        bounds: bounds
+    )
+    assert low.is_err()
+    high = carry(
+        proxy: "",
+        scheme: "http",
+        host: "a",
+        port: "65536",
+        deadline_ms: 1_000,
+        roots: "",
+        method: "GET",
+        target: "/",
+        host_value: "a",
+        fields: [],
+        content: [],
+        bounds: bounds
+    )
+    assert high.is_err()
+    odd = carry(
+        proxy: "ftp://p.example",
+        scheme: "http",
+        host: "a",
+        port: "",
+        deadline_ms: 1_000,
+        roots: "",
+        method: "GET",
+        target: "/",
+        host_value: "a",
+        fields: [],
+        content: [],
+        bounds: bounds
+    )
+    assert odd.is_err()
+
+test "plain_ms: no limit is the net's, any other as it is"
+    assert plain_ms(0) == net.FOREVER
+    assert plain_ms(1) == 1
+    assert plain_ms(30_000) == 30_000

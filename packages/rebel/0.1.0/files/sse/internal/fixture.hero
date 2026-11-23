@@ -1,0 +1,91 @@
+# The other end of an event stream's connections, run on a thread of its own
+# while the test's thread is the client: it answers the requests it reads, one
+# connection each, with the texts written ahead, and gives back what it saw.
+# Nothing outside the tests calls it.
+
+use http
+use io
+use net
+use strings
+use threads
+use time
+
+# What parts the pieces of a script and what the server saw.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# A server on a thread, and the port it listens on.
+record Started
+    # The port the server listens on, which it chose and told.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
+
+# A server that answers the connection number n with `pieces[n]`, each the
+# whole text of an answer, head and body: written after the request is read,
+# and the connection closed after it; a piece that begins with `hold:` keeps
+# the connection open for 700 ms after its text, as a server that falls
+# silent does.
+function start(pieces: [str]) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.start_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + pieces.join(SEPARATOR)).must()
+    net.set_accept_deadline(control, deadline_ms: 10_000).must()
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    said = io.read_rest_text(@r).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: net.parse_port(said).must(), thread: t)
+
+# Listens on a port the system chooses, tells it to the control port `arg`
+# names first, and answers each connection as `start` says. Gives back one
+# line for each request read, `METHOD path last-event-id accept`, a field it
+# lacks written as `-`, parted by `SEPARATOR`.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = net.parse_port(parts[0]).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: f"{l.address.port}").must()
+    io.close(@c.stream).must()
+    net.set_accept_deadline(l, deadline_ms: 10_000).must()
+    seen: [str] @= []
+    at: i64 @= 1
+
+    while at < parts.len()
+        match net.accept(l, deadline_ms: 10_000)
+            .err _ => break
+            .ok conn =>
+                r @= io.reader(conn.stream)
+
+                match http.next_request(@r, limits: http.default_limits())
+                    .ok asked =>
+                        seen @ seen.push(
+                            f"{asked.method} {asked.url.path} {http.value_of(asked.headers, name: "Last-Event-ID").default("-")} {http.value_of(asked.headers, name: "Accept").default("-")}"
+                        )
+                        piece = parts[at]
+                        at @ at + 1
+
+                        if strings.has_prefix(s: piece, prefix: "hold:")
+                            put(r.stream, text: piece.slice(from: 5, to: piece.len()))
+                            time.sleep(time.milliseconds(700).must())
+                        else
+                            put(r.stream, text: piece)
+                    .err _ => _ = 0
+
+                shut(@r.stream)
+
+    net.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
+# `text` written to `s`, a failure being the client's going and no news.
+function put(s: io.Stream, text: str)
+    match io.write_text(s, text: text)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Closes `s`, a failure to close being no news either.
+function shut(@s: io.Stream)
+    match io.close(@s)
+        .ok _  => _ = 0
+        .err _ => _ = 0

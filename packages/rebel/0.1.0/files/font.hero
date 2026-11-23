@@ -32,8 +32,7 @@
 # metrics and origins of vertical text; the strikeout, subscript and
 # superscript metrics, the typographic metrics, the unicode and code page
 # ranges and the script metrics of OS/2; Apple's aat tables and the MATH
-# table; web fonts: WOFF and WOFF2; a font found on the system by its name;
-# glyphs rasterised and text drawn into an image.
+# table; web fonts: WOFF and WOFF2; a font found on the system by its name.
 
 use bytes
 use font/internal/bin

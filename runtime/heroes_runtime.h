@@ -124,8 +124,12 @@ void hero_thread_guard(const char *what);
  * through a handler of C's (panel 247's R1, defect 2494): `what` as above, then
  * the thunk's own `__builtin_return_address(0)` and `__builtin_frame_address(0)`.
  * And the probe that learns the delivery's address, once per process, which the
- * table that hands C a thunk runs first (`parts/sigguard.c` holds both). */
+ * table that hands C a thunk runs first (`parts/sigguard.c` holds both). The
+ * line after the thunk's call, `hero_callback_left`, ends the count the first
+ * line began (`parts/callback.c`, defect 2704): a thunk C jumped over never
+ * reaches it, and the end of the program reads what stayed counted. */
 void hero_callback_entered(const char *what, void *, void *);
+void hero_callback_left(void);
 void hero_signal_learn(void);
 
 /* `heroes test`'s argument, parsed here so a generated unit still includes this

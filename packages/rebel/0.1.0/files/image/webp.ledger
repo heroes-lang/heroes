@@ -1,0 +1,82 @@
+# The ledger of `image/webp`: what libwebp (1.6.0, this Mac's, its `decode.h`,
+# `encode.h`, `mux.h` and `demux.h` and its tools' usage text read on
+# 2026-11-23), Go's `golang.org/x/image/webp` (`image/vp8`, `image/vp8l`,
+# `image/riff`) and Python's Pillow (its WebP plugin) let a program do with
+# WebP, one block per capability, and what Rebel answers. Go's x/image is not
+# part of Go's standard library and is not on this machine, and Pillow is not
+# installed: their lines are the names the catalogue and their documentation
+# give, unread by `go doc` or `dir()`, a question rather than a measurement.
+# Rust's standard library has no WebP: `-` in its lines.
+#
+# The expected values of the tests are libwebp's: files written by `cwebp`
+# (lossless at levels 0 to 9, exact alpha, near-lossless, multithreaded) read
+# back by `dwebp -pam`, an animation laid out by `webpmux`, a file given an ICC
+# profile, EXIF and XMP by `webpmux`, run on 2026-11-23. Every file `encode`
+# writes was read by `dwebp` and `webpinfo` to the same pixels, outside the
+# tests, on the same day.
+
+capability webp/decode  a lossless WebP picture read
+  heroes  image/webp.decode, image/webp.Webp, image/webp.Frame
+  go      webp.Decode, vp8l.Decode
+  rust    -
+  python  Image.open, WebPImagePlugin.WebPImageFile
+  note    libwebp: WebPDecode, WebPDecodeRGBA, WebPGetFeatures. every transform (predictor of all fourteen modes, cross-colour, green subtracted, colour index at 1, 2, 4 and 8 pixels a byte), the colour cache, groups of codes by block, every distance code, simple and normal prefix codes; RGB where the stream says alpha is unused and every alpha is 255, RGBA otherwise
+
+capability webp/decode-image  the first picture alone
+  heroes  image/webp.decode_image
+  go      webp.Decode
+  rust    -
+  python  Image.open
+  note    libwebp: WebPDecodeRGBA. one call of the shape every format of `image` has
+
+capability webp/info  the size and kind of a file, nothing decoded
+  heroes  image/webp.info_of, image/webp.Info
+  go      webp.DecodeConfig
+  rust    -
+  python  Image.open (lazy)
+  note    libwebp: WebPGetFeatures, WebPGetInfo. a lossy file is described (its size from the VP8 header), not refused
+
+capability webp/animation  the frames of an animation and the canvas after each
+  heroes  image/webp.decode, image/webp.composite, image/webp.Frame
+  go      -
+  rust    -
+  python  WebPImagePlugin (n_frames, seek), Image.info (loop, background)
+  note    libwebp: WebPAnimDecoder, WebPDemux, WebPAnimDecoderGetNext. every ANMF frame with its place, time, blending and disposal, the loop count and the background colour the file suggests; `composite` lays a frame over the canvas by its alpha or replaces it, clears a frame's rectangle after it when told to, and starts from a transparent canvas, as browsers do
+
+capability webp/metadata  the ICC profile, EXIF and XMP chunks
+  heroes  image/webp.Webp: icc, exif, xmp
+  go      -
+  rust    -
+  python  Image.info (icc_profile, exif, xmp)
+  note    libwebp: WebPMuxGetChunk, WebPDemuxGetChunk. kept as bytes, neither read nor checked; written back as given
+
+capability webp/lossy  a lossy (VP8) picture read
+  heroes  pending
+  go      vp8.Decoder
+  rust    -
+  python  WebPImagePlugin
+  note    libwebp: WebPDecode. `decode` fails `unsupported` for a lossy frame, with or without an ALPH chunk, and `info_of` describes one
+
+capability webp/limits  a file that claims a huge picture refused before it is allocated
+  heroes  image/webp.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    libwebp: WebPDecoderConfig.options (max sizes). the canvas and every frame against the caller's size and the pixels of all of them together, every chunk against the file's length, every prefix code for completeness, every copy against the pixels written; the test cuts a file at every length and changes every byte of five of them: none aborts
+
+capability webp/encode  a picture or an animation written losslessly
+  heroes  image/webp.encode, image/webp.encode_image
+  go      -
+  rust    -
+  python  Image.save(format="WEBP", lossless=True, save_all=True)
+  note    libwebp: WebPEncode (lossless), WebPAnimEncoder. a colour index where the picture has 256 colours or fewer, otherwise green subtracted and each 32-pixel block predicted by the mode that leaves the least; pixels cut into literals and copies (hash chains, distances through the 120 near codes); Huffman codes of at most 15 bits; frames with a place, a time, blending and disposal; ICC, EXIF and XMP; the same picture answers the same bytes. Not written: the colour cache, the cross-colour transform and groups of codes by block, which only make a file smaller
+
+capability webp/encode-lossy  a picture written lossily at a quality
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.save(format="WEBP", quality=...)
+  note    libwebp: WebPEncode, WebPConfig.quality
+
+dropped
+  python  WebPImagePlugin.WebPImageFile.seek, tell, n_frames: a file's cursor over its frames; `Webp.frames` is the list

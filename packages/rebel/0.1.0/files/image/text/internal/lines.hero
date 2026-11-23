@@ -1,0 +1,77 @@
+# Text cut into lines no wider than a width: paragraphs end at a line feed,
+# words at a space, and a word wider than the line is cut between characters.
+
+use font
+use image/text/internal/run
+
+# The width in pixels of `text` set as `run.set_line` sets it.
+function width_of(f: font.Font lent, text: str, size: f64, kerning: bool, spacing: f64, notdef: bool) -> f64?
+    return ok(
+        run.set_line(f, text: text, size: size, kerning: kerning, spacing: spacing, notdef: notdef, x: 0.0, y: 0.0, with_path: false)?.width
+    )
+
+# The paragraphs of `text`, cut at each line feed; the empty text is one empty paragraph.
+function paragraphs_of(text: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == 10
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The words of `paragraph`, cut at each space, none empty.
+function words_of(paragraph: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: paragraph.len())
+        if paragraph[i] == 32
+            if i > start
+                out @ out.push(paragraph.slice(from: start, to: i))
+            start @ i + 1
+
+    if paragraph.len() > start
+        out @ out.push(paragraph.slice(from: start, to: paragraph.len()))
+    return out
+
+# `text` as lines at most `max_width` pixels wide where they can be (a single
+# character wider than the line stands alone), a paragraph's words joined by
+# single spaces. Fails as `run.set_line` fails.
+function wrapped(f: font.Font lent, text: str, size: f64, kerning: bool, spacing: f64, notdef: bool, max_width: f64) -> [str]?
+    lines: [str] @= []
+
+    for paragraph in paragraphs_of(text)
+        line @= ""
+
+        for word in words_of(paragraph)
+            joined = if line == ""
+                word
+            else
+                line + " " + word
+
+            if width_of(f, text: joined, size: size, kerning: kerning, spacing: spacing, notdef: notdef)? <= max_width
+                line @ joined
+            else
+                if line != ""
+                    lines @ lines.push(line)
+                    line @ ""
+
+                if width_of(f, text: word, size: size, kerning: kerning, spacing: spacing, notdef: notdef)? <= max_width
+                    line @ word
+                else
+                    for c in word.chars()
+                        grown = line + c
+
+                        if line != "" && width_of(f, text: grown, size: size, kerning: kerning, spacing: spacing, notdef: notdef)? > max_width
+                            lines @ lines.push(line)
+                            line @ c
+                        else
+                            line @ grown
+
+        lines @ lines.push(line)
+
+    return ok(lines)

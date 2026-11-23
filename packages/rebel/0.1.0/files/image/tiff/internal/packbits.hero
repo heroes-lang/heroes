@@ -1,0 +1,105 @@
+# PackBits, TIFF's byte-run coding (compression 32773): a header byte `n`
+# says that the `n + 1` bytes after it are literal (0 to 127) or that the
+# one byte after it repeats `1 - n` times (-127 to -1); -128 does nothing.
+
+use image
+
+# The `expected` bytes that `src` unpacks to. A run that would pass `expected`
+# is cut at it, as the TIFF libraries do. Fails `invalid` where `src` ends
+# inside a run or before `expected` bytes are written.
+function decode(src: [u8] lent, expected: i64) -> [u8]?
+    out: [u8] @= []
+    i @= 0
+
+    while i < src.len() && out.len() < expected
+        n = to_i64(src[i]).must()
+        i @ i + 1
+
+        if n < 128
+            count = n + 1
+
+            if i + count > src.len()
+                return fail(code: image.INVALID, msg: "a PackBits literal run that passes the end of its strip")
+            take @= expected - out.len()
+
+            if take > count
+                take @ count
+
+            for k in range(from: 0, to: take)
+                out @ out.push(src[i + k])
+
+            i @ i + count
+        else if n > 128
+            if i >= src.len()
+                return fail(code: image.INVALID, msg: "a PackBits repeat run with no byte to repeat")
+            count = 257 - n
+            take @= expected - out.len()
+
+            if take > count
+                take @ count
+            b = src[i]
+            i @ i + 1
+
+            for _ in range(from: 0, to: take)
+                out @ out.push(b)
+
+    if out.len() < expected
+        return fail(
+            code: image.INVALID,
+            msg: f"a PackBits strip that unpacks to {out.len()} bytes, where {expected} are due"
+        )
+    return ok(out)
+
+# One row of `row` packed into `out`: runs of three or more equal bytes as
+# repeats, the rest as literals of at most 128 bytes.
+function pack_row(@out: [u8], row: [u8] lent)
+    n = row.len()
+    i @= 0
+
+    while i < n
+        run @= 1
+
+        while i + run < n && run < 128 && row[i + run] == row[i]
+            run @ run + 1
+
+        if run >= 3
+            out @ out.push(to_u8(257 - run).must())
+            out @ out.push(row[i])
+            i @ i + run
+        else
+            start = i
+            i @ i + 1
+
+            while i < n && i - start < 128 && !(i + 2 < n && row[i] == row[i + 1] && row[i] == row[i + 2])
+                i @ i + 1
+
+            out @ out.push(to_u8(i - start - 1).must())
+
+            for k in range(from: start, to: i)
+                out @ out.push(row[k])
+
+# `raw`, `rows` rows of `row_bytes` bytes, each packed on its own as the
+# TIFF specification asks.
+function encode(raw: [u8] lent, row_bytes: i64, rows: i64) -> [u8]
+    out: [u8] @= []
+
+    for r in range(from: 0, to: rows)
+        pack_row(out: @out, row: raw.slice(from: r * row_bytes, to: (r + 1) * row_bytes))
+
+    return out
+
+test "decode: literals, repeats, the no-op byte and the cut at the expected size"
+    assert decode([2, 1, 2, 3, 254, 9, 128, 0, 7], expected: 7).must() == [1, 2, 3, 9, 9, 9, 7]
+    assert decode([2, 1, 2, 3, 254, 9, 128, 0, 7], expected: 5).must() == [1, 2, 3, 9, 9]
+    assert decode([], expected: 0).must() == []
+
+test "decode: a literal cut short, a repeat with no byte and a short strip are refused"
+    assert decode([2, 1, 2], expected: 3).is_err()
+    assert decode([254], expected: 3).is_err()
+    assert decode([0, 5], expected: 2).is_err()
+
+test "encode: every row packed alone, and read back"
+    raw: [u8] = [1, 1, 1, 1, 2, 3, 3, 4, 4, 4, 9, 9, 8, 8]
+    packed = encode(raw, row_bytes: 7, rows: 2)
+    assert decode(packed, expected: 14).must() == raw
+    assert packed == [253, 1, 2, 2, 3, 3, 254, 4, 3, 9, 9, 8, 8]

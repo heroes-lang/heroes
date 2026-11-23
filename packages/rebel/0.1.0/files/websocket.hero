@@ -35,7 +35,8 @@
 # `tls`'s, so `wss://` checks the server's certificate as `tls.connect`
 # does; waiting on many connections is `poll`'s, which refuses a TLS stream
 # on macOS (`unsupported`), so a `wss://` server there serves each
-# connection on a thread of its own (`threads`). No extension but permessage-deflate, no proxy, and no
+# connection on a thread of its own (`threads`). A client goes through the
+# proxy its `proxy` names, by a tunnel. No extension but permessage-deflate, and no
 # keepalive on a clock of its own: a program pings with `write_ping` when its
 # own clock says.
 #
@@ -48,6 +49,7 @@ use io
 use json
 use net
 use poll
+use strings
 use threads
 use time
 use tls
@@ -379,6 +381,16 @@ record Client
     # What the server's answer may hold: its head's bytes and fields; the
     # body of an answer that is no upgrade is not read.
     head: http.Limits
+    # The proxies the connection may go through, as `http.Client.proxy` says:
+    # a `ws://` URL through the one for `http://` and a `wss://` URL through
+    # the one for `https://`, a tunnel to the server (`CONNECT`, or the SOCKS
+    # handshake of a `socks4://`, `socks4a://`, `socks5://` or `socks5h://`
+    # proxy), TLS over it for `wss`, which macOS's TLS does not begin
+    # (`tls.client_over`), so there a `wss://` URL through a proxy fails
+    # `unsupported`. `http.no_proxy()`, the usual, connects directly;
+    # `http.proxy_from_env()` and `http.proxy_from_system()` read the
+    # environment's and the system's.
+    proxy: http.Proxy
 
 # The usual client: `default_settings`, no compression, no subprotocol and
 # no origin, the system's own authorities, 10 seconds to connect, and 10
@@ -393,7 +405,8 @@ function default_client() -> Client
         tls: tls.Client(roots: "", protocols: []),
         deadline: time.seconds(10).must(),
         redirects: 10,
-        head: http.default_limits()
+        head: http.default_limits(),
+        proxy: http.no_proxy()
     )
 
 # What a server accepts in an opening request and answers it: made by
@@ -545,7 +558,7 @@ function connect(target: str, client: Client) -> Conn?
 
     while true
         u = opening.target_of(at)?
-        stream @= dialing.opened(u, deadline: client.deadline, secure: client.tls)?
+        stream @= dialing.opened(u, deadline: client.deadline, secure: client.tls, proxy: client.proxy)?
 
         outcome = match opening.handshake(stream, u: u, a: asking)
             .ok got => got
@@ -1125,6 +1138,38 @@ test "connect: compression agreed with the server, a long text there and back"
     assert data_of(read_message(@c).must()) == bytes.from_text(long)
     close(@c, code: CLOSE_NORMAL, reason: "").must()
     assert threads.wait_text(@server) == "echoed 2 /z"
+    net.close_udp(@told).must()
+
+test "connect: through an HTTP proxy, a tunnel to the server's own host and port, a message echoed, and a proxy that refuses"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.start_text(body: fixture.proxy_server, arg: f"{told.address.port} plain").must()
+    port = fixture.port_told(told)
+    client @= default_client()
+    client.proxy @ http.Proxy(http: f"127.0.0.1:{port}", https: "", bypass: [])
+    c @= connect(target: "ws://example.test:8080/chat", client: client).must()
+    write_text(@c, text: "through").must()
+    assert data_of(read_message(@c).must()) == bytes.from_text("through")
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "CONNECT example.test:8080 | echoed 1 /chat"
+    refused @= threads.start_text(body: fixture.proxy_server, arg: f"{told.address.port} refuse").must()
+    next_port = fixture.port_told(told)
+    client.proxy @ http.Proxy(http: f"127.0.0.1:{next_port}", https: "", bypass: [])
+
+    match connect(target: "ws://example.test:8080/chat", client: client)
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && strings.contains(s: e.msg, substr: "407")
+
+    assert threads.wait_text(@refused) == "CONNECT example.test:8080"
+    net.close_udp(@told).must()
+
+test "connect: a wss:// URL through a proxy uses the proxy for https, and fails where the platform's TLS cannot begin over a tunnel"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.start_text(body: fixture.proxy_server, arg: f"{told.address.port} refuse").must()
+    port = fixture.port_told(told)
+    client @= default_client()
+    client.proxy @ http.Proxy(http: "", https: f"127.0.0.1:{port}", bypass: [])
+    assert connect(target: "wss://example.test/chat", client: client).is_err()
+    assert threads.wait_text(@server) == "CONNECT example.test:443"
     net.close_udp(@told).must()
 
 test "connect: a redirect followed, then refused past the most allowed; a scheme other than ws and wss; nothing listening"

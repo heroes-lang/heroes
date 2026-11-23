@@ -1,0 +1,242 @@
+# The inverse transforms of a lossless WebP image, on its pixels held as RGBA
+# bytes, four a pixel in raster order: the predictor, the cross-colour
+# transform, the subtraction of green and the colour index.
+
+# The two numbers averaged and rounded down.
+function average(a: i64, b: i64) -> i64
+    return (a + b) / 2
+
+# `v` kept within 0 to 255.
+function clamp(v: i64) -> i64
+    if v < 0
+        return 0
+
+    if v > 255
+        return 255
+    return v
+
+# The prediction of one channel under `mode` (0 to 13) from the channel of the
+# pixel left (`l`), above (`t`), above and left (`tl`) and above and right
+# (`tr`); `pick_left` says for mode 11 whether the left pixel is the closer
+# estimate over all four channels.
+function predicted(mode: i64, l: i64, t: i64, tl: i64, tr: i64, pick_left: bool) -> i64
+    return match mode
+        0  => 0
+        1  => l
+        2  => t
+        3  => tr
+        4  => tl
+        5  => average(a: average(a: l, b: tr), b: t)
+        6  => average(a: l, b: tl)
+        7  => average(a: l, b: t)
+        8  => average(a: tl, b: t)
+        9  => average(a: t, b: tr)
+        10 => average(a: average(a: l, b: tl), b: average(a: t, b: tr))
+        11 => if pick_left
+            l
+        else
+            t
+        12 => clamp(l + t - tl)
+        _  => clamp(average(a: l, b: t) + (average(a: l, b: t) - tl) / 2)
+
+# The prediction of the pixel at column `x` and row `y` of the `width`-wide
+# image `px` under `mode`, its four channels packed red first as `r << 24 |
+# g << 16 | b << 8 | a`: black at the corner, the pixel to the left along the
+# top row, the one above down the left column, `mode`'s guess elsewhere.
+function guess(px: [u8] lent, x: i64, y: i64, width: i64, mode: i64) -> i64
+    base = (y * width + x) * 4
+
+    if y == 0 && x == 0
+        return 0xff
+
+    if y == 0
+        return pixel_at(px, base: base - 4)
+
+    if x == 0
+        return pixel_at(px, base: base - width * 4)
+    pick_left @= false
+
+    if mode == 11
+        near_l @= 0
+        near_t @= 0
+
+        for c in range(from: 0, to: 4)
+            l = to_i64(px[base - 4 + c]).must()
+            t = to_i64(px[base - width * 4 + c]).must()
+            tl = to_i64(px[base - width * 4 - 4 + c]).must()
+            near_l @ near_l + abs_of(t - tl)
+            near_t @ near_t + abs_of(l - tl)
+
+        pick_left @ near_l < near_t
+    packed @= 0
+
+    for c in range(from: 0, to: 4)
+        l = to_i64(px[base - 4 + c]).must()
+        t = to_i64(px[base - width * 4 + c]).must()
+        tl = to_i64(px[base - width * 4 - 4 + c]).must()
+        tr = to_i64(px[base - width * 4 + 4 + c]).must()
+
+        guess_c = if mode == 0 && c == 3
+            255
+        else
+            predicted(mode: mode, l: l, t: t, tl: tl, tr: tr, pick_left: pick_left)
+        packed @ packed << 8 | guess_c
+
+    return packed
+
+# The four bytes of `px` at `base` packed red first.
+function pixel_at(px: [u8] lent, base: i64) -> i64
+    return to_i64(px[base]).must() << 24 | to_i64(px[base + 1]).must() << 16 | to_i64(px[base + 2]).must() << 8 | to_i64(px[base + 3]).must()
+
+# Undoes the predictor transform over the `width` by `height` pixels of `px`:
+# the pixel's predictor is chosen by the green channel of `modes`, an image of
+# one pixel a block of `1 << bits` pixels a side, and added to it channel by
+# channel modulo 256.
+function undo_predictor(@px: [u8], modes: [u8] lent, width: i64, height: i64, bits: i64)
+    across = width + (1 << bits) - 1 >> bits
+
+    for y in range(from: 0, to: height)
+        for x in range(from: 0, to: width)
+            base = (y * width + x) * 4
+            mode = to_i64(modes[((y >> bits) * across + (x >> bits)) * 4 + 1]).must()
+            p = guess(px, x: x, y: y, width: width, mode: mode)
+
+            for c in range(from: 0, to: 4)
+                px[base + c] @ to_u8(to_i64(px[base + c]).must() + (p >> 24 - 8 * c & 255) & 255).must()
+
+# `v` without its sign.
+function abs_of(v: i64) -> i64
+    if v < 0
+        return -v
+    return v
+
+# The signed number `t` of 8 bits times the signed `c`, shifted right by 5:
+# how much of one channel a cross-colour element adds to another.
+function delta(t: i64, c: i64) -> i64
+    a = if t >= 128
+        t - 256
+    else
+        t
+
+    b = if c >= 128
+        c - 256
+    else
+        c
+    return a * b >> 5
+
+# Undoes the cross-colour transform: each pixel's red and blue get a share of
+# its green and of its red, the shares given by `elements`, an image of one
+# pixel a block of `1 << bits` pixels a side whose red channel holds red to
+# blue, green holds green to blue, and blue holds green to red.
+function undo_cross_color(@px: [u8], elements: [u8] lent, width: i64, height: i64, bits: i64)
+    across = width + (1 << bits) - 1 >> bits
+
+    for y in range(from: 0, to: height)
+        for x in range(from: 0, to: width)
+            e = ((y >> bits) * across + (x >> bits)) * 4
+            red_to_blue = to_i64(elements[e]).must()
+            green_to_blue = to_i64(elements[e + 1]).must()
+            green_to_red = to_i64(elements[e + 2]).must()
+            base = (y * width + x) * 4
+            red @= to_i64(px[base]).must()
+            green = to_i64(px[base + 1]).must()
+            blue @= to_i64(px[base + 2]).must()
+            red @ red + delta(t: green_to_red, c: green) & 255
+            blue @ blue + delta(t: green_to_blue, c: green) & 255
+            blue @ blue + delta(t: red_to_blue, c: red) & 255
+            px[base] @ to_u8(red).must()
+            px[base + 2] @ to_u8(blue).must()
+
+# Undoes the subtraction of green: green is added back to red and blue.
+function undo_subtract_green(@px: [u8], count: i64)
+    for i in range(from: 0, to: count)
+        base = i * 4
+        green = to_i64(px[base + 1]).must()
+        px[base] @ to_u8(to_i64(px[base]).must() + green & 255).must()
+        px[base + 2] @ to_u8(to_i64(px[base + 2]).must() + green & 255).must()
+
+# The pixels of the image whose colour indexes `packed` holds, `width` by
+# `height` of them: `packed` is `width` pixels shrunk by `bits` (0 one index a
+# pixel, 1 two, 2 four, 3 eight), the indexes in its green channel, the lowest
+# first; `table` is an image of one pixel a colour, and an index past it is
+# transparent black.
+function undo_color_index(packed: [u8] lent, table: [u8] lent, width: i64, height: i64, bits: i64) -> [u8]
+    out: [u8] @= []
+    packed_width = width + (1 << bits) - 1 >> bits
+    per = 1 << bits
+    size = 8 >> bits
+    colors = table.len() / 4
+
+    for y in range(from: 0, to: height)
+        for x in range(from: 0, to: width)
+            word = to_i64(packed[(y * packed_width + (x >> bits)) * 4 + 1]).must()
+            index = word >> x % per * size & (1 << size) - 1
+
+            if index < colors
+                for c in range(from: 0, to: 4)
+                    out @ out.push(table[index * 4 + c])
+            else
+                for _ in range(from: 0, to: 4)
+                    out @ out.push(0)
+
+    return out
+
+test "guess: every predictor mode over one neighbourhood, black with opaque alpha at mode 0"
+    px: [u8] = [
+        10
+        10
+        10
+        10
+        50
+        50
+        50
+        50
+        90
+        90
+        90
+        90
+        30
+        30
+        30
+        30
+        77
+        77
+        77
+        77
+        77
+        77
+        77
+        77
+    ]
+    want = [0, 30, 50, 90, 10, 55, 20, 40, 30, 70, 45, 50, 70, 55]
+
+    for mode in range(from: 0, to: 14)
+        p = guess(px, x: 1, y: 1, width: 3, mode: mode)
+
+        if mode == 0
+            assert p == 0xff
+        else
+            assert p == want[mode] << 24 | want[mode] << 16 | want[mode] << 8 | want[mode]
+
+test "guess: the corner is black, the top row copies the left pixel, the left column the one above"
+    px: [u8] = [
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+    ]
+    assert guess(px, x: 0, y: 0, width: 2, mode: 7) == 0xff
+    assert guess(px, x: 1, y: 0, width: 2, mode: 7) == 0x01020304
+    assert guess(px, x: 0, y: 1, width: 2, mode: 7) == 0x01020304

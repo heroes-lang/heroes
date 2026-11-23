@@ -214,7 +214,7 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
         if number > 65_535
             return fail(code: syntax.INVALID, msg: f"sending a request: the port {port} is past 65535")
     data = write.request(method: method, target: target, host: host_value, fields: fields, content: content, closing: true)?
-    stream @= connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots)?
+    stream @= connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots, protocols: [http2.ALPN, "http/1.1"])?
 
     if secure && tls.protocol_of(stream).default("") == http2.ALPN
         return h2bridge.exchange(
@@ -247,12 +247,12 @@ function tls_deadline(ms: i64) -> time.Duration?
     return ok(time.milliseconds(ms).default(time.max_duration()))
 
 # A connection to `host` at `port`: TLS where `secure`, the certificate
-# checked against `roots` ("" the system's store) and HTTP/2 then HTTP/1.1
-# offered, the server choosing by ALPN, its
+# checked against `roots` ("" the system's store) and `protocols` offered,
+# the server choosing by ALPN, its
 # deadline the connection's and the handshake's together, and what is left of
 # it then every read's and write's (`tls.set_deadline`); else TCP, its
 # deadline every read's and write's, as `net.connect` sets it. 0 is none.
-function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: str) -> io.Stream?
+function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: str, protocols: [str]) -> io.Stream?
     if !secure
         plain_ms = if deadline_ms == 0
             net.FOREVER
@@ -260,7 +260,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
             deadline_ms
         return ok(net.connect(host, port: port, deadline_ms: plain_ms)?.stream)
     began = time.mark()
-    stream @= tls.connect(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?.stream
+    stream @= tls.connect(host, port: port, deadline: tls_deadline(deadline_ms)?, client: tls.Client(roots: roots, protocols: protocols))?.stream
 
     if deadline_ms <= 0
         return ok(stream)

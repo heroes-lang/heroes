@@ -1,0 +1,26 @@
+# Fixed 2026-11-23, defect 2704, lane-jmp-fixes: the first case of the defect
+# on a thread the program started: the worker calls C, which `longjmp`s over
+# the frame of the worker's callback that holds a `str`. The thread has ended
+# when `main` reads the balance, so what it still counted joins the sum the
+# exit gate reads (`runtime/parts/callback.c`, `hero_callback_thread_ends`).
+# A correct program: the worker answers 7 and the program ends with status 0.
+# Symptom and cause: as the first case.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+extern "fixedbugs-2704-longjmp.h"
+    function ab_try(cb: (function(i64) -> i64)) -> i64
+    function ab_throw()
+
+function body(n: i64) -> i64
+    word = f"{n}-held"
+    ab_throw()
+    return word.len()
+
+function worker(n: i64) -> i64
+    return ab_try(cb: body) * n
+
+function main()
+    handle = hero_thread_spawn(body: worker, arg: 1)
+    print("thread ", hero_thread_join(handle: handle))

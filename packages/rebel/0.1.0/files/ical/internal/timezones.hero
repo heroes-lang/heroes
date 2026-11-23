@@ -1,0 +1,321 @@
+# A `VTIMEZONE` read as the `time.Zone` its observances make, and a zone
+# written as a `VTIMEZONE` of one observance for each change of offset in a
+# range of years. An observance's rule is expanded on the wall clock of the
+# offset in force before it (RFC 5545 section 3.6.5) with the engine the
+# recurrence rules use, from its start to the end of what an `Instant` holds.
+
+use ical
+use ical/internal/civil
+use ical/internal/expansion
+use ical/internal/moments
+use ical/internal/props
+use lists
+use strings
+use time
+
+# The last wall-clock second an observance is expanded to: the end of 2261.
+constant HORIZON: i64
+    9000000000
+
+# A change of offset the observances make.
+record Onset
+    # The instant it takes effect, in seconds since 1970 UTC.
+    at: i64
+    # The offset from UTC from then, in seconds.
+    to: i64
+    # The offset before it, in seconds.
+    from: i64
+    # The abbreviation, the empty text for none.
+    name: str
+    # Whether it is daylight saving time.
+    daylight: bool
+
+# The seconds an offset `+HHMM` or `-HHMMSS` writes.
+#
+# - `text`: the offset.
+#
+# Fails `invalid` where it is neither.
+function offset_seconds(text: str) -> i64?
+    body = strings.trim(text)
+
+    if body.len() != 5 && body.len() != 7 || body[0] != 43 && body[0] != 45
+        return fail(code: ical.INVALID, msg: f"the UTC offset \"{text}\" is not +HHMM or +HHMMSS")
+    hours = moments.digits(s: body, from: 1, count: 2)?
+    minutes = moments.digits(s: body, from: 3, count: 2)?
+    seconds: i64 @= 0
+
+    if body.len() == 7
+        seconds @ moments.digits(s: body, from: 5, count: 2)?
+
+    if minutes > 59 || seconds > 59
+        return fail(code: ical.INVALID, msg: f"the UTC offset \"{text}\" has minutes or seconds past 59")
+    total = hours * 3600 + minutes * 60 + seconds
+
+    if body[0] == 45
+        return ok(-total)
+    return ok(total)
+
+# The text of an offset: `+HHMM`, or `+HHMMSS` where it has seconds.
+#
+# - `seconds`: the offset, less than a day either way.
+function offset_text(seconds: i64) -> str
+    magnitude = if seconds < 0
+        -seconds
+    else
+        seconds
+
+    sign = if seconds < 0
+        "-"
+    else
+        "+"
+    text = sign + moments.two(magnitude / 3600) + moments.two(magnitude % 3600 / 60)
+
+    if magnitude % 60 != 0
+        return text + moments.two(magnitude % 60)
+    return text
+
+# Whether the onset `a` comes before `b`.
+#
+# - `a`: an onset.
+# - `b`: another.
+function onset_before(a: Onset, b: Onset) -> bool
+    return a.at < b.at
+
+# The first line of `c` called `name`.
+#
+# - `c`: the component.
+# - `name`: the property's name.
+#
+# Fails `invalid` where there is none.
+function required(c: ical.Component, name: str) -> ical.Line?
+    for line in c.lines
+        if line.name == name
+            return ok(line)
+
+    return fail(code: ical.INVALID, msg: f"{c.name} has no {name}")
+
+# The onsets one observance makes, up to the horizon.
+#
+# - `c`: a `STANDARD` or `DAYLIGHT`.
+#
+# Fails `invalid` where a property is missing or malformed, and `unsupported`
+# where an `RDATE` holds periods.
+function onsets_of(c: ical.Component) -> [Onset]?
+    start_line = required(c, "DTSTART")?
+    from = offset_seconds(required(c, "TZOFFSETFROM")?.value)?
+    to = offset_seconds(required(c, "TZOFFSETTO")?.value)?
+
+    name = match required(c, "TZNAME")
+        .ok l  => props.text_of(l)
+        .err _ => ""
+
+    first = civil.local_seconds(moments.parse_clock(strings.trim(start_line.value))?.fields)
+    locals: [i64] @= [first]
+
+    for line in c.lines
+        if line.name == "RDATE"
+            for w in moments.whens_of(line: line, zones: [])?
+                locals @ locals.push(moments.wall_seconds(w))
+        else if line.name == "RRULE"
+            rule = ical.parse_recur(line.value)?
+
+            bound = match rule.end
+                .until u =>
+                    match u.when
+                        .utc t      => time.unix_seconds(t.at) + from
+                        .floating f => civil.local_seconds(f.local)
+                        .zoned z    => civil.local_seconds(z.local)
+                        .date d => civil.days_from_civil(year: d.year, month: d.month, day: d.day) * civil.DAY_SECONDS + civil.DAY_SECONDS - 1
+                .forever => HORIZON
+                .count _ => HORIZON
+
+            last = if bound < HORIZON
+                bound
+            else
+                HORIZON
+
+            for t in expansion.occurrences(rule: rule, start: first, first: first, last: last, max: 200000)?
+                locals @ locals.push(t)
+
+    out: [Onset] @= []
+
+    for t in locals
+        out @ out.push(Onset(at: t - from, to: to, from: from, name: name, daylight: c.name == "DAYLIGHT"))
+
+    return ok(out)
+
+# The zone a `VTIMEZONE` defines, named by its `TZID`.
+#
+# - `c`: the `VTIMEZONE`.
+#
+# Fails `invalid` where it has no `TZID` or no observance, or one is malformed,
+# and `unsupported` as `onsets_of` does.
+function zone_from(c: ical.Component) -> time.Zone?
+    name = props.text_of(required(c, "TZID")?)
+    found: [Onset] @= []
+
+    for child in c.children
+        if child.name == "STANDARD" || child.name == "DAYLIGHT"
+            for o in onsets_of(child)?
+                found @ found.push(o)
+
+    if found.len() == 0
+        return fail(code: ical.INVALID, msg: f"the VTIMEZONE {name} has no STANDARD or DAYLIGHT")
+    ordered = lists.sort_by(xs: found, less: onset_before)
+    changes: [time.ZoneChange] @= []
+    last_at: i64 @= 0
+    seen: bool @= false
+
+    for o in ordered
+        if seen && o.at == last_at
+            continue
+
+        at = match time.from_unix(whole_seconds: o.at, extra_nanoseconds: 0)
+            .ok t  => t
+            .err _ => continue
+
+        label = if o.name == ""
+            offset_text(o.to)
+        else
+            o.name
+        changes @ changes.push(
+            time.ZoneChange(at: at, offset: time.ZoneOffset(from_utc: time.seconds(o.to)?, abbreviation: label, is_daylight: o.daylight))
+        )
+        seen @ true
+        last_at @ o.at
+
+    first = time.ZoneOffset(
+        from_utc: time.seconds(ordered[0].from)?,
+        abbreviation: offset_text(ordered[0].from),
+        is_daylight: false
+    )
+    return ok(time.Zone(name: name, first: first, changes: changes))
+
+# A `VTIMEZONE` for `zone`, one observance for each change of offset from the
+# start of `from_year` to the end of `to_year`.
+#
+# - `zone`: the zone, named as the events' `TZID` name it.
+# - `from_year`: the first year whose changes are written.
+# - `to_year`: the last year.
+#
+# Fails `invalid` where the years are outside 1 to 9999 or `to_year` is before
+# `from_year`, and where the zone's name holds a control character.
+function component_of(zone: time.Zone, from_year: i64, to_year: i64) -> ical.Component?
+    if from_year < 1 || to_year > 9999 || to_year < from_year
+        return fail(
+            code: ical.INVALID,
+            msg: f"the years {from_year} to {to_year} are not in 1 to 9999, the first not after the last"
+        )
+    children: [ical.Component] @= []
+    previous: time.ZoneOffset @= zone.first
+    low = civil.days_from_civil(year: from_year, month: 1, day: 1) * civil.DAY_SECONDS
+    high = civil.days_from_civil(year: to_year + 1, month: 1, day: 1) * civil.DAY_SECONDS
+
+    for change in zone.changes
+        before = time.unix_seconds(change.at) + previous.from_utc.nanoseconds / 1000000000
+        after_seconds = change.offset.from_utc.nanoseconds / 1000000000
+
+        if before >= low && before < high
+            kind = if change.offset.is_daylight
+                "DAYLIGHT"
+            else
+                "STANDARD"
+            lines: [ical.Line] @= []
+            lines @ lines.push(
+                props.line_of(name: "DTSTART", params: [], value: moments.clock_text(civil.date_time_of(before)))
+            )
+            lines @ lines.push(
+                props.line_of(name: "TZOFFSETFROM", params: [], value: offset_text(previous.from_utc.nanoseconds / 1000000000))
+            )
+            lines @ lines.push(props.line_of(name: "TZOFFSETTO", params: [], value: offset_text(after_seconds)))
+            lines @ lines.push(props.text_line(name: "TZNAME", text: change.offset.abbreviation)?)
+            children @ children.push(ical.Component(name: kind, lines: lines, children: []))
+        previous @ change.offset
+
+    if children.len() == 0
+        offset @= zone.first.from_utc.nanoseconds / 1000000000
+        at = civil.days_from_civil(year: from_year, month: 1, day: 1) * civil.DAY_SECONDS
+
+        for change in zone.changes
+            if time.unix_seconds(change.at) < at
+                offset @ change.offset.from_utc.nanoseconds / 1000000000
+
+        lines: [ical.Line] @= []
+        lines @ lines.push(
+            props.line_of(name: "DTSTART", params: [], value: moments.clock_text(civil.date_time_of(at)))
+        )
+        lines @ lines.push(props.line_of(name: "TZOFFSETFROM", params: [], value: offset_text(offset)))
+        lines @ lines.push(props.line_of(name: "TZOFFSETTO", params: [], value: offset_text(offset)))
+        lines @ lines.push(props.text_line(name: "TZNAME", text: zone.first.abbreviation)?)
+        children @ children.push(ical.Component(name: "STANDARD", lines: lines, children: []))
+    return ok(
+        ical.Component(name: "VTIMEZONE", lines: [props.text_line(name: "TZID", text: zone.name)?], children: children)
+    )
+
+test "offset_seconds and offset_text: the forms, the signs, seconds, and what is no offset"
+    assert offset_seconds("+0100").must() == 3600 && offset_seconds("-0500").must() == -18000
+    assert offset_seconds("+053000").must() == 19800 + 0 && offset_seconds("-0330").must() == -12600
+    assert offset_text(3600) == "+0100" && offset_text(-12600) == "-0330" && offset_text(0) == "+0000" && offset_text(-3661) == "-010101"
+
+    for bad in ["0100", "+01", "+0160", "+01:00", "+010060", "", "+0a00"]
+        match offset_seconds(bad)
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "component_of and zone_from: a zone of the database written for a year and read back, a fixed zone, and the years refused"
+    rome = time.load_zone("Europe/Rome").must()
+    c = component_of(zone: rome, from_year: 2026, to_year: 2026).must()
+    assert c.children[0].name == "DAYLIGHT" && c.children[1].name == "STANDARD"
+    assert props.text_of(c.children[0].lines[0]) == "20260329T020000" && props.text_of(c.children[1].lines[0]) == "20261025T030000"
+    assert c.children[0].lines[1].value == "+0100" && c.children[0].lines[2].value == "+0200" && c.children[0].lines[3].value == "CEST"
+    back = zone_from(c).must()
+    assert back.name == "Europe/Rome" && back.changes.len() == 2
+
+    for month in range(from: 1, to: 13)
+        t = time.date(year: 2026, month: month, day: 15).must()
+        assert time.offset_at(zone: back, t: t).from_utc == time.offset_at(zone: rome, t: t).from_utc
+
+    fixed = time.fixed_zone(name: "Fix/Zone", offset: time.hours(-5).must()).must()
+    f = component_of(zone: fixed, from_year: 2020, to_year: 2030).must()
+    assert f.children.len() == 1 && f.children[0].lines[1].value == "-0500" && f.children[0].lines[2].value == "-0500"
+    assert zone_from(f).must().first.from_utc == time.hours(-5).must()
+
+    for years in [[0, 5], [2030, 2020], [2020, 10000]]
+        match component_of(zone: rome, from_year: years[0], to_year: years[1])
+            .ok _  => assert false
+            .err e => assert e.code == ical.INVALID
+
+test "zone_from: a zone with no name, no observance, a missing offset or a malformed start is refused, and an observance that never ends reaches the horizon"
+    plain = ical.Component(
+        name: "VTIMEZONE",
+        lines: [props.line_of(name: "TZID", params: [], value: "Z/One")],
+        children: []
+    )
+
+    match zone_from(plain)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    bad = ical.Component(
+        name: "STANDARD",
+        lines: [props.line_of(name: "DTSTART", params: [], value: "19700101T000000")],
+        children: []
+    )
+
+    match zone_from(ical.Component(name: "VTIMEZONE", lines: plain.lines, children: [bad]))
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    nameless = ical.Component(name: "VTIMEZONE", lines: [], children: [])
+
+    match zone_from(nameless)
+        .ok _  => assert false
+        .err e => assert e.code == ical.INVALID
+
+    rule = ical.Component(
+        name: "DAYLIGHT",
+        lines: [props.line_of(name: "DTSTART", params: [], value: "20070311T020000"), props.line_of(name: "TZOFFSETFROM", params: [], value: "-0500"), props.line_of(name: "TZOFFSETTO", params: [], value: "-0400"), props.line_of(name: "RRULE", params: [], value: "FREQ=YEARLY;BYMONTH=3;BYDAY=2SU")],
+        children: []
+    )
+    z = zone_from(ical.Component(name: "VTIMEZONE", lines: plain.lines, children: [rule])).must()
+    assert z.changes.len() > 200 && z.changes[0].offset.abbreviation == "-0400"

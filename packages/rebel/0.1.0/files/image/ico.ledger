@@ -1,0 +1,59 @@
+# The ledger of `image/ico`: what Python's Pillow (its ICO plugin) and Windows'
+# own functions let a program do with an icon or a cursor, one block per
+# capability, and what Rebel answers. Go's standard library and Rust's have no
+# ICO (`-` in their lines). Pillow is not installed here, so its names are
+# those of its documented API, unread by `dir()`; Windows' are those of its
+# documentation, not run on this machine.
+#
+# The second implementation on this Mac is macOS's `sips` (run 2026-11-23),
+# which reads an ICO to a PNG and writes one from a PNG: the file it wrote from
+# a 16 by 16 PNG is a test file, read here to the pixels `sips` reads back from
+# it, and `sips` agrees with the other test files on the 32-bit alpha, the
+# 8-bit mask and the PNG entries. It ignores the AND mask of 1, 4, 24 and
+# zero-alpha 32 bits, which Microsoft's definition of the format gives: those
+# cases follow the definition, built by construction.
+
+capability ico/decode  every image of an icon or cursor read
+  heroes  image/ico.decode, image/ico.Ico, image/ico.Entry
+  go      -
+  rust    -
+  python  IcoImagePlugin.IcoFile, IcoImagePlugin.IcoImageFile, IcoFile.getimage, IcoFile.sizes
+  note    windows: LoadImage, CreateIconFromResourceEx, GetIconInfo. PNG entries and bitmap entries of 1, 4, 8, 24 and 32 bits, each image RGBA at 8 bits; a 32-bit bitmap's alpha channel where it is not all zero and its mask where it is, a lower depth's mask as alpha 0 or 255, as Windows draws them; a size byte of 0 is 256 and the image's own size is what is kept; a cursor's hot spot
+
+capability ico/decode-image  the largest image alone
+  heroes  image/ico.decode_image
+  go      -
+  rust    -
+  python  IcoImagePlugin.IcoImageFile.size, IcoFile.getimage
+  note    windows: LoadImage. the one with the most pixels, the first of equals
+
+capability ico/limits  a file that claims huge images refused before they are allocated
+  heroes  image/ico.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    every image against the caller's size and the pixels of all of them together, every offset and size against the file's length; the tests cut a file at every length and change every byte of four of them: none aborts
+
+capability ico/encode  an icon or a cursor written
+  heroes  image/ico.encode, image/ico.Storage
+  go      -
+  rust    -
+  python  Image.save(format="ICO", sizes=...)
+  note    windows: CreateIconIndirect. each image stored as a PNG or as a 32-bit bitmap with its mask, 1 to 256 pixels a side, any format of `image` written as RGBA at 8 bits; an icon or a cursor with its hot spot; the same file answers the same bytes
+
+capability ico/encode-depths  a bitmap entry written at 1, 4, 8 or 24 bits
+  heroes  refused: a bitmap entry is written at 32 bits with its mask, the depth every Windows since XP draws; a palette or 24-bit entry would be written by a program that reduces the colours first (`image.to_indexed`) for a reader older than that, and `ico/decode` reads those files
+  go      -
+  rust    -
+  python  Image.save(format="ICO", bitmap_format="bmp")
+  note    -
+
+capability ico/not-decoded  what an icon file can hold that this reads no further
+  heroes  refused: `unsupported`: a bitmap of 16 bits, or coded as run-length or bit fields (BI_RLE8, BI_RLE4, BI_BITFIELDS), which no icon editor writes; the animated cursor (`.ani`, a RIFF file of cursors) is another format and fails `invalid`
+  go      -
+  rust    -
+  python  -
+  note    Windows: LoadImage reads them
+
+dropped
+  python  IcoImagePlugin.IcoFile.entry, IcoFile.frame: the directory's raw fields; `Entry` holds the image, how it was stored and its depth

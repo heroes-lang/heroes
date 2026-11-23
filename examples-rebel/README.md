@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-three packages, in layers. **A package may use any package of a layer below
+A hundred and seventy packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -90,6 +90,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
 | 2 | `image/colorspace` | a colour in HSV, HLS, CMYK, YCbCr and YIQ and back, and an image split into the planes of a space and merged again; Lab is pending | `image`, `math` |  |
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
+| 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
@@ -99,6 +100,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `cbor` | CBOR (RFC 8949) read into a value of its own, which keeps bytes and tags, and crossed to and from a `json.Value` | `big`, `bytes`, `json`, `lists`, `math` |  |
 | 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `strings`, `unicode`, `unicode/segment` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
+| 3 | `image/text` | text drawn into an image: a line set in a `font`, kerned and spaced, its outline filled anti-aliased through `image/vector`, measured, cut into lines and aligned in a width | `bytes`, `font`, `image`, `image/vector`, `unicode` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `html`, `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |
@@ -144,6 +146,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |
+| 4 | `ical` | iCalendar (RFC 5545): documents read as lines and components and written folded; events, to-dos, journal entries and alarms read into records; dates, floating readings and zones as one variant; `VTIMEZONE`s read as zones and zones written; recurrence rules read, checked and expanded over a window, held to `dateutil`; a calendar's occurrences with their exceptions and overrides; free and busy time, invitations, period dates and ranges not written yet | `bytes`, `lists`, `numbers`, `strings`, `time` |  |
 | 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -164,12 +167,15 @@ package moves its row in the same change. There is no cycle.
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
+| 5 | `image/ico` | ICO and CUR read and written: every image of an icon or cursor (PNG and bitmap entries of 1, 4, 8, 24 and 32 bits with their masks) as RGBA, a cursor's hot spot; written with PNG or 32-bit bitmap entries | `bytes`, `hash`, `image`, `image/png` |  |
+| 5 | `image/tiff` | TIFF read and written: every page of a file, in strips or tiles, coded by PackBits, LZW, Deflate, Zstandard, JPEG or the fax codings, 1 to 16 bits a sample as gray, RGB, a palette, CMYK or YCbCr, with alpha; written in every coding but JPEG, classic or BigTIFF, as strips or tiles, or as one bit a pixel | `bytes`, `compress`, `compress/zstd`, `hash`, `image`, `image/colorspace`, `image/jpeg` |  |
 | 5 | `pdf` | PDF documents written (text in the standard fonts and in embedded TrueType fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `font`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |
 | 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time` |  |
 | 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `os`, `poll`, `printing`, `time`, `unicode/segment` | `hero_ui.h` |
-| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 5 | `ical/vcard` | vCard 3.0 and 4.0 (RFC 6350, 2426): contacts read into names, telephones, addresses and the rest with their groups and types, written; every line a record does not hold kept; version 2.1, photos and keys as bytes, groups of cards and the conversion between versions refused or not written yet | `bytes`, `ical`, `strings` |  |
+| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` | `hero_proxy.h` |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `strings`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `bytes`, `fs`, `io`, `lists`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
@@ -190,6 +196,7 @@ package moves its row in the same change. There is no cycle.
 | 8 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `http`, `log`, `otlp`, `random`, `time` |  |
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |
+| 8 | `sse` | server-sent events read and served: a reader that connects again as an `EventSource` does (the last id sent, the stream's `retry` kept, a silent connection given up), through the client's proxy, and a hub that keeps a stream's clients, tells them what happens, replays what a client missed and keeps a silent connection from being closed | `http`, `io`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url`, `web` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 

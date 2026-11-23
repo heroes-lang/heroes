@@ -1,0 +1,100 @@
+# The ledger of `sse`: what a program can do with server-sent events, read and
+# served, one block per capability, and what Rebel answers. Go's standard
+# library, Rust's and Python's hold none of it (the `go`, `rust` and `python`
+# lines are `-`: `go doc -all net/http` and Python's `dir(http.server)` and
+# `dir(urllib.request)` name no event-stream reader or writer, and Rust's std
+# has no HTTP at all, read 2026-11-23). The census is .NET's
+# System.Net.ServerSentEvents, whose namespace page, read the same day,
+# lists SseFormatter (WriteAsync of items to a stream), SseParser and
+# SseParser<T> (Enumerate and EnumerateAsync of items, the properties
+# LastEventId and ReconnectionInterval), SseItem<T> (Data, EventId, EventType,
+# ReconnectionInterval, a constructor of data and a type) and the delegate
+# SseItemParser<T>, and the browser's `EventSource` of the WHATWG HTML
+# standard, § 9.2, whose processing model the reader follows.
+#
+# One event, and its parsing and its writing, are not this package's: they are
+# `http.Event`, `http.read_event` and `web.format_event`, kept where they were
+# and named below so that every capability stands in a block.
+
+capability read/reconnecting  an event stream read as a browser's EventSource reads it: connected, read, and connected again after it ends or fails
+  heroes  sse.Source, sse.source, sse.next, sse.close, sse.Reading, sse.default_reading, sse.UNLIMITED
+  go      -
+  rust    -
+  python  -
+  note    the standard's processing model: a stream is accepted at 200 and `text/event-stream`, any other answer, a refused certificate or a coded body ends the source, and a stream that ends or a network failure is waited out and connected again; `Reading.statuses` lets a program name statuses (502, 503, 504) it would rather wait out, which the standard fails on; the wait doubles after each failure in a row up to `longest`, which the standard leaves open ("a few seconds"), and the source ends `limit` after `most_failures`; 301, 302, 303, 307 and 308 are followed as the browser's fetch follows them (the standard names 301 and 307), `Authorization` and `Cookie` left behind when the host, port or scheme changes. .NET's SseParser only parses a stream the program opened and has no connection of its own, so this block has no counterpart there; the standard's 204 "stop reconnecting" is the rule that any answer but 200 ends the source
+
+capability read/proxy  the stream read through the proxies the client names, and the system's
+  heroes  sse.Source (its client's `proxy`), http.open_stream
+  go      -
+  rust    -
+  python  -
+  note    a `Source` connects by `http.open_stream`, so `http.Client.proxy`, `http.proxy_from_env` and `http.proxy_from_system` apply: an HTTP proxy's absolute-form request or CONNECT tunnel, a SOCKS 4, 4a, 5 or 5h proxy; on macOS an `https://` stream through a proxy fails `unsupported`, as `http` says, TLS not beginning over a tunnel there
+
+capability read/last-id-retry  the last event id and the reconnection interval the stream gave
+  heroes  sse.last_id_of, sse.retry_of, http.EventReader
+  go      -
+  rust    -
+  python  -
+  note    .NET's SseParser<T>.LastEventId and ReconnectionInterval; sent as `Last-Event-ID` where the id is not empty and waited for as `retry` says, three seconds before the stream says one (as Chrome waits); a stream that sets exactly 3000 ms is read as setting none, where the reading's own `retry` stands in for the first wait
+
+capability read/parse  the events of a body parsed by the standard's line algorithm
+  heroes  http.event_reader, http.read_event, http.events_of, http.Event, http.EventReader
+  go      -
+  rust    -
+  python  -
+  note    built before this package, in `http`; .NET's SseParser<T>.Enumerate and EnumerateAsync and SseItem<T>'s Data, EventId and EventType
+
+capability read/idle  a connection silent for too long given up and made again
+  heroes  sse.Reading (its `idle`)
+  go      -
+  rust    -
+  python  -
+  note    bounds the wait for each event, comments included, since a deadline of the stream is a point in time and a comment cannot move it; the connection is then made again with `Last-Event-ID`, so no event is lost
+
+capability read/typed-payload  an event's data parsed into the program's own type as it is read
+  heroes  refused: the data is text; a program reads it with `json` or its own parser, which needs no delegate and hides no step
+  go      -
+  rust    -
+  python  -
+  note    .NET's SseItemParser<T> and SseParser<T>'s type parameter
+
+capability write/format  an event, a comment and a retry written in the format of the standard
+  heroes  web.format_event, web.write_event, web.write_comment, web.write_retry, web.start_events, web.respond_events
+  go      -
+  rust    -
+  python  -
+  note    built before this package, in `web`; .NET's SseFormatter.WriteAsync
+
+capability serve/hub  the clients of a stream kept, told what happens, and told nothing for too long kept alive
+  heroes  sse.Hub, sse.default_hub, sse.subscribe, sse.publish, sse.heartbeat, sse.due, sse.count, sse.stream_of, sse.drop, sse.close_all, sse.last_event_id_of
+  go      -
+  rust    -
+  python  -
+  note    a value the program's own loop holds, since `web.serve` answers a request with a response held whole; one thread, no lock and no thread of the package's own, so `heartbeat` is called by the program on a timer and `due` says when; each write waits at most `write_wait` and a client whose write fails or waits past it is dropped and its connection closed; a comment after fifteen quiet seconds, as the standard suggests; the hub gives an event with no id the next number and keeps one that holds its own
+
+capability serve/replay  a client that connects again told what it missed
+  heroes  sse.subscribe, sse.Hub (its `history`), sse.last_event_id_of
+  go      -
+  rust    -
+  python  -
+  note    the history after the event whose id the client sends as `Last-Event-ID`; an id the history no longer holds (or never held) is answered with all the history, so an event may be seen twice and is never missed, where the standard leaves the choice to the server; none for a client with no id, which has nothing to ask with
+
+capability serve/topics  several streams, each with its own clients, from one hub
+  heroes  refused: a program keeps one `Hub` for each topic; a topic inside the hub would hide which clients a `publish` reaches
+  go      -
+  rust    -
+  python  -
+  note    the same shape as a program with several `web` routes, each its own value
+
+capability read/http2  a stream read over HTTP/2
+  heroes  refused: `http.open_stream` speaks HTTP/1.1, which every server of event streams answers; a stream is one long response, and HTTP/2's multiplexing adds nothing a reader of one needs
+  go      -
+  rust    -
+  python  -
+  note    the connection is opened offering `http/1.1` alone, also over TLS
+
+dropped
+  go      -
+  rust    -
+  python  -
+  note    .NET's Object members of SseParser<T> and SseItem<T> (Equals, GetHashCode, GetType, MemberwiseClone, ToString) and SseItem<T>'s constructor (a record's fields are written where it is made, `http.Event(name:, data:, id:)`)

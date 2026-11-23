@@ -41,6 +41,14 @@
 # a job's cancellation was asked while it ran. A store fails also with its
 # driver's codes (`sql`'s, `redis`'s), handed on.
 #
+# ## Rate limits
+#
+# A rate is a value: `bucket` holds a time to earn a token and a burst,
+# and `allow`, `reserve` and `cancel` take the tokens of an attempt at the
+# time the caller names, so a worker holds one for each kind of job it
+# limits and asks it before it runs one. A limit shared by workers needs a
+# bucket kept in the store and is not written.
+#
 # Not written yet, each a `pending` block of its ledger: a worker woken at once
 # when a job comes, rather than at its next poll; no more than so many attempts
 # of a kind in a time, across workers; jobs that wait for others: chains,
@@ -49,6 +57,7 @@
 # worker started it by a time; the jobs processed and failed counted over time,
 # the latencies measured; the worker processes alive, each with what it runs.
 
+use jobs/internal/gcra
 use jobs/internal/limits
 use jobs/internal/stored
 use json
@@ -77,6 +86,15 @@ constant EXISTS: str
 # `extend`.
 constant STOPPED: str
     "stopped"
+
+# The code of a wait for tokens longer than the caller accepts: `reserve_within`.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a time too near the ends of an `Instant` for a bucket's sums:
+# `bucket`, `allow`, `reserve`, `reserve_within`, `cancel` and `with_rate`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
 
 ## Jobs
 
@@ -529,6 +547,199 @@ function new_periodic(name: str, cron: str, job: Job) -> Periodic?
 function next_due(periodic: Periodic, after: time.Instant) -> time.Instant?
     return time.next_run(periodic.schedule, after: after, zone: periodic.zone)
 
+## Rate limits
+
+# A token bucket, which holds a rate: it earns one token every `every`, holds
+# at most `burst`, and an attempt takes tokens from it. It is a value, so a
+# program keeps one for each kind of job it limits, and the clock is the
+# program's: every call names the time it is made at, which no call reads from
+# the machine, so a limit is tested with instants and never with sleeps. Time
+# is read as not going backwards: a call that names an earlier time than an
+# earlier call is read at that earlier call's time. `bucket` makes one.
+record Bucket
+    # The time to earn one token, above nothing.
+    every: time.Duration
+    # The most tokens it holds, 1 or more.
+    burst: i64
+    # The instant the bucket is, or was, empty: at `t` it holds
+    # `(t - empty_at) / every` tokens up to `burst`, fewer than none while
+    # reservations are waiting.
+    empty_at: time.Instant
+    # The latest time any call named.
+    seen: time.Instant
+
+# What `reserve` answers: the bucket with the tokens taken, and the wait.
+record Reservation
+    # The bucket after the tokens are taken, in debt if they were not all there.
+    bucket: Bucket
+    # How many tokens were taken.
+    tokens: i64
+    # How long the caller waits before it may act: nothing where they were there.
+    delay: time.Duration
+    # The instant it may act.
+    ready: time.Instant
+    # The bucket's `empty_at` right after this reservation, which a later
+    # reservation moves on and `cancel` reads.
+    finish: time.Instant
+
+# What `allow` answers.
+record Allowed
+    # Whether the tokens were there at once.
+    granted: bool
+    # The bucket after: with the tokens taken where `granted`, as it was where not.
+    bucket: Bucket
+
+# A bucket full at `at`: a rate of one token every `every` with a burst of `burst`.
+#
+# - `every`: the time to earn one token: `time.seconds(1)` is a rate of one a
+#   second, `time.milliseconds(100)` ten a second.
+# - `burst`: the most tokens it holds, so the most attempts that go at once.
+# - `at`: the instant it is made, the program's own clock.
+#
+# Fails `invalid` where `every` is nothing or less, `burst` is below 1, or the
+# burst takes longer than 73 years to earn, and `does_not_fit` where `at` is
+# too near the ends of an `Instant`. See also `allow`, `reserve`.
+function bucket(every: time.Duration, burst: i64, at: time.Instant) -> Bucket?
+    return gcra.make(every: every, burst: burst, at: at)
+
+# Whether `n` tokens are there at `at`, taking them where they are.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the attempt.
+# - `n`: how many tokens the attempt costs, 1 or more.
+#
+# Where they are not all there nothing is taken and `granted` is false, the
+# attempt asking for more than the burst included, which no wait would grant.
+# Fails `invalid` where `n` is below 1 and `does_not_fit` where the sums leave
+# an `Instant`. See also `reserve`.
+function allow(limit: Bucket, at: time.Instant, n: i64) -> Allowed?
+    return gcra.allow(limit: limit, at: at, n: n)
+
+# Takes `n` tokens at `at` even if they are not there, and tells how long to
+# wait for them: reservations queue, each behind the ones before.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the attempt.
+# - `n`: how many tokens, from 1 to the burst.
+#
+# Fails `invalid` where `n` is below 1 or past the burst, and `does_not_fit`
+# where the sums leave an `Instant`. See also `reserve_within`, `cancel`.
+function reserve(limit: Bucket, at: time.Instant, n: i64) -> Reservation?
+    return gcra.reserve(limit: limit, at: at, n: n)
+
+# `reserve`, kept only where the wait is no longer than `within`.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the attempt.
+# - `n`: how many tokens.
+# - `within`: the longest wait the caller will accept; nothing means the tokens must be there.
+#
+# Fails `timeout` where the wait is longer, the caller's own bucket staying as it was,
+# and as `reserve` does. See also `allow`.
+function reserve_within(limit: Bucket, at: time.Instant, n: i64, within: time.Duration) -> Reservation?
+    taken = gcra.reserve(limit: limit, at: at, n: n)?
+
+    if time.is_longer(a: taken.delay, b: within)
+        return fail(
+            code: TIMEOUT,
+            msg: f"{n} tokens are {time.format_duration(taken.delay)} away, more than the {time.format_duration(within)} allowed"
+        )
+    return ok(taken)
+
+# Gives a reservation back, as far as no later reservation has used what it took.
+#
+# - `limit`: the bucket as it stands, after later reservations too.
+# - `taken`: the reservation to give back.
+# - `at`: the time it is given back; a reservation whose time to act has passed gives back nothing.
+#
+# Fails `does_not_fit` where the sums leave an `Instant`. See also `reserve`.
+function cancel(limit: Bucket, taken: Reservation, at: time.Instant) -> Bucket?
+    return gcra.cancel(limit: limit, taken: taken, at: at)
+
+# The tokens the bucket holds at `at`, a fraction of one and the debt of
+# reservations that wait included, as a negative number.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+#
+# See also `available`.
+function tokens(limit: Bucket, at: time.Instant) -> f64
+    return gcra.tokens(limit: limit, at: at)
+
+# The whole tokens the bucket holds at `at`, never below none.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+#
+# See also `tokens`.
+function available(limit: Bucket, at: time.Instant) -> i64
+    held = gcra.tokens(limit: limit, at: at)
+
+    if held < 1.0
+        return 0
+    return to_i64(held).must()
+
+# The bucket with another rate and another burst, holding at `at` the tokens it held, as many as the new burst allows.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the change.
+# - `every`: the new time to earn one token.
+# - `burst`: the new burst.
+#
+# Fails `invalid` as `bucket` does and `does_not_fit` where the sums leave an
+# `Instant`. A change rounds the tokens held to the nanosecond.
+function with_rate(limit: Bucket, at: time.Instant, every: time.Duration, burst: i64) -> Bucket?
+    return gcra.reshape(limit: limit, at: at, every: every, burst: burst)
+
+# Something done now and then: the first calls, every so many, and at most once
+# in a span, as Go's `rate.Sometimes` decides it, kept as a value with the
+# clock the caller's. `sometimes` makes one.
+record Sometimes
+    # The first `first` calls are due; 0 for none.
+    first: i64
+    # Every `every`th call is due, the first being the 1st; 0 for none.
+    every: i64
+    # A call is due once `interval` has passed since the last that was; nothing for never.
+    interval: time.Duration
+    # The calls so far.
+    count: i64
+    # When the last due call was, where there was one.
+    last: time.Instant?
+
+# What `sometimes_due` answers.
+record Sampled
+    # Whether this call is due.
+    due: bool
+    # The state after the call.
+    state: Sometimes
+
+# A `Sometimes` of no calls yet.
+#
+# - `first`: how many of the first calls are due, 0 or more.
+# - `every`: which calls are due, every `every`th, 0 or more.
+# - `interval`: the span after which a call is due, nothing or more.
+#
+# Fails `invalid` where a number is below 0. A call is due if any of the three says so.
+# See also `sometimes_due`.
+function sometimes(first: i64, every: i64, interval: time.Duration) -> Sometimes?
+    if first < 0 || every < 0 || interval.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"a Sometimes of first {first}, every {every} and interval {time.format_duration(interval)} holds a number below 0"
+        )
+    return ok(
+        Sometimes(first: first, every: every, interval: interval, count: 0, last: fail(code: NOT_FOUND, msg: "no call was due yet"))
+    )
+
+# Whether the next call is due, and the state after it.
+#
+# - `state`: the `Sometimes` as it stands.
+# - `at`: the time of the call.
+#
+# Fails `does_not_fit` where the count or the sums leave their types.
+function sometimes_due(state: Sometimes, at: time.Instant) -> Sampled?
+    return gcra.sample(state: state, at: at)
+
 ## Tests
 
 test "new_job: the defaults, checked whole"
@@ -769,3 +980,85 @@ test "next_due: every fifteen minutes"
     p = new_periodic(name: "sync", cron: "*/15 * * * *", job: new_job("sync", .null_value)).must()
     after = time.parse("2026-11-18T10:07:00Z", .rfc3339).must()
     assert next_due(p, after: after).must() == time.parse("2026-11-18T10:15:00Z", .rfc3339).must()
+
+# A bucket of five attempts a second with a burst of ten: ten go at once.
+test "bucket: five a second, ten at once"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit = bucket(every: time.milliseconds(200).must(), burst: 10, at: now).must()
+    assert limit.burst == 10 && available(limit: limit, at: now) == 10
+
+# An attempt granted while the tokens last, and refused after.
+test "allow: two tokens, three attempts"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit @= bucket(every: time.seconds(1).must(), burst: 2, at: now).must()
+    granted: [bool] @= []
+
+    for _ in range(from: 0, to: 3)
+        got = allow(limit: limit, at: now, n: 1).must()
+        limit @ got.bucket
+        granted @ granted.push(got.granted)
+
+    assert granted == [true, true, false]
+
+# The wait a worker owes for the third token of a bucket of two.
+test "reserve: the wait for a token that is not there"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit @= bucket(every: time.seconds(1).must(), burst: 2, at: now).must()
+    limit @ reserve(limit: limit, at: now, n: 2).must().bucket
+    assert reserve(limit: limit, at: now, n: 1).must().delay == time.seconds(1).must()
+
+# A wait longer than the worker accepts.
+test "reserve_within: a wait of a second where half of one is allowed"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit @= bucket(every: time.seconds(1).must(), burst: 1, at: now).must()
+    limit @ reserve(limit: limit, at: now, n: 1).must().bucket
+
+    match reserve_within(limit: limit, at: now, n: 1, within: time.milliseconds(500).must())
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+# A reservation given back before its time comes.
+test "cancel: the token comes back"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit = bucket(every: time.seconds(1).must(), burst: 1, at: now).must()
+    taken = reserve(limit: limit, at: now, n: 1).must()
+    back = cancel(limit: taken.bucket, taken: taken, at: now).must()
+    assert available(limit: back, at: now) == 1
+
+# The tokens a bucket holds, in tenths.
+test "tokens: half a token after half a second"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit = bucket(every: time.seconds(1).must(), burst: 3, at: now).must()
+    emptied = allow(limit: limit, at: now, n: 3).must().bucket
+    later = time.add(t: now, d: time.milliseconds(500).must()).must()
+    assert tokens(limit: emptied, at: later) == 0.5
+
+# The whole tokens a bucket holds.
+test "available: none, then one"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit = bucket(every: time.seconds(1).must(), burst: 3, at: now).must()
+    emptied = allow(limit: limit, at: now, n: 3).must().bucket
+    assert available(limit: emptied, at: now) == 0
+    assert available(limit: emptied, at: time.add(t: now, d: time.seconds(1).must()).must()) == 1
+
+# A bucket whose rate is doubled keeps the tokens it holds.
+test "with_rate: a faster rate with the tokens it had"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    limit = bucket(every: time.seconds(1).must(), burst: 4, at: now).must()
+    emptied = allow(limit: limit, at: now, n: 4).must().bucket
+    later = time.add(t: now, d: time.seconds(2).must()).must()
+    faster = with_rate(limit: emptied, at: later, every: time.milliseconds(500).must(), burst: 4).must()
+    assert available(limit: faster, at: later) == 2 && available(limit: faster, at: time.add(t: later, d: time.seconds(1).must()).must()) == 4
+
+# Something done on the first call and every third.
+test "sometimes: the first call and every third"
+    state = sometimes(first: 1, every: 3, interval: time.milliseconds(0).must()).must()
+    assert state.count == 0 && state.first == 1
+
+# Whether a call is due.
+test "sometimes_due: the first call is due"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    state = sometimes(first: 1, every: 0, interval: time.milliseconds(0).must()).must()
+    got = sometimes_due(state: state, at: now).must()
+    assert got.due && got.state.count == 1
+    assert !sometimes_due(state: got.state, at: now).must().due

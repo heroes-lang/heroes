@@ -226,6 +226,14 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-on-the-own-stack-which-calls-the-function-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-that-resumes-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-left-by-setcontext-to-the-runner-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2704-a-handler-that-siglongjmps-out-of-the-function-the-program-gave-c-ends-the-program-quietly.hero", why: SIGACTION_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2707-a-siglongjmp-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-before-it-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2707-a-siglongjmp-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-after-it-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2707-a-setcontext-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-before-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2707-a-setcontext-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-after-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2706-a-siglongjmp-out-of-a-handler-onto-the-frames-that-reuse-an-ended-coroutines-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2706-a-siglongjmp-out-of-a-handler-onto-the-frames-that-reuse-a-stack-given-to-makecontext-and-never-switched-to-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2705-a-siglongjmp-out-of-a-handler-into-a-live-coroutine-is-refused-in-words-that-name-the-jump.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of

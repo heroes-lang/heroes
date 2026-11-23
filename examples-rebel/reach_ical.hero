@@ -1,0 +1,24 @@
+# Reaches Rebel's `ical`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). Given the path of an iCalendar file, it prints the
+# calendar as the package writes it, read into events, to-dos and journal
+# entries and written again.
+
+use <rebel>/fs
+use <rebel>/ical
+
+function main()
+    paths = args()
+
+    if paths.len() != 1
+        print("usage: reach_ical <calendar file>")
+        return
+
+    match fs.read_bytes(paths[0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match ical.decode_calendar(data)
+                .err e => print(e.code, ": ", e.msg)
+                .ok cal =>
+                    match ical.format_calendar(cal)
+                        .ok text => print(text)
+                        .err e   => print(e.code, ": ", e.msg)

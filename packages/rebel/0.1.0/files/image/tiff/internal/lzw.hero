@@ -1,0 +1,239 @@
+# TIFF's LZW (compression 5): codes of 9 to 12 bits written most significant
+# bit first, a clear code of 256 and an end code of 257, and the early change
+# that makes the width grow one code before the table fills it. The
+# pre-1988 form, least significant bit first with no early change, is
+# refused.
+
+use image
+
+# The first code a string can have: 0 to 255 are the bytes, 256 clears the
+# table and 257 ends the data.
+constant FIRST_CODE: i64
+    258
+
+# The most codes the table holds.
+constant TABLE_SIZE: i64
+    4096
+
+# `n` zeros as a list of numbers.
+function zero_list(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# The `expected` bytes that `src` decodes to, the output cut at `expected`.
+# Fails `invalid` where a code names no string or the data ends first, and
+# `unsupported` for the pre-1988 form.
+function decode(src: [u8] lent, expected: i64) -> [u8]?
+    if src.len() >= 2 && src[0] == 0 && to_i64(src[1]).must() & 1 == 1
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: "LZW of the pre-1988 form, least significant bit first, which no program has written for decades"
+        )
+    out: [u8] @= []
+    prefix @= zero_list(TABLE_SIZE)
+    firsts @= zero_list(TABLE_SIZE)
+    lengths @= zero_list(TABLE_SIZE)
+    suffix: [u8] @= []
+
+    for c in range(from: 0, to: TABLE_SIZE)
+        suffix @ suffix.push(to_u8(c & 255).must())
+
+    for c in range(from: 0, to: 256)
+        firsts[c] @ c
+        lengths[c] @ 1
+
+    next @= FIRST_CODE
+    width @= 9
+    prev @= -1
+    acc @= 0
+    have @= 0
+    pos @= 0
+
+    while out.len() < expected
+        while have < width && pos < src.len()
+            acc @ acc << 8 | to_i64(src[pos]).must()
+            have @ have + 8
+            pos @ pos + 1
+
+        if have < width
+            break
+        code = acc >> have - width & (1 << width) - 1
+        have @ have - width
+        acc @ acc & (1 << have) - 1
+
+        if code == 257
+            break
+
+        if code == 256
+            next @ FIRST_CODE
+            width @ 9
+            prev @ -1
+            continue
+
+        if prev < 0
+            if code > 255
+                return fail(code: image.INVALID, msg: f"an LZW code of {code} where a byte comes first after a clear")
+            out @ out.push(suffix[code])
+            prev @ code
+            continue
+
+        if code > next || code >= TABLE_SIZE
+            return fail(code: image.INVALID, msg: f"an LZW code of {code} where {next} is the newest string")
+        added @= firsts[prev]
+
+        if code < next
+            added @ firsts[code]
+
+        if next < TABLE_SIZE
+            prefix[next] @ prev
+            suffix[next] @ to_u8(added).must()
+            firsts[next] @ firsts[prev]
+            lengths[next] @ lengths[prev] + 1
+            next @ next + 1
+        size = lengths[code]
+        start = out.len()
+
+        for _ in range(from: 0, to: size)
+            out @ out.push(0)
+
+        c @= code
+        k @= size - 1
+
+        while k >= 0
+            out[start + k] @ suffix[c]
+            c @ prefix[c]
+            k @ k - 1
+
+        prev @ code
+
+        if next >= 2047
+            width @ 12
+        else if next >= 1023
+            width @ 11
+        else if next >= 511
+            width @ 10
+
+    if out.len() < expected
+        return fail(
+            code: image.INVALID,
+            msg: f"an LZW strip that decodes to {out.len()} bytes, where {expected} are due"
+        )
+
+    if out.len() > expected
+        return ok(out.slice(from: 0, to: expected))
+    return ok(out)
+
+# The slots of the encoder's table: a power of two above twice the codes.
+constant SLOTS: i64
+    8192
+
+# `n` copies of -1 as a list of numbers.
+function minus_ones(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(-1)
+
+    return out
+
+# Writes `code` of `width` bits to `out`, most significant bit first, through
+# the bits `acc` holds of the byte begun.
+function put(@out: [u8], @acc: i64, @have: i64, code: i64, width: i64)
+    acc @ acc << width | code
+    have @ have + width
+
+    while have >= 8
+        out @ out.push(to_u8(acc >> have - 8 & 255).must())
+        have @ have - 8
+
+    acc @ acc & (1 << have) - 1
+
+# `raw` coded as one LZW stream, from a clear code to an end code, the table
+# cleared when it is full, as libtiff writes it.
+function encode(raw: [u8] lent) -> [u8]
+    out: [u8] @= []
+    acc @= 0
+    have @= 0
+    put(out: @out, acc: @acc, have: @have, code: 256, width: 9)
+
+    if raw.len() == 0
+        put(out: @out, acc: @acc, have: @have, code: 257, width: 9)
+
+        if have > 0
+            out @ out.push(to_u8(acc << 8 - have & 255).must())
+        return out
+    hash_keys @= minus_ones(SLOTS)
+    hash_codes @= minus_ones(SLOTS)
+    next @= FIRST_CODE
+    width @= 9
+    current @= to_i64(raw[0]).must()
+
+    for i in range(from: 1, to: raw.len())
+        c = to_i64(raw[i]).must()
+        key = current << 8 | c
+        slot @= key * 40503 % SLOTS
+
+        while hash_keys[slot] != -1 && hash_keys[slot] != key
+            slot @ (slot + 1) % SLOTS
+
+        if hash_keys[slot] == key
+            current @ hash_codes[slot]
+            continue
+        put(out: @out, acc: @acc, have: @have, code: current, width: width)
+        hash_keys[slot] @ key
+        hash_codes[slot] @ next
+        next @ next + 1
+
+        if next == 4094
+            put(out: @out, acc: @acc, have: @have, code: 256, width: width)
+            hash_keys @ minus_ones(SLOTS)
+            next @ FIRST_CODE
+            width @ 9
+        else if next > (1 << width) - 1
+            width @ width + 1
+        current @ c
+
+    put(out: @out, acc: @acc, have: @have, code: current, width: width)
+    next @ next + 1
+
+    if next == 4094
+        put(out: @out, acc: @acc, have: @have, code: 256, width: width)
+        width @ 9
+    else if next > (1 << width) - 1
+        width @ width + 1
+    put(out: @out, acc: @acc, have: @have, code: 257, width: width)
+
+    if have > 0
+        out @ out.push(to_u8(acc << 8 - have & 255).must())
+    return out
+
+# `n` bytes from a linear congruential generator seeded with `seed`, folded
+# to `range` values: the same bytes every run.
+function noise(n: i64, seed: i64, spread: i64) -> [u8]
+    out: [u8] @= []
+    v @= seed
+
+    for _ in range(from: 0, to: n)
+        v @ (v * 1103515245 + 12345) % 2147483648
+        out @ out.push(to_u8(v / 65536 % spread).must())
+
+    return out
+
+test "encode and decode: back as written, from nothing to far past the table's end"
+    for n in [0, 1, 2, 3, 300, 5000, 40000]
+        for spread in [1, 2, 16, 256]
+            raw = noise(n: n, seed: n + spread, spread: spread)
+            assert decode(encode(raw), expected: n).must() == raw
+
+test "encode: an empty strip is a clear code and an end code, and a repeat shrinks"
+    assert encode([]) == [0x80, 0x40, 0x40]
+    assert encode(noise(n: 5000, seed: 1, spread: 1)).len() < 200
+
+test "decode: a pre-1988 strip, a code past the table, a missing byte and a short strip are refused"
+    assert decode([0, 1, 2, 3], expected: 4).is_err()
+    assert decode([0x80, 0x01, 0xff, 0xff], expected: 9).is_err()
+    assert decode(encode(noise(n: 100, seed: 3, spread: 7)), expected: 101).is_err()

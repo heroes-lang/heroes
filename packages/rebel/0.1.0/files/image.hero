@@ -3,8 +3,10 @@
 # drawn on, measured, and reduced to a palette.
 #
 # It reads and writes no file: PNG is `image/png`'s, JPEG `image/jpeg`'s,
-# GIF `image/gif`'s, BMP `image/bmp`'s, and PBM, PGM, PPM and PAM
-# `image/netpbm`'s; `kind_of` says which of them a file's bytes hold. It
+# GIF `image/gif`'s, BMP `image/bmp`'s, PBM, PGM, PPM and PAM
+# `image/netpbm`'s, TIFF `image/tiff`'s, ICO and CUR `image/ico`'s, and WebP
+# `image/webp`'s;
+# `kind_of` says which of them a file's bytes hold. It
 # opens no path: `fs.read_bytes` answers the bytes a decoder takes. Shapes
 # beyond lines, rectangles and circles, anti-aliased, are `image/vector`'s,
 # and colours in other spaces `image/colorspace`'s. It draws no text and
@@ -26,8 +28,8 @@
 # palette and other made palettes; convolution filters: blur, sharpen, edges;
 # levels changed: invert, contrast, brightness, equalize, posterize; an image
 # split into channels and put back together; two images combined sample by
-# sample; a colour from its CSS name or text; TIFF, WebP, ICO, AVIF, HEIF, TGA,
-# PSD, PCX and Pillow's other formats.
+# sample; a colour from its CSS name or text; AVIF, HEIF, TGA, PSD, PCX and Pillow's
+# other formats.
 
 use image/internal/compose
 use image/internal/convert as recode
@@ -1253,6 +1255,12 @@ variant Kind
     bmp
     # PBM, PGM, PPM or PAM: `image/netpbm` reads it.
     netpbm
+    # TIFF, classic or BigTIFF in either byte order: `image/tiff` reads it.
+    tiff
+    # An icon or a cursor, a directory of images: `image/ico` reads it.
+    ico
+    # WebP, a RIFF file: `image/webp` reads its lossless coding.
+    webp
 
 # The kind of file `data` begins as, read from its signature alone; the rest
 # is not checked, so a decoder may still fail `invalid`.
@@ -1277,7 +1285,16 @@ function kind_of(data: [u8]) -> Kind?
 
     if n >= 3 && data[0] == 'P' && data[1] >= '1' && data[1] <= '7' && (data[2] == ' ' || data[2] == '\n' || data[2] == '\r' || data[2] == '\t')
         return ok(.netpbm)
-    return fail(code: INVALID, msg: f"{n} bytes that begin as no PNG, JPEG, GIF, BMP or netpbm file")
+
+    if n >= 4 && (data[0] == 'I' && data[1] == 'I' && (data[2] == 42 || data[2] == 43) && data[3] == 0 || data[0] == 'M' && data[1] == 'M' && data[2] == 0 && (data[3] == 42 || data[3] == 43))
+        return ok(.tiff)
+
+    if n >= 6 && data[0] == 0 && data[1] == 0 && (data[2] == 1 || data[2] == 2) && data[3] == 0 && (data[4] != 0 || data[5] != 0)
+        return ok(.ico)
+
+    if n >= 12 && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P'
+        return ok(.webp)
+    return fail(code: INVALID, msg: f"{n} bytes that begin as no PNG, JPEG, GIF, BMP, netpbm, TIFF, ICO or WebP file")
 
 ## Tests
 
@@ -1391,6 +1408,16 @@ test "kind_of: every signature, short data, and none"
     assert kind_of([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]).must() == .gif
     assert kind_of([0x42, 0x4d]).must() == .bmp
     assert kind_of([0x50, 0x37, 0x0a]).must() == .netpbm
+    assert kind_of([0x49, 0x49, 0x2a, 0x00]).must() == .tiff
+    assert kind_of([0x4d, 0x4d, 0x00, 0x2a]).must() == .tiff
+    assert kind_of([0x49, 0x49, 0x2b, 0x00]).must() == .tiff
+    assert kind_of([0x4d, 0x4d, 0x00, 0x2b]).must() == .tiff
+    assert kind_of([0x49, 0x49, 0x2a]).is_err()
+    assert kind_of([0, 0, 1, 0, 3, 0]).must() == .ico
+    assert kind_of([0, 0, 2, 0, 1, 0]).must() == .ico
+    assert kind_of([0, 0, 1, 0, 0, 0]).is_err()
+    assert kind_of([0x52, 0x49, 0x46, 0x46, 1, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]).must() == .webp
+    assert kind_of([0x52, 0x49, 0x46, 0x46, 1, 0, 0, 0, 0x57, 0x41, 0x56, 0x45]).is_err()
     assert kind_of([0x50, 0x38, 0x0a]).is_err()
     assert kind_of([0x89, 0x50]).is_err()
     assert kind_of([]).is_err()
