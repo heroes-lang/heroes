@@ -307,7 +307,7 @@ void hero_signal_learn(void) {
  * thread-local of this runtime is touched there. One read of the slot, where
  * the record was one thread-local access (four of those cost a `qsort`
  * comparator 3.7 times D's instructions, the compiler-engineer). */
-#if defined(HERO_SIG_WRAPS)
+#if defined(HERO_SIG_WRAPS) || defined(HERO_SIG_REBIND)
 /* How many of B''s wrappers one thread may be inside at once; a deeper one
  * runs its handler without an entry (`parts/siginstall.c`). */
 #define HERO_SIG_DEPTH 8
@@ -315,6 +315,29 @@ void hero_signal_learn(void) {
 /* How many save points' buffers J remembers per thread (`parts/sigjump.c`);
  * a full record overwrites its oldest pair. */
 #define HERO_SIG_JUMPS 32
+#endif
+
+#if defined(HERO_SIG_REBIND)
+/* Darwin's route (`parts/rebind.c`, panel 255's R1 and R3): one trampolined
+ * handler this thread is inside. Its trampoline's frame, compared and never read through;
+ * its serial, one per push and never reused, which a record of route A names;
+ * the alternate stack it was pushed on (none where `alt_lo == alt_hi`); how
+ * many swaps made while it stood have not yet returned in their own frames
+ * (rule 5); whether a `setcontext` into a coroutine's stack holds it until it
+ * ends (rule 6); whether a jump this runtime could not follow passed over it;
+ * and whether it is gone, one store, so a nested signal never sees an entry
+ * half moved. */
+typedef struct {
+    uintptr_t at;
+    uint64_t serial;
+    uintptr_t alt_lo;
+    uintptr_t alt_hi;
+    _Atomic int suspended;
+    unsigned gen; /* bumped where a landing resumes the handler, so a swap's late return releases nothing */
+    int held;
+    int unsure;
+    int dead;
+} HeroRebindEntry;
 #endif
 
 typedef struct {
@@ -336,17 +359,31 @@ typedef struct {
     uint64_t jump_print[HERO_SIG_JUMPS];
     uint32_t jump_size[HERO_SIG_JUMPS];
     unsigned jump_next;
+#elif defined(HERO_SIG_REBIND)
+    /* Darwin's route: the handlers this thread is inside, innermost
+     * last, `depth` past the last one not gone; how many run with no entry
+     * because the record was full (each refuses until it ends); the last
+     * serial given; whether a handler of this thread ever ran on an alternate
+     * stack (only then can a jump land in a handler's frames from outside). */
+    HeroRebindEntry entries[HERO_SIG_DEPTH];
+    int depth;
+    int lost;
+    uint64_t serial;
+    int alt_seen;
 #endif
 } HeroSignalStack;
 
 static _Thread_local HeroSignalStack hero_signal_stack;
 
-/* The fourth question's three answers: no handler stands; one stands that
- * this runtime saw begin and no jump since passed over; or one stands that a
- * jump it could not follow passed over, which may have left it. */
+/* The fourth question's four answers: no handler stands; one stands that
+ * this runtime saw begin and no jump since passed over; one stands that a
+ * jump it could not follow passed over, which may have left it; or one stands
+ * that switched to another context and has not been seen to switch back or
+ * to end (Darwin's route, which counts the switches). */
 #define HERO_SIG_OUTSIDE 0
 #define HERO_SIG_INSIDE 1
 #define HERO_SIG_UNSURE 2
+#define HERO_SIG_SWITCHED 3
 
 #if defined(HERO_SIG_WRAPS)
 /* `parts/siginstall.c`, below: is a wrapper still running above `frame`? */
@@ -400,6 +437,7 @@ static void hero_signal_measure(void) {
 #define HERO_SIGNAL_DELIVERED 1 /* the system called it itself */
 #define HERO_SIGNAL_UNFOLLOWED 2
 #define HERO_SIGNAL_STANDING 3
+#define HERO_SIGNAL_SWITCHED 4
 
 /* EVERY REFUSAL THE FOURTH QUESTION MAKES SAYS WHAT THE RUNTIME KNOWS, never
  * more (the author's ruling B of 2026-11-20 on defect 2522's rows 1 and 2).
@@ -418,6 +456,17 @@ static void hero_signal_measure(void) {
  * C++ exception leaves no event either. R1's words stay for the exact test,
  * ONSTACK and the walk, which find the delivery's own frame live beneath the
  * function, so are true.
+ *
+ * HERO_SIGNAL_SWITCHED: the handler switched to another context (`swapcontext`
+ * or `setcontext` into a context `makecontext` made) and this runtime has not
+ * seen it switch back or end (panel 255's R4, defect 2702). The function may
+ * be called on that other context, inside the signal's own frames, or the
+ * handler may have been abandoned by a switch the runtime cannot tell from
+ * one that comes back: a handler swapped away from and never resumed, then
+ * the function called from the context the program returned to, is correct C
+ * and is refused, for the author's ruling R4. STANDING's words, *C left the
+ * handler in a way this runtime does not follow*, were false of it: the
+ * runtime followed the switch.
  *
  * HERO_SIGNAL_UNFOLLOWED: C jumped, while the handler ran, to a buffer this
  * runtime holds no trusted record of (panel 251's R1: such a jump keeps every
@@ -442,6 +491,13 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
               "runtime does not follow (an inline `__builtin_longjmp`, a C++ exception, a jump inside a "
               "system library). A handler not seen to end is held to be running, where neither this "
               "runtime's memory nor the C library's is safe to use. "
+        : how == HERO_SIGNAL_SWITCHED
+            ? " was called while a signal handler of C's that this runtime saw begin had switched to "
+              "another context (`swapcontext`, or `setcontext` into a context `makecontext` made) and "
+              "had not been seen to switch back or to end: either C called it on that other context, or "
+              "C abandoned the handler by a switch this runtime cannot tell from one that comes back. A "
+              "handler not seen to end is held to be running, where neither this runtime's memory nor "
+              "the C library's is safe to use. "
         : how == HERO_SIGNAL_UNFOLLOWED
             ? " was called after C, inside a signal handler, jumped to a buffer this runtime holds no "
               "record of as it now stands (copied with `memcpy`, refilled where the runtime does not "
@@ -480,7 +536,11 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
 #else
     int inside = HERO_SIG_OUTSIDE;
 #endif
-    if (inside != HERO_SIG_OUTSIDE) hero_signal_refuse(what, inside == HERO_SIG_UNSURE ? HERO_SIGNAL_UNFOLLOWED : HERO_SIGNAL_STANDING);
+    if (inside != HERO_SIG_OUTSIDE) {
+        hero_signal_refuse(what, inside == HERO_SIG_UNSURE     ? HERO_SIGNAL_UNFOLLOWED
+                                 : inside == HERO_SIG_SWITCHED ? HERO_SIGNAL_SWITCHED
+                                                               : HERO_SIGNAL_STANDING);
+    }
     if (plain == 0 || own == NULL) return;
     uintptr_t lo = own->lo;
     uintptr_t hi = own->hi;

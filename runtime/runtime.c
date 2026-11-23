@@ -175,14 +175,25 @@
  * running (panel 251's R1): on Linux and every POSIX system but Darwin, a
  * wrapper around every handler a program's C installs (`siginstall.c`) and the
  * save points and jumps that tell a handler left from one jumped within
- * (`sigjump.c`), and `dlsym` answered with their definitions for their names
- * (`siglookup.c`); on Darwin, the rewritten slots and the trampoline
- * (`rebind.c`). Each compiles to nothing where it does not stand. Right after
- * `sigguard.c`, whose thread record and key they use. */
+ * (`sigjump.c`, which names its four siblings), and `dlsym` answered with
+ * their definitions for their names (`siglookup.c`); on Darwin, the rewritten
+ * slots and the trampoline (`rebind.c`, which names its six siblings). Each
+ * compiles to nothing where it does not stand. Right after `sigguard.c`,
+ * whose thread record and key they use. */
 #include "parts/siginstall.c"
 #include "parts/sigjump.c"
+#include "parts/sigjump_probe.c"
+#include "parts/sigjump_decode.c"
+#include "parts/sigjump_record.c"
+#include "parts/sigjump_save.c"
 #include "parts/siglookup.c"
 #include "parts/rebind.c"
+#include "parts/rebind_entries.c"
+#include "parts/rebind_install.c"
+#include "parts/rebind_record.c"
+#include "parts/rebind_decode.c"
+#include "parts/rebind_jump.c"
+#include "parts/rebind_image.c"
 
 /* The runtime's door for a signal other than SIGINT and SIGTERM (panel 247's
  * G): its own C handler counts each delivery, and the program takes the count
