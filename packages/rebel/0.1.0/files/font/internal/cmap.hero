@@ -1,0 +1,370 @@
+# The `cmap` table: which glyph a Unicode scalar value has. The subtable a
+# renderer uses is chosen once, by the preference of the OpenType
+# specification's own recommendation (Unicode full repertoire, Unicode BMP,
+# Windows symbol), and read in formats 0, 4, 6, 10, 12 and 13; format 2
+# (the legacy CJK byte encodings) and format 14 (variation selectors) are not
+# read.
+
+use font/internal/bin
+use font/internal/sfnt
+
+# The most a subtable's own count may claim: a code point is at most
+# 0x10FFFF, so a count past this is not a mapping.
+constant MAX_GROUPS: i64
+    1114112
+
+# The subtable chosen.
+record Chosen
+    # Where the subtable begins in the file.
+    at: i64
+    # Its format, 0, 4, 6, 10, 12 or 13.
+    format: i64
+    # Where the whole `cmap` table ends in the file: no read of a subtable
+    # goes past it.
+    end: i64
+    # Whether the font's characters are Windows symbol codes: a character
+    # of 0 to 255 is looked up as 0xF000 plus it, as a symbol font keeps them.
+    symbol: bool
+
+# How well a subtable of this platform and encoding suits Unicode: 0 for none.
+function rank(platform: i64, encoding: i64) -> i64
+    if platform == 3 && encoding == 10
+        return 6
+
+    if platform == 0 && encoding >= 4 && encoding <= 6
+        return 5
+
+    if platform == 3 && encoding == 1
+        return 4
+
+    if platform == 0 && encoding <= 3
+        return 3
+
+    if platform == 3 && encoding == 0
+        return 2
+    return 0
+
+# Whether this package reads a subtable of `format`.
+function reads(format: i64) -> bool
+    return format == 0 || format == 4 || format == 6 || format == 10 || format == 12 || format == 13
+
+# The subtable of `t`, the `cmap` table, a lookup uses. Fails `not_found`
+# where none is a Unicode mapping this package reads, `invalid` where the
+# table's records or the subtable's own counts run past it.
+function choose(data: [u8] lent, t: sfnt.Table lent) -> Chosen?
+    if t.length < 4
+        return fail(code: sfnt.INVALID, msg: f"the cmap table holds {t.length} bytes, its header needs 4")
+    count = bin.u16_at(data, at: t.offset + 2)
+
+    if 4 + 8 * count > t.length
+        return fail(code: sfnt.INVALID, msg: f"the cmap table's {count} records run past its {t.length} bytes")
+
+    best @= 0
+    found: i64? @= fail(code: sfnt.NOT_FOUND, msg: "the font has no cmap subtable that maps Unicode and is read here")
+    seen: [str] @= []
+
+    for k in range(from: 0, to: count)
+        rec = t.offset + 4 + 8 * k
+        platform = bin.u16_at(data, at: rec)
+        encoding = bin.u16_at(data, at: rec + 2)
+        offset = bin.u32_at(data, at: rec + 4)
+        score = rank(platform: platform, encoding: encoding)
+        seen @ seen.push(f"({platform},{encoding})")
+
+        if offset + 4 > t.length || score == 0
+            continue
+        format = bin.u16_at(data, at: t.offset + offset)
+
+        if reads(format) && score > best
+            best @ score
+            found @ ok(k)
+
+    listed = seen.join(" ")
+
+    chosen = match found
+        .err e => return fail(code: e.code, msg: f"{e.msg}; its subtables are {listed}")
+        .ok k  => k
+
+    rec = t.offset + 4 + 8 * chosen
+    at = t.offset + bin.u32_at(data, at: rec + 4)
+    format = bin.u16_at(data, at: at)
+    ch = Chosen(
+        at: at,
+        format: format,
+        end: t.offset + t.length,
+        symbol: bin.u16_at(data, at: rec) == 3 && bin.u16_at(data, at: rec + 2) == 0
+    )
+    verify(data, c: ch)?
+    return ok(ch)
+
+# Holds when every array the subtable's header counts lies inside the table.
+function verify(data: [u8] lent, c: Chosen lent) -> ()?
+    ok_extent = match c.format
+        0  => c.at + 262 <= c.end
+        4  => verify4(data, c: c)
+        6  => c.at + 10 + 2 * bin.u16_at(data, at: c.at + 8) <= c.end
+        10 => c.at + 20 + 2 * bin.u32_at(data, at: c.at + 16) <= c.end
+        _  => groups_fit(data, c: c)
+
+    if !ok_extent
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"the cmap subtable of format {c.format} at byte {c.at} runs past the table"
+        )
+    return ok()
+
+# Whether a format 4 subtable's four parallel arrays lie inside the table.
+function verify4(data: [u8] lent, c: Chosen lent) -> bool
+    segs2 = bin.u16_at(data, at: c.at + 6)
+    return segs2 % 2 == 0 && segs2 >= 2 && c.at + 16 + 4 * segs2 <= c.end
+
+# Whether a format 12 or 13 subtable's groups lie inside the table.
+function groups_fit(data: [u8] lent, c: Chosen lent) -> bool
+    n = bin.u32_at(data, at: c.at + 12)
+    return n <= MAX_GROUPS && c.at + 16 + 12 * n <= c.end
+
+# The glyph of the scalar value `cp` in the subtable `c`, 0 where it has none.
+# `cp` is 0 to 0x10FFFF.
+function glyph_of(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    if c.symbol && cp >= 0 && cp < 256
+        found = lookup(data, c: c, cp: 61440 + cp)
+
+        if found != 0
+            return found
+    return lookup(data, c: c, cp: cp)
+
+# The glyph of `cp` in the subtable, 0 where it has none, without the symbol
+# offset.
+function lookup(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    return match c.format
+        0  => lookup0(data, c: c, cp: cp)
+        4  => lookup4(data, c: c, cp: cp)
+        6  => lookup6(data, c: c, cp: cp)
+        10 => lookup10(data, c: c, cp: cp)
+        _  => lookup_groups(data, c: c, cp: cp)
+
+# Format 0: one byte of glyph for each of the first 256 codes.
+function lookup0(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    if cp < 0 || cp > 255
+        return 0
+    return bin.u8_at(data, at: c.at + 6 + cp)
+
+# Format 6: a trimmed table, `entryCount` glyphs from `firstCode`.
+function lookup6(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    first = bin.u16_at(data, at: c.at + 6)
+    n = bin.u16_at(data, at: c.at + 8)
+
+    if cp < first || cp >= first + n
+        return 0
+    return bin.u16_at(data, at: c.at + 10 + 2 * (cp - first))
+
+# Format 10: a trimmed table with 32-bit codes.
+function lookup10(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    first = bin.u32_at(data, at: c.at + 12)
+    n = bin.u32_at(data, at: c.at + 16)
+
+    if cp < first || cp >= first + n
+        return 0
+    return bin.u16_at(data, at: c.at + 20 + 2 * (cp - first))
+
+# Formats 12 and 13: groups of consecutive codes, found by binary search,
+# which map to consecutive glyphs (12) or to one glyph (13).
+function lookup_groups(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    lo @= 0
+    hi @= bin.u32_at(data, at: c.at + 12)
+
+    while lo < hi
+        mid = (lo + hi) / 2
+        g = c.at + 16 + 12 * mid
+        start = bin.u32_at(data, at: g)
+        end = bin.u32_at(data, at: g + 4)
+
+        if cp < start
+            hi @ mid
+        else if cp > end
+            lo @ mid + 1
+        else
+            if c.format == 13
+                return bin.u32_at(data, at: g + 8)
+            return bin.u32_at(data, at: g + 8) + cp - start
+
+    return 0
+
+# Format 4: segments with a delta or a glyph array; the last segment ends at
+# 0xFFFF.
+function lookup4(data: [u8] lent, c: Chosen lent, cp: i64) -> i64
+    if cp > 65535
+        return 0
+    segs = bin.u16_at(data, at: c.at + 6) / 2
+    ends = c.at + 14
+    starts = c.at + 16 + 2 * segs
+    deltas = starts + 2 * segs
+    offsets = deltas + 2 * segs
+    lo @= 0
+    hi @= segs
+
+    while lo < hi
+        mid = (lo + hi) / 2
+
+        if bin.u16_at(data, at: ends + 2 * mid) < cp
+            lo @ mid + 1
+        else
+            hi @ mid
+
+    if lo >= segs || bin.u16_at(data, at: starts + 2 * lo) > cp
+        return 0
+    delta = bin.u16_at(data, at: deltas + 2 * lo)
+    inside = bin.u16_at(data, at: offsets + 2 * lo)
+
+    if inside == 0
+        return (cp + delta) % 65536
+    place = offsets + 2 * lo + inside + 2 * (cp - bin.u16_at(data, at: starts + 2 * lo))
+
+    if place + 2 > c.end
+        return 0
+    g = bin.u16_at(data, at: place)
+
+    if g == 0
+        return 0
+    return (g + delta) % 65536
+
+# Every scalar value the subtable maps to a glyph the font has other than 0,
+# ascending and once each. At most 0x110000 of them, so the list is as long
+# as the font's own repertoire.
+function all_of(data: [u8] lent, c: Chosen lent, num_glyphs: i64) -> [i64]
+    out: [i64] @= []
+
+    if c.format == 12 || c.format == 13
+        n = bin.u32_at(data, at: c.at + 12)
+
+        for k in range(from: 0, to: n)
+            g = c.at + 16 + 12 * k
+            start = bin.u32_at(data, at: g)
+            last = bin.u32_at(data, at: g + 4)
+            top @= last
+
+            if top > 1114111
+                top @ 1114111
+
+            for cp in range(from: start, to: top + 1)
+                glyph = lookup_groups(data, c: c, cp: cp)
+
+                if glyph != 0 && glyph < num_glyphs
+                    out @ out.push(cp)
+
+        return unique(out.sort())
+
+    top @= 65535
+
+    if c.format == 10
+        top @ 1114111
+
+    for cp in range(from: 0, to: top + 1)
+        glyph = lookup(data, c: c, cp: cp)
+
+        if glyph != 0 && glyph < num_glyphs
+            out @ out.push(cp)
+
+    return out
+
+# `sorted` without its repeated neighbours.
+function unique(sorted: [i64]) -> [i64]
+    out: [i64] @= []
+
+    for v in sorted
+        if out.len() == 0 || out[out.len() - 1] != v
+            out @ out.push(v)
+
+    return out
+
+# A `cmap` table of one record for `platform` and `encoding` whose subtable
+# `sub` follows it.
+function wrapped(platform: i64, encoding: i64, sub: [u8]) -> [u8]
+    out: [u8] @= [0, 0, 0, 1, 0, to_u8(platform).must(), 0, to_u8(encoding).must(), 0, 0, 0, 12]
+
+    for b in sub
+        out @ out.push(b)
+
+    return out
+
+# The reader's answers for `cps` in the subtable `sub` of a table made for
+# `platform` and `encoding`.
+function answers(platform: i64, encoding: i64, sub: [u8], cps: [i64]) -> [i64]
+    data = wrapped(platform: platform, encoding: encoding, sub: sub)
+    c = choose(data, t: sfnt.Table(tag: "cmap", offset: 0, length: data.len())).must()
+    out: [i64] @= []
+
+    for cp in cps
+        out @ out.push(glyph_of(data, c: c, cp: cp))
+
+    return out
+
+test "glyph_of: format 6, a trimmed table, at its first code, its last and either side"
+    sub: [u8] = [0, 6, 0, 16, 0, 0, 0, 65, 0, 3, 0, 7, 0, 8, 0, 9]
+    assert answers(platform: 0, encoding: 3, sub: sub, cps: [64, 65, 66, 67, 68]) == [0, 7, 8, 9, 0]
+
+test "glyph_of: format 13, one glyph for a range, and the range's two ends"
+    sub: [u8] = [0, 13, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 255, 0, 0, 0, 9]
+    assert answers(platform: 3, encoding: 10, sub: sub, cps: [255, 256, 300, 511, 512]) == [0, 9, 9, 9, 0]
+
+test "glyph_of: format 4 with a glyph array: a character in it, one its entry leaves out, one between segments"
+    sub: [u8] = [
+        0
+        4
+        0
+        36
+        0
+        0
+        0
+        4
+        0
+        4
+        0
+        1
+        0
+        0
+        0
+        66
+        255
+        255
+        0
+        0
+        0
+        65
+        255
+        255
+        0
+        10
+        0
+        1
+        0
+        4
+        0
+        0
+        0
+        5
+        0
+        0
+    ]
+    assert answers(platform: 3, encoding: 1, sub: sub, cps: [64, 65, 66, 67, 65535, 65536]) == [0, 15, 0, 0, 0, 0]
+
+test "glyph_of: format 0 under the Unicode platform, its 256 codes and the one past them"
+    plain: [u8] @= [0, 0, 1, 6, 0, 0]
+
+    for k in range(from: 0, to: 256)
+        plain @ plain.push(to_u8(k % 200).must())
+
+    assert answers(platform: 0, encoding: 3, sub: plain, cps: [0, 65, 255, 256]) == [0, 65, 55, 0]
+
+test "glyph_of: a symbol font, whose letters stand at 0xF000 and up, found by the letter and by the code"
+    sub: [u8] = [0, 6, 0, 12, 0, 0, 240, 65, 0, 1, 0, 7]
+    assert answers(platform: 3, encoding: 0, sub: sub, cps: [65, 66, 61505, 64]) == [7, 0, 7, 0]
+
+test "choose: a table with no Unicode subtable, one of an unread format, one that runs past the table"
+    data: [u8] = [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 12, 0, 0, 1, 6, 0, 0]
+    assert choose(data, t: sfnt.Table(tag: "cmap", offset: 0, length: data.len())).is_err()
+    other = wrapped(platform: 3, encoding: 1, sub: [0, 2, 0, 6, 0, 0])
+    assert choose(other, t: sfnt.Table(tag: "cmap", offset: 0, length: other.len())).is_err()
+    short = wrapped(platform: 3, encoding: 10, sub: [0, 12, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 5])
+    assert choose(short, t: sfnt.Table(tag: "cmap", offset: 0, length: short.len())).is_err()
+    assert choose([], t: sfnt.Table(tag: "cmap", offset: 0, length: 0)).is_err()

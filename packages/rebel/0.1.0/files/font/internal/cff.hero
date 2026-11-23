@@ -1,0 +1,303 @@
+# The `CFF ` table of an OpenType font with PostScript outlines: its INDEX
+# structures, its DICTs and the places they name (the charstrings, the global
+# and local subroutines, the charset and the FDSelect of a CID-keyed font).
+# Only what outlines and the CID of a glyph need is read; the rest of a Top
+# DICT is walked and left. A real number in a DICT is skipped, no operator
+# this package reads taking one.
+
+use font/internal/bin
+use font/internal/sfnt
+
+# One operator of a DICT with its operands.
+record Entry
+    # The operator: 0 to 21, or 1200 plus the byte after an escape (12).
+    op: i64
+    # Its operands, a real number as 0.
+    args: [f64]
+
+# The private DICT of one font (a CID-keyed font has one for each FD): where
+# its local subroutines stand.
+record Private
+    # Where the local subroutines INDEX begins in the file, -1 for none.
+    subrs_at: i64
+
+# What the table says of where its parts stand.
+record Info
+    # How many glyphs the charstrings INDEX holds.
+    num_glyphs: i64
+    # Where the charstrings INDEX begins in the file.
+    chars_at: i64
+    # Where the global subroutines INDEX begins in the file.
+    global_at: i64
+    # Whether the font is CID-keyed (its Top DICT holds ROS).
+    cid: bool
+    # Where the charset begins in the file, a predefined one as -1.
+    charset_at: i64
+    # Where the FDSelect begins in the file, -1 for a font with one FD.
+    select_at: i64
+    # The private DICTs, one for a font that is not CID-keyed.
+    privates: [Private]
+
+# How many objects the INDEX at `at` holds; 0 where its header is not inside
+# the file.
+function count_of(data: [u8] lent, at: i64) -> i64
+    return bin.u16_at(data, at: at)
+
+# The first byte of object `item` of the INDEX at `at`, and its length, as two
+# numbers. Fails `invalid` where the offsets run backwards or past the file.
+function item_of(data: [u8] lent, at: i64, item: i64) -> [i64]?
+    count = count_of(data, at: at)
+
+    if item < 0 || item >= count
+        return fail(code: sfnt.INVALID, msg: f"object {item} of an INDEX of {count}")
+    size = bin.u8_at(data, at: at + 2)
+
+    if size < 1 || size > 4
+        return fail(code: sfnt.INVALID, msg: f"an INDEX at byte {at} with offsets of {size} bytes: they are 1 to 4")
+    table = at + 3
+    base = table + (count + 1) * size - 1
+    first = bin.uint_at(data, at: table + item * size, size: size)
+    last = bin.uint_at(data, at: table + (item + 1) * size, size: size)
+
+    if first < 1 || last < first || !bin.fits(data, at: base + first, length: last - first)
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"object {item} of the INDEX at byte {at} runs from {first} to {last}, outside the file"
+        )
+    return ok([base + first, last - first])
+
+# Where the byte after the INDEX at `at` stands. Fails `invalid` where it
+# runs past the file.
+function end_of(data: [u8] lent, at: i64) -> i64?
+    count = count_of(data, at: at)
+
+    if count == 0
+        return ok(at + 2)
+    size = bin.u8_at(data, at: at + 2)
+
+    if size < 1 || size > 4 || !bin.fits(data, at: at + 3, length: (count + 1) * size)
+        return fail(code: sfnt.INVALID, msg: f"the INDEX at byte {at} runs past the end of the file")
+    base = at + 3 + (count + 1) * size - 1
+    last = bin.uint_at(data, at: at + 3 + count * size, size: size)
+
+    if last < 1 || !bin.fits(data, at: base + 1, length: last - 1)
+        return fail(code: sfnt.INVALID, msg: f"the INDEX at byte {at} holds data past the end of the file")
+    return ok(base + last)
+
+# The entries of the DICT of `length` bytes at `at`. Fails `invalid` where an
+# operand or an operator runs past it.
+function dict_at(data: [u8] lent, at: i64, length: i64) -> [Entry]?
+    out: [Entry] @= []
+    stack: [f64] @= []
+    k @= at
+    end = at + length
+
+    while k < end
+        b = bin.u8_at(data, at: k)
+
+        if b <= 21
+            op @= b
+            k @ k + 1
+
+            if b == 12
+                if k >= end
+                    return fail(code: sfnt.INVALID, msg: "a DICT ends inside an escaped operator")
+                op @ 1200 + bin.u8_at(data, at: k)
+                k @ k + 1
+            out @ out.push(Entry(op: op, args: stack))
+            stack @ []
+        else if b == 28
+            stack @ stack.push(to_f64(bin.i16_at(data, at: k + 1)))
+            k @ k + 3
+        else if b == 29
+            stack @ stack.push(to_f64(bin.i32_at(data, at: k + 1)))
+            k @ k + 5
+        else if b == 30
+            k @ k + 1
+
+            while k < end && bin.u8_at(data, at: k) & 15 != 15 && bin.u8_at(data, at: k) >> 4 != 15
+                k @ k + 1
+
+            k @ k + 1
+            stack @ stack.push(0.0)
+        else if b >= 32 && b <= 246
+            stack @ stack.push(to_f64(b - 139))
+            k @ k + 1
+        else if b >= 247 && b <= 250
+            stack @ stack.push(to_f64((b - 247) * 256 + bin.u8_at(data, at: k + 1) + 108))
+            k @ k + 2
+        else if b >= 251 && b <= 254
+            stack @ stack.push(to_f64(-(b - 251) * 256 - bin.u8_at(data, at: k + 1) - 108))
+            k @ k + 2
+        else
+            return fail(code: sfnt.INVALID, msg: f"byte {b} at {k} begins no operand or operator of a DICT")
+
+        if k > end
+            return fail(code: sfnt.INVALID, msg: "a DICT's last operand runs past its end")
+
+    return ok(out)
+
+# The operands of operator `op` among `entries`, as `not_found` where there
+# is none.
+function operands(entries: [Entry] lent, op: i64) -> [f64]?
+    for e in entries
+        if e.op == op
+            return ok(e.args)
+
+    return fail(code: sfnt.NOT_FOUND, msg: f"no operator {op} in the DICT")
+
+# The number `v` as an offset or a count: whole and 0 to 2^31.
+function whole(v: f64) -> i64?
+    n = to_i64(v).default(-1)
+
+    if to_f64(n) != v || n < 0 || n > 2147483647
+        return fail(code: sfnt.INVALID, msg: "an offset of a DICT that is not a whole number of the file's size")
+    return ok(n)
+
+# The private DICT whose `size` and `offset` the entries `entries` name,
+# read to find its local subroutines.
+function private_at(data: [u8] lent, base: i64, entries: [Entry] lent) -> Private?
+    found = operands(entries, op: 18)
+    none = Private(subrs_at: -1)
+
+    match found
+        .err _ => return ok(none)
+        .ok pair =>
+            if pair.len() != 2
+                return fail(code: sfnt.INVALID, msg: "a Private operator without its size and offset")
+            size = whole(pair[0])?
+            offset = whole(pair[1])?
+
+            if !bin.fits(data, at: base + offset, length: size)
+                return fail(
+                    code: sfnt.INVALID,
+                    msg: f"a private DICT of {size} bytes at {offset} runs past the CFF table"
+                )
+            inner = dict_at(data, at: base + offset, length: size)?
+
+            match operands(inner, op: 19)
+                .err _ => return ok(none)
+                .ok one =>
+                    if one.len() != 1
+                        return fail(code: sfnt.INVALID, msg: "a Subrs operator without its offset")
+                    return ok(Private(subrs_at: base + offset + whole(one[0])?))
+
+# The structure of the CFF table `t`. Fails `invalid` where an INDEX, a DICT
+# or a place they name runs past the table, `unsupported` for a Type 1
+# charstring font and for CFF2.
+function read(data: [u8] lent, t: sfnt.Table lent) -> Info?
+    if t.length < 4
+        return fail(code: sfnt.INVALID, msg: f"the CFF table holds {t.length} bytes, its header needs 4")
+
+    if bin.u8_at(data, at: t.offset) != 1
+        return fail(
+            code: sfnt.UNSUPPORTED,
+            msg: f"a CFF table of major version {bin.u8_at(data, at: t.offset)}: this package reads version 1"
+        )
+    base = t.offset
+    name_end = end_of(data, at: base + bin.u8_at(data, at: base + 2))?
+    top = item_of(data, at: name_end, item: 0)?
+    top_end = end_of(data, at: name_end)?
+    strings_end = end_of(data, at: top_end)?
+    global_at = strings_end
+    _ = end_of(data, at: global_at)?
+    entries = dict_at(data, at: top[0], length: top[1])?
+
+    match operands(entries, op: 1206)
+        .err _ => _ = 0
+        .ok kind =>
+            if kind.len() == 1 && kind[0] != 2.0
+                return fail(code: sfnt.UNSUPPORTED, msg: "a CFF font of Type 1 charstrings: this package reads Type 2")
+
+    chars_offset = whole(operands(entries, op: 17)?[0])?
+    chars_at = base + chars_offset
+    count = count_of(data, at: chars_at)
+    _ = end_of(data, at: chars_at)?
+    cid = operands(entries, op: 1230).is_err() == false
+    charset_at @= -1
+
+    match operands(entries, op: 15)
+        .err _ => _ = 0
+        .ok one =>
+            offset = whole(one[0])?
+
+            if offset > 2
+                charset_at @ base + offset
+
+    privates: [Private] @= []
+    select_at @= -1
+
+    if cid
+        fd_array = whole(operands(entries, op: 1236)?[0])?
+        select = whole(operands(entries, op: 1237)?[0])?
+        select_at @ base + select
+        fds = count_of(data, at: base + fd_array)
+
+        for k in range(from: 0, to: fds)
+            item = item_of(data, at: base + fd_array, item: k)?
+            fd = dict_at(data, at: item[0], length: item[1])?
+            privates @ privates.push(private_at(data, base: base, entries: fd)?)
+
+        if privates.len() == 0
+            return fail(code: sfnt.INVALID, msg: "a CID-keyed font whose FDArray is empty")
+    else
+        privates @ privates.push(private_at(data, base: base, entries: entries)?)
+
+    return ok(
+        Info(num_glyphs: count, chars_at: chars_at, global_at: global_at, cid: cid, charset_at: charset_at, select_at: select_at, privates: privates)
+    )
+
+# The index into `i.privates` that glyph `glyph` is drawn with.
+function font_of(data: [u8] lent, i: Info lent, glyph: i64) -> i64
+    if i.select_at < 0
+        return 0
+    format = bin.u8_at(data, at: i.select_at)
+    found @= 0
+
+    if format == 0
+        found @ bin.u8_at(data, at: i.select_at + 1 + glyph)
+    else if format == 3
+        ranges = bin.u16_at(data, at: i.select_at + 1)
+
+        for k in range(from: 0, to: ranges)
+            first = bin.u16_at(data, at: i.select_at + 3 + 3 * k)
+            next = bin.u16_at(data, at: i.select_at + 3 + 3 * (k + 1))
+
+            if glyph >= first && glyph < next
+                found @ bin.u8_at(data, at: i.select_at + 5 + 3 * k)
+                break
+
+    if found >= i.privates.len()
+        return 0
+    return found
+
+# The CID that glyph `glyph` of a CID-keyed font stands for, as its charset
+# gives it; `glyph` itself where the charset is a predefined one or the font
+# is not CID-keyed. Glyph 0 is CID 0.
+function cid_of(data: [u8] lent, i: Info lent, glyph: i64) -> i64
+    if !i.cid || i.charset_at < 0 || glyph <= 0
+        return glyph
+    format = bin.u8_at(data, at: i.charset_at)
+
+    if format == 0
+        return bin.u16_at(data, at: i.charset_at + 1 + 2 * (glyph - 1))
+    left @= glyph - 1
+    k @= i.charset_at + 1
+    step = if_two(format)
+
+    while left >= 0 && k + 2 + step <= data.len()
+        first = bin.u16_at(data, at: k)
+        spare = bin.uint_at(data, at: k + 2, size: step)
+
+        if left <= spare
+            return first + left
+        left @ left - spare - 1
+        k @ k + 2 + step
+
+    return glyph
+
+# The width in bytes of a charset range's `nLeft`: 1 in format 1, 2 in 2.
+function if_two(format: i64) -> i64
+    if format == 2
+        return 2
+    return 1

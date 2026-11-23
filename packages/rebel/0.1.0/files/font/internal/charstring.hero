@@ -1,0 +1,461 @@
+# The Type 2 charstring interpreter of CFF: the numbers, the path operators
+# (moves, lines, the curves, the four flex forms), the hints it skips, the
+# subroutine calls and the arithmetic. It draws a glyph into a path of lines
+# and cubic curves, never reading outside the table and never running past
+# the limits below, however a charstring calls itself.
+
+use font/internal/bin
+use font/internal/cff
+use font/internal/escape
+use font/internal/pen
+use font/internal/sfnt
+use font/internal/shapes
+
+# How deep subroutines may call one another, the specification's limit.
+constant MAX_DEPTH: i64
+    10
+
+# The path of glyph `glyph`. Fails `invalid` where the charstring reads
+# outside its table or misuses its stack, `limit` where it calls past
+# `MAX_DEPTH` or runs past `MAX_STEPS` of `pen`, `unsupported` for the deprecated
+# accented `endchar`.
+function draw(data: [u8] lent, info: cff.Info lent, glyph: i64) -> shapes.Path?
+    if glyph < 0 || glyph >= info.num_glyphs
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph} in a font of {info.num_glyphs} glyphs")
+    item = cff.item_of(data, at: info.chars_at, item: glyph)?
+    private = info.privates[cff.font_of(data, i: info, glyph: glyph)]
+    st: pen.State @= pen.start()
+    stack: [f64] @= []
+    ops: [i64] @= []
+    coords: [f64] @= []
+    run(data, info: info, private: private, at: item[0], length: item[1], depth: 0, st: @st, stack: @stack, ops: @ops, coords: @coords)?
+
+    if st.open
+        ops @ ops.push(shapes.CLOSE)
+    return ok(shapes.Path(ops: ops, coords: coords))
+
+# The subroutine bias for an INDEX of `count` subroutines.
+function bias_of(count: i64) -> i64
+    if count < 1240
+        return 107
+
+    if count < 33900
+        return 1131
+    return 32768
+
+# Runs the charstring of `length` bytes at `at` until it ends, returns or
+# the glyph ends.
+function run(data: [u8] lent, info: cff.Info lent, private: cff.Private lent, at: i64, length: i64, depth: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    k @= at
+    end = at + length
+
+    while k < end && !st.ended
+        st.steps @ st.steps + 1
+
+        if st.steps > pen.MAX_STEPS
+            return fail(code: pen.LIMIT, msg: f"a glyph runs past {pen.MAX_STEPS} operators")
+        b = bin.u8_at(data, at: k)
+        k @ k + 1
+
+        if b >= 32 || b == 28 || b == 255
+            k @ k + push_number(data, b: b, at: k, end: end, stack: @stack)?
+        else if b == 10 || b == 29
+            if stack.len() == 0
+                return fail(code: sfnt.INVALID, msg: "a subroutine call with nothing on the stack")
+
+            if depth >= MAX_DEPTH
+                return fail(code: pen.LIMIT, msg: f"subroutines called {MAX_DEPTH} levels deep")
+            place = if_global(b == 29, info: info, private: private)
+            count = cff.count_of(data, at: place)
+            number = to_i64(stack[stack.len() - 1]).default(-1000000) + bias_of(count)
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+            if place < 0 || number < 0 || number >= count
+                return fail(code: sfnt.INVALID, msg: f"a call of subroutine {number} in an INDEX of {count}")
+            sub = cff.item_of(data, at: place, item: number)?
+            run(data, info: info, private: private, at: sub[0], length: sub[1], depth: depth + 1, st: @st, stack: @stack, ops: @ops, coords: @coords)?
+        else if b == 11
+            return ok()
+        else if b == 19 || b == 20
+            hints(st: @st, stack: @stack)?
+            k @ k + (st.stems + 7) / 8
+        else if b == 12
+            k @ k + 1
+            escape.run(bin.u8_at(data, at: k - 1), st: @st, stack: @stack, ops: @ops, coords: @coords)?
+        else
+            operator(b, st: @st, stack: @stack, ops: @ops, coords: @coords)?
+
+    return ok()
+
+# The subroutine INDEX a call reaches: the global one, or the local one of the
+# glyph's private DICT, -1 where there is none.
+function if_global(global: bool, info: cff.Info lent, private: cff.Private lent) -> i64
+    if global
+        return info.global_at
+    return private.subrs_at
+
+# Pushes the number whose first byte is `b` and answers how many more bytes
+# it took.
+function push_number(data: [u8] lent, b: i64, at: i64, end: i64, @stack: [f64]) -> i64?
+    if stack.len() >= pen.MAX_STACK
+        return fail(code: sfnt.INVALID, msg: f"more than {pen.MAX_STACK} numbers on a charstring's stack")
+    extra @= 0
+
+    if b == 28
+        extra @ 2
+    else if b == 255
+        extra @ 4
+    else if b >= 247
+        extra @ 1
+
+    if at + extra > end
+        return fail(code: sfnt.INVALID, msg: "a number runs past the end of its charstring")
+
+    if b == 28
+        stack @ stack.push(to_f64(bin.i16_at(data, at: at)))
+    else if b == 255
+        stack @ stack.push(to_f64(bin.i32_at(data, at: at)) / 65536.0)
+    else if b >= 251
+        stack @ stack.push(to_f64(-(b - 251) * 256 - bin.u8_at(data, at: at) - 108))
+    else if b >= 247
+        stack @ stack.push(to_f64((b - 247) * 256 + bin.u8_at(data, at: at) + 108))
+    else
+        stack @ stack.push(to_f64(b - 139))
+    return ok(extra)
+
+# Counts the stems a hint operator declares and clears the stack. A hint mask
+# may carry the stems of a `vstem` left implicit.
+function hints(@st: pen.State, @stack: [f64]) -> ()?
+    pen.take_width(st: @st, stack: @stack, expected: -2)
+
+    if stack.len() % 2 != 0
+        return fail(code: sfnt.INVALID, msg: "a hint operator with an odd count of numbers")
+    st.stems @ st.stems + stack.len() / 2
+    stack @ []
+    return ok()
+
+# Executes the one-byte operator `b`, other than the escape, the calls and
+# the hint masks. Fails `invalid` where its numbers are not the count it takes.
+function operator(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    if b == 1 || b == 3 || b == 18 || b == 23
+        return hints(st: @st, stack: @stack)
+
+    if b == 21 || b == 22 || b == 4
+        return moves(b, st: @st, stack: @stack, ops: @ops, coords: @coords)
+
+    if b == 14
+        pen.take_width(st: @st, stack: @stack, expected: 0)
+
+        if stack.len() != 0
+            return fail(
+                code: sfnt.UNSUPPORTED,
+                msg: "an endchar that builds an accented glyph (the deprecated seac form)"
+            )
+        st.ended @ true
+        stack @ []
+        return ok()
+
+    if b == 5 || b == 6 || b == 7
+        return lines(b, st: @st, stack: @stack, ops: @ops, coords: @coords)
+
+    if b == 8 || b == 24 || b == 25 || b == 26 || b == 27 || b == 30 || b == 31
+        return curves(b, st: @st, stack: @stack, ops: @ops, coords: @coords)
+    return fail(code: sfnt.INVALID, msg: f"operator {b} is none a Type 2 charstring has")
+
+# The three move operators.
+function moves(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    want @= 1
+
+    if b == 21
+        want @ 2
+    pen.take_width(st: @st, stack: @stack, expected: want)
+
+    if stack.len() != want
+        return fail(code: sfnt.INVALID, msg: f"a move with {stack.len()} numbers, it takes {want}")
+
+    if b == 21
+        pen.move_by(dx: stack[0], dy: stack[1], st: @st, ops: @ops, coords: @coords)
+    else if b == 22
+        pen.move_by(dx: stack[0], dy: 0.0, st: @st, ops: @ops, coords: @coords)
+    else
+        pen.move_by(dx: 0.0, dy: stack[0], st: @st, ops: @ops, coords: @coords)
+    stack @ []
+    return ok()
+
+# The line operators: `rlineto` (pairs), `hlineto` and `vlineto` (alternating,
+# `hlineto` beginning horizontal).
+function lines(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    if stack.len() == 0 || b == 5 && stack.len() % 2 != 0
+        return fail(code: sfnt.INVALID, msg: f"a line operator with {stack.len()} numbers")
+    horizontal @= b == 6
+
+    for k in range(from: 0, to: stack.len())
+        if b == 5
+            if k % 2 == 0
+                pen.line_by(dx: stack[k], dy: stack[k + 1], st: @st, ops: @ops, coords: @coords)
+        else
+            if horizontal
+                pen.line_by(dx: stack[k], dy: 0.0, st: @st, ops: @ops, coords: @coords)
+            else
+                pen.line_by(dx: 0.0, dy: stack[k], st: @st, ops: @ops, coords: @coords)
+            horizontal @ !horizontal
+
+    stack @ []
+    return ok()
+
+# The curve operators, which differ in which coordinates they leave implicit.
+function curves(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    n = stack.len()
+    bad: ()? = fail(code: sfnt.INVALID, msg: f"a curve operator {b} with {n} numbers")
+
+    if b == 8
+        if n == 0 || n % 6 != 0
+            return bad
+
+        for k in range(from: 0, to: n / 6)
+            pen.curve_by(
+                dx1: stack[6 * k],
+                dy1: stack[6 * k + 1],
+                dx2: stack[6 * k + 2],
+                dy2: stack[6 * k + 3],
+                dx3: stack[6 * k + 4],
+                dy3: stack[6 * k + 5],
+                st: @st,
+                ops: @ops,
+                coords: @coords
+            )
+    else if b == 24
+        if n < 8 || (n - 2) % 6 != 0
+            return bad
+
+        for k in range(from: 0, to: (n - 2) / 6)
+            pen.curve_by(
+                dx1: stack[6 * k],
+                dy1: stack[6 * k + 1],
+                dx2: stack[6 * k + 2],
+                dy2: stack[6 * k + 3],
+                dx3: stack[6 * k + 4],
+                dy3: stack[6 * k + 5],
+                st: @st,
+                ops: @ops,
+                coords: @coords
+            )
+
+        pen.line_by(dx: stack[n - 2], dy: stack[n - 1], st: @st, ops: @ops, coords: @coords)
+    else if b == 25
+        if n < 8 || (n - 6) % 2 != 0
+            return bad
+
+        for k in range(from: 0, to: (n - 6) / 2)
+            pen.line_by(dx: stack[2 * k], dy: stack[2 * k + 1], st: @st, ops: @ops, coords: @coords)
+
+        m = n - 6
+        pen.curve_by(
+            dx1: stack[m],
+            dy1: stack[m + 1],
+            dx2: stack[m + 2],
+            dy2: stack[m + 3],
+            dx3: stack[m + 4],
+            dy3: stack[m + 5],
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+    else if b == 26 || b == 27
+        if n < 4 || n % 4 != 0 && n % 4 != 1
+            return bad
+        first @= 0.0
+        at @= 0
+
+        if n % 4 == 1
+            first @ stack[0]
+            at @ 1
+
+        for k in range(from: 0, to: n / 4)
+            j = at + 4 * k
+            extra @= 0.0
+
+            if k == 0
+                extra @ first
+
+            if b == 26
+                pen.curve_by(
+                    dx1: extra,
+                    dy1: stack[j],
+                    dx2: stack[j + 1],
+                    dy2: stack[j + 2],
+                    dx3: 0.0,
+                    dy3: stack[j + 3],
+                    st: @st,
+                    ops: @ops,
+                    coords: @coords
+                )
+            else
+                pen.curve_by(
+                    dx1: stack[j],
+                    dy1: extra,
+                    dx2: stack[j + 1],
+                    dy2: stack[j + 2],
+                    dx3: stack[j + 3],
+                    dy3: 0.0,
+                    st: @st,
+                    ops: @ops,
+                    coords: @coords
+                )
+    else
+        alternating(b == 31, st: @st, stack: stack, ops: @ops, coords: @coords)?
+
+    stack @ []
+    return ok()
+
+# `hvcurveto` (`horizontal`) and `vhcurveto`: curves of four numbers that begin
+# and end tangent to alternating axes, the last with an optional fifth number.
+function alternating(horizontal_first: bool, @st: pen.State, stack: [f64] lent, @ops: [i64], @coords: [f64]) -> ()?
+    n = stack.len()
+
+    if n < 4 || n % 4 != 0 && n % 4 != 1
+        return fail(code: sfnt.INVALID, msg: f"a curve operator with {n} numbers")
+    horizontal @= horizontal_first
+    groups = n / 4
+
+    for k in range(from: 0, to: groups)
+        j = 4 * k
+        tail @= 0.0
+
+        if k == groups - 1 && n % 4 == 1
+            tail @ stack[n - 1]
+
+        if horizontal
+            pen.curve_by(
+                dx1: stack[j],
+                dy1: 0.0,
+                dx2: stack[j + 1],
+                dy2: stack[j + 2],
+                dx3: tail,
+                dy3: stack[j + 3],
+                st: @st,
+                ops: @ops,
+                coords: @coords
+            )
+        else
+            pen.curve_by(
+                dx1: 0.0,
+                dy1: stack[j],
+                dx2: stack[j + 1],
+                dy2: stack[j + 2],
+                dx3: stack[j + 3],
+                dy3: tail,
+                st: @st,
+                ops: @ops,
+                coords: @coords
+            )
+        horizontal @ !horizontal
+
+    return ok()
+
+# The first glyph of a one-glyph INDEX of `body`, as a CFF structure of the
+# smallest kind: no subroutines, no charset.
+function lone(body: [u8] lent) -> [u8]
+    out: [u8] @= [0, 1, 1, 1, to_u8(body.len() + 1).must()]
+
+    for b in body
+        out @ out.push(b)
+
+    return out
+
+test "draw: a move, two lines and an endchar, with and without the width"
+    plain = lone([149, 159, 21, 169, 179, 5, 144, 6, 14])
+    info = cff.Info(
+        num_glyphs: 1,
+        chars_at: 0,
+        global_at: -1,
+        cid: false,
+        charset_at: -1,
+        select_at: -1,
+        privates: [cff.Private(subrs_at: -1)]
+    )
+    p = draw(plain, info: info, glyph: 0).must()
+    assert p.ops == [0, 1, 1, 4]
+    assert p.coords == [10.0, 20.0, 40.0, 60.0, 45.0, 60.0]
+    widthed = lone([150, 149, 159, 21, 14])
+    q = draw(widthed, info: info, glyph: 0).must()
+    assert q.ops == [0, 4]
+    assert q.coords == [10.0, 20.0]
+
+test "draw: a glyph outside the font, a number short of its operator, an unknown operator"
+    info = cff.Info(
+        num_glyphs: 1,
+        chars_at: 0,
+        global_at: -1,
+        cid: false,
+        charset_at: -1,
+        select_at: -1,
+        privates: [cff.Private(subrs_at: -1)]
+    )
+    assert draw(lone([14]), info: info, glyph: 1).is_err()
+    assert draw(lone([149, 21, 14]), info: info, glyph: 0).is_err()
+    assert draw(lone([0]), info: info, glyph: 0).is_err()
+    assert draw(lone([149, 159]), info: info, glyph: 0).must().ops == []
+
+test "draw: a subroutine that calls itself stops at ten levels, with limit"
+    data: [u8] = [0, 1, 1, 1, 3, 32, 29, 0, 1, 1, 1, 3, 32, 29]
+    info = cff.Info(
+        num_glyphs: 1,
+        chars_at: 7,
+        global_at: 0,
+        cid: false,
+        charset_at: -1,
+        select_at: -1,
+        privates: [cff.Private(subrs_at: -1)]
+    )
+
+    match draw(data, info: info, glyph: 0)
+        .ok _  => assert false
+        .err e => assert e.code == pen.LIMIT
+
+test "draw: ten subroutines that call the next six times each stop at the step limit"
+    index: [u8] @= [0, 10, 2]
+    bodies: [[u8]] @= []
+
+    for k in range(from: 0, to: 9)
+        body: [u8] @= []
+
+        for _ in range(from: 0, to: 6)
+            body @ body.push(to_u8(k + 33).must())
+            body @ body.push(29)
+
+        bodies @ bodies.push(body)
+
+    bodies @ bodies.push([11])
+    at @= 1
+
+    for b in bodies
+        index @ index.push(to_u8(at >> 8 & 255).must())
+        index @ index.push(to_u8(at & 255).must())
+        at @ at + b.len()
+
+    index @ index.push(to_u8(at >> 8 & 255).must())
+    index @ index.push(to_u8(at & 255).must())
+
+    for b in bodies
+        for v in b
+            index @ index.push(v)
+
+    start = index.len()
+
+    for v in [0, 1, 1, 1, 3, 32, 29]
+        index @ index.push(to_u8(v).must())
+
+    info = cff.Info(
+        num_glyphs: 1,
+        chars_at: start,
+        global_at: 0,
+        cid: false,
+        charset_at: -1,
+        select_at: -1,
+        privates: [cff.Private(subrs_at: -1)]
+    )
+
+    match draw(index, info: info, glyph: 0)
+        .ok _  => assert false
+        .err e => assert e.code == pen.LIMIT

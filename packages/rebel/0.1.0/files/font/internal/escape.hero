@@ -1,0 +1,299 @@
+# The two-byte operators of a Type 2 charstring, those that begin with the
+# byte 12: the four flex curves and the arithmetic (`random` is refused, a
+# font whose glyphs draw differently on every run being no font).
+
+use font/internal/pen
+use font/internal/sfnt
+
+# Executes the escaped operator `b`, the byte after the 12. Fails `invalid`
+# where the numbers on the stack are not what it takes or it is no operator.
+function run(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    if b >= 34 && b <= 37
+        return flex(b, st: @st, stack: @stack, ops: @ops, coords: @coords)
+    return arithmetic(b, st: @st, stack: @stack)
+
+# The four flex operators: two curves drawn as one, whose flatness the depth
+# argument (ignored) says when to draw as a line.
+function flex(b: i64, @st: pen.State, @stack: [f64], @ops: [i64], @coords: [f64]) -> ()?
+    want = match b
+        34 => 7
+        35 => 13
+        36 => 9
+        _  => 11
+
+    if stack.len() != want
+        return fail(code: sfnt.INVALID, msg: f"a flex operator with {stack.len()} numbers, it takes {want}")
+    v = stack
+
+    if b == 34
+        pen.curve_by(
+            dx1: v[0],
+            dy1: 0.0,
+            dx2: v[1],
+            dy2: v[2],
+            dx3: v[3],
+            dy3: 0.0,
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+        pen.curve_by(
+            dx1: v[4],
+            dy1: 0.0,
+            dx2: v[5],
+            dy2: -v[2],
+            dx3: v[6],
+            dy3: 0.0,
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+    else if b == 35
+        pen.curve_by(
+            dx1: v[0],
+            dy1: v[1],
+            dx2: v[2],
+            dy2: v[3],
+            dx3: v[4],
+            dy3: v[5],
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+        pen.curve_by(
+            dx1: v[6],
+            dy1: v[7],
+            dx2: v[8],
+            dy2: v[9],
+            dx3: v[10],
+            dy3: v[11],
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+    else if b == 36
+        pen.curve_by(
+            dx1: v[0],
+            dy1: v[1],
+            dx2: v[2],
+            dy2: v[3],
+            dx3: v[4],
+            dy3: 0.0,
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+        pen.curve_by(
+            dx1: v[5],
+            dy1: 0.0,
+            dx2: v[6],
+            dy2: v[7],
+            dx3: v[8],
+            dy3: -(v[1] + v[3] + v[7]),
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+    else
+        sum_x = v[0] + v[2] + v[4] + v[6] + v[8]
+        sum_y = v[1] + v[3] + v[5] + v[7] + v[9]
+        last_x @= v[10]
+        last_y @= -sum_y
+
+        if abs_of(sum_x) <= abs_of(sum_y)
+            last_x @ -sum_x
+            last_y @ v[10]
+        pen.curve_by(
+            dx1: v[0],
+            dy1: v[1],
+            dx2: v[2],
+            dy2: v[3],
+            dx3: v[4],
+            dy3: v[5],
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+        pen.curve_by(
+            dx1: v[6],
+            dy1: v[7],
+            dx2: v[8],
+            dy2: v[9],
+            dx3: last_x,
+            dy3: last_y,
+            st: @st,
+            ops: @ops,
+            coords: @coords
+        )
+
+    stack @ []
+    return ok()
+
+# The absolute value of `v`.
+function abs_of(v: f64) -> f64
+    if v < 0.0
+        return -v
+    return v
+
+# The arithmetic and stack operators.
+function arithmetic(b: i64, @st: pen.State, @stack: [f64]) -> ()?
+    n = stack.len()
+
+    pops = match b
+        3  => 2
+        4  => 2
+        5  => 1
+        9  => 1
+        10 => 2
+        11 => 2
+        12 => 2
+        14 => 1
+        15 => 2
+        18 => 1
+        20 => 2
+        21 => 1
+        22 => 4
+        24 => 2
+        26 => 1
+        27 => 1
+        28 => 2
+        29 => 1
+        30 => 2
+        _  => -1
+
+    if pops < 0
+        return fail(code: sfnt.INVALID, msg: f"escaped operator {b} is none a Type 2 charstring has, or it is `random`")
+
+    if n < pops
+        return fail(code: sfnt.INVALID, msg: f"operator 12 {b} needs {pops} numbers, the stack holds {n}")
+    top = stack[n - 1]
+    below @= 0.0
+
+    if n >= 2
+        below @ stack[n - 2]
+
+    if b == 3
+        replace(@stack, drop: 2, with: truth(top != 0.0 && below != 0.0))
+    else if b == 4
+        replace(@stack, drop: 2, with: truth(top != 0.0 || below != 0.0))
+    else if b == 5
+        replace(@stack, drop: 1, with: truth(top == 0.0))
+    else if b == 9
+        replace(@stack, drop: 1, with: abs_of(top))
+    else if b == 10
+        replace(@stack, drop: 2, with: below + top)
+    else if b == 11
+        replace(@stack, drop: 2, with: below - top)
+    else if b == 12
+        if top == 0.0
+            return fail(code: sfnt.INVALID, msg: "a charstring divides by zero")
+        replace(@stack, drop: 2, with: below / top)
+    else if b == 14
+        replace(@stack, drop: 1, with: -top)
+    else if b == 15
+        replace(@stack, drop: 2, with: truth(below == top))
+    else if b == 18
+        stack @ stack.slice(from: 0, to: n - 1)
+    else if b == 24
+        replace(@stack, drop: 2, with: below * top)
+    else if b == 26
+        if top < 0.0
+            return fail(code: sfnt.INVALID, msg: "a charstring takes the square root of a negative number")
+        replace(@stack, drop: 1, with: root(top))
+    else if b == 27
+        if n >= pen.MAX_STACK
+            return fail(code: sfnt.INVALID, msg: f"more than {pen.MAX_STACK} numbers on a charstring's stack")
+        stack @ stack.push(top)
+    else if b == 28
+        stack @ stack.slice(from: 0, to: n - 2)
+        stack @ stack.push(top)
+        stack @ stack.push(below)
+    else
+        return indexed(b, st: @st, stack: @stack)
+    return ok()
+
+# 1 for a true condition, 0 for a false one.
+function truth(v: bool) -> f64
+    if v
+        return 1.0
+    return 0.0
+
+# Drops `drop` numbers from the top of `stack` and pushes `with`.
+function replace(@stack: [f64], drop: i64, with: f64)
+    stack @ stack.slice(from: 0, to: stack.len() - drop)
+    stack @ stack.push(with)
+
+# The square root of `v`, 0 or more, by Newton's method to the precision of an
+# `f64`.
+function root(v: f64) -> f64
+    if v == 0.0
+        return 0.0
+    guess @= v
+
+    if guess < 1.0
+        guess @ 1.0
+
+    for _ in range(from: 0, to: 100)
+        guess @ (guess + v / guess) / 2.0
+
+    return guess
+
+# `put`, `get`, `ifelse`, `index` and `roll`, the operators that read the
+# stack by a number or the transient array.
+function indexed(b: i64, @st: pen.State, @stack: [f64]) -> ()?
+    n = stack.len()
+    top = stack[n - 1]
+    slot @= to_i64(top).default(-1)
+
+    if b == 20
+        place = to_i64(stack[n - 1]).default(-1)
+
+        if place < 0 || place >= st.transient.len()
+            return fail(code: sfnt.INVALID, msg: f"put into slot {place} of the 32 a charstring has")
+        st.transient[place] @ stack[n - 2]
+        stack @ stack.slice(from: 0, to: n - 2)
+    else if b == 21
+        if slot < 0 || slot >= st.transient.len()
+            return fail(code: sfnt.INVALID, msg: f"get of slot {slot} of the 32 a charstring has")
+        replace(@stack, drop: 1, with: st.transient[slot])
+    else if b == 22
+        chosen @= stack[n - 4]
+
+        if stack[n - 2] > stack[n - 1]
+            chosen @ stack[n - 3]
+        replace(@stack, drop: 4, with: chosen)
+    else if b == 29
+        if slot < 0
+            slot @ 0
+
+        if slot >= n - 1
+            return fail(code: sfnt.INVALID, msg: f"index {slot} past a stack of {n - 1} numbers")
+        replace(@stack, drop: 1, with: stack[n - 2 - slot])
+    else
+        roll(@stack)?
+    return ok()
+
+# `roll`: the `count` numbers under the two arguments rotated by `steps`
+# places, upward where positive.
+function roll(@stack: [f64]) -> ()?
+    n = stack.len()
+    steps = to_i64(stack[n - 1]).default(0)
+    count = to_i64(stack[n - 2]).default(-1)
+
+    if count < 0 || count > n - 2
+        return fail(code: sfnt.INVALID, msg: f"roll of {count} numbers on a stack of {n - 2}")
+    base = n - 2 - count
+    window = stack.slice(from: base, to: n - 2)
+    rolled: [f64] @= []
+
+    if count > 0
+        shift = (steps % count + count) % count
+
+        for k in range(from: 0, to: count)
+            rolled @ rolled.push(window[(k - shift + count) % count])
+    stack @ stack.slice(from: 0, to: base)
+
+    for v in rolled
+        stack @ stack.push(v)
+
+    return ok()

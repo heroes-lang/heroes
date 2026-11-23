@@ -1,0 +1,27 @@
+# Reaches Rebel's `font`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). Given the path of a font file it prints the font's
+# name, its glyph count and the width of a line of text set in it.
+
+use <rebel>/font
+use <rebel>/fs
+
+function main()
+    paths = args()
+
+    if paths.len() != 1
+        print("usage: reach_font <font file>")
+        return
+
+    match fs.read_bytes(paths[0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match font.parse(data, index: 0)
+                .err e => print(e.code, ": ", e.msg)
+                .ok f =>
+                    print(
+                        font.name_of(f, id: .full_name).default("(no name)"),
+                        ": ",
+                        font.metrics_of(f).glyph_count,
+                        " glyphs"
+                    )
+                    print("width of Hello at 12: ", font.width_of(f, text: "Hello", size: 12.0).default(0.0))

@@ -1,0 +1,88 @@
+# The path a glyph's points draw: its contours as lines and quadratic curves,
+# each starting where fontTools starts it.
+
+use font/internal/glyf
+use font/internal/shapes
+
+# The path a glyph's points draw: each contour starts on a point of the curve
+# (the middle of two off-curve points where none is) and each run of off-curve
+# points is a chain of quadratic curves. A contour of one point draws nothing
+# (a font keeps it to match a composite's points) and has no step.
+function path_of(p: glyf.Points lent) -> shapes.Path
+    ops: [i64] @= []
+    coords: [f64] @= []
+    first @= 0
+
+    for last in p.ends
+        n = last - first + 1
+
+        if n >= 2
+            contour(p, first: first, count: n, ops: @ops, coords: @coords)
+        first @ last + 1
+
+    return shapes.Path(ops: ops, coords: coords)
+
+# Adds the contour of `count` points from `first` to `ops` and `coords`: it
+# starts on its first point that is on the curve and goes round once, and
+# where none is, from the middle of its last and first points.
+function contour(p: glyf.Points lent, first: i64, count: i64, @ops: [i64], @coords: [f64])
+    last = first + count - 1
+    start_x @= 0.0
+    start_y @= 0.0
+    offset @= 0
+    steps @= count
+    found @= -1
+
+    for k in range(from: first, to: last + 1)
+        if found < 0 && p.on[k]
+            found @ k
+
+    if found >= 0
+        start_x @ p.xs[found]
+        start_y @ p.ys[found]
+        offset @ found - first + 1
+        steps @ count - 1
+    else
+        start_x @ (p.xs[first] + p.xs[last]) / 2.0
+        start_y @ (p.ys[first] + p.ys[last]) / 2.0
+
+    ops @ ops.push(shapes.MOVE)
+    coords @ coords.push(start_x)
+    coords @ coords.push(start_y)
+    pending @= false
+    control_x @= 0.0
+    control_y @= 0.0
+
+    for j in range(from: 0, to: steps)
+        k = first + (offset + j) % count
+        x = p.xs[k]
+        y = p.ys[k]
+
+        if p.on[k]
+            if pending
+                ops @ ops.push(shapes.QUAD)
+                coords @ coords.push(control_x)
+                coords @ coords.push(control_y)
+            else
+                ops @ ops.push(shapes.LINE)
+            coords @ coords.push(x)
+            coords @ coords.push(y)
+            pending @ false
+        else
+            if pending
+                ops @ ops.push(shapes.QUAD)
+                coords @ coords.push(control_x)
+                coords @ coords.push(control_y)
+                coords @ coords.push((control_x + x) / 2.0)
+                coords @ coords.push((control_y + y) / 2.0)
+            pending @ true
+            control_x @ x
+            control_y @ y
+
+    if pending
+        ops @ ops.push(shapes.QUAD)
+        coords @ coords.push(control_x)
+        coords @ coords.push(control_y)
+        coords @ coords.push(start_x)
+        coords @ coords.push(start_y)
+    ops @ ops.push(shapes.CLOSE)

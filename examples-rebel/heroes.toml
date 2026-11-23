@@ -37,6 +37,7 @@ packages = [
     "dns",
     "errors",
     "flags",
+    "font",
     "fs",
     "fs/watch",
     "fs/watch/hero_watch",

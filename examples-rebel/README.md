@@ -90,6 +90,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
+| 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings`, `threads` | `hero_net.h`, `hero_stream_net.h` |
 | 3 | `yaml` | a YAML document parsed into values and written back | `json`, `numbers`, `strings`, `unicode` |  |

@@ -1,0 +1,80 @@
+# The `kern` table: the adjustment, in font units, between two glyphs side by
+# side. Only the horizontal pair lists of format 0 are read, the form every
+# renderer's `kern` has; the pair adjustments of `GPOS` are not.
+
+use font/internal/bin
+use font/internal/sfnt
+
+# The adjustment between `left` and `right` in the `kern` table `t`, 0 where
+# the font has no pair for them. The subtables are read in the file's order
+# and their adjustments added, as a renderer adds them; a subtable that is
+# not a horizontal format 0 is passed over, and one that runs past the table
+# ends the search.
+function pair_of(data: [u8] lent, t: sfnt.Table lent, left: i64, right: i64) -> i64
+    if t.length < 4 || bin.u16_at(data, at: t.offset) != 0
+        return 0
+    count = bin.u16_at(data, at: t.offset + 2)
+    at @= t.offset + 4
+    total @= 0
+    end = t.offset + t.length
+
+    for _ in range(from: 0, to: count)
+        if at + 6 > end
+            break
+        length = bin.u16_at(data, at: at + 2)
+        coverage = bin.u16_at(data, at: at + 4)
+
+        if length < 6 || at + length > end
+            break
+
+        if coverage >> 8 == 0 && coverage & 1 == 1
+            total @ total + search(data, at: at + 6, end: at + length, left: left, right: right)
+        at @ at + length
+
+    return total
+
+# The adjustment in the format 0 subtable body at `at`, which ends at `end`.
+function search(data: [u8] lent, at: i64, end: i64, left: i64, right: i64) -> i64
+    pairs = bin.u16_at(data, at: at)
+    first = at + 8
+
+    if first + 6 * pairs > end
+        return 0
+    key = left << 16 | right
+    lo @= 0
+    hi @= pairs
+
+    while lo < hi
+        mid = (lo + hi) / 2
+        place = first + 6 * mid
+        here = bin.u16_at(data, at: place) << 16 | bin.u16_at(data, at: place + 2)
+
+        if key < here
+            hi @ mid
+        else if key > here
+            lo @ mid + 1
+        else
+            return bin.i16_at(data, at: place + 4)
+
+    return 0
+
+# A `kern` table of one format 0 subtable with the pairs (3, 4) and (3, 5).
+function sample() -> [u8]
+    return [0, 0, 0, 1, 0, 0, 0, 26, 0, 1, 0, 2, 0, 12, 0, 1, 0, 0, 0, 3, 0, 4, 255, 206, 0, 3, 0, 5, 0, 20]
+
+test "pair_of: a pair with a negative value, one with a positive, a missing pair, the pair reversed"
+    data = sample()
+    t = sfnt.Table(tag: "kern", offset: 0, length: data.len())
+    assert pair_of(data, t: t, left: 3, right: 4) == -50
+    assert pair_of(data, t: t, left: 3, right: 5) == 20
+    assert pair_of(data, t: t, left: 3, right: 6) == 0
+    assert pair_of(data, t: t, left: 4, right: 3) == 0
+    assert pair_of(data, t: t, left: 0, right: 0) == 0
+
+test "pair_of: a table that ends inside its subtable, an empty table, a version that is not 0"
+    data = sample()
+    assert pair_of(data, t: sfnt.Table(tag: "kern", offset: 0, length: 20), left: 3, right: 4) == 0
+    assert pair_of(data, t: sfnt.Table(tag: "kern", offset: 0, length: 3), left: 3, right: 4) == 0
+    other: [u8] @= sample()
+    other[1] @ 1
+    assert pair_of(other, t: sfnt.Table(tag: "kern", offset: 0, length: other.len()), left: 3, right: 4) == 0
