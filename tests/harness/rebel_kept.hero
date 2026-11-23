@@ -210,6 +210,7 @@ function kept() -> [Kept]
         Kept(check: "oversized", key: "pdf", why: A_SPLIT_IS_NOT_LOCAL)
         Kept(check: "oversized", key: "protobuf", why: A_SPLIT_IS_NOT_LOCAL)
         Kept(check: "oversized", key: "strings", why: A_SPLIT_IS_NOT_LOCAL)
+        Kept(check: "oversized", key: "ui", why: A_SPLIT_IS_NOT_LOCAL)
         Kept(check: "names", key: "grpc abbreviated conn", why: PARAMETER_LABELS)
         Kept(check: "names", key: "net copy with_port", why: MAKER_SINCE_THE_SPLIT)
         Kept(check: "names", key: "web copy with_cors", why: REQUEST_FIRST)
