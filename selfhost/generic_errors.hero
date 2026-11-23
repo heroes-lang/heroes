@@ -1,0 +1,135 @@
+# The words of a call that fills a generic function's type parameters with a
+# type its body cannot serve, and of a generic no type can serve (spec § 11;
+# panel 256's R1 and R2; design.md §4.17: the body's operation is quoted and
+# its line named, so the call's reader need not open the body).
+
+use ast
+use check/generic_needs
+use diag
+use source
+use token
+
+# One call that breaks one need, in words: the letters it fills and the types
+# it gives them, what the type holds or reaches, the functions from the callee
+# to the one whose body holds the operation, the operation as written and
+# where it stands from the call.
+record Call
+    rule: generic_needs.Rule
+    names: [str]
+    shown: [str]
+    words: str
+    chain: [str]
+    operation: str
+    place: str
+    span: token.Span
+
+constant JUDGED: str
+    "a generic function is checked once, and spec § 11's rules on what a value holds are judged at each call, on the types the call gives its type parameters"
+
+function at_call(call: Call) -> diag.Diagnostic
+    sender = "`" + call.chain[call.chain.len() - 1] + "`"
+    where: str @= "`" + call.operation + "` at " + call.place
+
+    if call.chain.len() > 1
+        where @ where + ", reached through `" + call.chain.join("` -> `") + "`"
+    shown: [str] @= []
+
+    for one in call.shown
+        shown @ shown.push("`" + one + "`")
+
+    many = call.names.len() > 1
+    gives: str @= "this call gives " + call.names.join(" and ") + " the type " + shown.join(" and ")
+    of: str @= "a value of it"
+
+    if many
+        gives @ "this call gives " + call.names.join(" and ") + " the types " + shown.join(" and ")
+        of @ "a value of them"
+    code: str @= "marker_mismatch"
+    message: str @= ""
+    note: str @= ""
+
+    match call.rule
+        .send_bare =>
+            message @ gives + ", which holds " + call.words + ", and " + sender + " sends " + of + " without `@`, " + where
+            note @ "a value holding a C handle or a thread crosses only handed over, `m.send(@v)` from a parameter written `@`, which empties it (spec § 11); " + sender + " sends a copy, so it serves only the types that hold neither"
+        .send_at =>
+            held: str @= ", which holds no C handle and no thread"
+
+            if many
+                held @ ", none of which holds a C handle or a thread"
+            message @ gives + held + ", and " + sender + " sends " + of + " with `@`, " + where
+            note @ "`m.send(@v)` hands over the C handles and the threads a value holds and empties it; a value that holds neither is sent as a copy, `m.send(v)`, so " + sender + " serves only the types that hold one"
+        .spawn_handle =>
+            code @ "handle_into_spawn"
+            message @ gives + ", which holds " + call.words + ", and " + sender + " hands " + of + " to a new thread, " + where
+            note @ "`spawn` copies its argument, and only a mailbox carries a C handle or a thread to another thread, `m.send(@v)` (spec § 11)"
+        .cross_ptr =>
+            code @ "thread_crossing"
+            message @ gives + ", which reaches " + call.words + ", and " + sender + " makes " + of + " cross between threads, " + where
+            note @ "a `ptr` or a `cstr` is an address C owns, and a copy of it would hand a second thread what the first may free: hand the thread the number or the handle C gives for it instead (spec § 11)"
+        .unit_mailbox =>
+            code @ "empty_mailbox"
+            message @ gives + ", and " + sender + " makes a mailbox of it, " + where + ": a mailbox of `()` carries nothing"
+            note @ "no expression is a value of `()`, so no value could be written to send"
+
+    d: diag.Diagnostic @= diag.new_diagnostic(code: code, message: message, span: call.span)
+    d.notes @ d.notes.push(JUDGED)
+    d.notes @ d.notes.push(note)
+    return d
+
+# A generic whose send with `@` asks its letters to hold a C handle or a
+# thread where another of its operations asks them to hold neither (R2).
+function unsatisfiable(s: source.Source, decls: [ast.Decl], need: generic_needs.Need, other: generic_needs.Need) -> diag.Diagnostic
+    names: [str] @= []
+
+    for l in need.letters
+        names @ names.push(letter_name(s, decls, decl: need.decl, letter: l))
+
+    function_name = source.span_text(s, decls[need.decl].name)
+    then: str @= "sends a value of it without `@`"
+
+    if other.rule == .spawn_handle
+        then @ "hands a value of it to a new thread"
+    message = "no type can fill " + names.join(" or ") + " in `" + function_name + "`: " + operation(s, decls, need: need, here: need.at.start) + " sends a value of it with `@`, which asks it to hold a C handle or a thread, and " + operation(s, decls, need: other, here: need.at.start) + " " + then + ", which asks it to hold neither"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "marker_mismatch", message: message, span: need.at)
+    d.notes @ d.notes.push(
+        "every type breaks one of the two, so no call of `" + function_name + "` could be written, and it is refused where it is written (spec § 11)"
+    )
+    d.notes @ d.notes.push(
+        "send both values with `@`, from parameters written `@`, or both without, or give the two values a type parameter each"
+    )
+    return d
+
+# An operation of a declaration's body as written, where it stands from
+# `here`, and, for one carried from a callee, the callee's own operation.
+function operation(s: source.Source, decls: [ast.Decl], need: generic_needs.Need, here: i64) -> str
+    out: str @= "`" + source.span_text(s, need.at) + "`"
+
+    if need.at.start == here
+        out @ out + " here"
+    else
+        out @ out + " at " + source.elsewhere(s, here: here, there: need.at.start)
+
+    if need.via.len() > 0
+        inner = source.span_text(s, decls[need.via[need.via.len() - 1]].name)
+        out @ out + " (`" + source.span_text(s, need.origin) + "` in `" + inner + "`)"
+    return out
+
+# The name of a declaration's type parameter, quoted.
+function letter_name(s: source.Source, decls: [ast.Decl], decl: i64, letter: i64) -> str
+    match decls[decl].kind
+        .function_decl fd =>
+            if letter < fd.value.generics.len()
+                return "`" + source.span_text(s, fd.value.generics[letter]) + "`"
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return "a type parameter"
+
+    return "a type parameter"
+
+# The functions from `first` along `via`, by name.
+function chain(s: source.Source, decls: [ast.Decl], first: i64, via: [i64]) -> [str]
+    out: [str] @= [source.span_text(s, decls[first].name)]
+
+    for d in via
+        out @ out.push(source.span_text(s, decls[d].name))
+
+    return out

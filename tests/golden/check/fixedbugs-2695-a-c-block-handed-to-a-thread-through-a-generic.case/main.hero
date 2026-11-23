@@ -1,0 +1,38 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R1, the
+# ffi-pragmatist's probes): a block C allocated crossed into a thread through a
+# generic's `spawn`, and `main` freed it while the thread read it, then wrote
+# into it after `main` had allocated another block of the same size; both
+# built and ran, a use after free. A `ptr` never crosses between threads, and
+# the call that gives the generic's letter a type reaching one is told now
+# (spec § 11).
+use cmem
+
+function begin<S>(body: (function(S) -> i64), setup: S) -> (thread i64)
+    return spawn(body, setup).must()
+
+function look(x: cmem.Pointed) -> i64
+    cmem.pause(us: 200000)
+
+    if cmem.length(p: x.p) == 63
+        return 1
+    return 0
+
+function scribble(x: cmem.Pointed) -> i64
+    cmem.pause(us: 200000)
+    cmem.fill(p: x.p, c: 66, n: 63)
+    return 0
+
+function main()
+    p = cmem.block()
+    cmem.fill(p: p, c: 65, n: 63)
+    t = begin(look, setup: cmem.Pointed(p: p))  #~ thread_crossing
+    cmem.give_back(p: p)
+    print(t.wait())
+    q = cmem.block()
+    u = begin(scribble, setup: cmem.Pointed(p: q))  #~ thread_crossing
+    cmem.give_back(p: q)
+    r = cmem.block()
+    cmem.fill(p: r, c: 90, n: 10)
+    _ = u.wait()
+    print(cmem.length(p: r))
+    cmem.give_back(p: r)

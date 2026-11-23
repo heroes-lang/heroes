@@ -208,7 +208,7 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
         got = instance_type(@c, s, decls, decl: decl, signature: signature, bindings: bindings)
 
         if type_fit.fits(@c.out.types, wanted: expected, got: got)
-            c.out.instantiations[span.end] @ bound
+            recorded(@c, span: span, decl: decl, bound: bound)
             return got
 
         # A nameless written type was refused where it is written (defect
@@ -339,3 +339,12 @@ test "an unbound value names every letter once, and offers the two ways to bind 
     assert d.fixes.len() == 1
     assert d.fixes[0].certainty == .guess
     assert d.fixes[0].title == "give it its type first, `f: (function(A, B) -> A) = first` with a type written for `A` and `B`, or hand it to a non-generic function's parameter, a record's field or a `return` whose declared type says what they are"
+
+# A call or a value of the generic `decl` made at `bound` (§4.12; panel 029
+# R2): the bindings `mono` instantiates it at, and beside them, by the same
+# key, the callee and the call's start, which `check/generic_calls.hero` asks
+# the body's needs of (panel 256). One writer for both tables, so no binding
+# stands without its callee.
+function recorded(@c: state.Checker, span: token.Span, decl: i64, bound: [i64])
+    c.out.instantiations[span.end] @ bound
+    c.out.instantiated[span.end] @ [decl, span.start]
