@@ -199,7 +199,11 @@ function open(interfaces: [str]) -> Transport?
 
     return ok(Transport(sockets: sockets, wide: wide, keys: ids, lines: chosen, set: set))
 
-# Closes the sockets, which leaves the groups, and the set.
+# Closes the sockets, which leaves the groups, and the set, and empties the
+# transport. A socket is closed through a copy of its place, whose emptying
+# the list does not see, so the list is emptied here: a second close finds no
+# socket and fails `closed` as the set does, and no handle C has freed is
+# handed to it again.
 function close(@t: Transport) -> ()?
     failed: str @= ""
 
@@ -210,6 +214,10 @@ function close(@t: Transport) -> ()?
             .ok _  => failed @ failed
             .err e => failed @ e.msg
 
+    t.sockets @ []
+    t.wide @ []
+    t.keys @ []
+    t.lines @ []
     closed = poll.close(@t.set)
 
     if failed != ""
@@ -223,8 +231,10 @@ function group_address(wide: bool) -> net.Address?
 
 # Sends `data` to the group through `line` alone, by the socket of each
 # family the line carries. Fails `failed` where not one send went, with the
-# first failure's words.
+# first failure's words, and `closed` where the transport was closed.
 function send_line(t: Transport, line: Line, data: [u8]) -> ()?
+    if t.sockets.len() == 0
+        return fail(code: failure.CLOSED, msg: "the multicast DNS sockets are closed")
     sent: i64 @= 0
     first: str @= ""
 
@@ -249,8 +259,10 @@ function send_line(t: Transport, line: Line, data: [u8]) -> ()?
     return ok()
 
 # Sends `data` to the group on every interface. Fails `failed` where not one
-# interface took it.
+# interface took it, and `closed` where the transport was closed.
 function send_group(t: Transport, data: [u8]) -> ()?
+    if t.sockets.len() == 0
+        return fail(code: failure.CLOSED, msg: "the multicast DNS sockets are closed")
     sent: i64 @= 0
     first: str @= ""
 
@@ -299,9 +311,11 @@ function repeated_zero() -> [u8]
     return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 # Sends `data` to one address, through the socket of its family. Fails
-# `unsupported` where the transport has no socket of that family, and as
-# `net.send_to` fails.
+# `unsupported` where the transport has no socket of that family, `closed`
+# where it was closed, and as `net.send_to` fails.
 function send_to(t: Transport, data: [u8], to: net.Address) -> ()?
+    if t.sockets.len() == 0
+        return fail(code: failure.CLOSED, msg: "the multicast DNS sockets are closed")
     want = !net.is_v4(to.host)
 
     for i in range(from: 0, to: t.sockets.len())
@@ -311,7 +325,8 @@ function send_to(t: Transport, data: [u8], to: net.Address) -> ()?
     return fail(code: failure.UNSUPPORTED, msg: f"no socket of the transport is of {net.format_host(to.host)}'s family")
 
 # The next datagram, waited for `wait_ms` milliseconds at most. Fails
-# `timeout` where none came, and `stopped` where the stop was asked.
+# `timeout` where none came, `stopped` where the stop was asked, and `closed`
+# where the transport was closed, as `poll.wait` does.
 function receive(t: Transport, wait_ms: i64) -> Packet?
     waited: i64 @= wait_ms
 
