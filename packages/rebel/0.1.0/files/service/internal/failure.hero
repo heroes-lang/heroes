@@ -1,0 +1,150 @@
+# The codes `service` fails with, and the one place a kind of the floor
+# `service/hero_service` becomes one: every failure of a service call is built
+# here, its message saying what was asked and what the system answered
+# (README § A4).
+
+use service/hero_service
+use strings
+
+constant INVALID: str
+    "invalid"
+
+constant EXISTS: str
+    "exists"
+
+constant CLOSED: str
+    "closed"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the layer or the system answered, in words a reader can act on.
+    why: str
+
+# The system's own words for the floor's last failure on this thread, "" where
+# the layer refused it itself.
+function system_words() -> str
+    room: [u8] @= []
+    length = hero_service.last_message(@room, n: 0)
+
+    if length <= 0
+        return ""
+
+    for _ in range(from: 0, to: length)
+        room @ room.push(0)
+
+    if hero_service.last_message(@room, n: length.to_u64().must()) != length
+        return ""
+
+    match room.validated_bytes()
+        .ok text => return text
+        .err _   => return ""
+
+# The code and the words for `kind`, one of `HERO_SERVICE_*`, the platform's
+# own number `os_error` and its words `words` in the message where the layer
+# names no kind of its own.
+function told(kind: i64, os_error: i64, words: str) -> Told
+    if kind == hero_service.HERO_SERVICE_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_service.HERO_SERVICE_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "only Windows has services, and this system is not Windows")
+
+    if kind == hero_service.HERO_SERVICE_NOT_SERVICE
+        return Told(
+            code: FAILED,
+            why: "the Service Control Manager did not start this program, so it cannot run as a service (`is_service` asks before `start` does)"
+        )
+
+    if kind == hero_service.HERO_SERVICE_EXISTS
+        return Told(
+            code: EXISTS,
+            why: "this program started a service already, and the system answers one start for the life of a process"
+        )
+
+    if kind == hero_service.HERO_SERVICE_NOT_OPEN
+        return Told(code: CLOSED, why: "no service stands: none was started, or it has ended")
+
+    if kind == hero_service.HERO_SERVICE_TIMEOUT
+        return Told(code: TIMEOUT, why: "the Service Control Manager did not call the program in the time allowed")
+
+    if kind == hero_service.HERO_SERVICE_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+
+    if kind == hero_service.HERO_SERVICE_LIMIT
+        return Told(code: LIMIT, why: "the system or the process has no thread, socket or memory left for it")
+
+    if kind == hero_service.HERO_SERVICE_DENIED
+        return Told(
+            code: FAILED,
+            why: f"the Service Control Manager refused the status: {with_words(os_error: os_error, words: words)}"
+        )
+    return Told(code: FAILED, why: f"the system refused: {with_words(os_error: os_error, words: words)}")
+
+# The system's number and, where it has them, its words.
+function with_words(os_error: i64, words: str) -> str
+    if words == ""
+        return f"error number {os_error}"
+    return f"{words} (error {os_error})"
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered. Called right after the floor's call,
+# before any other call of the floor on this thread, which would replace it.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_service.last_error(), os_error: hero_service.last_os_error(), words: system_words())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` the face itself finds before the floor is asked, its
+# message `asked` then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+test "told: every kind of the floor is a code of README § A4, and an unknown one is failed with its number"
+    assert told(kind: hero_service.HERO_SERVICE_INVALID, os_error: 0, words: "").code == INVALID
+    assert told(kind: hero_service.HERO_SERVICE_UNSUPPORTED, os_error: 0, words: "").code == UNSUPPORTED
+    assert told(kind: hero_service.HERO_SERVICE_NOT_SERVICE, os_error: 1063, words: "").code == FAILED
+    assert told(kind: hero_service.HERO_SERVICE_EXISTS, os_error: 0, words: "").code == EXISTS
+    assert told(kind: hero_service.HERO_SERVICE_NOT_OPEN, os_error: 0, words: "").code == CLOSED
+    assert told(kind: hero_service.HERO_SERVICE_TIMEOUT, os_error: 0, words: "").code == TIMEOUT
+    assert told(kind: hero_service.HERO_SERVICE_STOPPED, os_error: 0, words: "").code == STOPPED
+    assert told(kind: hero_service.HERO_SERVICE_LIMIT, os_error: 8, words: "").code == LIMIT
+    assert told(kind: hero_service.HERO_SERVICE_DENIED, os_error: 6, words: "").code == FAILED
+    assert told(kind: hero_service.HERO_SERVICE_OTHER, os_error: 5, words: "").code == FAILED
+    assert told(kind: hero_service.HERO_SERVICE_OTHER, os_error: 5, words: "").why == "the system refused: error number 5"
+    assert told(kind: hero_service.HERO_SERVICE_OTHER, os_error: 5, words: "Access is denied.").why == "the system refused: Access is denied. (error 5)"
+    assert told(kind: 99, os_error: -1, words: "").code == FAILED
+
+test "last: the floor's own failure, read right after its call, with what was asked first"
+    assert hero_service.count() == -1
+    r: i64? = last(asked: "counting")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert strings.has_prefix(s: e.msg, prefix: "counting: ")
+            assert e.code == CLOSED || e.code == UNSUPPORTED
+
+test "of: a code the face finds itself, with its words"
+    r: ()? = of(code: INVALID, asked: "starting \"\"", why: "the name is empty")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "starting \"\": the name is empty"

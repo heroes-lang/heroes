@@ -1,0 +1,125 @@
+# The ledger of `service`: what a program can do as a Windows service, one block
+# per capability, and what Rebel answers. The census, each list read on
+# 2026-11-23: Go's `golang.org/x/sys/windows/svc` (pkg.go.dev, the package's
+# index and its constants), the yardstick for Go, which has no service
+# package in its standard library; Rust's `windows-service` 0.8.1 (docs.rs:
+# `service`, `service_control_handler`, `service_dispatcher`), the crate the
+# `rust` lines name, the standard library having none; Python's standard
+# library has no service either, so the `python` lines are `-` (the
+# third-party pywin32's `win32serviceutil` is the usual way, read by no list
+# here). The system's own protocol, Microsoft's reference pages for
+# `StartServiceCtrlDispatcherW`, `RegisterServiceCtrlHandlerExW`,
+# `SetServiceStatus`, `HandlerEx` and `ServiceMain`, read the same day, is what
+# `runtime/platform/hero_service.c` follows. Only Windows has services: every
+# other system answers `unsupported`, by words, and its tests skip by them.
+# The Windows arm was run on the Windows box (`docs/platforms/windows/`) as the
+# commit that wrote this says; systemd's and launchd's
+# protocols (catalogue row H14) are no control of these.
+
+capability service/start-as-service  the program is the service the Service Control Manager called
+  heroes  service.start
+  go      svc.Run
+  rust    service_dispatcher::start
+  python  -
+  note    `start` runs the system's dispatcher on a thread of the layer's own and waits for the system to call the program, so `main` keeps the work: Go's `Run` and Rust's `start` block their caller until the service stopped. A program run from a console fails `failed` at once, the words naming the system's refusal, and is told the same again where it asks again: the system's dispatcher is asked once in a process, since its second answer is another error than its first (measured on the box). The system's start limit is 30 seconds, so a longer `limit` never helps. One service a program, once: the own-process kind, the name `sc create` registered, which the system ignores for it
+
+capability service/is-service  whether the system started the program as a service
+  heroes  service.is_service
+  go      svc.IsWindowsService, svc.IsAnInteractiveSession
+  rust    -
+  python  -
+  note    read from the system: the parent process is the Service Control Manager's and the session is 0, checked on the Windows box; `start` stays the authority. Go's `IsAnInteractiveSession` is deprecated there and is its negation, so it is dropped
+
+capability service/start-parameters  the arguments `sc start <name> <argument>...` gave
+  heroes  service.arguments
+  go      svc.Handler
+  rust    define_windows_service!
+  python  -
+  note    the parameters after the name, as text, in order; Go's `Execute` is handed them and Rust's `define_windows_service!` parses them into a `Vec<OsString>`
+
+capability service/report-state  the state the program reports to the system, with the controls it accepts
+  heroes  service.report_running, service.report_paused, service.report_pending
+  go      svc.Status, svc.State, svc.Accepted, svc.Stopped, svc.StartPending, svc.StopPending, svc.Running, svc.ContinuePending, svc.PausePending, svc.Paused, svc.AcceptStop, svc.AcceptShutdown, svc.AcceptPauseAndContinue, svc.AcceptParamChange, svc.AcceptPowerEvent, svc.AcceptSessionChange, svc.AcceptPreShutdown
+  rust    ServiceStatusHandle::set_service_status, ServiceStatus, ServiceState, ServiceControlAccept
+  python  -
+  note    the check point is kept by the layer and moves at each pending report, which the system documents as the sign of progress; a pending state and the stopped state accept no control, as the system asks; the wait hint is up to an hour. `stopped` is reported by `end`, the one report after which the process goes
+
+capability service/end  the service reported stopped, with an exit code
+  heroes  service.end
+  go      svc.Status
+  rust    ServiceExitCode
+  python  -
+  note    0 for a service that stopped as asked, any other number the service's own code, shown by `sc query` as the service-specific exit code. `end` also lets the system's `ServiceMain` return, so the dispatcher thread ends and the process may exit
+
+capability service/exit-win32-code  a Windows error number reported as the service's exit code
+  heroes  pending
+  go      svc.Status
+  rust    ServiceExitCode
+  python  -
+  note    pending: Go's `Status.Win32ExitCode` and Rust's `ServiceExitCode::Win32` let a service stop with a system error number, which the system prints in words; `end` takes the service's own code alone
+
+capability service/controls-lifecycle  stop, pause, resume, shutdown and pre-shutdown told to the program
+  heroes  service.wait, service.wait_forever
+  go      svc.ChangeRequest, svc.Cmd, svc.Stop, svc.Pause, svc.Continue, svc.Shutdown, svc.PreShutdown
+  rust    service_control_handler::register, ServiceControl, ServiceControlHandlerResult
+  python  -
+  note    the handler the system calls runs on the dispatcher's thread, writes the control in a queue of 64 and returns, as the system asks (its reference page: return at once, within 30 seconds); no Heroes code runs on a thread the system made. A control not accepted is answered not implemented, never queued. A full queue loses a notification before a lifecycle control. The stop of the program ends a wait `stopped` after what was queued is told. Go hands a control to a channel and Rust to a closure; Rebel hands a list of values to the program's own `while`
+
+capability service/controls-notifications  parameter, time, power, session and own controls told to the program
+  heroes  service.wait
+  go      svc.ParamChange, svc.PowerEvent, svc.SessionChange
+  rust    ServiceControl, SessionChangeParam, UserEventCode, PowerEventParam
+  python  -
+  note    each is told with the system's own event number and a session's number, `format_control` naming them; the numbers' meanings (`PBT_`, `WTS_`) are the system's and stand in the face's doc comments. A control of the program's own, 128 to 255, is `user`, its code in `event`
+
+capability service/controls-in-a-set  the service waited on beside connections and timers
+  heroes  service.add_to, service.count
+  go      -
+  rust    -
+  python  -
+  note    a datagram socket of the loopback the layer rings while a control waits, which `poll` waits on beside everything else, as `fs/watch` does for its events; a stranger's datagram can make it readable with nothing queued, so a `wait` of zero may answer none. Neither Go nor Rust has a wait of this shape: their controls arrive on a channel or in a closure
+
+capability service/interrogate  the system asking the service to report again
+  heroes  refused: the system's own reference page says the handler simply returns NO_ERROR, since the system knows the service's state, so the layer answers it and tells the program nothing; a control told for nobody to act on would only be one more case to match
+  go      svc.Interrogate
+  rust    ServiceControl
+  python  -
+
+capability service/network-bindings  the controls of network bindings
+  heroes  refused: the system's reference page for these controls says applications should use Plug and Play instead; the layer sends the system the answer for a control it does not handle
+  go      svc.NetBindAdd, svc.NetBindRemove, svc.NetBindEnable, svc.NetBindDisable, svc.AcceptNetBindChange
+  rust    ServiceControl, ServiceControlAccept
+  python  -
+
+capability service/device-and-hardware-events  device arrivals and hardware profile changes told to the program
+  heroes  pending
+  go      svc.DeviceEvent, svc.HardwareProfileChange, svc.AcceptHardwareProfileChange
+  rust    ServiceControl, HardwareProfileChangeParam
+  python  -
+  note    pending: the system sends a device event only to a service that registered for it with `RegisterDeviceNotification`, a call this package does not make
+
+capability service/power-settings  a power setting's change told with its value
+  heroes  pending
+  go      -
+  rust    PowerBroadcastSetting, PowerSchemePersonality, MonitorState, DisplayState, AwayModeState, BatterySaverState, LidSwitchStateChange
+  python  -
+  note    pending: a setting's change reaches a service that registered for it with `RegisterPowerSettingNotification`, and carries the setting's value; `power` tells the event's number alone
+
+capability service/start-reason  why the system started the service
+  heroes  pending
+  go      svc.StartReason, svc.DynamicStartReason, svc.StartReasonDemand, svc.StartReasonAuto, svc.StartReasonTrigger, svc.StartReasonRestartOnFailure
+  rust    -
+  python  -
+  note    pending: asked of the system with `QueryServiceDynamicInformation`, not written in this step
+
+capability service/manage  services installed, started, stopped, queried and removed
+  heroes  pending
+  go      svc.ActivityStatus, svc.Active, svc.Inactive, svc.AnyActivity
+  rust    Service, ServiceAccess, ServiceAction, ServiceConfig, ServiceFailureActions, ServiceInfo, ServiceType, ServiceStartType, ServiceErrorControl
+  python  -
+  note    pending: the catalogue's row H15, a service installed (the system's own `sc create` does it by hand today); this package is the program's side of the protocol, a service's running and being controlled
+
+dropped
+  go      svc.Handler (an interface of a callback, which the language has none of: the program's own loop calls `wait`), svc.ChangeRequest.CurrentStatus and .Context (the status and a raw handle of the system), svc.StatusHandle (a raw handle of the system, which the layer keeps)
+  rust    define_windows_service! (a macro that writes the entry function a program hands the system: `start` does it), service_control_handler::register's closure and ServiceControlHandlerResult (the handler's return code, which the layer answers), ServiceStatusHandle (a raw token of the system, which the layer keeps), the crate's error types (`Error`, `ParseRawError`: a failure is a `T?` here)
+  python  -
