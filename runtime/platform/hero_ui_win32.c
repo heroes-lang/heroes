@@ -2260,6 +2260,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_PROGRESS:
         made->hwnd = hero_ui_win_control(window, inside, PROGRESS_CLASSW, 0, 0, id);
         break;
+    case HERO_UI_SEPARATOR:
+        made->hwnd = hero_ui_win_control(window, inside, L"STATIC", SS_ETCHEDHORZ, 0, id);
+        break;
     case HERO_UI_SLIDER:
         made->hwnd = hero_ui_win_control(window, inside, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
         break;
@@ -3013,6 +3016,19 @@ int64_t hero_ui_arm_set_size(int64_t id, int64_t which, int64_t width, int64_t h
     return HERO_UI_OK;
 }
 
+/* Turns separator `line` to run along the longer side of the rectangle it
+ * was placed in, across where the two are equal: the system's etched line
+ * is a style of its control, horizontal or vertical. */
+static void hero_ui_win_turn_separator(hero_ui_native *line) {
+    LONG_PTR style = GetWindowLongPtrW(line->hwnd, GWL_STYLE);
+    LONG_PTR turned = (style & ~(LONG_PTR)SS_TYPEMASK) | (line->height > line->width ? SS_ETCHEDVERT : SS_ETCHEDHORZ);
+
+    if (turned != style) {
+        (void)SetWindowLongPtrW(line->hwnd, GWL_STYLE, turned);
+        (void)InvalidateRect(line->hwnd, NULL, TRUE);
+    }
+}
+
 int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64_t width, int64_t height) {
     hero_ui_native *widget = hero_ui_find(id);
 
@@ -3047,6 +3063,9 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         widget->width = width;
         widget->height = height;
         widget->placed = true;
+        if (widget->kind == HERO_UI_SEPARATOR) {
+            hero_ui_win_turn_separator(widget);
+        }
     }
     hero_ui_win_put(widget);
     return HERO_UI_OK;
@@ -3166,6 +3185,10 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_PROGRESS:
         *width = 160;
         *height = 16;
+        return HERO_UI_OK;
+    case HERO_UI_SEPARATOR:
+        *width = 1;
+        *height = 1;
         return HERO_UI_OK;
     case HERO_UI_SLIDER: {
         LRESULT thumb = SendMessageW(widget->hwnd, TBM_GETTHUMBLENGTH, 0, 0);
@@ -3677,7 +3700,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -9270,7 +9293,7 @@ static bool hero_ui_win_tip_apply(hero_ui_native *widget) {
     /* A static control lets the mouse through to its window unless it is
      * asked to be notified, and a tip is shown where the mouse rests on
      * the control. */
-    if (widget->tip != NULL && widget->kind == HERO_UI_LABEL) {
+    if (widget->tip != NULL && (widget->kind == HERO_UI_LABEL || widget->kind == HERO_UI_SEPARATOR)) {
         (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, GetWindowLongPtrW(widget->hwnd, GWL_STYLE) | SS_NOTIFY);
     }
     done = hero_ui_win_tool(tooltips, window->hwnd, widget->hwnd, widget->tip);

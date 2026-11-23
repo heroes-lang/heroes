@@ -1901,8 +1901,13 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     }
 #if !defined(__APPLE__)
     /* The kinds after the tray no C arm makes yet: refused by name here,
-     * before an arm's `makes` that knows them not. */
+     * before an arm's `makes` that knows them not; the Win32 arm makes the
+     * separator. */
+#if defined(_WIN32)
+    if (kind > HERO_UI_SEPARATOR) {
+#else
     if (kind > HERO_UI_TRAY) {
+#endif
         return hero_ui_elsewhere(hero_ui_making(kind));
     }
 #endif
