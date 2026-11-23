@@ -159,6 +159,16 @@ test "user_named, group_named and groups_of: an empty name and a name no one has
     assert change("no-such-user-in-rebel-tests") == -1
     assert last_error() == HERO_USERS_NOT_FOUND
 
+test "change: a name no one has is judged as user_named judges it, whatever its form"
+    room: [u8] @= []
+
+    for name in ["no-such-user-in-rebel-tests", "NO-SUCH-DOMAIN-REBEL\\no-such-user", "no-such-user@no-such-domain.rebel.test", " ", "a b", "."]
+        assert user_named(name, @room, n: 0) == -1
+        named = last_error()
+        assert named == HERO_USERS_NOT_FOUND || named == HERO_USERS_INVALID
+        assert change(name) == -1
+        assert last_error() == named
+
 test "user_identified and group_identified: an id that is none is invalid, one nobody holds is not found"
     room: [u8] @= []
     assert user_identified("not an id", @room, n: 0) == -1
