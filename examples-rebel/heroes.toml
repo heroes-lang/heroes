@@ -129,6 +129,8 @@ packages = [
     "semver",
     "serial",
     "serial/hero_serial",
+    "service",
+    "service/hero_service",
     "sets",
     "sql",
     "sql/build",

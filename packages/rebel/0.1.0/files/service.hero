@@ -1,0 +1,539 @@
+# The program as a Windows service: the Service Control Manager starts it, it
+# reports its state, and the stop, pause, resume and shutdown the system sends
+# it come to the program as values it waits on, in the loop the rest of Rebel
+# waits in. What Go's `svc` package, .NET's `ServiceBase` and Rust's
+# `windows-service` crate give a program, with no callback: the program's own
+# `while` takes a control from `wait`, acts, and reports.
+#
+# What it does NOT do: install or remove a service (the system's `sc create`
+# and `sc delete` register one by the program's path, and the account it runs
+# as is chosen there); log (`log`); run on Linux or macOS, whose systemd and
+# launchd start a plain process, so a program that runs as a service there
+# needs nothing from this package.
+#
+# **How a program is a service**: `start` makes the program the service the
+# system called, and the service stands in `start_pending`; the program does
+# what its start needs, reports `report_running` with the controls it accepts,
+# and then waits: `wait` for the controls alone, or `add_to` a `poll.Set`
+# beside connections and timers, `wait` with a limit of zero then taking what
+# the set told. A control the program did not say it accepts is refused by the
+# system, never told. `end` reports the service stopped and lets the process
+# go: **the program calls it before `main` returns**, since a process that
+# ends with its service still reported running is told by the system as a
+# service that died. **The program's stop**: every system in Rebel ends a wait
+# at the program's stop (`os.catch_stop`); a service's `stop` control is a
+# control of this package, and a program that wants both waits on both.
+#
+# **One service a program, once**: the program is the own-process kind, the
+# name it starts under is the one `sc create` registered, and a second `start`
+# after the first fails `exists`. A program run from a console is no service:
+# `is_service` asks, and `start` fails `failed` there.
+#
+# It fails with `invalid`, `exists`, `closed`, `timeout`, `stopped`, `limit`,
+# `unsupported` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: a program that hosts
+# several services in one process.
+
+use net
+use poll
+use service/hero_service
+use service/internal/failure
+use service/internal/reading
+use time
+
+## Codes
+
+# An argument out of its range: a name empty, longer than `NAME_MOST` bytes or
+# holding a slash or a backslash; a state a function does not report, or an
+# exit code outside 0 to 4,294,967,295; a wait of less than zero. `start`,
+# `report_pending`, `end` and `wait` fail with it.
+constant INVALID: str
+    "invalid"
+
+# This program started a service already. `start` fails with it.
+constant EXISTS: str
+    "exists"
+
+# No service stands: none was started, or `end` ran. Every function but
+# `start` fails with it.
+constant CLOSED: str
+    "closed"
+
+# The system did not call the program in the time `start` allowed.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while `wait` waited, after the controls queued
+# before the stop were told.
+constant STOPPED: str
+    "stopped"
+
+# The system has no thread, socket or memory left for what the call needs.
+constant LIMIT: str
+    "limit"
+
+# This system has no services: it is not Windows. Every function but
+# `is_supported` and `is_service` fails with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system refused for a reason none of the above names: the program was not
+# started by the Service Control Manager, or the system refused a report; the
+# message carries the system's own words.
+constant FAILED: str
+    "failed"
+
+# The longest service name `start` takes, in bytes.
+constant NAME_MOST: i64
+    256
+
+## The service
+
+# The service of this program. Every copy reaches the one service, and `end`
+# ends it for all of them; a call through a copy after `end` fails `closed`.
+record Service
+    # The name `start` was given, which messages carry.
+    name: str
+
+# What a service is in: the state it reports to the system.
+variant State
+    # Not running; the last state a service reports.
+    stopped
+    # Starting, and the system waits for the next report as long as the hint
+    # says.
+    start_pending
+    # Stopping, as above.
+    stop_pending
+    # Running, and taking the controls it accepts.
+    running
+    # Resuming from a pause, the system waiting as above.
+    resume_pending
+    # Pausing, the system waiting as above.
+    pause_pending
+    # Paused.
+    paused
+
+# A control the program says it accepts: the system sends no other.
+variant Accept
+    # `stop`.
+    stop
+    # `pause` and `resume`, together: the system has one bit for both.
+    pause_resume
+    # `shutdown`, the machine going down.
+    shutdown
+    # `preshutdown`, before the machine's services are told `shutdown`.
+    preshutdown
+    # `param_change`, the service's start parameters changed.
+    param_change
+    # `time_change`, the system's clock set.
+    time_change
+    # `power`, a power event.
+    power
+    # `session`, a user's session changed.
+    session
+
+# What the system asked of the program.
+variant Kind
+    # Stop: report `stop_pending`, finish, and `end`.
+    stop
+    # Pause: report `pause_pending`, then `paused`.
+    pause
+    # Resume after a pause: report `resume_pending`, then `running`.
+    resume
+    # The machine is shutting down: as a stop, in the time the system allows.
+    shutdown
+    # The machine will shut down shortly: as a stop, in the longer time this
+    # control is given.
+    preshutdown
+    # The service's start parameters changed.
+    param_change
+    # The system's clock was set.
+    time_change
+    # A power event: `event` is the system's `PBT_` number (4 suspend, 7
+    # resume after a suspend, 18 resume automatic, 10 power status change).
+    power
+    # A session changed: `event` is the system's `WTS_` number (5 logon, 6
+    # logoff, 7 lock, 8 unlock, among others), `session` the session's number.
+    session
+    # A control of the program's own, sent by `sc control <name> <code>`:
+    # `event` is the code, 128 to 255.
+    user
+
+# One control, as the system sent it.
+record Control
+    # What the system asked.
+    kind: Kind
+    # The system's number for a `power` event, a `session` change, or the code
+    # of a `user` control; 0 for every other kind.
+    event: i64
+    # The session of a `session` change, -1 where the system named none; 0 for
+    # every other kind.
+    session: i64
+
+## Starting and ending
+
+# Whether this system has services: true on Windows alone.
+function is_supported() -> bool
+    return hero_service.supported() == 1
+
+# Whether the Service Control Manager started this program, which a program
+# that is a service and a console tool at once asks first: false for a program
+# started from a console, by another program or a scheduled task, and on every
+# system but Windows. It is the parent process and the session the system
+# gives a service that it reads, so `start` stays the authority.
+function is_service() -> bool
+    return hero_service.is_service() == 1
+
+# Makes this program the service `name`, once the Service Control Manager has
+# called it, and answers the service, standing in `start_pending`.
+#
+# - `name`: the name `sc create` registered, 1 to `NAME_MOST` bytes with no
+#   slash or backslash. The system does not check it for a service that runs
+#   in a process of its own.
+# - `limit`: the longest to wait for the system to call the program: it gives
+#   a service 30 seconds to answer, so more than that never helps. Zero asks
+#   without waiting, and `time.max_duration()` waits as long as it takes.
+#
+# The program reports `report_running` within the wait hint the system holds
+# for its start. A program run from a console fails `failed` at once, and is
+# told the same again where it asks again; one the system never called fails
+# `timeout`, and either way the start is spent. Fails `invalid` where `name` is out of range or `limit` is below zero,
+# `exists` where this program started a service already, `limit` and `failed`
+# as the codes say, `unsupported` on a system with no services. See also
+# `is_service`, `end`.
+function start(name: str, limit: time.Duration) -> Service?
+    asked = f"starting the service \"{name}\""
+
+    if limit.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: f"a limit is zero or more, and {limit.nanoseconds} ns was asked"
+        )
+
+    if hero_service.start(name, limit_ms: reading.milliseconds_of(limit)) < 0
+        return failure.last(asked: asked)
+    return ok(Service(name: name))
+
+# The start parameters the system gave the service, which `sc start <name>
+# <argument>...` writes after the name, in order; none where the program was
+# started with none.
+#
+# - `s`: the service.
+#
+# Fails `closed` where no service stands. See also `start`.
+function arguments(s: Service) -> [str]?
+    asked = f"reading the start parameters of the service \"{s.name}\""
+    room: [u8] @= []
+    length = hero_service.arguments(@room, n: 0)
+
+    if length < 0
+        return failure.last(asked: asked)
+
+    for _ in range(from: 0, to: length)
+        room @ room.push(0)
+
+    if hero_service.arguments(@room, n: length.to_u64().must()) != length
+        return failure.last(asked: asked)
+    out: [str] @= []
+    from @= 0
+    first @= true
+
+    for at in range(from: 0, to: length)
+        if room[at] != 0
+            continue
+
+        if first
+            first @ false
+        else
+            match room.slice(from: from, to: at).validated_bytes()
+                .ok text => out @ out.push(text)
+                .err _   => out @ out.push("")
+        from @ at + 1
+
+    return ok(out)
+
+# Reports the service running, taking the controls `accepts`.
+#
+# - `s`: the service.
+# - `accepts`: the controls the system may send; none stops it from sending
+#   any, `stop` included, so a service that can be stopped says `.stop`.
+#
+# Fails `closed` where no service stands, `failed` where the system refused
+# the report. See also `report_paused`, `report_pending`.
+function report_running(s: Service, accepts: [Accept]) -> ()?
+    return reading.reported(
+        s,
+        state: hero_service.HERO_SERVICE_STATE_RUNNING,
+        accepts: accepts,
+        wait_hint: time.nanoseconds(0),
+        what: "running"
+    )
+
+# Reports the service paused, taking the controls `accepts`.
+#
+# - `s`: the service.
+# - `accepts`: as `report_running`; a paused service that can be resumed
+#   accepts `pause_resume`.
+#
+# Fails as `report_running` does.
+function report_paused(s: Service, accepts: [Accept]) -> ()?
+    return reading.reported(
+        s,
+        state: hero_service.HERO_SERVICE_STATE_PAUSED,
+        accepts: accepts,
+        wait_hint: time.nanoseconds(0),
+        what: "paused"
+    )
+
+# Reports a pending state: the service is on its way, and the system is told
+# how long to wait for the next report before it takes the service for hung.
+# Each report moves the check point the system reads, so a service doing a
+# long start or stop reports again before the hint passes.
+#
+# - `s`: the service.
+# - `state`: `start_pending`, `stop_pending`, `resume_pending` or
+#   `pause_pending`.
+# - `wait_hint`: the longest until the next report, up to an hour.
+#
+# A pending state accepts no control. Fails `invalid` where `state` is not a
+# pending one or `wait_hint` is below zero or above an hour, `closed` and
+# `failed` as `report_running` does.
+function report_pending(s: Service, state: State, wait_hint: time.Duration) -> ()?
+    asked = f"reporting the service \"{s.name}\" {state_name(state)}"
+    number = reading.pending_number(state)
+
+    if number < 0
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: "a pending state is start_pending, stop_pending, resume_pending or pause_pending"
+        )
+
+    if wait_hint.nanoseconds < 0 || wait_hint.nanoseconds > 3600000000000
+        return failure.of(code: INVALID, asked: asked, why: "a wait hint is zero to an hour")
+    return reading.reported(s, state: number, accepts: [], wait_hint: wait_hint, what: state_name(state))
+
+# Reports the service stopped and ends it: the system is told, the controls
+# not taken are let go, the bell closed, and every call through a copy of the
+# service fails `closed` from then on. The program returns from `main` after
+# it.
+#
+# - `s`: the service.
+# - `exit_code`: 0 for a service that stopped as asked; any other number up
+#   to 4,294,967,295 is the service's own code, which the system shows as its
+#   service-specific exit code and `sc query` prints.
+#
+# Fails `invalid` where `exit_code` is out of range, `closed` where no service
+# stands, `failed` where the system refused the report (the service ended
+# all the same). See also `start`.
+function end(s: Service, exit_code: i64) -> ()?
+    asked = f"ending the service \"{s.name}\""
+
+    if exit_code < 0 || exit_code > 4294967295
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: f"an exit code is 0 to 4,294,967,295, and {exit_code} was given"
+        )
+
+    if hero_service.end(exit_code: exit_code) < 0
+        return failure.last(asked: asked)
+    return ok()
+
+## Waiting
+
+# The controls the system sent, in order, waiting until one comes, `limit`
+# passes, or the program is asked to stop.
+#
+# - `s`: the service.
+# - `limit`: the longest to wait for the first control; zero asks without
+#   waiting.
+#
+# Every control held when the first is taken, so one call answers a burst
+# whole; empty where `limit` passed with none. The program reports its next
+# state before it waits again: a `stop` is answered by `report_pending` and
+# `end`.
+#
+# Fails `invalid` where `limit` is below zero, `stopped` where the program was
+# asked to stop (a control queued before the stop is answered first), `closed`
+# where no service stands or it ended while the call waited. See also
+# `wait_forever`, `add_to`.
+function wait(s: Service, limit: time.Duration) -> [Control]?
+    asked = f"waiting on the service \"{s.name}\""
+
+    if limit.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: f"a limit is zero or more, and {limit.nanoseconds} ns was asked"
+        )
+    numbers: [i64] @= [0, 0, 0]
+    out: [Control] @= []
+    got @= hero_service.next(limit_ns: limit.nanoseconds, @numbers, numbers_count: 3)
+
+    if got < 0
+        return failure.last(asked: asked)
+
+    while got == 1
+        out @ out.push(reading.control_of(kind: numbers[0], event: numbers[1], session: numbers[2]))
+        got @ hero_service.next(limit_ns: 0, @numbers, numbers_count: 3)
+
+    # What was taken is answered, and the failure that ended the burst is
+    # answered by the next call, which meets it again.
+    return ok(out)
+
+# The controls the system sent, waiting as long as it takes: until one comes
+# or the program is asked to stop.
+#
+# - `s`: the service.
+#
+# Never empty: it answers once a control comes. Fails as `wait` does. See also
+# `wait`.
+function wait_forever(s: Service) -> [Control]?
+    return wait(s, limit: time.max_duration())
+
+# How many controls wait, without waiting.
+#
+# - `s`: the service.
+#
+# Fails `closed` where no service stands. See also `wait`.
+function count(s: Service) -> i64?
+    n = hero_service.count()
+
+    if n < 0
+        return failure.last(asked: f"counting the controls of the service \"{s.name}\"")
+    return ok(n)
+
+# Adds the service to the set `set` and answers the entry's key: a wait on
+# the set tells the key readable while a control waits, and the program then
+# takes the controls with `wait` and a limit of zero.
+#
+# - `set`: the set; `poll.remove` takes the service out, and closing the set
+#   closes nothing of the service.
+# - `s`: the service, which stays the program's and ends with `end`.
+#
+# The set waits on a datagram socket of the loopback the service rings, so a
+# datagram from another program can make the key readable with no control
+# waiting: a `wait` of zero may answer none. Fails `closed` where the set is
+# closed or no service stands, `limit` where the set holds the most entries it
+# was made for or no socket can be made. See also `poll.wait`.
+function add_to(set: poll.Set, s: Service) -> i64?
+    socket = hero_service.bell_socket()
+
+    if socket == nullptr
+        return failure.last(asked: f"adding the service \"{s.name}\" to a set")
+
+    # Its port is not asked: a set reads the socket alone.
+    loopback = net.Address(host: net.loopback_v4(), port: 0)
+    return poll.add_udp(set, u: net.UdpSocket(socket: socket, address: loopback), interest: .read)
+
+## Telling
+
+# The state as a word the system's own tools use: `sc query` prints
+# `STOP_PENDING` for `stop_pending`, and this prints `stop_pending`.
+#
+# - `state`: the state.
+function state_name(state: State) -> str
+    match state
+        .stopped        => return "stopped"
+        .start_pending  => return "start_pending"
+        .stop_pending   => return "stop_pending"
+        .running        => return "running"
+        .resume_pending => return "resume_pending"
+        .pause_pending  => return "pause_pending"
+        .paused         => return "paused"
+
+# The control as one line a person reads: its kind, and the event and session
+# where the kind has them.
+#
+# - `c`: the control.
+function format_control(c: Control) -> str
+    match c.kind
+        .stop         => return "stop"
+        .pause        => return "pause"
+        .resume       => return "resume"
+        .shutdown     => return "shutdown"
+        .preshutdown  => return "preshutdown"
+        .param_change => return "param_change"
+        .time_change  => return "time_change"
+        .power        => return f"power event {c.event}"
+        .session      => return f"session change {c.event} of session {c.session}"
+        .user         => return f"user control {c.event}"
+
+## Tests
+
+test "is_supported and is_service: a system has services or not, and a test run is no service"
+    assert is_supported() == (hero_service.supported() == 1)
+    assert !is_service()
+
+test "start: a limit below zero is invalid on every system, and what the floor refuses is told by its code"
+    assert reading.code_of(start("demo", limit: time.nanoseconds(-1))) == INVALID
+
+    if is_supported()
+        assert reading.code_of(start("", limit: time.nanoseconds(0))) == INVALID
+        assert reading.code_of(start("a/b", limit: time.nanoseconds(0))) == INVALID
+        assert reading.code_of(start("a\\b", limit: time.nanoseconds(0))) == INVALID
+        return
+    assert reading.code_of(start("demo", limit: time.nanoseconds(0))) == UNSUPPORTED
+    assert reading.code_of(start("", limit: time.nanoseconds(0))) == UNSUPPORTED
+
+test "start: a program run from a console is not a service, told failed with the system's words, twice"
+    if !is_supported()
+        return
+    first = start("heroes-console-test", limit: time.seconds(10).must())
+
+    match first
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FAILED
+            assert e.msg.len() > 40
+
+    assert reading.code_of(start("heroes-console-test", limit: time.seconds(10).must())) == FAILED
+
+test "every call on no service says closed where services exist and unsupported where they do not"
+    want = reading.code_without_service()
+    s = Service(name: "none")
+    set @= poll.make(4).must()
+    assert reading.code_of(arguments(s)) == want
+    assert reading.code_of(report_running(s, accepts: [.stop])) == want
+    assert reading.code_of(report_paused(s, accepts: [.pause_resume])) == want
+    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1).must())) == want
+    assert reading.code_of(end(s, exit_code: 0)) == want
+    assert reading.code_of(wait(s, limit: time.nanoseconds(0))) == want
+    assert reading.code_of(wait_forever(s)) == want
+    assert reading.code_of(count(s)) == want
+    assert reading.code_of(add_to(set, s)) == want
+    assert poll.count(set).must() == 0
+    poll.close(@set).must()
+
+test "report_pending, end and wait: a state, a hint, an exit code and a limit out of range are invalid before the floor is asked"
+    s = Service(name: "none")
+    assert reading.code_of(report_pending(s, state: .running, wait_hint: time.seconds(1).must())) == INVALID
+    assert reading.code_of(report_pending(s, state: .stopped, wait_hint: time.seconds(1).must())) == INVALID
+    assert reading.code_of(report_pending(s, state: .paused, wait_hint: time.seconds(1).must())) == INVALID
+    assert reading.code_of(report_pending(s, state: .start_pending, wait_hint: time.nanoseconds(-1))) == INVALID
+    assert reading.code_of(report_pending(s, state: .pause_pending, wait_hint: time.nanoseconds(3600000000001))) == INVALID
+    assert reading.code_of(end(s, exit_code: -1)) == INVALID
+    assert reading.code_of(end(s, exit_code: 4294967296)) == INVALID
+    assert reading.code_of(wait(s, limit: time.nanoseconds(-1))) == INVALID
+
+test "state_name and format_control: every state and kind has its words"
+    assert state_name(.stopped) == "stopped"
+    assert state_name(.start_pending) == "start_pending"
+    assert state_name(.stop_pending) == "stop_pending"
+    assert state_name(.running) == "running"
+    assert state_name(.resume_pending) == "resume_pending"
+    assert state_name(.pause_pending) == "pause_pending"
+    assert state_name(.paused) == "paused"
+    assert format_control(Control(kind: .stop, event: 0, session: 0)) == "stop"
+    assert format_control(Control(kind: .pause, event: 0, session: 0)) == "pause"
+    assert format_control(Control(kind: .resume, event: 0, session: 0)) == "resume"
+    assert format_control(Control(kind: .shutdown, event: 0, session: 0)) == "shutdown"
+    assert format_control(Control(kind: .preshutdown, event: 0, session: 0)) == "preshutdown"
+    assert format_control(Control(kind: .param_change, event: 0, session: 0)) == "param_change"
+    assert format_control(Control(kind: .time_change, event: 0, session: 0)) == "time_change"
+    assert format_control(Control(kind: .power, event: 18, session: 0)) == "power event 18"
+    assert format_control(Control(kind: .session, event: 7, session: 3)) == "session change 7 of session 3"
+    assert format_control(Control(kind: .user, event: 130, session: 0)) == "user control 130"

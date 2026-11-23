@@ -1,0 +1,9 @@
+# Reaches Rebel's `service`, so that `heroes test` on this file runs the
+# package's tests (spec § 12). It prints whether this system has services and
+# whether this program was started as one.
+
+use <rebel>/service
+
+function main()
+    print(service.is_supported())
+    print(service.is_service())

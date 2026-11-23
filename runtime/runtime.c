@@ -438,4 +438,6 @@
 #include "platform/hero_ui_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
+#include "hero_service.h"
+#include "platform/hero_service.c"
 #endif
