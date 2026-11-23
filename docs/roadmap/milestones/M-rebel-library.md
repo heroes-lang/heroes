@@ -649,7 +649,7 @@ Put as four questions with the picture of what stood before and after the push (
 five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*:
 
 - **The push waits** for the lanes then running (the Windows box's round, the three `blocking` defects 2522, 2578
-  and 2583, the reach programs moved into `examples-rebel/reach/`) and for the last check on the exact tree pushed:
+  and 2583, the reach programs moved into `examples-rebel/reach/`, planned 2026-11-23) and for the last check on the exact tree pushed:
   the two-stage build and its fixpoint, the compiler's own tests, the net's own tests and the site's build; the whole
   net stays the CI's, as decided before.
 - **The drawing area, its mouse and its keys (DR01 to DR03) on Win32 and GTK 4, and the month calendar (CT44) on the
@@ -711,8 +711,8 @@ a question, not a premise), so a repository of Rebel's own would hold its Heroes
 **The author's answer to that reading, about 23:30, *1a 2a***, on two questions put with it:
 
 - **The folders move, the index's protocol does not** (*1a*). At the round's end, once, by a script: the package's
-  source to `rebel/library/0.1.0/files/`, the examples to `rebel/examples/` with their reach programs in
-  `rebel/examples/reach/`, the generators to `rebel/generators/`, and **`packages/` leaves the tree** until
+  source to `rebel/library/0.1.0/files/` (planned 2026-11-23), the examples to `rebel/examples/` (planned 2026-11-23) with their reach programs in
+  `rebel/examples/reach/`, the generators to `rebel/generators/` (planned 2026-11-23), and **`packages/` leaves the tree** until
   M-package-index gives it an index a client can read. The reason outranks tidiness: the source every lane rewrites
   stood at the address of a published version, which the index's own rule says is never rewritten. The version folder
   stays in the source's path tonight, since taking it out changes how the net and the site find the newest version and
@@ -750,8 +750,8 @@ wait for the CI's Windows leg.
    embedded in the program, stays a language form for a sitting of its own. The briefs are `coord/round-3b-brief.md`
    and `coord/round-3b-lanes.md`.
 3. **The layout move**, last, one script by one lane after every other lane has merged
-   (`coord/layout-move-brief.md`): `rebel/library/0.1.0/files`, `rebel/examples` (the reach programs in
-   `rebel/examples/reach`), `rebel/generators`; `packages/` leaves the tree; the 85 generated files that carry their
+   (`coord/layout-move-brief.md`): `rebel/library/0.1.0/files` (planned 2026-11-23), `rebel/examples` (the reach programs in
+   `rebel/examples/reach`, planned 2026-11-23), `rebel/generators` (planned 2026-11-23); `packages/` leaves the tree; the 85 generated files that carry their
    generator's path are regenerated, never edited; the site and the rules page say a program takes Rebel today by a path
    entry from a clone.
 4. **The last check on the exact tree pushed**: the two-stage build and its fixpoint, the compiler's own tests, the
