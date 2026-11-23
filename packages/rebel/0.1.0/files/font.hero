@@ -591,8 +591,13 @@ record Subset
     # glyphs asked for and those their composites draw.
     data: [u8]
     # The font's glyphs the subset keeps, ascending, glyph 0 first: the glyph
-    # `k` of the subset is `glyphs[k]` of the font it was cut from.
+    # `k` of the subset is `glyphs[k]` of the font it was cut from, unless
+    # `numbered` says each stands at its own number.
     glyphs: [i64]
+    # Whether the subset keeps the numbers of the font it was cut from (made by
+    # `subset_numbered`): each kept glyph is the same number in both fonts, and
+    # a glyph not kept is an empty one.
+    numbered: bool
 
 # The glyph of the subset that stands for glyph `glyph` of the font it was cut
 # from.
@@ -602,7 +607,7 @@ record Subset
 #
 # Fails `not_found` where the subset does not keep it.
 #
-# See also `subset` and `subset_glyphs`.
+# See also `subset`, `subset_glyphs` and `subset_numbered`.
 function subset_glyph_of(s: Subset lent, glyph: i64) -> i64?
     lo @= 0
     hi @= s.glyphs.len()
@@ -616,6 +621,8 @@ function subset_glyph_of(s: Subset lent, glyph: i64) -> i64?
             hi @ mid
 
     if lo < s.glyphs.len() && s.glyphs[lo] == glyph
+        if s.numbered
+            return ok(glyph)
         return ok(lo)
     return fail(code: NOT_FOUND, msg: f"the subset does not keep glyph {glyph}")
 
@@ -643,8 +650,8 @@ function subset(f: Font lent, code_points: [i64]) -> Subset?
     for cp in points
         glyphs @ glyphs.push(glyph_of(f, code_point: cp)?)
 
-    made = cutting.make(f.state, glyphs: glyphs, points: points, mapped: glyphs)?
-    return ok(Subset(data: made.data, glyphs: made.glyphs))
+    made = cutting.make(f.state, glyphs: glyphs, points: points, mapped: glyphs, keep_numbers: false)?
+    return ok(Subset(data: made.data, glyphs: made.glyphs, numbered: false))
 
 # The font cut down to the glyphs `glyphs` and what they draw, with no `cmap`:
 # a font a PDF embeds as a CID font whose codes are the glyph numbers.
@@ -659,8 +666,27 @@ function subset(f: Font lent, code_points: [i64]) -> Subset?
 #
 # See also `subset` and `subset_glyph_of`.
 function subset_glyphs(f: Font lent, glyphs: [i64]) -> Subset?
-    made = cutting.make(f.state, glyphs: glyphs, points: [], mapped: [])?
-    return ok(Subset(data: made.data, glyphs: made.glyphs))
+    made = cutting.make(f.state, glyphs: glyphs, points: [], mapped: [], keep_numbers: false)?
+    return ok(Subset(data: made.data, glyphs: made.glyphs, numbered: false))
+
+# The font cut down to the glyphs `glyphs` and what they draw, each keeping its
+# number: a font a PDF embeds as a CID font whose codes are the original font's
+# glyph numbers, so that a text written before the glyphs it uses are all known
+# stays right.
+#
+# - `f`: the font, with TrueType outlines.
+# - `glyphs`: the glyph numbers to keep, in any order, repeats allowed; glyph 0 is
+#   always kept.
+#
+# The font has as many glyphs as the last kept number asks for, the others
+# empty with no advance (`glyf` and `hmtx` hold nothing for them, and a
+# compressed file holds them in a few bytes); it has no `cmap`. Fails as
+# `subset_glyphs` does.
+#
+# See also `subset_glyphs` and `subset_glyph_of`.
+function subset_numbered(f: Font lent, glyphs: [i64]) -> Subset?
+    made = cutting.make(f.state, glyphs: glyphs, points: [], mapped: [], keep_numbers: true)?
+    return ok(Subset(data: made.data, glyphs: made.glyphs, numbered: true))
 
 ## Examples
 
@@ -806,6 +832,31 @@ test "subset_glyphs: the glyphs of A and e-acute, without a cmap"
     assert s.glyphs == [0, 5, 12, 15, 17]
     assert glyph_of(parse(s.data, index: 0).must(), code_point: 65).is_err()
     assert advance_of(parse(s.data, index: 0).must(), glyph: 1).must() == 639
+
+# The same glyphs keeping their numbers: the font is as long as the last number
+# asks, the kept glyphs are the original's own and the others are empty.
+test "subset_numbered: the glyphs of A and e-acute stay at 17 and 5"
+    f = parse(samples.truetype(), index: 0).must()
+    s = subset_numbered(f, glyphs: [17, 5]).must()
+    assert s.numbered && s.glyphs == [0, 5, 12, 15, 17]
+    cut = parse(s.data, index: 0).must()
+    assert metrics_of(cut).glyph_count == 18
+    assert advance_of(cut, glyph: 5).must() == advance_of(f, glyph: 5).must()
+    assert advance_of(cut, glyph: 17).must() == advance_of(f, glyph: 17).must()
+    assert advance_of(cut, glyph: 6).must() == 0
+    assert outline_of(cut, glyph: 17).must() == outline_of(f, glyph: 17).must()
+    assert outline_of(cut, glyph: 5).must() == outline_of(f, glyph: 5).must()
+    assert outline_of(cut, glyph: 6).must().segments.len() == 0
+    assert subset_glyph_of(s, glyph: 17).must() == 17
+    assert subset_glyph_of(s, glyph: 6).is_err()
+
+# Only glyph 0, and a font with CFF outlines or a glyph it lacks, fail as `subset_glyphs` does.
+test "subset_numbered: nothing asked, a glyph outside the font, a CFF font"
+    f = parse(samples.truetype(), index: 0).must()
+    s = subset_numbered(f, glyphs: []).must()
+    assert s.glyphs == [0] && metrics_of(parse(s.data, index: 0).must()).glyph_count == 1
+    assert subset_numbered(f, glyphs: [29]).is_err()
+    assert subset_numbered(parse(samples.postscript(), index: 0).must(), glyphs: [5]).is_err()
 
 # Where a glyph of the font stands in the subset.
 test "subset_glyph_of: kept and dropped glyphs"

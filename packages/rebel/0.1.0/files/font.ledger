@@ -112,11 +112,11 @@ capability font/tables  the tags of a font's tables and the bytes of each
   note    a table is the file's bytes as they stand, no table of them decoded
 
 capability font/subset  a TrueType font cut down to the glyphs a document uses, as a font file
-  heroes  font.subset, font.subset_glyphs, font.subset_glyph_of, font.Subset
+  heroes  font.subset, font.subset_glyphs, font.subset_numbered, font.subset_glyph_of, font.Subset
   go      -
   rust    -
   python  fontTools.subset.Subsetter, fontTools.subset.Options, fontTools.subset.subset_glyphs, fontTools.subset.closure_glyphs, fontTools.subset.load_font, fontTools.subset.save_font, fontTools.subset.main
-  note    glyphs are renumbered from 0 in the order of the original (`.notdef` first), the components of every composite come along and are renumbered, the glyphs keep their instructions with `cvt `, `fpgm` and `prep`, `loca` is written with 32-bit offsets and `post` as format 3 (no glyph names); the layout tables (`GPOS`, `GSUB`, `GDEF`) are left out, where fontTools keeps those of the features asked for; the tables of the result are read back by fontTools 4.68.0 and by Poppler's `pdftotext` through `pdf`
+  note    glyphs are renumbered from 0 in the order of the original (`.notdef` first), the components of every composite come along and are renumbered, the glyphs keep their instructions with `cvt `, `fpgm` and `prep`, `loca` is written with 32-bit offsets and `post` as format 3 (no glyph names); the layout tables (`GPOS`, `GSUB`, `GDEF`) are left out, where fontTools keeps those of the features asked for; the tables of the result are read back by fontTools 4.68.0 and by Poppler's `pdftotext` through `pdf`; `font.subset_numbered` keeps every glyph at its own number instead, the others empty with no advance, so that a PDF's codes are final before the glyphs it uses are all known
 
 capability font/subset-cff  a CFF font cut down to the glyphs a document uses
   heroes  pending

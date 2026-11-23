@@ -7,13 +7,16 @@ use bytes
 use compress
 use pdf/internal/codes
 use pdf/internal/compose
+use pdf/internal/embed_write
+use pdf/internal/embedded
 use pdf/internal/metrics
 use pdf/internal/syntax
 use pdf/internal/text_strings
 
 # The numbers given to the document's objects.
 record Numbers
-    # The fonts used, by font number, and their objects.
+    # The fonts used, by font number, and their objects: an embedded font's
+    # is its Type 0 dictionary's, the four of the font after it.
     fonts: {i64: i64}
     # Each image's object.
     images: [i64]
@@ -48,6 +51,14 @@ function number(d: compose.Doc lent) -> Numbers
             fonts[f] @ next
             next @ next + 1
         f @ f + 1
+
+    k @= 0
+
+    while k < d.embedded.len()
+        if d.fonts[14 + k].default(false)
+            fonts[14 + k] @ next
+            next @ next + 5
+        k @ k + 1
 
     images: [i64] @= []
 
@@ -123,6 +134,16 @@ function put_stream(@out: Out, n: i64, entries: str, data: [u8])
     bytes.push_text(@out.data, s: f"{n} 0 obj\n<< {entries} /Length {data.len()} >>\nstream\n")
     bytes.push_all(to: @out.data, from: data)
     bytes.push_text(@out.data, s: "\nendstream\nendobj\n")
+
+# Adds the five objects of the embedded font `slot`, the first numbered `n`.
+function put_embedded(@out: Out, slot: embedded.Slot lent, n: i64, packed: bool) -> ()?
+    written = embed_write.write(slot, base: n, packed: packed)?
+    put_object(@out, n: n, body: written.type0)
+    put_object(@out, n: n + 1, body: written.descendant)
+    put_object(@out, n: n + 2, body: written.descriptor)
+    put_stream(@out, n: n + 3, entries: written.program_entries, data: written.program)
+    put_stream(@out, n: n + 4, entries: written.unicode_entries, data: written.unicode)
+    return ok()
 
 # The destination of a page link or a bookmark: the page's object, shown
 # from `top`.
@@ -335,13 +356,19 @@ function write(d: compose.Doc lent) -> [u8]?
     put_object(@out, n: 3, body: resources(d, numbers: numbers))
 
     for f in keys(numbers.fonts)
+        n = numbers.fonts[f].must()
+
+        if f >= 14
+            put_embedded(@out, slot: d.embedded[f - 14], n: n, packed: d.compress)?
+            continue
+
         encoding = if f < 12
             " /Encoding /WinAnsiEncoding"
         else
             ""
         put_object(
             @out,
-            n: numbers.fonts[f].must(),
+            n: n,
             body: f"<< /Type /Font /Subtype /Type1 /BaseFont /{metrics.base_font_of(f)}{encoding} >>"
         )
 

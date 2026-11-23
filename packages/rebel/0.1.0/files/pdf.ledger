@@ -59,12 +59,19 @@ capability pdf/font-metrics  text measured, and a font's ascent, descent and hei
   python  pdfmetrics.stringWidth, Canvas.stringWidth, pdfmetrics.getAscent, pdfmetrics.getDescent, pdfmetrics.getAscentDescent, pdfmetrics.parseAFMFile, pdfmetrics.unicode2T1, pdfmetrics.instanceStringWidthT1
   note    widths from Adobe's Core 14 AFM files (1997), as ReportLab's stringWidth measures: Helvetica's "Hello" at 12 points is 27.336 in both; no kerning, as neither ReportLab nor gofpdf kerns the standard fonts by default
 
-capability pdf/fonts-embedded  TrueType and Type 1 fonts embedded, subset, any character
-  heroes  pending
+capability pdf/fonts-embedded  TrueType fonts embedded, cut down to the glyphs drawn, any character
+  heroes  pdf.load_font, pdf.Font, pdf.set_font, pdf.width_of, pdf.has_glyphs, pdf.wrap_text, pdf.metrics_of, pdf.base_font_of, pdf.measured, pdf.Measured, pdf.font_number
   go      Fpdf.AddFont, Fpdf.AddFontFromBytes, Fpdf.AddFontFromReader, Fpdf.AddUTF8Font, Fpdf.AddUTF8FontFromBytes, Fpdf.UTF8CutFont, gofpdf.MakeFont, gofpdf.TtfParse, gofpdf.TtfType, Fpdf.SetFontLoader, Fpdf.SetFontLocation, gofpdf.FontLoader, gofpdf.UnicodeTranslator, UnicodeTranslatorFromDescriptor, UnicodeTranslatorFromFile
   rust    PdfDocument::add_font, printpdf::font::ParsedFont, PdfFont, SubsetFont, subset_font, FontEmbeddingMode, FontType, generate_cmap_string, get_normalized_widths_ttf, get_normalized_widths_codes, cff_charset_gid_to_cid_map, extract_cid_keyed_cff, extract_collection_face, PdfFontMap, AzulParsedFont, OwnedGlyph, PrintpdfFontMeta, PdfFontParseWarning
   python  pdfmetrics.registerFont, registerFontFamily, registerTypeFace, registerEncoding, EmbeddedType1Face, faceFromAFM, findFontAndRegister, getRegisteredFontNames, Canvas.listLoadedFonts0
-  note    reading a TrueType file, subsetting it and writing its ToUnicode map is a package of its own; until it exists, text past the standard fonts' characters fails `unsupported`, never shown as boxes
+  note    a TrueType font read from its file's bytes (`font`) is carried as a Type 0 font, `/Identity-H`, with a CIDFontType2 descendant, the font descriptor, the font program cut down to the glyphs drawn (`font.subset_numbered`: the glyphs keep the font's own numbers, so a text is final when drawn) and a `/ToUnicode` map from the font's `cmap`, so that `pdftotext` and `pdf.text_of` read the text; a character with no glyph fails `unsupported` and draws nothing; widths are the font's own `hmtx` in thousandths, rounded as `/W` writes them; word spacing and justification are `TJ` adjustments, because `Tw` reaches one-byte codes alone; a font whose OS/2 licence bits bar embedding or cutting down is refused `unsupported`; a font with CFF outlines is refused `unsupported` (`pdf/fonts-embedded-cff`); a Type 1 font is refused, obsolete and unread by `font`; no kerning and no shaping: a text is its characters' glyphs in a row; a glyph two characters map to is read back as the lower one
+
+capability pdf/fonts-embedded-cff  OpenType fonts with CFF outlines embedded
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    needs `font/subset-cff`, a CFF font cut down to the glyphs drawn (FontFile3, CIDFontType0C); `pdf.load_font` refuses such a font `unsupported`, never embeds it badly
 
 capability pdf/text  a line of text drawn at a point, left, centred or right
   heroes  pdf.draw_text, pdf.Align

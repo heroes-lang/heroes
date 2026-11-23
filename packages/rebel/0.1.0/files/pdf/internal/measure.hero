@@ -1,8 +1,12 @@
-# Text turned into the codes a standard font shows, and measured: the twelve
-# Latin fonts by WinAnsiEncoding, Symbol and ZapfDingbats by their built-in
-# encodings, every width from `metrics`.
+# Text turned into the codes a font shows, and measured: the twelve Latin
+# fonts by WinAnsiEncoding, Symbol and ZapfDingbats by their built-in
+# encodings, every width from `metrics`; and an embedded font, numbered 14 and
+# more, by its own glyphs, two bytes a code, every width from the font. Font
+# `14 + k` is slot `k` of the `slots` a function is given; for a standard
+# font the slots are not looked at.
 
 use pdf/internal/codes
+use pdf/internal/embedded
 use pdf/internal/encodings
 use pdf/internal/metrics
 use unicode
@@ -21,9 +25,35 @@ record Spacing
 function plain() -> Spacing
     return Spacing(character: 0.0, word: 0.0, scale: 100.0)
 
+# Whether the font numbered `font` is an embedded one.
+function is_embedded(font: i64) -> bool
+    return font >= 14
+
+# The name of the font numbered `font` as a message names it.
+function name_of(font: i64, slots: [embedded.Slot] lent) -> str
+    if is_embedded(font)
+        return slots[font - 14].face.name
+    return metrics.base_font_of(font)
+
+# The code the space has in the font numbered `font`, -1 where it has none:
+# the one that a word's spacing is added after.
+function space_code(font: i64, slots: [embedded.Slot] lent) -> i64
+    if is_embedded(font)
+        return slots[font - 14].face.space
+    return 32
+
+# The measures of the font numbered `font` as a whole.
+function global_of(font: i64, slots: [embedded.Slot] lent) -> metrics.Global
+    if is_embedded(font)
+        return embedded.global_of(slots[font - 14].face)
+    return metrics.global_of(font)
+
 # The code of the character `point` in the font numbered `font`, -1 where
 # it has no glyph for it.
-function code_of(font: i64, point: i64) -> i64
+function code_of(font: i64, slots: [embedded.Slot] lent, point: i64) -> i64
+    if is_embedded(font)
+        return embedded.glyph_of(slots[font - 14].face, point: point)
+
     if font == 12
         return encodings.symbol_code_of(point)
 
@@ -43,19 +73,23 @@ function code_of(font: i64, point: i64) -> i64
 #
 # Fails `unsupported` where the font has no glyph for a character, the
 # message naming it and its code point.
-function codes_of(font: i64, text: str) -> [i64]?
+function codes_of(font: i64, slots: [embedded.Slot] lent, text: str) -> [i64]?
     out: [i64] @= []
 
     for c in text.chars()
         if c == "\n" || c == "\r"
             continue
         point = unicode.code_point(c)
-        code = code_of(font: font, point: point)
+        code = code_of(font: font, slots: slots, point: point)
 
         if code < 0
             hex = codes.format_point(point)
+            name = name_of(font, slots: slots)
+
+            if is_embedded(font)
+                return codes.unsupported(why: f"{name} has no glyph for \"{c}\" ({hex})")
             return codes.unsupported(
-                why: f"{metrics.base_font_of(font)} has no glyph for \"{c}\" ({hex}); the 14 standard fonts show WinAnsiEncoding's characters, Symbol's and ZapfDingbats'"
+                why: f"{name} has no glyph for \"{c}\" ({hex}); the 14 standard fonts show WinAnsiEncoding's characters, Symbol's and ZapfDingbats'"
             )
         out @ out.push(code)
 
@@ -63,52 +97,60 @@ function codes_of(font: i64, text: str) -> [i64]?
 
 # How wide the codes `shown` are in the font numbered `font` at `size`, with
 # `spacing`, in points.
-function width_of_codes(font: i64, shown: [i64], size: f64, spacing: Spacing) -> f64
-    widths = metrics.widths_of(font)
+function width_of_codes(font: i64, slots: [embedded.Slot] lent, shown: [i64], size: f64, spacing: Spacing) -> f64
+    widths: [i64] @= []
+
+    if !is_embedded(font)
+        widths @ metrics.widths_of(font)
+    space = space_code(font, slots: slots)
     total @= 0.0
 
     for code in shown
-        total @ total + to_f64(widths[code]) * size / 1000.0 + spacing.character
+        thousandths = if is_embedded(font)
+            embedded.width_of(slots[font - 14].face, glyph: code)
+        else
+            widths[code]
+        total @ total + to_f64(thousandths) * size / 1000.0 + spacing.character
 
-        if code == 32
+        if code == space
             total @ total + spacing.word
 
     return total * spacing.scale / 100.0
 
 # Whether the font numbered `font` shows every character of `text`.
-function shows_all(font: i64, text: str) -> bool
+function shows_all(font: i64, slots: [embedded.Slot] lent, text: str) -> bool
     for c in text.chars()
-        if c != "\n" && c != "\r" && code_of(font: font, point: unicode.code_point(c)) < 0
+        if c != "\n" && c != "\r" && code_of(font: font, slots: slots, point: unicode.code_point(c)) < 0
             return false
 
     return true
 
 test "code_of: ASCII, the euro, a character none has, Symbol's alpha, a dingbat"
-    assert code_of(font: 0, point: 0x41) == 0x41
-    assert code_of(font: 0, point: 0x20ac) == 0x80
-    assert code_of(font: 0, point: 0x3b1) == -1
-    assert code_of(font: 12, point: 0x3b1) == 0x61
-    assert code_of(font: 13, point: 0x2701) == 0x21
-    assert code_of(font: 13, point: 0x41) == -1
-    assert code_of(font: 0, point: 0x1f) == -1
+    assert code_of(font: 0, slots: [], point: 0x41) == 0x41
+    assert code_of(font: 0, slots: [], point: 0x20ac) == 0x80
+    assert code_of(font: 0, slots: [], point: 0x3b1) == -1
+    assert code_of(font: 12, slots: [], point: 0x3b1) == 0x61
+    assert code_of(font: 13, slots: [], point: 0x2701) == 0x21
+    assert code_of(font: 13, slots: [], point: 0x41) == -1
+    assert code_of(font: 0, slots: [], point: 0x1f) == -1
 
 test "codes_of: a line break left out, the empty text, a character refused"
-    assert codes_of(0, text: "A\nb").must() == [0x41, 0x62]
-    assert codes_of(0, text: "").must() == []
+    assert codes_of(0, slots: [], text: "A\nb").must() == [0x41, 0x62]
+    assert codes_of(0, slots: [], text: "").must() == []
 
-    match codes_of(4, text: "αβ")
+    match codes_of(4, slots: [], text: "αβ")
         .ok _  => assert false
         .err e => assert e.code == "unsupported" && e.msg == "Times-Roman has no glyph for \"α\" (U+03B1); the 14 standard fonts show WinAnsiEncoding's characters, Symbol's and ZapfDingbats'"
 
 test "width_of_codes: Helvetica's Hello at 12, Courier at 10, spacing and scale counted"
-    hello = codes_of(0, text: "Hello").must()
-    w = width_of_codes(0, shown: hello, size: 12.0, spacing: plain())
+    hello = codes_of(0, slots: [], text: "Hello").must()
+    w = width_of_codes(0, slots: [], shown: hello, size: 12.0, spacing: plain())
     assert w > 27.33599 && w < 27.33601
-    assert width_of_codes(8, shown: codes_of(8, text: "abc").must(), size: 10.0, spacing: plain()) == 18.0
+    assert width_of_codes(8, slots: [], shown: codes_of(8, slots: [], text: "abc").must(), size: 10.0, spacing: plain()) == 18.0
     spaced = Spacing(character: 1.0, word: 2.0, scale: 50.0)
-    assert width_of_codes(8, shown: codes_of(8, text: "a b").must(), size: 10.0, spacing: spaced) == 11.5
-    assert width_of_codes(0, shown: [], size: 12.0, spacing: plain()) == 0.0
-    assert shows_all(0, text: "Grüße €") && !shows_all(0, text: "Ω") && shows_all(12, text: "Ω")
+    assert width_of_codes(8, slots: [], shown: codes_of(8, slots: [], text: "a b").must(), size: 10.0, spacing: spaced) == 11.5
+    assert width_of_codes(0, slots: [], shown: [], size: 12.0, spacing: plain()) == 0.0
+    assert shows_all(0, slots: [], text: "Grüße €") && !shows_all(0, slots: [], text: "Ω") && shows_all(12, slots: [], text: "Ω")
 
 # The number of the standard font PDF names `base`, 0 to 13 in the order of
 # the face's `Font`; -1 for a name that is none of them.

@@ -1,10 +1,62 @@
 # Reaches Rebel's `pdf`, so that `heroes test` on this file runs the
-# package's own tests (spec § 12). It writes a page with a line of text and
-# reads the text back.
+# package's own tests (spec § 12). Without arguments it writes a page with a
+# line of text in a standard font and reads the text back. Given the path of a
+# TrueType font file and a path to write, it writes a page of Polish, Czech
+# and Greek lines in that font, embedded, and reads the text back.
 
+use <rebel>/fs
 use <rebel>/pdf
 
+# The text of the first page of the file `data`, as `text_of` reads it.
+function read_back(data: [u8])
+    match pdf.decode(data, password: "", limits: pdf.default_limits())
+        .err e => print(e.code, ": ", e.msg)
+        .ok f =>
+            pages = pdf.pages_of(f)
+            print(pages.len(), " page: ", pdf.text_of(f, page: pages[0]).default("?"))
+
+# A page of lines in the font file `font_path`, written to `out_path`: three lines and a justified paragraph.
+function embedded_page(font_path: str, out_path: str)
+    match fs.read_bytes(font_path)
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match pdf.load_font(data, index: 0)
+                .err e => print(e.code, ": ", e.msg)
+                .ok font =>
+                    doc @= pdf.document()
+                    pdf.add_page(@doc, size: pdf.size_of(.a4))
+                    pdf.set_font(@doc, font: font, size: 14.0)
+                    lines = ["Zażółć gęślą jaźń", "Čeština, kůň, Řeřicha, žluť", "Αλφα Βητα Γαμμα Δελτα Ω €5"]
+                    y @= 770.0
+
+                    for line in lines
+                        match pdf.draw_text(@doc, x: 72.0, y: y, text: line, align: .left)
+                            .ok _  => y @ y - 20.0
+                            .err e => print(e.code, ": ", e.msg)
+
+                    paragraph = "Zażółć gęślą jaźń, Čeština a kůň, Αλφα Βητα Γαμμα Δελτα: a paragraph of words that the box breaks into lines and justifies to its width."
+
+                    match pdf.draw_text_box(@doc, x: 72.0, top: y - 10.0, width: 300.0, text: paragraph, align: .justify, line_height: 18.0)
+                        .ok _  => _ = 0
+                        .err e => print(e.code, ": ", e.msg)
+
+                    match pdf.encode(doc)
+                        .err e => print(e.code, ": ", e.msg)
+                        .ok file =>
+                            match fs.write_bytes(out_path, data: file)
+                                .err e => print(e.code, ": ", e.msg)
+                                .ok _  => read_back(file)
+
 function main()
+    paths = args()
+
+    if paths.len() == 2
+        embedded_page(font_path: paths[0], out_path: paths[1])
+        return
+
+    if paths.len() != 0
+        print("usage: reach_pdf [<font file> <pdf file to write>]")
+        return
     doc @= pdf.document()
     pdf.add_page(@doc, size: pdf.size_of(.a4))
 
@@ -13,10 +65,5 @@ function main()
         .err e => print(e.code, ": ", e.msg)
 
     match pdf.encode(doc)
-        .err e => print(e.code, ": ", e.msg)
-        .ok data =>
-            match pdf.decode(data, password: "", limits: pdf.default_limits())
-                .err e => print(e.code, ": ", e.msg)
-                .ok f =>
-                    pages = pdf.pages_of(f)
-                    print(pages.len(), " page: ", pdf.text_of(f, page: pages[0]).default("?"))
+        .err e   => print(e.code, ": ", e.msg)
+        .ok data => read_back(data)

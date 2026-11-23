@@ -1,10 +1,11 @@
 # A TrueType font cut down to the glyphs a document uses: the glyphs asked
 # for and the components of every composite among them, renumbered from 0 in
-# the order of the original, with `glyf`, `loca` and `hmtx` rebuilt, `hhea`,
-# `maxp` and `head` made to say the new count, and the tables a renderer
-# reads besides (`OS/2`, `name`, `cvt `, `fpgm`, `prep`, `gasp`) and the
-# `post` header without names carried over. Glyph instructions keep working:
-# the programs they call are copied whole.
+# the order of the original or, where the caller asks, keeping their own
+# numbers (a glyph not kept is then an empty glyph with no advance), with
+# `glyf`, `loca` and `hmtx` rebuilt, `hhea`, `maxp` and `head` made to say the
+# new count, and the tables a renderer reads besides (`OS/2`, `name`, `cvt `,
+# `fpgm`, `prep`, `gasp`) and the `post` header without names carried over.
+# Glyph instructions keep working: the programs they call are copied whole.
 
 use bytes
 use font/internal/bin
@@ -89,13 +90,17 @@ function two(v: i64) -> [u8]
     return out
 
 # The kept glyphs' records with their component numbers renumbered, each padded
-# to four bytes, as the new `glyf` and the new `loca` (32-bit offsets).
-function build_glyf(p: model.Parsed lent, kept: [i64] lent, numbers: [i64] lent) -> [[u8]]?
+# to four bytes, as the new `glyf` and the new `loca` (32-bit offsets). `rows`
+# names the original glyph of each new one, -1 for a new glyph that is empty.
+function build_glyf(p: model.Parsed lent, rows: [i64] lent, numbers: [i64] lent) -> [[u8]]?
     glyf_out: [u8] @= []
     loca_out: [u8] @= []
 
-    for g in kept
+    for g in rows
         bin.put_u32(@loca_out, v: glyf_out.len())
+
+        if g < 0
+            continue
         rec @= record_of(p, glyph: g)?
 
         for part in parts_of(rec, glyph: g)?
@@ -109,11 +114,16 @@ function build_glyf(p: model.Parsed lent, kept: [i64] lent, numbers: [i64] lent)
     bin.put_u32(@loca_out, v: glyf_out.len())
     return ok([glyf_out, loca_out])
 
-# The new `hmtx`: an advance and a left side bearing for each kept glyph.
-function build_hmtx(p: model.Parsed lent, kept: [i64] lent) -> [u8]
+# The new `hmtx`: an advance and a left side bearing for each new glyph, 0 and
+# 0 for an empty one (`rows` as `build_glyf` reads it).
+function build_hmtx(p: model.Parsed lent, rows: [i64] lent) -> [u8]
     out: [u8] @= []
 
-    for g in kept
+    for g in rows
+        if g < 0
+            bin.put_u16(@out, v: 0)
+            bin.put_u16(@out, v: 0)
+            continue
         bin.put_u16(@out, v: core.advance_of(p.data, c: p.core, glyph: g))
         bearing @= core.bearing_of(p.data, c: p.core, glyph: g)
 
@@ -157,18 +167,37 @@ function cut(p: model.Parsed lent, wanted: [i64]) -> [i64]?
         return fail(code: sfnt.UNSUPPORTED, msg: "a font with CFF outlines: only TrueType outlines are cut down")
     return closure(p, wanted: wanted)
 
+# The original glyph of each glyph of the subset: the kept glyphs in order, or,
+# where the numbers are kept, one row for every number up to the last kept
+# glyph, -1 for the rows no kept glyph stands at.
+function rows_of(kept: [i64] lent, keep_numbers: bool) -> [i64]
+    if !keep_numbers
+        return kept
+    rows: [i64] @= []
+
+    for _ in range(from: 0, to: kept[kept.len() - 1] + 1)
+        rows @ rows.push(-1)
+
+    for g in kept
+        rows[g] @ g
+
+    return rows
+
 # The tables of the subset of `p` to `kept` glyphs, without a `cmap`.
-function tables(p: model.Parsed lent, kept: [i64] lent) -> [writer.Part]?
+function tables(p: model.Parsed lent, kept: [i64] lent, keep_numbers: bool) -> [writer.Part]?
     numbers: [i64] @= []
 
     for _ in range(from: 0, to: p.core.num_glyphs)
         numbers @ numbers.push(-1)
 
-    for k in range(from: 0, to: kept.len())
-        numbers[kept[k]] @ k
+    rows = rows_of(kept, keep_numbers: keep_numbers)
 
-    built = build_glyf(p, kept: kept, numbers: numbers)?
-    count = kept.len()
+    for k in range(from: 0, to: rows.len())
+        if rows[k] >= 0
+            numbers[rows[k]] @ k
+
+    built = build_glyf(p, rows: rows, numbers: numbers)?
+    count = rows.len()
     head @= table_bytes(p, tag: "head")
     head @ with_u16(head, at: 50, v: 1)
     head @ with_u16(head, at: 8, v: 0)
@@ -179,7 +208,7 @@ function tables(p: model.Parsed lent, kept: [i64] lent) -> [writer.Part]?
         writer.Part(tag: "maxp", body: with_u16(table_bytes(p, tag: "maxp"), at: 4, v: count))
         writer.Part(tag: "glyf", body: built[0])
         writer.Part(tag: "loca", body: built[1])
-        writer.Part(tag: "hmtx", body: build_hmtx(p, kept: kept))
+        writer.Part(tag: "hmtx", body: build_hmtx(p, rows: rows))
     ]
 
     for tag in copied()
@@ -198,8 +227,9 @@ function tables(p: model.Parsed lent, kept: [i64] lent) -> [writer.Part]?
 record Made
     # The font file.
     data: [u8]
-    # The original glyph of each new glyph: glyph `k` of the subset is
-    # `glyphs[k]` of the font cut.
+    # The original glyphs kept, ascending. Glyph `k` of the subset is
+    # `glyphs[k]` of the font cut, or, where the numbers are kept, each of
+    # these glyphs stands at its own number.
     glyphs: [i64]
 
 # The subset of `p` holding `glyphs`, their components and glyph 0, with a
@@ -207,15 +237,18 @@ record Made
 # any: each maps to the glyph `glyph_of(p, point)` it has in the font.
 # Fails `unsupported` for a font with CFF outlines, `not_found` for a glyph
 # or a character the font does not have.
-function make(p: model.Parsed lent, glyphs: [i64], points: [i64], mapped: [i64]) -> Made?
+function make(p: model.Parsed lent, glyphs: [i64], points: [i64], mapped: [i64], keep_numbers: bool) -> Made?
     kept = cut(p, wanted: glyphs)?
-    parts: [writer.Part] @= tables(p, kept: kept)?
+    parts: [writer.Part] @= tables(p, kept: kept, keep_numbers: keep_numbers)?
 
     if points.len() > 0
         numbers: [i64] @= []
 
         for g in mapped
-            numbers @ numbers.push(rank_of(kept, glyph: g))
+            if keep_numbers
+                numbers @ numbers.push(g)
+            else
+                numbers @ numbers.push(rank_of(kept, glyph: g))
 
         parts @ parts.push(writer.Part(tag: "cmap", body: cmap_write.build(points: points, glyphs: numbers)))
     return ok(Made(data: writer.assemble(version: 65536, parts: parts), glyphs: kept))

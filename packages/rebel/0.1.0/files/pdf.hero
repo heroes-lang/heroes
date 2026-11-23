@@ -1,6 +1,7 @@
 # PDF documents written and read. Writing makes pages of any size and draws
-# on them: text in the 14 standard fonts, measured by Adobe's own metrics,
-# wrapped into boxes and laid out as simple tables; lines, rectangles,
+# on them: text in the 14 standard fonts, measured by Adobe's own metrics, or
+# in TrueType fonts embedded, cut down to the glyphs drawn and measured by
+# their own tables, wrapped into boxes and laid out as simple tables; lines, rectangles,
 # circles and paths; colours, opacity, clipping and transforms; JPEG images
 # passed through, PNG and images in memory embedded with their alpha;
 # links, bookmarks and the document's information. Reading takes a file's
@@ -12,9 +13,15 @@
 # Poppler's `pdftotext` and `pdfinfo`, Ghostscript and pypdf read without a
 # complaint, and the text it reads is the text `pdftotext` reads.
 #
-# It embeds no font file, so text is what the standard fonts show: the
-# characters of WinAnsiEncoding (Latin-1 and the euro, the dashes and the
-# quotation marks) and those of Symbol and ZapfDingbats. It decodes no image
+# Text in a standard font is what those fonts show: the characters of
+# WinAnsiEncoding (Latin-1 and the euro, the dashes and the quotation marks)
+# and those of Symbol and ZapfDingbats; any other character needs a font
+# embedded, which `load_font` reads from the bytes of a TrueType file and
+# which every glyph it draws is written from, two bytes a code, with the map
+# that lets a reader copy the text out. It embeds no font with CFF outlines
+# and no Type 1 font, shapes no script (a ligature, a mark placed, a
+# right-to-left run) and kerns no pair: a text is its characters' glyphs in a
+# row. It decodes no image
 # itself: PNG is decoded by `image/png`, and a page's images are read as
 # their bytes. It opens no path (`fs` does) and draws no chart. It edits no
 # file it read and writes no encrypted file. A file encrypted with RC4 by
@@ -31,8 +38,8 @@
 # the codes of `compress` and `image/png` where a stream or an image does not
 # decode.
 #
-# Not written yet, each a `pending` block of its ledger: TrueType and Type 1
-# fonts embedded, subset, any character; spot colours and ICC colour spaces;
+# Not written yet, each a `pending` block of its ledger: Type 1 fonts and
+# fonts with CFF outlines embedded; spot colours and ICC colour spaces;
 # blend modes, overprint and soft masks of the graphics state; XMP metadata
 # streams; reusable form objects (templates); optional content: layers shown or
 # hidden; linear and radial gradients, shadings; files attached to a document;
@@ -54,10 +61,11 @@ use math
 use pdf/internal/assemble
 use pdf/internal/compose
 use pdf/internal/dates
+use pdf/internal/embedded
 use pdf/internal/filters
+use pdf/internal/font_samples
 use pdf/internal/images
 use pdf/internal/measure
-use pdf/internal/metrics
 use pdf/internal/model
 use pdf/internal/navigation
 use pdf/internal/samples
@@ -89,8 +97,9 @@ constant LIMIT: str
 constant NOT_FOUND: str
     "not_found"
 
-# The code of what this package does not do: a character a standard font
-# has no glyph for (`width_of`, `draw_text`), an image it does not embed
+# The code of what this package does not do: a character a font has no glyph
+# for (`width_of`, `draw_text`), a font it does not embed (`load_font`: CFF
+# outlines, a licence that bars embedding), an image it does not embed
 # (`add_png`), a file encrypted with AES (`decode`), a stream of an image
 # filter (`stream_data_of`).
 constant UNSUPPORTED: str
@@ -262,9 +271,12 @@ function parse_color(s: str) -> Color?
 
 ## Fonts
 
-# The 14 standard fonts, which every reader of PDF has and no file embeds.
-# The Latin twelve show WinAnsiEncoding's characters; Symbol shows Greek
-# letters and mathematical signs, ZapfDingbats ornaments.
+# A font text is drawn in: one of the 14 standard fonts, which every reader of
+# PDF has and no file embeds, or a TrueType font of the program's own, which
+# the file carries, cut down to the glyphs drawn.
+# The Latin twelve of the standard ones show WinAnsiEncoding's characters;
+# Symbol shows Greek letters and mathematical signs, ZapfDingbats ornaments;
+# an embedded font shows every character it has a glyph for.
 variant Font
     # Helvetica.
     helvetica
@@ -294,6 +306,10 @@ variant Font
     symbol
     # ZapfDingbats: arrows, stars, check marks and other ornaments.
     zapf_dingbats
+    # A TrueType font embedded in the file, made by `load_font`.
+    embedded
+        # The font, read.
+        face: embedded.Face
 
 # What an AFM file says of a font as a whole, in thousandths of the font's
 # size: multiply by the size and divide by 1000 for points.
@@ -324,6 +340,9 @@ record FontMetrics
     box_top: i64
 
 # The name PDF gives `font`, as its `/BaseFont` writes it: `Helvetica-Bold`.
+# An embedded font's is its PostScript name (its full name, else `EmbeddedFont`,
+# where it has none), cut to letters, digits, `-`, `_` and `.`; the file writes
+# it after a six-letter tag, `AAAAAA+NotoSans-Regular`.
 #
 # - `font`: the font.
 #
@@ -344,6 +363,7 @@ function base_font_of(font: Font) -> str
         .courier_bold_oblique   => "Courier-BoldOblique"
         .symbol                 => "Symbol"
         .zapf_dingbats          => "ZapfDingbats"
+        .embedded e             => e.face.name
 
 # The standard font PDF names `name`: `Times-Roman` is `times_roman`.
 #
@@ -370,13 +390,73 @@ function parse_font(name: str) -> Font?
         "ZapfDingbats"          => ok(.zapf_dingbats)
         _                       => fail(code: NOT_FOUND, msg: f"\"{name}\" is none of the 14 standard fonts")
 
-# The metrics of `font`, from Adobe's AFM file of it.
+# What the writer holds of `font` to measure with: its number, 0 to 13 for a
+# standard font and 14 for an embedded one, and the slots that number is read
+# against.
+record Measured
+    # The font's number.
+    number: i64
+    # The embedded fonts that number names: one, or none.
+    slots: [embedded.Slot]
+
+# `font` as the writer measures it: the number it has and the slots that number
+# is read against, so that a font that is not a document's yet can be measured.
+#
+# - `font`: the font.
+#
+# See also `font_number`.
+function measured(font: Font) -> Measured
+    return match font
+        .embedded e => Measured(number: 14, slots: [embedded.Slot(face: e.face, used: {})])
+        .helvetica | .helvetica_bold | .helvetica_oblique | .helvetica_bold_oblique | .times_roman | .times_bold | .times_italic | .times_bold_italic | .courier | .courier_bold | .courier_oblique | .courier_bold_oblique | .symbol | .zapf_dingbats => Measured(
+            number: measure.font_index_of(base_font_of(font)),
+            slots: []
+        )
+
+# The number the pen gives `font` in `doc`: an embedded font is added to the
+# document where it is not there already.
+#
+# - `doc`: the document.
+# - `font`: the font.
+#
+# See also `measured`.
+function font_number(@doc: Document, font: Font) -> i64
+    match font
+        .embedded e => return compose.number_of(@doc.state, face: e.face)
+        .helvetica | .helvetica_bold | .helvetica_oblique | .helvetica_bold_oblique | .times_roman | .times_bold | .times_italic | .times_bold_italic | .courier | .courier_bold | .courier_oblique | .courier_bold_oblique | .symbol | .zapf_dingbats => return measure.font_index_of(
+            base_font_of(font)
+        )
+
+# A TrueType font made ready to draw with: read from the bytes of its file, and
+# carried by every document that draws with it, cut down to the glyphs drawn,
+# with a `ToUnicode` map so that a reader copies the text out. The font file
+# is not kept open or read again: `data` is held.
+#
+# - `data`: the bytes of a `.ttf` or `.ttc` file, or an `.otf` with TrueType
+#   outlines.
+# - `index`: which font of a collection, from 0; 0 for a single font.
+#
+# Fails with the codes of `font` where `data` is no font (`invalid`,
+# `not_found`), and `unsupported` where the font has CFF outlines, has no
+# `cmap` that is read, or sets the bits of its `OS/2` licence that bar
+# embedding it or cutting it down, the message naming which.
+#
+# See also `set_font`, `width_of` and `draw_text`.
+function load_font(data: [u8], index: i64) -> Font?
+    return ok(.embedded(face: embedded.load(data, index: index)?))
+
+# The metrics of `font`, from Adobe's AFM file of it, or from the font itself
+# where it is embedded: its `hhea`, `OS/2`, `post` and `head` tables scaled to
+# thousandths of the size. An embedded font's `cap_height` is `OS/2`'s, else the
+# height of its `H`, else 0, and its stem is not a metric of the font but an
+# estimate from its weight.
 #
 # - `font`: the font.
 #
 # See also `width_of`.
 function metrics_of(font: Font) -> FontMetrics
-    g = metrics.global_of(measure.font_index_of(base_font_of(font)))
+    m = measured(font)
+    g = measure.global_of(m.number, slots: m.slots)
     return FontMetrics(
         ascent: g.ascent,
         descent: g.descent,
@@ -392,7 +472,9 @@ function metrics_of(font: Font) -> FontMetrics
     )
 
 # How wide `text` is in `font` at `size`, in points: the sum of its
-# characters' widths in Adobe's AFM file, with no kerning, as PDF shows it.
+# characters' widths in Adobe's AFM file, or in the embedded font's own `hmtx`
+# table, rounded as the file's width array writes them, with no kerning, as PDF
+# shows it.
 #
 # - `text`: the text; the empty text is 0 wide. A line break counts as no
 #   character.
@@ -404,9 +486,9 @@ function metrics_of(font: Font) -> FontMetrics
 #
 # See also `has_glyphs` and `wrap_text`.
 function width_of(text: str, font: Font, size: f64) -> f64?
-    index = measure.font_index_of(base_font_of(font))
-    shown = measure.codes_of(index, text: text)?
-    return ok(measure.width_of_codes(index, shown: shown, size: size, spacing: measure.plain()))
+    m = measured(font)
+    shown = measure.codes_of(m.number, slots: m.slots, text: text)?
+    return ok(measure.width_of_codes(m.number, slots: m.slots, shown: shown, size: size, spacing: measure.plain()))
 
 # Whether `font` has a glyph for every character of `text`, so that
 # `draw_text` can show it.
@@ -416,7 +498,8 @@ function width_of(text: str, font: Font, size: f64) -> f64?
 #
 # See also `width_of`.
 function has_glyphs(font: Font, text: str) -> bool
-    return measure.shows_all(measure.font_index_of(base_font_of(font)), text: text)
+    m = measured(font)
+    return measure.shows_all(m.number, slots: m.slots, text: text)
 
 ## Documents
 
@@ -582,7 +665,7 @@ record Matrix
 # See also `draw_text` and `set_text_style`.
 function set_font(@doc: Document, font: Font, size: f64)
     assert size > 0.0
-    doc.state.pen.font @ measure.font_index_of(base_font_of(font))
+    doc.state.pen.font @ font_number(@doc, font: font)
     doc.state.pen.size @ size
 
 # Sets the colour shapes are filled with and text is drawn in.
@@ -1165,9 +1248,11 @@ function draw_text(@doc: Document, x: f64, y: f64, text: str, align: Align) -> (
 #
 # See also `draw_text_box`.
 function wrap_text(text: str, font: Font, size: f64, width: f64) -> [str]?
+    m = measured(font)
     return wrap.wrap(
         text,
-        font: measure.font_index_of(base_font_of(font)),
+        font: m.number,
+        slots: m.slots,
         size: size,
         most: width,
         spacing: measure.plain()
@@ -1316,13 +1401,15 @@ function draw_table(@doc: Document, x: f64, top: f64, bottom: f64, t: Table) -> 
         .rgb c  => compose.Ink(space: 1, parts: [c.red, c.green, c.blue])
         .cmyk c => compose.Ink(space: 2, parts: [c.cyan, c.magenta, c.yellow, c.black])
 
+    cell_font = font_number(@doc, font: t.font)
+    head_font = font_number(@doc, font: t.header_font)
     spec = tables.Spec(
         widths: widths,
         aligns: aligns,
         rows: t.rows,
         header_rows: t.header_rows,
-        font: measure.font_index_of(base_font_of(t.font)),
-        header_font: measure.font_index_of(base_font_of(t.header_font)),
+        font: cell_font,
+        header_font: head_font,
         size: t.size,
         line_height: t.line_height,
         padding: t.padding,
@@ -2893,3 +2980,90 @@ test "raw_stream_of: compressed bytes"
     f = decode(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
     content = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Contents").must())
     assert raw_stream_of(content).must().len() > 0
+
+## Embedded fonts
+
+# The sample font as a face made by `load_font`.
+function noto() -> Font
+    return load_font(font_samples.noto_sans(), index: 0).must()
+
+# The measures of the sample's font as fontTools reads them, and the width of a
+# text from its `hmtx`: A is 639 and H 741 in the 1000 units of the em.
+test "load_font: the name, the metrics, the width of a text and the glyphs it has"
+    f = noto()
+    assert base_font_of(f) == "NotoSans-Regular"
+    m = metrics_of(f)
+    assert m.ascent == 1069 && m.descent == -293 && m.cap_height == 714 && m.x_height == 536
+    assert m.box_left == -621 && m.box_top == 1067 && m.underline_position == -100
+    w = width_of("AH", font: f, size: 10.0).must()
+    assert w > 13.7999 && w < 13.8001
+    assert has_glyphs(f, text: "Zażółć gęślą jaźń; Čeština, kůň, Řeřicha, žluť; Αλφα Ω €")
+    assert !has_glyphs(f, text: "日本") && !has_glyphs(f, text: "é")
+    assert width_of("", font: f, size: 10.0).must() == 0.0
+
+# A font that is no font, a font with CFF outlines, a licence that bars it.
+test "load_font: no font, CFF outlines and a restricted licence fail"
+    assert load_font([0, 1, 2, 3], index: 0).is_err()
+    assert load_font(font_samples.cff(), index: 0).is_err()
+    assert load_font(font_samples.with_licence(2), index: 0).is_err()
+
+    match load_font(font_samples.with_licence(0x100), index: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+# A character the font lacks fails `unsupported`, names the font and the character, and draws nothing.
+test "draw_text: a character the embedded font has no glyph for draws nothing"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: noto(), size: 12.0)
+
+    match draw_text(@doc, x: 10.0, y: 20.0, text: "A日", align: .left)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "NotoSans-Regular has no glyph for \"日\" (U+65E5)"
+
+    assert !bytes.contains(s: encode(doc).must(), substr: bytes.from_text("/Subtype /Type0"))
+
+# The code of a glyph is its number: A is 34 and H 41, two bytes each.
+test "draw_text: the glyphs of an embedded font are written as two-byte codes with TJ"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: noto(), size: 12.0)
+    draw_text(@doc, x: 10.0, y: 20.0, text: "AH", align: .left).must()
+    data = encode(doc).must()
+    assert bytes.contains(s: data, substr: bytes.from_text("BT /F14 12 Tf 10 20 Td [<00220029>] TJ ET"))
+    assert bytes.contains(s: data, substr: bytes.from_text("/Resources 3 0 R"))
+    assert bytes.contains(s: data, substr: bytes.from_text("/Font << /F14 "))
+
+# Tw reaches one-byte codes alone, so a word's spacing is an adjustment after each space glyph.
+test "draw_text: word spacing is a TJ adjustment after each space, not Tw"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: noto(), size: 12.0)
+    style @= text_style()
+    style.word_spacing @ 2.0
+    set_text_style(@doc, style: style)
+    draw_text(@doc, x: 10.0, y: 20.0, text: "A H", align: .left).must()
+    data = encode(doc).must()
+    assert bytes.contains(
+        s: data,
+        substr: bytes.from_text("BT /F14 12 Tf 10 20 Td [<00220001> -166.6667 <0029>] TJ ET")
+    )
+    w = width_of("A H", font: noto(), size: 12.0).must()
+    assert w > 19.6799 && w < 19.6801
+
+# Written and read back: the text, in Polish, Czech and Greek, through the ToUnicode map.
+test "encode and decode: Polish, Czech and Greek lines are read back as they were drawn"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: noto(), size: 14.0)
+    draw_text(@doc, x: 72.0, y: 700.0, text: "Zażółć gęślą jaźń", align: .left).must()
+    draw_text(@doc, x: 72.0, y: 680.0, text: "Čeština, kůň, Řeřicha, žluť", align: .left).must()
+    draw_text(@doc, x: 72.0, y: 660.0, text: "Αλφα Βητα Γαμμα Δελτα Ω €5", align: .left).must()
+    f = decode(encode(doc).must(), password: "", limits: default_limits()).must()
+    page = pages_of(f)[0]
+    assert text_of(f, page: page).must() == "Zażółć gęślą jaźń\nČeština, kůň, Řeřicha, žluť\nΑλφα Βητα Γαμμα Δελτα Ω €5"
+    pieces = pieces_of(f, page: page).must()
+    assert pieces.len() == 3 && pieces[0].size == 14.0 && pieces[0].font == "NotoSans-Regular"

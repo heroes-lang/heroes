@@ -243,7 +243,7 @@ function build(st: store.Store lent, font: model.Obj) -> Decoder
                 -1
             else
                 unicode.code_point(texts[c])
-            shown = measure.code_of(font: standard, point: point)
+            shown = measure.code_of(font: standard, slots: [], point: point)
 
             if shown >= 0
                 put_width(@widths, code: c, w: to_f64(afm[shown]))

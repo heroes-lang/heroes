@@ -6,7 +6,6 @@
 use pdf/internal/codes
 use pdf/internal/compose
 use pdf/internal/measure
-use pdf/internal/metrics
 use pdf/internal/syntax
 use pdf/internal/wrap
 
@@ -43,7 +42,7 @@ function draw_row(@d: compose.Doc, spec: Spec lent, x: f64, top: f64, height: f6
         spec.header_font
     else
         spec.font
-    ascent = to_f64(metrics.global_of(font).ascent) * spec.size / 1000.0
+    ascent = to_f64(measure.global_of(font, slots: d.embedded).ascent) * spec.size / 1000.0
     left @= x
     c @= 0
 
@@ -63,12 +62,19 @@ function draw_row(@d: compose.Doc, spec: Spec lent, x: f64, top: f64, height: f6
 
         for line in cells[c]
             if line.text != ""
-                shown = measure.codes_of(font, text: line.text).default([])
-                lw = measure.width_of_codes(font, shown: shown, size: spec.size, spacing: measure.plain())
+                shown = measure.codes_of(font, slots: d.embedded, text: line.text).default([])
+                lw = measure.width_of_codes(
+                    font,
+                    slots: d.embedded,
+                    shown: shown,
+                    size: spec.size,
+                    spacing: measure.plain()
+                )
                 spaces @= 0
+                space = measure.space_code(font, slots: d.embedded)
 
                 for code in shown
-                    if code == 32
+                    if code == space
                         spaces @ spaces + 1
 
                 align = spec.aligns[c]
@@ -134,7 +140,7 @@ function draw(@d: compose.Doc, x: f64, top: f64, bottom: f64, spec: Spec) -> f64
         c @= 0
 
         while c < row.len()
-            lines = wrap.lines_of(row[c], font: font, size: spec.size, most: spec.widths[c] - 2.0 * spec.padding, spacing: measure.plain())?
+            lines = wrap.lines_of(row[c], font: font, slots: d.embedded, size: spec.size, most: spec.widths[c] - 2.0 * spec.padding, spacing: measure.plain())?
             cells @ cells.push(lines)
 
             if lines.len() > most

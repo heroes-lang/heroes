@@ -4,8 +4,8 @@
 # file. A function that draws aborts where no page has been added: the face
 # says so beside each.
 
+use pdf/internal/embedded
 use pdf/internal/measure
-use pdf/internal/metrics
 use pdf/internal/syntax
 use pdf/internal/wrap
 
@@ -32,7 +32,8 @@ record Style
 
 # What the next drawing is made with.
 record Pen
-    # The font, 0 to 13 in the order of the face's `Font`.
+    # The font, 0 to 13 in the order of the face's `Font`, or 14 and more for
+    # an embedded one: font `14 + k` is the document's `embedded[k]`.
     font: i64
     # The font's size in points.
     size: f64
@@ -120,6 +121,8 @@ record Doc
     saved: [Pen]
     # The fonts some text was drawn in, by number.
     fonts: {i64: bool}
+    # The embedded fonts, in the order they were first set.
+    embedded: [embedded.Slot]
     # The images, by index.
     images: [Picture]
     # The opacities used, as their `gs` key, by index.
@@ -162,6 +165,7 @@ function start() -> Doc
         pen: pen,
         saved: [],
         fonts: {},
+        embedded: [],
         images: [],
         states: [],
         marks: []
@@ -339,11 +343,53 @@ function use_font(@fonts: {i64: bool}, font: i64)
 function spacing_of(s: Style) -> measure.Spacing
     return measure.Spacing(character: s.character_spacing, word: s.word_spacing, scale: s.horizontal_scale)
 
+# The number of the embedded font `face` in `d`: font `14 + k` for its slot
+# `k`, the slot made where the document has none.
+function number_of(@d: Doc, face: embedded.Face lent) -> i64
+    k @= 0
+
+    while k < d.embedded.len()
+        if embedded.same(a: d.embedded[k].face, b: face)
+            return 14 + k
+        k @ k + 1
+
+    d.embedded @ d.embedded.push(embedded.Slot(face: face, used: {}))
+    return 14 + k
+
+# The operator that shows the glyphs `shown` of an embedded font, two bytes a
+# glyph. A word's spacing is part of the pen's text state for `Tw`, which
+# PDF applies to one-byte codes alone, so it is written as an adjustment after
+# each space glyph: `extra` points added to the pen's own.
+function show_glyphs(@d: Doc, font: i64, size: f64, x: f64, y: f64, shown: [i64], extra: f64)
+    k = font - 14
+    space = d.embedded[k].face.space
+    gap = d.pen.style.word_spacing + extra
+    parts: [str] @= []
+    run: [u8] @= []
+
+    for code in shown
+        d.embedded[k].used[code] @ true
+        run @ run.push(to_u8(code / 256).must())
+        run @ run.push(to_u8(code % 256).must())
+
+        if code == space && gap != 0.0
+            parts @ parts.push(syntax.hex(run))
+            parts @ parts.push(syntax.real(-gap * 1000.0 / size))
+            run @ []
+
+    if run.len() > 0
+        parts @ parts.push(syntax.hex(run))
+    put(@d, op: f"BT /F{font} {syntax.real(size)} Tf {syntax.real(x)} {syntax.real(y)} Td [{parts.join(" ")}] TJ ET")
+
 # Shows the codes `shown` in the font numbered `font` at `size`, their
 # baseline beginning at (`x`, `y`), the word spacing raised by `extra`
 # points.
 function show(@d: Doc, font: i64, size: f64, x: f64, y: f64, shown: [i64], extra: f64)
     use_font(@d.fonts, font: font)
+
+    if measure.is_embedded(font)
+        show_glyphs(@d, font: font, size: size, x: x, y: y, shown: shown, extra: extra)
+        return
     bytes: [u8] @= []
 
     for code in shown
@@ -373,8 +419,14 @@ function one_line(text: str) -> str
 # says: 0 left or justified, 1 centred, 2 right.
 function draw_text(@d: Doc, x: f64, y: f64, text: str, align: i64) -> ()?
     assert d.at >= 0
-    shown = measure.codes_of(d.pen.font, text: one_line(text))?
-    w = measure.width_of_codes(d.pen.font, shown: shown, size: d.pen.size, spacing: spacing_of(d.pen.style))
+    shown = measure.codes_of(d.pen.font, slots: d.embedded, text: one_line(text))?
+    w = measure.width_of_codes(
+        d.pen.font,
+        slots: d.embedded,
+        shown: shown,
+        size: d.pen.size,
+        spacing: spacing_of(d.pen.style)
+    )
 
     left = match align
         1 => x - w / 2.0
@@ -390,22 +442,23 @@ function draw_box(@d: Doc, x: f64, top: f64, width: f64, text: str, align: i64, 
     assert d.at >= 0
     pen = d.pen
     spacing = spacing_of(pen.style)
-    lines = wrap.lines_of(text, font: pen.font, size: pen.size, most: width, spacing: spacing)?
+    lines = wrap.lines_of(text, font: pen.font, slots: d.embedded, size: pen.size, most: width, spacing: spacing)?
 
     if lines.len() == 0
         return ok(top)
-    global = metrics.global_of(pen.font)
+    global = measure.global_of(pen.font, slots: d.embedded)
     ascent = to_f64(global.ascent) * pen.size / 1000.0
     descent = to_f64(global.descent) * pen.size / 1000.0
     baseline @= top - ascent
 
     for line in lines
-        shown = measure.codes_of(pen.font, text: line.text)?
-        w = measure.width_of_codes(pen.font, shown: shown, size: pen.size, spacing: spacing)
+        shown = measure.codes_of(pen.font, slots: d.embedded, text: line.text)?
+        w = measure.width_of_codes(pen.font, slots: d.embedded, shown: shown, size: pen.size, spacing: spacing)
         spaces @= 0
+        space = measure.space_code(pen.font, slots: d.embedded)
 
         for code in shown
-            if code == 32
+            if code == space
                 spaces @ spaces + 1
 
         if line.text != ""

@@ -1,0 +1,213 @@
+# The objects a TrueType font drawn in a document is written as (ISO 32000-1:2008
+# section 9.6.3 and 9.7): a Type 0 font with `/Identity-H` encoding whose one
+# descendant is a CIDFontType2, its font descriptor, the font program cut down
+# to the glyphs drawn (`/FontFile2`, the glyph numbers kept so that the codes a
+# page shows stay the font's own) and a `/ToUnicode` map, so that a reader
+# copies the text out. `assemble` numbers them and puts them in the file.
+
+use bytes
+use compress
+use font as sfnt
+use pdf/internal/embedded
+use pdf/internal/font_samples
+use pdf/internal/syntax
+
+# The objects of one embedded font, their numbers fixed by the caller: `type0`
+# at `base`, then the descendant, the descriptor, the font program and the
+# `ToUnicode` map.
+record Written
+    # The Type 0 font dictionary's body.
+    type0: str
+    # The CIDFontType2 dictionary's body.
+    descendant: str
+    # The font descriptor's body.
+    descriptor: str
+    # The entries of the font program's stream, but `/Length`.
+    program_entries: str
+    # The stream's bytes.
+    program: [u8]
+    # The entries of the `ToUnicode` stream, but `/Length`.
+    unicode_entries: str
+    # The stream's bytes.
+    unicode: [u8]
+
+# The glyphs drawn with `slot`, ascending.
+function glyphs_of(slot: embedded.Slot lent) -> [i64]
+    return keys(slot.used).sort()
+
+# The six capital letters a subset's name begins with, one set of glyphs
+# having one tag and another set, nearly always, another.
+function tag_of(glyphs: [i64] lent) -> str
+    h @= 7
+
+    for g in glyphs
+        h @ (h * 131 + g + 1) % 308915776
+
+    out: [str] @= []
+
+    for _ in range(from: 0, to: 6)
+        out @ out.push(bytes.to_text_lossy([to_u8(65 + h % 26).must()]))
+        h @ h / 26
+
+    return out.join("")
+
+# The `/W` array: the width of each glyph, glyphs that follow one another
+# written as one run.
+function widths_of(face: embedded.Face lent, glyphs: [i64] lent) -> str
+    parts: [str] @= []
+    i @= 0
+
+    while i < glyphs.len()
+        run: [str] @= [to_str(embedded.width_of(face, glyph: glyphs[i]))]
+        j @= i + 1
+
+        while j < glyphs.len() && glyphs[j] == glyphs[j - 1] + 1
+            run @ run.push(to_str(embedded.width_of(face, glyph: glyphs[j])))
+            j @ j + 1
+
+        parts @ parts.push(f"{glyphs[i]} [{run.join(" ")}]")
+        i @ j
+
+    return "[" + parts.join(" ") + "]"
+
+# `n` as four hexadecimal digits.
+function hex4(n: i64) -> str
+    return bytes.format_hex_upper([to_u8(n / 256 % 256).must(), to_u8(n % 256).must()])
+
+# The character `point` as UTF-16BE in hexadecimal: four digits, or eight for
+# a surrogate pair.
+function utf16_of(point: i64) -> str
+    if point < 0x10000
+        return hex4(point)
+    v = point - 0x10000
+    return hex4(0xd800 + v / 1024) + hex4(0xdc00 + v % 1024)
+
+# The `ToUnicode` CMap of the glyphs drawn: each maps to the lowest character
+# the font's `cmap` gives it.
+function unicode_of(face: embedded.Face lent, glyphs: [i64] lent) -> [u8]?
+    wanted: {i64: bool} @= {}
+
+    for g in glyphs
+        wanted[g] @ true
+
+    chosen: {i64: i64} @= {}
+
+    for point in sfnt.code_points_of(face.file)?
+        g = embedded.glyph_of(face, point: point)
+
+        if wanted[g].default(false) && chosen[g].default(-1) < 0
+            chosen[g] @ point
+
+    lines: [str] @= []
+    pairs: [str] @= []
+
+    for g in glyphs
+        if chosen[g].default(-1) >= 0
+            pairs @ pairs.push(f"<{hex4(g)}> <{utf16_of(chosen[g].must())}>")
+
+    k @= 0
+
+    while k < pairs.len()
+        upto = if k + 100 < pairs.len()
+            k + 100
+        else
+            pairs.len()
+        lines @ lines.push(f"{upto - k} beginbfchar")
+        lines @ lines.push(pairs.slice(from: k, to: upto).join("\n"))
+        lines @ lines.push("endbfchar")
+        k @ upto
+
+    head = "/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n"
+    return ok(
+        bytes.from_text(head + lines.join("\n") + "\nendcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n")
+    )
+
+# The objects of `slot`, the Type 0 font's number being `base`, the streams
+# compressed where `packed`.
+#
+# Fails with `font`'s codes where a glyph's record does not read.
+function write(slot: embedded.Slot lent, base: i64, packed: bool) -> Written?
+    face = slot.face
+    glyphs = glyphs_of(slot)
+    program = sfnt.subset_numbered(face.file, glyphs: glyphs)?
+    unicode = unicode_of(face, glyphs: glyphs)?
+    tagged = tag_of(glyphs) + "+" + face.name
+    g = embedded.global_of(face)
+    program_entries @= f"/Length1 {program.data.len()}"
+    program_data @= program.data
+    unicode_entries @= ""
+    unicode_data @= unicode
+
+    if packed
+        program_data @ compress.compress(program.data, options: compress.default_options(.zlib))?
+        program_entries @ "/Filter /FlateDecode " + program_entries
+        unicode_data @ compress.compress(unicode, options: compress.default_options(.zlib))?
+        unicode_entries @ "/Filter /FlateDecode"
+
+    height = if g.x_height > 0
+        f" /XHeight {g.x_height}"
+    else
+        ""
+    descriptor = f"<< /Type /FontDescriptor /FontName {syntax.name(tagged)} /Flags 4 /FontBBox [{g.box[0]} {g.box[1]} {g.box[2]} {g.box[3]}] /ItalicAngle {syntax.real(g.italic_angle)} /Ascent {g.ascent} /Descent {g.descent} /CapHeight {g.cap_height}{height} /StemV {g.stem} /FontFile2 {base + 3} 0 R >>"
+    descendant = f"<< /Type /Font /Subtype /CIDFontType2 /BaseFont {syntax.name(tagged)} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor {base + 2} 0 R /CIDToGIDMap /Identity /W {widths_of(face, glyphs: glyphs)} >>"
+    type0 = f"<< /Type /Font /Subtype /Type0 /BaseFont {syntax.name(tagged)} /Encoding /Identity-H /DescendantFonts [{base + 1} 0 R] /ToUnicode {base + 4} 0 R >>"
+    return ok(
+        Written(type0: type0, descendant: descendant, descriptor: descriptor, program_entries: program_entries, program: program_data, unicode_entries: unicode_entries, unicode: unicode_data)
+    )
+
+test "hex4 and utf16_of: a glyph's four digits, a character in the plane 0, a surrogate pair"
+    assert hex4(34) == "0022" && hex4(65535) == "FFFF" && hex4(0) == "0000"
+    assert utf16_of(0x20ac) == "20AC" && utf16_of(0x41) == "0041" && utf16_of(0xffff) == "FFFF"
+    assert utf16_of(0x10000) == "D800DC00" && utf16_of(0x1f600) == "D83DDE00" && utf16_of(0x10ffff) == "DBFFDFFF"
+
+# Six capitals from the glyph set; the values are what the same arithmetic gives in Python.
+test "tag_of: six capitals, the same for the same glyphs"
+    assert tag_of([34]) == "QKBAAA" && tag_of([34, 41]) == "GOCHAA" && tag_of([]) == "HAAAAA"
+    assert tag_of([34, 41]) == tag_of([34, 41])
+
+# Widths in thousandths as fontTools reads the sample's `hmtx`.
+test "widths_of: a run of glyphs that follow one another, one apart, none"
+    face = embedded.load(font_samples.noto_sans(), index: 0).must()
+    assert widths_of(face, glyphs: [34, 35, 36, 41, 115]) == "[34 [639 650 632] 41 [741] 115 [258]]"
+    assert widths_of(face, glyphs: [41]) == "[41 [741]]" && widths_of(face, glyphs: []) == "[]"
+
+# Of the glyphs 1 to 150, 141 have a character in the font's `cmap`: 97, 98, 113 and 141 to 146 have none (as fontTools reads it).
+test "unicode_of: each glyph to the lowest character it has, blocks of at most 100"
+    face = embedded.load(font_samples.noto_sans(), index: 0).must()
+    small = unicode_of(face, glyphs: [1, 34, 115]).must()
+    assert bytes.contains(
+        s: small,
+        substr: bytes.from_text("3 beginbfchar\n<0001> <0020>\n<0022> <0041>\n<0073> <0142>\nendbfchar")
+    )
+    assert bytes.contains(s: small, substr: bytes.from_text("<0000> <FFFF>\nendcodespacerange"))
+    glyphs: [i64] @= []
+
+    for g in range(from: 1, to: 151)
+        glyphs @ glyphs.push(g)
+
+    big = unicode_of(face, glyphs: glyphs).must()
+    assert bytes.contains(s: big, substr: bytes.from_text("100 beginbfchar"))
+    assert bytes.contains(s: big, substr: bytes.from_text("41 beginbfchar"))
+    assert !bytes.contains(s: big, substr: bytes.from_text("\n<0061> <"))
+
+test "write: the five objects of one font, numbered from 10"
+    face = embedded.load(font_samples.noto_sans(), index: 0).must()
+    slot = embedded.Slot(face: face, used: {34: true, 41: true})
+    w = write(slot, base: 10, packed: false).must()
+    assert w.type0 == "<< /Type /Font /Subtype /Type0 /BaseFont /GOCHAA+NotoSans-Regular /Encoding /Identity-H /DescendantFonts [11 0 R] /ToUnicode 14 0 R >>"
+    assert w.descendant == "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /GOCHAA+NotoSans-Regular /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor 12 0 R /CIDToGIDMap /Identity /W [34 [639] 41 [741]] >>"
+    assert w.descriptor == "<< /Type /FontDescriptor /FontName /GOCHAA+NotoSans-Regular /Flags 4 /FontBBox [-621 -389 2800 1067] /ItalicAngle 0 /Ascent 1069 /Descent -293 /CapHeight 714 /XHeight 536 /StemV 87 /FontFile2 13 0 R >>"
+    kept = sfnt.parse(w.program, index: 0).must()
+    assert sfnt.metrics_of(kept).glyph_count == 42
+    assert sfnt.advance_of(kept, glyph: 34).must() == 639 && sfnt.advance_of(kept, glyph: 41).must() == 741
+    assert sfnt.advance_of(kept, glyph: 35).must() == 0
+    assert w.program_entries == f"/Length1 {w.program.len()}" && w.unicode_entries == ""
+
+test "write: packed, the streams are flate and Length1 is the font's own length"
+    face = embedded.load(font_samples.noto_sans(), index: 0).must()
+    slot = embedded.Slot(face: face, used: {34: true})
+    plain = write(slot, base: 1, packed: false).must()
+    w = write(slot, base: 1, packed: true).must()
+    assert w.program_entries == f"/Filter /FlateDecode /Length1 {plain.program.len()}" && w.unicode_entries == "/Filter /FlateDecode"
+    assert compress.decompress(w.program, format: .zlib, limit: 10000000).must() == plain.program
+    assert w.program.len() < plain.program.len()
