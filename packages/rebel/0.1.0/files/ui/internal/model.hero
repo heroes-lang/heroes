@@ -160,6 +160,9 @@ record Node
     selection_start: i64
     # The byte after its last; -1 for the text's end.
     selection_end: i64
+    # The columns of its grid a widget takes, from its cell rightwards; 1
+    # but in a grid (`ui.set_span`).
+    span: i64
 
 # What a web view keeps on both sides, so each answers alike: the assets as
 # the program put them, without their bodies, which the platform layer
@@ -358,7 +361,8 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         undone: [],
         redone: [],
         selection_start: -1,
-        selection_end: -1
+        selection_end: -1,
+        span: 1
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was

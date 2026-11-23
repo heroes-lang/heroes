@@ -655,9 +655,26 @@ function column(@app: App, into: Widget) -> Widget?
 #   pane.
 # - `columns`: the cells of a row, 1 to `MOST_STRETCH`.
 #
-# Fails `closed`, `invalid`. See also `set_grid_stretch`.
+# Fails `closed`, `invalid`. See also `set_grid_stretch`, `set_span`.
 function grid(@app: App, into: Widget, columns: i64) -> Widget?
     return makers.grid(@app, into: into, columns: columns)
+
+# Has a child of a grid take `columns` of its columns from its cell
+# rightwards, as wxWidgets' `wxGBSpan` in a `wxGridBagSizer`: a field as
+# wide as a label and its neighbour, a row of buttons under a form. Cells
+# fill row after row, and a child that does not fit in what is left of its
+# row starts the next; its columns widen, the last most, where together
+# they are narrower than it needs. On the native side the layout, which
+# this package computes, places it, so every system shows it alike.
+#
+# - `app`: the app holding it.
+# - `widget`: a child of a grid.
+# - `columns`: 1, as every child starts, to the grid's columns.
+#
+# Fails `closed`, `invalid` for a widget no grid holds or a span outside
+# 1 to the grid's columns. See also `grid`.
+function set_span(@app: App, widget: Widget, columns: i64) -> ()?
+    return makers.set_span(@app, widget: widget, columns: columns)
 
 # New tabs in `into`: pages one at a time, each chosen by its tab, as a
 # settings window shows them, wxWidgets' `wxNotebook`. They need the most

@@ -58,11 +58,13 @@ function measure(@nodes: {i64: model.Node}, id: i64) -> [i64]
 
     if model.holds_widgets(n.kind)
         sizes: [[i64]] @= []
+        spans: [i64] @= []
 
         for child in shown(nodes, ids: n.children)
             sizes @ sizes.push(measure(@nodes, id: child))
+            spans @ spans.push(nodes[child].must().span)
 
-        inner @ frames.need(n, needs: sizes, column: box_need(n, sizes: sizes))
+        inner @ frames.need(n, needs: sizes, column: box_need(n, sizes: sizes, spans: spans))
     width = most(a: inner[0], b: n.min_width) + 2 * n.margin
     height = most(a: inner[1], b: n.min_height) + 2 * n.margin
     n @ nodes[id].must()
@@ -72,8 +74,8 @@ function measure(@nodes: {i64: model.Node}, id: i64) -> [i64]
     return [width, height]
 
 # The least room box `n` needs inside its margin, for its shown children's
-# needs `sizes`, in order.
-function box_need(n: model.Node, sizes: [[i64]]) -> [i64]
+# needs `sizes` and, in a grid, the columns `spans` each takes, in order.
+function box_need(n: model.Node, sizes: [[i64]], spans: [i64]) -> [i64]
     pad = 2 * n.padding
 
     if sizes.len() == 0
@@ -86,7 +88,7 @@ function box_need(n: model.Node, sizes: [[i64]]) -> [i64]
         ]
 
     if n.kind == hero_ui.HERO_UI_GRID
-        cells = grid_lines(n, sizes: sizes)
+        cells = grid_lines(n, sizes: sizes, spans: spans)
         return [
             sum_list(cells[0]) + gaps(spacing: n.spacing, count: cells[0].len()) + pad
             sum_list(cells[1]) + gaps(spacing: n.spacing, count: cells[1].len()) + pad
@@ -138,7 +140,7 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
             k = nodes[kid].must()
             sizes @ sizes.push([k.need_width, k.need_height])
 
-        content = frames.scroll_content(n, column: box_need(n, sizes: sizes))
+        content = frames.scroll_content(n, column: box_need(n, sizes: sizes, spans: []))
         scroll @= nodes[id].must()
         scroll.width @ content[0]
         scroll.height @ content[1]
@@ -189,34 +191,51 @@ function arrange_line(@nodes: {i64: model.Node}, box: model.Node, kids: [i64], a
 # after row, `box.columns` to a row.
 function arrange_grid(@nodes: {i64: model.Node}, box: model.Node, kids: [i64], area: [i64])
     sizes: [[i64]] @= []
+    spans: [i64] @= []
 
     for k in kids
         kid = nodes[k].must()
         sizes @ sizes.push([kid.need_width, kid.need_height])
+        spans @ spans.push(kid.span)
 
-    lines = grid_lines(box, sizes: sizes)
+    lines = grid_lines(box, sizes: sizes, spans: spans)
+    cells = cells_of(columns: lines[0].len(), spans: spans)
     room_x = area[2] - sum_list(lines[0]) - gaps(spacing: box.spacing, count: lines[0].len())
     room_y = area[3] - sum_list(lines[1]) - gaps(spacing: box.spacing, count: lines[1].len())
     widths = shared(needs: lines[0], weights: weights_for(box.grow_columns, count: lines[0].len()), room: room_x)
     heights = shared(needs: lines[1], weights: weights_for(box.grow_rows, count: lines[1].len()), room: room_y)
     lefts = starts(widths, from: area[0], spacing: box.spacing)
     tops = starts(heights, from: area[1], spacing: box.spacing)
-    columns = lines[0].len()
 
     for i in range(from: 0, to: kids.len())
         kid = nodes[kids[i]].must()
-        column = i % columns
-        line = i / columns
-        across_x = placed_across(kid, axis: 0, start: lefts[column], room: widths[column])
+        line = cells[i][0]
+        column = cells[i][1]
+        wide = sum_list(widths.slice(from: column, to: column + cells[i][2])) + gaps(spacing: box.spacing, count: cells[i][2])
+        across_x = placed_across(kid, axis: 0, start: lefts[column], room: wide)
         across_y = placed_across(kid, axis: 1, start: tops[line], room: heights[line])
         arrange(@nodes, id: kids[i], x: across_x[0], y: across_y[0], width: across_x[1], height: across_y[1])
 
 # The widths of a grid's columns and the heights of its rows for its shown
-# children's needs `sizes`, as `[widths, heights]`: each column as wide as
-# its widest child, each row as high as its highest.
-function grid_lines(box: model.Node, sizes: [[i64]]) -> [[i64]]
-    columns = least(a: box.columns, b: sizes.len())
-    rows = (sizes.len() + columns - 1) / columns
+# children's needs `sizes` and the columns `spans` each takes, as
+# `[widths, heights]`: each column as wide as its widest child of one
+# column, each row as high as its highest, and a child across columns
+# widening them, evenly and the last by what is left, where they and the
+# gaps between are narrower than it needs. The grid has its columns, or
+# as many as its children take where they fill no first row.
+function grid_lines(box: model.Node, sizes: [[i64]], spans: [i64]) -> [[i64]]
+    taken @= 0
+
+    for s in spans
+        taken @ taken + most(a: 1, b: least(a: s, b: box.columns))
+
+    columns = most(a: 1, b: least(a: box.columns, b: taken))
+    cells = cells_of(columns: columns, spans: spans)
+    rows @= 0
+
+    for cell in cells
+        rows @ most(a: rows, b: cell[0] + 1)
+
     widths: [i64] @= []
     heights: [i64] @= []
 
@@ -227,10 +246,52 @@ function grid_lines(box: model.Node, sizes: [[i64]]) -> [[i64]]
         heights @ heights.push(0)
 
     for i in range(from: 0, to: sizes.len())
-        widths[i % columns] @ most(a: widths[i % columns], b: sizes[i][0])
-        heights[i / columns] @ most(a: heights[i / columns], b: sizes[i][1])
+        heights[cells[i][0]] @ most(a: heights[cells[i][0]], b: sizes[i][1])
+
+        if cells[i][2] == 1
+            widths[cells[i][1]] @ most(a: widths[cells[i][1]], b: sizes[i][0])
+
+    for i in range(from: 0, to: sizes.len())
+        across = cells[i][2]
+
+        if across > 1
+            first = cells[i][1]
+            have = sum_list(widths.slice(from: first, to: first + across)) + gaps(spacing: box.spacing, count: across)
+            short = sizes[i][0] - have
+
+            if short > 0
+                each = short / across
+
+                for c in range(from: first, to: first + across)
+                    widths[c] @ widths[c] + each
+
+                widths[first + across - 1] @ widths[first + across - 1] + short - each * across
 
     return [widths, heights]
+
+# Where each shown child of a grid of `columns` columns stands, as `[row,
+# column, columns taken]`, for the columns `spans` each asks: row after row,
+# one that does not fit in what is left of its row starting the next, and
+# none taking more than the grid has.
+function cells_of(columns: i64, spans: [i64]) -> [[i64]]
+    out: [[i64]] @= []
+    row @= 0
+    column @= 0
+
+    for s in spans
+        across = most(a: 1, b: least(a: s, b: columns))
+
+        if column + across > columns
+            row @ row + 1
+            column @ 0
+        out @ out.push([row, column, across])
+        column @ column + across
+
+        if column == columns
+            row @ row + 1
+            column @ 0
+
+    return out
 
 # The weights of `count` lines from `given`, a missing one 0 and one past
 # `count` dropped.
@@ -529,6 +590,45 @@ test "lay_out: a grid of two columns, its widest and highest deciding, the room 
     assert rect(nodes, id: 3) == [10, 10, 10, 8]
     assert rect(nodes, id: 4) == [42, 10, 48, 12]
     assert rect(nodes, id: 5) == [10, 24, 30, 8]
+
+test "lay_out: a grid of three columns, a child across two and one across all three, the columns widened for them and each placed across its own (catalogue LY03)"
+    nodes @= window_of(width: 0, height: 0)
+    g @= model.blank(id: 2, kind: hero_ui.HERO_UI_GRID, parent: 1, window: 1)
+    g.columns @ 3
+    g.spacing @ 2
+    nodes[2] @ g
+    w @= nodes[1].must()
+    w.children @ [2]
+    nodes[1] @ w
+    leaf(@nodes, id: 3, parent: 2, width: 10, height: 8)
+    leaf(@nodes, id: 4, parent: 2, width: 40, height: 8)
+    leaf(@nodes, id: 5, parent: 2, width: 10, height: 8)
+    leaf(@nodes, id: 6, parent: 2, width: 10, height: 8)
+    leaf(@nodes, id: 7, parent: 2, width: 60, height: 6)
+    wide @= nodes[4].must()
+    wide.span @ 2
+    wide.fill @ true
+    nodes[4] @ wide
+    whole @= nodes[7].must()
+    whole.span @ 9
+    nodes[7] @ whole
+    lay_out(@nodes, window: 1)
+
+    # Row 0: 3 in column 0, 4 across columns 1 and 2; row 1: 5 and 6 in
+    # columns 0 and 1; row 2: 7 across all three. Columns of one child: 10,
+    # 10 and none. 4's 40 against 10 + 0 + 2 widens columns 1 and 2 by 14
+    # each, to 24 and 14; 7's 60 against 10 + 24 + 14 + 4 widens all three
+    # by 2 and the last by 2 more: 12, 26 and 18, from 10, 24 and 52.
+    assert rect(nodes, id: 3) == [10, 10, 10, 8]
+    assert rect(nodes, id: 4) == [24, 10, 46, 8]
+    assert rect(nodes, id: 5) == [10, 20, 10, 8]
+    assert rect(nodes, id: 6) == [24, 20, 10, 8]
+    assert rect(nodes, id: 7) == [10, 30, 60, 6]
+
+test "cells_of: a span that does not fit starts the next row, one past the grid takes all of it"
+    assert cells_of(columns: 3, spans: [1, 1, 2, 3, 1]) == [[0, 0, 1], [0, 1, 1], [1, 0, 2], [2, 0, 3], [3, 0, 1]]
+    assert cells_of(columns: 2, spans: [5, 1, 1, 1]) == [[0, 0, 2], [1, 0, 1], [1, 1, 1], [2, 0, 1]]
+    assert cells_of(columns: 1, spans: [0, 2]) == [[0, 0, 1], [1, 0, 1]]
 
 test "shared: no room, room and no weight, and weights whose shares round, adding up to the room"
     assert shared(needs: [5, 5], weights: [1, 1], room: 0) == [5, 5]

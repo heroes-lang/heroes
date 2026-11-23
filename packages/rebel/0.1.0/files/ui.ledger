@@ -162,12 +162,12 @@ capability ui/boxes  widgets side by side and one under another, with spacing, p
   note    the layout is computed by Rebel the same on every system, in wxWidgets' sizers' manner; a widget's place given by hand, `tkinter.Place`'s, is refused: it is what a layout is for
 
 capability ui/grid  widgets in cells of columns and rows, the room left shared by the columns' and rows' weights
-  heroes  ui.grid, ui.set_grid_stretch
+  heroes  ui.grid, ui.set_grid_stretch, ui.set_span
   go      ui.NewGrid, Grid.Append, Grid.InsertAt, Grid.Padded, Grid.SetPadded, ui.At
   rust    -
   python  tkinter.Grid
-  wx      wxFlexGridSizer (AddGrowableCol, AddGrowableRow), wxGridSizer
-  note    a cell spanning several columns is not offered; a box inside a cell holds what would span
+  wx      wxFlexGridSizer (AddGrowableCol, AddGrowableRow), wxGridSizer, wxGridBagSizer, wxGBSpan
+  note    catalogue LY03; a child takes columns from its cell rightwards, cells filling row after row and a child that does not fit in what is left of its row starting the next, its columns widened, the last most, where together narrower than it needs; computed by this package, so every system lays it out alike; a cell spanning rows, and a child placed at a cell of the program's choosing (`wxGridBagSizer`'s position), are not offered
 
 capability ui/form  labelled fields, a label and its field on each line
   heroes  ui.grid
