@@ -24,9 +24,6 @@
 # It fails with `invalid`, `not_found`, `permission`, `limit`, `timeout`,
 # `stopped`, `closed`, `unsupported` and `failed` (README § A4), and
 # `read_wav` and `write_wav` as `fs` does.
-#
-# Not written yet, each a `pending` block of its ledger: a WAV file read or
-# written a piece at a time.
 
 use audio/hero_audio
 use audio/internal/check
@@ -37,6 +34,7 @@ use audio/internal/resample
 use audio/internal/samples
 use audio/internal/streams
 use audio/internal/wav
+use audio/internal/wav_stream
 use audio/internal/wav_write
 use fs
 use io
@@ -439,6 +437,94 @@ function read_wav(path: str) -> Sound?
 # file cannot be written. See also `read_wav`.
 function write_wav(path: str, s: Sound) -> ()?
     return fs.write_bytes(path, data: encode_wav(s)?)
+
+## WAV a piece at a time
+
+# A WAV file read from a stream a piece at a time: its frames' format and how
+# many are still to come, the stream standing at the next. Made by
+# `wav_reader` alone.
+record WavReader
+    # The stream read, the caller's, who closes it.
+    stream: io.Stream
+    # The format of the file's frames.
+    format: Format
+    # The frames the file's data chunk still holds; -1 where the file gives
+    # no size, as a writer that never went back leaves it, and it is read to
+    # the stream's end.
+    frames_left: i64
+
+# A WAV file written to a stream a piece at a time: its frames' format and
+# how many were written. Made by `wav_writer` alone; `finish_wav` writes its
+# sizes.
+record WavWriter
+    # The stream written, the caller's, who closes it after `finish_wav`.
+    stream: io.Stream
+    # The format of the frames written.
+    format: Format
+    # The frames written so far.
+    frames: i64
+
+# A reader of the WAV file `s` holds, its chunks read in order up to its
+# first frame, so its frames are read as the program asks, by `read_frames`.
+#
+# - `s`: a stream at the file's first byte, which may be a pipe: nothing is
+#   read twice and nothing sought; the caller closes it.
+#
+# Reads what `decode_wav` reads, but a file whose data chunk comes before its
+# `fmt ` chunk, which a stream cannot go back for. Fails `invalid` where the
+# file is no WAV file, or that one, or ends inside its header;
+# `unsupported` as `decode_wav` does; and where `io.read` fails, with its
+# code. See also `read_frames`, `decode_wav`.
+function wav_reader(s: io.Stream) -> WavReader?
+    return wav_stream.reader_of(s)
+
+# Up to `frames` of the next frames of `r`, fewer where the file ends first,
+# none once it has.
+#
+# - `r`: the reader; its stream and its count move on.
+# - `frames`: the most frames, 0 or more.
+#
+# A frame cut short at the file's end is left out, as `decode_wav` leaves
+# it. Fails `invalid` where `frames` is below 0, and where `io.read` fails,
+# with its code. See also `wav_reader`.
+function read_frames(@r: WavReader, frames: i64) -> Sound?
+    return wav_stream.frames_of(@r, frames: frames)
+
+# A writer of a WAV file of `format` on `s`, its header written with its sizes
+# unknown, which a reader reads to the end, until `finish_wav` writes them.
+#
+# - `s`: a stream at its first byte, which `finish_wav` seeks back to; the
+#   caller closes it.
+# - `format`: the format of the frames to come.
+#
+# The header keeps 28 bytes in a `JUNK` chunk where RF64 puts its `ds64`, so
+# a file that passes 4 GiB becomes RF64 in the same room (EBU Tech 3306).
+# Fails `invalid` where `format` is, and where `io.write` fails, with its
+# code. See also `write_frames`, `finish_wav`.
+function wav_writer(s: io.Stream, format: Format) -> WavWriter?
+    return wav_stream.writer_of(s, format: format)
+
+# Writes the frames of `s` after those `w` wrote.
+#
+# - `w`: the writer; its count moves on.
+# - `s`: frames of `w`'s format.
+#
+# Fails `invalid` where `s` is invalid or of another format, and where
+# `io.write` fails, with its code. See also `finish_wav`.
+function write_frames(@w: WavWriter, s: Sound) -> ()?
+    return wav_stream.written(@w, sound: s)
+
+# Finishes the file `w` wrote: its pad byte, and its header written again
+# with its sizes, as RF64 where 32 bits cannot hold them; the stream is left
+# at its end.
+#
+# - `w`: the writer; nothing should be written with it after.
+#
+# Fails where `io.write` or `io.seek` fails, with its code: a stream that
+# cannot seek, a pipe, keeps the sizes unknown, which `decode_wav` and
+# `wav_reader` read to the end. See also `wav_writer`.
+function finish_wav(w: WavWriter) -> ()?
+    return wav_stream.finished(w)
 
 ## Devices
 
@@ -1103,6 +1189,62 @@ test "read: a few frames recorded from this machine's default input"
 test "NULL_DEVICE: the floor's identifier"
     assert NULL_DEVICE == hero_audio.NULL_DEVICE
 
+test "wav_writer, write_frames and finish_wav: pieces written read back whole, as RIFF and pieces"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/pieces.wav"
+    f = Format(encoding: .pcm24, rate: 8000, channels: 3, speakers: 0)
+    whole = tone(f, hz: 300.0, amplitude: 0.5, length: time.milliseconds(5).must()).must()
+    out @= fs.create(path).must()
+    w @= wav_writer(out, format: f).must()
+    write_frames(@w, s: Sound(format: f, data: whole.data.slice(from: 0, to: 9 * 11))).must()
+    write_frames(@w, s: Sound(format: f, data: whole.data.slice(from: 9 * 11, to: whole.data.len()))).must()
+    finish_wav(w).must()
+    io.close(@out).must()
+    assert read_wav(path).must() == whole
+    inp @= fs.open(path).must()
+    r @= wav_reader(inp).must()
+    assert r.format == f && r.frames_left == 40
+    got: [u8] @= []
+
+    while r.frames_left > 0
+        for b in read_frames(@r, frames: 7).must().data
+            got @ got.push(b)
+
+    assert got == whole.data
+    assert frames_of(read_frames(@r, frames: 7).must()) == 0
+    assert read_frames(@r, frames: -1).is_err()
+    io.close(@inp).must()
+    fs.remove_all(dir).must()
+
+test "wav_reader: a file never finished read to its end, and one whose data comes before its fmt refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/open.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    out @= fs.create(path).must()
+    w @= wav_writer(out, format: f).must()
+    write_frames(@w, s: from_samples(f, values: [0.5, -0.5, 0.25]).must()).must()
+    io.close(@out).must()
+    assert to_samples(read_wav(path).must()).must() == [0.5, -0.5, 0.25]
+    inp @= fs.open(path).must()
+    r @= wav_reader(inp).must()
+    assert r.frames_left == -1
+    assert frames_of(read_frames(@r, frames: 100).must()) == 3
+    io.close(@inp).must()
+    late = dir + "/late.wav"
+    fs.write_bytes(
+        late,
+        data: [82, 73, 70, 70, 36, 0, 0, 0, 87, 65, 86, 69, 100, 97, 116, 97, 2, 0, 0, 0, 0, 0, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 64, 31, 0, 0, 128, 62, 0, 0, 2, 0, 16, 0]
+    ).must()
+    assert !decode_wav(fs.read_bytes(late).must()).is_err()
+    again @= fs.open(late).must()
+
+    match wav_reader(again)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.close(@again).must()
+    fs.remove_all(dir).must()
+
 ## Examples
 
 # How many bytes a sample takes in each encoding.
@@ -1392,3 +1534,63 @@ test "beep: the alert sounded, or no sound system told"
     match beep()
         .ok _  => _ = 0
         .err e => assert e.code == UNSUPPORTED || e.code == FAILED
+
+# A long WAV file read a piece at a time.
+test "wav_reader: the format and the frames of a file, before any is read"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/a.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0)
+    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    s @= fs.open(path).must()
+    r = wav_reader(s).must()
+    assert r.format == f && r.frames_left == 80
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# The next frames of a WAV file.
+test "read_frames: a file of 80 frames read 50 at a time"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/b.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    s @= fs.open(path).must()
+    r @= wav_reader(s).must()
+    assert frames_of(read_frames(@r, frames: 50).must()) == 50
+    assert frames_of(read_frames(@r, frames: 50).must()) == 30
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# A WAV file begun on a stream.
+test "wav_writer: the header of a 16-bit mono file"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    s @= fs.create(dir + "/c.wav").must()
+    w = wav_writer(s, format: Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)).must()
+    assert w.frames == 0
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# Frames written as they are made.
+test "write_frames: a hundredth of a second written twice"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    s @= fs.create(dir + "/d.wav").must()
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    w @= wav_writer(s, format: f).must()
+    piece = silence(f, length: time.milliseconds(10).must()).must()
+    write_frames(@w, s: piece).must()
+    write_frames(@w, s: piece).must()
+    assert w.frames == 160
+    io.close(@s).must()
+    fs.remove_all(dir).must()
+
+# A WAV file written a piece at a time, finished.
+test "finish_wav: the sizes written, so the file reads as any other"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/e.wav"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s @= fs.create(path).must()
+    w @= wav_writer(s, format: f).must()
+    write_frames(@w, s: from_samples(f, values: [0.5, 0.25]).must()).must()
+    finish_wav(w).must()
+    io.close(@s).must()
+    assert to_samples(read_wav(path).must()).must() == [0.5, 0.25]
+    fs.remove_all(dir).must()

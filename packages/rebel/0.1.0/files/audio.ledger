@@ -129,10 +129,11 @@ capability audio/beep  the system's beep
   note    The person's alert: `AudioServicesPlayAlertSound` on macOS, `MessageBeep(MB_OK)` on Windows, libcanberra's `bell` on Linux, else a tenth of a second at 880 Hz on the default output. The other alert kinds Windows names have no counterpart elsewhere and stand in `dropped`; `winsound.Beep`, a tone of a frequency and a length, is `tone` and `play`
 
 capability audio/wav-pieces  a WAV file read or written a piece at a time
-  heroes  pending
+  heroes  audio.wav_reader, audio.WavReader, audio.read_frames, audio.wav_writer, audio.WavWriter, audio.write_frames, audio.finish_wav
   go      wav.Decoder.PCMChunk, wav.Decoder.Seek
   rust    WavReader::seek, WavReader::into_inner, WavWriter::append, WavWriter::new_append
   python  Wave_read.setpos, Wave_read.tell, Wave_read.rewind
+  note    Read from a stream in order, so a pipe is read as a file is; a position is the program's, which counts the frames it read, where Python and Go seek. Written with its sizes unknown and a `JUNK` chunk reserved, then its header written again at `finish_wav`, as RF64 past 4 GiB in the same room (EBU Tech 3306), as hound's `finalize` writes its sizes
 
 capability audio/loopback  what an output plays recorded
   heroes  refused: macOS gives a program what another plays only through ScreenCaptureKit's capture of a display or an application, a permission and a framework of their own; on Linux the server's monitor sources are listed as inputs and recorded as any input is, and on Windows WASAPI's loopback is the one system with it

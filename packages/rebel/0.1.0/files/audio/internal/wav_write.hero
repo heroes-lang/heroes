@@ -13,17 +13,26 @@ function put_id(@out: [u8], id: str)
     for i in range(from: 0, to: 4)
         out @ out.push(id[i])
 
-# The bytes of the WAV file of `s`, as `audio.encode_wav` writes them, in
-# RF64 where `wide` or where a 32-bit size cannot hold the file.
+# The header of a WAV file of `format` whose data chunk holds `data_len`
+# bytes of `frames` frames, everything before the data's first byte: a plain
+# `fmt ` chunk for 8 and 16-bit integers and for floats in one or two
+# channels with no channel mask, WAVE_FORMAT_EXTENSIBLE for the rest; a
+# `fact` chunk for floats and the extensible form; RF64 with its `ds64` where
+# `wide` or where a 32-bit size cannot hold the file.
 #
-# - `s`: a sound whose format and data `audio` has checked.
+# - `format`: a checked format.
+# - `data_len`: the data's bytes, a whole number of frames; -1 says the sizes
+#   are not known yet, each written as `wav.UNKNOWN_SIZE`.
+# - `frames`: the data's frames.
 # - `wide`: whether RF64 is written whatever the size.
-function encoded(s: audio.Sound lent, wide: bool) -> [u8]
-    width = samples.width(s.format.encoding)
-    align = width * s.format.channels
-    frames = s.data.len() / align
-    float = s.format.encoding == .float32 || s.format.encoding == .float64
-    extensible = s.format.channels > 2 || s.format.speakers != 0 || width > 2 && !float
+# - `reserve`: whether 28 bytes are kept where a `ds64` stands, as a `JUNK`
+#   chunk in a RIFF file, so the header can be written again as RF64 in the
+#   same room.
+function header_of(format: audio.Format, data_len: i64, frames: i64, wide: bool, reserve: bool) -> [u8]
+    width = samples.width(format.encoding)
+    align = width * format.channels
+    float = format.encoding == .float32 || format.encoding == .float64
+    extensible = format.channels > 2 || format.speakers != 0 || width > 2 && !float
 
     tag = if float
         wav.FLOAT
@@ -37,20 +46,36 @@ function encoded(s: audio.Sound lent, wide: bool) -> [u8]
     else
         16
     fact = float || extensible
-    pad = s.data.len() % 2
+    known = data_len >= 0
+
+    pad = if known
+        data_len % 2
+    else
+        0
     head = 12 + 8 + fmt_size + 8
 
     head_fact = if fact
         head + 12
     else
         head
-    riff = head_fact + s.data.len() + pad - 8
-    rf64 = wide || riff > wav.UNKNOWN_SIZE - 36
 
-    total = if rf64
-        riff + 36
+    extra = if reserve
+        36
     else
-        riff
+        0
+
+    base = if known
+        head_fact + extra + data_len + pad
+    else
+        0
+
+    # Where the reservation is not there, RF64's `ds64` adds its 36 bytes.
+    rf64 = wide || known && (base - 8 > wav.UNKNOWN_SIZE - 36 || data_len > wav.UNKNOWN_SIZE)
+
+    total = if rf64 && !reserve
+        base + 36
+    else
+        base
     out: [u8] @= []
 
     if rf64
@@ -58,16 +83,27 @@ function encoded(s: audio.Sound lent, wide: bool) -> [u8]
         samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
     else
         put_id(@out, id: "RIFF")
-        samples.put(@out, value: total, count: 4)
+
+        riff = if known
+            total - 8
+        else
+            wav.UNKNOWN_SIZE
+        samples.put(@out, value: riff, count: 4)
     put_id(@out, id: "WAVE")
 
     if rf64
         put_id(@out, id: "ds64")
         samples.put(@out, value: 28, count: 4)
-        samples.put(@out, value: total, count: 8)
-        samples.put(@out, value: s.data.len(), count: 8)
+        samples.put(@out, value: total - 8, count: 8)
+        samples.put(@out, value: data_len, count: 8)
         samples.put(@out, value: frames, count: 8)
         samples.put(@out, value: 0, count: 4)
+    else if reserve
+        put_id(@out, id: "JUNK")
+        samples.put(@out, value: 28, count: 4)
+
+        for _ in range(from: 0, to: 28)
+            out @ out.push(0)
     put_id(@out, id: "fmt ")
     samples.put(@out, value: fmt_size, count: 4)
 
@@ -75,9 +111,9 @@ function encoded(s: audio.Sound lent, wide: bool) -> [u8]
         samples.put(@out, value: wav.EXTENSIBLE, count: 2)
     else
         samples.put(@out, value: tag, count: 2)
-    samples.put(@out, value: s.format.channels, count: 2)
-    samples.put(@out, value: s.format.rate, count: 4)
-    samples.put(@out, value: s.format.rate * align, count: 4)
+    samples.put(@out, value: format.channels, count: 2)
+    samples.put(@out, value: format.rate, count: 4)
+    samples.put(@out, value: format.rate * align, count: 4)
     samples.put(@out, value: align, count: 2)
     samples.put(@out, value: width * 8, count: 2)
 
@@ -86,7 +122,7 @@ function encoded(s: audio.Sound lent, wide: bool) -> [u8]
 
     if extensible
         samples.put(@out, value: width * 8, count: 2)
-        samples.put(@out, value: s.format.speakers, count: 4)
+        samples.put(@out, value: format.speakers, count: 4)
         samples.put(@out, value: tag, count: 2)
 
         for b in wav.guid_tail()
@@ -95,18 +131,33 @@ function encoded(s: audio.Sound lent, wide: bool) -> [u8]
     if fact
         put_id(@out, id: "fact")
         samples.put(@out, value: 4, count: 4)
-        samples.put(@out, value: math.min_i64(a: frames, b: wav.UNKNOWN_SIZE), count: 4)
+
+        counted = if known && !rf64
+            math.min_i64(a: frames, b: wav.UNKNOWN_SIZE)
+        else
+            wav.UNKNOWN_SIZE
+        samples.put(@out, value: counted, count: 4)
     put_id(@out, id: "data")
 
-    if rf64
+    if rf64 || !known
         samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
     else
-        samples.put(@out, value: s.data.len(), count: 4)
+        samples.put(@out, value: data_len, count: 4)
+    return out
+
+# The bytes of the WAV file of `s`, as `audio.encode_wav` writes them, in
+# RF64 where `wide` or where a 32-bit size cannot hold the file.
+#
+# - `s`: a sound whose format and data `audio` has checked.
+# - `wide`: whether RF64 is written whatever the size.
+function encoded(s: audio.Sound lent, wide: bool) -> [u8]
+    frames = s.data.len() / (samples.width(s.format.encoding) * s.format.channels)
+    out @= header_of(s.format, data_len: s.data.len(), frames: frames, wide: wide, reserve: false)
 
     for b in s.data
         out @ out.push(b)
 
-    if pad == 1
+    if s.data.len() % 2 == 1
         out @ out.push(0)
     return out
 
