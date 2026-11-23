@@ -72,10 +72,6 @@
 #
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
-#
-# Not written yet, each a `pending` block of its ledger: an area the program
-# draws into, with its keys and its mouse; a date, a colour or a font chosen
-# in the system's own picker.
 
 use bytes
 use image
@@ -348,6 +344,8 @@ variant Kind
     font_button
     # An area the program draws, which tells it the pointer and the keys.
     canvas
+    # A month shown whole, a day of it picked.
+    calendar
 
 # What `widget` is.
 #
@@ -939,8 +937,8 @@ function status_bar(@app: App, into: Widget) -> Widget?
 # - `at`: the day shown; its hour, minute, second and nanosecond are ignored.
 #
 # Fails `closed`, `invalid` for a moment no calendar has or a year outside 1
-# to 9999, `failed`, `unsupported` where the system's arm draws none (Windows
-# and Linux, pending). See also `time_picker`, `date_time_picker`.
+# to 9999, `failed`, `unsupported` where the system's arm draws none. See also
+# `time_picker`, `date_time_picker`, `calendar`.
 function date_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
     return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_PICKER, at: at)
 
@@ -970,11 +968,30 @@ function time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
 function date_time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
     return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_TIME_PICKER, at: at)
 
+# A new month's calendar in `into`, as wxWidgets' `wxCalendarCtrl` and Qt's
+# `QCalendarWidget`: the system's month shown whole as a grid of days, the
+# day of `at` picked, with the system's own way to the months before and
+# after. It is a date picker shown open: the same value, the day's midnight
+# in seconds with the fields read as UTC, the same `set_range`, `picked` and
+# `set_picked`, and a day the person picks is `.value_changed`, told once.
+# The month shown is the picked day's, turned by `set_picked` too.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the day picked; its hour, minute, second and nanosecond are
+#   ignored.
+#
+# Fails as `date_picker` does, `unsupported` where the system's arm draws
+# no month's calendar. See also `date_picker`.
+function calendar(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_CALENDAR, at: at)
+
 # The moment picker `widget` shows now, as the program put it or the person
-# picked it: a date picker's at midnight, a time picker's on 1970-01-01.
+# picked it: a date picker's and a calendar's at midnight, a time picker's on
+# 1970-01-01.
 #
 # - `app`: the app holding it.
-# - `widget`: a date, time or date and time picker.
+# - `widget`: a date, time or date and time picker, or a calendar.
 #
 # Fails `closed`, `invalid` for a widget that is no picker.
 function picked(app: App, widget: Widget) -> time.DateTime?
@@ -984,7 +1001,7 @@ function picked(app: App, widget: Widget) -> time.DateTime?
 # comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a date, time or date and time picker.
+# - `widget`: a date, time or date and time picker, or a calendar.
 # - `at`: the moment, within the picker's range.
 #
 # Fails `closed`, `invalid` for a widget that is no picker, a moment no
@@ -4744,6 +4761,19 @@ test "date_time_picker: a day and a time shown and read back as one number of se
         at: time.DateTime(year: 2026, month: 11, day: 23, hour: 17, minute: 40, second: 9, nanosecond: 0)
     ).must()
     assert value_of(app, widget: meet).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    close(@app).must()
+
+# A month shown whole: its value is the picked day's midnight in seconds.
+test "calendar: a month shown whole, the day picked read back as seconds and as a date"
+    app @= open(.headless).must()
+    w = window(@app, title: "Plan", width: 300, height: 260).must()
+    month = calendar(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 15, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: month).must() == 1795392000
+    assert picked(app, widget: month).must() == time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
     close(@app).must()
 
 # A picker read back as the moment it shows.

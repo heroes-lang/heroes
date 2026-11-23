@@ -613,9 +613,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             well.action = #selector(colorPicked(_:))
             well.tag = Int(widget.id)
             return well
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             let picker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
-            picker.datePickerStyle = .textFieldAndStepper
+            // A month's calendar is the same control shown open, its month a
+            // grid of days.
+            picker.datePickerStyle = kind == kindCalendar ? .clockAndCalendar : .textFieldAndStepper
             picker.datePickerMode = .single
             // The fields are read as UTC, so a value is the same seconds in
             // every zone, and no zone shifts what the person picked.
@@ -624,7 +626,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             picker.calendar = calendar
             picker.timeZone = calendar.timeZone
             switch kind {
-            case kindDatePicker:
+            case kindDatePicker, kindCalendar:
                 picker.datePickerElements = .yearMonthDay
             case kindTimePicker:
                 picker.datePickerElements = .hourMinuteSecond
@@ -1274,7 +1276,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             well.color = colorOf(value)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             guard let picker = widget.view as? NSDatePicker, pickerHolds(widget.kind, value),
                   Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
                   Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
@@ -1595,7 +1597,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
             return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             return (widget.view as? NSDatePicker)?.fittingSize ?? NSSize(width: 0, height: 0)
         case kindColorWell:
             return NSSize(width: 44, height: 23)
@@ -1662,7 +1664,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return (widget.view as? SpinView)?.value ?? 0
         case kindColorWell:
             return colorValue((widget.view as? NSColorWell)?.color ?? NSColor.clear)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             guard let picker = widget.view as? NSDatePicker else {
                 return 0
             }
@@ -3787,6 +3789,7 @@ private let kindDateTimePicker: Int64 = 40
 private let kindColorWell: Int64 = 41
 private let kindFontButton: Int64 = 42
 private let kindCanvas: Int64 = 43
+private let kindCalendar: Int64 = 44
 
 // A font as the layer's text holds it, `<size>|<style>|<family>` (`hero_ui.h`).
 private func fontDescriptor(_ font: NSFont) -> String {
@@ -3837,13 +3840,14 @@ private func colorOf(_ value: Int64) -> NSColor {
 }
 
 // The values a picker holds are its fields read as UTC (`hero_ui.h`): a date
-// picker's a whole day's seconds, a time picker's the seconds since midnight.
+// picker's and a month calendar's a whole day's seconds, a time picker's the
+// seconds since midnight.
 private let secondsInDay: Int64 = 86400
-private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800]
-private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799]
+private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800, kindCalendar: -62135596800]
+private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799, kindCalendar: 253402214400]
 
 private func isPicker(_ kind: Int64) -> Bool {
-    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker
+    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker || kind == kindCalendar
 }
 
 // The seconds a picker's date is, as its kind holds them: a date picker's
@@ -3852,7 +3856,7 @@ private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
     let whole = Int64(picker.dateValue.timeIntervalSince1970.rounded(.down))
     let day = Int64((Double(whole) / Double(secondsInDay)).rounded(.down)) * secondsInDay
     switch kind {
-    case kindDatePicker:
+    case kindDatePicker, kindCalendar:
         return day
     case kindTimePicker:
         return whole - day
@@ -3864,7 +3868,7 @@ private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
 // Whether `value` is one a picker of `kind` holds.
 private func pickerHolds(_ kind: Int64, _ value: Int64) -> Bool {
     switch kind {
-    case kindDatePicker:
+    case kindDatePicker, kindCalendar:
         return value % secondsInDay == 0 && value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
     case kindTimePicker:
         return value >= 0 && value < secondsInDay

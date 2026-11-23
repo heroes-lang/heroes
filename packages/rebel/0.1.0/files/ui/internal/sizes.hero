@@ -193,8 +193,6 @@ function of(n: model.Node) -> [i64]
     if k == hero_ui.HERO_UI_SLIDER
         return [FIELD, CONTROL]
 
-    # A date, a time or both as the system writes them: ten and eight
-    # characters, and the arrows.
     # A drawing area is the size the program asked for it.
     if k == hero_ui.HERO_UI_CANVAS
         return [n.width, n.height]
@@ -207,8 +205,15 @@ function of(n: model.Node) -> [i64]
     if k == hero_ui.HERO_UI_COLOR_WELL
         return [COLOR_WELL_WIDTH, CONTROL]
 
+    # A date, a time or both as the system writes them: ten and eight
+    # characters, and the arrows.
     if k == hero_ui.HERO_UI_DATE_PICKER
         return [10 * COLUMN + SPIN_ARROWS, CONTROL]
+
+    # A month's calendar: seven columns of a day's two digits and a space,
+    # under a line of the month and a line of the days' names, six weeks.
+    if k == hero_ui.HERO_UI_CALENDAR
+        return [21 * COLUMN, 8 * LINE]
 
     if k == hero_ui.HERO_UI_TIME_PICKER
         return [8 * COLUMN + SPIN_ARROWS, CONTROL]

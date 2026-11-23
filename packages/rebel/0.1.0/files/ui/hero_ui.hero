@@ -267,6 +267,8 @@ extern "hero_ui.h"
     constant HERO_UI_POINTER_LEFT: i64
     constant HERO_UI_POINTER_RIGHT: i64
     constant HERO_UI_POINTER_OTHER: i64
+    # A month's calendar.
+    constant HERO_UI_CALENDAR: i64
     # Gives canvas `id` the drawing the display list `list` holds: 0 once it
     # is kept and drawn, or -1.
     #

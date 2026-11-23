@@ -1643,4 +1643,19 @@ int64_t hero_ui_snapshot(hero_ui_app *app, int64_t id, void *rgba, uint64_t coun
  * takes a canvas as it takes a text field, and `hero_ui_set_focus` too. */
 #define HERO_UI_EVENT_KEY 24
 
+/* -- A MONTH'S CALENDAR ---------------------------------------------------------
+ *
+ * wxWidgets' `wxCalendarCtrl` and Qt's `QCalendarWidget`: the system's month
+ * shown whole as a grid of days, one of them picked, with the system's own
+ * way to the months before and after. `HERO_UI_CALENDAR` is a date picker
+ * shown open (A DATE, A TIME, A DATE AND TIME PICKED): the same value, a whole
+ * day's seconds read as UTC, midnight of it, a multiple of 86400; the same
+ * range until `hero_ui_set_range` bounds it, -62135596800 to 253402214400; the
+ * same `INVALID` for a value or a range end with a time of day; a day the
+ * person picks is `HERO_UI_EVENT_VALUE` told once, and `hero_ui_inject` of it
+ * gives the day as the person picked it, told only where it changes the
+ * value. The month shown is the value's, turned by a program's
+ * `hero_ui_set_value` too. */
+#define HERO_UI_CALENDAR 44
+
 #endif
