@@ -1,0 +1,222 @@
+# What the face's examples share and a program never calls: a host on the
+# machine's loopback that announces a service of a type of its own, on a
+# thread of its own, so that a call that waits for an answer has one to hear
+# where the loopback carries multicast, whatever else runs on the machine,
+# and nothing it sends leaves the machine. Its type is made fresh for each
+# use, so two runs at once, or a browser left open, hear none of the other's.
+
+use bytes
+use dns
+use mdns
+use mdns/internal/answer
+use mdns/internal/message
+use mdns/internal/model
+use mdns/internal/serving
+use mdns/internal/transport
+use net
+use random
+use strings
+use threads
+use time
+
+# The port the announced service gives.
+constant PORT: i64
+    4242
+
+# How many times the host announces itself, and the milliseconds between two
+# announcements: about two seconds in all, longer than any wait an example
+# gives a call that hears it.
+constant ROUNDS: i64
+    10
+
+constant PAUSE_MS: i64
+    200
+
+# A host announcing a service on the loopback, made by `announcing`; the
+# example owes `finish`, which waits for its thread.
+record Announcer
+    # The service type it announces, `_hero-1a2b3c._tcp`, its name fresh.
+    type: str
+    # The instance's name as people read it.
+    instance: str
+    # The host's name under `local.`, with its last dot.
+    host: str
+    # The thread that announces.
+    thread: threads.TextThread
+
+# The name of an interface that carries multicast and is the machine's
+# loopback, "" where none does: an example that needs the network runs on it
+# alone, and is skipped where it is "".
+function loopback() -> str
+    return serving.loopback_name()
+
+# Starts a host on the interface `interface` that announces the instance
+# `Hero Example` of a fresh type, port `PORT`, the attribute `k=v`, its host's
+# address 127.0.0.1, and the reverse name of 127.0.0.1 pointing at its host,
+# every `PAUSE_MS` milliseconds `ROUNDS` times, then says goodbye for all of it.
+#
+# - `interface`: the loopback's name, as `loopback` answers it.
+#
+# Fails as `random.secure_token_hex` and `threads.start_text` fail.
+function announcing(interface: str) -> Announcer?
+    suffix = random.secure_token_hex(count: 3)?
+    thread = threads.start_text(body: announce_on, arg: interface + "\n" + suffix)?
+    return ok(Announcer(type: type_of(suffix), instance: "Hero Example", host: host_of(suffix), thread: thread))
+
+# Waits for the announcing thread to end, and answers "" where it announced
+# all it was given, or the words of the first failure.
+#
+# - `a`: the announcer, which this spends.
+function finish(@a: Announcer) -> str
+    return threads.wait_text(@a.thread)
+
+# A browser on another thread, made by `browsing`; the example owes `heard`,
+# which waits for it.
+record Browser
+    # The thread that browses.
+    thread: threads.TextThread
+
+# Starts `mdns.browse` of `type` on the interface `interface` on a thread of
+# its own, listening for `BROWSE_MS` milliseconds.
+#
+# - `interface`: the loopback's name, as `loopback` answers it.
+# - `type`: the service type to browse.
+#
+# Fails as `threads.start_text` fails.
+function browsing(interface: str, type: str) -> Browser?
+    return ok(Browser(thread: threads.start_text(body: browse_on, arg: interface + "\n" + type)?))
+
+# Waits for the browser to end, and answers the instances it found, each with
+# its port, `Hero Example:4242`, joined by a line feed; or the code of its
+# failure.
+#
+# - `b`: the browser, which this spends.
+function heard(@b: Browser) -> str
+    return threads.wait_text(@b.thread)
+
+# How long `browsing`'s browser listens: two questions, at its start and a
+# second later (RFC 6762 § 5.2).
+constant BROWSE_MS: i64
+    1500
+
+# The body of the browsing thread: `arg` is the interface's name and the type,
+# a line feed between them.
+function browse_on(arg: str) -> str
+    match strings.split_once(s: arg, sep: "\n")
+        .err _ => return "no type in the argument"
+        .ok named =>
+            match mdns.browse(named.after, wait: time.milliseconds(BROWSE_MS).must(), interfaces: [named.before])
+                .err e => return e.code
+                .ok found =>
+                    out: [str] @= []
+
+                    for s in found
+                        out @ out.push(s.instance + ":" + to_str(s.port))
+
+                    return join(out, "\n")
+
+# A service of a fresh type for an example to publish on the loopback: the
+# instance `Hero Example`, port `PORT`, the attribute `k=v`, a host of its own
+# at 127.0.0.1, so that no name it claims is held by the machine.
+#
+# Fails as `random.secure_token_hex` fails.
+function fresh_service() -> mdns.Service?
+    suffix = random.secure_token_hex(count: 3)?
+    return ok(
+        mdns.Service(instance: "Hero Example", type: type_of(suffix), subtypes: [], host: host_of(suffix), port: PORT, priority: 0, weight: 0, addresses: [net.loopback_v4()], attributes: [mdns.Attribute(key: "k", value: ok(bytes.from_text("v")))])
+    )
+
+# The fresh service type of `suffix`, six hexadecimal digits.
+function type_of(suffix: str) -> str
+    return "_hero-" + suffix + "._tcp"
+
+# The host's name of `suffix`.
+function host_of(suffix: str) -> str
+    return "hero-" + suffix + ".local."
+
+# The body of the announcing thread: `arg` is the interface's name and the
+# suffix, a line feed between them. Answers "" or the first failure's words.
+function announce_on(arg: str) -> str
+    match strings.split_once(s: arg, sep: "\n")
+        .err _ => return "no suffix in the argument"
+        .ok named =>
+            match transport.open([named.before])
+                .err e => return e.msg
+                .ok opened =>
+                    line @= opened
+                    sent = rounds(line, suffix: named.after)
+
+                    match transport.close(@line)
+                        .err e =>
+                            if sent == ""
+                                return e.msg
+                        .ok _ => _ = 0
+
+                    return sent
+
+# Every round of announcements on `line`, then the goodbye; "" or the first
+# failure's words.
+function rounds(line: transport.Transport, suffix: str) -> str
+    pause = time.milliseconds(PAUSE_MS).must()
+
+    for _ in range(from: 0, to: ROUNDS)
+        said = say(line, suffix: suffix, ttl_kept: true)
+
+        if said != ""
+            return said
+        time.sleep(pause)
+
+    return say(line, suffix: suffix, ttl_kept: false)
+
+# The records the host announces: those of its one service, and the reverse
+# name of 127.0.0.1 pointing at its host.
+function records_of(suffix: str) -> [message.Held]?
+    own = net.loopback_v4()
+    d = model.Described(
+        instance: "Hero Example",
+        type: type_of(suffix),
+        subtypes: [],
+        host: host_of(suffix),
+        port: PORT,
+        priority: 0,
+        weight: 0,
+        addresses: [own],
+        texts: [bytes.from_text("k=v")]
+    )
+    records: [message.Held] @= answer.zone_of([d], addresses: [own])?
+    reverse = dns.Record(
+        name: net.to_reverse_name(own),
+        class_code: dns.CLASS_IN,
+        ttl: model.HOST_TTL,
+        data: .ptr(target: host_of(suffix))
+    )
+    records @ records.push(message.Held(item: reverse, flush: true))
+    return ok(records)
+
+# One announcement on every interface of `line`, its records' time to live
+# their own, or zero for a goodbye (RFC 6762 § 10.1); "" or the first
+# failure's words.
+function say(line: transport.Transport, suffix: str, ttl_kept: bool) -> str
+    match records_of(suffix)
+        .err e => return e.msg
+        .ok records =>
+            out: [message.Held] @= []
+
+            for h in records
+                if ttl_kept
+                    out @ out.push(h)
+                else
+                    out @ out.push(
+                        message.Held(item: dns.Record(name: h.item.name, class_code: h.item.class_code, ttl: 0, data: h.item.data), flush: h.flush)
+                    )
+
+            match message.pack(message.Head(response: true, id: 0), split: false, asked: [], answers: out, authorities: [], additionals: [])
+                .err e => return e.msg
+                .ok packets =>
+                    for l in line.lines
+                        for p in packets
+                            match transport.send_line(line, line: l, data: p)
+                                .err e => return e.msg
+                                .ok _  => _ = 0
+
+    return ""

@@ -1,6 +1,8 @@
 # XML read, walked, built and written: a text read by XML 1.0 (fifth edition)
 # and Namespaces in XML 1.0 into a tree a program matches on, the tree walked
-# by names, built by a program, and written back as text. Nothing here follows
+# by names, built by a program, and written back as text, or as the one text
+# Canonical XML 1.0, 1.1 or Exclusive XML Canonicalization gives it, the text
+# XML Signature digests (`xmldsig`). Nothing here follows
 # the data with recursion: a document nested deeper than its reading allows is
 # a failure the program is told, and a tree built deeper is written and walked
 # on a stack this package holds itself.
@@ -18,12 +20,13 @@
 # `limit` on a text past the depth or the size its reading allows; `not_found`
 # on a name an element does not hold.
 #
-# Not written yet, each a `pending` block of its ledger: the one text Canonical
-# XML gives a document.
+# Not written yet, each a `pending` block of its ledger: the text Canonical XML
+# 2.0 gives a document, with its parameters.
 
 use numbers
 use strings
 use unicode
+use xml/internal/canonical
 use xml/internal/characters
 use xml/internal/escape
 use xml/internal/event
@@ -549,6 +552,199 @@ function quote_attribute(s: str) -> str?
 function unescape(s: str) -> str?
     return escape.unescaped(s)
 
+## Canonical XML
+
+# Which Canonical XML `canonicalize` writes: the three XML Signature names,
+# each a W3C Recommendation.
+variant Canonical
+    # Canonical XML 1.0 (2001): every namespace in scope written on the first
+    # element written, and every `xml:` attribute of the elements left out
+    # above it carried down to it.
+    inclusive
+    # Canonical XML 1.1 (2008): as 1.0, but of the elements left out only
+    # `xml:lang` and `xml:space` are carried down, `xml:base` is joined from
+    # theirs, and `xml:id` is not carried.
+    inclusive_11
+    # Exclusive XML Canonicalization 1.0 (2002): a namespace written only on an
+    # element whose name or attribute uses it, or whose prefix is listed, and
+    # no `xml:` attribute carried down, so an element reads the same moved
+    # into another document.
+    exclusive
+        # The prefixes written as 1.0 writes them, the InclusiveNamespaces
+        # PrefixList: each a prefix, or `#default` for the default namespace.
+        prefixes: [str]
+
+# How `canonicalize` writes: which Canonical XML, and whether comments stay.
+# Made by `canonical_options`; a program sets `comments` itself.
+record CanonicalOptions
+    # Which Canonical XML.
+    method: Canonical
+    # Whether comments are written: each method's "with comments" form.
+    comments: bool
+
+# The options of `method` without comments, the form XML Signature uses
+# unless it names the other.
+#
+# - `method`: which Canonical XML.
+#
+# See also `canonicalize`.
+function canonical_options(method: Canonical) -> CanonicalOptions
+    return CanonicalOptions(method: method, comments: false)
+
+# `doc` as Canonical XML: the one text every document of the same content
+# gives, whatever its quotes, empty-element tags, attribute order and
+# redundant declarations, the text XML Signature digests.
+#
+# - `doc`: the document.
+# - `options`: which Canonical XML, and whether comments stay.
+#
+# The XML declaration is not written; a comment or an instruction before the
+# root is followed by a line feed, and one after it preceded by one. Every
+# element is a start and an end tag, every value stands between `"`,
+# namespace declarations come first by prefix, the default first, then the
+# attributes by namespace and local name, and `&`, `<`, `>`, `"`, a tab, a
+# line feed and a carriage return are escaped where each place needs it, in
+# hexadecimal.
+#
+# Fails `invalid` where `format` fails on `doc`, and where an exclusive
+# method lists a prefix that is neither a name with no colon nor `#default`.
+#
+# See also `canonicalize_at`, `canonical_options`.
+function canonicalize(doc: Document, options: CanonicalOptions) -> str?
+    root = canonicalize_at(doc, place: [], options: options)?
+    pieces: [str] @= []
+
+    for m in doc.before
+        match m
+            .comment c =>
+                if options.comments
+                    pieces @ pieces.push("<!--" + c.v + "-->\n")
+            .instruction i => pieces @ pieces.push(canonical.instruction_text(target: i.target, data: i.data) + "\n")
+
+    pieces @ pieces.push(root)
+
+    for m in doc.after
+        match m
+            .comment c =>
+                if options.comments
+                    pieces @ pieces.push("\n<!--" + c.v + "-->")
+            .instruction i => pieces @ pieces.push("\n" + canonical.instruction_text(target: i.target, data: i.data))
+
+    return ok(pieces.join(""))
+
+# The element at `place` in `doc` as Canonical XML, standing where it stands:
+# the document subset of that element and everything inside it, as XML
+# Signature digests an element a reference names.
+#
+# - `doc`: the document; the elements around the element are read for the
+#   namespaces and the `xml:` attributes it stands under, and not written.
+# - `place`: the element's place, each index a child of the element reached
+#   so far, from the root; empty for the root.
+# - `options`: which Canonical XML, and whether comments stay.
+#
+# Written as `canonicalize` writes the root, with what the method takes from
+# the elements left out: for 1.0 every namespace in scope and every `xml:`
+# attribute, for 1.1 the namespaces, `xml:lang`, `xml:space` and `xml:base`
+# joined, for the exclusive form only what the element and its descendants
+# use.
+#
+# Fails `invalid` where `canonicalize` fails, and where `place` names a child
+# that is no element. Aborts where an index of `place` stands outside the
+# children of the element it is read in.
+#
+# See also `canonicalize`, `places_with_attribute`.
+function canonicalize_at(doc: Document, place: [i64], options: CanonicalOptions) -> str?
+    _ = format(doc)?
+    method: i64 @= canonical.INCLUSIVE_10
+    listed: [str] @= []
+
+    match options.method
+        .inclusive    => method @ canonical.INCLUSIVE_10
+        .inclusive_11 => method @ canonical.INCLUSIVE_11
+        .exclusive x =>
+            method @ canonical.EXCLUSIVE
+
+            for p in x.prefixes
+                if p == "#default"
+                    listed @ listed.push("")
+                else if characters.is_ncname(p)
+                    listed @ listed.push(p)
+                else
+                    return fail(
+                        code: INVALID,
+                        msg: f"\"{p}\" in the prefixes of an exclusive method: a prefix is a name with no colon, or `#default`"
+                    )
+
+    above: [[event.Attr]] @= []
+    e: Element @= doc.root
+    walked: i64 @= 0
+
+    for step in place
+        held: [event.Attr] @= []
+
+        for a in e.attributes
+            held @ held.push(
+                event.Attr(prefix: a.name.prefix, local: a.name.local, space: a.name.space, value: a.value)
+            )
+
+        above @ above.push(held)
+
+        next = match e.children[step]
+            .element x => x.v
+            .text _ | .comment _ | .instruction _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"step {walked + 1} of the place, {step}, names a child of <{format_name(e.name)}> that is no element"
+                )
+
+        e @ next
+        walked @ walked + 1
+
+    walked_events: [event.Event] @= []
+    left: [Node] @= [.element(v: e)]
+    closing: [bool] @= [false]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        here = left[top]
+        left[top] @ .text(v: "")
+
+        if closing[top]
+            walked_events @ walked_events.push(event.of_text(kind: event.END, s: ""))
+        else
+            match here
+                .text t =>
+                    if t.v != ""
+                        walked_events @ walked_events.push(event.of_text(kind: event.TEXT, s: t.v))
+                .comment c     => walked_events @ walked_events.push(event.of_text(kind: event.COMMENT, s: c.v))
+                .instruction i => walked_events @ walked_events.push(event.instruction(target: i.target, data: i.data))
+                .element x =>
+                    attributes: [event.Attr] @= []
+
+                    for a in x.v.attributes
+                        attributes @ attributes.push(
+                            event.Attr(prefix: a.name.prefix, local: a.name.local, space: a.name.space, value: a.value)
+                        )
+
+                    walked_events @ walked_events.push(
+                        event.start(prefix: x.v.name.prefix, local: x.v.name.local, space: x.v.name.space, attributes: attributes, laid: false)
+                    )
+                    stack.put(items: @left, top: top, item: .text(v: ""))
+                    stack.put(items: @closing, top: top, item: true)
+                    top @ top + 1
+                    at: i64 @= x.v.children.len()
+
+                    while at > 0
+                        at @ at - 1
+                        stack.put(items: @left, top: top, item: x.v.children[at])
+                        stack.put(items: @closing, top: top, item: false)
+                        top @ top + 1
+
+    return ok(
+        canonical.element_text(above: above, events: walked_events, method: method, listed: listed, comments: options.comments)
+    )
+
 ## Building a tree
 
 # A document of `root` alone, opening with `<?xml version="1.0"
@@ -696,6 +892,53 @@ function with_child(e: Element, inner: Element) -> Element
     out: Element @= e
     out.children @ children
     return out
+
+# A copy of `doc` without the node at `place` and everything inside it, the
+# nodes beside it kept as they are: two texts it parted stand side by side.
+#
+# - `doc`: the document.
+# - `place`: the indices of the children walked from the root to the node
+#   taken out; its last index may name text, a comment or an instruction.
+#
+# Fails `invalid` where `place` is empty, since a document keeps its root, and
+# where an index before the last names a child that is no element. Aborts where
+# an index stands outside the children of the element it is read in.
+#
+# See also `places_with_attribute`, `element_at_place`.
+function without_node(doc: Document, place: [i64]) -> Document?
+    if place.len() == 0
+        return fail(code: INVALID, msg: "an empty place names the root, which a document keeps")
+    chain: [Element] @= [doc.root]
+
+    for step in place.slice(from: 0, to: place.len() - 1)
+        here = chain[chain.len() - 1]
+
+        next = match here.children[step]
+            .element x => x.v
+            .text _ | .comment _ | .instruction _ =>
+                return fail(code: INVALID, msg: f"child {step} of <{format_name(here.name)}> is no element")
+
+        chain @ chain.push(next)
+
+    last = place[place.len() - 1]
+    inner: Element @= chain[chain.len() - 1]
+    kept: [Node] @= inner.children.slice(from: 0, to: last)
+
+    for n in inner.children.slice(from: last + 1, to: inner.children.len())
+        kept @ kept.push(n)
+
+    inner.children @ kept
+    at: i64 @= chain.len() - 1
+
+    while at > 0
+        at @ at - 1
+        outer: Element @= chain[at]
+        outer.children[place[at]] @ .element(v: inner)
+        inner @ outer
+
+    built: Document @= doc
+    built.root @ inner
+    return ok(built)
 
 ## Walking a tree
 
@@ -1021,6 +1264,74 @@ function text_of(e: Element) -> str
             .comment _ | .instruction _ => _ = 0
 
     return pieces.join("")
+
+# The places of every element of `doc` whose attribute `name` holds `value`,
+# in document order: each the indices of the children walked from the root,
+# empty for the root, as `element_at_place` and `canonicalize_at` read one.
+#
+# - `doc`: the document, walked on a stack this package holds.
+# - `name`: the attribute's name as written, `p:local` or `local`, compared
+#   byte for byte.
+# - `value`: the value looked for, compared byte for byte.
+#
+# Empty where no element holds it; more than one place where several do, which
+# a program that takes the value as an identifier refuses.
+#
+# See also `element_at_place`, `attribute`.
+function places_with_attribute(doc: Document, name: str, value: str) -> [[i64]]
+    found: [[i64]] @= []
+    left: [Element] @= [doc.root]
+    places: [[i64]] @= [[]]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        e = left[top]
+        here = places[top]
+
+        for a in e.attributes
+            if a.value == value && format_name(a.name) == name
+                found @ found.push(here)
+                break
+
+        at: i64 @= e.children.len()
+
+        while at > 0
+            at @ at - 1
+
+            match e.children[at]
+                .element x =>
+                    inner: [i64] @= here
+                    inner @ inner.push(at)
+                    stack.put(items: @left, top: top, item: x.v)
+                    stack.put(items: @places, top: top, item: inner)
+                    top @ top + 1
+                .text _ | .comment _ | .instruction _ => _ = 0
+
+    return found
+
+# The element at `place` in `doc`.
+#
+# - `doc`: the document.
+# - `place`: the indices of the children walked from the root; empty for the
+#   root.
+#
+# Fails `invalid` where `place` names a child that is no element. Aborts where
+# an index stands outside the children of the element it is read in.
+#
+# See also `places_with_attribute`, `without_node`.
+function element_at_place(doc: Document, place: [i64]) -> Element?
+    e: Element @= doc.root
+
+    for step in place
+        next = match e.children[step]
+            .element x => x.v
+            .text _ | .comment _ | .instruction _ =>
+                return fail(code: INVALID, msg: f"child {step} of <{format_name(e.name)}> is no element")
+
+        e @ next
+
+    return ok(e)
 
 ## Tests
 
@@ -1413,6 +1724,137 @@ test "default_options and compact_format_options: their fields"
     assert default_options() == ParseOptions(max_depth: 512, max_bytes: 67108864)
     assert compact_format_options() == FormatOptions(multiline: false, indent: "", self_closing: true)
 
+test "canonicalize: Canonical XML 1.0's example of instructions and comments outside the root, without and with comments"
+    doc = parse(
+        "<?xml version=\"1.0\"?>\n\n<?xml-stylesheet   href=\"doc.xsl\"\n   type=\"text/xsl\"   ?>\n\n<doc>Hello, world!<!-- Comment 1 --></doc>\n\n<?pi-without-data     ?>\n\n<!-- Comment 2 -->\n\n<!-- Comment 3 -->"
+    ).must()
+    assert canonicalize(doc, options: canonical_options(.inclusive)) == ok("<?xml-stylesheet href=\"doc.xsl\"\n   type=\"text/xsl\"   ?>\n<doc>Hello, world!</doc>\n<?pi-without-data?>")
+    assert canonicalize(doc, options: CanonicalOptions(method: .inclusive, comments: true)) == ok("<?xml-stylesheet href=\"doc.xsl\"\n   type=\"text/xsl\"   ?>\n<doc>Hello, world!<!-- Comment 1 --></doc>\n<?pi-without-data?>\n<!-- Comment 2 -->\n<!-- Comment 3 -->")
+
+test "canonicalize: Canonical XML 1.0's example of start and end tags, empty elements, ordered attributes and redundant declarations"
+    doc = parse(
+        "<doc>\n   <e1   />\n   <e2   ></e2>\n   <e3   name = \"elem3\"   id=\"elem3\"   />\n   <e4   name=\"elem4\"   id=\"elem4\"   ></e4>\n   <e5 a:attr=\"out\" b:attr=\"sorted\" attr2=\"all\" attr=\"I'm\"\n      xmlns:b=\"http://www.ietf.org\"\n      xmlns:a=\"http://www.w3.org\"\n      xmlns=\"http://example.org\"/>\n   <e6 xmlns=\"\" xmlns:a=\"http://www.w3.org\">\n      <e7 xmlns=\"http://www.ietf.org\">\n         <e8 xmlns=\"\" xmlns:a=\"http://www.w3.org\">\n            <e9 xmlns=\"\" xmlns:a=\"http://www.ietf.org\"/>\n         </e8>\n      </e7>\n   </e6>\n</doc>"
+    ).must()
+    assert canonicalize(doc, options: canonical_options(.inclusive)) == ok("<doc>\n   <e1></e1>\n   <e2></e2>\n   <e3 id=\"elem3\" name=\"elem3\"></e3>\n   <e4 id=\"elem4\" name=\"elem4\"></e4>\n   <e5 xmlns=\"http://example.org\" xmlns:a=\"http://www.w3.org\" xmlns:b=\"http://www.ietf.org\" attr=\"I'm\" attr2=\"all\" b:attr=\"sorted\" a:attr=\"out\"></e5>\n   <e6 xmlns:a=\"http://www.w3.org\">\n      <e7 xmlns=\"http://www.ietf.org\">\n         <e8 xmlns=\"\">\n            <e9 xmlns:a=\"http://www.ietf.org\"></e9>\n         </e8>\n      </e7>\n   </e6>\n</doc>")
+
+test "canonicalize: Canonical XML 1.0's example of characters, a carriage return, CDATA and a normalised value"
+    doc = parse(
+        "<doc>\n   <text>First line&#x0d;&#10;Second line</text>\n   <value>&#x32;</value>\n   <compute><![CDATA[value>\"0\" && value<\"10\" ?\"valid\":\"error\"]]></compute>\n   <compute expr='value>\"0\" &amp;&amp; value&lt;\"10\" ?\"valid\":\"error\"'>valid</compute>\n   <norm attr=' &apos;   &#x20;&#13;&#xa;&#9;   &apos; '/>\n</doc>"
+    ).must()
+    assert canonicalize(doc, options: canonical_options(.inclusive)) == ok("<doc>\n   <text>First line&#xD;\nSecond line</text>\n   <value>2</value>\n   <compute>value&gt;\"0\" &amp;&amp; value&lt;\"10\" ?\"valid\":\"error\"</compute>\n   <compute expr=\"value>&quot;0&quot; &amp;&amp; value&lt;&quot;10&quot; ?&quot;valid&quot;:&quot;error&quot;\">valid</compute>\n   <norm attr=\" '    &#xD;&#xA;&#x9;   ' \"></norm>\n</doc>")
+
+test "canonicalize_at: Exclusive XML Canonicalization's own example, one element of three, by each method"
+    doc = parse(
+        "<n0:local xmlns:n0=\"foo:bar\" xmlns:n3=\"ftp://example.org\"><n1:elem2 xmlns:n1=\"http://example.net\" xml:lang=\"en\"><n3:stuff xmlns:n3=\"ftp://example.org\"/></n1:elem2></n0:local>"
+    ).must()
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.inclusive)) == ok("<n1:elem2 xmlns:n0=\"foo:bar\" xmlns:n1=\"http://example.net\" xmlns:n3=\"ftp://example.org\" xml:lang=\"en\"><n3:stuff></n3:stuff></n1:elem2>")
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.inclusive_11)) == ok("<n1:elem2 xmlns:n0=\"foo:bar\" xmlns:n1=\"http://example.net\" xmlns:n3=\"ftp://example.org\" xml:lang=\"en\"><n3:stuff></n3:stuff></n1:elem2>")
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.exclusive(prefixes: []))) == ok("<n1:elem2 xmlns:n1=\"http://example.net\" xml:lang=\"en\"><n3:stuff xmlns:n3=\"ftp://example.org\"></n3:stuff></n1:elem2>")
+
+test "canonicalize_at: a subset after a comment, its namespaces, xml:base and xml:id, comments kept or not, and a prefix list"
+    doc = parse(
+        "<r xmlns=\"urn:d\" xmlns:p=\"urn:p\" xmlns:q=\"urn:q\" xml:base=\"http://e.org/x/y/\" xml:id=\"i1\"><!-- c --><s q:at=\"1\"><p:t>&#xe9;<?pi data?><!-- in --></p:t></s></r>"
+    ).must()
+    assert canonicalize_at(doc, place: [1], options: canonical_options(.inclusive)) == ok("<s xmlns=\"urn:d\" xmlns:p=\"urn:p\" xmlns:q=\"urn:q\" xml:base=\"http://e.org/x/y/\" xml:id=\"i1\" q:at=\"1\"><p:t>é<?pi data?></p:t></s>")
+    assert canonicalize_at(doc, place: [1], options: CanonicalOptions(method: .inclusive, comments: true)) == ok("<s xmlns=\"urn:d\" xmlns:p=\"urn:p\" xmlns:q=\"urn:q\" xml:base=\"http://e.org/x/y/\" xml:id=\"i1\" q:at=\"1\"><p:t>é<?pi data?><!-- in --></p:t></s>")
+    assert canonicalize_at(doc, place: [1], options: canonical_options(.inclusive_11)) == ok("<s xmlns=\"urn:d\" xmlns:p=\"urn:p\" xmlns:q=\"urn:q\" xml:base=\"http://e.org/x/y/\" q:at=\"1\"><p:t>é<?pi data?></p:t></s>")
+    assert canonicalize_at(doc, place: [1], options: canonical_options(.exclusive(prefixes: []))) == ok("<s xmlns=\"urn:d\" xmlns:q=\"urn:q\" q:at=\"1\"><p:t xmlns:p=\"urn:p\">é<?pi data?></p:t></s>")
+    assert canonicalize_at(doc, place: [1], options: CanonicalOptions(method: .exclusive(prefixes: []), comments: true)) == ok("<s xmlns=\"urn:d\" xmlns:q=\"urn:q\" q:at=\"1\"><p:t xmlns:p=\"urn:p\">é<?pi data?><!-- in --></p:t></s>")
+    assert canonicalize_at(doc, place: [1], options: canonical_options(.exclusive(prefixes: ["q", "#default"]))) == ok("<s xmlns=\"urn:d\" xmlns:q=\"urn:q\" q:at=\"1\"><p:t xmlns:p=\"urn:p\">é<?pi data?></p:t></s>")
+
+test "canonicalize and canonicalize_at: a default namespace undeclared and declared again, inclusive and exclusive"
+    doc = parse("<p:r xmlns:p=\"urn:p\" xmlns=\"urn:d\"><e xmlns=\"\"><f/></e><g xmlns=\"urn:d\"/></p:r>").must()
+    assert canonicalize(doc, options: canonical_options(.inclusive)) == ok("<p:r xmlns=\"urn:d\" xmlns:p=\"urn:p\"><e xmlns=\"\"><f></f></e><g></g></p:r>")
+    assert canonicalize(doc, options: canonical_options(.exclusive(prefixes: []))) == ok("<p:r xmlns:p=\"urn:p\"><e><f></f></e><g xmlns=\"urn:d\"></g></p:r>")
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.inclusive)) == ok("<e xmlns:p=\"urn:p\"><f></f></e>")
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.exclusive(prefixes: []))) == ok("<e><f></f></e>")
+
+test "canonicalize_at: xml:lang and xml:space from one element above, its own xml:space kept, none carried by the exclusive form"
+    doc = parse("<a><b xml:lang=\"fr\" xml:space=\"preserve\"><c xml:space=\"default\"/></b></a>").must()
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive)) == ok("<c xml:lang=\"fr\" xml:space=\"default\"></c>")
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive_11)) == ok("<c xml:lang=\"fr\" xml:space=\"default\"></c>")
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.exclusive(prefixes: []))) == ok("<c xml:space=\"default\"></c>")
+
+test "canonicalize_at: Canonical XML 1.1 joins xml:base across an element between"
+    doc = parse("<a xml:base=\"http://e.org/x/y/\"><b><c xml:base=\"q/r\"><d/></c></b></a>").must()
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive_11)) == ok("<c xml:base=\"http://e.org/x/y/q/r\"><d></d></c>")
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive)) == ok("<c xml:base=\"q/r\"><d></d></c>")
+
+test "canonicalize: the exclusive form of a whole document writes each namespace where it is used"
+    doc = parse(
+        "<doc>\n   <e1   />\n   <e2   ></e2>\n   <e3   name = \"elem3\"   id=\"elem3\"   />\n   <e4   name=\"elem4\"   id=\"elem4\"   ></e4>\n   <e5 a:attr=\"out\" b:attr=\"sorted\" attr2=\"all\" attr=\"I'm\"\n      xmlns:b=\"http://www.ietf.org\"\n      xmlns:a=\"http://www.w3.org\"\n      xmlns=\"http://example.org\"/>\n   <e6 xmlns=\"\" xmlns:a=\"http://www.w3.org\">\n      <e7 xmlns=\"http://www.ietf.org\">\n         <e8 xmlns=\"\" xmlns:a=\"http://www.w3.org\">\n            <e9 xmlns=\"\" xmlns:a=\"http://www.ietf.org\"/>\n         </e8>\n      </e7>\n   </e6>\n</doc>"
+    ).must()
+    assert canonicalize(doc, options: canonical_options(.exclusive(prefixes: []))) == ok("<doc>\n   <e1></e1>\n   <e2></e2>\n   <e3 id=\"elem3\" name=\"elem3\"></e3>\n   <e4 id=\"elem4\" name=\"elem4\"></e4>\n   <e5 xmlns=\"http://example.org\" xmlns:a=\"http://www.w3.org\" xmlns:b=\"http://www.ietf.org\" attr=\"I'm\" attr2=\"all\" b:attr=\"sorted\" a:attr=\"out\"></e5>\n   <e6>\n      <e7 xmlns=\"http://www.ietf.org\">\n         <e8 xmlns=\"\">\n            <e9></e9>\n         </e8>\n      </e7>\n   </e6>\n</doc>")
+
+test "canonicalize_at: the nearest xml:lang of two above is carried down by 1.0 and 1.1, none by the exclusive form"
+    # Canonical XML 1.1 § 2.4 carries "the nearest occurrences"; the JDK 27's
+    # library carries the outermost here (run 2026-11-23), so the case holds
+    # the specification's words.
+    doc = parse("<a xml:lang=\"en\"><b xml:lang=\"fr\"><c/></b></a>").must()
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive)) == ok("<c xml:lang=\"fr\"></c>")
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.inclusive_11)) == ok("<c xml:lang=\"fr\"></c>")
+    assert canonicalize_at(doc, place: [0, 0], options: canonical_options(.exclusive(prefixes: []))) == ok("<c></c>")
+
+test "canonicalize_at: xml:base joined to nothing is not written, and every value above joined, the root's included"
+    doc = parse("<a xml:base=\"abc/\"><b xml:base=\"../\"/></a>").must()
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.inclusive_11)) == ok("<b></b>")
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.inclusive)) == ok("<b xml:base=\"../\"></b>")
+    deep = parse("<a xml:base=\"foo/bar\"><b xml:base=\"..\"><c xml:base=\"..\"><d xml:base=\"x\"/></c></b></a>").must()
+    assert canonicalize_at(deep, place: [0, 0, 0], options: canonical_options(.inclusive_11)) == ok("<d xml:base=\"../x\"></d>")
+
+test "canonicalize: the smallest document, an empty root, by every method"
+    doc = parse("<a/>").must()
+    assert canonicalize(doc, options: canonical_options(.inclusive)) == ok("<a></a>")
+    assert canonicalize(doc, options: canonical_options(.inclusive_11)) == ok("<a></a>")
+    assert canonicalize(doc, options: canonical_options(.exclusive(prefixes: ["#default"]))) == ok("<a></a>")
+
+test "canonicalize_at: a place naming text, a prefix list holding a colon, and a built tree that would not read back"
+    doc = parse("<a>t<b/></a>").must()
+
+    match canonicalize_at(doc, place: [0], options: canonical_options(.inclusive))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match canonicalize_at(doc, place: [1], options: canonical_options(.exclusive(prefixes: ["p:q"])))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match canonicalize(document(element_in(space: "urn:x", name: "p:a")), options: canonical_options(.inclusive))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "places_with_attribute: none, the root, two in document order past text, and a prefixed name"
+    doc = parse("<r ID=\"x\"><a ID=\"y\"/>t<b><c ID=\"y\" p:ID=\"z\" xmlns:p=\"u\"/></b></r>").must()
+    root: [i64] = []
+    assert places_with_attribute(doc, name: "ID", value: "none").len() == 0
+    assert places_with_attribute(doc, name: "ID", value: "x") == [root]
+    assert places_with_attribute(doc, name: "ID", value: "y") == [[0], [2, 0]]
+    assert places_with_attribute(doc, name: "p:ID", value: "z") == [[2, 0]]
+
+test "element_at_place: the root, an element two levels down, and a child that is text"
+    doc = parse("<r>t<b><c n=\"é\"/></b></r>").must()
+    assert element_at_place(doc, place: []).must().name.local == "r"
+    assert attribute(element_at_place(doc, place: [1, 0]).must(), name: "n") == ok("é")
+
+    match element_at_place(doc, place: [0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "without_node: an element taken out leaves its two texts side by side; the root and a place through text refused"
+    doc = parse("<r><a>x<s/>y</a></r>").must()
+    taken = without_node(doc, place: [0, 1]).must()
+    assert format(taken) == ok("<r><a>xy</a></r>")
+    assert taken.root.children[0] == .element(v: Element(name: Name(prefix: "", local: "a", space: ""), attributes: [], children: [.text(v: "x"), .text(v: "y")]))
+    assert format(without_node(doc, place: [0, 0]).must()) == ok("<r><a><s/>y</a></r>")
+
+    match without_node(doc, place: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match without_node(doc, place: [0, 0, 0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
 ## Examples
 
 # The default limits: 512 levels and 64 MiB.
@@ -1591,3 +2033,36 @@ test "has_attribute: there and not"
 # The text inside an element, its children's included.
 test "text_of: text at every depth"
     assert text_of(parse("<p>Hello <b>World</b>!</p>").must().root) == "Hello World!"
+
+# The same document written two ways gives one canonical text.
+test "canonicalize: two spellings of one document"
+    a = parse("<?xml version=\"1.0\"?><doc b='2' a=\"1\"><e/></doc>").must()
+    b = parse("<doc a=\"1\" b=\"2\"><e></e></doc>").must()
+    assert canonicalize(a, options: canonical_options(.inclusive)) == canonicalize(b, options: canonical_options(.inclusive))
+
+# Exclusive canonicalization keeps the comments when asked.
+test "canonical_options: the exclusive form with comments kept"
+    options: CanonicalOptions @= canonical_options(.exclusive(prefixes: []))
+    options.comments @ true
+    doc = parse("<a><!-- kept --></a>").must()
+    assert canonicalize(doc, options: options) == ok("<a><!-- kept --></a>")
+
+# An element signed where it stands carries the namespace declared above it.
+test "canonicalize_at: an element under a namespace declared on the root"
+    doc = parse("<r xmlns:p=\"urn:p\"><p:e/></r>").must()
+    assert canonicalize_at(doc, place: [0], options: canonical_options(.exclusive(prefixes: []))) == ok("<p:e xmlns:p=\"urn:p\"></p:e>")
+
+# The element an identifier names, found by its attribute.
+test "places_with_attribute: the element whose ID is x"
+    doc = parse("<r><a/><b ID=\"x\"/></r>").must()
+    assert places_with_attribute(doc, name: "ID", value: "x") == [[1]]
+
+# The element at a place a search answered.
+test "element_at_place: the second child of the root"
+    doc = parse("<r><a/><b/></r>").must()
+    assert element_at_place(doc, place: [1]).must().name.local == "b"
+
+# An enveloped signature taken out before its element is digested.
+test "without_node: the signature inside an element taken out"
+    doc = parse("<r><v>1</v><Signature/></r>").must()
+    assert format(without_node(doc, place: [1]).must()) == ok("<r><v>1</v></r>")

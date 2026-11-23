@@ -960,6 +960,14 @@ typedef struct hero_crypto_held {
     bool is_public;
     /* How many texts the key has sealed, under the table's lock. */
     uint64_t sealed;
+    /* A counted key's rule, `HERO_CRYPTO_COUNT_*`, or 0 for a key whose
+     * nonces are drawn; its way, `HERO_CRYPTO_SEALING` or
+     * `HERO_CRYPTO_OPENING`; its first nonce; and how many records it has
+     * spent a nonce on, under the table's lock. */
+    int64_t counting;
+    int64_t way;
+    unsigned char first_nonce[12];
+    uint64_t records;
     /* A secret key's bytes; on macOS also an Ed25519 or X25519 private
      * key's 32, which Monocypher computes with. */
     hero_crypto_blob secret;
@@ -1719,6 +1727,11 @@ static int64_t hero_crypto_sealing(hero_crypto_key *k, const void *nonce, const 
         hero_crypto_said(HERO_CRYPTO_INVALID, 0, "only a secret key seals: AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305");
         return -1;
     }
+    if (held->counting != 0) {
+        hero_crypto_leave(slot);
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "a key that counts its nonces seals by hero_crypto_seal_counted alone");
+        return -1;
+    }
     whole = text_count + HERO_CRYPTO_NONCE_BYTES + HERO_CRYPTO_TAG_BYTES;
     if (count < whole) {
         hero_crypto_leave(slot);
@@ -1780,6 +1793,11 @@ int64_t hero_crypto_open(hero_crypto_key *k, const void *sealed, uint64_t sealed
         hero_crypto_said(HERO_CRYPTO_INVALID, 0, "only a secret key opens: AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305");
         return -1;
     }
+    if (held->counting != 0) {
+        hero_crypto_leave(slot);
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "a key that counts its nonces opens by hero_crypto_open_counted alone");
+        return -1;
+    }
     if (sealed_count < HERO_CRYPTO_NONCE_BYTES + HERO_CRYPTO_TAG_BYTES) {
         hero_crypto_leave(slot);
         hero_crypto_said(HERO_CRYPTO_INVALID, 0, "the sealed bytes are fewer than a nonce and a tag, 28");
@@ -1797,6 +1815,190 @@ int64_t hero_crypto_open(hero_crypto_key *k, const void *sealed, uint64_t sealed
         hero_crypto_wipe(out, (size_t)text_count);
         if (opened == 0) {
             hero_crypto_said(HERO_CRYPTO_FORGED, 0, "the sealed bytes do not open under this key with this associated data");
+        }
+        return -1;
+    }
+    hero_crypto_fine();
+    return (int64_t)text_count;
+}
+
+/* -- COUNTED NONCES ----------------------------------------------------------
+ *
+ * A counted key computes each record's nonce from its first one, so the
+ * nonce never crosses from the caller and is never used twice: record n's is
+ * taken under the table's lock with n's place in the count, and no two calls
+ * are handed one n. */
+
+hero_crypto_key *hero_crypto_from_secret_counted(int64_t kind, const void *bytes, uint64_t count, const void *nonce, uint64_t nonce_count, int64_t counting, int64_t way) {
+    hero_crypto_key *k;
+    hero_crypto_slot *slot;
+    hero_crypto_held *held;
+
+    if (nonce == NULL || nonce_count != HERO_CRYPTO_NONCE_BYTES) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "a counted key's first nonce is 12 bytes");
+        return NULL;
+    }
+    if (counting != HERO_CRYPTO_COUNT_INCREMENTED && counting != HERO_CRYPTO_COUNT_XORED) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "a nonce is counted by HERO_CRYPTO_COUNT_INCREMENTED or HERO_CRYPTO_COUNT_XORED");
+        return NULL;
+    }
+    if (way != HERO_CRYPTO_SEALING && way != HERO_CRYPTO_OPENING) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "a counted key works HERO_CRYPTO_SEALING or HERO_CRYPTO_OPENING");
+        return NULL;
+    }
+    k = hero_crypto_from_secret(kind, bytes, count);
+    if (k == NULL) {
+        return NULL;
+    }
+    held = hero_crypto_enter(k, &slot);
+    if (held == NULL) {
+        return NULL;
+    }
+    hero_crypto_table_lock();
+    held->counting = counting;
+    held->way = way;
+    memcpy(held->first_nonce, nonce, HERO_CRYPTO_NONCE_BYTES);
+    held->records = 0;
+    hero_crypto_table_unlock();
+    hero_crypto_leave(slot);
+    hero_crypto_fine();
+    return k;
+}
+
+/* The nonce of record `record` of `held`, a counted key, into `nonce`. The
+ * incremented rule adds byte by byte with a carry, dropping the last, so the
+ * sum is RFC 5647's modulo 2^64 with no unsigned wrap asked of C. */
+static void hero_crypto_counted_nonce(const hero_crypto_held *held, uint64_t record, unsigned char nonce[12]) {
+    unsigned carry = 0;
+    int at;
+
+    memcpy(nonce, held->first_nonce, HERO_CRYPTO_NONCE_BYTES);
+    for (at = 0; at < 8; at++) {
+        unsigned char part = (unsigned char)((record >> (8 * at)) & 0xff);
+        if (held->counting == HERO_CRYPTO_COUNT_XORED) {
+            nonce[11 - at] = (unsigned char)(nonce[11 - at] ^ part);
+        } else {
+            unsigned sum = (unsigned)nonce[11 - at] + (unsigned)part + carry;
+            nonce[11 - at] = (unsigned char)(sum & 0xff);
+            carry = sum >> 8;
+        }
+    }
+}
+
+/* The next record's number of `held` taken, a counted key of `way`; false,
+ * said, for a key not counted, of the other way, or past the bound. */
+static bool hero_crypto_next_record(hero_crypto_held *held, int64_t way, uint64_t *record) {
+    bool counted;
+    bool fits;
+
+    hero_crypto_table_lock();
+    counted = held->counting != 0 && held->way == way;
+    fits = held->records < HERO_CRYPTO_RECORDS_MOST;
+    if (counted && fits) {
+        *record = held->records;
+        held->records += 1;
+    }
+    hero_crypto_table_unlock();
+    if (!counted) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, way == HERO_CRYPTO_SEALING ? "hero_crypto_seal_counted seals under a counted key made HERO_CRYPTO_SEALING alone" : "hero_crypto_open_counted opens under a counted key made HERO_CRYPTO_OPENING alone");
+        return false;
+    }
+    if (!fits) {
+        hero_crypto_said(HERO_CRYPTO_LIMIT, 0, "the counted key has spent 2^64 - 1 nonces, past which they come round: make another key");
+        return false;
+    }
+    return true;
+}
+
+int64_t hero_crypto_seal_counted(hero_crypto_key *k, const void *text, uint64_t text_count, const void *associated, uint64_t associated_count, void *buffer, uint64_t count) {
+    hero_crypto_slot *slot;
+    hero_crypto_held *held;
+    uint64_t whole;
+    uint64_t record;
+    unsigned char nonce[12];
+    unsigned char *out = (unsigned char *)buffer;
+    bool good;
+
+    if (!hero_crypto_bytes_given(text, text_count, HERO_CRYPTO_TEXT_MOST, "the text") || !hero_crypto_bytes_given(associated, associated_count, HERO_CRYPTO_TEXT_MOST, "the associated data") || !hero_crypto_bytes_given(buffer, count, UINT64_MAX, "the buffer")) {
+        return -1;
+    }
+    held = hero_crypto_enter(k, &slot);
+    if (held == NULL) {
+        return -1;
+    }
+    if (!hero_crypto_is_aead(held->kind)) {
+        hero_crypto_leave(slot);
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "only a secret key seals: AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305");
+        return -1;
+    }
+    whole = text_count + HERO_CRYPTO_TAG_BYTES;
+    if (count < whole) {
+        hero_crypto_leave(slot);
+        hero_crypto_fine();
+        return (int64_t)whole;
+    }
+    if (!hero_crypto_next_record(held, HERO_CRYPTO_SEALING, &record)) {
+        hero_crypto_leave(slot);
+        return -1;
+    }
+    hero_crypto_counted_nonce(held, record, nonce);
+    good = hero_crypto_arm_seal(held, nonce, (const unsigned char *)text, (size_t)text_count, (const unsigned char *)associated, (size_t)associated_count, out, out + text_count);
+    hero_crypto_leave(slot);
+    if (!good) {
+        hero_crypto_wipe(out, (size_t)whole);
+        return -1;
+    }
+    hero_crypto_fine();
+    return (int64_t)whole;
+}
+
+int64_t hero_crypto_open_counted(hero_crypto_key *k, const void *sealed, uint64_t sealed_count, const void *associated, uint64_t associated_count, void *buffer, uint64_t count) {
+    hero_crypto_slot *slot;
+    hero_crypto_held *held;
+    uint64_t text_count;
+    uint64_t record;
+    unsigned char nonce[12];
+    const unsigned char *in = (const unsigned char *)sealed;
+    /* Where no buffer is given for an empty text, a byte of its own, so no
+     * arm adds even 0 to a null pointer. */
+    unsigned char spare[1];
+    unsigned char *out = buffer != NULL ? (unsigned char *)buffer : spare;
+    int opened;
+
+    if (!hero_crypto_bytes_given(sealed, sealed_count, HERO_CRYPTO_TEXT_MOST + HERO_CRYPTO_TAG_BYTES, "the sealed bytes") || !hero_crypto_bytes_given(associated, associated_count, HERO_CRYPTO_TEXT_MOST, "the associated data") || !hero_crypto_bytes_given(buffer, count, UINT64_MAX, "the buffer")) {
+        return -1;
+    }
+    held = hero_crypto_enter(k, &slot);
+    if (held == NULL) {
+        return -1;
+    }
+    if (!hero_crypto_is_aead(held->kind)) {
+        hero_crypto_leave(slot);
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "only a secret key opens: AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305");
+        return -1;
+    }
+    if (sealed_count < HERO_CRYPTO_TAG_BYTES) {
+        hero_crypto_leave(slot);
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "the sealed bytes of a counted record are fewer than a tag, 16");
+        return -1;
+    }
+    text_count = sealed_count - HERO_CRYPTO_TAG_BYTES;
+    if (count < text_count) {
+        hero_crypto_leave(slot);
+        hero_crypto_fine();
+        return (int64_t)text_count;
+    }
+    if (!hero_crypto_next_record(held, HERO_CRYPTO_OPENING, &record)) {
+        hero_crypto_leave(slot);
+        return -1;
+    }
+    hero_crypto_counted_nonce(held, record, nonce);
+    opened = hero_crypto_arm_open(held, nonce, in, (size_t)text_count, (const unsigned char *)associated, (size_t)associated_count, in + text_count, out);
+    hero_crypto_leave(slot);
+    if (opened != 1) {
+        hero_crypto_wipe(out, (size_t)text_count);
+        if (opened == 0) {
+            hero_crypto_said(HERO_CRYPTO_FORGED, 0, "the sealed record does not open under this key with this associated data and its nonce");
         }
         return -1;
     }

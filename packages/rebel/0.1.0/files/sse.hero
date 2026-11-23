@@ -40,6 +40,10 @@
 # when they happened and has no id to ask with, and a stream read over HTTP/2
 # (`http.open_stream` speaks HTTP/1.1, which is what every server of event
 # streams answers).
+#
+# The codes it fails with: `invalid`, `unsupported`, `limit`, `stopped`,
+# `closed` and `not_found`, and those of `http`, `web`, `io` and `time` that
+# a call hands on where it says so.
 
 use http
 use io
@@ -50,11 +54,12 @@ use sse/internal/opening
 use sse/internal/replaying
 use sse/internal/waiting
 use strings
-use threads
 use time
 use tls
 use url
 use web
+
+## Codes
 
 # The code of a source that has ended, or was closed.
 constant CLOSED: str
@@ -75,6 +80,10 @@ constant INVALID: str
 # The code of a target that is not `http://` or `https://`.
 constant UNSUPPORTED: str
     "unsupported"
+
+# The code of a client number no client of the hub has.
+constant NOT_FOUND: str
+    "not_found"
 
 ## Reading a stream
 
@@ -172,7 +181,7 @@ function source(target: str, client: http.Client, reading: Reading) -> Source?
             msg: "reading an event stream: a retry, a longest wait, an idle time or a count of failures below zero"
         )
     return ok(
-        Source(target: target, client: client, reading: reading, headers: [], last_id: "", retry: reading.retry, failures: 0, link: fail(code: "not_found", msg: "no connection is open"), finished: false)
+        Source(target: target, client: client, reading: reading, headers: [], last_id: "", retry: reading.retry, failures: 0, link: fail(code: NOT_FOUND, msg: "no connection is open"), finished: false)
     )
 
 # The next event of the stream `s` reads, waiting for it and connecting, or
@@ -209,7 +218,7 @@ function next(@s: Source) -> http.Event?
             link = s.link.must()
             reader @= link.reader
             events @= link.events
-            s.link @ fail(code: "not_found", msg: "no connection is open")
+            s.link @ fail(code: NOT_FOUND, msg: "no connection is open")
 
             got: http.Event? = match tls.set_deadline(reader.stream, deadline: s.reading.idle)
                 .ok _  => http.read_event(@reader, @events)
@@ -270,7 +279,7 @@ function close(@s: Source)
             opening.shut(@stream)
         .err _ => _ = 0
 
-    s.link @ fail(code: "not_found", msg: "no connection is open")
+    s.link @ fail(code: NOT_FOUND, msg: "no connection is open")
     s.finished @ true
 
 # The last event id `s` was given: what its next connection sends as
@@ -391,7 +400,8 @@ function subscribe(@hub: Hub, s: io.Stream, last_id: str, headers: [http.Header]
 # - `event`: the event.
 #
 # How many clients were told. Fails `invalid` as `web.format_event` fails, with
-# nothing kept and nobody told.
+# nothing kept and nobody told, and as `time.mark` fails where the system
+# cannot read its monotonic clock, the event kept and nobody told.
 function publish(@hub: Hub, event: http.Event) -> i64?
     stamped @= event
 
@@ -425,7 +435,8 @@ function publish(@hub: Hub, event: http.Event) -> i64?
 # - `hub`: the hub.
 #
 # How many clients were dropped. Call it on a timer, `due` saying how long
-# until it is next needed. See also `publish`.
+# until it is next needed. Fails as `time.mark` and `time.elapsed` fail, where
+# the system cannot read its monotonic clock. See also `publish`.
 function heartbeat(@hub: Hub) -> i64?
     now = time.mark()?
     kept: [members.Member] @= []
@@ -489,7 +500,7 @@ function stream_of(hub: Hub, id: i64) -> io.Stream?
         if m.id == id
             return ok(m.stream)
 
-    return fail(code: "not_found", msg: f"the hub has no client {id}")
+    return fail(code: NOT_FOUND, msg: f"the hub has no client {id}")
 
 # Removes the client `id` and closes its connection. Fails `not_found` where
 # no client has that number.
@@ -511,7 +522,7 @@ function drop(@hub: Hub, id: i64) -> ()?
     hub.members @ kept
 
     if !found
-        return fail(code: "not_found", msg: f"the hub has no client {id}")
+        return fail(code: NOT_FOUND, msg: f"the hub has no client {id}")
     return ok()
 
 # Removes every client and closes every connection; the history stays.
@@ -525,23 +536,6 @@ function close_all(@hub: Hub)
     hub.members @ []
 
 ## Tests
-
-# The head of an answer that opens an event stream and ends with the connection.
-function stream_head() -> str
-    return "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"
-
-# The settings a test reads with: a short wait, one second to connect.
-function quick() -> Reading
-    r @= default_reading()
-    r.retry @ time.milliseconds(10).must()
-    r.longest @ time.milliseconds(40).must()
-    return r
-
-# What the stand-in `t` saw, a line for each request.
-#
-# - `t`: the stand-in; its thread is waited for.
-function seen_by(@t: fixture.Started) -> [str]
-    return strings.split(s: threads.wait_text(@t.thread), sep: fixture.SEPARATOR)
 
 test "source: a target that is no URL, no http, no host, or a reading below zero is refused, and a good one starts quiet"
     c = http.default_client()
@@ -560,61 +554,61 @@ test "source: a target that is no URL, no http, no host, or a reading below zero
 
 test "next: events across a stream that ends, the last id sent again, the stream's retry kept, and a source closed"
     t @= fixture.start(
-        [stream_head() + "retry: 10\nid: 1\ndata: a\n\n", stream_head() + "id: 2\nevent: tick\ndata: b\n\n"]
+        [fixture.stream_head() + "retry: 10\nid: 1\ndata: a\n\n", fixture.stream_head() + "id: 2\nevent: tick\ndata: b\n\n"]
     )
-    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: quick()).must()
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
     assert next(@s).must() == http.Event(name: "message", data: "a", id: "1")
     assert next(@s).must() == http.Event(name: "tick", data: "b", id: "2")
     assert last_id_of(s) == "2" && retry_of(s) == time.milliseconds(10).must()
     close(@s)
     assert next(@s).is_err()
-    seen = seen_by(@t)
+    seen = fixture.seen_by(@t)
     assert seen == ["GET /feed - text/event-stream", "GET /feed 1 text/event-stream"]
 
 test "next: an answer that is no event stream ends the source at once, whatever its status"
     t @= fixture.start(["HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"])
-    s @= source(f"http://127.0.0.1:{t.port}/gone", client: http.default_client(), reading: quick()).must()
+    s @= source(f"http://127.0.0.1:{t.port}/gone", client: http.default_client(), reading: fixture.quick()).must()
 
     match next(@s)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
     assert next(@s).is_err()
-    assert seen_by(@t).len() == 1
+    assert fixture.seen_by(@t).len() == 1
     h @= fixture.start(["HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"])
-    s2 @= source(f"http://127.0.0.1:{h.port}/page", client: http.default_client(), reading: quick()).must()
+    s2 @= source(f"http://127.0.0.1:{h.port}/page", client: http.default_client(), reading: fixture.quick()).must()
     assert next(@s2).is_err() && next(@s2).is_err()
-    assert seen_by(@h).len() == 1
+    assert fixture.seen_by(@h).len() == 1
 
 test "next: a status of `statuses` is waited out and the stream asked for again"
     t @= fixture.start(
-        ["HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", stream_head() + "data: up\n\n"]
+        ["HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", fixture.stream_head() + "data: up\n\n"]
     )
-    r @= quick()
+    r @= fixture.quick()
     r.statuses @ [502, 503, 504]
     s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: r).must()
     assert next(@s).must().data == "up"
-    assert seen_by(@t).len() == 2
+    assert fixture.seen_by(@t).len() == 2
     close(@s)
     plain @= fixture.start(["HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"])
-    s2 @= source(f"http://127.0.0.1:{plain.port}/feed", client: http.default_client(), reading: quick()).must()
+    s2 @= source(f"http://127.0.0.1:{plain.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
     assert next(@s2).is_err()
-    assert seen_by(@plain).len() == 1
+    assert fixture.seen_by(@plain).len() == 1
 
 test "next: a redirect is followed with the last id kept, and a stream that ends with no event is tried again"
     t @= fixture.start(
-        ["HTTP/1.1 302 Found\r\nLocation: /two\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", stream_head() + ": nothing yet\n\n", stream_head() + "id: 5\ndata: late\n\n"]
+        ["HTTP/1.1 302 Found\r\nLocation: /two\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", fixture.stream_head() + ": nothing yet\n\n", fixture.stream_head() + "id: 5\ndata: late\n\n"]
     )
-    s @= source(f"http://127.0.0.1:{t.port}/one", client: http.default_client(), reading: quick()).must()
+    s @= source(f"http://127.0.0.1:{t.port}/one", client: http.default_client(), reading: fixture.quick()).must()
     assert next(@s).must().id == "5"
-    assert seen_by(@t) == ["GET /one - text/event-stream", "GET /two - text/event-stream", "GET /one - text/event-stream"]
+    assert fixture.seen_by(@t) == ["GET /one - text/event-stream", "GET /two - text/event-stream", "GET /one - text/event-stream"]
     close(@s)
 
 test "next: no one listening is waited out, doubled up to the longest, and given up on after `most_failures`"
     gone @= net.listen(host: "127.0.0.1", port: 0).must()
     port = gone.address.port
     net.close_listener(@gone).must()
-    r @= quick()
+    r @= fixture.quick()
     r.most_failures @ 2
     s @= source(f"http://127.0.0.1:{port}/feed", client: http.default_client(), reading: r).must()
     began = time.mark().must()
@@ -629,55 +623,31 @@ test "next: no one listening is waited out, doubled up to the longest, and given
     assert next(@s).is_err()
 
 test "next: a connection silent of events for `idle` is given up and made again with the last id"
-    t @= fixture.start(["hold:" + stream_head() + "id: 1\ndata: a\n\n", stream_head() + "id: 2\ndata: b\n\n"])
-    r @= quick()
+    t @= fixture.start(
+        ["hold:" + fixture.stream_head() + "id: 1\ndata: a\n\n", fixture.stream_head() + "id: 2\ndata: b\n\n"]
+    )
+    r @= fixture.quick()
     r.idle @ time.milliseconds(100).must()
     s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: r).must()
     assert next(@s).must().data == "a"
     assert next(@s).must().data == "b"
     close(@s)
-    assert seen_by(@t) == ["GET /feed - text/event-stream", "GET /feed 1 text/event-stream"]
+    assert fixture.seen_by(@t) == ["GET /feed - text/event-stream", "GET /feed 1 text/event-stream"]
 
 test "next: a source with headers sends them, the program's `Authorization` among them"
-    t @= fixture.start([stream_head() + "data: x\n\n"])
-    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: quick()).must()
+    t @= fixture.start([fixture.stream_head() + "data: x\n\n"])
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
     s.headers @ [http.Header(name: "Accept", value: "text/event-stream, text/x")]
     assert next(@s).must().data == "x"
     close(@s)
-    assert seen_by(@t) == ["GET /feed - text/event-stream, text/x"]
-
-# A client's side of the hub's connection: the connection read from, and the
-# server's side the hub is handed.
-record Pair
-    # What the hub is handed.
-    server: io.Stream
-    # What the client reads.
-    client: io.Reader
-
-# A connection on the loopback.
-function pair() -> Pair
-    l @= net.listen(host: "127.0.0.1", port: 0).must()
-    c = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
-    a = net.accept(l, deadline_ms: 5_000).must()
-    net.close_listener(@l).must()
-    net.set_deadline(c.stream, deadline_ms: 5_000).must()
-    return Pair(server: a.stream, client: io.reader(c.stream))
-
-# The stream a client reads after the head of its answer, the head checked to
-# open an event stream.
-#
-# - `p`: the connection; its reader moves past the head.
-function watched(@p: Pair) -> http.EventReader
-    head = http.read_response_head(@p.client, method: "GET", limits: http.default_limits()).must()
-    assert head.status == 200 && http.value_of(head.headers, name: "Content-Type").must() == "text/event-stream"
-    return http.event_reader(head, limits: http.default_limits()).must()
+    assert fixture.seen_by(@t) == ["GET /feed - text/event-stream, text/x"]
 
 test "subscribe and publish: a client is told what happens, each event with the id it was given"
     hub @= default_hub()
-    p @= pair()
+    p @= fixture.pair()
     id = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
     assert count(hub) == 1 && id == 1
-    events @= watched(@p)
+    events @= fixture.watched(@p)
     assert publish(@hub, event: http.Event(name: "", data: "one", id: "")).must() == 1
     assert publish(@hub, event: http.Event(name: "note", data: "two\nlines", id: "abc")).must() == 1
     assert http.read_event(@p.client, @events).must() == http.Event(name: "message", data: "one", id: "1")
@@ -692,18 +662,18 @@ test "subscribe: a client that connects again is told what it missed, all of it 
     for n in range(from: 1, to: 4)
         assert publish(@hub, event: http.Event(name: "", data: f"e{n}", id: "")).must() == 0
 
-    known @= pair()
+    known @= fixture.pair()
     _ = subscribe(@hub, s: known.server, last_id: "1", headers: []).must()
-    known_events @= watched(@known)
+    known_events @= fixture.watched(@known)
     assert http.read_event(@known.client, @known_events).must().data == "e2"
     assert http.read_event(@known.client, @known_events).must().data == "e3"
-    gone @= pair()
+    gone @= fixture.pair()
     _ = subscribe(@hub, s: gone.server, last_id: "zzz", headers: []).must()
-    gone_events @= watched(@gone)
+    gone_events @= fixture.watched(@gone)
     assert http.read_event(@gone.client, @gone_events).must().data == "e1"
-    fresh @= pair()
+    fresh @= fixture.pair()
     _ = subscribe(@hub, s: fresh.server, last_id: "", headers: []).must()
-    fresh_events @= watched(@fresh)
+    fresh_events @= fixture.watched(@fresh)
     assert publish(@hub, event: http.Event(name: "", data: "e4", id: "")).must() == 3
     assert http.read_event(@fresh.client, @fresh_events).must().data == "e4"
     close_all(@hub)
@@ -720,14 +690,14 @@ test "subscribe: the history holds the most it was told to, and the `retry` a hu
         _ = publish(@hub, event: http.Event(name: "", data: f"e{n}", id: "")).must()
 
     assert hub.events.len() == 2
-    p @= pair()
+    p @= fixture.pair()
     _ = subscribe(
         @hub,
         s: p.server,
         last_id: "zzz",
         headers: [http.Header(name: "X-Accel-Buffering", value: "no")]
     ).must()
-    events @= watched(@p)
+    events @= fixture.watched(@p)
     assert http.read_event(@p.client, @events).must().data == "e3"
     assert events.retry == time.seconds(7).must()
     close_all(@hub)
@@ -744,9 +714,9 @@ test "publish: an event a stream cannot carry is refused and kept by none, and o
 test "heartbeat: a comment is written to a client quiet for the interval, and to none that was just told"
     hub @= default_hub()
     hub.heartbeat @ time.Duration(nanoseconds: 0)
-    p @= pair()
+    p @= fixture.pair()
     _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
-    _ = watched(@p)
+    _ = fixture.watched(@p)
     assert heartbeat(@hub).must() == 0
     assert io.read_n(@p.client, n: 2).must() == [58, 10]
     hub.heartbeat @ time.seconds(3_600).must()
@@ -759,11 +729,11 @@ test "heartbeat: a comment is written to a client quiet for the interval, and to
 test "publish and heartbeat: a client that has gone is dropped, its connection closed, and the others still told"
     hub @= default_hub()
     hub.heartbeat @ time.Duration(nanoseconds: 0)
-    gone @= pair()
-    kept @= pair()
+    gone @= fixture.pair()
+    kept @= fixture.pair()
     _ = subscribe(@hub, s: gone.server, last_id: "", headers: []).must()
     id = subscribe(@hub, s: kept.server, last_id: "", headers: []).must()
-    kept_events @= watched(@kept)
+    kept_events @= fixture.watched(@kept)
     io.close(@gone.client.stream).must()
     left: i64 @= 2
     tries: i64 @= 0
@@ -782,7 +752,7 @@ test "publish and heartbeat: a client that has gone is dropped, its connection c
 test "publish: a client that reads nothing is dropped once its connection is full, not waited for"
     hub @= default_hub()
     hub.write_wait @ time.Duration(nanoseconds: 0)
-    slow @= pair()
+    slow @= fixture.pair()
     _ = subscribe(@hub, s: slow.server, last_id: "", headers: []).must()
     big = http.Event(name: "", data: repeat("x", 32_768), id: "")
     tries: i64 @= 0
@@ -805,3 +775,167 @@ test "stream_of and drop: a number no client has is not found"
     hub @= default_hub()
     assert stream_of(hub, id: 9).is_err()
     assert drop(@hub, id: 9).is_err()
+
+## Examples
+
+# The usual reading, changed for a server that restarts: its 503 waited out
+# and the stream asked for again.
+test "default_reading: a reading that waits out a restarting server"
+    r @= default_reading()
+    r.statuses @ [503]
+    assert r.retry == time.seconds(3).must() && r.most_failures == 10
+
+# A source of a feed, which connects at its first `next` and not before.
+test "source: a source of a news feed"
+    s = source("https://example.test/news", client: http.default_client(), reading: default_reading()).must()
+    assert last_id_of(s) == "" && !s.finished
+
+# The events of a stream as they come, read from a server on the loopback.
+test "next: two events of a stream"
+    t @= fixture.start([fixture.stream_head() + "data: a\n\nevent: tick\ndata: b\n\n"])
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
+    assert next(@s).must().data == "a"
+    second = next(@s).must()
+    assert second.name == "tick" && second.data == "b"
+    close(@s)
+    assert fixture.seen_by(@t) == ["GET /feed - text/event-stream"]
+
+# A source the program is done with: its connection closed, and every later
+# `next` failing `closed`.
+test "close: a source ended by the program"
+    t @= fixture.start([fixture.stream_head() + "data: a\n\n"])
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
+    assert next(@s).must().data == "a"
+    close(@s)
+
+    match next(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    _ = fixture.seen_by(@t)
+
+# The id of the last event read, which the next connection sends as
+# `Last-Event-ID`.
+test "last_id_of: the id a stream gave"
+    t @= fixture.start([fixture.stream_head() + "id: 7\ndata: a\n\n"])
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
+    assert last_id_of(s) == ""
+    _ = next(@s).must()
+    assert last_id_of(s) == "7"
+    close(@s)
+    _ = fixture.seen_by(@t)
+
+# The wait before connecting again: the reading's, until the stream asks for
+# another in its `retry` field.
+test "retry_of: the wait a stream asks for"
+    t @= fixture.start([fixture.stream_head() + "retry: 250\ndata: a\n\n"])
+    s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: default_reading()).must()
+    assert retry_of(s) == time.seconds(3).must()
+    _ = next(@s).must()
+    assert retry_of(s) == time.milliseconds(250).must()
+    close(@s)
+    _ = fixture.seen_by(@t)
+
+# A hub that keeps fewer events and writes a comment sooner than the usual one.
+test "default_hub: a hub with a shorter history and heartbeat"
+    hub @= default_hub()
+    hub.history @ 10
+    hub.heartbeat @ time.seconds(5).must()
+    assert count(hub) == 0 && hub.events == []
+
+# The id a browser that connects again sends, read from its request.
+test "last_event_id_of: a browser connecting again"
+    r @= http.request(method: "GET", target: "http://example.test/feed").must()
+    r.headers @ [http.Header(name: "Last-Event-ID", value: "17")]
+    assert last_event_id_of(r) == "17"
+
+# A client made one of the hub's: the head of an event stream written to it,
+# and the number it is known by.
+test "subscribe: a client given its number"
+    hub @= default_hub()
+    p @= fixture.pair()
+    id = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    assert count(hub) == 1 && id == 1
+    _ = fixture.watched(@p)
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# An event told to every client, given a number as its id where it has none.
+test "publish: an event told to a client"
+    hub @= default_hub()
+    p @= fixture.pair()
+    _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    events @= fixture.watched(@p)
+    assert publish(@hub, event: http.Event(name: "", data: "hello", id: "")).must() == 1
+    assert http.read_event(@p.client, @events).must() == http.Event(name: "message", data: "hello", id: "1")
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# A comment written to a client told nothing for the hub's interval, which
+# its reader skips.
+test "heartbeat: a comment to a quiet client"
+    hub @= default_hub()
+    hub.heartbeat @ time.Duration(nanoseconds: 0)
+    p @= fixture.pair()
+    _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    _ = fixture.watched(@p)
+    assert heartbeat(@hub).must() == 0
+    assert io.read_n(@p.client, n: 2).must() == [58, 10]
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# How long a loop may wait before it calls `heartbeat`: no longer than the
+# hub's interval once it has a client, and for ever while it has none.
+test "due: the wait before the next heartbeat"
+    hub @= default_hub()
+    assert due(hub) == time.max_duration()
+    p @= fixture.pair()
+    _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    assert due(hub).nanoseconds <= hub.heartbeat.nanoseconds
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# How many clients a hub holds.
+test "count: a hub with one client"
+    hub @= default_hub()
+    p @= fixture.pair()
+    _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    assert count(hub) == 1
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# The connection of one client, as a loop that waits with `poll` adds it to its
+# set.
+test "stream_of: a client's connection"
+    hub @= default_hub()
+    p @= fixture.pair()
+    id = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    assert !stream_of(hub, id: id).is_err()
+
+    match stream_of(hub, id: id + 1)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    close_all(@hub)
+    io.close(@p.client.stream).must()
+
+# A client removed by the program, its connection closed, which its reader
+# sees as the stream's end.
+test "drop: a client removed"
+    hub @= default_hub()
+    p @= fixture.pair()
+    id = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    drop(@hub, id: id).must()
+    assert count(hub) == 0
+    io.close(@p.client.stream).must()
+
+# Every client removed and every connection closed, as a server that stops
+# does; the history stays for the clients that come back.
+test "close_all: a hub emptied"
+    hub @= default_hub()
+    p @= fixture.pair()
+    _ = subscribe(@hub, s: p.server, last_id: "", headers: []).must()
+    _ = publish(@hub, event: http.Event(name: "", data: "kept", id: "")).must()
+    close_all(@hub)
+    assert count(hub) == 0 && hub.events.len() == 1
+    io.close(@p.client.stream).must()

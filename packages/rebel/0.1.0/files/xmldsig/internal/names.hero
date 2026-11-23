@@ -1,0 +1,232 @@
+# The identifiers XML Signature 1.1 and RFC 9231 give algorithms, and what
+# each one asks of this package: a digest computed by `crypto`, a signature
+# checked or made by `crypto/keypairs` or an HMAC, a canonical form written by
+# `xml`. An identifier of SHA-1, MD5 or RIPEMD is named so that its refusal
+# can say what it is.
+
+use crypto
+use crypto/keypairs
+use xml
+
+# The namespace of XML Signature's elements.
+constant SPACE: str
+    "http://www.w3.org/2000/09/xmldsig#"
+
+# The namespace of InclusiveNamespaces, the exclusive form's prefix list.
+constant EXCLUSIVE_SPACE: str
+    "http://www.w3.org/2001/10/xml-exc-c14n#"
+
+# The enveloped-signature transform.
+constant ENVELOPED: str
+    "http://www.w3.org/2000/09/xmldsig#enveloped-signature"
+
+# The code of a document or an algorithm this package does not read.
+constant INVALID: str
+    "invalid"
+
+# The code of an algorithm named and not offered.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The prefix of XML Signature 1.0's own identifiers.
+constant DSIG: str
+    "http://www.w3.org/2000/09/xmldsig#"
+
+# The prefix of RFC 4051's identifiers.
+constant MORE: str
+    "http://www.w3.org/2001/04/xmldsig-more#"
+
+# The prefix of RFC 6931's identifiers.
+constant MORE_2007: str
+    "http://www.w3.org/2007/05/xmldsig-more#"
+
+# The prefix of RFC 9231's identifiers.
+constant MORE_2021: str
+    "http://www.w3.org/2021/04/xmldsig-more#"
+
+# The prefix of XML Encryption's digest identifiers.
+constant ENC: str
+    "http://www.w3.org/2001/04/xmlenc#"
+
+# What a signature method asks.
+record Facts
+    # `rsa`, `rsa_pss`, `ecdsa`, `ed25519` or `hmac`.
+    family: str
+    # The scheme of `crypto/keypairs` that checks it; `ed25519` for an HMAC,
+    # which reads `hmac` instead.
+    scheme: keypairs.Scheme
+    # The hash of an HMAC.
+    hmac: crypto.Algorithm
+    # The HMAC's whole output in bits; 0 for the others.
+    bits: i64
+
+# The digest identified by `uri` of `data`. Fails `unsupported` for SHA-1, MD5,
+# RIPEMD-160 and any identifier not offered, saying which.
+function digest_of(uri: str, data: [u8]) -> [u8]?
+    algorithm = digest_algorithm(uri)?
+    state @= crypto.start(algorithm)
+    crypto.update(@state, data)
+    return ok(crypto.digest(state))
+
+# The hash `uri` identifies as a digest method.
+function digest_algorithm(uri: str) -> crypto.Algorithm?
+    algorithm: crypto.Algorithm = match uri
+        "http://www.w3.org/2001/04/xmldsig-more#sha224" => .sha224
+        "http://www.w3.org/2001/04/xmlenc#sha256" => .sha256
+        "http://www.w3.org/2001/04/xmldsig-more#sha384" => .sha384
+        "http://www.w3.org/2001/04/xmlenc#sha512" => .sha512
+        "http://www.w3.org/2007/05/xmldsig-more#sha3-224" => .sha3_224
+        "http://www.w3.org/2007/05/xmldsig-more#sha3-256" => .sha3_256
+        "http://www.w3.org/2007/05/xmldsig-more#sha3-384" => .sha3_384
+        "http://www.w3.org/2007/05/xmldsig-more#sha3-512" => .sha3_512
+        _ => return fail(code: UNSUPPORTED, msg: refusal(uri: uri, what: "digest method"))
+
+    return ok(algorithm)
+
+# What the signature method `uri` asks. Fails `unsupported` for one this
+# package does not check, saying why where a reason is known.
+function facts_of(uri: str) -> Facts?
+    facts = match uri
+        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" => asymmetric(family: "rsa", scheme: .rsa_pkcs1_sha256)
+        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384" => asymmetric(family: "rsa", scheme: .rsa_pkcs1_sha384)
+        "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512" => asymmetric(family: "rsa", scheme: .rsa_pkcs1_sha512)
+        "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1" => asymmetric(
+            family: "rsa_pss",
+            scheme: .rsa_pss_sha256
+        )
+        "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1" => asymmetric(
+            family: "rsa_pss",
+            scheme: .rsa_pss_sha384
+        )
+        "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1" => asymmetric(
+            family: "rsa_pss",
+            scheme: .rsa_pss_sha512
+        )
+        "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256" => asymmetric(family: "ecdsa", scheme: .ecdsa_sha256)
+        "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384" => asymmetric(family: "ecdsa", scheme: .ecdsa_sha384)
+        "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519" => asymmetric(family: "ed25519", scheme: .ed25519)
+        "http://www.w3.org/2001/04/xmldsig-more#hmac-sha224" => keyed(hmac: .sha224, bits: 224)
+        "http://www.w3.org/2001/04/xmldsig-more#hmac-sha256" => keyed(hmac: .sha256, bits: 256)
+        "http://www.w3.org/2001/04/xmldsig-more#hmac-sha384" => keyed(hmac: .sha384, bits: 384)
+        "http://www.w3.org/2001/04/xmldsig-more#hmac-sha512" => keyed(hmac: .sha512, bits: 512)
+        _ => return fail(code: UNSUPPORTED, msg: refusal(uri: uri, what: "signature method"))
+
+    return ok(facts)
+
+# The facts of a signature by a key pair.
+function asymmetric(family: str, scheme: keypairs.Scheme) -> Facts
+    return Facts(family: family, scheme: scheme, hmac: .sha256, bits: 0)
+
+# The facts of an HMAC over `hmac`, whose output is `bits` long.
+function keyed(hmac: crypto.Algorithm, bits: i64) -> Facts
+    return Facts(family: "hmac", scheme: .ed25519, hmac: hmac, bits: bits)
+
+# The message refusing the algorithm `uri`, a `what`, with the reason known
+# for the families left out.
+function refusal(uri: str, what: str) -> str
+    reason = if uri.has_sha1()
+        "SHA-1 is refused: two texts of one SHA-1 digest have been made since 2017, so a digest or a signature over it proves nothing"
+    else if uri == "http://www.w3.org/2001/04/xmldsig-more#md5" || uri == "http://www.w3.org/2001/04/xmldsig-more#rsa-md5" || uri == "http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
+        "MD5 is refused: its collisions are made in seconds"
+    else if uri == "http://www.w3.org/2001/04/xmlenc#ripemd160" || uri == "http://www.w3.org/2001/04/xmldsig-more#rsa-ripemd160" || uri == "http://www.w3.org/2001/04/xmldsig-more#hmac-ripemd160"
+        "RIPEMD-160 is not offered by `crypto`"
+    else if uri == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512" || uri == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha224" || uri == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha224" || uri == "http://www.w3.org/2007/05/xmldsig-more#sha224-rsa-MGF1"
+        "`crypto/keypairs` signs ECDSA over SHA-256 and SHA-384 alone, and RSA over SHA-256, SHA-384 and SHA-512"
+    else if uri == "http://www.w3.org/2007/05/xmldsig-more#rsa-pss"
+        "RSA-PSS with parameters of its own is not read; the methods of RFC 6931, `sha256-rsa-MGF1` and its siblings, are"
+    else if uri == "http://www.w3.org/2009/xmldsig11#dsa-sha256" || uri == "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448"
+        "`crypto/keypairs` has no DSA and no Ed448"
+    else
+        "it is none XML Signature 1.1 or RFC 9231 names that this package checks"
+    return f"the {what} \"{uri}\": {reason}"
+
+# Whether `uri` names an algorithm over SHA-1.
+function has_sha1(uri: str) -> bool
+    return uri == "http://www.w3.org/2000/09/xmldsig#sha1" || uri == "http://www.w3.org/2000/09/xmldsig#rsa-sha1" || uri == "http://www.w3.org/2000/09/xmldsig#dsa-sha1" || uri == "http://www.w3.org/2000/09/xmldsig#hmac-sha1" || uri == "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1" || uri == "http://www.w3.org/2007/05/xmldsig-more#sha1-rsa-MGF1"
+
+# The canonical form `uri` names, the exclusive form's prefixes `prefixes`.
+# Fails `unsupported` for any other.
+function canonical_of(uri: str, prefixes: [str]) -> xml.CanonicalOptions?
+    options = match uri
+        "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" => xml.CanonicalOptions(method: .inclusive, comments: false)
+        "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments" => xml.CanonicalOptions(
+            method: .inclusive,
+            comments: true
+        )
+        "http://www.w3.org/2006/12/xml-c14n11" => xml.CanonicalOptions(method: .inclusive_11, comments: false)
+        "http://www.w3.org/2006/12/xml-c14n11#WithComments" => xml.CanonicalOptions(
+            method: .inclusive_11,
+            comments: true
+        )
+        "http://www.w3.org/2001/10/xml-exc-c14n#" => xml.CanonicalOptions(
+            method: .exclusive(prefixes: prefixes),
+            comments: false
+        )
+        "http://www.w3.org/2001/10/xml-exc-c14n#WithComments" => xml.CanonicalOptions(
+            method: .exclusive(prefixes: prefixes),
+            comments: true
+        )
+        _ => return fail(
+            code: UNSUPPORTED,
+            msg: f"the canonicalization method \"{uri}\": XML Signature 1.1 names Canonical XML 1.0, 1.1 and the exclusive form, with comments or without, and no other is read"
+        )
+
+    return ok(options)
+
+# The identifier of `options`.
+function canonical_uri(options: xml.CanonicalOptions) -> str
+    base = match options.method
+        .inclusive    => "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+        .inclusive_11 => "http://www.w3.org/2006/12/xml-c14n11"
+        .exclusive _  => "http://www.w3.org/2001/10/xml-exc-c14n#"
+
+    if !options.comments
+        return base
+
+    match options.method
+        .exclusive _               => return base + "WithComments"
+        .inclusive | .inclusive_11 => return base + "#WithComments"
+
+## Tests
+
+test "digest_of: SHA-256 and SHA3-256 of the empty bytes, SHA-1 and an unknown identifier refused"
+    empty: [u8] = []
+    assert digest_of(uri: ENC + "sha256", data: empty).must()[0] == 0xe3
+    assert digest_of(uri: MORE_2007 + "sha3-256", data: empty).must()[0] == 0xa7
+
+    match digest_of(uri: DSIG + "sha1", data: empty)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && e.msg.len() > 40
+
+    match digest_of(uri: "urn:none", data: empty)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "facts_of: each family, an HMAC's length, and RSA over SHA-1 refused"
+    assert facts_of(MORE + "rsa-sha256").must().family == "rsa"
+    assert facts_of(MORE_2007 + "sha512-rsa-MGF1").must().scheme == .rsa_pss_sha512
+    assert facts_of(MORE + "ecdsa-sha384").must().scheme == .ecdsa_sha384
+    assert facts_of(MORE_2021 + "eddsa-ed25519").must().family == "ed25519"
+    assert facts_of(MORE + "hmac-sha384").must().bits == 384
+
+    match facts_of(DSIG + "rsa-sha1")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "canonical_of and canonical_uri: the six identifiers read and written back, another refused"
+    uris = [
+        "http://www.w3.org/TR/2001/REC-xml-c14n-20010315"
+        "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"
+        "http://www.w3.org/2006/12/xml-c14n11"
+        "http://www.w3.org/2006/12/xml-c14n11#WithComments"
+        "http://www.w3.org/2001/10/xml-exc-c14n#"
+        "http://www.w3.org/2001/10/xml-exc-c14n#WithComments"
+    ]
+    none: [str] = []
+
+    for u in uris
+        assert canonical_uri(canonical_of(uri: u, prefixes: none).must()) == u
+
+    match canonical_of(uri: "http://www.w3.org/2006/12/xml-c14n2", prefixes: none)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED

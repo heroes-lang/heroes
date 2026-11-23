@@ -1,0 +1,53 @@
+# Reaches Rebel's `xmldsig`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). It checks the first
+# signature of an XML file against the certificate of a PEM file, both named
+# on the command line, and prints what the signature covers.
+
+use <rebel>/x509
+use <rebel>/xml
+use <rebel>/xmldsig
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"reach_xmldsig: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+# What the signature of the document at `path` covers, checked by the
+# certificate at `certificate`, or why it does not hold.
+function report(path: str, certificate: str) -> str?
+    doc = xml.parse(read_file(path)?)?
+    trusted = x509.parse_certificate(read_file(certificate)?)?
+    places = xmldsig.signature_places(doc)
+
+    if places.len() == 0
+        return ok("no signature")
+    checked = xmldsig.check(doc, signature: places[0], verifier: .certificate(v: trusted), options: xmldsig.default_check_options())?
+    lines: [str] @= []
+
+    for s in checked.signed
+        lines @ lines.push(f"signed: \"{s.uri}\" <{xml.format_name(s.element.name)}>")
+
+    return ok(lines.join("\n"))
+
+function main()
+    given = text_arguments()
+
+    if given.len() != 2
+        print("usage: reach_xmldsig <document.xml> <certificate.pem>")
+        exit(code: 2)
+
+    match report(path: given[0], certificate: given[1])
+        .ok text => print(text)
+        .err e =>
+            print(f"{e.code}: {e.msg}")
+            exit(code: 1)

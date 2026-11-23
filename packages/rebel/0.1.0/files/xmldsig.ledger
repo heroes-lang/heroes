@@ -1,0 +1,110 @@
+# The ledger of `xmldsig`: what XML Signature Syntax and Processing 1.1 (W3C,
+# 2013), with RFC 6931's and RFC 9231's algorithms, lets a program do, one
+# block per capability, and what Rebel answers. Go 1.27's standard library,
+# Rust 1.100's and Python 3.15's hold no XML Signature, so their lines are
+# `-` in every block (`go doc -all encoding/xml`, `python3 -I -c "import
+# xml; print(dir(xml))"` and the Rust documentation of this machine,
+# 2026-11-23). The yardstick is Java's `javax.xml.crypto.dsig` of OpenJDK
+# 27.0.1, installed here, whose public names each note gives: it made the
+# documents the tests check, and it checked the documents this package made
+# (2026-11-23). `xmlsec1` is not installed on this Mac, so its answers are
+# unrun.
+
+capability xmldsig/check  a signature checked against a key the program trusts, its value and every reference's digest
+  heroes  xmldsig.check, xmldsig.default_check_options, xmldsig.Verifier
+  go      -
+  rust    -
+  python  -
+  note    Java's XMLSignature.validate, DOMValidateContext, XMLSignatureFactory.unmarshalXMLSignature. The value is checked before any reference is followed, and what is answered is the places of the elements covered, so a program reads what was signed; Java answers the references' streams and leaves finding the element to the program
+
+capability xmldsig/found  the signatures a document holds found
+  heroes  xmldsig.signature_places
+  go      -
+  rust    -
+  python  -
+  note    Java's Document.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature")
+
+capability xmldsig/same-document  a reference to the document itself: the whole document, an element by its identifier, and their XPointer forms
+  heroes  xmldsig.check, xmldsig.CheckOptions
+  go      -
+  rust    -
+  python  -
+  note    Java's URIDereferencer and DOMValidateContext.setIdAttributeNS. An identifier two elements hold is refused, where Java takes the one it was told; a signature wrapped around content it does not cover is how SAML has been broken
+
+capability xmldsig/outside  a reference to something outside the document, fetched or given
+  heroes  refused: this package fetches nothing, and a signature that makes its checker fetch a URI it names lets the document choose what is read; a program that signs a file signs its bytes with `crypto/keypairs`
+  go      -
+  rust    -
+  python  -
+  note    Java's URIDereferencer over http and file URIs, which its secure validation forbids by default
+
+capability xmldsig/transforms  the enveloped transform and the canonical forms as transforms
+  heroes  xmldsig.check, xmldsig.sign
+  go      -
+  rust    -
+  python  -
+  note    Java's Transform.ENVELOPED and CanonicalizationMethod's six, through `xml.canonicalize_at`
+
+capability xmldsig/other-transforms  the XPath, XPath Filter 2.0, XSLT and base 64 transforms
+  heroes  refused: each runs a language or a decoding the document chooses over the document, the source of the denials of service and wrappings XML Signature's best practices (W3C Note, 2013) warn of; SAML and XAdES name none
+  go      -
+  rust    -
+  python  -
+  note    Java's Transform.XPATH, XPATH2, XSLT and BASE64; its secure validation forbids XSLT
+
+capability xmldsig/algorithms  the identifiers of the signature and digest methods written
+  heroes  xmldsig.method_uri, xmldsig.digest_uri, xmldsig.Method, xmldsig.Digest
+  go      -
+  rust    -
+  python  -
+  note    Java's SignatureMethod and DigestMethod constants, whose strings the identifiers here were checked against (2026-11-23)
+
+capability xmldsig/sha1  a digest or a signature over SHA-1 or MD5 checked or made
+  heroes  refused: two documents of one SHA-1 digest are made at will since 2017, and of one MD5 in seconds, so a signature over either proves nothing; `crypto/keypairs` signs no RSA over SHA-1
+  go      -
+  rust    -
+  python  -
+  note    Java's SignatureMethod.RSA_SHA1 and DigestMethod.SHA1, which its secure validation refuses since JDK 17
+
+capability xmldsig/hmac  an HMAC signature checked and made under a shared secret
+  heroes  xmldsig.check, xmldsig.sign_hmac
+  go      -
+  rust    -
+  python  -
+  note    Java's SignatureMethod.HMAC_SHA256 and its siblings, HMACParameterSpec; an HMACOutputLength short of the whole output is refused (CVE-2009-0217), as Java refuses one under half
+
+capability xmldsig/sign  an enveloped or detached signature made by a key pair, the certificates written in KeyInfo
+  heroes  xmldsig.sign, xmldsig.default_sign_options, xmldsig.SignOptions
+  go      -
+  rust    -
+  python  -
+  note    Java's XMLSignatureFactory.newXMLSignature, DOMSignContext, KeyInfoFactory.newX509Data; a document made here was checked by Java, every key kind and method of the tests
+
+capability xmldsig/key-info  the certificates a signature carries in KeyInfo read
+  heroes  xmldsig.certificates_of
+  go      -
+  rust    -
+  python  -
+  note    Java's KeyInfo, X509Data, KeySelector. A key a signature carries never checks it; KeyValue, KeyName, X509IssuerSerial and RetrievalMethod are not read, the program naming its key itself
+
+capability xmldsig/manifest  a Manifest's references checked
+  heroes  refused: XML Signature leaves a Manifest's references to the application, and `check` answers SignedInfo's; a Manifest's own digests can be compared by a program through `xml.canonicalize_at`
+  go      -
+  rust    -
+  python  -
+  note    Java's Manifest, Reference.validate on a Manifest's references
+
+capability xmldsig/enveloping  an enveloping signature made, its content inside an `Object`
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    Java's XMLObject and XMLSignatureFactory.newXMLObject; one is checked by `check`, its Object named by `Id`
+
+capability xmldsig/xades  XAdES's qualifying properties read and made: the signing time, the signer's certificate digest, the signature policy
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    an e-invoice's signature (ETSI EN 319 132); its XMLDSig part is checked by `check`, its SignedProperties a reference like another
+
