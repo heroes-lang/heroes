@@ -1,0 +1,207 @@
+# What a property list is between its readers, its writers and the face: a flat
+# list of events in the order a document holds them, each container's event
+# carrying how many objects follow it, as a binary list's own header does. A
+# dictionary's count is its entries, and its events are each key, a string,
+# then its value.
+#
+# Every reader writes this list and every writer reads it, each in one loop, a
+# container's count standing where a recursion would, so that no function
+# follows the data with recursion however deep it is nested.
+
+use time
+
+# `<null>`, which only the binary form holds.
+constant NIL_VALUE: i64
+    0
+
+# `false` or `true`, in `flag`.
+constant BOOLEAN: i64
+    1
+
+# An integer from 0 up, in `arg`.
+constant UNSIGNED: i64
+    2
+
+# An integer below 0, in `signed`.
+constant NEGATIVE: i64
+    3
+
+# A real, in `number`.
+constant REAL: i64
+    4
+
+# A string, its characters in `text`.
+constant TEXT: i64
+    5
+
+# A date, in `date`.
+constant DATE: i64
+    6
+
+# Data, its bytes in `data`.
+constant DATA: i64
+    7
+
+# A keyed archive's reference, in `arg`.
+constant UID: i64
+    8
+
+# An array: `arg` objects follow.
+constant LIST: i64
+    9
+
+# A dictionary: `arg` entries follow, each a key then its value.
+constant DICT: i64
+    10
+
+# One event: a kind and the fields that kind reads, the others at their zero.
+record Event
+    # One of the kinds above.
+    kind: i64
+    # An unsigned integer, a reference, or a container's count.
+    arg: u64
+    # A negative integer.
+    signed: i64
+    # Data's bytes.
+    data: [u8]
+    # A string's characters.
+    text: str
+    # A real's value.
+    number: f64
+    # A boolean's value.
+    flag: bool
+    # A date's moment.
+    date: time.Instant
+    # The place in the document where the object began: a byte index in a
+    # binary list, a line in an XML one, -1 where the event was made from a
+    # value.
+    at: i64
+
+# The event of `kind` with every field given.
+function make(kind: i64, arg: u64, signed: i64, data: [u8], text: str, number: f64, flag: bool) -> Event
+    return Event(
+        kind: kind,
+        arg: arg,
+        signed: signed,
+        data: data,
+        text: text,
+        number: number,
+        flag: flag,
+        date: time.epoch(),
+        at: -1
+    )
+
+# An event of `kind` with `arg`, its other fields at their zero.
+function of_kind(kind: i64, arg: u64) -> Event
+    return make(kind: kind, arg: arg, signed: 0, data: [], text: "", number: 0.0, flag: false)
+
+# The event of a negative integer.
+function of_negative(n: i64) -> Event
+    return make(kind: NEGATIVE, arg: 0, signed: n, data: [], text: "", number: 0.0, flag: false)
+
+# The event of data.
+function of_data(data: [u8]) -> Event
+    return make(kind: DATA, arg: 0, signed: 0, data: data, text: "", number: 0.0, flag: false)
+
+# The event of a string.
+function of_text(text: str) -> Event
+    return make(kind: TEXT, arg: 0, signed: 0, data: [], text: text, number: 0.0, flag: false)
+
+# The event of a real.
+function of_real(number: f64) -> Event
+    return make(kind: REAL, arg: 0, signed: 0, data: [], text: "", number: number, flag: false)
+
+# The event of a boolean.
+function of_boolean(flag: bool) -> Event
+    return make(kind: BOOLEAN, arg: 0, signed: 0, data: [], text: "", number: 0.0, flag: flag)
+
+# The event of a date.
+function of_date(date: time.Instant) -> Event
+    return Event(
+        kind: DATE,
+        arg: 0,
+        signed: 0,
+        data: [],
+        text: "",
+        number: 0.0,
+        flag: false,
+        date: date,
+        at: -1
+    )
+
+# `e` with `at` as the place its object began.
+function placed(e: Event, at: i64) -> Event
+    return Event(
+        kind: e.kind,
+        arg: e.arg,
+        signed: e.signed,
+        data: e.data,
+        text: e.text,
+        number: e.number,
+        flag: e.flag,
+        date: e.date,
+        at: at
+    )
+
+# `e` with its count set to `count`, for a container whose objects were
+# counted as they were read.
+function counted(e: Event, count: i64) -> Event
+    return Event(
+        kind: e.kind,
+        arg: to_u64(count).must(),
+        signed: e.signed,
+        data: e.data,
+        text: e.text,
+        number: e.number,
+        flag: e.flag,
+        date: e.date,
+        at: e.at
+    )
+
+# How many objects follow `e` and belong to it: a list's, twice a
+# dictionary's entries, none for any other kind. Aborts where a count is past
+# an `i64`, which no list held in memory reaches.
+function children_of(e: Event) -> i64
+    if e.kind == LIST
+        return to_i64(e.arg).must()
+    else if e.kind == DICT
+        return to_i64(e.arg).must() * 2
+    return 0
+
+# The name of the kind of `e`, as a message says it.
+function kind_name(e: Event) -> str
+    names = [
+        "a null"
+        "a boolean"
+        "an integer"
+        "an integer"
+        "a real"
+        "a string"
+        "a date"
+        "data"
+        "a UID"
+        "an array"
+        "a dictionary"
+    ]
+    return names[e.kind]
+
+test "of_kind and make: the fields each sets, the others at their zero"
+    e = of_kind(kind: UNSIGNED, arg: 18446744073709551615)
+    assert e.arg == 18446744073709551615 && e.signed == 0 && e.at == -1 && e.text == ""
+    assert of_negative(-9223372036854775808).signed == -9223372036854775808
+    assert of_data([1, 2]).data == [1, 2]
+    assert of_text("é").text == "é"
+    assert of_real(-0.5).number == -0.5
+    assert of_boolean(true).flag
+    assert of_date(time.epoch()).kind == DATE
+
+test "placed and counted: one field changed, the rest kept"
+    e = counted(e: placed(e: of_kind(kind: LIST, arg: 0), at: 7), count: 3)
+    assert e.at == 7 && e.arg == 3 && e.kind == LIST
+
+test "children_of and kind_name: a list, a dictionary, a scalar; the first and last names"
+    assert children_of(of_kind(kind: LIST, arg: 3)) == 3
+    assert children_of(of_kind(kind: DICT, arg: 2)) == 4
+    assert children_of(of_kind(kind: UNSIGNED, arg: 9)) == 0
+    assert kind_name(of_kind(kind: NIL_VALUE, arg: 0)) == "a null"
+    assert kind_name(of_kind(kind: DICT, arg: 0)) == "a dictionary"

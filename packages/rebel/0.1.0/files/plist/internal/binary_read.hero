@@ -1,0 +1,612 @@
+# The events of a binary property list, `bplist00`: its trailer read, then its
+# objects walked from the top object by a stack of the containers still open,
+# each object found through the table of offsets, so a list nested a million
+# deep costs a list of a million entries and never the machine's stack. No
+# count or offset is trusted before the bytes that would hold what it names
+# are known to be there; an object that holds itself is refused, and an object
+# a list refers to twice is read twice, each counted against the values a
+# caller allows.
+
+use bytes
+use math
+use plist
+use plist/internal/binary_write
+use plist/internal/event
+use plist/internal/samples
+use strings
+use time
+use unicode
+
+# The trailer of a binary list, its last 32 bytes.
+record Trailer
+    # The bytes of each entry of the offset table, 1 to 8.
+    offset_size: i64
+    # The bytes of each object number a container holds, 1 to 8.
+    ref_size: i64
+    # How many objects the list holds.
+    count: i64
+    # The number of the object the list is.
+    top: i64
+    # Where the offset table begins, which is where the objects end.
+    table: i64
+
+# What an object's first bytes say: its event, and for a container where its
+# object numbers begin and how many events its objects make.
+record Header
+    # The scalar's event, or the container's, its count set.
+    item: event.Event
+    # The byte index of a container's first object number.
+    start: i64
+    # The objects a container holds, a dictionary's keys and values each
+    # counted.
+    total: i64
+
+# The unsigned number in the `width` bytes from `at`, most significant first.
+# The caller has seen the bytes are there.
+function uint_at(data: [u8], at: i64, width: i64) -> u64
+    n: u64 @= 0
+
+    for k in range(from: 0, to: width)
+        n @ n * 256 + to_u64(data[at + k]).must()
+
+    return n
+
+# The `i64` that `n` holds, or a failure naming `what`.
+function small(n: u64, what: str) -> i64?
+    match to_i64(n)
+        .ok v  => return ok(v)
+        .err _ => return fail(code: plist.INVALID, msg: f"{what} is {n}, past what a list holds")
+
+# The trailer of `data`, and the checks that make every later read safe: the
+# sizes, the offset table inside the data and the top object among the objects.
+# Fails `invalid`, or `unsupported` where the header names another version.
+function trailer_of(data: [u8]) -> Trailer?
+    if data.len() < 8 + 1 + 32
+        return fail(code: plist.INVALID, msg: f"byte {data.len()}: the data ends before a trailer of 32 bytes")
+
+    if data[6] != 48 || data[7] != 48
+        if data[6] >= 48 && data[6] <= 57 && data[7] >= 48 && data[7] <= 57
+            return fail(
+                code: plist.UNSUPPORTED,
+                msg: f"bplist{bytes.to_text_lossy([data[6], data[7]])}: only version 00 is read"
+            )
+        return fail(code: plist.INVALID, msg: "byte 6: the header's version is not two digits")
+
+    at = data.len() - 32
+    offset_size = to_i64(data[at + 6]).must()
+    ref_size = to_i64(data[at + 7]).must()
+
+    if offset_size < 1 || offset_size > 8
+        return fail(code: plist.INVALID, msg: f"byte {at + 6}: an offset size of {offset_size}, which is 1 to 8")
+
+    if ref_size < 1 || ref_size > 8
+        return fail(code: plist.INVALID, msg: f"byte {at + 7}: an object number size of {ref_size}, which is 1 to 8")
+
+    count = small(uint_at(data: data, at: at + 8, width: 8), "the number of objects")?
+    top = small(uint_at(data: data, at: at + 16, width: 8), "the top object")?
+    table = small(uint_at(data: data, at: at + 24, width: 8), "the offset table's place")?
+
+    if count < 1
+        return fail(code: plist.INVALID, msg: "the list holds no object")
+
+    if table < 8 || table > at || count > (at - table) / offset_size
+        return fail(
+            code: plist.INVALID,
+            msg: f"the offset table of {count} entries at byte {table} does not lie inside the data"
+        )
+
+    if top >= count
+        return fail(code: plist.INVALID, msg: f"the top object is {top}, and the list holds {count} objects")
+
+    if ref_size < 8 && count > 1 << 8 * ref_size
+        return fail(
+            code: plist.INVALID,
+            msg: f"{count} objects cannot be numbered in {ref_size} bytes"
+        )
+
+    return ok(Trailer(offset_size: offset_size, ref_size: ref_size, count: count, top: top, table: table))
+
+# Where object `index` begins. Fails `invalid` where the table puts it outside
+# the objects.
+function offset_of(data: [u8], tr: Trailer, index: i64) -> i64?
+    at = small(uint_at(data: data, at: tr.table + index * tr.offset_size, width: tr.offset_size), f"the offset of object {index}")?
+
+    if at < 8 || at >= tr.table
+        return fail(code: plist.INVALID, msg: f"object {index} is at byte {at}, outside the objects (8 to {tr.table})")
+    return ok(at)
+
+# Fails `invalid` where `width` bytes from `at` do not lie inside the objects.
+function need(tr: Trailer, at: i64, width: i64) -> ()?
+    if width < 0 || at + width > tr.table
+        return fail(code: plist.INVALID, msg: f"byte {at}: the object runs past the end of the objects at {tr.table}")
+    return ok()
+
+# The length that follows a marker whose low nibble is `lo`, and the byte
+# index past it: the nibble itself below 15, else the integer object that
+# follows the marker.
+record Length
+    # The count.
+    n: i64
+    # The byte index past the count.
+    next: i64
+
+# The count of the object at `at`, its marker's low nibble `lo`.
+function length_at(data: [u8], tr: Trailer, at: i64, lo: i64) -> Length?
+    if lo < 15
+        return ok(Length(n: lo, next: at + 1))
+
+    need(tr: tr, at: at + 1, width: 1)?
+    marker = to_i64(data[at + 1]).must()
+
+    if marker < 0x10 || marker > 0x13
+        return fail(code: plist.INVALID, msg: f"byte {at + 1}: a count is an integer object, not marker {marker}")
+
+    width = 1 << marker - 0x10
+    need(tr: tr, at: at + 2, width: width)?
+    n = small(uint_at(data: data, at: at + 2, width: width), f"byte {at + 2}: a count")?
+    return ok(Length(n: n, next: at + 2 + width))
+
+# The event of the integer of `width` bytes at `at`: 1, 2 and 4 bytes are
+# unsigned, 8 are signed, 16 hold an unsigned 64-bit number or a negative one.
+function integer_at(data: [u8], at: i64, width: i64) -> event.Event?
+    if width <= 4
+        return ok(event.of_kind(kind: event.UNSIGNED, arg: uint_at(data: data, at: at + 1, width: width)))
+
+    if width == 8
+        u = uint_at(data: data, at: at + 1, width: 8)
+
+        if u < 9223372036854775808
+            return ok(event.of_kind(kind: event.UNSIGNED, arg: u))
+        return ok(event.of_negative(to_i64(u - 9223372036854775808).must() - 9223372036854775807 - 1))
+
+    high = uint_at(data: data, at: at + 1, width: 8)
+    low = uint_at(data: data, at: at + 9, width: 8)
+
+    if high == 0
+        return ok(event.of_kind(kind: event.UNSIGNED, arg: low))
+
+    if high == 18446744073709551615 && low >= 9223372036854775808
+        return ok(event.of_negative(to_i64(low - 9223372036854775808).must() - 9223372036854775807 - 1))
+    return fail(code: plist.DOES_NOT_FIT, msg: f"byte {at}: an integer of 16 bytes past -2^63 to 2^64 - 1")
+
+# The date `seconds` after 2001-01-01T00:00:00Z. Fails `invalid` for `nan` and
+# the infinities, `does_not_fit` outside the years a `time.Instant` holds.
+function date_of(seconds: f64, at: i64) -> time.Instant?
+    if math.is_nan(seconds) || math.is_inf(seconds)
+        return fail(code: plist.INVALID, msg: f"byte {at}: a date that is not a number")
+
+    if seconds < -9000000000.0 || seconds > 9000000000.0
+        return fail(
+            code: plist.DOES_NOT_FIT,
+            msg: f"byte {at}: a date {seconds} seconds from 2001, outside the years 1678 to 2261"
+        )
+
+    whole = math.floor(seconds)
+    nanos = to_i64(math.round((seconds - whole) * 1000000000.0)).must()
+    return time.from_unix(whole_seconds: to_i64(whole).must() + 978307200, extra_nanoseconds: nanos)
+
+# The string of `count` UTF-16 units, big endian, from `at`. Fails `invalid`
+# where a surrogate stands alone.
+function utf16_at(data: [u8], at: i64, count: i64) -> str?
+    units: [u16] @= []
+
+    for k in range(from: 0, to: count)
+        units @ units.push(bytes.decode_u16_be(data, at + 2 * k).must())
+
+    match unicode.from_utf16(units)
+        .err _ => return fail(code: plist.INVALID, msg: f"byte {at}: a UTF-16 string with a surrogate alone")
+        .ok points =>
+            match unicode.from_code_points(points)
+                .ok s  => return ok(s)
+                .err _ => return fail(code: plist.INVALID, msg: f"byte {at}: a UTF-16 string that holds no character")
+
+# The header of the object at byte `at`: the event of a scalar or the count of
+# a container. Fails `invalid` where the marker is none a writer uses or the
+# object runs past the objects.
+function header_at(data: [u8], tr: Trailer, at: i64) -> Header?
+    marker = to_i64(data[at]).must()
+    hi = marker / 16
+    lo = marker % 16
+    none = event.of_kind(kind: event.NIL_VALUE, arg: 0)
+
+    if marker == 0x00
+        return ok(Header(item: none, start: 0, total: 0))
+    else if marker == 0x08
+        return ok(Header(item: event.of_boolean(false), start: 0, total: 0))
+    else if marker == 0x09
+        return ok(Header(item: event.of_boolean(true), start: 0, total: 0))
+    else if hi == 1
+        if lo > 4
+            return fail(
+                code: plist.INVALID,
+                msg: f"byte {at}: an integer of {1 << lo} bytes, which is 1, 2, 4, 8 or 16"
+            )
+        width = 1 << lo
+        need(tr: tr, at: at + 1, width: width)?
+        return ok(Header(item: integer_at(data, at: at, width: width)?, start: 0, total: 0))
+    else if marker == 0x22 || marker == 0x23
+        width = 1 << lo
+        need(tr: tr, at: at + 1, width: width)?
+
+        if width == 4
+            return ok(Header(item: event.of_real(to_f64(bytes.decode_f32_be(data, at + 1).must())), start: 0, total: 0))
+        return ok(Header(item: event.of_real(bytes.decode_f64_be(data, at + 1).must()), start: 0, total: 0))
+    else if marker == 0x33
+        need(tr: tr, at: at + 1, width: 8)?
+        seconds = bytes.decode_f64_be(data, at + 1).must()
+        return ok(Header(item: event.of_date(date_of(seconds: seconds, at: at)?), start: 0, total: 0))
+    else if hi == 4 || hi == 5 || hi == 6
+        got = length_at(data, tr, at: at, lo: lo)?
+
+        unit = if hi == 6
+            2
+        else
+            1
+
+        need(tr: tr, at: got.next, width: 0)?
+
+        if got.n > (tr.table - got.next) / unit
+            return fail(
+                code: plist.INVALID,
+                msg: f"byte {at}: {got.n} {unit_name(hi)} where the objects end after {tr.table - got.next} bytes"
+            )
+
+        if hi == 4
+            return ok(Header(item: event.of_data(data.slice(from: got.next, to: got.next + got.n)), start: 0, total: 0))
+        else if hi == 5
+            for k in range(from: 0, to: got.n)
+                if data[got.next + k] >= 128
+                    return fail(code: plist.INVALID, msg: f"byte {got.next + k}: a byte past 127 in an ASCII string")
+
+            text = bytes.to_text(data.slice(from: got.next, to: got.next + got.n)).must()
+            return ok(Header(item: event.of_text(text), start: 0, total: 0))
+        return ok(Header(item: event.of_text(utf16_at(data, at: got.next, count: got.n)?), start: 0, total: 0))
+    else if hi == 8
+        width = lo + 1
+        need(tr: tr, at: at + 1, width: width)?
+        return ok(
+            Header(item: event.of_kind(kind: event.UID, arg: uint_at(data: data, at: at + 1, width: width)), start: 0, total: 0)
+        )
+    else if hi == 10 || hi == 12 || hi == 13
+        got = length_at(data, tr, at: at, lo: lo)?
+
+        per = if hi == 13
+            2
+        else
+            1
+
+        if got.n > (tr.table - got.next) / (tr.ref_size * per)
+            return fail(
+                code: plist.INVALID,
+                msg: f"byte {at}: {got.n} objects where the objects end after {tr.table - got.next} bytes"
+            )
+
+        kind = if hi == 13
+            event.DICT
+        else
+            event.LIST
+        return ok(
+            Header(item: event.of_kind(kind: kind, arg: to_u64(got.n).must()), start: got.next, total: got.n * per)
+        )
+    return fail(
+        code: plist.INVALID,
+        msg: f"byte {at}: marker 0x{bytes.format_hex([data[at]])}, which no property list object has"
+    )
+
+# What a string-like marker counts, for a message.
+function unit_name(hi: i64) -> str
+    if hi == 4
+        return "bytes of data"
+    else if hi == 5
+        return "ASCII characters"
+    return "UTF-16 units"
+
+# The events of the list in `data`, the top object first. Fails `invalid` for a
+# list that is not well formed, `unsupported` for another version, `limit`
+# where it nests deeper than `max_depth` or holds more than `max_items` values,
+# `does_not_fit` for an integer or a date outside its type.
+function events(data: [u8], max_depth: i64, max_items: i64) -> [event.Event]?
+    tr = trailer_of(data)?
+    out: [event.Event] @= []
+
+    # Whether an object is one of the containers being read: one met again
+    # stands inside itself.
+    active: [bool] @= []
+
+    for k in range(from: 0, to: tr.count)
+        active @ active.push(k < 0)
+
+    # The containers being read, the innermost last, `top` of them: the object,
+    # where its numbers begin, how many events its objects make, how many have
+    # been made, and whether it is a dictionary.
+    f_obj: [i64] @= []
+    f_start: [i64] @= []
+    f_total: [i64] @= []
+    f_next: [i64] @= []
+    f_dict: [bool] @= []
+    top: i64 @= 0
+
+    current: i64 @= tr.top
+    pending: bool @= true
+    want_key: bool @= false
+
+    while true
+        if pending
+            pending @ false
+
+            if active[current]
+                return fail(
+                    code: plist.INVALID,
+                    msg: f"object {current} holds itself, directly or through the objects it holds"
+                )
+
+            at = offset_of(data, tr, current)?
+            h = header_at(data, tr, at)?
+
+            if want_key && h.item.kind != event.TEXT
+                return fail(
+                    code: plist.INVALID,
+                    msg: f"byte {at}: a dictionary's key is {event.kind_name(h.item)}, which is no string"
+                )
+
+            out @ out.push(event.placed(e: h.item, at: at))
+
+            if out.len() > max_items
+                return fail(code: plist.LIMIT, msg: f"more than {max_items} values, the most this reading allows")
+
+            if h.item.kind == event.LIST || h.item.kind == event.DICT
+                if top + 1 > max_depth
+                    return fail(
+                        code: plist.LIMIT,
+                        msg: f"byte {at}: nested deeper than {max_depth}, the most this reading allows"
+                    )
+
+                active[current] @ true
+                is_dict = h.item.kind == event.DICT
+
+                if top == f_obj.len()
+                    f_obj @ f_obj.push(current)
+                    f_start @ f_start.push(h.start)
+                    f_total @ f_total.push(h.total)
+                    f_next @ f_next.push(0)
+                    f_dict @ f_dict.push(is_dict)
+                else
+                    f_obj[top] @ current
+                    f_start[top] @ h.start
+                    f_total[top] @ h.total
+                    f_next[top] @ 0
+                    f_dict[top] @ is_dict
+                top @ top + 1
+
+        if top == 0
+            return ok(out)
+
+        f = top - 1
+
+        if f_next[f] == f_total[f]
+            active[f_obj[f]] @ false
+            top @ top - 1
+        else
+            c = f_next[f]
+            f_next[f] @ c + 1
+            where: i64 @= f_start[f]
+
+            if f_dict[f]
+                entries = f_total[f] / 2
+                is_key = c % 2 == 0
+                entry = c / 2
+                want_key @ is_key
+
+                index = if is_key
+                    entry
+                else
+                    entries + entry
+                where @ where + index * tr.ref_size
+            else
+                want_key @ false
+                where @ where + c * tr.ref_size
+
+            number = small(uint_at(data: data, at: where, width: tr.ref_size), f"byte {where}: an object number")?
+
+            if number >= tr.count
+                return fail(
+                    code: plist.INVALID,
+                    msg: f"byte {where}: refers to object {number}, and the list holds {tr.count}"
+                )
+            current @ number
+            pending @ true
+
+    return ok(out)
+
+# A binary list of `objects`, each given as its bytes, with 2-byte offsets and
+# object numbers of `ref_size` bytes, the object `top` the list.
+function made(objects: [[u8]], top: i64, ref_size: i64) -> [u8]
+    parts: [[u8]] @= [bytes.from_text("bplist00")]
+    offsets: [i64] @= []
+    place: i64 @= 8
+
+    for object in objects
+        offsets @ offsets.push(place)
+        parts @ parts.push(object)
+        place @ place + object.len()
+
+    for offset in offsets
+        parts @ parts.push(binary_write.uint_bytes(to_u64(offset).must(), 2))
+
+    trailer: [u8] = [0, 0, 0, 0, 0, 0, 2, to_u8(ref_size).must()]
+    count = to_u64(objects.len()).must()
+    parts @ parts.push(trailer)
+    parts @ parts.push(binary_write.uint_bytes(count, 8))
+    parts @ parts.push(binary_write.uint_bytes(to_u64(top).must(), 8))
+    parts @ parts.push(binary_write.uint_bytes(to_u64(place).must(), 8))
+    return bytes.concat(parts)
+
+# The value of the list of `objects`, the first object its top.
+function read_one(objects: [[u8]]) -> plist.Value?
+    return plist.decode_binary(made(objects: objects, top: 0, ref_size: 1))
+
+# Whether reading `objects` fails with `code`.
+function fails_with(objects: [[u8]], code: str) -> bool
+    match read_one(objects)
+        .ok _  => return false
+        .err e => return e.code == code
+
+test "header_at: a null, a boolean and a reference, as plutil and plistlib read them"
+    assert read_one([[0x00]]).must() == .nil_value
+    assert read_one([[0x08]]).must() == .boolean(v: false)
+    assert read_one([[0x09]]).must() == .boolean(v: true)
+    assert read_one([[0x80, 5]]).must() == .uid(v: 5)
+    assert read_one([[0x81, 1, 0]]).must() == .uid(v: 256)
+
+test "integer_at: each width, 8 bytes signed, 16 bytes holding an unsigned or a negative number"
+    assert read_one([[0x10, 255]]).must() == .unsigned(v: 255)
+    assert read_one([[0x11, 255, 255]]).must() == .unsigned(v: 65535)
+    assert read_one([[0x12, 0, 1, 0, 0]]).must() == .unsigned(v: 65536)
+    assert read_one([[0x13, 0x80, 0, 0, 0, 0, 0, 0, 0]]).must() == .negative(v: -9223372036854775808)
+    assert read_one([[0x13, 255, 255, 255, 255, 255, 255, 255, 255]]).must() == .negative(v: -1)
+    assert read_one([[0x14, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255]]).must() == .unsigned(v: 18446744073709551615)
+    assert read_one([[0x14, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]).must() == .negative(v: -1)
+    assert fails_with(objects: [[0x14, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]], code: "does_not_fit")
+    assert fails_with(objects: [[0x15, 0]], code: "invalid")
+
+test "header_at: a real of 4 and of 8 bytes, a date with a fraction of a second"
+    assert read_one([[0x22, 0x3f, 0xc0, 0, 0]]).must() == .real(v: 1.5)
+    assert read_one([[0x23, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0]]).must() == .real(v: 1.5)
+    assert read_one([[0x23, 0x80, 0, 0, 0, 0, 0, 0, 0]]).must() == .real(v: -0.0)
+    half = time.from_unix(whole_seconds: 978307200, extra_nanoseconds: 500000000).must()
+    assert read_one([[0x33, 0x3f, 0xe0, 0, 0, 0, 0, 0, 0]]).must() == .date(v: half)
+    assert fails_with(objects: [[0x33, 0x7f, 0xf8, 0, 0, 0, 0, 0, 0]], code: "invalid")
+    assert fails_with(objects: [[0x33, 0x7f, 0xef, 255, 255, 255, 255, 255, 255]], code: "does_not_fit")
+    assert fails_with(objects: [[0x21, 0]], code: "invalid")
+
+test "header_at: strings in ASCII and in UTF-16 with a surrogate pair, a count of 15 or more, and the ones refused"
+    assert read_one([[0x52, 104, 105]]).must() == .text(v: "hi")
+    assert read_one([[0x62, 0x00, 0xe9, 0x65, 0xe5]]).must() == .text(v: "é日")
+    assert read_one([[0x62, 0xd8, 0x3d, 0xde, 0x00]]).must() == .text(v: "😀")
+    assert read_one([[0x50]]).must() == .text(v: "")
+
+    twenty = bytes.concat([[0x5f, 0x10, 20], bytes.from_text("abcdefghijklmnopqrst")])
+    assert read_one([twenty]).must() == .text(v: "abcdefghijklmnopqrst")
+    assert read_one([[0x4f, 0x10, 3, 1, 2, 3]]).must() == .data(v: [1, 2, 3])
+    assert fails_with(objects: [[0x61, 0xd8, 0x00]], code: "invalid")
+    assert fails_with(objects: [[0x61, 0xdc, 0x00]], code: "invalid")
+    assert fails_with(objects: [[0x51, 200]], code: "invalid")
+    assert fails_with(objects: [[0x6f, 0x10, 255, 0, 0]], code: "invalid")
+    assert fails_with(objects: [[0x5f, 0x20, 1]], code: "invalid")
+    assert fails_with(objects: [[0x5f, 0x10]], code: "invalid")
+
+test "header_at: the markers plutil refuses, a fill byte, an ordered set and UTF-8 text, and a set read as an array"
+    assert fails_with(objects: [[0x0f]], code: "invalid")
+    assert fails_with(objects: [[0xb1, 1], [0x09]], code: "invalid")
+    assert fails_with(objects: [[0x72, 104, 105]], code: "invalid")
+    assert fails_with(objects: [[0x34, 0, 0, 0, 0]], code: "invalid")
+    assert read_one([[0xc1, 1], [0x09]]).must() == .list(items: [.boolean(v: true)])
+
+test "events: an object that holds itself, directly and through another, and a key that is no string"
+    assert fails_with(objects: [[0xa1, 0]], code: "invalid")
+    assert fails_with(objects: [[0xa1, 1], [0xa1, 0]], code: "invalid")
+    assert fails_with(objects: [[0xd1, 1, 2], [0x09], [0x09]], code: "invalid")
+    assert fails_with(objects: [[0xa1, 5]], code: "invalid")
+
+    shared = read_one([[0xa2, 1, 1], [0x09]]).must()
+    assert shared == .list(items: [.boolean(v: true), .boolean(v: true)])
+
+    pairs = read_one([[0xd1, 1, 2], [0x51, 107], [0x09]]).must()
+    assert pairs == .dictionary(entries: [plist.Entry(key: "k", value: .boolean(v: true))])
+
+test "trailer_of: a version other than 00, bad sizes, a count past the table, a top object outside, and data too short"
+    good = made(objects: [[0x09]], top: 0, ref_size: 1)
+    assert plist.decode_binary(good).must() == .boolean(v: true)
+    assert good.len() == 8 + 1 + 2 + 32
+
+    other = bytes.concat([bytes.from_text("bplist01"), good.slice(from: 8, to: good.len())])
+
+    match plist.decode_binary(other)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && strings.contains(s: e.msg, substr: "01")
+
+    letters = bytes.concat([bytes.from_text("bplistxy"), good.slice(from: 8, to: good.len())])
+
+    match plist.decode_binary(letters)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    for place in [good.len() - 32 + 6, good.len() - 32 + 7]
+        for size in [0, 9]
+            broken: [u8] @= good
+            broken[place] @ to_u8(size).must()
+
+            match plist.decode_binary(broken)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+    # The top object, the number of objects and the table's place, each past what the data holds.
+    for place in [good.len() - 32 + 15, good.len() - 32 + 23, good.len() - 32 + 31]
+        broken: [u8] @= good
+        broken[place] @ 99
+
+        match plist.decode_binary(broken)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    assert fails_with(objects: [], code: "invalid")
+
+    match plist.decode_binary(bytes.from_text("bplist00"))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "events: nesting and a count of values at the limit and past it, and a list that shares objects to make a tree of 2^40"
+    chain: [[u8]] @= []
+
+    for level in range(from: 0, to: 40)
+        chain @ chain.push([0xa2, to_u8(level + 1).must(), to_u8(level + 1).must()])
+
+    chain @ chain.push([0xa0])
+
+    match read_one(chain)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && strings.contains(s: e.msg, substr: "values")
+
+    deep: [[u8]] @= []
+
+    for level in range(from: 0, to: 5)
+        deep @ deep.push([0xa1, to_u8(level + 1).must()])
+
+    deep @ deep.push([0xa0])
+    options = plist.DecodeOptions(max_depth: 6, max_items: 100, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: made(objects: deep, top: 0, ref_size: 1), options: options)
+        .ok _  => assert true
+        .err _ => assert false
+
+    tighter = plist.DecodeOptions(max_depth: 5, max_items: 100, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: made(objects: deep, top: 0, ref_size: 1), options: tighter)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+test "events: a list cut short at every place, and every byte of a list changed, never read past its end"
+    whole = samples.big_binary()
+
+    for cut in range(from: 0, to: whole.len())
+        match plist.decode_binary(whole.slice(from: 0, to: cut))
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" || e.code == "limit"
+
+    for place in range(from: 0, to: whole.len())
+        for value in [0, 255, 15]
+            changed: [u8] @= whole
+            changed[place] @ to_u8(value).must()
+
+            match plist.decode_binary(changed)
+                .ok _  => assert true
+                .err _ => assert true
+
+test "events: object numbers of two bytes and a dictionary with a key twice"
+    wide = made(objects: [[0xa1, 0, 1], [0x09]], top: 0, ref_size: 2)
+    assert plist.decode_binary(wide).must() == .list(items: [.boolean(v: true)])
+    twice = made(objects: [[0xd2, 1, 1, 2, 3], [0x51, 107], [0x09], [0x08]], top: 0, ref_size: 1)
+
+    match plist.decode_binary(twice)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && strings.contains(s: e.msg, substr: "\"k\" twice")

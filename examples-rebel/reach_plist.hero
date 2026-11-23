@@ -1,0 +1,23 @@
+# Reaches Rebel's `plist`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). Given the path of a property list, XML or binary, it
+# prints the list as the XML form writes it.
+
+use <rebel>/fs
+use <rebel>/plist
+
+function main()
+    paths = args()
+
+    if paths.len() != 1
+        print("usage: reach_plist <property list>")
+        return
+
+    match fs.read_bytes(paths[0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match plist.decode(data)
+                .err e => print(e.code, ": ", e.msg)
+                .ok v =>
+                    match plist.format_xml(v)
+                        .ok text => print(text)
+                        .err e   => print(e.code, ": ", e.msg)

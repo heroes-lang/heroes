@@ -1,0 +1,172 @@
+# The ledger of `plist`: what Apple's property list formats let a program do,
+# one block per capability, and what Rebel answers. Neither Go's standard
+# library (1.27.4: no directory of `src` is named for it and no `.go` file of
+# it mentions a property list, run 2026-11-23) nor Rust's (1.100.0, `std`'s
+# index) holds property lists, so every `go` and `rust` line is `-`. Python's
+# `plistlib` (3.15.2, `plistlib.__all__` and `inspect.signature` run
+# 2026-11-23) is the library, and macOS's `plutil` (`plutil -help`, the
+# system's own tool, run 2026-11-23) the second implementation the tests are
+# held to: `plutil` made the lists of `plist/internal/samples.hero` in both
+# forms and read what this package writes (`plutil -lint` accepts it and
+# `plutil -p` prints what it prints for `plutil`'s own file); `plistlib` read
+# both forms of each list as the same value.
+#
+# Where the two disagree this package decides, and the block says so: `plutil`
+# refuses a cycle, a dictionary whose key is no string, a `<true>` with text in
+# it and a date that is not `YYYY-MM-DDTHH:MM:SSZ`, and `plistlib` reads the
+# cycle, the key and the text and refuses the date, so the first three are
+# refused (`invalid`) and the date is refused; `plutil` writes a real zero as
+# `0.0` whichever its sign, and this package writes `-0.0`, which reads back as
+# the same number.
+
+capability plist/read-xml  a property list in its XML form read into a value
+  heroes  plist.parse_xml, plist.decode
+  go      -
+  rust    -
+  python  plistlib.loads, plistlib.load
+  note    both references read integers in decimal and `0x` hexadecimal, reals with `nan` and the infinities, data in base 64 with white space anywhere, and a CDATA section or a reference as text; so does this package. A comment inside a `<string>` is read and left out, as `plistlib` does and `plutil` refuses. A `<key>` inside an array is refused, where `plutil` reads it as a string. A document type declaration is read and not kept, and a `<plist>` with no `version` is read as 1.0
+
+capability plist/read-binary  a property list in its binary form, `bplist00`, read into a value
+  heroes  plist.decode_binary, plist.decode
+  go      -
+  rust    -
+  python  plistlib.loads, plistlib.load
+  note    objects of every marker `plistlib` reads (null, booleans, integers of 1, 2, 4, 8 and 16 bytes, reals of 4 and 8 bytes, dates, data, ASCII and UTF-16 strings, references, arrays, dictionaries) and the set, which `plutil` reads and `plistlib` refuses, is read as an array. The markers `plutil` refuses, a fill byte, an ordered set and UTF-8 text, are refused though `plistlib` reads the first as empty data. An integer of 16 bytes that is -1 in 128 bits is -1, as `plistlib` reads it, where `plutil` prints 18446744073709551615
+
+capability plist/detect  which of the two forms a document is in
+  heroes  plist.format_of, plist.Format
+  go      -
+  rust    -
+  python  plistlib.load, plistlib.loads, plistlib.FMT_XML, plistlib.FMT_BINARY
+  note    `plistlib` tries the binary mark and then XML; a byte order mark and white space before the `<` are allowed, as an XML parser allows them
+
+capability plist/read-limits  how deep and how large a document may be, and whether a key may stand twice
+  heroes  plist.decode_with, plist.DecodeOptions, plist.default_decode_options, plist.DEFAULT_MAX_DEPTH, plist.DEFAULT_MAX_ITEMS, plist.DEFAULT_MAX_BYTES
+  go      -
+  rust    -
+  python  plistlib.loads
+  note    `plistlib` has no limit, and a binary list that shares objects expands to the tree it makes, so one of 40 levels asks for 2^40 values; here that fails `limit` at the count a caller allows. `plutil` and `plistlib` both keep the last of a key written twice; this package refuses it unless `duplicate_keys` asks to keep both, in order
+
+capability plist/cycles  a binary list in which an object holds itself
+  heroes  plist.decode_binary, plist.decode
+  go      -
+  rust    -
+  python  plistlib.loads
+  note    refused `invalid`, as `plutil` refuses it; `plistlib` answers a list that holds itself, which no value of this package can be
+
+capability plist/write-xml  a value written in the XML form as Apple's tool writes it
+  heroes  plist.format_xml
+  go      -
+  rust    -
+  python  plistlib.dumps, plistlib.dump
+  note    the text is `plutil -convert xml1`'s byte for byte for every value tried (tabs, one element to a line, `<array/>` for an empty array, data in lines of 76 less 8 characters for each level and at least 12, reals in 17 significant digits with `nan`, `+infinity` and `-infinity`, `&#13;` for a carriage return where `plutil` writes it raw and an XML parser then reads it as a line feed) except two: a dictionary's entries stay in the order they stand where `plutil` sorts them, and a real minus zero is `-0.0`. A date's fraction of a second is dropped, as both references drop it
+
+capability plist/write-binary  a value written in the binary form
+  heroes  plist.encode_binary
+  go      -
+  rust    -
+  python  plistlib.dumps, plistlib.dump
+  note    each distinct string, integer, real, date and datum is one object, as `plutil` does it, so the file is the size `plutil`'s is for the lists tried; the objects stand in another order than `plutil`'s, and any reader takes either. Integers take 1, 2, 4 or 8 bytes by size and 16 from 2^63, a real 8 bytes, a string ASCII where it is and UTF-16 otherwise
+
+capability plist/write  a value written in a form chosen by the program
+  heroes  plist.encode, plist.Format
+  go      -
+  rust    -
+  python  plistlib.dumps, plistlib.dump, plistlib.FMT_XML, plistlib.FMT_BINARY
+  note    the XML form comes back as the UTF-8 bytes of `format_xml`'s text
+
+capability plist/value  the kinds of value a list holds
+  heroes  plist.Value, plist.Entry
+  go      -
+  rust    -
+  python  plistlib.loads
+  note    eleven cases: null, boolean, integer (two cases, so the whole range from -2^63 to 2^64 - 1 is exact), real, string, date, data, UID, array, dictionary. Python answers `dict`, `list`, `str`, `int`, `float`, `bool`, `datetime`, `bytes`, `plistlib.UID` and `None`; an integer past 64 bits is an `OverflowError` on writing there and `does_not_fit` here on reading
+
+capability plist/integers  an integer of either sign, and a helper to make one and read one
+  heroes  plist.from_int, plist.int_of
+  go      -
+  rust    -
+  python  plistlib.dumps
+  note    `plistlib` refuses past 2^64 - 1 and below -2^63 and so do `plutil` and this package, on reading (`does_not_fit`)
+
+capability plist/uid  a reference of a keyed archive
+  heroes  plist.Value
+  go      -
+  rust    -
+  python  plistlib.UID
+  note    the binary form has a marker for it, `0x8N`; the XML form writes the dictionary of the single key `CF$UID`, and a dictionary of that shape is read back as a UID, as Core Foundation reads it and `plistlib` does not. A dictionary with another key beside it, or a negative number under it, stays a dictionary
+
+capability plist/dates  a date as a moment
+  heroes  plist.Value
+  go      -
+  rust    -
+  python  plistlib.loads, plistlib.dumps
+  note    an XML date is read as `YYYY-MM-DDTHH:MM:SSZ` and nothing else (a fraction, an offset, a lower case `t` or `z`, white space around it are refused, as both references refuse them); a binary one is seconds from 2001-01-01 as a double, so the fraction is kept to the nanosecond. A date outside the years 1678 to 2261 fails `does_not_fit`, which both references read: `time.Instant` is nanoseconds from 1970 in an `i64`. `plistlib`'s `aware_datetime` is the one case here, every date being UTC
+
+capability plist/null  a null, which only the binary form holds
+  heroes  plist.Value
+  go      -
+  rust    -
+  python  plistlib.loads
+  note    read and written in the binary form (`<null>` in `plutil -p`); `format_xml` fails `unsupported`, as `plutil -convert xml1` refuses it
+
+capability plist/lookup  one value of a list fetched by its key, its place or a path of both
+  heroes  plist.member, plist.item, plist.value_at
+  go      -
+  rust    -
+  python  -
+  note    `plutil -extract keypath` takes keys and places separated by dots, as `value_at` does; Python indexes the dict and the list it made
+
+capability plist/dict-type  a mapping class chosen for the dictionaries read
+  heroes  refused: a dictionary is a list of entries that keeps the order it was read or built in, so no class has a choice to make
+  go      -
+  rust    -
+  python  plistlib.loads (dict_type)
+  note    a program that wants a map builds one from the entries
+
+capability plist/sort-keys  a dictionary's keys written in order
+  heroes  refused: `format_xml` and `encode_binary` write the entries in the order they stand, so a program that wants them sorted sorts them with `lists`, and the text is what it chose
+  go      -
+  rust    -
+  python  plistlib.dumps (sort_keys)
+  note    `plistlib` sorts by default and so does `plutil`; the order of a document read is kept so that a list read and written again keeps its layout
+
+capability plist/skip-keys  a key that is no string left out of a dictionary
+  heroes  refused: a key is a `str` here, so no other kind can stand in one
+  go      -
+  rust    -
+  python  plistlib.dumps (skipkeys)
+  note    `plistlib` raises `TypeError` for such a key unless asked to skip it
+
+capability plist/errors  a document that is no property list told apart from a value no form can hold
+  heroes  plist.INVALID, plist.NOT_TEXT, plist.DOES_NOT_FIT, plist.NOT_FOUND, plist.UNSUPPORTED, plist.LIMIT
+  go      -
+  rust    -
+  python  plistlib.InvalidFileException
+  note    `plistlib` answers one exception for a bad document; here the code says whether the text is not UTF-8, a number or a date past its type, a form or a version not read, or a limit reached, and the message names the line of an XML list or the byte of a binary one where it knows it
+
+capability plist/convert  a list read in one form and written in the other
+  heroes  plist.decode, plist.encode
+  go      -
+  rust    -
+  python  plistlib.loads, plistlib.dumps
+  note    `plutil -convert xml1` and `binary1`; a list read and written again keeps every value, dictionary entries in their order
+
+capability plist/json  a list crossed to JSON and back
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `plutil -convert json` refuses a date, data and a reference, which JSON has no form for; the crossing needs the same refusals and a rule for an integer past 2^53
+
+capability plist/openstep  the text form of NeXTSTEP and OpenStep, `{ key = value; }`
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `plutil` reads it (`.strings` files and old `Info.plist`s); `plistlib` does not, and the two forms of this package are the ones both read
+
+dropped
+  go      -
+  rust    -
+  python  plistlib.PlistFormat (the enumeration behind `FMT_XML` and `FMT_BINARY`: `plist.Format` is its variant), plistlib.PLISTHEADER (the XML form's first lines as a constant of the module, which `plist.format_xml` writes without a name)

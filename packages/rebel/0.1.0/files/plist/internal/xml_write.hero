@@ -1,0 +1,244 @@
+# The XML text of a property list's events, as `plutil -convert xml1` writes
+# it: the declaration and the document type, one element to a line, a tab for
+# each level a container holds, data in base 64 lines that shrink with the
+# level, a real in 17 significant digits. The containers still open wait on a
+# stack this module holds, each with how many of its objects remain, so the
+# closing tags are written where the last one is, and a list nested deep costs
+# a list and never the machine's stack. The indentation grows with the
+# nesting, so a list nested past `plist.DEFAULT_MAX_DEPTH` fails `limit` where
+# its text would be quadratic in its depth.
+
+use bytes
+use numbers
+use plist
+use plist/internal/build
+use plist/internal/event
+use strings
+use time
+use unicode
+use xml
+
+# The document's first two lines and its opening tag.
+constant HEADER: str
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n"
+
+# `n` tabs.
+function tabs(n: i64) -> str
+    return repeat("\t", to_u64(n).must())
+
+# The text of a real: `nan`, `+infinity` and `-infinity` as Apple writes them,
+# a zero as `0.0` or `-0.0`, any other number in 17 significant digits, which
+# reads back as the same number.
+function real_text(x: f64) -> str
+    if x != x
+        return "nan"
+
+    if x == 0.0
+        return numbers.format_float_shortest(x)
+
+    shown = numbers.format_float_shortest(x)
+
+    if shown == "inf"
+        return "+infinity"
+    else if shown == "-inf"
+        return "-infinity"
+    return numbers.format_float_general(x, 17)
+
+# The text of a date: the second it falls in, in UTC, `YYYY-MM-DDTHH:MM:SSZ`.
+function date_text(at: time.Instant) -> str
+    whole: i64 @= at.unix_nanoseconds / 1000000000
+
+    if at.unix_nanoseconds % 1000000000 < 0
+        whole @ whole - 1
+    seconds = time.from_unix(whole_seconds: whole, extra_nanoseconds: 0).must()
+    return time.format(seconds, .rfc3339_seconds)
+
+# The lines of base 64 that `raw` makes at nesting `depth`, each as many
+# characters as `plutil` sets: 76 less 8 for each level, at least 12, and a
+# multiple of 4.
+function data_lines(raw: [u8], depth: i64) -> [str]
+    text = bytes.format_base64(raw)
+    width: i64 @= (76 - 8 * depth) / 4 * 4
+
+    if width < 12
+        width @ 12
+
+    lines: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        last = if at + width < text.len()
+            at + width
+        else
+            text.len()
+        lines @ lines.push(tabs(depth) + text.slice(from: at, to: last))
+        at @ last
+
+    return lines
+
+# The text of the property list `events` hold. Fails `unsupported` where they
+# hold a null, `invalid` where a string holds a character XML cannot, and
+# `limit` where they nest past `plist.DEFAULT_MAX_DEPTH`.
+function document(events: [event.Event]) -> str?
+    pieces: [str] @= [HEADER]
+
+    # The containers still open, the innermost last, `top` of them: the
+    # objects each still waits for, how many it holds, and its closing tag.
+    waiting: [i64] @= []
+    total: [i64] @= []
+    closing: [str] @= []
+    top: i64 @= 0
+
+    for e in events
+        depth = top
+        indent = tabs(depth)
+        is_key = top > 0 && closing[top - 1] == "</dict>" && (total[top - 1] - waiting[top - 1]) % 2 == 0
+        complete: bool @= true
+
+        if is_key
+            pieces @ pieces.push(indent + "<key>" + xml.escape_text(e.text)? + "</key>\n")
+        else if e.kind == event.NIL_VALUE
+            return fail(
+                code: plist.UNSUPPORTED,
+                msg: "a null has no form in an XML property list; the binary form holds one"
+            )
+        else if e.kind == event.BOOLEAN
+            word = if e.flag
+                "<true/>\n"
+            else
+                "<false/>\n"
+            pieces @ pieces.push(indent + word)
+        else if e.kind == event.UNSIGNED
+            pieces @ pieces.push(indent + "<integer>" + numbers.format_u64(e.arg, 10) + "</integer>\n")
+        else if e.kind == event.NEGATIVE
+            pieces @ pieces.push(indent + "<integer>" + numbers.format_int(n: e.signed, base: 10) + "</integer>\n")
+        else if e.kind == event.REAL
+            pieces @ pieces.push(indent + "<real>" + real_text(e.number) + "</real>\n")
+        else if e.kind == event.TEXT
+            pieces @ pieces.push(indent + "<string>" + xml.escape_text(e.text)? + "</string>\n")
+        else if e.kind == event.DATE
+            pieces @ pieces.push(indent + "<date>" + date_text(e.date) + "</date>\n")
+        else if e.kind == event.DATA
+            pieces @ pieces.push(indent + "<data>\n")
+
+            for line in data_lines(raw: e.data, depth: depth)
+                pieces @ pieces.push(line + "\n")
+
+            pieces @ pieces.push(indent + "</data>\n")
+        else if e.kind == event.UID
+            inner = tabs(depth + 1)
+            pieces @ pieces.push(indent + "<dict>\n")
+            pieces @ pieces.push(inner + "<key>CF$UID</key>\n")
+            pieces @ pieces.push(inner + "<integer>" + numbers.format_u64(e.arg, 10) + "</integer>\n")
+            pieces @ pieces.push(indent + "</dict>\n")
+        else
+            name = if e.kind == event.DICT
+                "dict"
+            else
+                "array"
+            count = event.children_of(e)
+
+            if count == 0
+                pieces @ pieces.push(indent + "<" + name + "/>\n")
+            else
+                if top + 1 > plist.DEFAULT_MAX_DEPTH
+                    return fail(
+                        code: plist.LIMIT,
+                        msg: f"nested deeper than {plist.DEFAULT_MAX_DEPTH}, past which an indented text grows with the square of the depth"
+                    )
+
+                pieces @ pieces.push(indent + "<" + name + ">\n")
+
+                if top == waiting.len()
+                    waiting @ waiting.push(count)
+                    total @ total.push(count)
+                    closing @ closing.push("</" + name + ">")
+                else
+                    waiting[top] @ count
+                    total[top] @ count
+                    closing[top] @ "</" + name + ">"
+                top @ top + 1
+                complete @ false
+
+        if complete && top > 0
+            waiting[top - 1] @ waiting[top - 1] - 1
+
+            while top > 0 && waiting[top - 1] == 0
+                top @ top - 1
+                pieces @ pieces.push(tabs(top) + closing[top] + "\n")
+
+                if top > 0
+                    waiting[top - 1] @ waiting[top - 1] - 1
+
+    pieces @ pieces.push("</plist>\n")
+    return ok(pieces.join(""))
+
+# 148 bytes, in base 64.
+function long_data() -> [u8]
+    return bytes.parse_base64(
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiotsbW5vcHFycw=="
+    ).must()
+
+# A value of `levels` arrays and data inside.
+function nested_data(levels: i64) -> plist.Value
+    v: plist.Value @= .data(v: long_data())
+
+    for _ in range(from: 0, to: levels)
+        v @ .list(items: [v])
+
+    return v
+
+test "document: data lines shrink with the level as plutil wraps them: at the top, three deep and eight deep"
+    assert document(build.events_of(nested_data(0))).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<data>\nAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4\nOTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3Bx\ncnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiotsbW5vcHFycw==\n</data>\n</plist>\n"
+    assert document(build.events_of(nested_data(3))).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<array>\n\t<array>\n\t\t<array>\n\t\t\t<data>\n\t\t\tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUm\n\t\t\tJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xN\n\t\t\tTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0\n\t\t\tdXZ3eHl6e3x9fn+AgYKDhIWGh4iJiotsbW5vcHFycw==\n\t\t\t</data>\n\t\t</array>\n\t</array>\n</array>\n</plist>\n"
+    assert document(build.events_of(nested_data(8))).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<array>\n\t<array>\n\t\t<array>\n\t\t\t<array>\n\t\t\t\t<array>\n\t\t\t\t\t<array>\n\t\t\t\t\t\t<array>\n\t\t\t\t\t\t\t<array>\n\t\t\t\t\t\t\t\t<data>\n\t\t\t\t\t\t\t\tAAECAwQFBgcI\n\t\t\t\t\t\t\t\tCQoLDA0ODxAR\n\t\t\t\t\t\t\t\tEhMUFRYXGBka\n\t\t\t\t\t\t\t\tGxwdHh8gISIj\n\t\t\t\t\t\t\t\tJCUmJygpKiss\n\t\t\t\t\t\t\t\tLS4vMDEyMzQ1\n\t\t\t\t\t\t\t\tNjc4OTo7PD0+\n\t\t\t\t\t\t\t\tP0BBQkNERUZH\n\t\t\t\t\t\t\t\tSElKS0xNTk9Q\n\t\t\t\t\t\t\t\tUVJTVFVWV1hZ\n\t\t\t\t\t\t\t\tWltcXV5fYGFi\n\t\t\t\t\t\t\t\tY2RlZmdoaWpr\n\t\t\t\t\t\t\t\tbG1ub3BxcnN0\n\t\t\t\t\t\t\t\tdXZ3eHl6e3x9\n\t\t\t\t\t\t\t\tfn+AgYKDhIWG\n\t\t\t\t\t\t\t\th4iJiotsbW5v\n\t\t\t\t\t\t\t\tcHFycw==\n\t\t\t\t\t\t\t\t</data>\n\t\t\t\t\t\t\t</array>\n\t\t\t\t\t\t</array>\n\t\t\t\t\t</array>\n\t\t\t\t</array>\n\t\t\t</array>\n\t\t</array>\n\t</array>\n</array>\n</plist>\n"
+
+test "document: a real as Apple writes it, nan and the infinities, both zeros, and 17 digits"
+    cases = [
+        ["0.1", "0.10000000000000001"]
+        ["100000", "100000"]
+        ["1e22", "1e+22"]
+        ["1.5e-7", "1.4999999999999999e-07"]
+        ["-2.5", "-2.5"]
+        ["5e-324", "4.9406564584124654e-324"]
+        ["1e16", "10000000000000000"]
+        ["12345678901234567890", "1.2345678901234567e+19"]
+        ["nan", "nan"]
+        ["inf", "+infinity"]
+        ["-inf", "-infinity"]
+        ["0", "0.0"]
+        ["-0.0", "-0.0"]
+    ]
+
+    for pair in cases
+        text = document([event.of_real(numbers.parse_float(pair[0]).must())]).must()
+        assert strings.contains(s: text, substr: "<real>" + pair[1] + "</real>\n")
+
+test "document: escaping, a carriage return as a reference, a character XML cannot hold, and a null"
+    text = document([event.of_text("<&> \"q\" 'a' \ttab\nnl \rcr")]).must()
+    assert strings.contains(s: text, substr: "<string>&lt;&amp;&gt; \"q\" 'a' \ttab\nnl &#13;cr</string>")
+
+    for bad in [event.of_text("a" + unicode.from_code_point(1).must() + "b"), event.of_kind(kind: event.NIL_VALUE, arg: 0)]
+        match document([bad])
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" || e.code == "unsupported"
+
+test "document: a reference as the dictionary a keyed archive writes, empty containers, and a nesting too deep"
+    uid = document([event.of_kind(kind: event.UID, arg: 5)]).must()
+    assert strings.contains(s: uid, substr: "<dict>\n\t<key>CF$UID</key>\n\t<integer>5</integer>\n</dict>\n")
+    both = [
+        event.of_kind(kind: event.LIST, arg: 2)
+        event.of_kind(kind: event.LIST, arg: 0)
+        event.of_kind(kind: event.DICT, arg: 0)
+    ]
+    assert strings.contains(s: document(both).must(), substr: "<array>\n\t<array/>\n\t<dict/>\n</array>\n")
+
+    deep = build.events_of(nested_data(600))
+
+    match document(deep)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match document(build.events_of(nested_data(512)))
+        .ok _  => assert true
+        .err _ => assert false

@@ -1,0 +1,514 @@
+# The events of an XML property list: the document `xml` read, walked once by
+# a stack of the elements still open, so a list nested a million deep costs a
+# list of a million entries and never the machine's stack, and the nesting a
+# caller allows is a number it sets. The scalars are read as the Property List
+# Document Type Definition and Apple's own reader read them: integers in
+# decimal or `0x` hexadecimal, reals with `nan` and the infinities, dates as
+# `YYYY-MM-DDTHH:MM:SSZ`, data in base 64 with white space anywhere.
+
+use bytes
+use numbers
+use plist
+use plist/internal/event
+use time
+use xml
+
+# The code of a document that is no property list.
+constant INVALID: str
+    "invalid"
+
+# The kind of the frame that holds the one value of `<plist>`.
+constant ROOT: i64
+    0
+
+# The kind of the frame of an `<array>`.
+constant ARRAY: i64
+    1
+
+# The kind of the frame of a `<dict>`.
+constant DICT: i64
+    2
+
+# The events of the property list `doc` holds. Fails `invalid` where its root
+# is not `<plist>` holding one value, where an element stands that the type
+# definition has none for, where a scalar is not spelt as its element asks,
+# where a dictionary has a key with no value; `limit` where the nesting passes
+# `max_depth` or the values `max_items`; `does_not_fit` for a date or an
+# integer outside its type.
+function events(doc: xml.Document, max_depth: i64, max_items: i64) -> [event.Event]?
+    root = doc.root
+
+    if root.name.local != "plist" || root.name.space != ""
+        return fail(
+            code: INVALID,
+            msg: f"the root element is <{xml.format_name(root.name)}>, a property list's is <plist>"
+        )
+
+    match xml.attribute(root, name: "version")
+        .ok v =>
+            if v != "1.0"
+                return fail(code: plist.UNSUPPORTED, msg: f"<plist version=\"{v}\">: only version 1.0 is read")
+        .err _ => _ = 0
+
+    out: [event.Event] @= []
+
+    # The frame being read: its children, the next to look at, its kind, the
+    # objects it holds so far and where its own event stands in `out`.
+    nodes: [xml.Node] @= root.children
+    pos: i64 @= 0
+    kind: i64 @= ROOT
+    count: i64 @= 0
+    at: i64 @= -1
+
+    # The frames that hold it, the nearest last; `saved` of them.
+    s_nodes: [[xml.Node]] @= []
+    s_pos: [i64] @= []
+    s_kind: [i64] @= []
+    s_count: [i64] @= []
+    s_at: [i64] @= []
+    saved: i64 @= 0
+
+    finished: bool @= false
+
+    while !finished
+        if pos >= nodes.len()
+            if kind == DICT && count % 2 != 0
+                return fail(code: INVALID, msg: "a <dict> holds a <key> with no value after it")
+
+            if kind == ROOT
+                if count != 1
+                    return fail(code: INVALID, msg: f"<plist> holds {count} values, where one is wanted")
+                finished @ true
+            else
+                members = if kind == DICT
+                    count / 2
+                else
+                    count
+                out[at] @ event.counted(e: out[at], count: members)
+                saved @ saved - 1
+                nodes @ s_nodes[saved]
+                pos @ s_pos[saved]
+                kind @ s_kind[saved]
+                count @ s_count[saved] + 1
+                at @ s_at[saved]
+        else
+            node = nodes[pos]
+            pos @ pos + 1
+
+            match node
+                .text t =>
+                    if !is_blank(t.v)
+                        return fail(
+                            code: INVALID,
+                            msg: f"text \"{shown(t.v)}\" stands between elements, where only white space may"
+                        )
+                .comment _     => _ = 0
+                .instruction _ => _ = 0
+                .element held =>
+                    el = held.v
+                    name = el.name.local
+
+                    if el.name.space != ""
+                        return fail(
+                            code: INVALID,
+                            msg: f"<{xml.format_name(el.name)}> is in a namespace; a property list names none"
+                        )
+
+                    if kind == DICT && count % 2 == 0
+                        if name != "key"
+                            return fail(code: INVALID, msg: f"<{name}> stands where a <key> is wanted")
+                        out @ out.push(event.of_text(plain_text(el)?))
+                        count @ count + 1
+                    else if name == "key"
+                        return fail(code: INVALID, msg: "a <key> stands where a value is wanted")
+                    else if name == "array" || name == "dict"
+                        if saved + 1 > max_depth
+                            return fail(
+                                code: plist.LIMIT,
+                                msg: f"nested deeper than {max_depth}, the most this reading allows"
+                            )
+
+                        is_uid: bool @= false
+                        as_uid: u64 @= 0
+
+                        if name == "dict"
+                            match uid_of(el)
+                                .ok n =>
+                                    is_uid @ true
+                                    as_uid @ n
+                                .err _ => _ = 0
+
+                        if is_uid
+                            out @ out.push(event.of_kind(kind: event.UID, arg: as_uid))
+                            count @ count + 1
+                        else
+                            s_nodes @ push_at(list: s_nodes, at: saved, item: nodes)
+                            s_pos @ push_at(list: s_pos, at: saved, item: pos)
+                            s_kind @ push_at(list: s_kind, at: saved, item: kind)
+                            s_count @ push_at(list: s_count, at: saved, item: count)
+                            s_at @ push_at(list: s_at, at: saved, item: at)
+                            saved @ saved + 1
+                            at @ out.len()
+                            nodes @ el.children
+                            pos @ 0
+                            count @ 0
+
+                            if name == "dict"
+                                kind @ DICT
+                                out @ out.push(event.of_kind(kind: event.DICT, arg: 0))
+                            else
+                                kind @ ARRAY
+                                out @ out.push(event.of_kind(kind: event.LIST, arg: 0))
+                    else
+                        out @ out.push(scalar(el)?)
+                        count @ count + 1
+
+                    if out.len() > max_items
+                        return fail(
+                            code: plist.LIMIT,
+                            msg: f"more than {max_items} values, the most this reading allows"
+                        )
+
+    return ok(out)
+
+# `list` with `item` at place `at`: a push where the list stands at its end,
+# a replacement where an earlier frame left the place free. A stack kept this
+# way never shrinks, so a frame's place is overwritten and not reallocated.
+function push_at<T>(list: [T], at: i64, item: T) -> [T]
+    held: [T] @= list
+
+    if at == held.len()
+        return held.push(item)
+    held[at] @ item
+    return held
+
+# Whether `s` is white space alone, as XML counts it: the empty text too.
+function is_blank(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        b = s[at]
+
+        if b != 32 && b != 9 && b != 10 && b != 13
+            return false
+
+    return true
+
+# `s` cut for a message: its first 24 bytes at most, on a character's edge.
+function shown(s: str) -> str
+    if s.len() <= 24
+        return s
+
+    cut: i64 @= 24
+
+    while cut > 0 && to_i64(s[cut]).must() & 0xc0 == 0x80
+        cut @ cut - 1
+
+    return s.slice(from: 0, to: cut) + "..."
+
+# The text an element holds, which may hold nothing but text, its comments and
+# instructions left out. Fails `invalid` where an element stands inside it.
+function plain_text(el: xml.Element) -> str?
+    parts: [str] @= []
+
+    for node in el.children
+        match node
+            .text t        => parts @ parts.push(t.v)
+            .comment _     => _ = 0
+            .instruction _ => _ = 0
+            .element inner =>
+                return fail(
+                    code: INVALID,
+                    msg: f"<{el.name.local}> holds an element, <{inner.v.name.local}>, where only text may stand"
+                )
+
+    return ok(parts.join(""))
+
+# The reference `el`, a `<dict>`, writes as a keyed archive does: the one key
+# `CF$UID` and an integer under it. Fails `invalid` where `el` is anything else.
+function uid_of(el: xml.Element) -> u64?
+    seen: [xml.Element] @= []
+
+    for node in el.children
+        match node
+            .text t =>
+                if !is_blank(t.v)
+                    return fail(code: INVALID, msg: "text in a <dict>")
+            .comment _     => _ = 0
+            .instruction _ => _ = 0
+            .element inner => seen @ seen.push(inner.v)
+
+    if seen.len() != 2 || seen[0].name.local != "key" || seen[1].name.local != "integer"
+        return fail(code: INVALID, msg: "not a reference")
+
+    if plain_text(seen[0])? != "CF$UID"
+        return fail(code: INVALID, msg: "not a reference")
+
+    got = integer_of(plain_text(seen[1])?)?
+
+    if got.kind != event.UNSIGNED
+        return fail(code: INVALID, msg: "not a reference")
+    return ok(got.arg)
+
+# The event of the scalar element `el`. Fails `invalid` for an element that is
+# no scalar of the type definition or whose text is not spelt as it asks.
+function scalar(el: xml.Element) -> event.Event?
+    name = el.name.local
+
+    if name == "string"
+        return ok(event.of_text(plain_text(el)?))
+    else if name == "integer"
+        return integer_of(plain_text(el)?)
+    else if name == "real"
+        return real_of(plain_text(el)?)
+    else if name == "true" || name == "false"
+        if !is_blank(plain_text(el)?)
+            return fail(code: INVALID, msg: f"<{name}> holds text, where it is empty")
+        return ok(event.of_boolean(name == "true"))
+    else if name == "date"
+        return date_of(plain_text(el)?)
+    else if name == "data"
+        return data_of(plain_text(el)?)
+    return fail(code: INVALID, msg: f"<{name}> is no element of a property list")
+
+# The white space around `s` taken off.
+function trimmed(s: str) -> str
+    first: i64 @= 0
+    last: i64 @= s.len()
+
+    while first < last && (s[first] == 32 || s[first] == 9 || s[first] == 10 || s[first] == 13)
+        first @ first + 1
+
+    while last > first && (s[last - 1] == 32 || s[last - 1] == 9 || s[last - 1] == 10 || s[last - 1] == 13)
+        last @ last - 1
+
+    return s.slice(from: first, to: last)
+
+# The integer `s` spells: an optional sign, then decimal digits or `0x` and
+# hexadecimal ones. Fails `invalid` for any other spelling and `does_not_fit`
+# past -2^63 to 2^64 - 1.
+function integer_of(s: str) -> event.Event?
+    t = trimmed(s)
+    negative = t.len() > 0 && t[0] == 45
+
+    body = if t.len() > 0 && (t[0] == 45 || t[0] == 43)
+        t.slice(from: 1, to: t.len())
+    else
+        t
+
+    hex = body.len() > 2 && body[0] == 48 && (body[1] == 120 || body[1] == 88)
+
+    if negative
+        magnitude = if hex
+            numbers.parse_u64_base(body.slice(from: 2, to: body.len()), 16)
+        else
+            numbers.parse_u64(body)
+
+        match magnitude
+            .err e => return fail(code: e.code, msg: f"<integer>{shown(s)}</integer>: {e.msg}")
+            .ok m =>
+                if m > 9223372036854775808
+                    return fail(code: plist.DOES_NOT_FIT, msg: f"<integer>{shown(s)}</integer> is below -2^63")
+
+                if m == 0
+                    return ok(event.of_kind(kind: event.UNSIGNED, arg: 0))
+                return ok(event.of_negative(to_i64(m - 1).must() * -1 - 1))
+
+    value = if hex
+        numbers.parse_u64_base(body.slice(from: 2, to: body.len()), 16)
+    else
+        numbers.parse_u64(body)
+
+    match value
+        .err e => return fail(code: e.code, msg: f"<integer>{shown(s)}</integer>: {e.msg}")
+        .ok n  => return ok(event.of_kind(kind: event.UNSIGNED, arg: n))
+
+# The real `s` spells, as `numbers.parse_float` reads it: `nan`, `inf`,
+# `infinity` and a sign before them too. Fails `invalid` otherwise.
+function real_of(s: str) -> event.Event?
+    match numbers.parse_float(trimmed(s))
+        .ok x  => return ok(event.of_real(x))
+        .err e => return fail(code: INVALID, msg: f"<real>{shown(s)}</real>: {e.msg}")
+
+# The date `s` spells, `YYYY-MM-DDTHH:MM:SSZ` and nothing else. Fails `invalid`
+# for any other spelling and `does_not_fit` outside the years `time` holds.
+function date_of(s: str) -> event.Event?
+    t = s
+    shape = "dddd-dd-ddTdd:dd:ddZ"
+
+    ok_shape: bool @= t.len() == shape.len()
+
+    if ok_shape
+        for k in range(from: 0, to: t.len())
+            want = shape[k]
+            got = t[k]
+
+            if want == 100
+                if got < 48 || got > 57
+                    ok_shape @ false
+            else if got != want
+                ok_shape @ false
+
+    if !ok_shape
+        return fail(code: INVALID, msg: f"<date>{shown(s)}</date> is not YYYY-MM-DDTHH:MM:SSZ")
+
+    match time.parse(t, .rfc3339_seconds)
+        .ok at => return ok(event.of_date(at))
+        .err e => return fail(code: e.code, msg: f"<date>{shown(s)}</date>: {e.msg}")
+
+# The bytes `s` holds in base 64, white space anywhere skipped. Fails `invalid`
+# where it is not base 64.
+function data_of(s: str) -> event.Event?
+    kept: [u8] @= []
+
+    for k in range(from: 0, to: s.len())
+        b = s[k]
+
+        if b != 32 && b != 9 && b != 10 && b != 13
+            kept @ kept.push(b)
+
+    match bytes.to_text(kept)
+        .err _ => return fail(code: INVALID, msg: "<data> is not base 64")
+        .ok joined =>
+            match bytes.parse_base64(joined)
+                .ok raw => return ok(event.of_data(raw))
+                .err e  => return fail(code: INVALID, msg: f"<data>: {e.msg}")
+
+# A property list holding `body` as its one value.
+function wrapped(body: str) -> str
+    return "<plist version=\"1.0\">" + body + "</plist>"
+
+# The value of a property list holding `body`.
+function read(body: str) -> plist.Value?
+    return plist.parse_xml(wrapped(body))
+
+# Whether reading `body` fails with `code`.
+function fails_with(body: str, code: str) -> bool
+    match read(body)
+        .ok _  => return false
+        .err e => return e.code == code
+
+test "integer_of: decimal, a sign, zeros before, hexadecimal, and both ends of the range, as plutil and plistlib read them"
+    assert read("<integer>5</integer>").must() == .unsigned(v: 5)
+    assert read("<integer>+5</integer>").must() == .unsigned(v: 5)
+    assert read("<integer>007</integer>").must() == .unsigned(v: 7)
+    assert read("<integer>-0</integer>").must() == .unsigned(v: 0)
+    assert read("<integer>-1</integer>").must() == .negative(v: -1)
+    assert read("<integer>0x10</integer>").must() == .unsigned(v: 16)
+    assert read("<integer>0xFFFFFFFFFFFFFFFF</integer>").must() == .unsigned(v: 18446744073709551615)
+    assert read("<integer>18446744073709551615</integer>").must() == .unsigned(v: 18446744073709551615)
+    assert read("<integer>-9223372036854775808</integer>").must() == .negative(v: -9223372036854775808)
+
+test "integer_of: past 2^64 - 1 and below -2^63 as plutil's overflow and underflow, and spellings neither reads"
+    assert fails_with(body: "<integer>18446744073709551616</integer>", code: "does_not_fit")
+    assert fails_with(body: "<integer>-9223372036854775809</integer>", code: "does_not_fit")
+
+    for body in ["<integer></integer>", "<integer>abc</integer>", "<integer>1_0</integer>", "<integer>0x</integer>", "<integer>1e3</integer>"]
+        assert fails_with(body: body, code: "invalid")
+
+test "real_of: a point at either end, an exponent, nan and the infinities in the spellings both references read"
+    assert read("<real>.5</real>").must() == .real(v: 0.5)
+    assert read("<real>5.</real>").must() == .real(v: 5.0)
+    assert read("<real>1e5</real>").must() == .real(v: 100000.0)
+    assert read("<real>1e999</real>").must() == .real(v: numbers.parse_float("inf").must())
+    assert read("<real>-inf</real>").must() == .real(v: numbers.parse_float("-inf").must())
+    assert read("<real>+infinity</real>").must() == .real(v: numbers.parse_float("inf").must())
+    assert read("<real>Infinity</real>").must() == .real(v: numbers.parse_float("inf").must())
+
+    for body in ["<real>nan</real>", "<real>NaN</real>"]
+        match read(body).must()
+            .real r       => assert r.v != r.v
+            .nil_value    => assert false
+            .boolean _    => assert false
+            .unsigned _   => assert false
+            .negative _   => assert false
+            .text _       => assert false
+            .date _       => assert false
+            .data _       => assert false
+            .uid _        => assert false
+            .list _       => assert false
+            .dictionary _ => assert false
+
+    for body in ["<real></real>", "<real>abc</real>", "<real>1 2</real>"]
+        assert fails_with(body: body, code: "invalid")
+
+test "date_of: a date in UTC to the second, the epoch, and the spellings both references refuse"
+    assert read("<date>2001-01-01T00:00:00Z</date>").must() == .date(v: time.from_unix(whole_seconds: 978307200, extra_nanoseconds: 0).must())
+    assert read("<date>1970-01-01T00:00:00Z</date>").must() == .date(v: time.epoch())
+    assert fails_with(body: "<date>0001-01-01T00:00:00Z</date>", code: "does_not_fit")
+    assert fails_with(body: "<date>9999-12-31T23:59:59Z</date>", code: "does_not_fit")
+
+    for body in ["<date>2001-01-01T00:00:00+01:00</date>", "<date>2001-01-01</date>", "<date>2001-01-01t00:00:00z</date>", "<date> 2001-01-01T00:00:00Z </date>", "<date>2001-13-01T00:00:00Z</date>", "<date>2001-02-30T00:00:00Z</date>", "<date>2001-01-01T00:00:00.5Z</date>"]
+        assert fails_with(body: body, code: "invalid")
+
+test "data_of: base 64 with white space anywhere, empty, padded, and what plistlib refuses"
+    assert read("<data></data>").must() == .data(v: [])
+    assert read("<data>AQ==</data>").must() == .data(v: [1])
+    assert read("<data>AQ ID</data>").must() == .data(v: [1, 2, 3])
+    assert read("<data>AQID\n AQID</data>").must() == .data(v: [1, 2, 3, 1, 2, 3])
+
+    for body in ["<data>AQI</data>", "<data>AQ=</data>", "<data>A!ID</data>"]
+        assert fails_with(body: body, code: "invalid")
+
+test "scalar: booleans, strings with references and CDATA, and the elements plutil refuses"
+    assert read("<true/>").must() == .boolean(v: true)
+    assert read("<true></true>").must() == .boolean(v: true)
+    assert read("<false/>").must() == .boolean(v: false)
+    assert read("<string/>").must() == .text(v: "")
+    assert read("<string>a<![CDATA[<b>]]></string>").must() == .text(v: "a<b>")
+    assert read("<string>&#x41;&amp;&lt;</string>").must() == .text(v: "A&<")
+    assert read("<string>a<!-- c -->b</string>").must() == .text(v: "ab")
+    assert read("<array> </array>").must() == .list(items: [])
+
+    for body in ["<true>x</true>", "<string>a<b/>c</string>", "<foo/>", "<array>x</array>", "<array><key>a</key></array>", "<dict><key>a</key></dict>", "<dict><string>a</string></dict>", "<dict><key>a</key><key>b</key><true/></dict>", "<dict><key><string>x</string></key><true/></dict>", "<string>&foo;</string>", "<integer>1</integer><integer>2</integer>", ""]
+        assert fails_with(body: body, code: "invalid")
+
+test "uid_of: the dictionary a keyed archive writes for a reference, and the dictionaries that are only alike"
+    assert read("<dict><key>CF$UID</key><integer>5</integer></dict>").must() == .uid(v: 5)
+    assert plist.value_at(root: read("<array><dict><key>CF$UID</key><integer>9</integer></dict></array>").must(), path: "0").must() == .uid(v: 9)
+
+    two = read("<dict><key>CF$UID</key><integer>5</integer><key>x</key><true/></dict>").must()
+    assert plist.member(dict: two, key: "x").must() == .boolean(v: true)
+
+    negative = read("<dict><key>CF$UID</key><integer>-5</integer></dict>").must()
+    assert plist.member(dict: negative, key: "CF$UID").must() == .negative(v: -5)
+
+test "events: the root must be plist, one value in it, version 1.0, no namespace"
+    assert fails_with(body: "", code: "invalid")
+
+    for text in ["<dict/>", "<plist xmlns=\"urn:x\"><true/></plist>"]
+        match plist.parse_xml(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match plist.parse_xml("<plist version=\"1.1\"><true/></plist>")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert plist.parse_xml("<plist><true/></plist>").must() == .boolean(v: true)
+    assert plist.parse_xml("<?xml version=\"1.0\"?><!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><!-- c --><plist version=\"1.0\"><true/></plist>").must() == .boolean(v: true)
+
+test "events: the nesting and the count of values a caller allows, at the edge and past it"
+    five = "<array><array><array><array><array/></array></array></array></array>"
+    tight = plist.DecodeOptions(max_depth: 5, max_items: 100, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: bytes.from_text(wrapped(five)), options: tight)
+        .ok _  => assert true
+        .err _ => assert false
+
+    one_less = plist.DecodeOptions(max_depth: 4, max_items: 100, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: bytes.from_text(wrapped(five)), options: one_less)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    many = wrapped("<array>" + repeat("<true/>", 20) + "</array>")
+    few = plist.DecodeOptions(max_depth: 5, max_items: 20, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: bytes.from_text(many), options: few)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    enough = plist.DecodeOptions(max_depth: 5, max_items: 21, max_bytes: 1000, duplicate_keys: false)
+
+    match plist.decode_with(data: bytes.from_text(many), options: enough)
+        .ok _  => assert true
+        .err _ => assert false

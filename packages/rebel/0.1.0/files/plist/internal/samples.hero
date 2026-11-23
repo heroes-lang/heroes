@@ -1,0 +1,143 @@
+# Property lists that Apple's `plutil` wrote or read, kept as the expected
+# values of the package's tests: each document below was made from the same
+# list by `plutil -convert xml1` and `plutil -convert binary1` on macOS (run
+# 2026-11-23), and the values written under it are what `plutil -p` and
+# Python 3.15.2's `plistlib` read from it. Nothing here is code under test.
+
+use bytes
+use numbers
+use plist
+use time
+
+# The XML text `plutil -convert xml1` writes for every scalar: integers from -2^63 to 2^64 - 1 in each width, a real, booleans, a date, data and three strings, two of them in UTF-16.
+function big_xml() -> str
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<array>\n\t<integer>18446744073709551615</integer>\n\t<integer>9223372036854775808</integer>\n\t<integer>-9223372036854775808</integer>\n\t<integer>0</integer>\n\t<integer>255</integer>\n\t<integer>256</integer>\n\t<integer>65536</integer>\n\t<integer>4294967296</integer>\n\t<real>1.5</real>\n\t<real>0.0</real>\n\t<true/>\n\t<false/>\n\t<date>2001-01-01T00:00:00Z</date>\n\t<data>\n\tAQID\n\t</data>\n\t<string>héllo</string>\n\t<string>日本</string>\n\t<string>😀</string>\n</array>\n</plist>\n"
+
+# The bytes `plutil -convert binary1` writes for the same list.
+function big_binary() -> [u8]
+    text = ["62706c6973743030af10110102030405060708090a0b0c0d0e0f101114000000", "0000000000ffffffffffffffff14000000000000000080000000000000001380", "00000000000000100010ff1101001200010000130000000100000000233ff800", "0000000000230000000000000000090833000000000000000043010203650068", "00e9006c006c006f6265e5672c62d83dde00081c2d3e47494b4e535c656e6f70", "797d888d00000000000001010000000000000012000000000000000000000000", "00000092"].join(
+        ""
+    )
+    return bytes.parse_hex(text).must()
+
+# The XML text `plutil -convert xml1` writes for a dictionary of empty containers, nested ones, long data, reals in 17 digits, an escaped string and a string with white space at its ends.
+function p2b_xml() -> str
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\t<key>a b</key>\n\t<string> lead and trail </string>\n\t<key>e1</key>\n\t<array/>\n\t<key>e2</key>\n\t<dict/>\n\t<key>e3</key>\n\t<data>\n\t</data>\n\t<key>e4</key>\n\t<string></string>\n\t<key>esc</key>\n\t<string>&lt;&amp;&gt; \"q\" 'a' \ttab\nnl cr é</string>\n\t<key>long</key>\n\t<data>\n\tAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEy\n\tMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2Rl\n\tZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiotsbW5vcHFycw==\n\t</data>\n\t<key>nested</key>\n\t<array>\n\t\t<array/>\n\t\t<dict>\n\t\t\t<key>k</key>\n\t\t\t<array>\n\t\t\t\t<integer>1</integer>\n\t\t\t</array>\n\t\t</dict>\n\t</array>\n\t<key>reals</key>\n\t<array>\n\t\t<real>0.10000000000000001</real>\n\t\t<real>100000</real>\n\t\t<real>1e+22</real>\n\t\t<real>1.4999999999999999e-07</real>\n\t\t<real>123456789.125</real>\n\t\t<real>3.14159265358979</real>\n\t\t<real>1e+100</real>\n\t\t<real>-2.5</real>\n\t\t<real>4.9406564584124654e-324</real>\n\t\t<real>1.7976931348623157e+308</real>\n\t\t<real>0.30000000000000004</real>\n\t\t<real>1e+21</real>\n\t\t<real>1.2345678901234568e+17</real>\n\t</array>\n</dict>\n</plist>\n"
+
+# The bytes `plutil -convert binary1` writes for the same list.
+function p2b_binary() -> [u8]
+    text = ["62706c6973743030d90102030405060708090a10110b1314151624566e657374", "65645265335365736352653152653452653253612062557265616c73546c6f6e", "67a20b0ca0d10d0e516ba10f1001406f1018003c0026003e0020002200710022", "002000270061002700200009007400610062000a006e006c0020006300720020", "00e9a050d05f1010206c65616420616e6420747261696c20ad1718191a1b1c1d", "1e1f20212223233fb999999999999a2340f86a0000000000234480f0cf064dd5", "92233e8421f5f40d837623419d6f345480000023400921fb54442d112354b249", "ad2594c37d23c004000000000000230000000000000001237fefffffffffffff", "233fd333333333333423444b1ae4d6e2ef5023437b69b4ba630f354f10940001", "02030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021", "22232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041", "42434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f6061", "62636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081", "82838485868788898a8b6c6d6e6f707172730008001b002200250029002c002f", "00320036003c0041004400450048004a004c004e004f00820083008400850098", "00a600af00b800c100ca00d300dc00e500ee00f7010001090112011b00000000", "000002010000000000000025000000000000000000000000000001b2"].join(
+        ""
+    )
+    return bytes.parse_hex(text).must()
+
+# The bytes this package writes for the list above, which `plutil -lint` accepts, `plutil -p` and `plistlib` read as the list `plutil` wrote.
+function big_ours() -> [u8]
+    text = ["62706c697374303062d83dde006265e5672c65006800e9006c006c006f430102", "033300000000000000000809230000000000000000233ff80000000000001300", "00000100000000120001000011010010ff100013800000000000000014000000", "00000000008000000000000000140000000000000000ffffffffffffffffaf10", "11100f0e0d0c0b0a09080706050403020100080d121d212a2b2c353e474c4f51", "535c6d7e00000000000001010000000000000012000000000000001100000000", "00000092"].join(
+        ""
+    )
+    return bytes.parse_hex(text).must()
+
+# The bytes this package writes for the second list, which `plutil -lint` accepts, `plutil -p` and `plistlib` read as the list `plutil` wrote.
+function p2b_ours() -> [u8]
+    text = ["62706c697374303023437b69b4ba630f3523444b1ae4d6e2ef50233fd3333333", "333334237fefffffffffffff23000000000000000123c0040000000000002354", "b249ad2594c37d23400921fb54442d1123419d6f3454800000233e8421f5f40d", "8376234480f0cf064dd5922340f86a0000000000233fb999999999999aad0c0b", "0a09080706050403020100557265616c731001a10f516bd11110a0a21312566e", "65737465644f1094000102030405060708090a0b0c0d0e0f1011121314151617", "18191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637", "38393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354555657", "58595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f7071727374757677", "78797a7b7c7d7e7f808182838485868788898a8b6c6d6e6f70717273546c6f6e", "676f1018003c0026003e00200022007100220020002700610027002000090074", "00610062000a006e006c002000630072002000e9536573635052653440526533", "d0526532a05265315f1010206c65616420616e6420747261696c2053612062d9", "23211f1d1b1917150e22201e1c1a1816140d00080011001a0023002c0035003e", "0047005000590062006b0074007d008b0091009300950097009a009b009e00a5", "013c0141017401780179017c017d01800181018401850188019b019f00000000", "000002010000000000000025000000000000002400000000000001b2"].join(
+        ""
+    )
+    return bytes.parse_hex(text).must()
+
+# What `plutil -p` and `plistlib` read from the first list.
+function big_value() -> plist.Value
+    return .list(
+        items: [.unsigned(v: 18446744073709551615), .unsigned(v: 9223372036854775808), .negative(v: -9223372036854775808), .unsigned(v: 0), .unsigned(v: 255), .unsigned(v: 256), .unsigned(v: 65536), .unsigned(v: 4294967296), .real(v: 1.5), .real(v: 0.0), .boolean(v: true), .boolean(v: false), .date(v: time.from_unix(whole_seconds: 978307200, extra_nanoseconds: 0).must()), .data(v: [1, 2, 3]), .text(v: "héllo"), .text(v: "日本"), .text(v: "😀")]
+    )
+
+# The reals of the second list, as `plutil` spells them: each read back by
+# `numbers.parse_float`, which is correctly rounded.
+function p2b_reals() -> [plist.Value]
+    spelt = [
+        "0.1"
+        "100000"
+        "1e22"
+        "1.5e-7"
+        "123456789.125"
+        "3.14159265358979"
+        "1e100"
+        "-2.5"
+        "5e-324"
+        "1.7976931348623157e308"
+        "0.30000000000000004"
+        "1e21"
+        "123456789012345678"
+    ]
+    made: [plist.Value] @= []
+
+    for word in spelt
+        made @ made.push(.real(v: numbers.parse_float(word).must()))
+
+    return made
+
+# What `plutil -p` reads from the second list: 148 bytes of data that count up
+# to 111 and then are the bytes of `lmnopqrs`.
+function p2b_value() -> plist.Value
+    raw = bytes.parse_base64(
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiotsbW5vcHFycw=="
+    ).must()
+    return .dictionary(
+        entries: [plist.Entry(key: "a b", value: .text(v: " lead and trail ")), plist.Entry(key: "e1", value: .list(items: [])), plist.Entry(key: "e2", value: .dictionary(entries: [])), plist.Entry(key: "e3", value: .data(v: [])), plist.Entry(key: "e4", value: .text(v: "")), plist.Entry(key: "esc", value: .text(v: "<&> \"q\" 'a' \ttab\nnl cr é")), plist.Entry(key: "long", value: .data(v: raw)), plist.Entry(key: "nested", value: .list(items: [.list(items: []), .dictionary(entries: [plist.Entry(key: "k", value: .list(items: [.unsigned(v: 1)]))])])), plist.Entry(key: "reals", value: .list(items: p2b_reals()))]
+    )
+
+# Whether `got` is a dictionary holding the entries of the dictionary `want`
+# in any order: `plutil`'s binary form writes a dictionary's keys in the order
+# its hash table holds them, so only the entries mean anything.
+function same_entries(got: plist.Value, want: plist.Value) -> bool
+    match want
+        .dictionary w =>
+            for entry in w.entries
+                match plist.member(dict: got, key: entry.key)
+                    .ok value =>
+                        if value != entry.value
+                            return false
+                    .err _ => return false
+
+            match got
+                .dictionary g => return g.entries.len() == w.entries.len()
+                .nil_value    => return false
+                .boolean _    => return false
+                .unsigned _   => return false
+                .negative _   => return false
+                .real _       => return false
+                .text _       => return false
+                .date _       => return false
+                .data _       => return false
+                .uid _        => return false
+                .list _       => return false
+        .nil_value  => return false
+        .boolean _  => return false
+        .unsigned _ => return false
+        .negative _ => return false
+        .real _     => return false
+        .text _     => return false
+        .date _     => return false
+        .data _     => return false
+        .uid _      => return false
+        .list _     => return false
+
+test "plutil's first list: read from XML and binary, written as XML as plutil writes it, and as binary"
+    v = big_value()
+    assert plist.parse_xml(big_xml()).must() == v
+    assert plist.decode(bytes.from_text(big_xml())).must() == v
+    assert plist.decode(big_binary()).must() == v
+    assert plist.decode_binary(big_binary()).must() == v
+    assert plist.format_xml(v).must() == big_xml()
+    assert plist.encode_binary(v).must() == big_ours()
+    assert plist.decode(big_ours()).must() == v
+    assert plist.encode_binary(plist.decode(big_ours()).must()).must() == big_ours()
+
+test "plutil's second list: empty containers, nested ones, long data at one level, 17-digit reals, an escaped string"
+    v = p2b_value()
+    assert plist.parse_xml(p2b_xml()).must() == v
+    assert same_entries(got: plist.decode(p2b_binary()).must(), want: v)
+    assert plist.format_xml(v).must() == p2b_xml()
+    assert plist.encode_binary(v).must() == p2b_ours()
+    assert plist.decode(p2b_ours()).must() == v
+    assert plist.encode_binary(plist.decode(p2b_ours()).must()).must() == p2b_ours()
