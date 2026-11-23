@@ -1,0 +1,83 @@
+# Runs as a Windows service, and writes what the system asks of it to a log, so
+# that the throwaway service of `service`'s Windows run can be driven by
+# `sc.exe`: `sc create heroes-demo binPath= <this program built> obj=
+# LocalSystem`, `sc start heroes-demo <log file>`, then `sc pause`, `sc
+# continue`, `sc control heroes-demo 130` and `sc stop`, and `sc delete` after.
+# A user control 130 ends the service with the exit code 42, so `sc query`
+# shows a service-specific exit code. Started from a console it only says what
+# it is: `heroes test` on this file runs the package's tests (spec § 12).
+
+use <rebel>/poll
+use <rebel>/service
+use <rebel>/time
+
+# The log's lines so far, written whole at each change: the program is a
+# throwaway and the log is read once the service ended.
+function write_log(path: str, lines: [str] lent)
+    text @= ""
+
+    for line in lines
+        text @ text + line + "\n"
+
+    write_file(path: path, text: text).must()
+
+function main()
+    if !service.is_service()
+        print("a throwaway service for `sc.exe`: sc create, sc start <log file>")
+        return
+    svc = service.start("heroes-demo", limit: time.seconds(30).must()).must()
+    given = service.arguments(svc).must()
+    path @= "C:\\w\\gap-service\\svc.log"
+
+    if given.len() > 0
+        path @ given[0]
+    lines: [str] @= [f"started with {given.len()} parameters"]
+    set = poll.make(4).must()
+    _ = service.add_to(set, svc).must()
+    tick = poll.add_timer(set, first: time.seconds(1).must(), every: time.seconds(1).must()).must()
+    ticks @= 0
+    service.report_running(
+        svc,
+        accepts: [.stop, .pause_resume, .shutdown, .preshutdown, .param_change, .time_change, .power, .session]
+    ).must()
+    lines @ lines.push("running")
+    write_log(path, lines)
+    done @= false
+    exit_code @= 0
+
+    while !done
+        for e in poll.wait(set, limit: time.seconds(60).must()).must()
+            if e.key == tick
+                ticks @ ticks + 1
+
+        for c in service.wait(svc, limit: time.nanoseconds(0)).must()
+            lines @ lines.push(service.format_control(c))
+
+            match c.kind
+                .stop        => done @ true
+                .shutdown    => done @ true
+                .preshutdown => done @ true
+                .pause =>
+                    service.report_pending(svc, state: .pause_pending, wait_hint: time.seconds(5).must()).must()
+                    service.report_paused(svc, accepts: [.pause_resume, .stop]).must()
+                    lines @ lines.push("paused")
+                .resume =>
+                    service.report_pending(svc, state: .resume_pending, wait_hint: time.seconds(5).must()).must()
+                    service.report_running(svc, accepts: [.stop, .pause_resume]).must()
+                    lines @ lines.push("running")
+                .user =>
+                    if c.event == 130
+                        exit_code @ 42
+                        done @ true
+                .param_change => lines @ lines.push("parameters changed")
+                .time_change  => lines @ lines.push("clock set")
+                .power        => lines @ lines.push("power")
+                .session      => lines @ lines.push("session")
+
+        write_log(path, lines)
+
+    service.report_pending(svc, state: .stop_pending, wait_hint: time.seconds(5).must()).must()
+    lines @ lines.push(f"ticks seen: {ticks > 0}")
+    lines @ lines.push(f"ended with {exit_code}")
+    write_log(path, lines)
+    service.end(svc, exit_code: exit_code).must()

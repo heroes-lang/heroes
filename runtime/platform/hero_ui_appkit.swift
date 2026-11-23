@@ -232,6 +232,49 @@ private final class FlippedView: NSView {
     }
 }
 
+// A spin: the field of a whole number and the stepper beside it, laid out
+// again as the view is sized. The stepper holds the value the program and the
+// person have settled on; the field may hold a number being typed.
+private final class SpinView: NSView {
+    let field = NSTextField(string: "0")
+    let stepper = NSStepper(frame: NSRect(x: 0, y: 0, width: 19, height: 27))
+
+    override var isFlipped: Bool {
+        return true
+    }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        field.alignment = .right
+        stepper.minValue = 0
+        stepper.maxValue = 100
+        stepper.increment = 1
+        stepper.valueWraps = false
+        addSubview(field)
+        addSubview(stepper)
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func resizeSubviews(withOldSize old: NSSize) {
+        let arrows = stepper.fittingSize
+        field.frame = NSRect(x: 0, y: 0, width: max(0, bounds.width - arrows.width - 2), height: bounds.height)
+        stepper.frame = NSRect(x: max(0, bounds.width - arrows.width), y: max(0, (bounds.height - arrows.height) / 2), width: arrows.width, height: arrows.height)
+    }
+
+    var value: Int64 {
+        return Int64(stepper.doubleValue.rounded())
+    }
+
+    // Shows `value` in the field and the stepper.
+    func show(_ value: Int64) {
+        stepper.doubleValue = Double(value)
+        field.stringValue = String(value)
+    }
+}
+
 // One native widget and what it is made of.
 @MainActor
 private final class Native {
@@ -278,7 +321,7 @@ private final class Native {
 
 // The one native app's widgets and the means to queue what the person does.
 @MainActor
-private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate {
+private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate {
     static var shared: Backend?
     static var launched = false
 
@@ -508,6 +551,23 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindSpin:
+            let spin = SpinView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            spin.field.target = self
+            spin.field.action = #selector(spinTyped(_:))
+            spin.field.tag = Int(widget.id)
+            spin.stepper.target = self
+            spin.stepper.action = #selector(spinStepped(_:))
+            spin.stepper.tag = Int(widget.id)
+            return spin
+        case kindEditableCombo:
+            let combo = NSComboBox(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            combo.usesDataSource = false
+            combo.completes = true
+            combo.numberOfVisibleItems = 10
+            combo.delegate = self
+            combo.tag = Int(widget.id)
+            return combo
         case kindProgress:
             let bar = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: 20))
             bar.style = .bar
@@ -771,6 +831,32 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventSelect, Int64(sender.tag), Int64(sender.indexOfSelectedItem), 0)
     }
 
+    // A number typed into a spin and committed: one past the range is
+    // clamped to it, a text that is no whole number goes back to the value
+    // held, and the value is told where it changed.
+    @objc func spinTyped(_ sender: NSTextField) {
+        guard let spin = sender.superview as? SpinView else {
+            return
+        }
+        let held = spin.value
+        var next = held
+        if let typed = Int64(sender.stringValue.trimmingCharacters(in: .whitespaces)) {
+            next = min(max(typed, Int64(spin.stepper.minValue)), Int64(spin.stepper.maxValue))
+        }
+        spin.show(next)
+        if next != held {
+            queue(eventValue, Int64(sender.tag), next, 0)
+        }
+    }
+
+    @objc func spinStepped(_ sender: NSStepper) {
+        guard let spin = sender.superview as? SpinView else {
+            return
+        }
+        spin.show(spin.value)
+        queue(eventValue, Int64(sender.tag), spin.value, 0)
+    }
+
     @objc func slid(_ sender: NSSlider) {
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
     }
@@ -828,6 +914,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return nil
         }
         return areaUndo(widget)
+    }
+
+    // The person's choice of an item from an editable combo's list: told as
+    // the choice and then as the text it became.
+    func comboBoxSelectionDidChange(_ note: Notification) {
+        guard let combo = note.object as? NSComboBox else {
+            return
+        }
+        queue(eventSelect, Int64(combo.tag), Int64(combo.indexOfSelectedItem), 0)
+        queue(eventText, Int64(combo.tag), 0, 0)
     }
 
     func controlTextDidChange(_ note: Notification) {
@@ -901,13 +997,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             setTrayText(widget, text)
         case kindWindow:
             widget.window?.title = text
+        case kindGroup:
+            (widget.view as? NSBox)?.title = text
         case kindPage:
             if let tabs = widgets[widget.parent]?.view as? NSTabView {
                 for item in tabs.tabViewItems where item.view === widget.view {
                     item.label = text
                 }
             }
-        case kindLabel, kindTextField:
+        case kindLabel, kindTextField, kindEditableCombo:
             (widget.view as? NSTextField)?.stringValue = text
             if widget.kind == kindTextField {
                 widget.fieldRange = nil
@@ -963,6 +1061,17 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 popup.menu?.addItem(NSMenuItem(title: text, action: nil, keyEquivalent: ""))
             }
             popup.selectItem(at: -1)
+        case kindEditableCombo:
+            guard let combo = widget.view as? NSComboBox else {
+                return answerInvalid
+            }
+            // The items go and come, the text stays as it is.
+            let typed = combo.stringValue
+            muted = true
+            combo.removeAllItems()
+            combo.addItems(withObjectValues: items)
+            combo.stringValue = typed
+            muted = false
         case kindRadioGroup:
             for radio in widget.radios {
                 radio.removeFromSuperview()
@@ -1009,6 +1118,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             slider.doubleValue = Double(value)
+        case kindSpin:
+            guard let spin = widget.view as? SpinView, Double(value) >= spin.stepper.minValue, Double(value) <= spin.stepper.maxValue else {
+                return answerInvalid
+            }
+            spin.show(value)
         case kindProgress:
             guard let bar = widget.view as? NSProgressIndicator, Double(value) >= bar.minValue, Double(value) <= bar.maxValue else {
                 return answerInvalid
@@ -1019,6 +1133,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             (widget.view as? NSPopUpButton)?.selectItem(at: Int(value))
+        case kindEditableCombo:
+            guard value >= -1, value < Int64(widget.items.count) else {
+                return answerInvalid
+            }
+            if value >= 0, let combo = widget.view as? NSComboBox {
+                muted = true
+                combo.stringValue = widget.items[Int(value)]
+                muted = false
+            }
         case kindRadioGroup:
             guard value >= -1, value < Int64(widget.radios.count) else {
                 return answerInvalid
@@ -1042,6 +1165,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let slider = widget.view as? NSSlider {
             slider.minValue = Double(least)
             slider.maxValue = Double(most)
+            return answerOk
+        }
+        if let spin = widget.view as? SpinView {
+            spin.stepper.minValue = Double(least)
+            spin.stepper.maxValue = Double(most)
             return answerOk
         }
         if let bar = widget.view as? NSProgressIndicator {
@@ -1126,6 +1254,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 for radio in widget.radios {
                     radio.isEnabled = on
                 }
+            } else if let spin = widget.view as? SpinView {
+                spin.field.isEnabled = on
+                spin.stepper.isEnabled = on
             } else if let control = widget.view as? NSControl {
                 control.isEnabled = on
             } else if widget.view is NSProgressIndicator {
@@ -1277,8 +1408,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return NSSize(width: fieldWidth, height: areaHeight)
         }
         switch widget.kind {
-        case kindTextField:
+        case kindTextField, kindEditableCombo:
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
+        case kindSpin:
+            // Room for the digits of the longer end of its range, and for
+            // the arrows.
+            guard let spin = widget.view as? SpinView else {
+                return NSSize(width: 0, height: 0)
+            }
+            let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
+            return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
         case kindSeparator:
@@ -1314,6 +1453,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let text = widget.textView {
             return text.string
         }
+        if let box = widget.view as? NSBox, widget.kind == kindGroup {
+            return box.title
+        }
         return (widget.view as? NSTextField)?.stringValue
     }
 
@@ -1332,10 +1474,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return (widget.view as? NSButton)?.state == .on ? 1 : 0
         case kindSlider:
             return Int64(((widget.view as? NSSlider)?.doubleValue ?? 0).rounded())
+        case kindSpin:
+            return (widget.view as? SpinView)?.value ?? 0
         case kindProgress:
             return Int64(((widget.view as? NSProgressIndicator)?.doubleValue ?? 0).rounded())
         case kindCombo:
             return Int64((widget.view as? NSPopUpButton)?.indexOfSelectedItem ?? -1)
+        case kindEditableCombo:
+            let typed = (widget.view as? NSComboBox)?.stringValue ?? ""
+            return Int64(widget.items.firstIndex(of: typed) ?? -1)
         case kindRadioGroup:
             return Int64(widget.radios.firstIndex { $0.state == .on } ?? -1)
         default:
@@ -1356,7 +1503,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let table = widget.table {
             return table.selectedRowIndexes.map { Int64($0) }
         }
-        if widget.kind == kindCombo || widget.kind == kindRadioGroup {
+        if widget.kind == kindCombo || widget.kind == kindRadioGroup || widget.kind == kindEditableCombo {
             let at = value(id) ?? -1
             return at >= 0 ? [at] : []
         }
@@ -1432,6 +1579,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 } else {
                     return answerInvalid
                 }
+            } else if let combo = widget.view as? NSComboBox, widget.kind == kindEditableCombo {
+                guard value >= 0, value < Int64(widget.items.count) else {
+                    return answerInvalid
+                }
+                // The person's choice from the list: the text becomes the
+                // item, told as the choice and then as the text.
+                if combo.isEnabled {
+                    muted = true
+                    combo.stringValue = widget.items[Int(value)]
+                    muted = false
+                    queue(eventSelect, id, value, 0)
+                    queue(eventText, id, 0, 0)
+                }
             } else if let popup = widget.view as? NSPopUpButton {
                 guard value >= 0, value < Int64(widget.items.count) else {
                     return answerInvalid
@@ -1449,6 +1609,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
         case eventValue:
+            if let spin = widget.view as? SpinView {
+                guard Double(value) >= spin.stepper.minValue, Double(value) <= spin.stepper.maxValue else {
+                    return answerInvalid
+                }
+                if spin.field.isEnabled && spin.value != value {
+                    spin.show(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
             guard let slider = widget.view as? NSSlider else {
                 return answerInvalid
             }
@@ -2498,6 +2668,8 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             return owner.view
         case kindScroll:
             return (owner.view as? NSScrollView)?.documentView
+        case kindGroup:
+            return (owner.view as? NSBox)?.contentView
         default:
             return nil
         }
@@ -2542,6 +2714,17 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             pane.clipsToBounds = true
             split.addArrangedSubview(pane)
             made.view = pane
+        case kindGroup:
+            guard let content = contentOf(owner) else {
+                return answerInvalid
+            }
+            let box = NSBox(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+            box.boxType = .primary
+            box.titlePosition = .atTop
+            box.title = ""
+            box.contentView = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            content.addSubview(box)
+            made.view = box
         case kindContextMenu:
             if widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) {
                 return answerInvalid
@@ -2611,6 +2794,20 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             let bottom = tabs.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
             return (left, top, right, bottom)
         }
+        if let box = widget.view as? NSBox, widget.kind == kindGroup {
+            // The content's rectangle inside a frame of a known size is what
+            // the box's own margins and title leave; the box lays it out as
+            // its frame is set, so it is read at a frame of 400 by 300.
+            let saved = box.frame
+            box.frame = NSRect(x: saved.minX, y: saved.minY, width: 400, height: 300)
+            box.layoutSubtreeIfNeeded()
+            let inner = box.contentView?.frame ?? .zero
+            box.frame = saved
+            box.layoutSubtreeIfNeeded()
+            let top = box.isFlipped ? Int64(inner.minY.rounded(.up)) : Int64((300 - inner.maxY).rounded(.up))
+            let bottom = box.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
+            return (Int64(inner.minX.rounded(.up)), top, Int64((400 - inner.maxX).rounded(.up)), bottom)
+        }
         if let scroll = widget.view as? NSScrollView, widget.kind == kindScroll {
             let frame = NSSize(width: 400, height: 300)
             let inner = NSScrollView.contentSize(forFrameSize: frame, horizontalScrollerClass: nil, verticalScrollerClass: NSScroller.self, borderType: scroll.borderType, controlSize: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
@@ -2627,7 +2824,7 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         case kindSplitRow, kindSplitColumn:
             let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
             return NSSize(width: thickness, height: thickness)
-        case kindTabs, kindPage, kindScroll, kindPane:
+        case kindTabs, kindPage, kindScroll, kindPane, kindGroup:
             return NSSize(width: 0, height: 0)
         default:
             return nil
@@ -3284,6 +3481,9 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 private let kindContextMenu: Int64 = 30
 private let kindTray: Int64 = 31
 private let kindSeparator: Int64 = 32
+private let kindGroup: Int64 = 33
+private let kindEditableCombo: Int64 = 34
+private let kindSpin: Int64 = 35
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

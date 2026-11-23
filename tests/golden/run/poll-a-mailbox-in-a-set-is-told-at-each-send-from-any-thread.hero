@@ -1,0 +1,103 @@
+# A mailbox in a set of `hero_poll.h` is told at each send from any thread,
+# with nothing the sender does but send (panel 256's R7 and R8, provisional;
+# feature 2693): four threads send 5,000 values each while the main thread
+# waits on the set and takes one value per wake, then every value per wake.
+# A lost wake is a wait of a second that ended with no event while a value
+# stood in the mailbox; there is none, and every value is taken. Once closed
+# and empty the mailbox is told still, so a loop's receive answers `closed`.
+
+extern "hero_poll.h"
+    record Set tag hero_poll_set
+    function hero_poll_make(most: i64) -> Set acquires hero_poll_close
+    function hero_poll_add_mailbox(set: Set, number: i64) -> i64
+    function hero_poll_wait(set: Set, limit_ns: i64, @events: [i64] counted_by n lent, n: u64) -> i64
+    function hero_poll_close(set: Set consumes) -> i64
+
+record Job
+    m: (mailbox i64)
+    sends: i64
+
+function sender(job: Job) -> i64
+    i @= 0
+
+    while i < job.sends
+        job.m.send(i).must()
+        i @ i + 1
+
+    return job.sends
+
+function run(senders: i64, each: i64, one: bool) -> str
+    m: (mailbox i64) = mailbox()
+    set = hero_poll_make(4)
+    assert hero_poll_add_mailbox(set, number: m.number()) > 0
+    threads: [(thread i64)] @= []
+
+    for _ in range(from: 0, to: senders)
+        threads @ threads.push(spawn(sender, Job(m: m, sends: each)).must())
+
+    expected = senders * each
+    taken @= 0
+    wakes @= 0
+    timeouts @= 0
+    lost @= 0
+    quiet @= 0
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+
+    while taken < expected && quiet < 3
+        n = hero_poll_wait(set, limit_ns: 1000000000, @events, n: 6)
+        assert n >= 0
+
+        if n == 0
+            timeouts @ timeouts + 1
+            quiet @ quiet + 1
+
+            match m.receive(within_ms: 0)
+                .ok _ =>
+                    lost @ lost + 1
+                    taken @ taken + 1
+                .err _ => lost @ lost
+        else
+            wakes @ wakes + 1
+            quiet @ 0
+            more @= true
+
+            while more
+                match m.receive(within_ms: 0)
+                    .ok _ =>
+                        taken @ taken + 1
+                        more @ !one
+                    .err _ => more @ false
+
+    for t in threads
+        _ = t.wait()
+
+    _ = hero_poll_close(set)
+    style @= "drain"
+
+    if one
+        style @ "one"
+    _ = wakes
+    _ = timeouts
+    return f"{senders} senders, {each} each, {style} per wake: {taken} of {expected} taken, {lost} waits slept past a value"
+
+function closed_is_told() -> str
+    m: (mailbox i64) = mailbox()
+    set = hero_poll_make(1)
+    key = hero_poll_add_mailbox(set, number: m.number())
+    events: [i64] @= [0, 0, 0]
+    before = hero_poll_wait(set, limit_ns: 0, @events, n: 3)
+    m.close()
+    after = hero_poll_wait(set, limit_ns: 0, @events, n: 3)
+    told @= after == 1 && events[0] == key
+
+    match m.receive(within_ms: 0)
+        .ok _  => told @ false
+        .err e => told @ told && e.code == "closed"
+
+    _ = hero_poll_close(set)
+    return f"an empty mailbox: told {before} times; closed: told {told}"
+
+function main()
+    print(run(senders: 4, each: 5000, one: true))
+    print(run(senders: 4, each: 5000, one: false))
+    print(closed_is_told())

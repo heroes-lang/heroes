@@ -188,11 +188,12 @@ int64_t hero_watch_count(hero_watch *w);
 hero_stream *hero_watch_bell_stream(hero_watch *w);
 
 /* The bell as `hero_watch_bell_stream`'s, a datagram socket of this layer
- * bound to the loopback, which a datagram reaches while an event waits:
- * Windows only, NULL with `HERO_WATCH_UNSUPPORTED` elsewhere, where the pipe
- * is the bell. BORROWED as that one is. A datagram a stranger sends it makes
- * it ready while no event waits, so a wait on the watch after a set told it
- * ready may find none. */
+ * bound to the loopback and connected to its own address, which a datagram
+ * reaches while an event waits: Windows only, NULL with
+ * `HERO_WATCH_UNSUPPORTED` elsewhere, where the pipe is the bell. BORROWED as
+ * that one is. Connected, it takes no other socket's datagram, another
+ * process's among them (defect 2696's class), so a set tells it ready for
+ * this watch's events alone. */
 hero_net_socket *hero_watch_bell_socket(hero_watch *w);
 
 /* Closes the watch and gives its handle back: the system's watch ended, the

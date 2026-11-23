@@ -1,0 +1,234 @@
+/* SPDX-FileCopyrightText: 2026 Giuseppe Arici
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * With the Heroes runtime exception (LICENSE-RUNTIME-EXCEPTION): a program
+ * compiled with Heroes carries part of this runtime inside it and owes nothing
+ * for doing so. The exception is stated here in prose rather than after a
+ * `WITH` in the tag above, because that operator takes an exception from
+ * SPDX's own registry and this one is not in it. */
+
+/* parts/rebind_record.c — Darwin's route D-rebind, part of `parts/rebind.c`
+ * (read its module doc first): route A: the records of the save points, for a
+ * family whose decode did not verify (panel 255's R1, defects 2679 and 2702;
+ * design.md §1.12, §4.19). Needs the files `rebind.c` names before it. */
+
+#if defined(__APPLE__)
+
+/* A buffer, its thread, the serial of the innermost entry standing at its
+ * save (0 for none), and its fingerprint once read. Written and read with no
+ * lock: a writer claims a record by moving its buffer word to 1, a reader
+ * trusts one only where the buffer word reads the same before and after; any
+ * race is a miss, and a miss keeps every entry. A buffer's home is a hash of
+ * it and its thread, probed HERO_REBIND_PROBES deep. */
+#define HERO_REBIND_RECORDS 4096
+#define HERO_REBIND_PROBES 8
+/* The bytes a fingerprint reads: Darwin arm64's `jmp_buf` is 48 `int`s. */
+#define HERO_REBIND_PRINT_BYTES 192
+
+typedef struct {
+    _Atomic uintptr_t buf;
+    _Atomic uintptr_t thread;
+    _Atomic uint64_t entry;
+    _Atomic uint64_t print;
+    _Atomic int printed;
+} HeroRebindRecord;
+
+static HeroRebindRecord hero_rebind_records[HERO_REBIND_RECORDS];
+
+/* The one buffer this thread saved into and has not yet fingerprinted, in a
+ * key's slot. */
+static _Atomic pthread_key_t hero_rebind_pending;
+static _Atomic int hero_rebind_pending_keyed = 0;
+
+static size_t hero_rebind_home(uintptr_t buf, uintptr_t thread) {
+    uint64_t h = (uint64_t)buf * UINT64_C(0x9E3779B97F4A7C15) ^ (uint64_t)thread * UINT64_C(0xC2B2AE3D27D4EB4F);
+    return (size_t)(h >> 52) & (HERO_REBIND_RECORDS - 1);
+}
+
+static HeroRebindRecord *hero_rebind_probe(size_t home, int i) {
+    return &hero_rebind_records[(home + (size_t)i) & (HERO_REBIND_RECORDS - 1)];
+}
+
+/* A fingerprint read only of a buffer that provably lives (rule 3). A machine
+ * read of a mapped stack, never a program's access, so not instrumented by
+ * AddressSanitizer: a returned frame's bytes may sit under a later frame's
+ * redzone. */
+__attribute__((no_sanitize("address"))) static uint64_t hero_rebind_fingerprint(const void *buf) {
+    const unsigned char *p = (const unsigned char *)buf;
+    uint64_t h = UINT64_C(1469598103934665603);
+    for (int i = 0; i < HERO_REBIND_PRINT_BYTES; i += 1) {
+        h ^= p[i];
+        h *= UINT64_C(1099511628211);
+    }
+    return h;
+}
+
+static void hero_rebind_write(HeroRebindRecord *r, uintptr_t was, uintptr_t buf, uintptr_t thread, uint64_t entry) {
+    if (!atomic_compare_exchange_strong(&r->buf, &was, (uintptr_t)1)) return;
+    atomic_store(&r->thread, thread);
+    atomic_store(&r->entry, entry);
+    atomic_store(&r->printed, 0);
+    atomic_store_explicit(&r->buf, buf, memory_order_release);
+}
+
+/* This thread's record of `buf`, or NULL. */
+static HeroRebindRecord *hero_rebind_record(const void *buf) {
+    uintptr_t b = (uintptr_t)buf;
+    uintptr_t t = (uintptr_t)pthread_self();
+    size_t home = hero_rebind_home(b, t);
+    for (int i = 0; i < HERO_REBIND_PROBES; i += 1) {
+        HeroRebindRecord *r = hero_rebind_probe(home, i);
+        if (atomic_load_explicit(&r->buf, memory_order_acquire) == b && atomic_load(&r->thread) == t) return r;
+    }
+    return NULL;
+}
+
+/* The writable segments of the images loaded before `main`, which stay mapped
+ * while the process runs; written once, before `main`. */
+#define HERO_REBIND_REGIONS 1024
+static _Atomic uintptr_t hero_rebind_region_lo[HERO_REBIND_REGIONS];
+static _Atomic uintptr_t hero_rebind_region_hi[HERO_REBIND_REGIONS];
+static _Atomic int hero_rebind_regions = 0;
+
+static void hero_rebind_regions_of(const struct mach_header *header, intptr_t slide) {
+    const struct mach_header_64 *mh = (const struct mach_header_64 *)header;
+    const uint8_t *p = (const uint8_t *)(mh + 1);
+    for (uint32_t i = 0; i < mh->ncmds; i += 1) {
+        const struct load_command *lc = (const struct load_command *)p;
+        p += lc->cmdsize;
+        if (lc->cmd != LC_SEGMENT_64) continue;
+        const struct segment_command_64 *seg = (const struct segment_command_64 *)lc;
+        if ((seg->initprot & VM_PROT_WRITE) == 0 || seg->vmsize == 0) continue;
+        int n = atomic_load(&hero_rebind_regions);
+        if (n == HERO_REBIND_REGIONS) return;
+        atomic_store(&hero_rebind_region_lo[n], (uintptr_t)slide + (uintptr_t)seg->vmaddr);
+        atomic_store(&hero_rebind_region_hi[n], (uintptr_t)slide + (uintptr_t)seg->vmaddr + (uintptr_t)seg->vmsize);
+        atomic_store(&hero_rebind_regions, n + 1);
+    }
+}
+
+/* Whether `[buf, buf + size)` lies on this thread's stack, on the alternate
+ * stack it is running on, or in a writable segment of an image loaded before
+ * `main`. */
+static bool hero_rebind_lives(const void *buf, size_t size) {
+    uintptr_t lo = (uintptr_t)buf, hi = lo + size;
+    pthread_t self = pthread_self();
+    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
+    if (lo >= top - pthread_get_stacksize_np(self) && hi <= top) return true;
+    int n = atomic_load(&hero_rebind_regions);
+    for (int i = 0; i < n; i += 1) {
+        if (lo >= atomic_load(&hero_rebind_region_lo[i]) && hi <= atomic_load(&hero_rebind_region_hi[i])) return true;
+    }
+    stack_t alt;
+    return sigaltstack(NULL, &alt) == 0 && (alt.ss_flags & SS_ONSTACK) != 0 && lo >= (uintptr_t)alt.ss_sp &&
+           hi <= (uintptr_t)alt.ss_sp + alt.ss_size;
+}
+
+/* The pending buffer fingerprinted where it provably lives; where it does
+ * not, its record is marked one no jump trusts (2). */
+static void hero_rebind_settle(void) {
+    if (!atomic_load_explicit(&hero_rebind_pending_keyed, memory_order_acquire)) return;
+    pthread_key_t key = atomic_load_explicit(&hero_rebind_pending, memory_order_relaxed);
+    void *buf = pthread_getspecific(key);
+    if (buf == NULL) return;
+    pthread_setspecific(key, NULL);
+    HeroRebindRecord *r = hero_rebind_record(buf);
+    if (r == NULL) return;
+    if (!hero_rebind_lives(buf, HERO_REBIND_PRINT_BYTES)) {
+        atomic_store(&r->printed, 2);
+        return;
+    }
+    atomic_store(&r->print, hero_rebind_fingerprint(buf));
+    atomic_store(&r->printed, 1);
+}
+
+/* The serial of the innermost entry standing, 0 for none. */
+static uint64_t hero_rebind_innermost(void) {
+    HeroSignalStack *own = hero_rebind_own();
+    if (own == NULL) return 0;
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        if (!own->entries[i].dead) return own->entries[i].serial;
+    }
+    return 0;
+}
+
+/* A save into `buf`: its record taken back where it has one, else a free
+ * record near its home, else the home overwritten. */
+static void hero_rebind_note(const void *buf) {
+    if (buf == NULL) return;
+    hero_rebind_settle();
+    uint64_t entry = hero_rebind_innermost();
+    uintptr_t b = (uintptr_t)buf;
+    uintptr_t t = (uintptr_t)pthread_self();
+    size_t home = hero_rebind_home(b, t);
+    HeroRebindRecord *free_one = NULL;
+    int written = 0;
+    for (int i = 0; i < HERO_REBIND_PROBES && !written; i += 1) {
+        HeroRebindRecord *r = hero_rebind_probe(home, i);
+        uintptr_t v = atomic_load_explicit(&r->buf, memory_order_acquire);
+        if (v == b && atomic_load(&r->thread) == t) {
+            hero_rebind_write(r, b, b, t, entry);
+            written = 1;
+        } else if (v == 0 && free_one == NULL) {
+            free_one = r;
+        }
+    }
+    if (!written) {
+        if (free_one != NULL) {
+            hero_rebind_write(free_one, 0, b, t, entry);
+        } else {
+            HeroRebindRecord *r = hero_rebind_probe(home, 0);
+            uintptr_t v = atomic_load(&r->buf);
+            if (v > 1) hero_rebind_write(r, v, b, t, entry);
+        }
+    }
+    if (atomic_load_explicit(&hero_rebind_pending_keyed, memory_order_acquire)) {
+        pthread_setspecific(atomic_load_explicit(&hero_rebind_pending, memory_order_relaxed), (void *)(uintptr_t)buf);
+    }
+}
+
+/* `buf`'s record dropped, its context now naming another stack. */
+static void hero_rebind_forget(const void *buf) {
+    uintptr_t b = (uintptr_t)buf;
+    uintptr_t t = (uintptr_t)pthread_self();
+    size_t home = hero_rebind_home(b, t);
+    for (int i = 0; i < HERO_REBIND_PROBES; i += 1) {
+        HeroRebindRecord *r = hero_rebind_probe(home, i);
+        uintptr_t v = b;
+        if (atomic_load(&r->thread) == t) (void)atomic_compare_exchange_strong(&r->buf, &v, (uintptr_t)0);
+    }
+}
+
+/* A jump to `buf` judged by its record (rule 3), rules 5 and 6 obeyed: where
+ * the record is trusted, every entry pushed after its save that nothing pins
+ * is left; where the entry it names no longer stands, the jump re-enters a
+ * handler left earlier, which stands again as an entry, unsure; where no
+ * record is trusted, every entry is kept and marked unsure. */
+static void hero_rebind_jump_by_record(HeroSignalStack *own, const void *buf) {
+    hero_rebind_settle();
+    HeroRebindRecord *r = hero_rebind_record(buf);
+    uintptr_t b = (uintptr_t)buf;
+    int printed = r != NULL ? atomic_load(&r->printed) : 0;
+    bool trusted = r != NULL && printed != 2 && !(printed == 1 && atomic_load(&r->print) != hero_rebind_fingerprint(buf));
+    uint64_t entry = trusted ? atomic_load(&r->entry) : 0;
+    if (!trusted || atomic_load_explicit(&r->buf, memory_order_acquire) != b) {
+        hero_rebind_mark_unsure(own);
+        return;
+    }
+    bool named = entry == 0;
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        HeroRebindEntry *e = &own->entries[i];
+        if (e->dead) continue;
+        if (e->serial == entry) {
+            named = true;
+            hero_rebind_resumed(e);
+        }
+        if (e->serial > entry && !hero_rebind_pinned(e)) hero_rebind_drop(own, i);
+    }
+    if (!named) {
+        uint64_t serial = 0;
+        if (!hero_rebind_push(own, 0, 0, 0, 1, &serial)) own->lost += 1;
+    }
+}
+
+#endif

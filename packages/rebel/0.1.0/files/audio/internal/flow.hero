@@ -1,0 +1,124 @@
+# What a stream's frames become on their way between the program and its
+# device: the program's sounds made the device's interleaved floats (its
+# channels, then its rate), and the device's floats made sounds of the
+# program's format, the rate conversion carried from one call to the next so
+# frames given in pieces sound as frames given whole (`resample`'s promise).
+
+use audio
+use audio/internal/mix
+use audio/internal/resample
+use audio/internal/samples
+
+# The device frames of `values`, frames of `from`, as floats: `values` remixed
+# to `to`'s channels by `mask`, then carried to `to`'s rate by `rates` where
+# the rates differ.
+#
+# - `rates`: the conversion of the stream, which keeps what it has not used.
+# - `values`: interleaved samples, whole frames of `from`.
+# - `from`: their format.
+# - `to`: the format the frames are wanted in.
+function carried(@rates: resample.Resampler, values: [f64] lent, from: audio.Format lent, to: audio.Format lent) -> [f64]
+    mixed = mix.remixed(values, from: from.channels, to: to.channels, mask: from.speakers)
+
+    if from.rate == to.rate
+        return mixed
+    return resample.feed(@rates, samples: mixed)
+
+# The floats of `values`.
+#
+# - `values`: samples.
+function floats(values: [f64] lent) -> [f32]
+    out: [f32] @= []
+
+    for x in values
+        out @ out.push(to_f32(x))
+
+    return out
+
+# The device's floats for the sound `s`, of the stream's format `from`.
+#
+# - `rates`: the conversion of the stream.
+# - `s`: a checked sound of `from`.
+# - `from`: the stream's format.
+# - `device`: the device's format.
+function outgoing(@rates: resample.Resampler, s: audio.Sound lent, from: audio.Format lent, device: audio.Format lent) -> [f32]
+    values = samples.all_of(s.data, encoding: s.format.encoding)
+    return floats(carried(@rates, values: values, from: from, to: device))
+
+# The device's floats the rate conversion still holds once the program has
+# finished, the input after its end read as silence.
+#
+# - `rates`: the conversion of the stream, which holds nothing after.
+# - `from`: the stream's format.
+# - `device`: the device's format.
+function outgoing_tail(@rates: resample.Resampler, from: audio.Format lent, device: audio.Format lent) -> [f32]
+    if from.rate == device.rate
+        return []
+    return floats(resample.finish(@rates))
+
+# The sound of the stream's format `to` for the device's floats `frames`.
+#
+# - `rates`: the conversion of the stream.
+# - `frames`: interleaved floats, whole frames of `device`.
+# - `device`: the device's format.
+# - `to`: the stream's format.
+function incoming(@rates: resample.Resampler, frames: [f32] lent, device: audio.Format lent, to: audio.Format lent) -> audio.Sound
+    values: [f64] @= []
+
+    for x in frames
+        values @ values.push(to_f64(x))
+
+    carried_values = carried(@rates, values: values, from: device, to: to)
+    return audio.Sound(format: to, data: samples.bytes_of(carried_values, encoding: to.encoding))
+
+# The sound the rate conversion still holds once the device has ended.
+#
+# - `rates`: the conversion of the stream, which holds nothing after.
+# - `device`: the device's format.
+# - `to`: the stream's format.
+function incoming_tail(@rates: resample.Resampler, device: audio.Format lent, to: audio.Format lent) -> audio.Sound
+    tail: [f64] = if device.rate == to.rate
+        []
+    else
+        resample.finish(@rates)
+    return audio.Sound(format: to, data: samples.bytes_of(tail, encoding: to.encoding))
+
+test "outgoing: mono 16-bit at the device's rate made stereo floats, the same samples"
+    rates @= resample.new(from: 8000, to: 8000, channels: 2)
+    from = audio.Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    device = audio.Format(encoding: .float32, rate: 8000, channels: 2, speakers: 0)
+    s = audio.from_samples(from, values: [0.5, -0.25]).must()
+    assert outgoing(@rates, s: s, from: from, device: device) == [0.5, 0.5, -0.25, -0.25]
+    assert outgoing_tail(@rates, from: from, device: device).len() == 0
+
+test "outgoing and its tail: pieces at another rate give the frames the whole gives"
+    from = audio.Format(encoding: .float32, rate: 44100, channels: 1, speakers: 0)
+    device = audio.Format(encoding: .float32, rate: 48000, channels: 1, speakers: 0)
+    values: [f64] @= []
+
+    for i in range(from: 0, to: 441)
+        values @ values.push(0.001 * to_f64(i % 50))
+
+    rounded = audio.to_samples(audio.from_samples(from, values: values).must()).must()
+    whole = floats(resample.whole_of(rounded, from: 44100, to: 48000, channels: 1))
+    rates @= resample.new(from: 44100, to: 48000, channels: 1)
+    got: [f32] @= []
+
+    for part in [values.slice(from: 0, to: 100), values.slice(from: 100, to: 441)]
+        piece = audio.from_samples(from, values: part).must()
+
+        for x in outgoing(@rates, s: piece, from: from, device: device)
+            got @ got.push(x)
+
+    for x in outgoing_tail(@rates, from: from, device: device)
+        got @ got.push(x)
+
+    assert got == whole
+
+test "incoming: the device's stereo floats made a mono 16-bit sound, and no tail at one rate"
+    rates @= resample.new(from: 8000, to: 8000, channels: 1)
+    device = audio.Format(encoding: .float32, rate: 8000, channels: 2, speakers: 0)
+    to = audio.Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = incoming(@rates, frames: [0.5, 0.5, -0.5, 0.0], device: device, to: to)
+    assert audio.to_samples(s).must() == [0.5, -0.25]
+    assert audio.frames_of(incoming_tail(@rates, device: device, to: to)) == 0

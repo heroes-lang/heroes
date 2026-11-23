@@ -1,0 +1,128 @@
+# The `name` table: the family, the style, the PostScript name and the other
+# strings a font carries, each under a name id, in one or more languages. A
+# string is read from the Windows or Unicode records, which hold UTF-16, and
+# from a Macintosh Roman record where its bytes are ASCII, in English wherever
+# the font has it.
+
+use font/internal/bin
+use font/internal/sfnt
+use unicode
+
+# How much a record of this platform, encoding and language is preferred: 0
+# for one this package does not read. English wins over another language
+# wherever it stands: the Windows record in American English, then in another
+# English, then a Unicode platform record (which names no language), then a
+# Macintosh Roman record in English, then any other Windows language.
+function rank(platform: i64, encoding: i64, language: i64) -> i64
+    if platform == 3 && (encoding == 1 || encoding == 10)
+        if language == 1033
+            return 8
+
+        if language % 1024 == 9
+            return 7
+        return 3
+
+    if platform == 0
+        return 6
+
+    if platform == 1 && encoding == 0 && language == 0
+        return 5
+    return 0
+
+# The text of `raw`, two bytes a unit with surrogate pairs, high byte first;
+# a unit that stands alone is the replacement character.
+function utf16_of(raw: [u8] lent) -> str
+    points: [i64] @= []
+    k @= 0
+
+    while k + 1 < raw.len()
+        unit = bin.u16_at(raw, at: k)
+        k @ k + 2
+
+        if unit >= 55296 && unit < 56320 && k + 1 < raw.len()
+            low = bin.u16_at(raw, at: k)
+
+            if low >= 56320 && low < 57344
+                points @ points.push(65536 + (unit - 55296) * 1024 + (low - 56320))
+                k @ k + 2
+                continue
+
+        if unit >= 55296 && unit < 57344
+            points @ points.push(65533)
+        else
+            points @ points.push(unit)
+
+    return unicode.from_code_points(points).default("")
+
+# The text of `raw`, a Macintosh Roman string, where every byte is ASCII;
+# a byte past 127 is the replacement character, the 128 characters of Mac
+# Roman's upper half not being carried.
+function mac_of(raw: [u8] lent) -> str
+    points: [i64] @= []
+
+    for b in raw
+        if b < 128
+            points @ points.push(to_i64(b).must())
+        else
+            points @ points.push(65533)
+
+    return unicode.from_code_points(points).default("")
+
+# The string of name id `id` in the `name` table `t`, from the best record
+# the font has. Fails `not_found` where it holds none, `invalid` where the
+# table's header or a record runs past it.
+function string_of(data: [u8] lent, t: sfnt.Table lent, id: i64) -> str?
+    if t.length < 6
+        return fail(code: sfnt.INVALID, msg: f"the name table holds {t.length} bytes, its header needs 6")
+    count = bin.u16_at(data, at: t.offset + 2)
+    store = bin.u16_at(data, at: t.offset + 4)
+
+    if 6 + 12 * count > t.length || store > t.length
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"the name table's {count} records and its strings at {store} run past its {t.length} bytes"
+        )
+
+    best @= 0
+    at @= 0
+    length @= 0
+    platform @= 0
+
+    for k in range(from: 0, to: count)
+        rec = t.offset + 6 + 12 * k
+        score = rank(
+            platform: bin.u16_at(data, at: rec),
+            encoding: bin.u16_at(data, at: rec + 2),
+            language: bin.u16_at(data, at: rec + 4)
+        )
+        size = bin.u16_at(data, at: rec + 8)
+        start = store + bin.u16_at(data, at: rec + 10)
+
+        if bin.u16_at(data, at: rec + 6) == id && score > best && start + size <= t.length
+            best @ score
+            at @ t.offset + start
+            length @ size
+            platform @ bin.u16_at(data, at: rec)
+
+    if best == 0
+        return fail(code: sfnt.NOT_FOUND, msg: f"the font's name table has no string of name id {id}")
+    raw = bin.bytes_at(data, at: at, length: length)
+
+    if platform == 1
+        return ok(mac_of(raw))
+    return ok(utf16_of(raw))
+
+test "utf16_of: a pair of surrogates, a lone surrogate either way, an odd byte left over, nothing"
+    assert utf16_of([0, 65, 216, 61, 222, 0]) == "A😀"
+    assert utf16_of([216, 61]) == "�"
+    assert utf16_of([222, 0, 0, 65]) == "�A"
+    assert utf16_of([0, 65, 0]) == "A"
+    assert utf16_of([]) == ""
+
+test "mac_of and rank: ASCII kept, a byte past 127 replaced, English preferred over another language"
+    assert mac_of([72, 105, 200]) == "Hi�"
+    assert rank(platform: 3, encoding: 1, language: 1033) > rank(platform: 3, encoding: 1, language: 2057)
+    assert rank(platform: 3, encoding: 1, language: 2057) > rank(platform: 0, encoding: 3, language: 0)
+    assert rank(platform: 0, encoding: 3, language: 0) > rank(platform: 1, encoding: 0, language: 0)
+    assert rank(platform: 1, encoding: 0, language: 0) > rank(platform: 3, encoding: 1, language: 1041)
+    assert rank(platform: 1, encoding: 0, language: 15) == 0

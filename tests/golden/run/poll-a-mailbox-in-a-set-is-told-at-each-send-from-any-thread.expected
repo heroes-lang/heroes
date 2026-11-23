@@ -1,0 +1,3 @@
+4 senders, 5000 each, one per wake: 20000 of 20000 taken, 0 waits slept past a value
+4 senders, 5000 each, drain per wake: 20000 of 20000 taken, 0 waits slept past a value
+an empty mailbox: told 0 times; closed: told true

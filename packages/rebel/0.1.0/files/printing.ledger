@@ -1,0 +1,206 @@
+# The ledger of `printing`: what a program can do with the system's printers,
+# one block per capability, and what Rebel answers. None of Go's, Rust's or
+# Python's standard libraries prints (Python's `os.startfile(path, "print")`
+# is Windows' shell verb, which this package refuses), so the yardsticks are
+# the ones the author named on 2026-11-22: Java's `javax.print`, read on this
+# machine that day by `javap -public` of OpenJDK 27's `PrintServiceLookup`,
+# `PrintService`, `DocPrintJob`, `CancelablePrintJob`, `DocFlavor`,
+# `PrintJobListener` and the standard attributes; Qt Print Support 6.12.0,
+# read the same day from `qprinter.h` and `qprinterinfo.h` under Homebrew's
+# `qtbase`; and .NET's `System.Drawing.Printing` and `System.Printing` and
+# wxWidgets 3.2's printing classes, named from Microsoft's and wxWidgets'
+# references and unread on this machine, where neither is installed. Their
+# lines are `java`, `qt`, `dotnet` and `wx`.
+
+capability printing/printers  the printers this machine knows, listed with their state
+  heroes  printing.printers, printing.Printer, printing.State
+  go      -
+  rust    -
+  python  -
+  java    PrintServiceLookup.lookupPrintServices, PrintService.getName, PrinterState, PrinterStateReasons, PrinterInfo, PrinterLocation, PrinterMakeAndModel, PrinterIsAcceptingJobs
+  qt      QPrinterInfo.availablePrinters, QPrinterInfo.availablePrinterNames, QPrinterInfo.printerName, QPrinterInfo.description, QPrinterInfo.location, QPrinterInfo.makeAndModel, QPrinterInfo.state, QPrinterInfo.isRemote
+  dotnet  PrinterSettings.InstalledPrinters, PrintServer.GetPrintQueues, PrintQueue.QueueStatus, PrintQueue.IsOffline, PrintQueue.IsPaused
+  wx      -
+  note    A printer is a CUPS queue on macOS and Linux and a spooler's printer on Windows, its state in IPP's three words and its reasons in IPP's keywords on both, the spooler's status bits written as those keywords (`media-empty`, `offline-report`, `paused`). An instance of a CUPS queue (its options saved under another name) is no printer and is left out, as Qt and Java leave it out. wxWidgets lists no printers: its dialog chooses one
+
+capability printing/default-printer  the machine's default printer
+  heroes  printing.default_printer
+  go      -
+  rust    -
+  python  -
+  java    PrintServiceLookup.lookupDefaultPrintService
+  qt      QPrinterInfo.defaultPrinter, QPrinterInfo.defaultPrinterName, QPrinterInfo.isDefault
+  dotnet  PrinterSettings.IsDefaultPrinter, LocalPrintServer.DefaultPrintQueue
+  wx      -
+  note    none fails `not_found`, where Java answers null and Qt a null printer; a CUPS instance marked the default makes its queue the default
+
+capability printing/printer-named  a printer found by its name
+  heroes  printing.printer_named
+  go      -
+  rust    -
+  python  -
+  java    -
+  qt      QPrinterInfo.printerInfo, QPrinterInfo.isNull
+  dotnet  PrinterSettings.PrinterName, PrinterSettings.IsValid
+  wx      wxPrintData.SetPrinterName
+  note    an unknown name fails `not_found`, where Qt answers a null printer and .NET an invalid setting
+
+capability printing/papers  the papers a printer takes, their sizes and unprinted margins
+  heroes  printing.papers, printing.Paper
+  go      -
+  rust    -
+  python  -
+  java    PrintService.getSupportedAttributeValues, MediaSizeName, MediaSize, MediaPrintableArea
+  qt      QPrinterInfo.supportedPageSizes, QPrinterInfo.supportsCustomPageSizes, QPrinterInfo.minimumPhysicalPageSize, QPrinterInfo.maximumPhysicalPageSize
+  dotnet  PrinterSettings.PaperSizes, PaperSize, PageSettings.PrintableArea, PageSettings.HardMarginX, PageSettings.HardMarginY
+  wx      wxPrintPaperDatabase, wxPrintPaperType
+  note    A paper is named by its PWG 5101.1 name on every system, IPP's own on CUPS; on Windows the driver's papers are named by their size where it is one of PWG's, and `om_dmpaper-<number>_<w>x<h>mm` where it is not, so every name a list holds names one paper. Lengths are in millimetres, read from hundredths of a millimetre (CUPS) or tenths (Windows) exactly; a Windows paper's margins are read from an information context of the printer set to it
+
+capability printing/default-paper  the paper a printer prints on where a job names none
+  heroes  printing.default_paper
+  go      -
+  rust    -
+  python  -
+  java    PrintService.getDefaultAttributeValue
+  qt      QPrinterInfo.defaultPageSize
+  dotnet  PrinterSettings.DefaultPageSettings, PageSettings.PaperSize
+  wx      wxPrintData.GetPaperId
+  note    a printer naming no default fails `not_found`
+
+capability printing/capabilities  whether a printer prints on both sides and in colour, and how many copies it makes
+  heroes  printing.capabilities, printing.Capabilities
+  go      -
+  rust    -
+  python  -
+  java    PrintService.isAttributeValueSupported, PrintService.getSupportedAttributeCategories, Sides, Chromaticity, Copies
+  qt      QPrinterInfo.supportedDuplexModes, QPrinterInfo.defaultDuplexMode, QPrinterInfo.supportedColorModes, QPrinterInfo.defaultColorMode, QPrinter.supportsMultipleCopies
+  dotnet  PrinterSettings.CanDuplex, PrinterSettings.SupportsColor, PrinterSettings.MaximumCopies
+  wx      -
+  note    CUPS is asked by `cupsCheckDestSupported` and the `copies-supported` range, Windows by `DeviceCapabilitiesW`; `submit` holds a job to the same answers, failing `unsupported` where Qt would print one side silently
+
+capability printing/settings  what a job asks: copies, paper, orientation, sides, colour, pages and collation
+  heroes  printing.Settings, printing.default_settings, printing.Orientation, printing.Sides, printing.ColorMode, printing.PageRange
+  go      -
+  rust    -
+  python  -
+  java    HashPrintRequestAttributeSet, Copies, MediaSizeName, OrientationRequested, Sides, Chromaticity, PageRanges, SheetCollate
+  qt      QPrinter.setCopyCount, QPrinter.copyCount, QPrinter.setPageSize, QPrinter.setPageOrientation, QPrinter.setDuplex, QPrinter.duplex, QPrinter.setColorMode, QPrinter.colorMode, QPrinter.setPageRanges, QPrinter.setFromTo, QPrinter.fromPage, QPrinter.toPage, QPrinter.setPrintRange, QPrinter.printRange, QPrinter.setCollateCopies, QPrinter.collateCopies, QPrinter.setPrinterName, QPrinter.printerName
+  dotnet  PrinterSettings.Copies, PrinterSettings.Collate, PrinterSettings.Duplex, PrinterSettings.FromPage, PrinterSettings.ToPage, PrinterSettings.PrintRange, PageSettings.Landscape, PageSettings.Color, PageSettings.PaperSize
+  wx      wxPrintData.SetNoCopies, wxPrintData.SetCollate, wxPrintData.SetOrientation, wxPrintData.SetDuplex, wxPrintData.SetColour, wxPrintData.SetPaperId, wxPrintDialogData.SetFromPage, wxPrintDialogData.SetToPage
+  note    one record, which `ui`'s print dialog answers and `submit` takes, as Qt's `QPrinter` is both; the four orientations are IPP's, a reverse one printed half a turn on Windows, whose settings have two; page ranges in order and not touching, as IPP's `page-ranges` holds them
+
+capability printing/settings-text  a job's settings written as text and read back, in IPP's words
+  heroes  printing.format_settings, printing.parse_settings
+  go      -
+  rust    -
+  python  -
+  java    -
+  qt      -
+  dotnet  -
+  wx      -
+  note    IPP's job-template attributes as `<key>=<value>` lines, the words CUPS's options take, so a person's settings are kept in a program's own file; the same text `ui`'s print dialogs exchange with the platform layer, whose C and Swift readers refuse what `parse_settings` refuses (a key twice, a value outside its values)
+
+capability printing/submit  a PDF document submitted to a printer as one job
+  heroes  printing.submit, printing.Job
+  go      -
+  rust    -
+  python  -
+  java    PrintService.createPrintJob, DocPrintJob.print, SimpleDoc, DocFlavor.INPUT_STREAM.PDF, JobName
+  qt      -
+  dotnet  -
+  wx      -
+  note    PDF is the one document form, which CUPS takes on macOS and Linux and Windows' own PDF renderer (`Windows.Data.Pdf`) draws through Direct2D's print control into an XPS job with a print ticket of the settings; never a shell verb. Java takes PDF only where the print service does (no service of Java's own renders one). Qt, .NET and wxWidgets print what a program paints on a page through a painter (`QPainter`, `PrintDocument.PrintPage`, `wxPrintout.OnPrintPage`), which is here `pdf`'s work, the document arriving whole. A page larger than the paper is fitted to it, centred, as CUPS's `print-scaling` of `auto` does
+
+capability printing/status  a job's state, its reasons and the pages printed, told while it runs and when it ends
+  heroes  printing.status_of, printing.Status, printing.JobState, printing.is_ended
+  go      -
+  rust    -
+  python  -
+  java    DocPrintJob.addPrintJobListener, PrintJobListener, PrintJobEvent, JobState, JobStateReasons, JobImpressionsCompleted
+  qt      -
+  dotnet  PrintSystemJobInfo.JobStatus, PrintSystemJobInfo.NumberOfPagesPrinted, PrintSystemJobInfo.IsCompleted, PrintSystemJobInfo.IsDeleted, PrintSystemJobInfo.Refresh
+  wx      -
+  note    IPP's seven job states on every system: CUPS's Get-Job-Attributes, the spooler's `GetJobW` on Windows. The spooler forgets a job once it ends, so the layer keeps what this process saw of the jobs it submitted and tells their end then; a job of another process gone from Windows' queue fails `not_found`. Asked, not pushed, as .NET asks it: Java's listener is a callback, which the language takes on no thread of its own
+
+capability printing/jobs  the jobs on a printer that have not ended
+  heroes  printing.jobs
+  go      -
+  rust    -
+  python  -
+  java    -
+  qt      -
+  dotnet  PrintQueue.GetPrintJobInfoCollection, PrintQueue.NumberOfJobs
+  wx      -
+  note    oldest first, every user's the system shows
+
+capability printing/cancel  a job cancelled
+  heroes  printing.cancel
+  go      -
+  rust    -
+  python  -
+  java    CancelablePrintJob.cancel
+  qt      QPrinter.abort
+  dotnet  PrintSystemJobInfo.Cancel
+  wx      -
+  note    a job that had already ended is no failure, where Java throws `PrintException`; on Windows `JOB_CONTROL_DELETE`, Microsoft's word for a cancel
+
+capability printing/wait  the end of a job waited for, bounded by a span
+  heroes  printing.wait, printing.FOREVER
+  go      -
+  rust    -
+  python  -
+  java    PrintJobListener.printJobNoMoreEvents
+  qt      -
+  dotnet  -
+  wx      -
+  note    asked four times a second; fails `timeout` at the span's end and `stopped` once the program's stop is asked (README § A4), in milliseconds, the package standing below `time`
+
+capability printing/raw  a document in the printer's own language sent as it is
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  java    DocFlavor.BYTE_ARRAY.AUTOSENSE, DocFlavor.INPUT_STREAM.POSTSCRIPT, DocFlavor.INPUT_STREAM.PCL
+  qt      -
+  dotnet  -
+  wx      -
+  note    a label printer's ZPL or a PCL stream: CUPS's `application/vnd.cups-raw` and the spooler's `RAW` datatype; it waits for its own block, the spooler's raw path being another arm than the PDF one
+
+capability printing/job-options  the print quality, pages per sheet, scaling, finishing and the input tray asked of a job
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  java    PrintQuality, NumberUp, Finishings, MediaTray, PrinterResolution
+  qt      QPrinter.setResolution, QPrinter.resolution, QPrinterInfo.supportedResolutions, QPrinter.setPaperSource, QPrinter.paperSource, QPrinterInfo.supportedPaperSources, QPrinter.setFullPage, QPrinter.setPageOrder
+  dotnet  PrinterSettings.PrinterResolutions, PageSettings.PrinterResolution, PrinterSettings.PaperSources, PageSettings.PaperSource
+  wx      wxPrintData.SetQuality, wxPrintData.SetBin
+  note    each a setting the printer must be asked whether it takes, as `capabilities` asks sides and colour
+
+capability printing/to-file  a job written to a file instead of a printer
+  heroes  refused: the document is a PDF the program already holds, written to a file by `write_file` or `fs`
+  go      -
+  rust    -
+  python  -
+  java    Destination
+  qt      QPrinter.setOutputFileName, QPrinter.outputFileName, QPrinter.setOutputFormat, QPrinter.outputFormat, QPrinter.setPdfVersion, QPrinter.pdfVersion
+  dotnet  PrinterSettings.PrintToFile, PrinterSettings.PrintFileName
+  wx      wxPrintData.SetFilename
+  note    the libraries that paint pages need a file printer to make a PDF; here `pdf` makes it
+
+capability printing/administer  printers added, shared, paused or removed
+  heroes  refused: the system's settings do it, with its privileges; a program printing needs none
+  go      -
+  rust    -
+  python  -
+  java    -
+  qt      -
+  dotnet  PrintServer.InstallPrintQueue, PrintQueue.Pause, PrintQueue.Resume, PrintQueue.Purge
+  wx      -
+  note    CUPS's `lpadmin` and Windows' print management ask the administrator's rights
+
+dropped
+  java    MultiDocPrintService, MultiDocPrintJob, MultiDoc (several documents in one job: one document a job here); StreamPrintService, StreamPrintServiceFactory (a print service writing to a stream: `pdf` writes the document); ServiceUI (Java's own print dialog: `ui`'s); DocFlavor's other families (one document form, PDF); AttributeSet, HashAttributeSet and the attribute classes' plumbing (one record of settings)
+  qt      QPrinter's paint device (newPage, pageRect, paperRect, fullPage, metric, devType, setEngines, QPrintEngine: pages are painted by `pdf`); QPrinter.setPrintProgram, QPrinter.printProgram (a Unix spooler's command: CUPS's library is called); QPrinter.setDocName, QPrinter.docName (the job's title, `submit`'s `title`); QPrinter.setCreator, QPrinter.creator, QPrinter.setFontEmbeddingEnabled, QPrinter.fontEmbeddingEnabled (the document's own, `pdf`'s); QPrinter.setPrinterSelectionOption, QPrinter.printerSelectionOption (raw CUPS options: the settings are one record); QPrinterInfo.isValid (a printer named is found or `not_found`)
+  dotnet  PrintDocument, PrintPageEventArgs, PrintController, StandardPrintController, PreviewPrintController (painting pages through events: `pdf` writes the document); PrinterSettings.CreateMeasurementGraphics, PrinterSettings.GetHdevmode, PrinterSettings.SetHdevmode, PrinterSettings.GetHdevnames, PrinterSettings.SetHdevnames (Windows' handles)
+  wx      wxPrinter, wxPrintout, wxPrinterDC, wxPrintPreview (painting pages: `pdf`'s); wxPrintDialog, wxPageSetupDialog (`ui`'s dialogs)

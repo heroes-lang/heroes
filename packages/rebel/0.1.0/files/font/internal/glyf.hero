@@ -1,0 +1,344 @@
+# TrueType outlines: `loca` says where each glyph's record stands in `glyf`;
+# a simple glyph holds contours of points on and off the curve, a composite
+# glyph holds other glyphs moved, scaled and turned. Read into points here;
+# `contour` draws them.
+
+use font/internal/bin
+use font/internal/sfnt
+
+# The most points a glyph may expand to, composites included.
+constant MAX_POINTS: i64
+    1048576
+
+# The most components a glyph may expand to, nested ones included.
+constant MAX_COMPONENTS: i64
+    4096
+
+# How deep composites may nest: a composite of composites to this depth.
+constant MAX_DEPTH: i64
+    16
+
+# Why a glyph is not read past a limit.
+constant LIMIT: str
+    "limit"
+
+# Where the outline tables stand.
+record Source
+    # Where `glyf` begins in the file.
+    glyf_at: i64
+    # How many bytes `glyf` holds.
+    glyf_length: i64
+    # Where `loca` begins in the file.
+    loca_at: i64
+    # Whether `loca` holds 32-bit offsets.
+    loca_long: bool
+    # How many glyphs the font has.
+    num_glyphs: i64
+
+# The points of a glyph before they are drawn.
+record Points
+    # The x of each point.
+    xs: [f64]
+    # The y of each point.
+    ys: [f64]
+    # Whether each point is on the curve.
+    on: [bool]
+    # The index of each contour's last point, ascending.
+    ends: [i64]
+
+# What a glyph has spent of the limits.
+record Budget
+    # The components expanded so far.
+    components: i64
+    # The points expanded so far.
+    points: i64
+
+# The glyph's place in `glyf` as its first byte and its length, where `loca`
+# gives it one. Fails `invalid` where `loca` runs backwards or past `glyf`.
+function span_of(data: [u8] lent, s: Source lent, glyph: i64) -> [i64]?
+    first = offset_in(data, s: s, entry: glyph)
+    last = offset_in(data, s: s, entry: glyph + 1)
+
+    if first > last || last > s.glyf_length
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"loca puts glyph {glyph} from {first} to {last} in a glyf table of {s.glyf_length} bytes"
+        )
+    return ok([s.glyf_at + first, last - first])
+
+# The `entry`th offset of `loca`, in bytes of `glyf`.
+function offset_in(data: [u8] lent, s: Source lent, entry: i64) -> i64
+    if s.loca_long
+        return bin.u32_at(data, at: s.loca_at + 4 * entry)
+    return 2 * bin.u16_at(data, at: s.loca_at + 2 * entry)
+
+# The points of `glyph`, composites expanded. Fails `invalid` where a record
+# runs past its bytes or names a glyph the font does not have, `limit` where
+# the glyph expands past `MAX_POINTS`, `MAX_COMPONENTS` or `MAX_DEPTH`.
+function points_of(data: [u8] lent, s: Source lent, glyph: i64, depth: i64, @budget: Budget) -> Points?
+    empty = Points(xs: [], ys: [], on: [], ends: [])
+
+    if glyph < 0 || glyph >= s.num_glyphs
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph} in a font of {s.num_glyphs} glyphs")
+
+    if depth > MAX_DEPTH
+        return fail(code: LIMIT, msg: f"composite glyphs nested past {MAX_DEPTH} levels, at glyph {glyph}")
+    span = span_of(data, s: s, glyph: glyph)?
+
+    if span[1] == 0
+        return ok(empty)
+
+    if span[1] < 10
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph} holds {span[1]} bytes, its header needs 10")
+    contours = bin.i16_at(data, at: span[0])
+
+    if contours >= 0
+        return simple(data, at: span[0], length: span[1], contours: contours, glyph: glyph, budget: @budget)
+    return composite(data, s: s, at: span[0], length: span[1], glyph: glyph, depth: depth, budget: @budget)
+
+# The points of a simple glyph record of `length` bytes at `at`.
+function simple(data: [u8] lent, at: i64, length: i64, contours: i64, glyph: i64, @budget: Budget) -> Points?
+    end = at + length
+    ends_at = at + 10
+
+    if ends_at + 2 * contours + 2 > end
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: {contours} contour ends run past its {length} bytes")
+    ends: [i64] @= []
+    previous @= -1
+
+    for c in range(from: 0, to: contours)
+        last = bin.u16_at(data, at: ends_at + 2 * c)
+
+        if last <= previous
+            return fail(
+                code: sfnt.INVALID,
+                msg: f"glyph {glyph}: contour {c} ends at point {last}, not after point {previous}"
+            )
+        ends @ ends.push(last)
+        previous @ last
+
+    count = previous + 1
+    budget.points @ budget.points + count
+
+    if budget.points > MAX_POINTS
+        return fail(code: LIMIT, msg: f"glyph {glyph} expands past {MAX_POINTS} points")
+    cursor @= ends_at + 2 * contours
+    skip = bin.u16_at(data, at: cursor)
+    cursor @ cursor + 2 + skip
+    flags: [i64] @= []
+
+    while flags.len() < count
+        if cursor >= end
+            return fail(
+                code: sfnt.INVALID,
+                msg: f"glyph {glyph}: the flags of {count} points run past its {length} bytes"
+            )
+        flag = bin.u8_at(data, at: cursor)
+        cursor @ cursor + 1
+        flags @ flags.push(flag)
+
+        if flag & 8 != 0
+            if cursor >= end
+                return fail(
+                    code: sfnt.INVALID,
+                    msg: f"glyph {glyph}: a flag's repeat count runs past its {length} bytes"
+                )
+            repeats = bin.u8_at(data, at: cursor)
+            cursor @ cursor + 1
+
+            for _ in range(from: 0, to: repeats)
+                if flags.len() < count
+                    flags @ flags.push(flag)
+
+    xs: [f64] @= []
+    ys: [f64] @= []
+    on: [bool] @= []
+    value @= 0
+
+    for flag in flags
+        if flag & 2 != 0
+            if cursor >= end
+                return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: the x coordinates run past its {length} bytes")
+            step = bin.u8_at(data, at: cursor)
+            cursor @ cursor + 1
+
+            if flag & 16 != 0
+                value @ value + step
+            else
+                value @ value - step
+        else if flag & 16 == 0
+            if cursor + 2 > end
+                return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: the x coordinates run past its {length} bytes")
+            value @ value + bin.i16_at(data, at: cursor)
+            cursor @ cursor + 2
+        xs @ xs.push(to_f64(value))
+        on @ on.push(flag & 1 != 0)
+
+    value @ 0
+
+    for flag in flags
+        if flag & 4 != 0
+            if cursor >= end
+                return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: the y coordinates run past its {length} bytes")
+            step = bin.u8_at(data, at: cursor)
+            cursor @ cursor + 1
+
+            if flag & 32 != 0
+                value @ value + step
+            else
+                value @ value - step
+        else if flag & 32 == 0
+            if cursor + 2 > end
+                return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: the y coordinates run past its {length} bytes")
+            value @ value + bin.i16_at(data, at: cursor)
+            cursor @ cursor + 2
+        ys @ ys.push(to_f64(value))
+
+    return ok(Points(xs: xs, ys: ys, on: on, ends: ends))
+
+# One component of a composite glyph, as its record says it.
+record Component
+    # The glyph it draws.
+    glyph: i64
+    # The flags of the record.
+    flags: i64
+    # The first argument: an offset in x, or a point of the glyphs so far.
+    arg1: i64
+    # The second argument: an offset in y, or a point of this component.
+    arg2: i64
+    # The 2x2 transform, `xscale`, `scale01`, `scale10`, `yscale`.
+    matrix: [f64]
+    # Where the next component's record begins.
+    next: i64
+
+# The component record at `at`, inside `end`.
+function component_at(data: [u8] lent, at: i64, end: i64, glyph: i64) -> Component?
+    if at + 4 > end
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: a component record runs past its glyph")
+    flags = bin.u16_at(data, at: at)
+    child = bin.u16_at(data, at: at + 2)
+    wide = flags & 1 != 0
+    cursor @= at + 4
+    need = args_size(wide)
+
+    if cursor + need > end
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: a component's arguments run past its glyph")
+    xy = flags & 2 != 0
+    arg1 @= 0
+    arg2 @= 0
+
+    if wide && xy
+        arg1 @ bin.i16_at(data, at: cursor)
+        arg2 @ bin.i16_at(data, at: cursor + 2)
+    else if wide
+        arg1 @ bin.u16_at(data, at: cursor)
+        arg2 @ bin.u16_at(data, at: cursor + 2)
+    else if xy
+        arg1 @ signed8(bin.u8_at(data, at: cursor))
+        arg2 @ signed8(bin.u8_at(data, at: cursor + 1))
+    else
+        arg1 @ bin.u8_at(data, at: cursor)
+        arg2 @ bin.u8_at(data, at: cursor + 1)
+
+    cursor @ cursor + need
+    matrix: [f64] @= [1.0, 0.0, 0.0, 1.0]
+    extra @= 0
+
+    if flags & 8 != 0
+        extra @ 2
+    else if flags & 64 != 0
+        extra @ 4
+    else if flags & 128 != 0
+        extra @ 8
+
+    if cursor + extra > end
+        return fail(code: sfnt.INVALID, msg: f"glyph {glyph}: a component's transform runs past its glyph")
+
+    if flags & 8 != 0
+        scale = f2dot14(data, at: cursor)
+        matrix @ [scale, 0.0, 0.0, scale]
+    else if flags & 64 != 0
+        matrix @ [f2dot14(data, at: cursor), 0.0, 0.0, f2dot14(data, at: cursor + 2)]
+    else if flags & 128 != 0
+        matrix @ [
+            f2dot14(data, at: cursor)
+            f2dot14(data, at: cursor + 2)
+            f2dot14(data, at: cursor + 4)
+            f2dot14(data, at: cursor + 6)
+        ]
+
+    return ok(Component(glyph: child, flags: flags, arg1: arg1, arg2: arg2, matrix: matrix, next: cursor + extra))
+
+# How many bytes a component's two arguments take.
+function args_size(wide: bool) -> i64
+    if wide
+        return 4
+    return 2
+
+# The byte `v` as a signed 8-bit number.
+function signed8(v: i64) -> i64
+    if v >= 128
+        return v - 256
+    return v
+
+# The signed 2.14 fixed-point number at `at`.
+function f2dot14(data: [u8] lent, at: i64) -> f64
+    return to_f64(bin.i16_at(data, at: at)) / 16384.0
+
+# The points of a composite glyph record of `length` bytes at `at`: each
+# component's points moved, scaled and turned, one after another.
+function composite(data: [u8] lent, s: Source lent, at: i64, length: i64, glyph: i64, depth: i64, @budget: Budget) -> Points?
+    end = at + length
+    cursor @= at + 10
+    xs: [f64] @= []
+    ys: [f64] @= []
+    on: [bool] @= []
+    ends: [i64] @= []
+
+    while true
+        budget.components @ budget.components + 1
+
+        if budget.components > MAX_COMPONENTS
+            return fail(code: LIMIT, msg: f"glyph {glyph} expands past {MAX_COMPONENTS} components")
+        c = component_at(data, at: cursor, end: end, glyph: glyph)?
+        child = points_of(data, s: s, glyph: c.glyph, depth: depth + 1, budget: @budget)?
+        shift = offsets_of(c: c, child: child, so_far_x: xs, so_far_y: ys, glyph: glyph)?
+        base = xs.len()
+
+        for k in range(from: 0, to: child.xs.len())
+            px = child.xs[k]
+            py = child.ys[k]
+            xs @ xs.push(c.matrix[0] * px + c.matrix[2] * py + shift[0])
+            ys @ ys.push(c.matrix[1] * px + c.matrix[3] * py + shift[1])
+            on @ on.push(child.on[k])
+
+        for e in child.ends
+            ends @ ends.push(base + e)
+
+        cursor @ c.next
+
+        if c.flags & 32 == 0
+            break
+
+    return ok(Points(xs: xs, ys: ys, on: on, ends: ends))
+
+# Where a component's points move to: its offset, scaled by its transform when
+# the flag says so, or the shift that puts one of its points on one of the
+# points so far. Fails `invalid` where a point number is outside its glyph.
+function offsets_of(c: Component lent, child: Points lent, so_far_x: [f64] lent, so_far_y: [f64] lent, glyph: i64) -> [f64]?
+    if c.flags & 2 != 0
+        dx = to_f64(c.arg1)
+        dy = to_f64(c.arg2)
+
+        if c.flags & 2048 != 0 && c.flags & 4096 == 0
+            return ok([c.matrix[0] * dx + c.matrix[2] * dy, c.matrix[1] * dx + c.matrix[3] * dy])
+        return ok([dx, dy])
+
+    if c.arg1 >= so_far_x.len() || c.arg2 >= child.xs.len()
+        return fail(
+            code: sfnt.INVALID,
+            msg: f"glyph {glyph}: a component matches point {c.arg1} to point {c.arg2}, past the points there are"
+        )
+    cx = c.matrix[0] * child.xs[c.arg2] + c.matrix[2] * child.ys[c.arg2]
+    cy = c.matrix[1] * child.xs[c.arg2] + c.matrix[3] * child.ys[c.arg2]
+    return ok([so_far_x[c.arg1] - cx, so_far_y[c.arg1] - cy])

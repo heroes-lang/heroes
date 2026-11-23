@@ -1,0 +1,353 @@
+# The platform layer's sound, `hero_audio.h`, bound thin: one function per C
+# function, in C's order, each answering what C answers. Rebel's floor of
+# `audio` (`examples-rebel/README.md` § A2): where a call fails its stream or
+# bell is `nullptr` or its count -1, and `last_error` then the kind; no policy
+# stands here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. A stream is begun by `hero_audio_open` and ended
+# by `hero_audio_close`; its bell, a stream on Darwin and Linux and a socket on
+# Windows, is the stream's own, borrowed, and closed with it.
+
+use io/hero_stream
+use math
+use net/hero_net
+
+extern "hero_audio.h"
+    # A stream the layer holds open. It is a handle the layer issues and
+    # checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_AUDIO_NOT_OPEN`, never a read of freed memory.
+    record Stream tag hero_audio_stream
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_AUDIO_OK: i64
+    constant HERO_AUDIO_INVALID: i64
+    constant HERO_AUDIO_NOT_OPEN: i64
+    constant HERO_AUDIO_NOT_FOUND: i64
+    constant HERO_AUDIO_DENIED: i64
+    constant HERO_AUDIO_LIMIT: i64
+    constant HERO_AUDIO_UNSUPPORTED: i64
+    constant HERO_AUDIO_TIMEOUT: i64
+    constant HERO_AUDIO_STOPPED: i64
+    constant HERO_AUDIO_ENDED: i64
+    constant HERO_AUDIO_LOST: i64
+    constant HERO_AUDIO_OTHER: i64
+    # The two directions.
+    constant HERO_AUDIO_OUTPUT: i64
+    constant HERO_AUDIO_INPUT: i64
+    # The states `hero_audio_state` answers.
+    constant HERO_AUDIO_RUNNING: i64
+    constant HERO_AUDIO_PAUSED: i64
+    constant HERO_AUDIO_DONE: i64
+    constant HERO_AUDIO_GONE: i64
+    # The bounds of a stream.
+    constant HERO_AUDIO_RATE_MOST: i64
+    constant HERO_AUDIO_CHANNELS_MOST: i64
+    constant HERO_AUDIO_ROOM_MOST: i64
+    constant HERO_AUDIO_SAMPLES_MOST: i64
+    function hero_audio_system(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_audio_devices(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_audio_open(device: cstr lent, direction: i64, rate: i64, channels: i64, room: i64) -> Stream acquires hero_audio_close
+    function hero_audio_write(s: Stream, @samples: [f32] counted_by n lent, n: u64, limit_ns: i64) -> i64
+    function hero_audio_read(s: Stream, @buffer: [f32] counted_by n lent, n: u64, limit_ns: i64) -> i64
+    function hero_audio_finish(s: Stream) -> i64
+    function hero_audio_wait(s: Stream, limit_ns: i64) -> i64
+    function hero_audio_pause(s: Stream) -> i64
+    function hero_audio_resume(s: Stream) -> i64
+    function hero_audio_stop(s: Stream) -> i64
+    function hero_audio_set_volume(s: Stream, volume: f64) -> i64
+    function hero_audio_state(s: Stream) -> i64
+    function hero_audio_position(s: Stream) -> i64
+    function hero_audio_waiting(s: Stream) -> i64
+    function hero_audio_dropped(s: Stream) -> i64
+    function hero_audio_bell_stream(s: Stream) -> hero_stream.Stream borrows
+    function hero_audio_bell_socket(s: Stream) -> hero_net.Socket borrows
+    function hero_audio_close(s: Stream consumes) -> i64
+    function hero_audio_permission(limit_ns: i64) -> i64
+    function hero_audio_beep() -> i64
+    function hero_audio_last_error() -> i64
+    function hero_audio_last_os_error() -> i64
+    function hero_audio_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# The identifier of the null device, `hero_audio.h`'s `HERO_AUDIO_NULL`: an
+# output that plays nothing at its stream's rate and an input that records a
+# sine of 440 Hz at half the full scale, on every system and with no hardware.
+constant NULL_DEVICE: str
+    "heroes:null"
+
+# The length of this machine's sound system's name, written into `buffer`
+# where it fits in `n` bytes; or -1.
+#
+# - `buffer`: filled with the name's UTF-8, no zero byte; left `n` long.
+# - `n`: the bytes `buffer` holds; a name longer than it is not written, its
+#   length answered all the same.
+function system(@buffer: [u8], n: u64) -> i64
+    return hero_audio_system(@buffer, n: n)
+
+# The bytes of the list of devices, seven fields each ended by a zero byte,
+# written into `buffer` where they fit in `n`; or -1.
+#
+# - `buffer`: filled with the list; left `n` long.
+# - `n`: the bytes `buffer` holds; a list longer is not written, its length
+#   answered all the same.
+function devices(@buffer: [u8], n: u64) -> i64
+    return hero_audio_devices(@buffer, n: n)
+
+# A new stream, started; or `nullptr`.
+#
+# - `device`: a device's identifier, "" for the default of `direction`, or
+#   `NULL_DEVICE`; one no device has is `HERO_AUDIO_NOT_FOUND`. It aborts
+#   where it holds a zero byte.
+# - `direction`: `HERO_AUDIO_OUTPUT` or `HERO_AUDIO_INPUT`.
+# - `rate`: frames a second, 1 to `HERO_AUDIO_RATE_MOST`.
+# - `channels`: 1 to `HERO_AUDIO_CHANNELS_MOST`.
+# - `room`: the frames waiting between the program and the system, 1 to
+#   `HERO_AUDIO_ROOM_MOST`, at most `HERO_AUDIO_SAMPLES_MOST` samples.
+function open(device: str, direction: i64, rate: i64, channels: i64, room: i64) -> Stream
+    return hero_audio_open(device.cstr(), direction: direction, rate: rate, channels: channels, room: room)
+
+# The frames of `samples` queued on the output `s`, or -1.
+#
+# - `s`: an output.
+# - `samples`: interleaved frames, the first `n` samples handed to C; left
+#   `n` long.
+# - `n`: the samples, a whole number of frames.
+# - `limit_ns`: nanoseconds to wait for room; 0 waits not at all.
+function write(s: Stream, @samples: [f32], n: u64, limit_ns: i64) -> i64
+    return hero_audio_write(s, @samples, n: n, limit_ns: limit_ns)
+
+# The frames moved from the input `s` into `buffer`, 0 where `limit_ns`
+# passed with none, or -1.
+#
+# - `s`: an input.
+# - `buffer`: filled with the frames; left `n` long.
+# - `n`: the samples `buffer` holds, room for one frame or more.
+# - `limit_ns`: nanoseconds to wait for the first frame; 0 waits not at all.
+function read(s: Stream, @buffer: [f32], n: u64, limit_ns: i64) -> i64
+    return hero_audio_read(s, @buffer, n: n, limit_ns: limit_ns)
+
+# 0 once the output `s` is told no more frames come, or -1.
+#
+# - `s`: an output.
+function finish(s: Stream) -> i64
+    return hero_audio_finish(s)
+
+# 0 once `s` has ended, or -1: `HERO_AUDIO_TIMEOUT` where `limit_ns` passed.
+#
+# - `s`: the stream.
+# - `limit_ns`: nanoseconds to wait; 0 waits not at all.
+function wait(s: Stream, limit_ns: i64) -> i64
+    return hero_audio_wait(s, limit_ns: limit_ns)
+
+# 0 once `s` is paused, or -1.
+#
+# - `s`: the stream.
+function pause(s: Stream) -> i64
+    return hero_audio_pause(s)
+
+# 0 once `s` runs again, or -1.
+#
+# - `s`: the stream.
+function resume(s: Stream) -> i64
+    return hero_audio_resume(s)
+
+# 0 once `s` has stopped and ended, or -1.
+#
+# - `s`: the stream.
+function stop(s: Stream) -> i64
+    return hero_audio_stop(s)
+
+# 0 once every sample of `s` is multiplied by `volume`, or -1.
+#
+# - `s`: the stream.
+# - `volume`: 0 to 1.
+function set_volume(s: Stream, volume: f64) -> i64
+    return hero_audio_set_volume(s, volume: volume)
+
+# The state of `s`, one of `HERO_AUDIO_RUNNING`, `_PAUSED`, `_DONE`, `_GONE`,
+# or -1.
+#
+# - `s`: the stream.
+function state(s: Stream) -> i64
+    return hero_audio_state(s)
+
+# The frames the system took from or gave to `s`, or -1.
+#
+# - `s`: the stream.
+function position(s: Stream) -> i64
+    return hero_audio_position(s)
+
+# The frames waiting in `s`, or -1.
+#
+# - `s`: the stream.
+function waiting(s: Stream) -> i64
+    return hero_audio_waiting(s)
+
+# The frames `s` dropped, or played as silence for want of any, or -1.
+#
+# - `s`: the stream.
+function dropped(s: Stream) -> i64
+    return hero_audio_dropped(s)
+
+# The stream's bell as a stream, borrowed; or `nullptr`,
+# `HERO_AUDIO_UNSUPPORTED` on Windows.
+#
+# - `s`: the stream whose bell is asked for; the bell is its own, never read,
+#   written or closed by the caller, and closed with it.
+function bell_stream(s: Stream) -> hero_stream.Stream
+    return hero_audio_bell_stream(s)
+
+# The stream's bell as a datagram socket, borrowed; or `nullptr`,
+# `HERO_AUDIO_UNSUPPORTED` but on Windows.
+#
+# - `s`: the stream whose bell is asked for; the bell is its own, never read,
+#   written or closed by the caller, and closed with it. A datagram from a
+#   stranger makes it ready.
+function bell_socket(s: Stream) -> hero_net.Socket
+    return hero_audio_bell_socket(s)
+
+# 0, or -1 where the stream was not open; `s` is given back either way.
+#
+# - `s`: the stream ended and given back, its bell with it; a wait another
+#   thread is in on it answers `HERO_AUDIO_NOT_OPEN`.
+function close(@s: Stream) -> i64
+    return hero_audio_close(s)
+
+# 1 where this program may record, or -1.
+#
+# - `limit_ns`: nanoseconds to wait for the person's answer where they are
+#   asked; 0 asks nothing.
+function permission(limit_ns: i64) -> i64
+    return hero_audio_permission(limit_ns)
+
+# 0 once the system's alert is sounding, or -1.
+function beep() -> i64
+    return hero_audio_beep()
+
+# The kind of the last call's failure on this thread.
+function last_error() -> i64
+    return hero_audio_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# itself refused.
+function last_os_error() -> i64
+    return hero_audio_last_os_error()
+
+# The bytes of the last failure's words written into `buffer`, or -1.
+#
+# - `buffer`: filled with the words; left `n` long.
+# - `n`: the bytes `buffer` holds, 1 or more.
+function last_message(@buffer: [u8], n: u64) -> i64
+    return hero_audio_last_message(@buffer, n: n)
+
+## The floor's own tests
+
+test "open: every argument out of its range refused, and a device no system has not found"
+    for bad in [[0, 48000, 1, 10], [3, 48000, 1, 10], [1, 0, 1, 10], [1, 768001, 1, 10], [1, 48000, 0, 10], [1, 48000, 65, 10], [1, 48000, 1, 0], [1, 48000, 64, 268435456]]
+        s = open(NULL_DEVICE, direction: bad[0], rate: bad[1], channels: bad[2], room: bad[3])
+        assert s == nullptr
+        assert last_error() == HERO_AUDIO_INVALID
+
+    missing = open("heroes:no-such-device", direction: HERO_AUDIO_OUTPUT, rate: 48000, channels: 2, room: 4800)
+    assert missing == nullptr
+    assert last_error() == HERO_AUDIO_NOT_FOUND || last_error() == HERO_AUDIO_UNSUPPORTED
+
+test "write, finish, wait: the null output takes a tenth of a second in about a tenth of a second, then ends"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 8000, channels: 2, room: 8000)
+    assert s != nullptr
+    frames: [f32] @= []
+
+    for _ in range(from: 0, to: 1600)
+        frames @ frames.push(0.25)
+
+    assert write(s, @frames, n: 1600, limit_ns: 0) == 800
+    assert waiting(s) <= 800
+    assert finish(s) == 0
+    assert write(s, @frames, n: 2, limit_ns: 0) == -1 && last_error() == HERO_AUDIO_ENDED
+    assert wait(s, limit_ns: 2000000000) == 0
+    assert state(s) == HERO_AUDIO_DONE && position(s) == 800 && waiting(s) == 0
+    assert close(@s) == 0
+
+test "write: a frame cut short, an input written, a closed stream"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 8000, channels: 2, room: 100)
+    odd: [f32] @= [0.5, 0.5, 0.5]
+    assert write(s, @odd, n: 3, limit_ns: 0) == -1 && last_error() == HERO_AUDIO_INVALID
+    assert close(@s) == 0
+    i @= open(NULL_DEVICE, direction: HERO_AUDIO_INPUT, rate: 8000, channels: 1, room: 100)
+    one: [f32] @= [0.5]
+    assert write(i, @one, n: 1, limit_ns: 0) == -1 && last_error() == HERO_AUDIO_INVALID
+    assert finish(i) == -1 && last_error() == HERO_AUDIO_INVALID
+    assert close(@i) == 0
+
+test "write: the room full, a limit of zero queues what fits and answers at once"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 8000, channels: 1, room: 10)
+    assert pause(s) == 0 && state(s) == HERO_AUDIO_PAUSED
+    frames: [f32] @= []
+
+    for _ in range(from: 0, to: 25)
+        frames @ frames.push(0.0)
+
+    assert write(s, @frames, n: 25, limit_ns: 0) == 10
+    assert write(s, @frames, n: 25, limit_ns: 20000000) == 0
+    assert resume(s) == 0 && state(s) == HERO_AUDIO_RUNNING
+    assert write(s, @frames, n: 25, limit_ns: 2000000000) == 25
+    assert stop(s) == 0 && state(s) == HERO_AUDIO_DONE && waiting(s) == 0
+    assert wait(s, limit_ns: 0) == 0
+    assert close(@s) == 0
+
+test "read: the null input records the 440 Hz sine, frame after frame, in every channel"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_INPUT, rate: 8000, channels: 2, room: 8000)
+    got: [f32] @= []
+
+    while got.len() < 400
+        buffer: [f32] @= []
+
+        for _ in range(from: 0, to: 200)
+            buffer @ buffer.push(0.0)
+
+        n = read(s, @buffer, n: 200, limit_ns: 1000000000)
+        assert n > 0
+
+        for i in range(from: 0, to: n * 2)
+            got @ got.push(buffer[i])
+
+    for k in range(from: 0, to: 200)
+        turn = to_f64(k * 440 % 8000) / 8000.0
+        expected = 0.5 * math.sin(math.TAU * turn)
+        assert math.abs(to_f64(got[2 * k]) - expected) < 0.000001
+        assert got[2 * k] == got[2 * k + 1]
+
+    assert stop(s) == 0
+    assert close(@s) == 0
+
+test "read: a limit of zero with nothing recorded answers 0, and a stopped input ends once read"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_INPUT, rate: 8000, channels: 1, room: 100)
+    assert pause(s) == 0
+    buffer: [f32] @= [0.0, 0.0]
+    assert read(s, @buffer, n: 2, limit_ns: 0) == 0
+    assert stop(s) == 0
+    assert read(s, @buffer, n: 2, limit_ns: 0) == -1 && last_error() == HERO_AUDIO_ENDED
+    assert pause(s) == -1 && last_error() == HERO_AUDIO_ENDED
+    assert close(@s) == 0
+
+test "set_volume: outside 0 to 1 refused, a NaN too, and 0.5 taken"
+    s @= open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 8000, channels: 1, room: 100)
+    assert set_volume(s, volume: 1.5) == -1 && last_error() == HERO_AUDIO_INVALID
+    assert set_volume(s, volume: -0.1) == -1
+    assert set_volume(s, volume: 0.0 / 0.0) == -1
+    assert set_volume(s, volume: 0.5) == 0
+    assert close(@s) == 0
+
+test "last_message: no room is refused; after a refusal it says what was refused"
+    empty: [u8] @= []
+    assert last_message(@empty, n: 0) == -1
+    s = open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 0, channels: 1, room: 1)
+    assert s == nullptr
+    words: [u8] @= []
+
+    for _ in range(from: 0, to: 200)
+        words @ words.push(0)
+
+    n = last_message(@words, n: 200)
+    assert n > 10

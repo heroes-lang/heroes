@@ -1,0 +1,243 @@
+# A certificate, a certificate request and a revocation list put together
+# and signed, from parts the face has already turned from its records into
+# bytes and ASN.1: the TBSCertificate of RFC 5280 § 4.1, the
+# CertificationRequestInfo of RFC 2986 § 4.1 and the TBSCertList of RFC 5280
+# § 5.1, each signed by `schemes.signed`. Each refuses what RFC 5280 forbids
+# in the part it puts in, naming the part.
+
+use asn1
+use big
+use crypto/keypairs
+use time
+use x509/internal/places
+use x509/internal/schemes
+use x509/internal/shapes
+use x509/internal/writing
+
+## Codes
+
+# A part RFC 5280 does not allow, the message saying which.
+constant INVALID: str
+    "invalid"
+
+## Identifiers
+
+# `subjectKeyIdentifier`, `2.5.29.14`: the face's `SUBJECT_KEY_ID`.
+constant SUBJECT_KEY_ID: str
+    "2.5.29.14"
+
+# `authorityKeyIdentifier`, `2.5.29.35`.
+constant AUTHORITY_KEY_ID: str
+    "2.5.29.35"
+
+# `authorityInfoAccess`, `1.3.6.1.5.5.7.1.1`.
+constant AUTHORITY_INFO_ACCESS: str
+    "1.3.6.1.5.5.7.1.1"
+
+# `cRLDistributionPoints`, `2.5.29.31`.
+constant CRL_DISTRIBUTION_POINTS: str
+    "2.5.29.31"
+
+# `cRLNumber`, `2.5.29.20`.
+constant CRL_NUMBER: str
+    "2.5.29.20"
+
+# The access method `id-ad-ocsp`, `1.3.6.1.5.5.7.48.1`.
+constant OCSP: str
+    "1.3.6.1.5.5.7.48.1"
+
+# The access method `id-ad-caIssuers`, `1.3.6.1.5.5.7.48.2`.
+constant CA_ISSUERS: str
+    "1.3.6.1.5.5.7.48.2"
+
+# The attribute `extensionRequest` of PKCS #9, `1.2.840.113549.1.9.14`.
+constant EXTENSION_REQUEST: str
+    "1.2.840.113549.1.9.14"
+
+## Certificates
+
+# What a certificate says, as bytes and ASN.1, before it is signed.
+record Parts
+    # The serial number.
+    serial: big.Integer
+    # The first moment it is valid, in UTC.
+    not_before: time.DateTime
+    # The last moment it is valid, in UTC.
+    not_after: time.DateTime
+    # The subject's name: its DER.
+    subject: [u8]
+    # The issuer's name: its DER.
+    issuer: [u8]
+    # The subject's SubjectPublicKeyInfo: its DER.
+    key: [u8]
+    # The bytes inside that structure's BIT STRING, which the key identifier
+    # is taken of.
+    key_bits: [u8]
+    # The extension naming the issuer's key, or none for a certificate that
+    # signs itself.
+    authority: [asn1.Value]
+    # The extensions the profile writes, each as `writing.extension` wrote it.
+    profile: [asn1.Value]
+    # The places an OCSP answer is asked, as URLs; empty for none.
+    ocsp_urls: [str]
+    # The places the issuer's certificate is, as URLs; empty for none.
+    issuer_urls: [str]
+    # The places the issuer's list is, as URLs; empty for none.
+    crl_urls: [str]
+
+# The DER of the certificate `parts` say, signed by `signer`: version 3, the
+# subject's key identifier first, then the issuer's, the profile's, the
+# accesses and the distribution points.
+#
+# - `parts`: what it says.
+# - `signer`: the issuer's private key, which stays open.
+# - `scheme`: how it signs.
+#
+# Fails `invalid` where the serial number is not positive or takes over 20
+# octets, a moment is no date, the validity ends before it starts, a name or
+# the key is no DER, a URL is empty or not ASCII, or an extension stands
+# twice; and as `keypairs.sign` fails.
+function certificate_der(parts: Parts, signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> [u8]?
+    if shapes.compare_date_times(a: parts.not_after, b: parts.not_before) < 0
+        return fail(code: INVALID, msg: "the validity ends before it starts")
+    serial = writing.integer(n: parts.serial, what: "the serial number", zero_allowed: false)?
+    before = writing.moment(parts.not_before, what: "the validity's start")?
+    after = writing.moment(parts.not_after, what: "the validity's end")?
+    subject = shapes.within(r: asn1.decode_der(parts.subject), what: "the subject")?
+    issuer = shapes.within(r: asn1.decode_der(parts.issuer), what: "the issuer")?
+    key = shapes.within(r: asn1.decode_der(parts.key), what: "the subject's key")?
+    key_id = writing.key_id_der(writing.key_id(parts.key_bits))?
+    extensions: [asn1.Value] @= [writing.extension(oid: SUBJECT_KEY_ID, critical: false, der: key_id)?]
+
+    for one in parts.authority
+        extensions @ extensions.push(one)
+
+    for one in parts.profile
+        extensions @ extensions.push(one)
+
+    if parts.ocsp_urls.len() + parts.issuer_urls.len() > 0
+        methods: [str] @= []
+        spots: [asn1.Value] @= []
+
+        for place in places.uri_names(parts.ocsp_urls)?
+            methods @ methods.push(OCSP)
+            spots @ spots.push(place)
+
+        for place in places.uri_names(parts.issuer_urls)?
+            methods @ methods.push(CA_ISSUERS)
+            spots @ spots.push(place)
+
+        extensions @ extensions.push(
+            writing.extension(oid: AUTHORITY_INFO_ACCESS, critical: false, der: places.access_descriptions(methods, names: spots)?)?
+        )
+
+    if parts.crl_urls.len() > 0
+        extensions @ extensions.push(
+            writing.extension(oid: CRL_DISTRIBUTION_POINTS, critical: false, der: places.distribution_points(places.uri_names(parts.crl_urls)?)?)?
+        )
+    writing.refuse_duplicates(extensions)?
+    body: asn1.Value = .sequence(
+        items: [asn1.tagged(.integer(v: 2), number: 0), serial, schemes.identifier(scheme), issuer, .sequence(items: [before, after]), subject, key, asn1.tagged(.sequence(items: extensions), number: 3)]
+    )
+    return schemes.signed(signer, scheme: scheme, body: body)
+
+## Requests
+
+# The DER of the certificate request for `key` that `signer` signs, naming
+# `subject` and asking `extensions` and `attributes`.
+#
+# - `subject`: the subject's name: its DER.
+# - `key`: the subject's SubjectPublicKeyInfo: its DER.
+# - `extensions`: the extensions asked for, each as `writing.extension` wrote
+#   it; written as an `extensionRequest` attribute where there are any.
+# - `attributes`: the other attributes, each a SEQUENCE of an identifier and a
+#   SET of values.
+# - `signer`: the private key whose public half is `key`, which stays open.
+# - `scheme`: how it signs.
+#
+# Fails `invalid` where a name or the key is no DER, an extension or an
+# attribute stands twice, or `attributes` holds `extensionRequest`; and as
+# `keypairs.sign` fails.
+function request_der(subject: [u8], key: [u8], extensions: [asn1.Value], attributes: [asn1.Value], signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> [u8]?
+    subject_value = shapes.within(r: asn1.decode_der(subject), what: "the subject")?
+    key_value = shapes.within(r: asn1.decode_der(key), what: "the subject's key")?
+    writing.refuse_duplicates(extensions)?
+    asked: [asn1.Value] @= []
+
+    if extensions.len() > 0
+        asked @ asked.push(
+            .sequence(items: [.oid(v: asn1.Oid(dotted: EXTENSION_REQUEST)), .set(items: [.sequence(items: extensions)])])
+        )
+
+    for id in writing.identifiers_of(attributes)?
+        if id == EXTENSION_REQUEST
+            return fail(
+                code: INVALID,
+                msg: "an extensionRequest attribute is written from the profile, not given in attributes"
+            )
+
+    for one in attributes
+        asked @ asked.push(one)
+
+    ids = writing.identifiers_of(asked)?
+
+    for i in range(from: 0, to: ids.len())
+        for j in range(from: 0, to: i)
+            if ids[i] == ids[j]
+                return fail(code: INVALID, msg: f"the attribute {ids[i]} is given twice")
+
+    wrapped = shapes.within(r: asn1.with_tag(.set(items: asked), tag: asn1.Tag(kind: .context_specific, number: 0, constructed: true)), what: "the attributes")?
+    body: asn1.Value = .sequence(items: [.integer(v: 0), subject_value, key_value, wrapped])
+    return schemes.signed(signer, scheme: scheme, body: body)
+
+## Revocation lists
+
+# One entry of a revocation list: the serial, the date and the extensions.
+#
+# - `serial`: the revoked certificate's serial number.
+# - `date`: when it was revoked, in UTC.
+# - `extensions`: the entry's extensions, each as `writing.extension` wrote it;
+#   none for a bare entry.
+#
+# Fails `invalid` where the serial is not positive or takes over 20 octets, or
+# the date is no date.
+function entry(serial: big.Integer, date: time.DateTime, extensions: [asn1.Value]) -> asn1.Value?
+    number = writing.integer(n: serial, what: "a revoked serial number", zero_allowed: false)?
+    moment = writing.moment(date, what: "a revocation date")?
+
+    if extensions.len() == 0
+        return ok(.sequence(items: [number, moment]))
+    return ok(.sequence(items: [number, moment, .sequence(items: extensions)]))
+
+# The DER of the revocation list that `signer` signs for `issuer`: version 2,
+# `authorityKeyIdentifier` and `cRLNumber`, and `entries` where there are any.
+#
+# - `issuer`: the issuer's name: its DER.
+# - `authority_id`: the identifier of the issuer's key.
+# - `number`: the list's number.
+# - `this_update`: when it is issued, in UTC.
+# - `next_update`: when the next one will be, in UTC.
+# - `entries`: the certificates revoked, each as `entry` wrote it.
+# - `signer`: the issuer's private key, which stays open.
+# - `scheme`: how it signs.
+#
+# Fails `invalid` where the number is negative or takes over 20 octets, a
+# moment is no date, `next_update` is before `this_update`, or the issuer is no
+# DER; and as `keypairs.sign` fails.
+function list_der(issuer: [u8], authority_id: [u8], number: big.Integer, this_update: time.DateTime, next_update: time.DateTime, entries: [asn1.Value], signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> [u8]?
+    if shapes.compare_date_times(a: next_update, b: this_update) < 0
+        return fail(code: INVALID, msg: "the next update is before this one")
+    count = writing.integer(n: number, what: "the list's number", zero_allowed: true)?
+    this_moment = writing.moment(this_update, what: "the list's date")?
+    next_moment = writing.moment(next_update, what: "the next update's date")?
+    issuer_value = shapes.within(r: asn1.decode_der(issuer), what: "the issuer")?
+    extensions: [asn1.Value] = [
+        writing.extension(oid: AUTHORITY_KEY_ID, critical: false, der: writing.authority_key_id(authority_id)?)?
+        writing.extension(oid: CRL_NUMBER, critical: false, der: writing.crl_number(count)?)?
+    ]
+    items: [asn1.Value] @= [.integer(v: 1), schemes.identifier(scheme), issuer_value, this_moment, next_moment]
+
+    if entries.len() > 0
+        items @ items.push(.sequence(items: entries))
+    items @ items.push(asn1.tagged(.sequence(items: extensions), number: 0))
+    return schemes.signed(signer, scheme: scheme, body: .sequence(items: items))

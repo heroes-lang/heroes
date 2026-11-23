@@ -1,0 +1,83 @@
+# The one place a kind of the floor `audio/hero_audio` becomes a code of
+# README § A4: every failure of a device's or a stream's call is built here,
+# its message saying what was asked, what the layer or the system answered,
+# and the system's own words where it gave some.
+
+use audio
+use audio/hero_audio
+
+# The code `kind`, one of `HERO_AUDIO_*`, is told with.
+#
+# - `kind`: the floor's kind.
+function code_of(kind: i64) -> str
+    if kind == hero_audio.HERO_AUDIO_INVALID
+        return audio.INVALID
+
+    if kind == hero_audio.HERO_AUDIO_NOT_OPEN || kind == hero_audio.HERO_AUDIO_ENDED || kind == hero_audio.HERO_AUDIO_LOST
+        return audio.CLOSED
+
+    if kind == hero_audio.HERO_AUDIO_NOT_FOUND
+        return audio.NOT_FOUND
+
+    if kind == hero_audio.HERO_AUDIO_DENIED
+        return audio.PERMISSION
+
+    if kind == hero_audio.HERO_AUDIO_LIMIT
+        return audio.LIMIT
+
+    if kind == hero_audio.HERO_AUDIO_UNSUPPORTED
+        return audio.UNSUPPORTED
+
+    if kind == hero_audio.HERO_AUDIO_TIMEOUT
+        return audio.TIMEOUT
+
+    if kind == hero_audio.HERO_AUDIO_STOPPED
+        return audio.STOPPED
+    return audio.FAILED
+
+# The words of the last failure on this thread, as the layer wrote them.
+function words() -> str
+    buffer: [u8] @= []
+
+    for _ in range(from: 0, to: 512)
+        buffer @ buffer.push(0)
+
+    n = hero_audio.last_message(@buffer, n: 512)
+
+    if n <= 0
+        return ""
+    return buffer.slice(from: 0, to: n).validated_bytes().default("")
+
+# The failure of the floor's last call on this thread, `asked` saying what
+# the program asked: its code by `code_of`, its words the layer's, and the
+# system's number where it gave one.
+#
+# - `asked`: what was asked, a reader's words.
+function last<T>(asked: str) -> T?
+    kind = hero_audio.last_error()
+    os = hero_audio.last_os_error()
+    said = words()
+
+    told = if said == ""
+        "the layer gave no words"
+    else
+        said
+
+    number = if os != 0
+        f" (the system's number {os})"
+    else
+        ""
+    return fail(code: code_of(kind), msg: f"{asked}: {told}{number}")
+
+test "code_of: every kind of the floor told with its code"
+    assert code_of(hero_audio.HERO_AUDIO_INVALID) == "invalid"
+    assert code_of(hero_audio.HERO_AUDIO_NOT_OPEN) == "closed"
+    assert code_of(hero_audio.HERO_AUDIO_ENDED) == "closed"
+    assert code_of(hero_audio.HERO_AUDIO_LOST) == "closed"
+    assert code_of(hero_audio.HERO_AUDIO_NOT_FOUND) == "not_found"
+    assert code_of(hero_audio.HERO_AUDIO_DENIED) == "permission"
+    assert code_of(hero_audio.HERO_AUDIO_LIMIT) == "limit"
+    assert code_of(hero_audio.HERO_AUDIO_UNSUPPORTED) == "unsupported"
+    assert code_of(hero_audio.HERO_AUDIO_TIMEOUT) == "timeout"
+    assert code_of(hero_audio.HERO_AUDIO_STOPPED) == "stopped"
+    assert code_of(hero_audio.HERO_AUDIO_OTHER) == "failed"

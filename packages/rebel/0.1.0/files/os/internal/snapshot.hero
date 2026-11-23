@@ -1,0 +1,364 @@
+# The snapshot of the machine's processes, read back from the bytes
+# `hero_procs_list` writes:
+# for each process `hero_procs.fields()` fields, each text and a zero byte, in
+# the order `hero_procs.h` gives. The face turns each `Entry` here into its own
+# records; this module holds no type of the face, which a private module cannot
+# reach.
+
+use os/hero_procs
+use os/internal/codes
+
+# How many bytes the first reading of the list is given room for: some two
+# thousand processes at the hundred bytes an entry takes, so one call is the
+# whole list on a machine that is not very busy.
+constant FIRST_ROOM: i64
+    262144
+
+# How many readings are made before a list that grows on every one is a
+# failure: processes begin and end between two calls.
+constant TRIES: i64
+    16
+
+# The bytes of U+FFFD, which stands for a byte that was no UTF-8.
+constant REPLACEMENT: [u8]
+    [239, 191, 189]
+
+# One process as the layer wrote it. An empty `owner_id` and an empty
+# `owner_name` are what the platform did not tell, and `usage` holds either its
+# four numbers (resident bytes, virtual bytes, user and system nanoseconds) or
+# none.
+record Entry
+    # The process's id.
+    id: i64
+    # The id of its parent.
+    parent_id: i64
+    # When it started, in milliseconds since 1970.
+    started_unix_ms: i64
+    # The id of its owner as the system writes it, or "".
+    owner_id: str
+    # The name of the account that owns it, or "".
+    owner_name: str
+    # Its memory and time, four numbers, or none.
+    usage: [i64]
+    # The name of its program, with U+FFFD in place of each byte that was not
+    # UTF-8.
+    name: str
+
+# The words a refused list is told in, by the kind the layer gave.
+function failed<T>() -> T?
+    kind = hero_procs.last_error()
+    number = hero_procs.last_os_error()
+
+    if kind == hero_procs.HERO_PROCS_UNSUPPORTED
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: "the machine's processes are not listed on this system: Darwin, Linux and Windows are"
+        )
+
+    if kind == hero_procs.HERO_PROCS_DENIED
+        return fail(
+            code: codes.PERMISSION,
+            msg: f"the system does not let this program list the processes (its number {number})"
+        )
+
+    if kind == hero_procs.HERO_PROCS_LIMIT
+        return fail(code: codes.LIMIT, msg: f"the system had no room to list the processes (its number {number})")
+
+    if kind == hero_procs.HERO_PROCS_INVALID
+        return fail(code: codes.INVALID, msg: "the list of processes was asked with a count and no room")
+    return fail(code: codes.FAILED, msg: f"the system refused the list of processes (its number {number})")
+
+# The whole list of processes, read once and asked again with more room where
+# it did not fit. Fails with the layer's kind as a code, and `failed` where the
+# list grew on every one of `TRIES` readings.
+function read() -> [Entry]?
+    room: i64 @= FIRST_ROOM
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got = hero_procs.list(@buffer, n: room.to_u64().must())
+
+        if got < 0
+            return failed()
+
+        if got <= room
+            return entries_of(buffer.slice(from: 0, to: got))
+
+        if got > 1099511627776
+            return fail(code: codes.LIMIT, msg: f"the list of processes has {got} bytes")
+
+        # Room for the processes that begin before it is read again.
+        room @ got + got / 8 + 4096
+        tries @ tries + 1
+
+    return fail(code: codes.FAILED, msg: f"the list of processes grew on each of {TRIES} readings")
+
+# Where the next zero byte stands in `bytes`, from `from` on. Fails `failed`
+# where none does, so the bytes are not the layer's form.
+function zero_after(bytes: [u8] lent, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < bytes.len()
+        if bytes[at] == 0
+            return ok(at)
+        at @ at + 1
+
+    return fail(
+        code: codes.FAILED,
+        msg: f"the list of processes ends at byte {bytes.len()} inside a field that opened at byte {from}"
+    )
+
+# The number written in `bytes` from `from` to `to`, decimal digits alone.
+# Fails `failed` where it is empty, holds another byte, or passes the largest
+# `i64`.
+function number_of(bytes: [u8] lent, from: i64, to: i64) -> i64?
+    if to == from
+        return fail(code: codes.FAILED, msg: f"the list of processes holds an empty number at byte {from}")
+    value: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        b = bytes[at]
+
+        if b < '0' || b > '9'
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of processes holds byte {b} inside a number at byte {at}"
+            )
+
+        # A byte always fits an `i64`.
+        digit = (b - '0').to_i64().must()
+
+        if value > (9223372036854775807 - digit) / 10
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of processes holds a number at byte {from} past the largest i64"
+            )
+        value @ value * 10 + digit
+        at @ at + 1
+
+    return ok(value)
+
+# How many bytes the UTF-8 sequence a byte begins has, or 0 for a byte that
+# begins none: a continuation byte, one UTF-8 never writes, or one past
+# U+10FFFF's.
+function sequence_length(lead: u8) -> i64
+    if lead < 128
+        return 1
+
+    if lead >= 194 && lead <= 223
+        return 2
+
+    if lead >= 224 && lead <= 239
+        return 3
+
+    if lead >= 240 && lead <= 244
+        return 4
+    return 0
+
+# Whether the `n` bytes of `bytes` from `at` are one whole UTF-8 sequence.
+function is_whole(bytes: [u8] lent, at: i64, n: i64) -> bool
+    match bytes.slice(from: at, to: at + n).validated_bytes()
+        .ok _  => return true
+        .err _ => return false
+
+# The text `bytes` holds from `from` to `to`, as it is where it is UTF-8, and
+# with U+FFFD in the place of every byte that does not begin or continue a
+# whole sequence where it is not: a program's name is for a person to read, and
+# one that is not UTF-8 must not hide the others.
+function shown(bytes: [u8] lent, from: i64, to: i64) -> str
+    match bytes.slice(from: from, to: to).validated_bytes()
+        .ok text => return text
+        .err _   => return replaced(bytes, from: from, to: to)
+
+# `shown`'s text of bytes that are not all UTF-8: each whole sequence kept and
+# each byte outside one written as U+FFFD, one for one.
+function replaced(bytes: [u8] lent, from: i64, to: i64) -> str
+    out: [u8] @= []
+    at: i64 @= from
+
+    while at < to
+        n = sequence_length(bytes[at])
+
+        if n > 0 && at + n <= to && is_whole(bytes, at: at, n: n)
+            for i in range(from: at, to: at + n)
+                out @ out.push(bytes[i])
+
+            at @ at + n
+        else
+            for b in REPLACEMENT
+                out @ out.push(b)
+
+            at @ at + 1
+
+    # Every piece pushed is a whole sequence.
+    return out.validated_bytes().must()
+
+# The text `bytes` holds from `from` to `to` where it is UTF-8. Fails
+# `not_text` where it is not: an id is digits or a SID, which are ASCII.
+function text_of(bytes: [u8] lent, from: i64, to: i64) -> str?
+    match bytes.slice(from: from, to: to).validated_bytes()
+        .ok text => return ok(text)
+        .err _ => return fail(
+            code: codes.NOT_TEXT,
+            msg: f"the list of processes holds an id that is not UTF-8 at byte {from}"
+        )
+
+# The processes `bytes` holds, in the layer's order. Fails `failed` where the
+# bytes are not the layer's form, a number is empty, holds another byte or
+# does not fit an `i64`, or a process has some of its usage and not all of
+# it, and `not_text` where an owner's id is not UTF-8.
+function entries_of(bytes: [u8] lent) -> [Entry]?
+    found: [Entry] @= []
+    at: i64 @= 0
+    wanted = hero_procs.fields()
+
+    while at < bytes.len()
+        ends: [i64] @= []
+        starts: [i64] @= []
+
+        while ends.len() < wanted
+            end = zero_after(bytes, from: at)?
+            starts @ starts.push(at)
+            ends @ ends.push(end)
+            at @ end + 1
+
+        usage: [i64] @= []
+        given: i64 @= 0
+
+        for k in range(from: 5, to: 9)
+            if ends[k] > starts[k]
+                given @ given + 1
+
+        if given != 0 && given != 4
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of processes holds {given} of a process's 4 usage numbers at byte {starts[5]}"
+            )
+
+        if given == 4
+            for k in range(from: 5, to: 9)
+                usage @ usage.push(number_of(bytes, from: starts[k], to: ends[k])?)
+        found @ found.push(
+            Entry(id: number_of(bytes, from: starts[0], to: ends[0])?, parent_id: number_of(bytes, from: starts[1], to: ends[1])?, started_unix_ms: number_of(bytes, from: starts[2], to: ends[2])?, owner_id: text_of(bytes, from: starts[3], to: ends[3])?, owner_name: shown(bytes, from: starts[4], to: ends[4]), usage: usage, name: shown(bytes, from: starts[9], to: ends[9]))
+        )
+
+    return ok(found)
+
+## Tests
+
+# Adds the bytes of `text` and a zero byte to `out`.
+function add_text(@out: [u8], text: str)
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    out @ out.push(0)
+
+# The bytes the layer writes for one process whose fields are `fields`.
+function written(fields: [str]) -> [u8]
+    out: [u8] @= []
+
+    for field in fields
+        add_text(@out, text: field)
+
+    return out
+
+# The fields of a process with an owner and a usage.
+function whole_fields(id: i64, name: str) -> [str]
+    return [f"{id}", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "16", name]
+
+test "entries_of: none, one with every field, one with no owner and no usage, and two in order"
+    assert entries_of([]).must() == []
+    one = entries_of(written(whole_fields(id: 42, name: "sleep"))).must()
+    assert one.len() == 1
+    assert one[0].id == 42 && one[0].parent_id == 1 && one[0].started_unix_ms == 1795380530442
+    assert one[0].owner_id == "501" && one[0].owner_name == "joseph"
+    assert one[0].usage == [4096, 8192, 15, 16] && one[0].name == "sleep"
+    bare = entries_of(written(["4", "0", "1795380530442", "", "", "", "", "", "", "System"])).must()
+    assert bare.len() == 1 && bare[0].owner_id == "" && bare[0].owner_name == "" && bare[0].usage == []
+    both: [u8] @= written(whole_fields(id: 7, name: "a"))
+
+    for b in written(whole_fields(id: 9, name: "b"))
+        both @ both.push(b)
+
+    two = entries_of(both).must()
+    assert two.len() == 2 && two[0].id == 7 && two[1].id == 9 && two[1].name == "b"
+
+test "entries_of: a name of more than one byte, an empty name, an owner id without a name, and the largest numbers"
+    long_name = entries_of(written(whole_fields(id: 1, name: "Café ☕"))).must()
+    assert long_name[0].name == "Café ☕"
+    unnamed = entries_of(
+        written(["5", "1", "9223372036854775807", "S-1-5-18", "", "9223372036854775807", "0", "0", "0", ""])
+    ).must()
+    assert unnamed[0].name == "" && unnamed[0].owner_id == "S-1-5-18" && unnamed[0].owner_name == ""
+    assert unnamed[0].started_unix_ms == 9223372036854775807 && unnamed[0].usage[0] == 9223372036854775807
+
+test "entries_of fails: a field with no end, a process with a field missing, an empty number, a sign, a number past the largest i64, a usage with a number missing and an owner id that is not UTF-8"
+    whole = written(whole_fields(id: 42, name: "sleep"))
+    cut = whole.slice(from: 0, to: whole.len() - 1)
+    missing = written(["42", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "16"])
+
+    for bad in [cut, missing]
+        match entries_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED && e.msg.len() > 0
+
+    empty_id = written(["", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "16", "x"])
+    signed = written(["-4", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "16", "x"])
+    past = written(["9223372036854775808", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "16", "x"])
+    short_usage = written(["4", "1", "1795380530442", "501", "joseph", "4096", "8192", "15", "", "x"])
+
+    for bad in [empty_id, signed, past, short_usage]
+        match entries_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED && e.msg.len() > 0
+
+    not_text: [u8] @= [52, 0, 49, 0, 49, 0, 255, 0, 0]
+
+    for b in written(["", "", "", "", "x"])
+        not_text @ not_text.push(b)
+
+    match entries_of(not_text)
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_TEXT
+
+test "sequence_length: one byte for ASCII, two to four for a lead byte, none for a continuation byte and the bytes UTF-8 never writes"
+    assert sequence_length(0) == 1 && sequence_length(127) == 1
+    assert sequence_length(194) == 2 && sequence_length(223) == 2
+    assert sequence_length(224) == 3 && sequence_length(239) == 3
+    assert sequence_length(240) == 4 && sequence_length(244) == 4
+    assert sequence_length(128) == 0 && sequence_length(191) == 0
+    assert sequence_length(192) == 0 && sequence_length(193) == 0
+    assert sequence_length(245) == 0 && sequence_length(255) == 0
+
+test "shown: UTF-8 as it is, and each byte that is none as U+FFFD, a cut sequence one for each byte it holds"
+    assert shown([], from: 0, to: 0) == ""
+    plain: [u8] = [97, 195, 169, 98]
+    assert shown(plain, from: 0, to: 4) == "aéb"
+    assert shown(plain, from: 1, to: 3) == "é"
+    lone: [u8] = [255]
+    assert shown(lone, from: 0, to: 1) == "�"
+    mixed: [u8] = [97, 255, 98, 195, 169]
+    assert shown(mixed, from: 0, to: 5) == "a�bé"
+    cut: [u8] = [226, 130]
+    assert shown(cut, from: 0, to: 2) == "��"
+    overlong: [u8] = [192, 128, 99]
+    assert shown(overlong, from: 0, to: 3) == "��c"
+    surrogate: [u8] = [237, 160, 128]
+    assert shown(surrogate, from: 0, to: 3) == "���"
+    past_the_end: [u8] = [244, 144, 128, 128]
+    assert shown(past_the_end, from: 0, to: 4) == "����"
+    four: [u8] = [240, 159, 146, 169, 255]
+    assert shown(four, from: 0, to: 5) == "💩�"
+
+test "read: this machine's processes, ascending by id with no id twice, each with its usage whole or none"
+    found = read().must()
+    assert found.len() > 0
+    previous: i64 @= -1
+
+    for entry in found
+        assert entry.id > previous
+        assert entry.parent_id >= 0 && entry.started_unix_ms > 0
+        assert entry.usage.len() == 0 || entry.usage.len() == 4
+        previous @ entry.id

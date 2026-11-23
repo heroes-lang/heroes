@@ -1,0 +1,16 @@
+# A datagram another socket sends to the stop's bell of `hero_poll.h` never
+# fails a wait `stopped` (defect 2696). On Windows the bell is a loopback
+# datagram socket, bound and never connected until the repair, so one
+# datagram from any other process made it readable and every later wait of
+# the program failed `stopped`, no stop asked; it is now connected to itself,
+# its address held exclusively, and a wait asks whether the stop was asked
+# rather than trust the bell. The C is in the header beside this file: a
+# socket of its own sends to every loopback port the process holds, and the
+# set's next wait answers its timer, then nothing. It prints 1 where every
+# step held, or on Darwin and Linux, whose bell is a pipe the process alone
+# holds; else the step that did not.
+extern "fixedbugs-2696-strangers.h"
+    function strangers_leave_the_wait() -> i64
+
+function main()
+    print(f"a stranger's datagram to every loopback port leaves the next wait unstopped: {strangers_leave_the_wait()}")

@@ -5,7 +5,8 @@
 # 2986) and revocation lists (RFC 5280 § 5) read; a signature checked by the
 # system's own cryptography through `crypto/keypairs`; a chain put in order
 # from a leaf and a pool, and checked; a host name and an address matched
-# against a certificate as RFC 6125 says.
+# against a certificate as RFC 6125 says; and certificates, requests and
+# revocation lists made and signed through `crypto/keypairs`.
 #
 # **Every structure is read as DER**, every canonical rule `asn1` checks,
 # and a certificate whose two signature algorithms differ, whose extension
@@ -21,11 +22,23 @@
 # **A moment is a `time.DateTime`**, so RFC 5280's `99991231235959Z`, the
 # validity that does not end, is read: a `time.Instant` ends in 2262.
 #
-# It does not write a certificate, a request or a list (each needs a
-# signature made by `crypto/keypairs` and is pending), process certificate
-# policies in `verify_chain`, fetch a list or ask OCSP (`http`), read the
-# system's store of roots (`tls` checks a connection by it), or read a
-# private key (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
+# **What is made is read back before it is answered**: a certificate, a request
+# or a list made is decoded by this package's own reader and its signature
+# checked, so a program never holds one that its own checks refuse. The
+# serial, the names, the moments and the extensions are the caller's, checked
+# against RFC 5280: a serial positive and of 20 octets at most, a subject that
+# is empty only where an alternative name is critical, a `keyUsage` that
+# agrees with `basicConstraints`. The subject key identifier is RFC 5280's
+# first method, and the authority key identifier is the issuer's. A moment is
+# written as UTCTime until 2049 and GeneralizedTime after, its fraction of a
+# second dropped.
+#
+# It does not process certificate policies in `verify_chain`, write the
+# extensions of other documents (name constraints, policies and the rest go
+# through `Profile`'s `extra`, written as given), write delta lists or
+# indirect ones, fetch a list or ask OCSP (`http`), read the system's store of
+# roots (`tls` checks a connection by it), or read a private key
+# (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
 # `does_not_fit` and `unsupported`.
 #
 # Not written yet, each a `pending` block of its ledger: RFC 4514's text read
@@ -33,21 +46,25 @@
 # poison, TLS feature, OCSP no-check, Microsoft's template, admissions, subject
 # directory attributes, private key usage period; RFC 5280 § 6.1's processing of
 # certificate policies over a chain; the system's own store of trusted roots
-# read; a certificate made and signed; a certificate request made and signed; a
-# revocation list made and signed.
+# read.
 
 use asn1
 use big
 use bytes
 use crypto/keypairs
 use net
+use os
 use pem
 use time
+use x509/internal/assembling
 use x509/internal/dn
 use x509/internal/hosts
 use x509/internal/known
+use x509/internal/openssl
+use x509/internal/places
 use x509/internal/samples
 use x509/internal/shapes
+use x509/internal/writing
 
 ## Codes
 
@@ -2022,6 +2039,692 @@ function is_for_address(certificate: Certificate, address: net.Host) -> bool
 
     return false
 
+## Making
+
+# What a certificate or a request says about its key's role: the
+# `basicConstraints` extension (RFC 5280 § 4.2.1.9), written critical where it
+# is written at all.
+variant Role
+    # `basicConstraints` is not written: a certificate of a version 3 with no
+    # such extension is not a certificate authority's.
+    unstated
+    # `basicConstraints` with `cA` false: a certificate for an end entity, a
+    # server or a person.
+    end_entity
+    # `cA` true with no limit on the authorities below it.
+    authority
+    # `cA` true and a `pathLenConstraint`.
+    limited_authority
+        # How many authorities may follow this one before an end entity: 0 or
+        # more.
+        path_len: i64
+
+# What a certificate or a request says beyond its names and its key: the role
+# of the key, what it may be used for, and the names the subject also goes by.
+# Made by `default_profile`, which says nothing, and changed field by field.
+record Profile
+    # The subject's alternative names, `subjectAltName`; empty to write none.
+    # A name that is an address is `.ip`, never a `.dns` whose text is one.
+    alt_names: [GeneralName]
+    # The key's usages, `keyUsage`, written critical; every bit false to write
+    # none.
+    key_usage: KeyUsage
+    # The purposes the key is for, `extKeyUsage`: `SERVER_AUTH` and the
+    # others; empty to write none.
+    extended_key_usage: [asn1.Oid]
+    # What `basicConstraints` says.
+    role: Role
+    # Extensions written as given, each its identifier, its criticality and
+    # the DER of its value; empty for none. One this package writes from
+    # another field, or one given twice, is refused.
+    extra: [Extension]
+
+# The profile that says nothing: no name, no usage, no purpose, no
+# `basicConstraints`, no other extension.
+#
+# See also `Profile`.
+function default_profile() -> Profile
+    none = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    return Profile(alt_names: [], key_usage: none, extended_key_usage: [], role: .unstated, extra: [])
+
+# What `create_certificate` and `create_self_signed` write into a certificate
+# besides its key and its issuer.
+record CertificateTemplate
+    # The serial number: positive, and 20 octets at most in DER (RFC 5280
+    # § 4.1.2.2). An authority never gives one twice; `random_serial` draws one.
+    serial: big.Integer
+    # The subject; empty only where `profile` names an alternative name, which
+    # is then written critical (RFC 5280 § 4.1.2.6).
+    subject: Name
+    # The first moment it is valid, in UTC, its fraction of a second dropped.
+    not_before: time.DateTime
+    # The last moment it is valid, in UTC, its fraction of a second dropped;
+    # not before `not_before`. `99991231235959Z` is the validity that does not
+    # end.
+    not_after: time.DateTime
+    # The role, the usages and the names.
+    profile: Profile
+    # Where the issuer answers OCSP, as URLs: `authorityInfoAccess`'s `OCSP`
+    # entries; empty for none.
+    ocsp_urls: [str]
+    # Where the issuer's own certificate is, as URLs: `authorityInfoAccess`'s
+    # `caIssuers` entries; empty for none.
+    issuer_urls: [str]
+    # Where the issuer's revocation list is, as URLs: one `cRLDistributionPoints`
+    # point for each; empty for none.
+    crl_urls: [str]
+
+# What `create_request` writes into a certificate request.
+record RequestTemplate
+    # The subject asked for; empty where `profile` names an alternative name.
+    subject: Name
+    # The role, the usages and the names asked for, written as the
+    # `extensionRequest` attribute (RFC 2985 § 5.4.2) where any is set.
+    profile: Profile
+    # The other attributes, written as given, each with one value at least;
+    # `challengePassword` is one. `EXTENSION_REQUEST` among them is refused,
+    # `profile` writing it.
+    attributes: [RequestAttribute]
+
+# One certificate a revocation list lists, and why.
+record Revocation
+    # The revoked certificate's serial number, as its certificate holds it.
+    serial: big.Integer
+    # When it was revoked, in UTC, its fraction of a second dropped.
+    date: time.DateTime
+    # Why; `.unspecified` writes no reason, as RFC 5280 § 5.3.1 asks, and
+    # `.remove_from_crl` is refused, belonging to delta lists, which this
+    # package does not write.
+    reason: Reason
+    # When the key is known or suspected to have been compromised.
+    invalidity: Invalidity
+
+# The `invalidityDate` of a revoked certificate (RFC 5280 § 5.3.2).
+variant Invalidity
+    # No `invalidityDate` is written.
+    unstated
+    # `invalidityDate` is written.
+    since
+        # The moment, in UTC, its fraction of a second dropped.
+        at: time.DateTime
+
+# What `create_crl` writes into a revocation list besides its issuer.
+record RevocationListTemplate
+    # The list's number, `cRLNumber`: 0 or more and 20 octets at most; each
+    # list its issuer makes is numbered above the last (RFC 5280 § 5.2.3).
+    number: big.Integer
+    # When it is issued, in UTC, its fraction of a second dropped.
+    this_update: time.DateTime
+    # When the next one will be, in UTC, its fraction of a second dropped; not
+    # before `this_update`.
+    next_update: time.DateTime
+    # The certificates revoked, each serial once; empty for a list that
+    # revokes none.
+    revoked: [Revocation]
+
+# One attribute of a name made from text, written in the string type RFC 5280
+# gives its type: PrintableString for a country and a serial number,
+# IA5String for an email address and a domain component, UTF8String for any
+# other.
+#
+# - `oid`: the attribute's type in dotted text: `COMMON_NAME` and the others.
+# - `text`: the value, one character at least; at most 64 characters for a
+#   common name, an organization, an organizational unit and a serial number,
+#   128 for a locality and a state, 255 for an email address, exactly 2 for a
+#   country (RFC 5280 Appendix A); the types this package does not name have
+#   no bound here.
+#
+# Fails `invalid` where `oid` is no identifier, `text` is empty, past its
+# bound or holds a character its string type lacks, the message saying which.
+# See also `new_name`.
+function new_attribute(oid: str, text: str) -> Attribute?
+    parsed = asn1.parse_oid(oid)?
+    count = text.chars().len()
+    what = f"the attribute {oid}"
+
+    if count == 0
+        return fail(code: INVALID, msg: f"{what} has no text, where RFC 5280 asks one character at least")
+    most @= 0
+    kind: asn1.TextKind @= .utf8
+
+    if oid == COMMON_NAME || oid == ORGANIZATION_NAME || oid == ORGANIZATIONAL_UNIT_NAME
+        most @ 64
+
+    if oid == LOCALITY_NAME || oid == STATE_OR_PROVINCE_NAME
+        most @ 128
+
+    if oid == COUNTRY_NAME || oid == SERIAL_NUMBER
+        kind @ .printable
+
+    if oid == SERIAL_NUMBER
+        most @ 64
+
+    if oid == COUNTRY_NAME
+        most @ 2
+
+        if count != 2
+            return fail(code: INVALID, msg: f"{what} has {count} characters, where RFC 5280 asks exactly 2")
+
+    if oid == EMAIL_ADDRESS || oid == DOMAIN_COMPONENT
+        kind @ .ia5
+
+    if oid == EMAIL_ADDRESS
+        most @ 255
+
+    if most > 0 && count > most
+        return fail(code: INVALID, msg: f"{what} has {count} characters, where RFC 5280 allows {most} at most")
+    value: asn1.Value = .text(kind: kind, v: text)
+    _ = shapes.within(r: asn1.encode_der(value), what: what)?
+    return ok(Attribute(oid: parsed, value: value))
+
+# A name made from its relative names, which `to_name` reads back and DER
+# writes in a canonical order.
+#
+# - `rdns`: the relative names in the order a certificate writes them, the
+#   least specific first (`C`, then `O`, then `CN`), each one attribute or
+#   more, as `new_attribute` makes them; none for an empty name.
+#
+# Fails `invalid` where a relative name holds no attribute. See also
+# `new_attribute`, `format_name`.
+function new_name(rdns: [[Attribute]]) -> Name?
+    relative: [asn1.Value] @= []
+
+    for rdn in rdns
+        if rdn.len() == 0
+            return fail(code: INVALID, msg: "a name's relative name holds no attribute")
+        pairs: [asn1.Value] @= []
+
+        for a in rdn
+            pairs @ pairs.push(.sequence(items: [.oid(v: a.oid), a.value]))
+
+        relative @ relative.push(.set(items: pairs))
+
+    der = shapes.within(r: asn1.encode_der(.sequence(items: relative)), what: "a name")?
+    return to_name(shapes.within(r: asn1.decode_der(der), what: "a name")?)
+
+# The public key of `key`, as a certificate's subject key and a request's.
+#
+# - `key`: the private key, which stays open; its public half is made and
+#   closed here.
+#
+# Fails as `keypairs.public_of` and `keypairs.encode_public_der` fail, and as
+# `decode_public_key` does. See also `create_certificate`.
+function public_key_of(key: keypairs.PrivateKey) -> PublicKey?
+    public @= keypairs.public_of(key)?
+    der = keypairs.encode_public_der(public)
+    _ = keypairs.close_public(@public).is_err()
+    return decode_public_key(der?)
+
+# A serial number of 159 random bits from the system's generator for keys,
+# positive and 20 octets at most in DER, as Python's
+# `random_serial_number` draws one.
+#
+# Fails with the code of `os.random_bytes` where the system's generator
+# refuses. See also `CertificateTemplate`.
+function random_serial() -> big.Integer?
+    drawn = os.random_bytes(20)?
+    masked: [u8] @= drawn
+    masked[0] @ to_u8(to_i64(drawn[0]).must() & 0x7f).must()
+    serial = big.from_bytes(masked, order: .big_endian)
+
+    if big.compare(a: serial, b: big.from_int(0)) == 0
+        return ok(big.from_int(1))
+    return ok(serial)
+
+# The ASN.1 of `general`, a name of the kinds a subject alternative name, an
+# access and a distribution point hold: the inverse of `to_general_name`.
+#
+# - `general`: the name; a `.dns` is not empty and is no address, an `.ip` has
+#   4 or 16 bytes, a kept `.x400_address` or `.edi_party` is its own DER with
+#   its tag.
+#
+# Fails `invalid` where the name is empty, a `.dns` whose text is an address, a
+# `.ip` of other than 4 or 16 bytes, a `.ip_network` (a name constraint's, not
+# a name's), a kept DER that is not its kind's, or a text with a character an
+# IA5String lacks. See also `to_general_name`, `profile_extensions`.
+function from_general_name(general: GeneralName) -> asn1.Value?
+    match general
+        .dns d =>
+            if d.name.len() == 0
+                return fail(code: INVALID, msg: "a dNSName with no text")
+
+            if !net.parse_host(d.name).is_err()
+                return fail(code: INVALID, msg: f"the dNSName {d.name} is an address, which is an iPAddress")
+            return places.implicit_text(text: d.name, tag: 2, what: "a dNSName")
+        .email e =>
+            if e.address.len() == 0
+                return fail(code: INVALID, msg: "an rfc822Name with no text")
+            return places.implicit_text(text: e.address, tag: 1, what: "an rfc822Name")
+        .uri u =>
+            if u.uri.len() == 0
+                return fail(code: INVALID, msg: "a uniformResourceIdentifier with no text")
+            return places.implicit_text(text: u.uri, tag: 6, what: "a uniformResourceIdentifier")
+        .ip a =>
+            if a.address.bytes.len() != 4 && a.address.bytes.len() != 16
+                return fail(
+                    code: INVALID,
+                    msg: f"an iPAddress of {a.address.bytes.len()} bytes, where it holds 4 or 16"
+                )
+            return ok(
+                .primitive(tag: asn1.Tag(kind: .context_specific, number: 7, constructed: false), content: a.address.bytes)
+            )
+        .ip_network _ =>
+            return fail(
+                code: INVALID,
+                msg: "a network is a name constraint's iPAddress, where a name holds an address alone"
+            )
+        .registered_id r =>
+            return asn1.with_tag(
+                .oid(v: r.oid),
+                tag: asn1.Tag(kind: .context_specific, number: 8, constructed: false)
+            )
+        .other_name o =>
+            return ok(
+                .constructed(tag: asn1.Tag(kind: .context_specific, number: 0, constructed: true), items: [.oid(v: o.type_id), asn1.tagged(o.value, number: 0)])
+            )
+        .directory d =>
+            return ok(asn1.tagged(shapes.within(r: asn1.decode_der(d.name.der), what: "a directoryName")?, number: 4))
+        .x400_address x =>
+            return places.kept(der: x.der, tag: 3, what: "an x400Address")
+        .edi_party x =>
+            return places.kept(der: x.der, tag: 5, what: "an ediPartyName")
+
+# The SEQUENCE of `extension`, as a certificate holds it: the inverse of
+# `to_extension`.
+#
+# - `extension`: the extension; its criticality is written only where true, as
+#   DER has it.
+#
+# Fails `invalid` where its identifier is no identifier or its value is no
+# DER. See also `to_extension`.
+function from_extension(extension: Extension) -> asn1.Value?
+    return writing.extension(oid: extension.oid.dotted, critical: extension.critical, der: extension.value)
+
+# The extensions `profile` writes, as `Extension`s whose values are DER:
+# `basicConstraints`, `keyUsage`, `extKeyUsage` and `subjectAltName` from its
+# own fields, in that order, then `extra` as given. The ones a program asks
+# written for a certificate or a request, to read or to hand on.
+#
+# - `profile`: what is asked.
+# - `subject_empty`: whether the subject is empty, which makes the alternative
+#   names critical (RFC 5280 § 4.2.1.6).
+#
+# `basicConstraints` and `keyUsage` are critical, `extKeyUsage` and
+# `subjectAltName` are not unless the subject is empty. Fails `invalid` where
+# `keyCertSign` is asserted and the role is no authority's (RFC 5280
+# § 4.2.1.3), an authority's `keyUsage` is written without `keyCertSign` (RFC
+# 5280 § 4.2.1.9), `encipher_only` or `decipher_only` is asserted without
+# `key_agreement`, a path length is negative, a name is refused as
+# `from_general_name` refuses it, or an `extra` stands twice, repeats an
+# extension written from another field, or holds an identifier or a value that
+# is no DER. See also `create_certificate`, `create_request`.
+function profile_extensions(profile: Profile, subject_empty: bool) -> [Extension]?
+    out: [Extension] @= []
+    is_authority @= false
+
+    match profile.role
+        .unstated => _ = 0
+        .end_entity =>
+            out @ out.push(
+                Extension(oid: asn1.Oid(dotted: BASIC_CONSTRAINTS), critical: true, value: writing.end_entity_constraints())
+            )
+        .authority =>
+            is_authority @ true
+            out @ out.push(
+                Extension(oid: asn1.Oid(dotted: BASIC_CONSTRAINTS), critical: true, value: writing.authority_constraints())
+            )
+        .limited_authority l =>
+            is_authority @ true
+            out @ out.push(
+                Extension(oid: asn1.Oid(dotted: BASIC_CONSTRAINTS), critical: true, value: writing.limited_authority_constraints(path_len: l.path_len)?)
+            )
+
+    usage = profile.key_usage
+    flags = [
+        usage.digital_signature
+        usage.content_commitment
+        usage.key_encipherment
+        usage.data_encipherment
+        usage.key_agreement
+        usage.key_cert_sign
+        usage.crl_sign
+        usage.encipher_only
+        usage.decipher_only
+    ]
+    written @= false
+
+    for flag in flags
+        if flag
+            written @ true
+
+    if written
+        if usage.key_cert_sign && !is_authority
+            return fail(
+                code: INVALID,
+                msg: "keyCertSign is asserted where basicConstraints does not say an authority (RFC 5280 § 4.2.1.3)"
+            )
+
+        if is_authority && !usage.key_cert_sign
+            return fail(
+                code: INVALID,
+                msg: "an authority's keyUsage must assert keyCertSign, or its certificates verify under no path (RFC 5280 § 4.2.1.9)"
+            )
+
+        if (usage.encipher_only || usage.decipher_only) && !usage.key_agreement
+            return fail(
+                code: INVALID,
+                msg: "encipherOnly or decipherOnly is asserted without keyAgreement (RFC 5280 § 4.2.1.3)"
+            )
+        out @ out.push(
+            Extension(oid: asn1.Oid(dotted: KEY_USAGE), critical: true, value: writing.key_usage(flags)?)
+        )
+
+    if profile.extended_key_usage.len() > 0
+        dotted: [str] @= []
+
+        for purpose in profile.extended_key_usage
+            dotted @ dotted.push(purpose.dotted)
+
+        out @ out.push(
+            Extension(oid: asn1.Oid(dotted: EXTENDED_KEY_USAGE), critical: false, value: writing.key_purposes(dotted)?)
+        )
+
+    if profile.alt_names.len() > 0
+        names: [asn1.Value] @= []
+
+        for general in profile.alt_names
+            names @ names.push(from_general_name(general)?)
+
+        out @ out.push(
+            Extension(oid: asn1.Oid(dotted: SUBJECT_ALT_NAME), critical: subject_empty, value: asn1.encode_der(.sequence(items: names))?)
+        )
+
+    for given in profile.extra
+        for earlier in out
+            if earlier.oid.dotted == given.oid.dotted
+                return fail(
+                    code: INVALID,
+                    msg: f"the extension {given.oid.dotted} is given twice, or is one this profile writes from another field"
+                )
+
+        _ = shapes.within(r: asn1.parse_oid(given.oid.dotted), what: f"the extension {given.oid.dotted}")?
+        _ = shapes.within(r: asn1.decode_der(given.value), what: f"the value of the extension {given.oid.dotted}")?
+        out @ out.push(given)
+
+    return ok(out)
+
+# A certificate that `signer` gives itself: its own key is the subject's, its
+# subject is its issuer, and no `authorityKeyIdentifier` is written, as RFC
+# 5280 § 4.2.1.1 allows of a self-signed one. A root authority, or a
+# server's own certificate. Its subject key identifier is written, and the
+# accesses and distribution points `template` names.
+#
+# - `template`: what the certificate says; its `serial`, its names and its
+#   validity are the caller's to give.
+# - `signer`: the private key, which stays open; its public half is the
+#   subject's key.
+# - `scheme`: how it signs, one of `signer`'s kind: `.ecdsa_sha256` for P-256,
+#   `.ecdsa_sha384` for P-384, `.ed25519`, or an RSA scheme.
+#
+# What is made is read back before it is answered: its names are the given
+# ones and its signature holds. Fails `invalid` where the template breaks
+# RFC 5280 (a serial that is not positive or takes over 20 octets, a validity
+# that ends before it starts, an empty subject with no alternative name, a
+# `profile` `profile_extensions` refuses, an extension twice, a name that is
+# no name) and where `scheme` is of another kind than `signer`; `unsupported`
+# as `keypairs.sign` fails. See also `create_certificate`,
+# `format_certificate`.
+function create_self_signed(template: CertificateTemplate, signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> Certificate?
+    key = public_key_of(signer)?
+    empty = template.subject.der == [0x30, 0x00]
+
+    if empty && template.profile.alt_names.len() == 0
+        return fail(
+            code: INVALID,
+            msg: "a certificate with an empty subject must name an alternative name (RFC 5280 § 4.1.2.6)"
+        )
+    profile: [asn1.Value] @= []
+
+    for one in profile_extensions(template.profile, subject_empty: empty)?
+        profile @ profile.push(from_extension(one)?)
+
+    der = assembling.certificate_der(assembling.Parts(serial: template.serial, not_before: template.not_before, not_after: template.not_after, subject: template.subject.der, issuer: template.subject.der, key: key.der, key_bits: key.key, authority: [], profile: profile, ocsp_urls: template.ocsp_urls, issuer_urls: template.issuer_urls, crl_urls: template.crl_urls), signer: signer, scheme: scheme)?
+    made = decode_certificate(der)?
+
+    if made.issuer.der != template.subject.der || made.subject.der != template.subject.der
+        return fail(code: INVALID, msg: "the certificate made does not read back with the names it was given")
+
+    if !verify_signature(key: key, algorithm: made.signature_algorithm, message: made.tbs, signature: made.signature)?
+        return fail(code: INVALID, msg: "the signature of the certificate made does not hold under the signer's key")
+    return ok(made)
+
+# A certificate that `issuer`'s key signs for `subject_key`: its issuer is
+# `issuer`'s subject, written with `issuer`'s own bytes, and its
+# `authorityKeyIdentifier` is `issuer`'s key identifier (or RFC 5280's first
+# method over `issuer`'s key where `issuer` writes none).
+#
+# - `template`: what the certificate says.
+# - `subject_key`: the key it certifies: a request's `public_key`, or
+#   `public_key_of` a private key.
+# - `issuer`: the authority's certificate; its key is `signer`'s public half.
+# - `signer`: the authority's private key, which stays open.
+# - `scheme`: how it signs, one of `signer`'s kind.
+#
+# Fails as `create_self_signed` does, and `invalid` where `signer` is not
+# `issuer`'s key, `issuer`'s `basicConstraints` says no authority, its
+# `keyUsage` lacks `keyCertSign`, or its path length of 0 allows no authority
+# below it where `template` asks one. See also `create_request`.
+function create_certificate(template: CertificateTemplate, subject_key: PublicKey, issuer: Certificate, signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> Certificate?
+    key = public_key_of(signer)?
+
+    if key.der != issuer.public_key.der
+        return fail(code: INVALID, msg: "the signing key is not the issuer certificate's key")
+
+    match issuer.extensions.basic_constraints
+        .err _ => _ = 0
+        .ok constraints =>
+            if !constraints.is_ca
+                return fail(code: INVALID, msg: "the issuer certificate's basicConstraints says it is no authority")
+
+            match constraints.path_len
+                .err _ => _ = 0
+                .ok limit =>
+                    match template.profile.role
+                        .unstated | .end_entity => _ = 0
+                        .authority | .limited_authority _ =>
+                            if limit == 0
+                                return fail(
+                                    code: INVALID,
+                                    msg: "the issuer's path length of 0 allows no authority below it"
+                                )
+
+    match issuer.extensions.key_usage
+        .err _ => _ = 0
+        .ok usage =>
+            if !usage.key_cert_sign
+                return fail(code: INVALID, msg: "the issuer certificate's keyUsage lacks keyCertSign")
+
+    empty = template.subject.der == [0x30, 0x00]
+
+    if empty && template.profile.alt_names.len() == 0
+        return fail(
+            code: INVALID,
+            msg: "a certificate with an empty subject must name an alternative name (RFC 5280 § 4.1.2.6)"
+        )
+    authority_id @= writing.key_id(issuer.public_key.key)
+
+    match issuer.extensions.subject_key_id
+        .err _ => _ = 0
+        .ok id => authority_id @ id
+
+    authority = writing.extension(oid: AUTHORITY_KEY_ID, critical: false, der: writing.authority_key_id(authority_id)?)?
+    profile: [asn1.Value] @= []
+
+    for one in profile_extensions(template.profile, subject_empty: empty)?
+        profile @ profile.push(from_extension(one)?)
+
+    der = assembling.certificate_der(assembling.Parts(serial: template.serial, not_before: template.not_before, not_after: template.not_after, subject: template.subject.der, issuer: issuer.subject.der, key: subject_key.der, key_bits: subject_key.key, authority: [authority], profile: profile, ocsp_urls: template.ocsp_urls, issuer_urls: template.issuer_urls, crl_urls: template.crl_urls), signer: signer, scheme: scheme)?
+    made = decode_certificate(der)?
+
+    if made.issuer.der != issuer.subject.der || made.subject.der != template.subject.der
+        return fail(code: INVALID, msg: "the certificate made does not read back with the names it was given")
+
+    if !verify_signature(key: key, algorithm: made.signature_algorithm, message: made.tbs, signature: made.signature)?
+        return fail(code: INVALID, msg: "the signature of the certificate made does not hold under the signer's key")
+    return ok(made)
+
+# A certificate request (PKCS #10, RFC 2986) for `signer`'s key, signed by
+# `signer` to show that its holder has it.
+#
+# - `template`: the subject, and the role, usages and names asked for.
+# - `signer`: the private key whose public half is asked to be certified,
+#   which stays open.
+# - `scheme`: how it signs, one of `signer`'s kind.
+#
+# What is made is read back before it is answered: `is_request_signed` holds
+# of it. Fails `invalid` where `profile_extensions` refuses `template`'s
+# profile, an attribute has no value or stands twice, or `attributes` holds
+# `EXTENSION_REQUEST`; `unsupported` as `keypairs.sign` fails. See also
+# `create_certificate`, `format_request`.
+function create_request(template: RequestTemplate, signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> Request?
+    key = public_key_of(signer)?
+    extensions: [asn1.Value] @= []
+
+    for one in profile_extensions(template.profile, subject_empty: template.subject.der == [0x30, 0x00])?
+        extensions @ extensions.push(from_extension(one)?)
+
+    attributes: [asn1.Value] @= []
+
+    for attribute in template.attributes
+        if attribute.values.len() == 0
+            return fail(
+                code: INVALID,
+                msg: f"the attribute {attribute.oid.dotted} has no value, where PKCS #10 asks one at least"
+            )
+        attributes @ attributes.push(.sequence(items: [.oid(v: attribute.oid), .set(items: attribute.values)]))
+
+    der = assembling.request_der(subject: template.subject.der, key: key.der, extensions: extensions, attributes: attributes, signer: signer, scheme: scheme)?
+    made = decode_request(der)?
+
+    if !is_request_signed(made)?
+        return fail(code: INVALID, msg: "the signature of the request made does not hold under the signer's key")
+    return ok(made)
+
+# `request` as a `CERTIFICATE REQUEST` block of PEM, lines of 64 characters
+# each ending in `\n`.
+#
+# - `request`: the request; its `der` is written.
+#
+# See also `parse_request`, `create_request`.
+function format_request(request: Request) -> str
+    return pem.format(pem.Block(label: "CERTIFICATE REQUEST", headers: [], data: request.der)).must()
+
+# A revocation list (RFC 5280 § 5) of `template`, issued by `issuer` and
+# signed with its key: version 2, with `authorityKeyIdentifier` and
+# `cRLNumber`, each entry's reason and invalidity date where it has them.
+#
+# - `template`: the list's number, its dates and the certificates it revokes.
+# - `issuer`: the authority's certificate: its subject is the list's issuer,
+#   its key identifier the list's `authorityKeyIdentifier`.
+# - `signer`: the authority's private key, which stays open; it must be
+#   `issuer`'s key.
+# - `scheme`: how it signs, one of `signer`'s kind.
+#
+# What is made is read back before it is answered: `is_crl_signed_by` holds
+# of it. Fails `invalid` where `number` is negative or takes over 20 octets, a
+# date is no date, `next_update` is before `this_update`, a serial is not
+# positive or stands twice, a reason is `.remove_from_crl`, `signer` is not
+# `issuer`'s key, or `issuer`'s `keyUsage` lacks `cRLSign`; `unsupported` as
+# `keypairs.sign` fails. See also `format_crl`, `revoked_of`.
+function create_crl(template: RevocationListTemplate, issuer: Certificate, signer: keypairs.PrivateKey, scheme: keypairs.Scheme) -> RevocationList?
+    key = public_key_of(signer)?
+
+    if key.der != issuer.public_key.der
+        return fail(code: INVALID, msg: "the signing key is not the issuer certificate's key")
+
+    match issuer.extensions.key_usage
+        .err _ => _ = 0
+        .ok usage =>
+            if !usage.crl_sign
+                return fail(code: INVALID, msg: "the issuer certificate's keyUsage lacks cRLSign")
+
+    authority_id @= writing.key_id(issuer.public_key.key)
+
+    match issuer.extensions.subject_key_id
+        .err _ => _ = 0
+        .ok id => authority_id @ id
+
+    entries: [asn1.Value] @= []
+    serials: [big.Integer] @= []
+
+    for revocation in template.revoked
+        for earlier in serials
+            if big.compare(a: earlier, b: revocation.serial) == 0
+                return fail(
+                    code: INVALID,
+                    msg: f"the serial {big.format_base(n: revocation.serial, base: 16)} is revoked twice"
+                )
+
+        serials @ serials.push(revocation.serial)
+
+        code = match revocation.reason
+            .unspecified            => 0
+            .key_compromise         => 1
+            .ca_compromise          => 2
+            .affiliation_changed    => 3
+            .superseded             => 4
+            .cessation_of_operation => 5
+            .certificate_hold       => 6
+            .remove_from_crl        => 8
+            .privilege_withdrawn    => 9
+            .aa_compromise          => 10
+
+        if code == 8
+            return fail(code: INVALID, msg: "removeFromCRL belongs to delta lists, which this package does not write")
+        extensions: [asn1.Value] @= []
+
+        if code > 0
+            extensions @ extensions.push(
+                writing.extension(oid: REASON_CODE, critical: false, der: writing.reason_code(code)?)?
+            )
+
+        match revocation.invalidity
+            .unstated => _ = 0
+            .since s =>
+                extensions @ extensions.push(
+                    writing.extension(oid: INVALIDITY_DATE, critical: false, der: writing.invalidity_date(writing.general_moment(s.at, what: "an invalidity date")?)?)?
+                )
+
+        entries @ entries.push(
+            assembling.entry(serial: revocation.serial, date: revocation.date, extensions: extensions)?
+        )
+
+    der = assembling.list_der(issuer: issuer.subject.der, authority_id: authority_id, number: template.number, this_update: template.this_update, next_update: template.next_update, entries: entries, signer: signer, scheme: scheme)?
+    made = decode_crl(der)?
+
+    if !is_crl_signed_by(made, issuer: issuer)?
+        return fail(code: INVALID, msg: "the signature of the list made does not hold under the signer's key")
+    return ok(made)
+
+# `crl` as an `X509 CRL` block of PEM, lines of 64 characters each ending in
+# `\n`.
+#
+# - `crl`: the list; its `der` is written.
+#
+# See also `parse_crl`, `create_crl`.
+function format_crl(crl: RevocationList) -> str
+    return pem.format(pem.Block(label: "X509 CRL", headers: [], data: crl.der)).must()
+
 ## Identifiers
 
 # The attribute `commonName`, `2.5.4.3`.
@@ -2493,6 +3196,948 @@ test "parse_certificates: a bundle with another block and text between"
     assert parse_certificates("none here").must().len() == 0
     assert parse_certificate(samples.request()).is_err()
 
+test "new_attribute: the string type of each type RFC 5280 names, bounds counted in characters, and what is refused"
+    assert asn1.tag_of(new_attribute(oid: COUNTRY_NAME, text: "IT").must().value).number == asn1.PRINTABLE_STRING
+    assert asn1.tag_of(new_attribute(oid: SERIAL_NUMBER, text: "42").must().value).number == asn1.PRINTABLE_STRING
+    assert asn1.tag_of(new_attribute(oid: COMMON_NAME, text: "example.org").must().value).number == asn1.UTF8_STRING
+    assert asn1.tag_of(new_attribute(oid: EMAIL_ADDRESS, text: "ops@example.org").must().value).number == asn1.IA5_STRING
+    assert asn1.tag_of(new_attribute(oid: DOMAIN_COMPONENT, text: "example").must().value).number == asn1.IA5_STRING
+    assert asn1.tag_of(new_attribute(oid: "2.5.4.9", text: "1 Main Street").must().value).number == asn1.UTF8_STRING
+    assert !new_attribute(oid: COMMON_NAME, text: repeat("é", to_u64(64).must())).is_err()
+    assert !new_attribute(oid: COMMON_NAME, text: repeat("a", to_u64(64).must())).is_err()
+    assert new_attribute(oid: COMMON_NAME, text: repeat("a", to_u64(65).must())).is_err()
+    assert new_attribute(oid: ORGANIZATION_NAME, text: repeat("é", to_u64(65).must())).is_err()
+    assert new_attribute(oid: LOCALITY_NAME, text: repeat("a", to_u64(129).must())).is_err()
+    assert !new_attribute(oid: LOCALITY_NAME, text: repeat("a", to_u64(128).must())).is_err()
+    assert new_attribute(oid: COMMON_NAME, text: "").is_err()
+    assert new_attribute(oid: COUNTRY_NAME, text: "ITA").is_err()
+    assert new_attribute(oid: COUNTRY_NAME, text: "I").is_err()
+    assert new_attribute(oid: COUNTRY_NAME, text: "i*").is_err()
+    assert new_attribute(oid: EMAIL_ADDRESS, text: "pè@example.org").is_err()
+    assert new_attribute(oid: "1.2.x", text: "a").is_err()
+
+    match new_attribute(oid: COUNTRY_NAME, text: "ITA")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the attribute 2.5.4.6 has 3 characters, where RFC 5280 asks exactly 2"
+
+test "new_name: OpenSSL's subject bytes, a relative name in DER's order, the empty name and a relative name of nothing"
+    root = parse_certificate(openssl.root()).must()
+    name = new_name(
+        [[new_attribute(oid: COUNTRY_NAME, text: "IT").must()], [new_attribute(oid: ORGANIZATION_NAME, text: "Heroes Test").must()], [new_attribute(oid: COMMON_NAME, text: "Heroes Made Root").must()]]
+    ).must()
+    assert name.der == root.subject.der
+    assert format_name(name) == "CN=Heroes Made Root,O=Heroes Test,C=IT"
+    both = new_name(
+        [[new_attribute(oid: COMMON_NAME, text: "zed").must(), new_attribute(oid: ORGANIZATION_NAME, text: "a").must()]]
+    ).must()
+    assert both.rdns[0][0].oid.dotted == ORGANIZATION_NAME
+    assert both.rdns == to_name(asn1.decode_der(both.der).must()).must().rdns
+    assert new_name([]).must().der == [0x30, 0x00]
+    assert new_name([[]]).is_err()
+
+test "random_serial: positive, 159 bits at most, and not the same twice"
+    a = random_serial().must()
+    b = random_serial().must()
+    assert big.compare(a: a, b: big.from_int(0)) > 0
+    assert big.bit_len(a) <= 159 && big.bit_len(b) <= 159
+    assert big.compare(a: a, b: b) != 0
+
+test "from_general_name: every kind of name written and read back, and what is refused"
+    key @= keypairs.generate(.p256).must()
+    house = new_name([[new_attribute(oid: COMMON_NAME, text: "Names").must()]]).must()
+    names: [GeneralName] = [
+        .dns(name: "a.example.org")
+        .dns(name: "*.example.org")
+        .email(address: "x@example.org")
+        .uri(uri: "https://example.org/")
+        .ip(address: net.parse_host("192.0.2.1").must())
+        .ip(address: net.parse_host("2001:db8::1").must())
+        .registered_id(oid: asn1.Oid(dotted: "1.2.3.4"))
+        .other_name(type_id: asn1.Oid(dotted: "1.3.6.1.4.1.311.20.2.3"), value: .text(kind: .utf8, v: "user@example.org"))
+        .directory(name: house)
+        .x400_address(der: [0xa3, 0x00])
+    ]
+    profile @= default_profile()
+    profile.alt_names @ names
+    template = CertificateTemplate(
+        serial: big.from_int(7),
+        subject: house,
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    built = create_self_signed(template, signer: key, scheme: .ecdsa_sha256).must()
+    assert built.extensions.alt_names.must() == names
+    assert built.extensions.list[1].oid.dotted == SUBJECT_ALT_NAME && !built.extensions.list[1].critical
+
+    refused: [[GeneralName]] = [
+        [.dns(name: "")]
+        [.dns(name: "127.0.0.1")]
+        [.dns(name: "::1")]
+        [.dns(name: "é.example.org")]
+        [.email(address: "")]
+        [.uri(uri: "")]
+        [.ip(address: net.Host(bytes: [1, 2, 3, 4, 5], zone: ""))]
+        [.ip_network(network: net.parse_network("10.0.0.0/8").must())]
+        [.x400_address(der: [0xa4, 0x00])]
+        [.edi_party(der: [0xa3, 0x00])]
+        [.x400_address(der: [0x30])]
+    ]
+
+    for choice in refused
+        wrong @= template
+        bad @= default_profile()
+        bad.alt_names @ choice
+        wrong.profile @ bad
+        assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+
+    _ = keypairs.close_private(@key).is_err()
+
+test "create_self_signed: OpenSSL's bytes for an Ed25519 root with a path length, key usage and key identifier"
+    if keypairs.is_available(.ed25519)
+        key @= keypairs.parse_private_pem(openssl.ed25519_key()).must()
+        root = parse_certificate(openssl.root()).must()
+        usage = KeyUsage(
+            digital_signature: false,
+            content_commitment: false,
+            key_encipherment: false,
+            data_encipherment: false,
+            key_agreement: false,
+            key_cert_sign: true,
+            crl_sign: true,
+            encipher_only: false,
+            decipher_only: false
+        )
+        profile @= default_profile()
+        profile.key_usage @ usage
+        profile.role @ .limited_authority(path_len: 1)
+        template = CertificateTemplate(
+            serial: big.parse_base(s: "0102030405060708090a0b0c0d0e0f1011121314", base: 16).must(),
+            subject: root.subject,
+            not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            profile: profile,
+            ocsp_urls: [],
+            issuer_urls: [],
+            crl_urls: []
+        )
+        built = create_self_signed(template, signer: key, scheme: .ed25519).must()
+        assert built.der == root.der
+        assert format_certificate(built) == openssl.root()
+        assert is_self_issued(built) && is_signed_by(certificate: built, issuer: built).must()
+        _ = keypairs.close_private(@key).is_err()
+    else
+        assert keypairs.parse_private_pem(openssl.ed25519_key()).is_err()
+
+test "create_certificate: OpenSSL's bytes for a leaf of a P-256 key under the Ed25519 root, with every extension"
+    if keypairs.is_available(.ed25519)
+        issuer_key @= keypairs.parse_private_pem(openssl.ed25519_key()).must()
+        subject_key @= keypairs.parse_private_pem(openssl.p256_key()).must()
+        root = parse_certificate(openssl.root()).must()
+        leaf = parse_certificate(openssl.leaf()).must()
+        usage = KeyUsage(
+            digital_signature: true,
+            content_commitment: false,
+            key_encipherment: false,
+            data_encipherment: false,
+            key_agreement: false,
+            key_cert_sign: false,
+            crl_sign: false,
+            encipher_only: false,
+            decipher_only: false
+        )
+        profile @= default_profile()
+        profile.key_usage @ usage
+        profile.role @ .end_entity
+        profile.extended_key_usage @ [asn1.Oid(dotted: SERVER_AUTH), asn1.Oid(dotted: CLIENT_AUTH)]
+        profile.alt_names @ [
+            .dns(name: "made.example.org")
+            .dns(name: "*.made.example.org")
+            .ip(address: net.parse_host("192.0.2.7").must())
+            .ip(address: net.parse_host("2001:db8::7").must())
+            .email(address: "ops@example.org")
+            .uri(uri: "https://made.example.org/")
+        ]
+        template = CertificateTemplate(
+            serial: big.parse_base(s: "7edcba9876543210", base: 16).must(),
+            subject: new_name([[new_attribute(oid: COMMON_NAME, text: "made.example.org").must()]]).must(),
+            not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            not_after: time.DateTime(year: 2027, month: 2, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            profile: profile,
+            ocsp_urls: ["http://ocsp.example.org/"],
+            issuer_urls: ["http://ca.example.org/root.der"],
+            crl_urls: ["http://ca.example.org/root.crl"]
+        )
+        built = create_certificate(
+            template,
+            subject_key: public_key_of(subject_key).must(),
+            issuer: root,
+            signer: issuer_key,
+            scheme: .ed25519
+        ).must()
+        assert built.der == leaf.der
+        assert is_signed_by(certificate: built, issuer: root).must()
+        assert built.issuer.der == root.subject.der
+        _ = keypairs.close_private(@issuer_key).is_err()
+        _ = keypairs.close_private(@subject_key).is_err()
+    else
+        assert keypairs.parse_private_pem(openssl.ed25519_key()).is_err()
+
+test "create_self_signed: OpenSSL's bytes for an RSA PKCS #1 v1.5 server's own certificate"
+    key @= keypairs.parse_private_pem(openssl.rsa_key()).must()
+    server = parse_certificate(openssl.server()).must()
+    usage = KeyUsage(
+        digital_signature: true,
+        content_commitment: false,
+        key_encipherment: true,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    profile @= default_profile()
+    profile.key_usage @ usage
+    profile.role @ .end_entity
+    profile.extended_key_usage @ [asn1.Oid(dotted: SERVER_AUTH)]
+    profile.alt_names @ [
+        .dns(name: "localhost")
+        .ip(address: net.parse_host("127.0.0.1").must())
+        .ip(address: net.parse_host("::1").must())
+    ]
+    template = CertificateTemplate(
+        serial: big.parse_base(s: "0a1b2c3d4e5f", base: 16).must(),
+        subject: new_name([[new_attribute(oid: COUNTRY_NAME, text: "US").must()], [new_attribute(oid: ORGANIZATION_NAME, text: "Dev Co").must()], [new_attribute(oid: COMMON_NAME, text: "dev.example.org").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    built = create_self_signed(template, signer: key, scheme: .rsa_pkcs1_sha256).must()
+    assert built.der == server.der
+    assert format_certificate(built) == openssl.server()
+    assert is_for_host(certificate: built, host: "localhost")
+    _ = keypairs.close_private(@key).is_err()
+
+test "create_request: OpenSSL's bytes for an Ed25519 request with an extension request"
+    if keypairs.is_available(.ed25519)
+        key @= keypairs.parse_private_pem(openssl.ed25519_key()).must()
+        wanted = parse_request(openssl.request()).must()
+        usage = KeyUsage(
+            digital_signature: true,
+            content_commitment: false,
+            key_encipherment: false,
+            data_encipherment: false,
+            key_agreement: false,
+            key_cert_sign: false,
+            crl_sign: false,
+            encipher_only: false,
+            decipher_only: false
+        )
+        profile @= default_profile()
+        profile.key_usage @ usage
+        profile.role @ .end_entity
+        profile.extended_key_usage @ [asn1.Oid(dotted: SERVER_AUTH)]
+        profile.alt_names @ [.dns(name: "csr.example.org"), .ip(address: net.parse_host("192.0.2.9").must())]
+        template = RequestTemplate(
+            subject: new_name([[new_attribute(oid: ORGANIZATION_NAME, text: "Heroes Test").must()], [new_attribute(oid: COMMON_NAME, text: "csr.example.org").must()]]).must(),
+            profile: profile,
+            attributes: []
+        )
+        built = create_request(template, signer: key, scheme: .ed25519).must()
+        assert built.der == wanted.der
+        assert format_request(built) == openssl.request()
+        assert is_request_signed(built).must()
+        _ = keypairs.close_private(@key).is_err()
+    else
+        assert keypairs.parse_private_pem(openssl.ed25519_key()).is_err()
+
+test "create_crl: OpenSSL's bytes for the Ed25519 root's list of three entries, a reason on two"
+    if keypairs.is_available(.ed25519)
+        key @= keypairs.parse_private_pem(openssl.ed25519_key()).must()
+        root = parse_certificate(openssl.root()).must()
+        wanted = parse_crl(openssl.crl()).must()
+        template = RevocationListTemplate(
+            number: big.from_int(5),
+            this_update: time.DateTime(year: 2026, month: 11, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            next_update: time.DateTime(year: 2026, month: 12, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            revoked: [Revocation(serial: big.from_int(0x0aaa), date: time.DateTime(year: 2026, month: 11, day: 7, hour: 0, minute: 0, second: 0, nanosecond: 0), reason: .unspecified, invalidity: .unstated), Revocation(serial: big.from_int(0x1234), date: time.DateTime(year: 2026, month: 11, day: 6, hour: 0, minute: 0, second: 0, nanosecond: 0), reason: .superseded, invalidity: .unstated), Revocation(serial: big.parse_base(s: "7edcba9876543210", base: 16).must(), date: time.DateTime(year: 2026, month: 11, day: 5, hour: 12, minute: 0, second: 0, nanosecond: 0), reason: .key_compromise, invalidity: .unstated)]
+        )
+        built = create_crl(template, issuer: root, signer: key, scheme: .ed25519).must()
+        assert built.der == wanted.der
+        assert format_crl(built) == openssl.crl()
+        assert is_crl_signed_by(built, issuer: root).must()
+        assert revoked_of(built, serial: big.from_int(0x1234)).must().date.day == 6
+        assert revoked_of(built, serial: big.from_int(0x1235)).is_err()
+        _ = keypairs.close_private(@key).is_err()
+    else
+        assert keypairs.parse_private_pem(openssl.ed25519_key()).is_err()
+
+test "create_self_signed: each of the nine schemes signs, and the certificate names it and verifies"
+    p256 @= keypairs.generate(.p256).must()
+    p384 @= keypairs.generate(.p384).must()
+    rsa @= keypairs.parse_private_pem(openssl.rsa_key()).must()
+    template = CertificateTemplate(
+        serial: big.from_int(99),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Schemes").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: default_profile(),
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    built @= [
+        create_self_signed(template, signer: p256, scheme: .ecdsa_sha256).must()
+        create_self_signed(template, signer: p384, scheme: .ecdsa_sha384).must()
+    ]
+    rsa_schemes: [keypairs.Scheme] = [
+        .rsa_pkcs1_sha256
+        .rsa_pkcs1_sha384
+        .rsa_pkcs1_sha512
+        .rsa_pss_sha256
+        .rsa_pss_sha384
+        .rsa_pss_sha512
+    ]
+
+    for scheme in rsa_schemes
+        built @ built.push(create_self_signed(template, signer: rsa, scheme: scheme).must())
+
+    expected: [keypairs.Scheme] @= [.ecdsa_sha256, .ecdsa_sha384]
+
+    for scheme in rsa_schemes
+        expected @ expected.push(scheme)
+
+    assert built.len() == expected.len()
+
+    for i in range(from: 0, to: expected.len())
+        assert scheme_of(built[i].signature_algorithm).must() == expected[i]
+        assert is_signed_by(certificate: built[i], issuer: built[i]).must()
+
+    assert create_self_signed(template, signer: p256, scheme: .rsa_pkcs1_sha256).is_err()
+    assert create_self_signed(template, signer: rsa, scheme: .ecdsa_sha256).is_err()
+    assert create_self_signed(template, signer: p384, scheme: .rsa_pss_sha256).is_err()
+    _ = keypairs.close_private(@p256).is_err()
+    _ = keypairs.close_private(@p384).is_err()
+    _ = keypairs.close_private(@rsa).is_err()
+
+test "create_self_signed: Ed25519 signs and reads back where the platform has it, and is unsupported where it has not"
+    if keypairs.is_available(.ed25519)
+        key @= keypairs.generate(.ed25519).must()
+        template = CertificateTemplate(
+            serial: big.from_int(100),
+            subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Edwards").must()]]).must(),
+            not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+            profile: default_profile(),
+            ocsp_urls: [],
+            issuer_urls: [],
+            crl_urls: []
+        )
+        built = create_self_signed(template, signer: key, scheme: .ed25519).must()
+        assert scheme_of(built.signature_algorithm).must() == .ed25519
+        assert is_signed_by(certificate: built, issuer: built).must()
+        _ = keypairs.close_private(@key).is_err()
+    else
+        match keypairs.generate(.ed25519)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+test "create_self_signed: a serial that is not positive or is past 20 octets, a validity that ends first, and an empty subject are refused"
+    key @= keypairs.generate(.p256).must()
+    seven = new_name([[new_attribute(oid: COMMON_NAME, text: "Seven").must()]]).must()
+    base = CertificateTemplate(
+        serial: big.from_int(7),
+        subject: seven,
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: default_profile(),
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    assert !create_self_signed(base, signer: key, scheme: .ecdsa_sha256).is_err()
+    zero @= base
+    zero.serial @ big.from_int(0)
+    assert create_self_signed(zero, signer: key, scheme: .ecdsa_sha256).is_err()
+    negative @= base
+    negative.serial @ big.from_int(-5)
+    assert create_self_signed(negative, signer: key, scheme: .ecdsa_sha256).is_err()
+    widest @= base
+    widest.serial @ big.parse_base(s: "7fffffffffffffffffffffffffffffffffffffff", base: 16).must()
+    assert big.compare(a: create_self_signed(widest, signer: key, scheme: .ecdsa_sha256).must().serial, b: widest.serial) == 0
+    over @= base
+    over.serial @ big.parse_base(s: "ffffffffffffffffffffffffffffffffffffffff", base: 16).must()
+    assert create_self_signed(over, signer: key, scheme: .ecdsa_sha256).is_err()
+    longer @= base
+    longer.serial @ big.parse_base(s: "010000000000000000000000000000000000000000", base: 16).must()
+    assert create_self_signed(longer, signer: key, scheme: .ecdsa_sha256).is_err()
+    reversed @= base
+    reversed.not_after @ time.DateTime(year: 2026, month: 10, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert create_self_signed(reversed, signer: key, scheme: .ecdsa_sha256).is_err()
+    instant @= base
+    instant.not_after @ base.not_before
+    assert !create_self_signed(instant, signer: key, scheme: .ecdsa_sha256).is_err()
+    impossible @= base
+    impossible.not_after @ time.DateTime(year: 2027, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert create_self_signed(impossible, signer: key, scheme: .ecdsa_sha256).is_err()
+    nameless @= base
+    nameless.subject @ new_name([]).must()
+    assert create_self_signed(nameless, signer: key, scheme: .ecdsa_sha256).is_err()
+    broken @= base
+    broken.subject @ Name(rdns: [], der: [0x01])
+    assert create_self_signed(broken, signer: key, scheme: .ecdsa_sha256).is_err()
+
+    match create_self_signed(zero, signer: key, scheme: .ecdsa_sha256)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the serial number is 0, where RFC 5280 asks a positive integer"
+
+    _ = keypairs.close_private(@key).is_err()
+
+test "create_self_signed: moments written as UTCTime or GeneralizedTime, the fraction dropped, an empty subject named by a critical alternative name"
+    key @= keypairs.generate(.p256).must()
+    profile @= default_profile()
+    profile.alt_names @ [.dns(name: "only.example.org")]
+    template = CertificateTemplate(
+        serial: big.from_int(8),
+        subject: new_name([]).must(),
+        not_before: time.DateTime(year: 1949, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 999999999),
+        not_after: time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0),
+        profile: profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    built = create_self_signed(template, signer: key, scheme: .ecdsa_sha256).must()
+    assert built.not_before == time.DateTime(year: 1949, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert built.not_after.year == 9999
+    assert format_name(built.subject) == "" && built.subject.der == [0x30, 0x00]
+    assert built.extensions.list[1].oid.dotted == SUBJECT_ALT_NAME && built.extensions.list[1].critical
+    assert is_for_host(certificate: built, host: "only.example.org")
+    modern @= template
+    modern.not_before @ time.DateTime(year: 2049, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    modern.not_after @ time.DateTime(year: 2050, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert create_self_signed(modern, signer: key, scheme: .ecdsa_sha256).must().not_after.year == 2050
+    _ = keypairs.close_private(@key).is_err()
+
+test "create_self_signed: a role and key usage that disagree, an extension twice, one of no DER, and one unknown kept as given"
+    key @= keypairs.generate(.p256).must()
+    base = CertificateTemplate(
+        serial: big.from_int(9),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Roles").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: default_profile(),
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    sign_only = KeyUsage(
+        digital_signature: true,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    ca_usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    only_encipher = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: true,
+        decipher_only: false
+    )
+
+    roles: [Role] = [.unstated, .end_entity]
+
+    for role in roles
+        profile @= default_profile()
+        profile.role @ role
+        profile.key_usage @ ca_usage
+        wrong @= base
+        wrong.profile @ profile
+        assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+
+    authority @= default_profile()
+    authority.role @ .authority
+    authority.key_usage @ sign_only
+    wrong @= base
+    wrong.profile @ authority
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    authority.key_usage @ ca_usage
+    wrong.profile @ authority
+    assert !create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    authority.role @ .limited_authority(path_len: -1)
+    wrong.profile @ authority
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    agreement @= default_profile()
+    agreement.key_usage @ only_encipher
+    wrong.profile @ agreement
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    twice @= default_profile()
+    twice.alt_names @ [.dns(name: "a.example.org")]
+    twice.extra @ [Extension(oid: asn1.Oid(dotted: SUBJECT_ALT_NAME), critical: false, value: [0x30, 0x00])]
+    wrong.profile @ twice
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    unknown = Extension(oid: asn1.Oid(dotted: "1.2.3.4.5"), critical: true, value: [0x05, 0x00])
+    pair @= default_profile()
+    pair.extra @ [unknown, unknown]
+    wrong.profile @ pair
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    nothing @= default_profile()
+    nothing.extra @ [Extension(oid: asn1.Oid(dotted: "1.2.3.4.5"), critical: false, value: [0x30])]
+    wrong.profile @ nothing
+    assert create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    given @= default_profile()
+    given.extra @ [unknown]
+    wrong.profile @ given
+    built = create_self_signed(wrong, signer: key, scheme: .ecdsa_sha256).must()
+    assert built.extensions.unknown.len() == 1
+    assert built.extensions.unknown[0] == unknown
+    assert built.extensions.list.len() == 2
+    _ = keypairs.close_private(@key).is_err()
+
+test "create_certificate: an issuer that is no authority, whose usage lacks keyCertSign, whose path allows none, or whose key is not the signer's"
+    root_key @= keypairs.generate(.p256).must()
+    other_key @= keypairs.generate(.p256).must()
+    leaf_key @= keypairs.generate(.p256).must()
+    ca_usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    sign_only = KeyUsage(
+        digital_signature: true,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    base = CertificateTemplate(
+        serial: big.from_int(10),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Issuer").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2027, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: default_profile(),
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    zero_path @= default_profile()
+    zero_path.role @ .limited_authority(path_len: 0)
+    zero_path.key_usage @ ca_usage
+    root_template @= base
+    root_template.profile @ zero_path
+    root = create_self_signed(root_template, signer: root_key, scheme: .ecdsa_sha256).must()
+    leaf_template @= base
+    leaf_template.serial @ big.from_int(11)
+    leaf_template.subject @ new_name([[new_attribute(oid: COMMON_NAME, text: "Leaf").must()]]).must()
+    leaf_public = public_key_of(leaf_key).must()
+    leaf = create_certificate(
+        leaf_template,
+        subject_key: leaf_public,
+        issuer: root,
+        signer: root_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    assert is_signed_by(certificate: leaf, issuer: root).must()
+    assert leaf.issuer.der == root.subject.der
+    assert leaf.extensions.authority_key_id.must().key_id.must() == root.extensions.subject_key_id.must()
+    assert leaf.extensions.subject_key_id.must().len() == 20
+    assert create_certificate(
+        leaf_template,
+        subject_key: leaf_public,
+        issuer: root,
+        signer: other_key,
+        scheme: .ecdsa_sha256
+    ).is_err()
+    below @= leaf_template
+    below.profile @ zero_path
+    assert create_certificate(
+        below,
+        subject_key: leaf_public,
+        issuer: root,
+        signer: root_key,
+        scheme: .ecdsa_sha256
+    ).is_err()
+    end_entity @= default_profile()
+    end_entity.role @ .end_entity
+    leaf_template.profile @ end_entity
+    leaf_as_issuer_template @= base
+    leaf_as_issuer_template.profile @ end_entity
+    leaf_ca = create_self_signed(leaf_as_issuer_template, signer: leaf_key, scheme: .ecdsa_sha256).must()
+    assert create_certificate(
+        base,
+        subject_key: leaf_public,
+        issuer: leaf_ca,
+        signer: leaf_key,
+        scheme: .ecdsa_sha256
+    ).is_err()
+    signing @= default_profile()
+    signing.key_usage @ sign_only
+    signer_template @= base
+    signer_template.profile @ signing
+    signer_ca = create_self_signed(signer_template, signer: other_key, scheme: .ecdsa_sha256).must()
+    assert create_certificate(
+        base,
+        subject_key: leaf_public,
+        issuer: signer_ca,
+        signer: other_key,
+        scheme: .ecdsa_sha256
+    ).is_err()
+    bare = create_self_signed(base, signer: other_key, scheme: .ecdsa_sha256).must()
+    bare_leaf = create_certificate(
+        leaf_template,
+        subject_key: leaf_public,
+        issuer: bare,
+        signer: other_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    assert is_signed_by(certificate: bare_leaf, issuer: bare).must()
+    assert bare_leaf.extensions.authority_key_id.must().key_id.must() == writing.key_id(bare.public_key.key)
+    _ = keypairs.close_private(@root_key).is_err()
+    _ = keypairs.close_private(@other_key).is_err()
+    _ = keypairs.close_private(@leaf_key).is_err()
+
+test "create_certificate: a chain of an ECDSA P-256 root, a P-384 intermediate and an RSA leaf that verify_chain accepts for its host alone"
+    root_key @= keypairs.generate(.p256).must()
+    inter_key @= keypairs.generate(.p384).must()
+    leaf_key @= keypairs.parse_private_pem(openssl.rsa_key()).must()
+    ca_usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    root_profile @= default_profile()
+    root_profile.role @ .limited_authority(path_len: 1)
+    root_profile.key_usage @ ca_usage
+    inter_profile @= default_profile()
+    inter_profile.role @ .limited_authority(path_len: 0)
+    inter_profile.key_usage @ ca_usage
+    leaf_profile @= default_profile()
+    leaf_profile.role @ .end_entity
+    leaf_profile.extended_key_usage @ [asn1.Oid(dotted: SERVER_AUTH)]
+    leaf_profile.alt_names @ [.dns(name: "chain.example.org")]
+    root_template = CertificateTemplate(
+        serial: big.from_int(1),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Chain Root").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: root_profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    inter_template @= root_template
+    inter_template.serial @ big.from_int(2)
+    inter_template.subject @ new_name([[new_attribute(oid: COMMON_NAME, text: "Chain Intermediate").must()]]).must()
+    inter_template.profile @ inter_profile
+    inter_template.crl_urls @ ["http://ca.example.org/root.crl"]
+    leaf_template @= root_template
+    leaf_template.serial @ big.from_int(3)
+    leaf_template.subject @ new_name([[new_attribute(oid: COMMON_NAME, text: "chain.example.org").must()]]).must()
+    leaf_template.profile @ leaf_profile
+    root = create_self_signed(root_template, signer: root_key, scheme: .ecdsa_sha256).must()
+    inter = create_certificate(
+        inter_template,
+        subject_key: public_key_of(inter_key).must(),
+        issuer: root,
+        signer: root_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    leaf = create_certificate(
+        leaf_template,
+        subject_key: public_key_of(leaf_key).must(),
+        issuer: inter,
+        signer: inter_key,
+        scheme: .ecdsa_sha384
+    ).must()
+    chain = chain_of(leaf, pool: [root, inter])
+    assert chain.len() == 3
+    june = time.date(year: 2026, month: 12, day: 1).must()
+    good = Verification(roots: [root], at: june, purpose: SERVER_AUTH, host: "chain.example.org")
+    assert !verify_chain(chain, options: good).is_err()
+    assert verify_chain(
+        chain,
+        options: Verification(roots: [root], at: june, purpose: SERVER_AUTH, host: "other.example.org")
+    ).is_err()
+    assert verify_chain(chain, options: Verification(roots: [root], at: june, purpose: CODE_SIGNING, host: "")).is_err()
+    assert inter.extensions.crl_distribution_points.must().len() == 1
+    _ = keypairs.close_private(@root_key).is_err()
+    _ = keypairs.close_private(@inter_key).is_err()
+    _ = keypairs.close_private(@leaf_key).is_err()
+
+test "profile_extensions: nothing for the default, RFC 5280's bytes for each extension, their order, their criticality and the extra last"
+    assert profile_extensions(default_profile(), subject_empty: false).must().len() == 0
+    usage = KeyUsage(
+        digital_signature: true,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: true,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: true
+    )
+    extra = Extension(oid: asn1.Oid(dotted: "1.2.3.4"), critical: true, value: [0x05, 0x00])
+    profile @= default_profile()
+    profile.role @ .limited_authority(path_len: 0)
+    profile.key_usage @ usage
+    profile.extended_key_usage @ [asn1.Oid(dotted: SERVER_AUTH)]
+    profile.alt_names @ [.dns(name: "a.example.org")]
+    profile.extra @ [extra]
+    assert profile_extensions(profile, subject_empty: false).is_err()
+    profile.role @ .end_entity
+    list = profile_extensions(profile, subject_empty: false).must()
+    assert list.len() == 5
+    assert list[0].oid.dotted == BASIC_CONSTRAINTS && list[0].critical && list[0].value == [0x30, 0x00]
+    assert list[1].oid.dotted == KEY_USAGE && list[1].critical && list[1].value == [0x03, 0x03, 0x07, 0x88, 0x80]
+    assert list[2].oid.dotted == EXTENDED_KEY_USAGE && !list[2].critical
+    assert list[3].oid.dotted == SUBJECT_ALT_NAME && !list[3].critical
+    assert list[4] == extra
+    assert profile_extensions(profile, subject_empty: true).must()[3].critical
+    ca = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    authority @= default_profile()
+    authority.key_usage @ ca
+    authority.role @ .authority
+    wide = profile_extensions(authority, subject_empty: false).must()
+    assert wide[0].value == [0x30, 0x03, 0x01, 0x01, 0xff] && wide[1].value == [0x03, 0x02, 0x01, 0x06]
+    authority.role @ .limited_authority(path_len: 0)
+    assert profile_extensions(authority, subject_empty: false).must()[0].value == [0x30, 0x06, 0x01, 0x01, 0xff, 0x02, 0x01, 0x00]
+    authority.role @ .limited_authority(path_len: 300)
+    assert profile_extensions(authority, subject_empty: false).must()[0].value == [0x30, 0x07, 0x01, 0x01, 0xff, 0x02, 0x02, 0x01, 0x2c]
+
+test "from_extension: an extension's SEQUENCE, its criticality written only where true, and a value that is no DER refused"
+    quiet = from_extension(Extension(oid: asn1.Oid(dotted: "1.2.3.4"), critical: false, value: [0x05, 0x00])).must()
+    assert asn1.encode_der(quiet).must() == [0x30, 0x09, 0x06, 0x03, 0x2a, 0x03, 0x04, 0x04, 0x02, 0x05, 0x00]
+    loud = from_extension(Extension(oid: asn1.Oid(dotted: "1.2.3.4"), critical: true, value: [0x05, 0x00])).must()
+    assert asn1.encode_der(loud).must() == [0x30, 0x0c, 0x06, 0x03, 0x2a, 0x03, 0x04, 0x01, 0x01, 0xff, 0x04, 0x02, 0x05, 0x00]
+    assert to_extension(loud).must().critical
+    assert from_extension(Extension(oid: asn1.Oid(dotted: "1.2.3.4"), critical: false, value: [0x30])).is_err()
+    assert from_extension(Extension(oid: asn1.Oid(dotted: "1.40"), critical: false, value: [0x05, 0x00])).is_err()
+    assert from_extension(Extension(oid: asn1.Oid(dotted: "x"), critical: false, value: [0x05, 0x00])).is_err()
+
+test "create_crl: every reason and an invalidity date read back, a list of none, a number of 0, and what is refused"
+    key @= keypairs.generate(.p256).must()
+    other @= keypairs.generate(.p256).must()
+    ca = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    signing_only = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    profile @= default_profile()
+    profile.role @ .authority
+    profile.key_usage @ ca
+    base = CertificateTemplate(
+        serial: big.from_int(1),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "List Root").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    root = create_self_signed(base, signer: key, scheme: .ecdsa_sha256).must()
+    reasons: [Reason] = [
+        .key_compromise
+        .ca_compromise
+        .affiliation_changed
+        .superseded
+        .cessation_of_operation
+        .certificate_hold
+        .privilege_withdrawn
+        .aa_compromise
+    ]
+    revoked: [Revocation] @= []
+    day = time.DateTime(year: 2026, month: 11, day: 5, hour: 1, minute: 2, second: 3, nanosecond: 0)
+
+    for i in range(from: 0, to: reasons.len())
+        revoked @ revoked.push(
+            Revocation(serial: big.from_int(100 + i), date: day, reason: reasons[i], invalidity: .unstated)
+        )
+
+    revoked @ revoked.push(
+        Revocation(serial: big.from_int(200), date: day, reason: .unspecified, invalidity: .since(at: time.DateTime(year: 2026, month: 10, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 500)))
+    )
+    template = RevocationListTemplate(
+        number: big.from_int(0),
+        this_update: time.DateTime(year: 2026, month: 11, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        next_update: time.DateTime(year: 2026, month: 11, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        revoked: revoked
+    )
+    built = create_crl(template, issuer: root, signer: key, scheme: .ecdsa_sha256).must()
+    assert built.revoked.len() == 9 && built.version == 2
+    assert big.compare(a: built.extensions.crl_number.must(), b: big.from_int(0)) == 0
+    assert built.extensions.authority_key_id.must().key_id.must() == root.extensions.subject_key_id.must()
+
+    for i in range(from: 0, to: reasons.len())
+        assert built.revoked[i].extensions.reason.must() == reasons[i]
+
+    assert built.revoked[8].extensions.reason.is_err()
+    assert built.revoked[8].extensions.invalidity_date.must() == time.DateTime(year: 2026, month: 10, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert built.revoked[0].extensions.invalidity_date.is_err()
+    assert parse_crl(format_crl(built)).must().der == built.der
+    none @= template
+    none.revoked @ []
+    emptied = create_crl(none, issuer: root, signer: key, scheme: .ecdsa_sha256).must()
+    assert emptied.revoked.len() == 0 && is_crl_signed_by(emptied, issuer: root).must()
+    twice @= template
+    twice.revoked @ [revoked[0], revoked[0]]
+    assert create_crl(twice, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    delta @= template
+    delta.revoked @ [Revocation(serial: big.from_int(1), date: day, reason: .remove_from_crl, invalidity: .unstated)]
+    assert create_crl(delta, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    nothing @= template
+    nothing.revoked @ [Revocation(serial: big.from_int(0), date: day, reason: .unspecified, invalidity: .unstated)]
+    assert create_crl(nothing, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    backwards @= template
+    backwards.next_update @ time.DateTime(
+        year: 2026,
+        month: 11,
+        day: 9,
+        hour: 23,
+        minute: 59,
+        second: 59,
+        nanosecond: 0
+    )
+    assert create_crl(backwards, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    negative @= template
+    negative.number @ big.from_int(-1)
+    assert create_crl(negative, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    huge @= template
+    huge.number @ big.parse_base(s: "ffffffffffffffffffffffffffffffffffffffff", base: 16).must()
+    assert create_crl(huge, issuer: root, signer: key, scheme: .ecdsa_sha256).is_err()
+    assert create_crl(template, issuer: root, signer: other, scheme: .ecdsa_sha256).is_err()
+    weak_profile @= profile
+    weak_profile.key_usage @ signing_only
+    weak @= base
+    weak.profile @ weak_profile
+    list_less = create_self_signed(weak, signer: other, scheme: .ecdsa_sha256).must()
+    assert create_crl(template, issuer: list_less, signer: other, scheme: .ecdsa_sha256).is_err()
+    _ = keypairs.close_private(@key).is_err()
+    _ = keypairs.close_private(@other).is_err()
+
+test "create_request: attributes written as given, a challenge password and a request for an authority read back, and what is refused"
+    key @= keypairs.generate(.p256).must()
+    password = RequestAttribute(oid: asn1.Oid(dotted: CHALLENGE_PASSWORD), values: [.text(kind: .utf8, v: "s3cret")])
+    template = RequestTemplate(
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Request").must()]]).must(),
+        profile: default_profile(),
+        attributes: [password]
+    )
+    built = create_request(template, signer: key, scheme: .ecdsa_sha256).must()
+    assert built.attributes == [password] && built.extensions.list.len() == 0
+    assert is_request_signed(built).must() && parse_request(format_request(built)).must().der == built.der
+    bare = RequestTemplate(subject: new_name([]).must(), profile: default_profile(), attributes: [])
+    assert create_request(bare, signer: key, scheme: .ecdsa_sha256).must().attributes.len() == 0
+    ca = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    profile @= default_profile()
+    profile.role @ .limited_authority(path_len: 2)
+    profile.key_usage @ ca
+    profile.alt_names @ [.dns(name: "ca.example.org")]
+    wanted = RequestTemplate(subject: new_name([]).must(), profile: profile, attributes: [password])
+    asked = create_request(wanted, signer: key, scheme: .ecdsa_sha256).must()
+    assert asked.extensions.basic_constraints.must().is_ca && asked.extensions.basic_constraints.must().path_len.must() == 2
+    assert asked.extensions.key_usage.must().key_cert_sign && asked.extensions.alt_names.must() == profile.alt_names
+    assert asked.attributes.len() == 2 && asked.subject.der == [0x30, 0x00]
+    both @= template
+    both.attributes @ [password, password]
+    assert create_request(both, signer: key, scheme: .ecdsa_sha256).is_err()
+    empty @= template
+    empty.attributes @ [RequestAttribute(oid: asn1.Oid(dotted: CHALLENGE_PASSWORD), values: [])]
+    assert create_request(empty, signer: key, scheme: .ecdsa_sha256).is_err()
+    extension_request @= template
+    extension_request.attributes @ [
+        RequestAttribute(oid: asn1.Oid(dotted: EXTENSION_REQUEST), values: [.sequence(items: [])])
+    ]
+    assert create_request(extension_request, signer: key, scheme: .ecdsa_sha256).is_err()
+    wrong @= template
+    bad @= default_profile()
+    bad.key_usage @ ca
+    wrong.profile @ bad
+    assert create_request(wrong, signer: key, scheme: .ecdsa_sha256).is_err()
+    assert create_request(template, signer: key, scheme: .ed25519).is_err()
+    _ = keypairs.close_private(@key).is_err()
+
 ## Examples
 
 # The subject of a certificate read from PEM, as RFC 4514 writes a name.
@@ -2666,3 +4311,179 @@ test "is_for_address: an IPv4 address"
         certificate: parse_certificate(samples.leaf()).must(),
         address: net.parse_host("192.0.2.1").must()
     )
+
+# One attribute of a name, made from its type and its text.
+test "new_attribute: a common name, in the string type RFC 5280 gives it"
+    attribute = new_attribute(oid: COMMON_NAME, text: "example.org").must()
+    assert asn1.text_of(attribute.value).must() == "example.org"
+
+# A name made of a country, an organization and a common name.
+test "new_name: a subject of three relative names"
+    name = new_name(
+        [[new_attribute(oid: COUNTRY_NAME, text: "IT").must()], [new_attribute(oid: ORGANIZATION_NAME, text: "Heroes Test").must()], [new_attribute(oid: COMMON_NAME, text: "example.org").must()]]
+    ).must()
+    assert format_name(name) == "CN=example.org,O=Heroes Test,C=IT"
+
+# The public key of a private key, in the form a certificate holds it.
+test "public_key_of: a P-256 key's SubjectPublicKeyInfo"
+    key @= keypairs.generate(.p256).must()
+    public = public_key_of(key).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert kind_of(public).must() == .p256
+
+# A serial number for a certificate, drawn at random.
+test "random_serial: a positive serial of 159 bits at most"
+    assert big.bit_len(random_serial().must()) <= 159
+
+# The profile that says nothing, changed where a program wants something said.
+test "default_profile: a server's profile, an end entity that names a host"
+    profile @= default_profile()
+    profile.role @ .end_entity
+    profile.alt_names @ [.dns(name: "example.org")]
+    assert profile.alt_names.len() == 1
+
+# A name written into its ASN.1 and read back.
+test "from_general_name: a host name, written as its dNSName"
+    written = from_general_name(.dns(name: "a.example.org")).must()
+    assert to_general_name(written).must() == .dns(name: "a.example.org")
+
+# An extension written into its ASN.1 and read back.
+test "from_extension: a critical extension, read back by `to_extension`"
+    written = from_extension(Extension(oid: asn1.Oid(dotted: "1.2.3.4"), critical: true, value: [0x05, 0x00])).must()
+    assert to_extension(written).must().critical
+
+# The extensions a profile writes, as a certificate would carry them.
+test "profile_extensions: an end entity's basic constraints and its names"
+    profile @= default_profile()
+    profile.role @ .end_entity
+    profile.alt_names @ [.dns(name: "example.org")]
+    list = profile_extensions(profile, subject_empty: false).must()
+    assert list[0].oid.dotted == BASIC_CONSTRAINTS && list[1].oid.dotted == SUBJECT_ALT_NAME
+
+# A root authority that a P-256 key gives itself.
+test "create_self_signed: a root authority, valid for ten years"
+    key @= keypairs.generate(.p256).must()
+    usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    profile @= default_profile()
+    profile.role @ .authority
+    profile.key_usage @ usage
+    template = CertificateTemplate(
+        serial: random_serial().must(),
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Example Root").must()]]).must(),
+        not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        profile: profile,
+        ocsp_urls: [],
+        issuer_urls: [],
+        crl_urls: []
+    )
+    root = create_self_signed(template, signer: key, scheme: .ecdsa_sha256).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert is_self_issued(root) && root.extensions.basic_constraints.must().is_ca
+
+# A server's certificate that a root signs for the server's own key.
+test "create_certificate: a server's certificate under a root, for its host name"
+    root_key @= keypairs.generate(.p256).must()
+    server_key @= keypairs.generate(.p256).must()
+    usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    authority @= default_profile()
+    authority.role @ .authority
+    authority.key_usage @ usage
+    server @= default_profile()
+    server.role @ .end_entity
+    server.alt_names @ [.dns(name: "example.org")]
+    start = time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    root = create_self_signed(
+        CertificateTemplate(serial: big.from_int(1), subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Example Root").must()]]).must(), not_before: start, not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), profile: authority, ocsp_urls: [], issuer_urls: [], crl_urls: []),
+        signer: root_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    leaf = create_certificate(
+        CertificateTemplate(serial: big.from_int(2), subject: new_name([[new_attribute(oid: COMMON_NAME, text: "example.org").must()]]).must(), not_before: start, not_after: time.DateTime(year: 2027, month: 2, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), profile: server, ocsp_urls: [], issuer_urls: [], crl_urls: []),
+        subject_key: public_key_of(server_key).must(),
+        issuer: root,
+        signer: root_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    _ = keypairs.close_private(@root_key).is_err()
+    _ = keypairs.close_private(@server_key).is_err()
+    assert is_signed_by(certificate: leaf, issuer: root).must() && is_for_host(certificate: leaf, host: "example.org")
+
+# A request for a host name, signed by the key that will hold the certificate.
+test "create_request: a request for a host name"
+    key @= keypairs.generate(.p256).must()
+    profile @= default_profile()
+    profile.alt_names @ [.dns(name: "example.org")]
+    template = RequestTemplate(
+        subject: new_name([[new_attribute(oid: COMMON_NAME, text: "example.org").must()]]).must(),
+        profile: profile,
+        attributes: []
+    )
+    request = create_request(template, signer: key, scheme: .ecdsa_sha256).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert is_request_signed(request).must() && request.extensions.alt_names.must() == [.dns(name: "example.org")]
+
+# A request written as PEM and read back.
+test "format_request: a request as a PEM block, read back by `parse_request`"
+    key @= keypairs.generate(.p256).must()
+    template = RequestTemplate(subject: new_name([]).must(), profile: default_profile(), attributes: [])
+    request = create_request(template, signer: key, scheme: .ecdsa_sha256).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert parse_request(format_request(request)).must().der == request.der
+
+# A list of one revoked certificate, issued by a root.
+test "create_crl: a list that revokes one serial for a stated reason"
+    key @= keypairs.generate(.p256).must()
+    usage = KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: true,
+        crl_sign: true,
+        encipher_only: false,
+        decipher_only: false
+    )
+    profile @= default_profile()
+    profile.role @ .authority
+    profile.key_usage @ usage
+    root = create_self_signed(
+        CertificateTemplate(serial: big.from_int(1), subject: new_name([[new_attribute(oid: COMMON_NAME, text: "Example Root").must()]]).must(), not_before: time.DateTime(year: 2026, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), not_after: time.DateTime(year: 2036, month: 11, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), profile: profile, ocsp_urls: [], issuer_urls: [], crl_urls: []),
+        signer: key,
+        scheme: .ecdsa_sha256
+    ).must()
+    template = RevocationListTemplate(
+        number: big.from_int(1),
+        this_update: time.DateTime(year: 2026, month: 11, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        next_update: time.DateTime(year: 2026, month: 12, day: 10, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        revoked: [Revocation(serial: big.from_int(42), date: time.DateTime(year: 2026, month: 11, day: 9, hour: 0, minute: 0, second: 0, nanosecond: 0), reason: .key_compromise, invalidity: .unstated)]
+    )
+    crl = create_crl(template, issuer: root, signer: key, scheme: .ecdsa_sha256).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert revoked_of(crl, serial: big.from_int(42)).must().extensions.reason.must() == .key_compromise
+
+# A list written as PEM and read back.
+test "format_crl: a list as a PEM block, read back by `parse_crl`"
+    crl = parse_crl(openssl.crl()).must()
+    assert parse_crl(format_crl(crl)).must().der == crl.der

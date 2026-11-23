@@ -175,14 +175,25 @@
  * running (panel 251's R1): on Linux and every POSIX system but Darwin, a
  * wrapper around every handler a program's C installs (`siginstall.c`) and the
  * save points and jumps that tell a handler left from one jumped within
- * (`sigjump.c`), and `dlsym` answered with their definitions for their names
- * (`siglookup.c`); on Darwin, the rewritten slots and the trampoline
- * (`rebind.c`). Each compiles to nothing where it does not stand. Right after
- * `sigguard.c`, whose thread record and key they use. */
+ * (`sigjump.c`, which names its four siblings), and `dlsym` answered with
+ * their definitions for their names (`siglookup.c`); on Darwin, the rewritten
+ * slots and the trampoline (`rebind.c`, which names its six siblings). Each
+ * compiles to nothing where it does not stand. Right after `sigguard.c`,
+ * whose thread record and key they use. */
 #include "parts/siginstall.c"
 #include "parts/sigjump.c"
+#include "parts/sigjump_probe.c"
+#include "parts/sigjump_decode.c"
+#include "parts/sigjump_record.c"
+#include "parts/sigjump_save.c"
 #include "parts/siglookup.c"
 #include "parts/rebind.c"
+#include "parts/rebind_entries.c"
+#include "parts/rebind_install.c"
+#include "parts/rebind_record.c"
+#include "parts/rebind_decode.c"
+#include "parts/rebind_jump.c"
+#include "parts/rebind_image.c"
 
 /* The runtime's door for a signal other than SIGINT and SIGTERM (panel 247's
  * G): its own C handler counts each delivery, and the program takes the count
@@ -289,9 +300,11 @@
 /* Threads that exchange any value while they run (feature 2647; panel 254):
  * the language's `spawn` on `spawn.c`'s table, the crossing walk and the
  * mailbox. After the map, whose entries the walk reads, and the platform
- * layer's word for the stop, declared by the header the layer's members
- * include, so clang checks the definition. */
+ * layer's word for the stop and its questions of a numbered queue, declared
+ * by the headers the layer's members include, so clang checks each
+ * definition. */
 #include "platform/hero_layer_stop.h"
+#include "platform/hero_layer_mail.h"
 #include "parts/mail.c"
 
 /* The code page a narrow name is read in on Windows, and the manifest that makes
@@ -378,6 +391,15 @@
  * them. */
 #if 0
 #include "platform/hero_handle_tag.h"
+#include "hero_audio.h"
+#include "platform/hero_audio.c"
+#include "platform/hero_audio_arm.h"
+#include "hero_audio_coreaudio.h"
+#include "platform/hero_audio_coreaudio.c"
+#include "hero_audio_pulse.h"
+#include "platform/hero_audio_pulse.c"
+#include "hero_audio_wasapi.h"
+#include "platform/hero_audio_wasapi.c"
 #include "hero_crypto.h"
 #include "platform/hero_crypto.c"
 #include "platform/hero_crypto_cryptokit.h"
@@ -400,14 +422,27 @@
 #include "platform/hero_odbc.c"
 #include "hero_poll.h"
 #include "platform/hero_poll.c"
+#include "hero_printing.h"
+#include "platform/hero_printing.c"
+#include "platform/hero_ui_print_text.h"
+#include "platform/hero_ui_appkit_print.h"
+#include "platform/hero_ui_appkit_print.swift"
+#include "platform/hero_ui_print_gtk.h"
+#include "platform/hero_ui_print_gtk.c"
+#include "platform/hero_ui_print_win32.h"
+#include "platform/hero_ui_print_win32.c"
 #include "hero_proc.h"
 #include "platform/hero_proc.c"
+#include "hero_procs.h"
+#include "platform/hero_procs.c"
 #include "hero_serial.h"
 #include "platform/hero_serial.c"
 #include "hero_sys.h"
 #include "platform/hero_sys.c"
 #include "hero_term.h"
 #include "platform/hero_term.c"
+#include "hero_users.h"
+#include "platform/hero_users.c"
 #include "hero_stream.h"
 #include "platform/hero_stream.c"
 #include "hero_stream_net.h"
@@ -438,4 +473,6 @@
 #include "platform/hero_ui_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
+#include "hero_service.h"
+#include "platform/hero_service.c"
 #endif

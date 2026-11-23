@@ -230,18 +230,18 @@ typedef socklen_t hero_net_len;
 /* A handle carries this table's tag, a slot and a life in one pointer's 64
  * bits: `HERO_HANDLE_TAG(HERO_HANDLE_TAG_NET) | (life << HERO_NET_INDEX_BITS)
  * | (index + 1)`, 17 bits for an index plus one up to 65,536, the life above
- * them below bit 58, and the tag in bits 58 to 61 (`hero_handle_tag.h`), so
+ * them below bit 57, and the tag in bits 57 to 61 (`hero_handle_tag.h`), so
  * no handle is NULL and none is another member's: until 2026-11-16 a socket
  * and a stream at the same slot and life were one value, which the runtime's
  * set of ended handles mistook for each other. */
 _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a socket handle carries its slot and its life in 64 bits");
 #define HERO_NET_INDEX_BITS 17
 #define HERO_NET_INDEX_MASK ((UINT64_C(1) << HERO_NET_INDEX_BITS) - 1)
-/* The last life a slot is given, 2^41 - 1 since the tag (2026-11-16; 2^45
- * - 1 before it): a slot that takes a new life for every socket and every
- * number taken back reaches it after 254 days at a hundred thousand a
- * second, and a slot at it is never issued again, which costs a slot and
- * never a wrong handle. Until 2026-11-13 a life was 32 bits, which a socket
+/* The last life a slot is given, 2^40 - 1 since the tag's fifth bit
+ * (2026-11-23; 2^41 - 1 from the tag of 2026-11-16, 2^45 - 1 before it): a
+ * slot that takes a new life for every socket and every number taken back
+ * reaches it after 127 days at a hundred thousand a second, and a slot at
+ * it is never issued again, which costs a slot and never a wrong handle. Until 2026-11-13 a life was 32 bits, which a socket
  * taken back as a number every time could spend in a day. */
 #define HERO_NET_LIFE_MOST HERO_HANDLE_LIFE_MOST(HERO_NET_INDEX_BITS)
 /* The bit a number carries and no handle does, so a number is positive and

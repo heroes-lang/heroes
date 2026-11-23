@@ -66,6 +66,18 @@ constant VIEW_HEIGHT: i64
 constant TAB_SIDE: i64
     8
 
+# The room the headless side's group box takes around its content: its
+# frame on each side and below, and its title and the frame above.
+constant GROUP_SIDE: i64
+    5
+
+constant GROUP_TOP: i64
+    21
+
+# The room a spin's arrows take beside its digits.
+constant SPIN_ARROWS: i64
+    32
+
 # The room its tabs and the border above a page take, high.
 constant TAB_TOP: i64
     32
@@ -86,6 +98,9 @@ constant DIVIDER: i64
 function insets_of(kind: i64) -> [i64]
     if kind == hero_ui.HERO_UI_TABS
         return [TAB_SIDE, TAB_TOP, TAB_SIDE, TAB_SIDE]
+
+    if kind == hero_ui.HERO_UI_GROUP
+        return [GROUP_SIDE, GROUP_TOP, GROUP_SIDE, GROUP_SIDE]
     return [0, 0, 0, 0]
 
 # The size `n` is drawn at by the headless side, as `[width, height]` in
@@ -140,11 +155,31 @@ function of(n: model.Node) -> [i64]
             return [COMBO_LEAST, CONTROL]
         return [wide, CONTROL]
 
+    if k == hero_ui.HERO_UI_EDITABLE_COMBO
+        columns = if segment.width_of(n.text) > widest(n.items)
+            segment.width_of(n.text)
+        else
+            widest(n.items)
+
+        wide = columns * COLUMN + ARROW
+
+        if wide < FIELD
+            return [FIELD, CONTROL]
+        return [wide, CONTROL]
+
     if k == hero_ui.HERO_UI_PROGRESS
         return [FIELD, LINE]
 
     if k == hero_ui.HERO_UI_SLIDER
         return [FIELD, CONTROL]
+
+    if k == hero_ui.HERO_UI_SPIN
+        columns = if segment.width_of(f"{n.most}") > segment.width_of(f"{n.least}")
+            segment.width_of(f"{n.most}")
+        else
+            segment.width_of(f"{n.least}")
+
+        return [columns * COLUMN + SPIN_ARROWS, CONTROL]
 
     if k == hero_ui.HERO_UI_IMAGE
         return [n.width, n.height]
@@ -208,6 +243,24 @@ test "of: a combo box keeps room for its arrow and is never narrower than its le
     assert of(n) == [80, 24]
     n.items @ ["Monday", "Wednesday"]
     assert of(n) == [112, 24]
+
+test "of: an editable combo box is as wide as its widest item or its text, with room for its arrow, and never narrower than a text field"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_EDITABLE_COMBO, parent: 0, window: 0)
+    assert of(n) == [FIELD, CONTROL]
+    n.items @ ["Monday", "Wednesday"]
+    assert of(n) == [FIELD, CONTROL]
+    n.items @ ["a much longer item than the field is wide", "b"]
+    assert of(n) == [41 * COLUMN + ARROW, CONTROL]
+    n.text @ "a text that is even longer than the longest item in its list, so it sets the width"
+    assert of(n) == [82 * COLUMN + ARROW, CONTROL]
+
+test "of: a spin has room for the digits of the longer end of its range and its arrows"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_SPIN, parent: 0, window: 0)
+    n.least @ 0
+    n.most @ 100
+    assert of(n) == [3 * COLUMN + SPIN_ARROWS, CONTROL]
+    n.least @ -1000
+    assert of(n) == [5 * COLUMN + SPIN_ARROWS, CONTROL]
 
 test "of: an image is its pixels, and the kinds no system draws are nothing"
     n @= model.blank(id: 1, kind: hero_ui.HERO_UI_IMAGE, parent: 0, window: 0)

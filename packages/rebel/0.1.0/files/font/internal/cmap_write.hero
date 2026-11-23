@@ -1,0 +1,158 @@
+# A `cmap` table written for a subset: the subtables a renderer looks for (the
+# Windows Unicode BMP one in format 4, shared with the Unicode platform's, and
+# the Windows full repertoire one in format 12 where a character is past the
+# BMP or the BMP subtable would not fit), each made of runs of consecutive
+# characters that map to consecutive glyphs.
+
+use bytes
+use font/internal/bin
+use font/internal/cmap
+use font/internal/sfnt
+
+# The most bytes a format 4 subtable may hold: its length is 16 bits.
+constant MAX_FORMAT4: i64
+    65535
+
+# The runs in `points` (ascending) with glyphs `glyphs`, as the first
+# character, the last character and the first glyph of each, three numbers a
+# run.
+function runs_of(points: [i64] lent, glyphs: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    for k in range(from: 0, to: points.len())
+        n = out.len()
+
+        if n > 0 && points[k] == out[n - 2] + 1 && glyphs[k] == out[n - 1] + (points[k] - out[n - 3])
+            out[n - 2] @ points[k]
+        else
+            out @ out.push(points[k])
+            out @ out.push(points[k])
+            out @ out.push(glyphs[k])
+
+    return out
+
+# The format 4 subtable of the runs that lie in the BMP, empty where it would
+# not fit its 16-bit length.
+function format4(runs: [i64] lent) -> [u8]
+    firsts: [i64] @= []
+    lasts: [i64] @= []
+    deltas: [i64] @= []
+
+    for k in range(from: 0, to: runs.len() / 3)
+        if runs[3 * k + 1] <= 65534
+            firsts @ firsts.push(runs[3 * k])
+            lasts @ lasts.push(runs[3 * k + 1])
+            deltas @ deltas.push((runs[3 * k + 2] - runs[3 * k] + 65536) % 65536)
+
+    firsts @ firsts.push(65535)
+    lasts @ lasts.push(65535)
+    deltas @ deltas.push(1)
+    segments = lasts.len()
+    length = 16 + 8 * segments
+
+    if length > MAX_FORMAT4
+        return []
+    out: [u8] @= []
+    entry @= 1
+    log2 @= 0
+
+    while entry * 2 <= segments
+        entry @ entry * 2
+        log2 @ log2 + 1
+
+    bin.put_u16(@out, v: 4)
+    bin.put_u16(@out, v: length)
+    bin.put_u16(@out, v: 0)
+    bin.put_u16(@out, v: 2 * segments)
+    bin.put_u16(@out, v: 2 * entry)
+    bin.put_u16(@out, v: log2)
+    bin.put_u16(@out, v: 2 * segments - 2 * entry)
+
+    for v in lasts
+        bin.put_u16(@out, v: v)
+
+    bin.put_u16(@out, v: 0)
+
+    for v in firsts
+        bin.put_u16(@out, v: v)
+
+    for v in deltas
+        bin.put_u16(@out, v: v)
+
+    for _ in range(from: 0, to: segments)
+        bin.put_u16(@out, v: 0)
+
+    return out
+
+# The format 12 subtable of all the runs.
+function format12(runs: [i64] lent) -> [u8]
+    groups = runs.len() / 3
+    out: [u8] @= []
+    bin.put_u16(@out, v: 12)
+    bin.put_u16(@out, v: 0)
+    bin.put_u32(@out, v: 16 + 12 * groups)
+    bin.put_u32(@out, v: 0)
+    bin.put_u32(@out, v: groups)
+
+    for v in runs
+        bin.put_u32(@out, v: v)
+
+    return out
+
+# The `cmap` table for the characters `points` (ascending, once each) that map
+# to `glyphs`, one glyph for each.
+function build(points: [i64] lent, glyphs: [i64] lent) -> [u8]
+    runs = runs_of(points: points, glyphs: glyphs)
+    bmp = format4(runs)
+    wide = format12(runs)
+    out: [u8] @= []
+    records @= 1
+
+    if bmp.len() > 0
+        records @ 3
+    bin.put_u16(@out, v: 0)
+    bin.put_u16(@out, v: records)
+    place @= 4 + 8 * records
+
+    if bmp.len() > 0
+        bin.put_u16(@out, v: 0)
+        bin.put_u16(@out, v: 3)
+        bin.put_u32(@out, v: place)
+        bin.put_u16(@out, v: 3)
+        bin.put_u16(@out, v: 1)
+        bin.put_u32(@out, v: place)
+        place @ place + bmp.len()
+    bin.put_u16(@out, v: 3)
+    bin.put_u16(@out, v: 10)
+    bin.put_u32(@out, v: place)
+
+    if bmp.len() > 0
+        bytes.push_all(to: @out, from: bmp)
+    bytes.push_all(to: @out, from: wide)
+    return out
+
+test "runs_of: consecutive characters with consecutive glyphs make one run, a gap or a jump starts another"
+    assert runs_of(points: [65, 66, 67, 100], glyphs: [1, 2, 3, 4]) == [65, 67, 1, 100, 100, 4]
+    assert runs_of(points: [65, 66, 67], glyphs: [1, 2, 9]) == [65, 66, 1, 67, 67, 9]
+    assert runs_of(points: [], glyphs: []) == []
+
+test "build: a table read back by the reader finds every character, and none besides"
+    points: [i64] = [65, 66, 67, 100, 8364, 128512]
+    glyphs: [i64] = [1, 2, 3, 4, 5, 6]
+    data = build(points: points, glyphs: glyphs)
+    t = sfnt.Table(tag: "cmap", offset: 0, length: data.len())
+    chosen = cmap.choose(data, t: t).must()
+    assert chosen.format == 12
+
+    for k in range(from: 0, to: points.len())
+        assert cmap.glyph_of(data, c: chosen, cp: points[k]) == glyphs[k]
+
+    assert cmap.glyph_of(data, c: chosen, cp: 68) == 0
+    assert cmap.glyph_of(data, c: chosen, cp: 0) == 0
+    assert cmap.all_of(data, c: chosen, num_glyphs: 7) == points
+
+test "build: characters of the BMP alone give the format 4 subtable too, and the empty list gives glyph 0 nothing"
+    data = build(points: [65, 66], glyphs: [1, 2])
+    assert bin.u16_at(data, at: 2) == 3
+    assert bin.u16_at(data, at: 28) == 4
+    assert build(points: [], glyphs: []).len() > 0

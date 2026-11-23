@@ -1,0 +1,285 @@
+# The platform layer's service, `hero_service.h`, bound thin: one function per
+# C function, in C's order, each answering what C answers. Rebel's floor of
+# `service` (`examples-rebel/README.md` § A2): where a call fails it answers
+# -1, or `nullptr` for the bell, and `last_error` then names the kind,
+# `last_os_error` the system's number and `last_message` its words; no policy
+# stands here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. Only Windows has services; every other system
+# answers `HERO_SERVICE_UNSUPPORTED` to every call but `supported` and
+# `is_service`. The program is one service, begun once by `start` and ended by
+# `end`; its bell, a datagram socket of the loopback, is the service's own,
+# borrowed, and closed with it.
+
+use net/hero_net
+use os
+
+extern "hero_service.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_SERVICE_OK: i64
+    constant HERO_SERVICE_INVALID: i64
+    constant HERO_SERVICE_UNSUPPORTED: i64
+    constant HERO_SERVICE_NOT_SERVICE: i64
+    constant HERO_SERVICE_EXISTS: i64
+    constant HERO_SERVICE_NOT_OPEN: i64
+    constant HERO_SERVICE_TIMEOUT: i64
+    constant HERO_SERVICE_STOPPED: i64
+    constant HERO_SERVICE_LIMIT: i64
+    constant HERO_SERVICE_OTHER: i64
+    constant HERO_SERVICE_SHORT: i64
+    constant HERO_SERVICE_DENIED: i64
+    # The states `report` takes.
+    constant HERO_SERVICE_STATE_STOPPED: i64
+    constant HERO_SERVICE_STATE_START_PENDING: i64
+    constant HERO_SERVICE_STATE_STOP_PENDING: i64
+    constant HERO_SERVICE_STATE_RUNNING: i64
+    constant HERO_SERVICE_STATE_CONTINUE_PENDING: i64
+    constant HERO_SERVICE_STATE_PAUSE_PENDING: i64
+    constant HERO_SERVICE_STATE_PAUSED: i64
+    # The controls a service accepts, the bits of `report`'s `accepts`.
+    constant HERO_SERVICE_ACCEPT_STOP: i64
+    constant HERO_SERVICE_ACCEPT_PAUSE_CONTINUE: i64
+    constant HERO_SERVICE_ACCEPT_SHUTDOWN: i64
+    constant HERO_SERVICE_ACCEPT_PRESHUTDOWN: i64
+    constant HERO_SERVICE_ACCEPT_PARAM_CHANGE: i64
+    constant HERO_SERVICE_ACCEPT_TIME_CHANGE: i64
+    constant HERO_SERVICE_ACCEPT_POWER: i64
+    constant HERO_SERVICE_ACCEPT_SESSION: i64
+    constant HERO_SERVICE_ACCEPT_ALL: i64
+    # The kinds of control, a control's first number.
+    constant HERO_SERVICE_STOP: i64
+    constant HERO_SERVICE_PAUSE: i64
+    constant HERO_SERVICE_CONTINUE: i64
+    constant HERO_SERVICE_SHUTDOWN: i64
+    constant HERO_SERVICE_PRESHUTDOWN: i64
+    constant HERO_SERVICE_PARAM_CHANGE: i64
+    constant HERO_SERVICE_TIME_CHANGE: i64
+    constant HERO_SERVICE_POWER: i64
+    constant HERO_SERVICE_SESSION: i64
+    constant HERO_SERVICE_USER: i64
+    # The numbers one control takes, the controls the queue holds, the most
+    # bytes of a name.
+    constant HERO_SERVICE_NUMBERS: i64
+    constant HERO_SERVICE_QUEUE: i64
+    constant HERO_SERVICE_NAME_MOST: i64
+    function hero_service_supported() -> i64
+    function hero_service_is_service() -> i64
+    function hero_service_start(name: cstr lent, limit_ms: i64) -> i64
+    function hero_service_arguments(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_service_report(state: i64, accepts: i64, exit_code: i64, wait_hint_ms: i64) -> i64
+    function hero_service_next(limit_ns: i64, @numbers: [i64] counted_by numbers_count lent, numbers_count: u64) -> i64
+    function hero_service_count() -> i64
+    function hero_service_bell_socket() -> hero_net.Socket borrows
+    function hero_service_end(exit_code: i64) -> i64
+    function hero_service_last_error() -> i64
+    function hero_service_last_os_error() -> i64
+    function hero_service_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# 1 where this system has services, 0 where it has none.
+function supported() -> i64
+    return hero_service_supported()
+
+# 1 where the Service Control Manager started this program, 0 where anything
+# else did and on every system but Windows. It starts nothing and never
+# fails; `start` is the authority.
+function is_service() -> i64
+    return hero_service_is_service()
+
+# 0 once the dispatcher has called this program as the service `name`, which
+# then stands in `HERO_SERVICE_STATE_START_PENDING`; or -1.
+#
+# - `name`: the service's name, UTF-8, 1 to `HERO_SERVICE_NAME_MOST` bytes
+#   with no slash or backslash, else `HERO_SERVICE_INVALID`; it aborts where
+#   it holds a zero byte. The system does not check it for a service that
+#   runs in a process of its own.
+# - `limit_ms`: how long to wait for the system to call, in milliseconds; -1
+#   waits with no limit, below -1 is `HERO_SERVICE_INVALID`, and the wait
+#   running out is `HERO_SERVICE_TIMEOUT`. A program run from a console is
+#   `HERO_SERVICE_NOT_SERVICE` at once. A second start is
+#   `HERO_SERVICE_EXISTS`, and after a start the system refused it is told
+#   that refusal again: the system's dispatcher is asked once in a process.
+function start(name: str, limit_ms: i64) -> i64
+    return hero_service_start(name.cstr(), limit_ms: limit_ms)
+
+# The length of the start parameters, the service's name first, each UTF-8
+# and ended by a zero byte, written into `buffer` where they fit; or -1.
+#
+# - `buffer`: where they are written from its first byte where `n` holds them
+#   all; left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone, and a shorter
+#   room than they take gets nothing written and the length all the same.
+function arguments(@buffer: [u8], n: u64) -> i64
+    return hero_service_arguments(@buffer, n: n)
+
+# 0 once the state is reported to the system; or -1.
+#
+# - `state`: one of `HERO_SERVICE_STATE_*`, else `HERO_SERVICE_INVALID`.
+# - `accepts`: the controls the service takes, `HERO_SERVICE_ACCEPT_*` added
+#   together, 0 to `HERO_SERVICE_ACCEPT_ALL`; a pending state and the stopped
+#   state accept none whatever is given.
+# - `exit_code`: read for `HERO_SERVICE_STATE_STOPPED` alone: 0 is success,
+#   any other number up to 4,294,967,295 the service's own code.
+# - `wait_hint_ms`: read for a pending state: the milliseconds the system is
+#   to wait for the next report, 0 to 3,600,000.
+function report(state: i64, accepts: i64, exit_code: i64, wait_hint_ms: i64) -> i64
+    return hero_service_report(state: state, accepts: accepts, exit_code: exit_code, wait_hint_ms: wait_hint_ms)
+
+# 1 once the oldest queued control is in `numbers`, 0 where `limit_ns` passed
+# with none, or -1; `numbers` is left `numbers_count` long.
+#
+# - `limit_ns`: nanoseconds to wait for a control; 0 asks without waiting, -1
+#   waits with no limit, below -1 is `HERO_SERVICE_INVALID`. The stop asked
+#   ends the wait with `HERO_SERVICE_STOPPED`, after the controls queued
+#   before it were taken.
+# - `numbers`: filled with the control's `HERO_SERVICE_NUMBERS` numbers: its
+#   kind, then the system's event for a power event, a session change or a
+#   control of the service's own, then the session's number for a session
+#   change.
+# - `numbers_count`: the numbers `numbers` holds, 3 or more, else
+#   `HERO_SERVICE_INVALID`.
+function next(limit_ns: i64, @numbers: [i64], numbers_count: u64) -> i64
+    return hero_service_next(limit_ns: limit_ns, @numbers, numbers_count: numbers_count)
+
+# How many controls wait, or -1.
+function count() -> i64
+    return hero_service_count()
+
+# The service's bell as a datagram socket of the loopback, borrowed; or
+# `nullptr`. It is readable while a control waits, and a datagram from a
+# stranger may make it readable with none, so a `next` of 0 may answer 0.
+function bell_socket() -> hero_net.Socket
+    return hero_service_bell_socket()
+
+# 0 once `HERO_SERVICE_STATE_STOPPED` is reported with `exit_code` (as
+# `report` reads it) and the service has ended, its bell closed; or -1. A
+# `next` that waits meanwhile answers `HERO_SERVICE_NOT_OPEN`.
+#
+# - `exit_code`: 0 for a service that stopped as asked, any other number up to
+#   4,294,967,295 the service's own code; outside that, `HERO_SERVICE_INVALID`.
+function end(exit_code: i64) -> i64
+    return hero_service_end(exit_code: exit_code)
+
+# The kind of the last call's failure on this thread, `HERO_SERVICE_OK` after
+# a call that did not fail.
+function last_error() -> i64
+    return hero_service_last_error()
+
+# The system's own number for the last failure, 0 where the layer itself
+# refused.
+function last_os_error() -> i64
+    return hero_service_last_os_error()
+
+# The length of the system's words for the last failure's number, written into
+# `buffer` where they fit; 0 where the layer itself refused.
+#
+# - `buffer`: where the words are written, UTF-8, from its first byte where
+#   `n` holds them; left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone.
+function last_message(@buffer: [u8], n: u64) -> i64
+    return hero_service_last_message(@buffer, n: n)
+
+# What `supported` answers on the system the tests run on.
+function system_has() -> i64
+    if on_windows()
+        return 1
+    return 0
+
+# The kind a call on no service answers on the system the tests run on: not
+# open where services exist, unsupported where they do not.
+function kind_of_no_service() -> i64
+    if on_windows()
+        return HERO_SERVICE_NOT_OPEN
+    return HERO_SERVICE_UNSUPPORTED
+
+# Whether the tests run on a system with services.
+function on_windows() -> bool
+    match os.system()
+        .windows => return true
+        .darwin  => return false
+        .linux   => return false
+        .other   => return false
+
+# The numbers of a control, three long, for a call to fill.
+function room() -> [i64]
+    return [0, 0, 0]
+
+test "hero_service supported, is_service: a system answers 1 or 0 by what it has, and a test run is no service"
+    assert supported() == system_has()
+    assert is_service() == 0
+
+test "hero_service start: a name refused, a limit below -1, and a system with no services say what they are"
+    if !on_windows()
+        assert start("demo", limit_ms: 0) == -1
+        assert last_error() == HERO_SERVICE_UNSUPPORTED
+        assert start("", limit_ms: 0) == -1
+        assert last_error() == HERO_SERVICE_UNSUPPORTED
+        return
+    assert start("", limit_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert start("a/b", limit_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert start("a\\b", limit_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert start("demo", limit_ms: -2) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    long: str @= ""
+
+    for _ in range(from: 0, to: HERO_SERVICE_NAME_MOST + 1)
+        long @ long + "a"
+
+    assert start(long, limit_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert start("café", limit_ms: -1) == -1
+    assert last_error() == HERO_SERVICE_NOT_SERVICE
+
+test "hero_service start: a program run from a console is not a service, twice, and the system's words say so"
+    if !on_windows()
+        return
+    assert start("heroes-console-test", limit_ms: 10000) == -1
+    assert last_error() == HERO_SERVICE_NOT_SERVICE
+    assert last_os_error() == 1063
+    words: [u8] @= []
+    assert last_message(@words, n: 0) > 0
+    assert start("heroes-console-test", limit_ms: 10000) == -1
+    assert last_error() == HERO_SERVICE_NOT_SERVICE
+
+test "hero_service calls on no service: not open on Windows, unsupported everywhere else, an argument refused first"
+    want = kind_of_no_service()
+    numbers: [i64] @= room()
+    buffer: [u8] @= []
+    assert next(0, @numbers, numbers_count: 3) == -1
+    assert last_error() == want
+    assert count() == -1
+    assert last_error() == want
+    assert report(state: HERO_SERVICE_STATE_RUNNING, accepts: 0, exit_code: 0, wait_hint_ms: 0) == -1
+    assert last_error() == want
+    assert end(0) == -1
+    assert last_error() == want
+    assert arguments(@buffer, n: 0) == -1
+    assert last_error() == want
+    assert bell_socket() == nullptr
+    assert last_error() == want
+
+test "hero_service report and next: an argument out of its range is refused invalid, on a system that has services"
+    if !on_windows()
+        return
+    numbers: [i64] @= room()
+    assert next(-2, @numbers, numbers_count: 3) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: 0, accepts: 0, exit_code: 0, wait_hint_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: 8, accepts: 0, exit_code: 0, wait_hint_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: HERO_SERVICE_STATE_RUNNING, accepts: 256, exit_code: 0, wait_hint_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: HERO_SERVICE_STATE_RUNNING, accepts: -1, exit_code: 0, wait_hint_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: HERO_SERVICE_STATE_STOPPED, accepts: 0, exit_code: -1, wait_hint_ms: 0) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert report(state: HERO_SERVICE_STATE_STOP_PENDING, accepts: 0, exit_code: 0, wait_hint_ms: 3600001) == -1
+    assert last_error() == HERO_SERVICE_INVALID
+    assert end(4294967296) == -1
+    assert last_error() == HERO_SERVICE_INVALID

@@ -1,0 +1,3 @@
+tests/golden/check/threads-a-mailbox-number-takes-nothing-and-is-a-mailboxs.hero:14:11: error[wrong_arity]: `number` takes 1 argument(s), found 2
+tests/golden/check/threads-a-mailbox-number-takes-nothing-and-is-a-mailboxs.hero:15:13: error[operation_of_another]: `number` is a mailbox's operation, and the value before the dot has type `(thread i64)`
+tests/golden/check/threads-a-mailbox-number-takes-nothing-and-is-a-mailboxs.hero:17:16: error[operation_of_another]: `number` is a mailbox's operation, and the value before the dot has type `str`

@@ -1,0 +1,239 @@
+# A TrueType font cut down to the glyphs a document uses: the glyphs asked
+# for and the components of every composite among them, renumbered from 0 in
+# the order of the original, with `glyf`, `loca` and `hmtx` rebuilt, `hhea`,
+# `maxp` and `head` made to say the new count, and the tables a renderer
+# reads besides (`OS/2`, `name`, `cvt `, `fpgm`, `prep`, `gasp`) and the
+# `post` header without names carried over. Glyph instructions keep working:
+# the programs they call are copied whole.
+
+use bytes
+use font/internal/bin
+use font/internal/cmap_write
+use font/internal/core
+use font/internal/glyf
+use font/internal/model
+use font/internal/sfnt
+use font/internal/writer
+
+# The tables copied unchanged when the font has them.
+function copied() -> [str]
+    return ["OS/2", "name", "cvt ", "fpgm", "prep", "gasp"]
+
+# The record bytes of glyph `glyph`.
+function record_of(p: model.Parsed lent, glyph: i64) -> [u8]?
+    span = glyf.span_of(p.data, s: p.glyf, glyph: glyph)?
+    return ok(bin.bytes_at(p.data, at: span[0], length: span[1]))
+
+# The glyphs that composite record `rec` draws, in the order it lists them,
+# with where in `rec` each one's number stands. Fails `invalid` where the
+# components run past the record.
+function parts_of(rec: [u8] lent, glyph: i64) -> [[i64]]?
+    out: [[i64]] @= []
+
+    if rec.len() < 10 || bin.i16_at(rec, at: 0) >= 0
+        return ok(out)
+    cursor @= 10
+
+    while true
+        c = glyf.component_at(rec, at: cursor, end: rec.len(), glyph: glyph)?
+        out @ out.push([c.glyph, cursor + 2])
+        cursor @ c.next
+
+        if c.flags & 32 == 0
+            break
+
+    return ok(out)
+
+# The original glyphs the subset keeps, ascending and once each, `.notdef`
+# first, with every component of a composite among them. Fails `not_found`
+# where a glyph asked for is not in the font.
+function closure(p: model.Parsed lent, wanted: [i64]) -> [i64]?
+    total = p.core.num_glyphs
+    keep: [bool] @= []
+
+    for _ in range(from: 0, to: total)
+        keep @ keep.push(false)
+
+    pending: [i64] @= [0]
+
+    for g in wanted
+        if g < 0 || g >= total
+            return fail(code: sfnt.NOT_FOUND, msg: f"glyph {g} in a font of {total} glyphs")
+        pending @ pending.push(g)
+
+    while pending.len() > 0
+        g = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if keep[g]
+            continue
+        keep[g] @ true
+
+        for part in parts_of(record_of(p, glyph: g)?, glyph: g)?
+            if part[0] >= total
+                return fail(code: sfnt.INVALID, msg: f"glyph {g} draws glyph {part[0]}, past the font's {total}")
+            pending @ pending.push(part[0])
+
+    kept: [i64] @= []
+
+    for g in range(from: 0, to: total)
+        if keep[g]
+            kept @ kept.push(g)
+
+    return ok(kept)
+
+# `v` as the two bytes of a 16-bit number, the high one first.
+function two(v: i64) -> [u8]
+    out: [u8] @= []
+    bin.put_u16(@out, v: v)
+    return out
+
+# The kept glyphs' records with their component numbers renumbered, each padded
+# to four bytes, as the new `glyf` and the new `loca` (32-bit offsets).
+function build_glyf(p: model.Parsed lent, kept: [i64] lent, numbers: [i64] lent) -> [[u8]]?
+    glyf_out: [u8] @= []
+    loca_out: [u8] @= []
+
+    for g in kept
+        bin.put_u32(@loca_out, v: glyf_out.len())
+        rec @= record_of(p, glyph: g)?
+
+        for part in parts_of(rec, glyph: g)?
+            at = part[1]
+            renumbered = numbers[part[0]]
+            rec[at] @ to_u8(renumbered >> 8 & 255).must()
+            rec[at + 1] @ to_u8(renumbered & 255).must()
+
+        bytes.push_all(to: @glyf_out, from: writer.padded(rec))
+
+    bin.put_u32(@loca_out, v: glyf_out.len())
+    return ok([glyf_out, loca_out])
+
+# The new `hmtx`: an advance and a left side bearing for each kept glyph.
+function build_hmtx(p: model.Parsed lent, kept: [i64] lent) -> [u8]
+    out: [u8] @= []
+
+    for g in kept
+        bin.put_u16(@out, v: core.advance_of(p.data, c: p.core, glyph: g))
+        bearing @= core.bearing_of(p.data, c: p.core, glyph: g)
+
+        if bearing < 0
+            bearing @ bearing + 65536
+        bin.put_u16(@out, v: bearing)
+
+    return out
+
+# The bytes of table `tag` of the font, empty where it has none.
+function table_bytes(p: model.Parsed lent, tag: str) -> [u8]
+    match sfnt.table_named(p.directory, tag: tag)
+        .err _ => return []
+        .ok t  => return bin.bytes_at(p.data, at: t.offset, length: t.length)
+
+# `body` with the 16-bit number at `at` set to `v`.
+function with_u16(body: [u8], at: i64, v: i64) -> [u8]
+    out: [u8] @= body
+    out[at] @ to_u8(v >> 8 & 255).must()
+    out[at + 1] @ to_u8(v & 255).must()
+    return out
+
+# The `post` table as format 3: the first 32 bytes, which carry the slant and
+# the underline, with no glyph names.
+function post_header(body: [u8] lent) -> [u8]
+    if body.len() < 32
+        return []
+    out: [u8] @= bin.bytes_at(body, at: 0, length: 32)
+    out[0] @ 0
+    out[1] @ 3
+    out[2] @ 0
+    out[3] @ 0
+    return out
+
+# The font made of glyphs `wanted` of `p` and what they draw, as the tables
+# of the new font and, in `kept`, the original glyph of each new one. The
+# caller adds a `cmap` or none. Fails `unsupported` for a font with CFF
+# outlines, `not_found` for a glyph the font does not have.
+function cut(p: model.Parsed lent, wanted: [i64]) -> [i64]?
+    if p.postscript
+        return fail(code: sfnt.UNSUPPORTED, msg: "a font with CFF outlines: only TrueType outlines are cut down")
+    return closure(p, wanted: wanted)
+
+# The tables of the subset of `p` to `kept` glyphs, without a `cmap`.
+function tables(p: model.Parsed lent, kept: [i64] lent) -> [writer.Part]?
+    numbers: [i64] @= []
+
+    for _ in range(from: 0, to: p.core.num_glyphs)
+        numbers @ numbers.push(-1)
+
+    for k in range(from: 0, to: kept.len())
+        numbers[kept[k]] @ k
+
+    built = build_glyf(p, kept: kept, numbers: numbers)?
+    count = kept.len()
+    head @= table_bytes(p, tag: "head")
+    head @ with_u16(head, at: 50, v: 1)
+    head @ with_u16(head, at: 8, v: 0)
+    head @ with_u16(head, at: 10, v: 0)
+    parts: [writer.Part] @= [
+        writer.Part(tag: "head", body: head)
+        writer.Part(tag: "hhea", body: with_u16(table_bytes(p, tag: "hhea"), at: 34, v: count))
+        writer.Part(tag: "maxp", body: with_u16(table_bytes(p, tag: "maxp"), at: 4, v: count))
+        writer.Part(tag: "glyf", body: built[0])
+        writer.Part(tag: "loca", body: built[1])
+        writer.Part(tag: "hmtx", body: build_hmtx(p, kept: kept))
+    ]
+
+    for tag in copied()
+        body = table_bytes(p, tag: tag)
+
+        if body.len() > 0
+            parts @ parts.push(writer.Part(tag: tag, body: body))
+
+    post = post_header(table_bytes(p, tag: "post"))
+
+    if post.len() > 0
+        parts @ parts.push(writer.Part(tag: "post", body: post))
+    return ok(parts)
+
+# A subset made: the font file and the original glyph of each of its glyphs.
+record Made
+    # The font file.
+    data: [u8]
+    # The original glyph of each new glyph: glyph `k` of the subset is
+    # `glyphs[k]` of the font cut.
+    glyphs: [i64]
+
+# The subset of `p` holding `glyphs`, their components and glyph 0, with a
+# `cmap` for the characters `points` (ascending, once each) where there are
+# any: each maps to the glyph `glyph_of(p, point)` it has in the font.
+# Fails `unsupported` for a font with CFF outlines, `not_found` for a glyph
+# or a character the font does not have.
+function make(p: model.Parsed lent, glyphs: [i64], points: [i64], mapped: [i64]) -> Made?
+    kept = cut(p, wanted: glyphs)?
+    parts: [writer.Part] @= tables(p, kept: kept)?
+
+    if points.len() > 0
+        numbers: [i64] @= []
+
+        for g in mapped
+            numbers @ numbers.push(rank_of(kept, glyph: g))
+
+        parts @ parts.push(writer.Part(tag: "cmap", body: cmap_write.build(points: points, glyphs: numbers)))
+    return ok(Made(data: writer.assemble(version: 65536, parts: parts), glyphs: kept))
+
+# The index of `glyph` among the ascending `kept` glyphs, -1 where it is not
+# one of them.
+function rank_of(kept: [i64] lent, glyph: i64) -> i64
+    lo @= 0
+    hi @= kept.len()
+
+    while lo < hi
+        mid = (lo + hi) / 2
+
+        if kept[mid] < glyph
+            lo @ mid + 1
+        else
+            hi @ mid
+
+    if lo < kept.len() && kept[lo] == glyph
+        return lo
+    return -1

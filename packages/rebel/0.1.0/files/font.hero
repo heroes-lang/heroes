@@ -1,0 +1,932 @@
+# TrueType and OpenType fonts read: the glyph a character has, a glyph's
+# advance, its bounds and its outline as a path, a font's names and metrics,
+# the width of a text, and a TrueType font cut down to the glyphs a document
+# uses (a PDF embeds such a subset). A font is read from the bytes of its
+# file, a single font or one of a collection (`.ttc`), by the OpenType
+# specification: the `sfnt` directory, `head`, `hhea`, `hmtx`, `maxp`, `cmap`
+# (formats 0, 4, 6, 10, 12 and 13), `name`, `OS/2`, `post`, `kern` (format 0),
+# `loca` and `glyf` with its composite glyphs, and `CFF ` with its Type 2
+# charstrings, flat or CID-keyed.
+#
+# It draws no text, shapes no script and finds no font by its name: it
+# reads one font whose bytes the program holds, and the glyph a character
+# has is the one the `cmap` says, one for one, with no ligature, no mark placed
+# and no right-to-left run. A variable font is read at its default design. It
+# opens no file (`fs` does) and reads no web font (`wOFF`, `wOF2`) or Type 1
+# font.
+#
+# **A font from outside is not trusted.** Every table's place, every count
+# and every offset the file holds is checked against the file's end before it
+# is followed, and a glyph that nests composites, calls subroutines or
+# expands past a limit fails `limit`, so a broken or hostile font fails
+# `invalid` or `limit` and never reads past its bytes or runs without end.
+#
+# It fails with `invalid`, `limit`, `not_found` and `unsupported`.
+#
+# Not written yet, each a `pending` block of its ledger: the legacy byte
+# encodings of a font (cmap format 2) and its variation selectors (format
+# 14); a CFF font cut down to the glyphs a document uses; the name of a
+# glyph, and the glyph of a name; the pair adjustments, substitutions and
+# mark positioning of GPOS and GSUB, shaped text; color glyphs, bitmap
+# glyphs and SVG glyphs; the instances of a variable font; the vertical
+# metrics and origins of vertical text; the strikeout, subscript and
+# superscript metrics, the typographic metrics, the unicode and code page
+# ranges and the script metrics of OS/2; Apple's aat tables and the MATH
+# table; web fonts: WOFF and WOFF2; a font found on the system by its name;
+# glyphs rasterised and text drawn into an image.
+
+use bytes
+use font/internal/bin
+use font/internal/charstring
+use font/internal/cmap
+use font/internal/contour
+use font/internal/core
+use font/internal/cutting
+use font/internal/glyf
+use font/internal/kern
+use font/internal/model
+use font/internal/names
+use font/internal/samples
+use font/internal/sfnt
+use font/internal/shapes
+use unicode
+
+## Codes
+
+# The input is not a font this package reads, or a table of it says what no
+# font does; the message names the table and the number.
+constant INVALID: str
+    "invalid"
+
+# A glyph nests composites, calls subroutines or expands past a limit the
+# package holds, however the font is made.
+constant LIMIT: str
+    "limit"
+
+# The font has no such glyph, name, table or code point.
+constant NOT_FOUND: str
+    "not_found"
+
+# The font is a kind this package does not read, or has no `cmap` it reads.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Reading a font
+
+# A font read: its bytes and what its tables say. Made by `parse`; it is a
+# value, and every function below only reads it.
+record Font
+    # The font's tables, read once.
+    state: model.Parsed
+
+# How many fonts the file `data` holds: the count of a collection, 1 for a
+# single font.
+#
+# - `data`: the bytes of a `.ttf`, `.otf` or `.ttc` file.
+#
+# Fails `invalid` where `data` is no font file, `unsupported` where it is a
+# web font or a Type 1 font.
+#
+# See also `parse`.
+function font_count(data: [u8]) -> i64?
+    return sfnt.font_count(data)
+
+# The font number `index` of the file `data`.
+#
+# - `data`: the bytes of a `.ttf`, `.otf` or `.ttc` file, kept inside the font.
+# - `index`: which font of a collection, from 0; 0 for a single font.
+#
+# Fails `invalid` where a required table (`head`, `hhea`, `hmtx`, `maxp` and
+# the outlines) is missing or says what no font does, `not_found` where the
+# collection has no font `index`, `unsupported` where the file is a web font
+# or a Type 1 font or the outlines are CFF2's. A font without a `cmap` it reads
+# is read; `glyph_of` then fails `unsupported`.
+#
+# See also `font_count` and `metrics_of`.
+function parse(data: [u8], index: i64) -> Font?
+    return ok(Font(state: model.parse(data, index: index)?))
+
+## What a font says of itself
+
+# How the outlines of a font are drawn.
+variant Outlines
+    # Straight lines and quadratic curves, in `glyf`.
+    truetype
+    # Straight lines and cubic curves, in `CFF `.
+    postscript
+
+# The measures of a font as a whole, in font units: `units_per_em` of them
+# make the em square.
+record Metrics
+    # The number of font units to the em square.
+    units_per_em: i64
+    # How many glyphs the font has, `.notdef` included.
+    glyph_count: i64
+    # How far the tallest letters reach above the baseline, from `hhea`.
+    ascent: i64
+    # How far letters reach below the baseline, from `hhea`: negative.
+    descent: i64
+    # The gap `hhea` asks between one line's descent and the next line's ascent.
+    line_gap: i64
+    # The height of a capital letter; absent where `OS/2` is older than version 2.
+    cap_height: i64?
+    # The height of a small letter without an ascender; absent as `cap_height`.
+    x_height: i64?
+    # The slant of upright strokes in degrees, from `post`: negative leans
+    # right; 0 where the font has no `post`.
+    italic_angle: f64
+    # Where an underline stands, negative below the baseline; 0 without `post`.
+    underline_position: i64
+    # How thick an underline is; 0 without `post`.
+    underline_thickness: i64
+    # The left of the box every glyph fits in, from `head`.
+    box_left: i64
+    # The bottom of that box.
+    box_bottom: i64
+    # The right of that box.
+    box_right: i64
+    # The top of that box.
+    box_top: i64
+    # The weight class of `OS/2`, 100 thin to 900 black; 400 without `OS/2`.
+    weight: i64
+    # The width class of `OS/2`, 1 ultra-condensed to 9 ultra-expanded; 5
+    # without `OS/2`.
+    width_class: i64
+    # Whether the font is bold, by `head`'s style bits or `OS/2`'s.
+    is_bold: bool
+    # Whether the font is italic or oblique, by the same.
+    is_italic: bool
+    # Whether every glyph is as wide as another, by `post`.
+    is_monospaced: bool
+
+# The measures of `f` as a whole.
+#
+# - `f`: the font.
+#
+# See also `outlines_of`.
+function metrics_of(f: Font lent) -> Metrics
+    c = f.state.core
+    bold = c.mac_style & 1 != 0 || c.selection & 32 != 0
+    italic = c.mac_style & 2 != 0 || c.selection & 1 != 0
+    return Metrics(
+        units_per_em: c.units_per_em,
+        glyph_count: c.num_glyphs,
+        ascent: c.ascent,
+        descent: c.descent,
+        line_gap: c.line_gap,
+        cap_height: c.cap_height,
+        x_height: c.x_height,
+        italic_angle: c.italic_angle,
+        underline_position: c.underline_position,
+        underline_thickness: c.underline_thickness,
+        box_left: c.x_min,
+        box_bottom: c.y_min,
+        box_right: c.x_max,
+        box_top: c.y_max,
+        weight: c.weight,
+        width_class: c.width_class,
+        is_bold: bold,
+        is_italic: italic,
+        is_monospaced: c.fixed_pitch
+    )
+
+# How the outlines of `f` are drawn.
+#
+# - `f`: the font.
+#
+# See also `outline_of`.
+function outlines_of(f: Font lent) -> Outlines
+    if f.state.postscript
+        return .postscript
+    return .truetype
+
+# The strings a font carries, by their name id in the `name` table.
+variant NameId
+    # The copyright notice.
+    copyright
+    # The family, `Noto Sans`.
+    family
+    # The style within the family, `Regular` or `Bold Italic`.
+    subfamily
+    # An identifier unique to this version of the font.
+    unique_id
+    # The family and the style together, `Noto Sans Regular`.
+    full_name
+    # The version, `Version 2.015`.
+    version
+    # The PostScript name, with no space: `NotoSans-Regular`.
+    postscript_name
+    # The trademark notice.
+    trademark
+    # The company that made the font.
+    manufacturer
+    # The person or team that designed it.
+    designer
+    # A description of the font.
+    description
+    # The address of the maker's site.
+    vendor_url
+    # The address of the designer's site.
+    designer_url
+    # The licence the font is under.
+    license
+    # The address of the licence.
+    license_url
+    # The family without the style words, where the font's family name carries them.
+    typographic_family
+    # The style without the family words, where the font's style name carries them.
+    typographic_subfamily
+
+# The string `id` of `f`, in English where the font has it and in another
+# language where it does not.
+#
+# - `f`: the font.
+# - `id`: which string.
+#
+# Fails `not_found` where the font has no `name` table or none of this id,
+# `invalid` where the table runs past itself.
+#
+# See also `metrics_of`.
+function name_of(f: Font lent, id: NameId) -> str?
+    number = match id
+        .copyright             => 0
+        .family                => 1
+        .subfamily             => 2
+        .unique_id             => 3
+        .full_name             => 4
+        .version               => 5
+        .postscript_name       => 6
+        .trademark             => 7
+        .manufacturer          => 8
+        .designer              => 9
+        .description           => 10
+        .vendor_url            => 11
+        .designer_url          => 12
+        .license               => 13
+        .license_url           => 14
+        .typographic_family    => 16
+        .typographic_subfamily => 17
+
+    t = sfnt.table_named(f.state.directory, tag: "name")?
+    return names.string_of(f.state.data, t: t, id: number)
+
+# The tags of the tables `f` has, in the file's order.
+#
+# - `f`: the font.
+#
+# See also `table_of`.
+function table_tags(f: Font lent) -> [str]
+    out: [str] @= []
+
+    for t in f.state.directory.tables
+        out @ out.push(t.tag)
+
+    return out
+
+# The bytes of the table `tag` of `f`, as the file holds it.
+#
+# - `f`: the font.
+# - `tag`: the four-character tag, `glyf` or `CFF ` (with its space).
+#
+# Fails `not_found` where the font has no such table.
+#
+# See also `table_tags`.
+function table_of(f: Font lent, tag: str) -> [u8]?
+    t = sfnt.table_named(f.state.directory, tag: tag)?
+    return ok(bin.bytes_at(f.state.data, at: t.offset, length: t.length))
+
+## Glyphs
+
+# The glyph that the character `code_point` has in `f`, by the font's `cmap`.
+#
+# - `f`: the font.
+# - `code_point`: a Unicode scalar value, 0 to 0x10FFFF.
+#
+# Fails `not_found` where the font has no glyph for it (the `.notdef` glyph
+# 0 is never answered), `unsupported` where the font has no `cmap` this
+# package reads.
+#
+# See also `has_glyphs` and `code_points_of`.
+function glyph_of(f: Font lent, code_point: i64) -> i64?
+    chosen = f.state.charmap?
+
+    if code_point < 0 || code_point > 1114111
+        return fail(code: NOT_FOUND, msg: f"{code_point} is not a Unicode scalar value")
+    glyph = cmap.glyph_of(f.state.data, c: chosen, cp: code_point)
+
+    if glyph == 0 || glyph >= f.state.core.num_glyphs
+        return fail(code: NOT_FOUND, msg: f"the font has no glyph for U+{code_point}")
+    return ok(glyph)
+
+# Every character `f` has a glyph for, ascending.
+#
+# - `f`: the font.
+#
+# The list holds each character once and is as long as the font's repertoire:
+# up to 1,114,112 numbers, and the call reads the whole `cmap`.
+#
+# Fails `unsupported` where the font has no `cmap` this package reads.
+#
+# See also `glyph_of`.
+function code_points_of(f: Font lent) -> [i64]?
+    chosen = f.state.charmap?
+    return ok(cmap.all_of(f.state.data, c: chosen, num_glyphs: f.state.core.num_glyphs))
+
+# The advance width of glyph `glyph`: how far the pen moves after it, in font
+# units.
+#
+# - `f`: the font.
+# - `glyph`: a glyph number, 0 to the font's `glyph_count` less one.
+#
+# Fails `not_found` where `glyph` is outside the font.
+#
+# See also `width_of` and `bearing_of`.
+function advance_of(f: Font lent, glyph: i64) -> i64?
+    if glyph < 0 || glyph >= f.state.core.num_glyphs
+        return fail(code: NOT_FOUND, msg: f"glyph {glyph} in a font of {f.state.core.num_glyphs} glyphs")
+    return ok(core.advance_of(f.state.data, c: f.state.core, glyph: glyph))
+
+# The left side bearing of glyph `glyph`: how far its box stands right of the
+# pen, in font units, negative where it hangs left.
+#
+# - `f`: the font.
+# - `glyph`: a glyph number, 0 to the font's `glyph_count` less one.
+#
+# Fails `not_found` where `glyph` is outside the font.
+#
+# See also `advance_of` and `bounds_of`.
+function bearing_of(f: Font lent, glyph: i64) -> i64?
+    if glyph < 0 || glyph >= f.state.core.num_glyphs
+        return fail(code: NOT_FOUND, msg: f"glyph {glyph} in a font of {f.state.core.num_glyphs} glyphs")
+    return ok(core.bearing_of(f.state.data, c: f.state.core, glyph: glyph))
+
+# The box a glyph's points all lie in, in font units.
+record Box
+    # The left edge.
+    left: f64
+    # The bottom edge.
+    bottom: f64
+    # The right edge.
+    right: f64
+    # The top edge.
+    top: f64
+
+# The box of every point of glyph `glyph`, the control points of its curves
+# included, as the font's own `glyf` says or as its charstring draws; every
+# edge 0 for a glyph with nothing to draw, a space.
+#
+# - `f`: the font.
+# - `glyph`: a glyph number, 0 to the font's `glyph_count` less one.
+#
+# Fails `not_found` where `glyph` is outside the font, `invalid` and `limit`
+# where its record does not read.
+#
+# See also `outline_of`.
+function bounds_of(f: Font lent, glyph: i64) -> Box?
+    if glyph < 0 || glyph >= f.state.core.num_glyphs
+        return fail(code: NOT_FOUND, msg: f"glyph {glyph} in a font of {f.state.core.num_glyphs} glyphs")
+    zero = Box(left: 0.0, bottom: 0.0, right: 0.0, top: 0.0)
+
+    if f.state.postscript
+        info = f.state.cff?
+        path = charstring.draw(f.state.data, info: info, glyph: glyph)?
+        b = shapes.bounds_of(path)
+        return ok(Box(left: b[0], bottom: b[1], right: b[2], top: b[3]))
+    span = glyf.span_of(f.state.data, s: f.state.glyf, glyph: glyph)?
+
+    if span[1] == 0
+        return ok(zero)
+
+    if span[1] < 10
+        return fail(code: INVALID, msg: f"glyph {glyph} holds {span[1]} bytes, its header needs 10")
+    d = f.state.data
+    return ok(
+        Box(left: to_f64(bin.i16_at(d, at: span[0] + 2)), bottom: to_f64(bin.i16_at(d, at: span[0] + 4)), right: to_f64(bin.i16_at(d, at: span[0] + 6)), top: to_f64(bin.i16_at(d, at: span[0] + 8)))
+    )
+
+# One step of an outline.
+variant Segment
+    # Lifts the pen to a point and begins a contour.
+    move
+        x: f64
+        y: f64
+    # A straight line to a point.
+    line
+        x: f64
+        y: f64
+    # A quadratic curve (TrueType's) to a point, bent toward a control point.
+    quad
+        control_x: f64
+        control_y: f64
+        x: f64
+        y: f64
+    # A cubic curve (CFF's) to a point, bent toward two control points.
+    cubic
+        control1_x: f64
+        control1_y: f64
+        control2_x: f64
+        control2_y: f64
+        x: f64
+        y: f64
+    # Joins the contour's last point to its first and ends it.
+    close
+
+# A glyph's outline: contours of lines and curves in font units, y up, the
+# origin on the baseline at the glyph's own pen position. A glyph with
+# nothing to draw has no segment.
+record Outline
+    # The steps in drawing order; each contour opens with a `move` and ends
+    # with a `close`.
+    segments: [Segment]
+
+# The outline of glyph `glyph`, composites expanded: curves are quadratic in a
+# TrueType font and cubic in a CFF one, and `to_cubics` makes them all cubic.
+#
+# - `f`: the font.
+# - `glyph`: a glyph number, 0 to the font's `glyph_count` less one.
+#
+# Fails `not_found` where `glyph` is outside the font, `invalid` where its
+# record runs past its table or names a glyph the font does not have, `limit`
+# where it nests composites past 16 levels, expands past 1,048,576 points or
+# 4,096 components, calls subroutines past 10 levels or runs past 1,000,000
+# operators, `unsupported` for the deprecated accented `endchar` of CFF.
+#
+# See also `bounds_of` and `to_cubics`.
+function outline_of(f: Font lent, glyph: i64) -> Outline?
+    if glyph < 0 || glyph >= f.state.core.num_glyphs
+        return fail(code: NOT_FOUND, msg: f"glyph {glyph} in a font of {f.state.core.num_glyphs} glyphs")
+    path: shapes.Path @= shapes.empty()
+
+    if f.state.postscript
+        info = f.state.cff?
+        path @ charstring.draw(f.state.data, info: info, glyph: glyph)?
+    else
+        budget: glyf.Budget @= glyf.Budget(components: 0, points: 0)
+        points = glyf.points_of(f.state.data, s: f.state.glyf, glyph: glyph, depth: 0, budget: @budget)?
+        path @ contour.path_of(points)
+
+    out: [Segment] @= []
+    k @= 0
+
+    for op in path.ops
+        if op == shapes.MOVE
+            out @ out.push(.move(x: path.coords[k], y: path.coords[k + 1]))
+        else if op == shapes.LINE
+            out @ out.push(.line(x: path.coords[k], y: path.coords[k + 1]))
+        else if op == shapes.QUAD
+            out @ out.push(
+                .quad(control_x: path.coords[k], control_y: path.coords[k + 1], x: path.coords[k + 2], y: path.coords[k + 3])
+            )
+        else if op == shapes.CUBIC
+            out @ out.push(
+                .cubic(control1_x: path.coords[k], control1_y: path.coords[k + 1], control2_x: path.coords[k + 2], control2_y: path.coords[k + 3], x: path.coords[k + 4], y: path.coords[k + 5])
+            )
+        else
+            out @ out.push(.close)
+        k @ k + shapes.width_of(op)
+
+    return ok(Outline(segments: out))
+
+# `o` with every quadratic curve raised to the cubic curve that draws it
+# exactly, so that a drawing that has only cubic curves (PDF, PostScript, SVG's
+# `C`) takes any glyph.
+#
+# - `o`: the outline.
+#
+# See also `outline_of`.
+function to_cubics(o: Outline) -> Outline
+    out: [Segment] @= []
+    x @= 0.0
+    y @= 0.0
+    start_x @= 0.0
+    start_y @= 0.0
+
+    for s in o.segments
+        match s
+            .move m =>
+                x @ m.x
+                y @ m.y
+                start_x @ m.x
+                start_y @ m.y
+                out @ out.push(s)
+            .line l =>
+                x @ l.x
+                y @ l.y
+                out @ out.push(s)
+            .quad q =>
+                out @ out.push(
+                    .cubic(control1_x: x + 2.0 * (q.control_x - x) / 3.0, control1_y: y + 2.0 * (q.control_y - y) / 3.0, control2_x: q.x + 2.0 * (q.control_x - q.x) / 3.0, control2_y: q.y + 2.0 * (q.control_y - q.y) / 3.0, x: q.x, y: q.y)
+                )
+                x @ q.x
+                y @ q.y
+            .cubic c =>
+                x @ c.x
+                y @ c.y
+                out @ out.push(s)
+            .close =>
+                x @ start_x
+                y @ start_y
+                out @ out.push(s)
+
+    return Outline(segments: out)
+
+## Text
+
+# The adjustment between glyph `left` and glyph `right` side by side, in font
+# units, from the `kern` table: negative draws them closer.
+#
+# - `f`: the font.
+# - `left`: the glyph on the left.
+# - `right`: the glyph on the right.
+#
+# 0 where the font has no `kern` table or no pair for them. The pair
+# adjustments of `GPOS`, which most recent fonts carry instead of `kern`, are
+# not read.
+#
+# See also `width_of`.
+function kern_of(f: Font lent, left: i64, right: i64) -> i64
+    match sfnt.table_named(f.state.directory, tag: "kern")
+        .err _ => return 0
+        .ok t  => return kern.pair_of(f.state.data, t: t, left: left, right: right)
+
+# The width of `text` set in `f` at `size`: the advances of its characters'
+# glyphs, one after another, with no kerning.
+#
+# - `f`: the font.
+# - `text`: the text; the empty text is 0 wide.
+# - `size`: the size of the em square in the unit the answer is wanted in.
+#
+# Fails `not_found` where the font has no glyph for a character of `text`,
+# the message naming it, `unsupported` where the font has no `cmap` this
+# package reads.
+#
+# See also `has_glyphs`, `advance_of` and `kern_of`.
+function width_of(f: Font lent, text: str, size: f64) -> f64?
+    total @= 0
+
+    for c in text.chars()
+        glyph = glyph_of(f, code_point: unicode.code_point(c))?
+        total @ total + core.advance_of(f.state.data, c: f.state.core, glyph: glyph)
+
+    return ok(to_f64(total) * size / to_f64(f.state.core.units_per_em))
+
+# Whether `f` has a glyph for every character of `text`.
+#
+# - `f`: the font.
+# - `text`: the text; the empty text is shown by every font.
+#
+# See also `glyph_of` and `width_of`.
+function has_glyphs(f: Font lent, text: str) -> bool
+    for c in text.chars()
+        if glyph_of(f, code_point: unicode.code_point(c)).is_err()
+            return false
+
+    return true
+
+## A font cut down
+
+# A font cut down to some glyphs, as the file of a TrueType font.
+record Subset
+    # The file: a complete TrueType font (`parse` reads it) holding only the
+    # glyphs asked for and those their composites draw.
+    data: [u8]
+    # The font's glyphs the subset keeps, ascending, glyph 0 first: the glyph
+    # `k` of the subset is `glyphs[k]` of the font it was cut from.
+    glyphs: [i64]
+
+# The glyph of the subset that stands for glyph `glyph` of the font it was cut
+# from.
+#
+# - `s`: the subset.
+# - `glyph`: a glyph of the original font.
+#
+# Fails `not_found` where the subset does not keep it.
+#
+# See also `subset` and `subset_glyphs`.
+function subset_glyph_of(s: Subset lent, glyph: i64) -> i64?
+    lo @= 0
+    hi @= s.glyphs.len()
+
+    while lo < hi
+        mid = (lo + hi) / 2
+
+        if s.glyphs[mid] < glyph
+            lo @ mid + 1
+        else
+            hi @ mid
+
+    if lo < s.glyphs.len() && s.glyphs[lo] == glyph
+        return ok(lo)
+    return fail(code: NOT_FOUND, msg: f"the subset does not keep glyph {glyph}")
+
+# The font cut down to the characters `code_points` and what their glyphs
+# draw, with a `cmap` of its own that maps each of them to the glyph it has in
+# the subset.
+#
+# - `f`: the font, with TrueType outlines.
+# - `code_points`: the characters to keep, in any order, repeats allowed; the
+#   empty list keeps glyph 0 alone.
+#
+# The glyphs keep their instructions, `cvt `, `fpgm` and `prep` come along, and
+# the file is a font any reader of TrueType reads. `post` keeps the slant and
+# the underline and drops the glyph names.
+#
+# Fails `not_found` where the font has no glyph for a character, `unsupported`
+# where the font has CFF outlines or no `cmap` this package reads, `invalid`
+# and `limit` where a glyph's record does not read.
+#
+# See also `subset_glyphs`.
+function subset(f: Font lent, code_points: [i64]) -> Subset?
+    points = cmap.unique(code_points.sort())
+    glyphs: [i64] @= []
+
+    for cp in points
+        glyphs @ glyphs.push(glyph_of(f, code_point: cp)?)
+
+    made = cutting.make(f.state, glyphs: glyphs, points: points, mapped: glyphs)?
+    return ok(Subset(data: made.data, glyphs: made.glyphs))
+
+# The font cut down to the glyphs `glyphs` and what they draw, with no `cmap`:
+# a font a PDF embeds as a CID font whose codes are the glyph numbers.
+#
+# - `f`: the font, with TrueType outlines.
+# - `glyphs`: the glyph numbers to keep, in any order, repeats allowed; glyph 0 is
+#   always kept.
+#
+# Fails `not_found` where a glyph is outside the font, `unsupported` where the
+# font has CFF outlines, `invalid` and `limit` where a glyph's record does not
+# read.
+#
+# See also `subset` and `subset_glyph_of`.
+function subset_glyphs(f: Font lent, glyphs: [i64]) -> Subset?
+    made = cutting.make(f.state, glyphs: glyphs, points: [], mapped: [])?
+    return ok(Subset(data: made.data, glyphs: made.glyphs))
+
+## Examples
+
+# The samples hold one font, and a collection of two copies holds two.
+test "font_count: one font, and a collection of two"
+    assert font_count(samples.truetype()).must() == 1
+    assert font_count(samples.collection()).must() == 2
+
+# A font is read from the bytes of its file.
+test "parse: the TrueType sample and the CFF sample"
+    assert metrics_of(parse(samples.truetype(), index: 0).must()).glyph_count == 29
+    assert metrics_of(parse(samples.postscript(), index: 0).must()).glyph_count == 29
+
+# The scale, the vertical metrics and the heights, as fontTools reads them.
+test "metrics_of: scale, ascent, descent, heights and the style"
+    m = metrics_of(parse(samples.truetype(), index: 0).must())
+    assert m.units_per_em == 1000
+    assert m.ascent == 1069
+    assert m.descent == -293
+    assert m.line_gap == 0
+    assert m.cap_height.must() == 714
+    assert m.x_height.must() == 536
+    assert m.weight == 400
+    assert m.width_class == 5
+    assert m.underline_position == -100
+    assert m.underline_thickness == 50
+    assert m.box_left == -621
+    assert m.box_top == 1067
+    assert !m.is_bold && !m.is_italic && !m.is_monospaced
+
+# The outlines of the two samples.
+test "outlines_of: TrueType and CFF"
+    assert outlines_of(parse(samples.truetype(), index: 0).must()) == .truetype
+    assert outlines_of(parse(samples.postscript(), index: 0).must()) == .postscript
+
+# The family, the style and the PostScript name.
+test "name_of: family, style, PostScript name and licence address"
+    f = parse(samples.truetype(), index: 0).must()
+    assert name_of(f, id: .family).must() == "Noto Sans"
+    assert name_of(f, id: .subfamily).must() == "Regular"
+    assert name_of(f, id: .full_name).must() == "Noto Sans Regular"
+    assert name_of(f, id: .postscript_name).must() == "NotoSans-Regular"
+    assert name_of(f, id: .license_url).must() == "https://scripts.sil.org/OFL"
+    assert name_of(f, id: .typographic_family).is_err()
+
+# The tags a subset keeps, in the file's order.
+test "table_tags: the tables of the TrueType sample"
+    tags = table_tags(parse(samples.truetype(), index: 0).must())
+    assert tags.len() == 14
+    assert tags[0] == "OS/2"
+    assert tags[tags.len() - 1] == "prep"
+
+# A table's bytes: `head` is 54 bytes and begins with its version.
+test "table_of: head"
+    head = table_of(parse(samples.truetype(), index: 0).must(), tag: "head").must()
+    assert head.len() == 54
+    assert head[1] == 1
+
+# The glyph a character has.
+test "glyph_of: Latin, Latin Extended-A, Greek and Cyrillic"
+    f = parse(samples.truetype(), index: 0).must()
+    assert glyph_of(f, code_point: 65).must() == 5
+    assert glyph_of(f, code_point: 233).must() == 17
+    assert glyph_of(f, code_point: 322).must() == 20
+    assert glyph_of(f, code_point: 913).must() == 25
+    assert glyph_of(f, code_point: 1044).must() == 27
+
+# Every character the sample has a glyph for.
+test "code_points_of: the 21 characters of the sample"
+    cps = code_points_of(parse(samples.truetype(), index: 0).must()).must()
+    assert cps.len() == 21
+    assert cps[0] == 32
+    assert cps[20] == 1076
+
+# The advance of a capital A and of a space.
+test "advance_of: A, O and space"
+    f = parse(samples.truetype(), index: 0).must()
+    assert advance_of(f, glyph: 5).must() == 639
+    assert advance_of(f, glyph: 8).must() == 781
+    assert advance_of(f, glyph: 1).must() == 260
+
+# The left bearing of O and of l with a stroke.
+test "bearing_of: O and the Polish l"
+    f = parse(samples.truetype(), index: 0).must()
+    assert bearing_of(f, glyph: 8).must() == 61
+    assert bearing_of(f, glyph: 20).must() == -9
+
+# The box of an A, and of a space, which has none.
+test "bounds_of: A and space"
+    f = parse(samples.truetype(), index: 0).must()
+    a = bounds_of(f, glyph: 5).must()
+    assert a == Box(left: 0.0, bottom: 0.0, right: 638.0, top: 717.0)
+    assert bounds_of(f, glyph: 1).must() == Box(left: 0.0, bottom: 0.0, right: 0.0, top: 0.0)
+
+# The outline of an A: two contours, the second a triangle's counter.
+test "outline_of: the A of both samples"
+    glyph = outline_of(parse(samples.truetype(), index: 0).must(), glyph: 5).must()
+    assert glyph.segments.len() == 18
+    assert glyph.segments[0] == .move(x: 545.0, y: 0.0)
+    assert glyph.segments[8] == .close
+    cff = outline_of(parse(samples.postscript(), index: 0).must(), glyph: 5).must()
+    assert cff.segments.len() == 18
+    assert cff.segments[0] == .move(x: 545.0, y: 0.0)
+
+# A quadratic curve raised to a cubic one that draws the same curve.
+test "to_cubics: one quadratic curve"
+    o = Outline(segments: [.move(x: 0.0, y: 0.0), .quad(control_x: 30.0, control_y: 60.0, x: 60.0, y: 0.0), .close])
+    cubic = to_cubics(o)
+    assert cubic.segments[1] == .cubic(control1_x: 20.0, control1_y: 40.0, control2_x: 40.0, control2_y: 40.0, x: 60.0, y: 0.0)
+
+# A font with no `kern` table has no pair.
+test "kern_of: a font without a kern table"
+    assert kern_of(parse(samples.truetype(), index: 0).must(), left: 5, right: 10) == 0
+
+# Three letters at 12 points: 639, 781 and 564 units of 1000.
+test "width_of: three letters"
+    w = width_of(parse(samples.truetype(), index: 0).must(), text: "AOe", size: 12.0).must()
+    assert w > 23.8079 && w < 23.8081
+
+# What the sample can and cannot show.
+test "has_glyphs: present, absent and empty"
+    f = parse(samples.truetype(), index: 0).must()
+    assert has_glyphs(f, text: "AOe")
+    assert !has_glyphs(f, text: "AB")
+    assert has_glyphs(f, text: "")
+
+# An A and an e with an acute accent, cut out with the glyphs the e's two
+# components are.
+test "subset: two characters and what the second one draws"
+    f = parse(samples.truetype(), index: 0).must()
+    s = subset(f, code_points: [233, 65]).must()
+    assert s.glyphs == [0, 5, 12, 15, 17]
+    cut = parse(s.data, index: 0).must()
+    assert metrics_of(cut).glyph_count == 5
+    assert glyph_of(cut, code_point: 65).must() == 1
+    assert glyph_of(cut, code_point: 233).must() == 4
+    assert outline_of(cut, glyph: 4).must() == outline_of(f, glyph: 17).must()
+
+# The same glyphs by their numbers, with no character map.
+test "subset_glyphs: the glyphs of A and e-acute, without a cmap"
+    f = parse(samples.truetype(), index: 0).must()
+    s = subset_glyphs(f, glyphs: [17, 5]).must()
+    assert s.glyphs == [0, 5, 12, 15, 17]
+    assert glyph_of(parse(s.data, index: 0).must(), code_point: 65).is_err()
+    assert advance_of(parse(s.data, index: 0).must(), glyph: 1).must() == 639
+
+# Where a glyph of the font stands in the subset.
+test "subset_glyph_of: kept and dropped glyphs"
+    s = subset_glyphs(parse(samples.truetype(), index: 0).must(), glyphs: [17]).must()
+    assert subset_glyph_of(s, glyph: 17).must() == 3
+    assert subset_glyph_of(s, glyph: 5).is_err()
+
+test "parse: no bytes, a short file, a file that is no font, a web font, a Type 1 font"
+    assert parse([], index: 0).is_err()
+    assert parse([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0], index: 0).is_err()
+    assert parse(bytes.from_text("This is text, not a font file."), index: 0).is_err()
+
+    match parse([119, 79, 70, 70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], index: 0)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match parse(bytes.from_text("%!PS-AdobeFont-1.0: Name"), index: 0)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "parse: the font number of a single font and of a collection, past either, and negative"
+    assert parse(samples.truetype(), index: 1).is_err()
+    assert parse(samples.truetype(), index: -1).is_err()
+    assert metrics_of(parse(samples.collection(), index: 1).must()).glyph_count == 29
+    assert parse(samples.collection(), index: 2).is_err()
+
+    match parse(samples.collection(), index: 2)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "parse: a file cut short anywhere is refused and never read past its end"
+    whole = samples.truetype()
+    cut @= 0
+
+    for step in range(from: 0, to: 40)
+        cut @ step * 233
+        assert parse(whole.slice(from: 0, to: cut), index: 0).is_err()
+
+    assert parse(samples.postscript().slice(from: 0, to: 2000), index: 0).is_err()
+    assert !parse(whole, index: 0).is_err()
+
+test "glyph_of: a character the font lacks, out of range and negative"
+    f = parse(samples.truetype(), index: 0).must()
+    assert glyph_of(f, code_point: 66).is_err()
+    assert glyph_of(f, code_point: 1114112).is_err()
+    assert glyph_of(f, code_point: -1).is_err()
+    assert glyph_of(f, code_point: 0).is_err()
+
+    match glyph_of(f, code_point: 66)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "advance_of, bearing_of, bounds_of and outline_of: the first glyph, the last, past it and negative"
+    f = parse(samples.truetype(), index: 0).must()
+    assert advance_of(f, glyph: 0).must() == 600
+    assert advance_of(f, glyph: 28).must() == 607
+    assert advance_of(f, glyph: 29).is_err()
+    assert advance_of(f, glyph: -1).is_err()
+    assert bearing_of(f, glyph: 29).is_err()
+    assert bounds_of(f, glyph: 29).is_err()
+    assert outline_of(f, glyph: 29).is_err()
+    assert outline_of(f, glyph: -1).is_err()
+    assert outline_of(f, glyph: 1).must().segments.len() == 0
+
+test "outline_of: a composite draws its components, one after another"
+    f = parse(samples.truetype(), index: 0).must()
+    assert outline_of(f, glyph: 17).must().segments.len() == 38
+    assert outline_of(f, glyph: 25).must() == outline_of(f, glyph: 5).must()
+    assert bounds_of(f, glyph: 17).must() == Box(left: 55.0, bottom: -10.0, right: 513.0, top: 766.0)
+
+test "outline_of: the CFF sample agrees with fontTools on the O and the Polish l"
+    f = parse(samples.postscript(), index: 0).must()
+    o = outline_of(f, glyph: 8).must()
+    assert o.segments.len() == 24
+    assert o.segments[0] == .move(x: 720.0, y: 358.0)
+    assert outline_of(f, glyph: 20).must().segments.len() == 13
+    assert bounds_of(f, glyph: 8).must() == Box(left: 61.0, bottom: -10.0, right: 720.0, top: 725.0)
+    assert advance_of(f, glyph: 8).must() == 781
+    assert name_of(f, id: .postscript_name).must() == "SampleCFF-Regular"
+
+test "outline_of: a loca that runs backwards is invalid, a composite that draws itself is a limit"
+    data: [u8] @= samples.truetype()
+    d = sfnt.directory_at(data, at: 0).must()
+    loca = sfnt.table_named(d, tag: "loca").must()
+    data[loca.offset + 12] @ 255
+    data[loca.offset + 13] @ 255
+    f = parse(data, index: 0).must()
+
+    match outline_of(f, glyph: 5)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    again: [u8] @= samples.truetype()
+    span = glyf.span_of(again, s: parse(again, index: 0).must().state.glyf, glyph: 17).must()
+    again[span[0] + 12] @ 0
+    again[span[0] + 13] @ 17
+
+    match outline_of(parse(again, index: 0).must(), glyph: 17)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "subset: no characters keeps glyph 0, a character the font lacks fails, a CFF font is unsupported"
+    f = parse(samples.truetype(), index: 0).must()
+    assert subset(f, code_points: []).must().glyphs == [0]
+    assert subset(f, code_points: [65, 65, 65]).must().glyphs == [0, 5]
+    assert subset(f, code_points: [66]).is_err()
+    assert subset_glyphs(f, glyphs: [29]).is_err()
+
+    match subset_glyphs(parse(samples.postscript(), index: 0).must(), glyphs: [5])
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "subset: every glyph of the sample cut again is the sample's own, glyph for glyph"
+    f = parse(samples.truetype(), index: 0).must()
+    everything = code_points_of(f).must()
+    s = subset(f, code_points: everything).must()
+    assert s.glyphs.len() == 29
+    cut = parse(s.data, index: 0).must()
+
+    for g in range(from: 0, to: 29)
+        assert advance_of(cut, glyph: g).must() == advance_of(f, glyph: g).must()
+        assert outline_of(cut, glyph: g).must() == outline_of(f, glyph: g).must()
+
+    assert code_points_of(cut).must() == everything

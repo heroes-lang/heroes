@@ -1,0 +1,104 @@
+# The pen of a Type 2 charstring: where it stands, whether a contour is open,
+# what it has counted, and the three ways it draws, each relative to where the
+# pen is.
+
+use font/internal/shapes
+
+# The most operators and numbers one glyph may execute: a charstring has no
+# loop, so only the calls of one subroutine by another can run long.
+constant MAX_STEPS: i64
+    1000000
+
+# The most numbers the stack may hold.
+constant MAX_STACK: i64
+    192
+
+# Why a glyph that calls too much is not read.
+constant LIMIT: str
+    "limit"
+
+# What a charstring has done so far, apart from the stack and the path.
+record State
+    # The pen's x, in font units.
+    x: f64
+    # The pen's y.
+    y: f64
+    # Whether a contour is open and needs closing.
+    open: bool
+    # How many stem hints it has declared, which sizes a hint mask.
+    stems: i64
+    # Whether the width, the optional first number of the first operator that
+    # clears the stack, has been taken off.
+    width_done: bool
+    # The operators and numbers executed.
+    steps: i64
+    # Whether `endchar` has run.
+    ended: bool
+    # The transient array of `put` and `get`, 32 numbers.
+    transient: [f64]
+
+# `n` zeros.
+function zeros(n: i64) -> [f64]
+    out: [f64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0.0)
+
+    return out
+
+# A new state at the origin.
+function start() -> State
+    return State(x: 0.0, y: 0.0, open: false, stems: 0, width_done: false, steps: 0, ended: false, transient: zeros(32))
+
+# Drops the width where the first operator that clears the stack has one more
+# number than it takes, `expected` being the count it takes or, for the ones
+# that take any, `-2`: a pair of numbers for the stems.
+function take_width(@st: State, @stack: [f64], expected: i64)
+    if st.width_done
+        return
+    st.width_done @ true
+    extra @= false
+
+    if expected == -2
+        extra @ stack.len() % 2 == 1
+    else
+        extra @ stack.len() > expected
+
+    if extra
+        stack @ stack.slice(from: 1, to: stack.len())
+
+# Closes the open contour and moves the pen by `dx` and `dy`.
+function move_by(dx: f64, dy: f64, @st: State, @ops: [i64], @coords: [f64])
+    if st.open
+        ops @ ops.push(shapes.CLOSE)
+    st.x @ st.x + dx
+    st.y @ st.y + dy
+    st.open @ true
+    ops @ ops.push(shapes.MOVE)
+    coords @ coords.push(st.x)
+    coords @ coords.push(st.y)
+
+# Draws a line by `dx` and `dy`.
+function line_by(dx: f64, dy: f64, @st: State, @ops: [i64], @coords: [f64])
+    st.x @ st.x + dx
+    st.y @ st.y + dy
+    ops @ ops.push(shapes.LINE)
+    coords @ coords.push(st.x)
+    coords @ coords.push(st.y)
+
+# Draws a cubic curve whose three points are given each relative to the one
+# before it.
+function curve_by(dx1: f64, dy1: f64, dx2: f64, dy2: f64, dx3: f64, dy3: f64, @st: State, @ops: [i64], @coords: [f64])
+    x1 = st.x + dx1
+    y1 = st.y + dy1
+    x2 = x1 + dx2
+    y2 = y1 + dy2
+    st.x @ x2 + dx3
+    st.y @ y2 + dy3
+    ops @ ops.push(shapes.CUBIC)
+    coords @ coords.push(x1)
+    coords @ coords.push(y1)
+    coords @ coords.push(x2)
+    coords @ coords.push(y2)
+    coords @ coords.push(st.x)
+    coords @ coords.push(st.y)

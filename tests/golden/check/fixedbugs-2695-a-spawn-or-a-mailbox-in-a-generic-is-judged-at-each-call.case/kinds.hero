@@ -1,0 +1,21 @@
+# A C handle and a C address, for the cases of defect 2695: `Boxed` holds a
+# `FILE *` the program must give back, `Pointed` a `ptr`.
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32 when 0
+
+record Boxed
+    f: File
+
+record Pointed
+    p: ptr
+
+function boxed() -> Boxed
+    return Boxed(f: tmpfile())
+
+function pointed() -> Pointed
+    return Pointed(p: nullptr)
+
+function release(@b: Boxed) -> bool
+    return fclose(b.f) == 0

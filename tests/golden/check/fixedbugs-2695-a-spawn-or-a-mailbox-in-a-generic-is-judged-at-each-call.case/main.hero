@@ -1,0 +1,83 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R1), its class:
+# every rule of spec § 11 on what a value holds is judged at each call of a
+# generic function, not the send's alone. A `spawn` whose argument holds a C
+# handle, a `spawn`'s argument or answer reaching a `ptr` or a `cstr` (in a
+# list, behind `?`), a `(mailbox T)` whose `T` reaches one, written or
+# inferred, a mailbox of `()`, and a generic function taken as a value: each
+# was accepted and built, a `ptr` crossing between threads unchecked, and the
+# mailbox of `()` a compiler panic at build. Told at the call now; a
+# mailbox nothing types is still told where it is made.
+use kinds
+
+function start<S>(body: (function(S) -> i64), setup: S) -> i64
+    t = spawn(body, setup).must()
+    return t.wait()
+
+function fresh<T>(x: T) -> (mailbox T)
+    m: (mailbox T) = mailbox()
+    m.send(x).must()
+    return m
+
+function filled<T>(f: (function() -> T)) -> (mailbox T)
+    m: (mailbox T) = mailbox()
+    m.send(f()).must()
+    return m
+
+function run<T>(f: (function(i64) -> T)) -> T
+    t = spawn(f, 1).must()
+    return t.wait()
+
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function keep<T>(x: T) -> i64
+    m: (mailbox T) = mailbox()
+    print(m.send(x).is_err())
+    return 1
+
+function use_it(b: kinds.Boxed) -> i64
+    c @= b
+    return kinds.release(@c).to_str().len()
+
+function look(p: kinds.Pointed) -> i64
+    if p.p == nullptr
+        return 1
+    return 0
+
+function look_all(ps: [kinds.Pointed]) -> i64
+    return ps.len()
+
+function look_maybe(p: kinds.Pointed?) -> i64
+    if p.is_err()
+        return 0
+    return 1
+
+function look_text(c: cstr) -> i64
+    if c == nullptr
+        return 0
+    return 1
+
+function make(_: i64) -> kinds.Pointed
+    return kinds.pointed()
+
+function nothing()
+    _ = 0
+
+function main()
+    print(start(use_it, setup: kinds.boxed()))  #~ handle_into_spawn
+    print(start(look, setup: kinds.pointed()))  #~ thread_crossing
+    print(start(look_all, setup: [kinds.pointed()]))  #~ thread_crossing
+    maybe: kinds.Pointed? = ok(kinds.pointed())
+    print(start(look_maybe, setup: maybe))  #~ thread_crossing
+    s = "hello"
+    x: cstr = s.lease()
+    print(start(look_text, setup: x))  #~ thread_crossing
+    m = fresh(kinds.pointed())  #~ thread_crossing
+    print(m.receive(within_ms: 0).is_err())
+    u = filled(nothing)  #~ empty_mailbox
+    u.close()
+    print(run(make).p == nullptr)  #~ thread_crossing
+    inferred = mailbox()  #~ mailbox_needs_type
+    print(relay(inferred, kinds.pointed()))  #~ thread_crossing
+    f: (function(kinds.Pointed) -> i64) = keep  #~ thread_crossing
+    print(f(kinds.pointed()))

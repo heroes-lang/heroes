@@ -1,0 +1,22 @@
+# Fixed 2026-11-23, defect 2679, lane-p255-impl (panel 255's R1, route C):
+# libpng, where the defect was found. A decode that fails jumps by libpng's
+# own `longjmp` to the `jmp_buf` of its `png_struct`, which is then freed; the
+# next decode saves into the next struct.
+# Symptom: `--sanitize`: heap-use-after-free at the runtime's
+# `hero_jmp_fingerprint` on the second decode, the read of the freed struct's
+# buffer (Linux arm64 and Darwin, panel 255, 2026-11-22).
+# Cause: the runtime read a fingerprint of every buffer a save filled at the
+# thread's next save point or jump, by which time libpng had given it back.
+# Fix: a jump reads one word of the buffer it jumps to, which the C library
+# reads next; no buffer a save filled is read at any other moment (route C).
+# A machine without libpng skips the case, which `package` tells
+# (`ffi_package`).
+extern "fixedbugs-2679-libpng.h" pkgconfig "libpng"
+    function png_make() -> i64
+    function png_decode(which: i64) -> i64
+
+function main()
+    print(png_make())
+    print(png_decode(which: 0))
+    print(png_decode(which: 1))
+    print(png_decode(which: 0))

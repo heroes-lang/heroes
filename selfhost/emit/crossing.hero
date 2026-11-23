@@ -116,7 +116,7 @@ function held(c: state.Checked, decls: [ast.Decl], ty: i64) -> [i64]
 
     match table.get(c.types, ty)
         .named n => return synth.field_types(c, decls, decl: n.decl)
-        .case_ty vc => return case_fields(c, decls, decl: vc.decl, at: vc.at)
+        .case_ty vc => return synth.case_field_types(c, decls, decl: vc.decl, at: vc.at)
         .array a => return [a.element]
         .map m => return [m.key, m.value]
         .fallible o => return [o.payload]
@@ -125,20 +125,6 @@ function held(c: state.Checked, decls: [ast.Decl], ty: i64) -> [i64]
         .generic | .error => return []
 
     return []
-
-function case_fields(c: state.Checked, decls: [ast.Decl], decl: i64, at: i64) -> [i64]
-    out: [i64] @= []
-
-    match decls[decl].kind
-        .variant_decl v =>
-            for field in v.cases[at].fields
-                written = state.written_type(c, field.ty)
-
-                if !written.is_err()
-                    out @ out.push(written.must())
-        .record_decl | .constant_decl | .function_decl | .test_decl => return out
-
-    return out
 
 # What a unit's functions cross, read from their calls of the built-ins.
 record Crossed

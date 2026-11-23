@@ -210,12 +210,40 @@ capability user/groups  the other groups the process belongs to
   rust    -
   python  os.getgroups
 
-capability user/groups-of  the groups a named user belongs to
-  heroes  pending
+capability user/lookup  a user found by its name or by its id: its id, name, primary group and home
+  heroes  os.user_named, os.user_identified, os.User, os.AccountId
+  go      user.Lookup, user.LookupId, user.User, user.UnknownUserError, user.UnknownUserIdError
+  rust    -
+  python  pwd.getpwnam, pwd.getpwuid, pwd.struct_passwd
+  note    added 2026-11-23 (gap G12). Rust 1.90.0's `std` has no user database (read this session: `std::os::unix::process::CommandExt` has `uid`, `gid` and `groups`, which set a child's, see user/change). An id is an `AccountId`, a number on Darwin and Linux and a SID on Windows, so `fs.set_owner`'s number is a `match` away and Windows is never forgotten; Go's `Uid` string and Python's int are the two halves. `UnknownUserError` and `UnknownUserIdError` are `not_found`, and so is a number no user holds (run this session: Go 1.27.4 `user: unknown userid 4294967295`, Python 3.15.2 `KeyError`); a number past 32 bits is `invalid`, where Go's `LookupId("4294967296")` answers root, the number wrapped to 0. Measured on this Mac against Go's `user.LookupId` and Python's `pwd`: root (0, `/var/root`, group 0) and the user running (501, `/Users/joseph`, group 20) equal in all three; Windows against `Get-LocalUser` and `net user` on the box: the Administrator's SID ending `-500`, its primary group `-513` (`None`), home `C:\Users\Administrator`. Windows adds `DOMAIN\user` and `user@domain` to a name, and counts the service accounts `SYSTEM`, `LOCAL SERVICE` and `NETWORK SERVICE`, which its lookup calls well-known groups, as users, since they own processes; the home is the profile list's `ProfileImagePath`, absent for a user that never logged on, and the primary group the local accounts' `NetUserGetInfo` tells, absent for an account of a domain this machine cannot ask (unrun here: no domain). A name that is not UTF-8 is refused `invalid` on Windows and read as the bytes the system holds on POSIX
+
+capability user/list  every user of the machine
+  heroes  refused: a directory service may hold millions of users, so a list of them all is a call that may wait on the network and hand back a table no program wants whole; the question programs ask is one user's or a user's groups, `user_named` and `groups_of`; a program that wants `/etc/passwd`'s lines reads that file with `fs`
   go      -
   rust    -
+  python  pwd.getpwall, grp.getgrall
+  note    the one refusal of the lookups; the same reason holds for the groups
+
+capability user/record-fields  the rest of a user's record: its real name and its login shell
+  heroes  pending
+  go      user.User
+  rust    -
+  python  pwd.struct_passwd
+  note    outside gap G12, which asked for a user's id, home and groups: Go's `User.Name` and Python's `pw_gecos` and `pw_shell` are a person's display name and a program's shell, and Windows keeps a full name and no shell
+
+capability group/lookup  a group found by its name or by its id
+  heroes  os.group_named, os.group_identified, os.Group
+  go      user.LookupGroup, user.LookupGroupId, user.Group, user.UnknownGroupError, user.UnknownGroupIdError
+  rust    -
+  python  grp.getgrnam, grp.getgrgid, grp.struct_group
+  note    added 2026-11-23 (gap G12). Python's `struct_group.gr_mem`, the users a group's record names, is not offered: it names only the users listed in the group's own line, never those whose primary group it is, so it answers a question nobody asked, and the question a program asks, which groups a user belongs to, is `user/groups-of`. On Windows a group, an alias or a well-known group (`Administrators`, `Everyone`: `S-1-5-32-544`, `S-1-1-0` on the box); a user's name is `not_found` as a group's
+
+capability user/groups-of  the groups a named user belongs to
+  heroes  os.groups_of
+  go      user.User.GroupIds
+  rust    -
   python  os.getgrouplist
-  note    no door of `hero_sys.h` reads the system's record of another user
+  note    added 2026-11-23 (gap G12). The groups come from the system's record of groups, not from the groups this process runs with, which are `user/groups`; on POSIX `getgrouplist`, the user's primary group among them, each once and in the system's order. Measured on this Mac against `id`, Go's `GroupIds` and Python's `os.getgrouplist` for the user running: the same 16 groups in the same order (Darwin keeps at most `NGROUPS_MAX`, 16, for a user); in the Linux arm64 container for root: group 0 alone. On Windows `NetUserGetLocalGroups` with indirect membership, the Administrator's `Administrators` equal to `net user Administrator`'s local group memberships
 
 capability user/name  the name of the user the process runs as
   heroes  os.user_name
@@ -224,12 +252,19 @@ capability user/name  the name of the user the process runs as
   python  getpass.getuser, os.getlogin
   note    the system's record of the effective user first (`getpwuid_r`), and `USER` only where no record names one; Python's getuser reads LOGNAME, USER and USERNAME first, which any program's parent may set to anything. On Windows `GetUserNameW`, the name without its domain. `not_found` where neither names one
 
-capability user/change  the user or the groups the process runs as changed
-  heroes  pending
+capability user/change  the user and the groups the process runs as changed to a named user's
+  heroes  os.change_user
   go      -
   rust    -
-  python  os.setuid, os.seteuid, os.setgid, os.setegid, os.setgroups, os.setregid, os.setreuid, os.initgroups
-  note    no floor door changes who the process runs as, and every thread of the process is changed at once
+  python  os.setuid, os.setgid, os.initgroups
+  note    added 2026-11-23 (gap G12). Written as one whole drop, `initgroups`, `setgid`, `setuid` in that order, then every id checked and `setuid(0)` asked and required to be refused where the user is not root (CERT's POS36-C), since a process whose saved id is still root can take it back: the mistake a daemon dropping root makes with a lone `setuid`. A process that is not root changes nothing and answers where it already is that user and group (`permission` otherwise). Run on Linux arm64 as root in a container: ids 0 to 65534 on all of real, effective and saved, `setuid(0)` and `seteuid(0)` refused after, the groups one (`nogroup`); and as user 1000, `permission`. Run on Darwin as an ordinary user only: its root path is unrun here, no root being had, and its calls are the same four. Windows answers `unsupported` in words: a process keeps the user it started as, and a thread takes another's rights only with that user's password (`LogonUser`), which nothing here is given. Rust's `CommandExt::uid`, `gid` and `groups` change a child's, which belongs to `process`
+
+capability user/change-parts  one of the ids or the list of groups changed by itself
+  heroes  refused: a process that sets its effective id, or its real and effective ids, apart from its saved id, or a list of groups of its own making, can end able to take back what it gave up; `change_user` does the whole drop and checks it, and no program has been shown that needs the parts
+  go      -
+  rust    -
+  python  os.seteuid, os.setegid, os.setreuid, os.setregid, os.setgroups
+  note    the same family as user/change
 
 capability user/password  a secret read from the terminal without echoing it
   heroes  term.read_secret, term.read_password
@@ -299,6 +334,13 @@ capability process/usage  what a process holds and has spent, by its id: its res
   rust    -
   python  resource.getrusage, resource.struct_rusage, resource.RUSAGE_SELF, resource.RUSAGE_CHILDREN
   note    added 2026-11-17 (queue 58); psutil's `Process(pid).memory_info` (rss, vms) and `cpu_times` (user, system) the yardstick; Python's `getrusage` reads only the process itself and its waited children, its `ru_maxrss` the most it ever held, not what it holds; measured 2026-11-17 against `ps -o rss=,vsz=` on Darwin (2,848 KiB and 488,785,824 KiB, equal) and `/proc/<pid>/stat` in the arm64 container (357 pages and 2,473,984 bytes, equal); Darwin's times converted by `mach_timebase_info` (125/3 here: 8,516,289 units were `getrusage`'s 0.354845 s); Darwin refuses another user's process (`permission`, pid 1 here) where Linux reads it; Windows' virtual is the bytes committed for the process (`PagefileUsage`), its resident the working set, unrun; a child's time once it ended is `process.cpu_of`'s, and a volume's space, psutil's `disk_usage`, is `fs.space` (block fs/space)
+
+capability process/list  every process of the machine: its id, its parent, its name, its owner, its start time, and what it holds and has spent
+  heroes  os.processes, os.Process, os.Owner
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-23 (gap G20). None of Go 1.27.4's `os`, Rust 1.90.0's `std::process` (abort, exit, id and the child types) or Python 3.15.2's `os` lists the machine's processes (read this session: `go doc -all os`, the `std/process` index, `dir(os)`), so the yardsticks are .NET's `Process.GetProcesses`, Java's `ProcessHandle.allProcesses` and psutil's `process_iter`, none installed here; the values were asked of the system's own tools instead: `ps -axo pid,ppid,user,lstart,rss,vsz,comm` on Darwin (this Mac, 604 processes: ids, parents, users, start seconds and virtual sizes equal for every process both listed, the resident size equal for a quiet child, 896 KiB both) and `Get-CimInstance Win32_Process` on the Windows box (81 processes: parents, names, start milliseconds and working sets equal for every process both listed). Each entry carries its start time, milliseconds since 1970 and constant while the process lives, so an id and a start time together name one process, the very reason `process`'s `child/find` is refused. A process the system hides, one whose start time cannot be read, or one that ended while the list was read, is absent and never made up: on Windows the idle process (id 0) and a process the program may not open; Darwin lists every process (`sysctl` `KERN_PROC_ALL`, where `proc_pidinfo` read 464 of 622 here and answered EPERM for pid 1 and 0), so the other user's processes are in the list without usage and the owner is the kernel's. A name that is not UTF-8 is shown with U+FFFD for each byte that is none, since failing the list on one name would hide every other process, as `fs`'s read of a folder does. Linux's start time rests on `btime`, whole seconds, so it is within a second of the true time; `hidepid` mounts and Windows' protected processes are unrun here
 
 capability network/counters  the counters of every network interface: bytes, packets, errors and dropped packets, each way
   heroes  os.network_counters, os.NetworkCounters

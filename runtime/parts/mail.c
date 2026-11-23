@@ -43,11 +43,25 @@
  * `stopped` from then on, a send to it failing `stopped`. `closed` comes
  * before `stopped`. The layer tells this file of the stop by one line at the
  * end of `hero_net_nudge_all` (R6), on a thread of its own and never inside a
- * signal handler; this file never calls the layer, and a program that links
- * no member of it cannot be stopped, so its receives never answer `stopped`.
+ * signal handler; this file names no symbol of the layer, and a program that
+ * links no member of it cannot be stopped, so its receives never answer
+ * `stopped`.
+ *
+ * A QUEUE NAMED BY NUMBER (panel 256's R6 to R8, provisional). `m.number()`
+ * gives the layer an `i64` for the queue, never the queue: a slot of this
+ * file's table and the slot's life, so the number names nothing once the last
+ * copy is gone, and never the next queue of that slot. By number the layer asks
+ * whether a receive would wait (`hero_mail_ready`) and registers a watch, a
+ * function of its own handed by pointer, rung when the queue goes from empty
+ * to one value, at its close, at the stop and at its end
+ * (`platform/hero_layer_mail.h`). So the layer's code runs on this file's
+ * threads while the runtime names none of its symbols, and a program that
+ * links no member links none of it.
+ *
  * THE ORDER OF THE LOCKS, one order everywhere: the layer's lock, then the
  * queues' list lock, then one queue's lock, then the handle set's or the
- * thread table's. No queue operation ever takes the layer's lock.
+ * thread table's. No queue operation ever takes the layer's lock, and a watch's
+ * ring, called under a queue's lock or the list's, takes no lock at all.
  *
  * A HANDLE BELONGS TO THE THREAD THAT HOLDS IT (panel 254's R3). A C handle's
  * life (`parts/alloc.c`) and a thread's slot (`parts/spawn.c`) record the
@@ -266,7 +280,31 @@ struct HeroMail {
     /* The live list the stop and the end of `main` walk, under its own lock. */
     struct HeroMail *live_prev;
     struct HeroMail *live_next;
+    /* Its number's slot plus one, 0 until `m.number()` first asks; written
+     * under the list's lock, as the slots' table is. */
+    int64_t slot;
+    /* The platform layer's watches (`hero_layer_mail.h`), each rung under
+     * this queue's lock, `watch_room` of them allocated. */
+    struct HeroMailWatch *watches;
+    int64_t watching;
+    int64_t watch_room;
 };
+
+/* One watch: the layer's ring and its context. */
+typedef struct HeroMailWatch {
+    HeroMailRing ring;
+    void *ctx;
+} HeroMailWatch;
+
+/* A queue known by number (`m.number()`): the queue, NULL while the slot is
+ * free; the life the slot is in, which the number carries, so a number whose
+ * queue has gone names nothing and never the next queue of that slot; and the
+ * next free slot plus one. */
+typedef struct {
+    HeroMail *queue;
+    uint32_t life;
+    int64_t next_free;
+} HeroMailSlot;
 
 /* SHARED ON PURPOSE, for `tests/harness/suite_runtime.hero`'s rule 3: the
  * queues alive, so a stop can wake a receive waiting on any of them and the
@@ -276,6 +314,16 @@ static hero_mail_mutex hero_mail_list_lock = HERO_MAIL_LIST_INIT;
 static HeroMail *hero_mail_list = NULL;
 static int64_t hero_mail_alive = 0;
 static _Atomic int hero_mail_stop_asked = 0;
+
+/* SHARED ON PURPOSE, as the list is and under its lock: the slots a number
+ * names (`hero_mail_number`), `hero_mail_slot_room` of them allocated, the
+ * first `hero_mail_slots_used` ever handed out, and the first free one plus
+ * one, 0 for none. A number is read on any thread, so a per-thread table would
+ * name nothing for the thread that waits. */
+static HeroMailSlot *hero_mail_slots = NULL;
+static int64_t hero_mail_slot_room = 0;
+static int64_t hero_mail_slots_used = 0;
+static int64_t hero_mail_slot_free = 0;
 
 /* The queue whose values this thread is giving back, while it gives them back:
  * no thread's and no C handle's holder moves then; and, where the queue's last
@@ -359,7 +407,22 @@ void hero_mail_decref(HeroMail *m) {
     }
     if (m->live_next != NULL) m->live_next->live_prev = m->live_prev;
     hero_mail_alive -= 1;
+    /* Its number names nothing from now: the slot is free, its life kept, so
+     * the next queue there is numbered with the next life. Every watch is
+     * rung once, so a wait on the number wakes and finds it gone; a watch, an
+     * unwatch and a readiness asked by number all take the list's lock first,
+     * so none reaches this queue meanwhile. */
+    if (m->slot > 0) {
+        HeroMailSlot *at = &hero_mail_slots[m->slot - 1];
+        at->queue = NULL;
+        if (at->life < UINT32_MAX) {
+            at->next_free = hero_mail_slot_free;
+            hero_mail_slot_free = m->slot;
+        }
+    }
+    for (int64_t i = 0; i < m->watching; i++) m->watches[i].ring(m->watches[i].ctx);
     hero_mail_drop(&hero_mail_list_lock);
+    if (m->watches != NULL) hero_free_raw(m->watches);
     HeroMailNote *n = m->head;
     m->head = NULL;
     m->tail = NULL;
@@ -404,6 +467,13 @@ static HeroMail *hero_mail_named(HeroMail *m, const char *what, const HeroPlace 
     return m;
 }
 
+/* Every watch of the queue rung, under its lock, which an unwatch takes too:
+ * so a watch taken away is never rung after. A ring takes no lock and does
+ * not wait (`hero_layer_mail.h`). */
+static void hero_mail_ring(HeroMail *m) {
+    for (int64_t i = 0; i < m->watching; i++) m->watches[i].ring(m->watches[i].ctx);
+}
+
 /* `m.send(v)`: the copy written on this thread, outside the lock; then, under
  * it, `closed` or `stopped` with the copy given back and `*v` untouched, or
  * every handle `*v` holds handed over and its cell emptied (`sent`, NULL for a
@@ -430,6 +500,9 @@ int64_t hero_mail_send(HeroMail *m, HeroPutFn put, HeroSentFn sent, void *v, con
     m->tail = n;
     m->queued += 1;
     hero_mail_wake_one(&m->ready);
+    /* From empty to one value is the one change a watch is rung for: while
+     * the queue holds a value it is ready, and the layer asks before waiting. */
+    if (m->queued == 1) hero_mail_ring(m);
     hero_mail_drop(&m->lock);
     return HERO_MAIL_GOT;
 }
@@ -536,8 +609,10 @@ int64_t hero_mail_receive(HeroMail *m, void *out, int64_t within_ms, const HeroP
 void hero_mail_close(HeroMail *m, const HeroPlace *where) {
     hero_mail_named(m, "a mailbox no `mailbox()` began was closed — a compiler bug", where);
     hero_mail_take(&m->lock);
+    int was = m->closed;
     m->closed = 1;
     hero_mail_wake_all(&m->ready);
+    if (!was) hero_mail_ring(m);
     hero_mail_drop(&m->lock);
 }
 
@@ -550,9 +625,124 @@ void hero_mail_hear_stop(void) {
     for (HeroMail *m = hero_mail_list; m != NULL; m = m->live_next) {
         hero_mail_take(&m->lock);
         hero_mail_wake_all(&m->ready);
+        hero_mail_ring(m);
         hero_mail_drop(&m->lock);
     }
     hero_mail_drop(&hero_mail_list_lock);
+}
+
+/* -- a queue named by number (panel 256's R6 to R8, provisional) -------------- */
+
+/* The number's halves: the slot plus one above 32 bits, the slot's life
+ * below, so a number is above 0 and fits an `i64` with room to spare. */
+#define HERO_MAIL_SLOT_MOST INT64_C(0x7fffffff)
+
+/* `m.number()`: the same for every copy, the slot taken the first time it is
+ * asked, held by no copy. */
+int64_t hero_mail_number(HeroMail *m, const HeroPlace *where) {
+    hero_mail_named(m, "a mailbox no `mailbox()` began was asked its number — a compiler bug", where);
+    hero_mail_take(&hero_mail_list_lock);
+    if (m->slot == 0) {
+        int64_t at = 0;
+        if (hero_mail_slot_free != 0) {
+            at = hero_mail_slot_free;
+            hero_mail_slot_free = hero_mail_slots[at - 1].next_free;
+        } else {
+            if (hero_mail_slots_used == HERO_MAIL_SLOT_MOST) {
+                hero_mail_drop(&hero_mail_list_lock);
+                hero_mail_panic("more than 2,147,483,647 mailboxes were numbered at once", where);
+            }
+            if (hero_mail_slots_used == hero_mail_slot_room) {
+                int64_t room = hero_mail_slot_room == 0 ? 16 : hero_mail_slot_room * 2;
+                if (room > HERO_MAIL_SLOT_MOST) room = HERO_MAIL_SLOT_MOST;
+                HeroMailSlot *grown = (HeroMailSlot *)hero_calloc_raw((size_t)room * sizeof *grown);
+                if (hero_mail_slot_room > 0) {
+                    memcpy(grown, hero_mail_slots, (size_t)hero_mail_slot_room * sizeof *grown);
+                    hero_free_raw(hero_mail_slots);
+                }
+                hero_mail_slots = grown;
+                hero_mail_slot_room = room;
+            }
+            hero_mail_slots_used += 1;
+            at = hero_mail_slots_used;
+        }
+        HeroMailSlot *s = &hero_mail_slots[at - 1];
+        s->queue = m;
+        s->life += 1;
+        s->next_free = 0;
+        m->slot = at;
+    }
+    int64_t number = (m->slot << 32) | (int64_t)hero_mail_slots[m->slot - 1].life;
+    hero_mail_drop(&hero_mail_list_lock);
+    return number;
+}
+
+/* Under the list's lock: the queue a number names, NULL once it has gone. */
+static HeroMail *hero_mail_numbered(int64_t number) {
+    if (number <= 0) return NULL;
+    int64_t slot = number >> 32;
+    if (slot < 1 || slot > hero_mail_slots_used) return NULL;
+    const HeroMailSlot *s = &hero_mail_slots[slot - 1];
+    if (s->queue == NULL || (int64_t)s->life != (number & INT64_C(0xffffffff))) return NULL;
+    return s->queue;
+}
+
+int64_t hero_mail_ready(int64_t number) {
+    int64_t ready = -1;
+    hero_mail_take(&hero_mail_list_lock);
+    HeroMail *m = hero_mail_numbered(number);
+    if (m != NULL) {
+        hero_mail_take(&m->lock);
+        ready = m->head != NULL || m->closed || m->stopped || atomic_load(&hero_mail_stop_asked) != 0 ? 1 : 0;
+        hero_mail_drop(&m->lock);
+    }
+    hero_mail_drop(&hero_mail_list_lock);
+    return ready;
+}
+
+int64_t hero_mail_watch(int64_t number, HeroMailRing ring, void *ctx) {
+    if (ring == NULL) return -1;
+    int64_t answer = -1;
+    hero_mail_take(&hero_mail_list_lock);
+    HeroMail *m = hero_mail_numbered(number);
+    if (m != NULL) {
+        hero_mail_take(&m->lock);
+        if (m->watching == m->watch_room) {
+            int64_t room = m->watch_room == 0 ? 4 : m->watch_room * 2;
+            HeroMailWatch *grown = (HeroMailWatch *)hero_calloc_raw((size_t)room * sizeof *grown);
+            if (m->watching > 0) memcpy(grown, m->watches, (size_t)m->watching * sizeof *grown);
+            if (m->watches != NULL) hero_free_raw(m->watches);
+            m->watches = grown;
+            m->watch_room = room;
+        }
+        m->watches[m->watching].ring = ring;
+        m->watches[m->watching].ctx = ctx;
+        m->watching += 1;
+        answer = 0;
+        hero_mail_drop(&m->lock);
+    }
+    hero_mail_drop(&hero_mail_list_lock);
+    return answer;
+}
+
+int64_t hero_mail_unwatch(int64_t number, HeroMailRing ring, void *ctx) {
+    int64_t answer = -1;
+    hero_mail_take(&hero_mail_list_lock);
+    HeroMail *m = hero_mail_numbered(number);
+    if (m != NULL) {
+        hero_mail_take(&m->lock);
+        for (int64_t i = 0; i < m->watching; i++) {
+            if (m->watches[i].ring == ring && m->watches[i].ctx == ctx) {
+                m->watches[i] = m->watches[m->watching - 1];
+                m->watching -= 1;
+                answer = 0;
+                break;
+            }
+        }
+        hero_mail_drop(&m->lock);
+    }
+    hero_mail_drop(&hero_mail_list_lock);
+    return answer;
 }
 
 /* -- the failures a receive, a send and a start answer ---------------------- */

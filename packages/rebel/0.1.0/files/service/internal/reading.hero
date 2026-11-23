@@ -1,0 +1,158 @@
+# What the face of `service` reads from its floor and writes to it: the floor's
+# numbers made the face's values and the face's values the floor's numbers, one
+# place for each, so the face's functions say what they do and not how the
+# floor counts. Private to the package (README § A2); it names the face's types
+# as a ring of modules (panel 252's R1).
+
+use service
+use service/hero_service
+use service/internal/failure
+use time
+
+# `limit` in milliseconds as the floor takes them: a part of a millisecond
+# waits the whole one, and a limit past what the floor's wait holds waits for
+# ever.
+function milliseconds_of(limit: time.Duration) -> i64
+    if limit.nanoseconds >= 4000000000000000
+        return -1
+    whole = limit.nanoseconds / 1000000
+
+    if limit.nanoseconds % 1000000 != 0
+        return whole + 1
+    return whole
+
+# The floor's number for a pending state, -1 for a state that is not pending.
+function pending_number(state: service.State) -> i64
+    match state
+        .start_pending  => return hero_service.HERO_SERVICE_STATE_START_PENDING
+        .stop_pending   => return hero_service.HERO_SERVICE_STATE_STOP_PENDING
+        .resume_pending => return hero_service.HERO_SERVICE_STATE_CONTINUE_PENDING
+        .pause_pending  => return hero_service.HERO_SERVICE_STATE_PAUSE_PENDING
+        .stopped        => return -1
+        .running        => return -1
+        .paused         => return -1
+
+# The floor's bit for an accepted control.
+function accept_bit(a: service.Accept) -> i64
+    match a
+        .stop         => return hero_service.HERO_SERVICE_ACCEPT_STOP
+        .pause_resume => return hero_service.HERO_SERVICE_ACCEPT_PAUSE_CONTINUE
+        .shutdown     => return hero_service.HERO_SERVICE_ACCEPT_SHUTDOWN
+        .preshutdown  => return hero_service.HERO_SERVICE_ACCEPT_PRESHUTDOWN
+        .param_change => return hero_service.HERO_SERVICE_ACCEPT_PARAM_CHANGE
+        .time_change  => return hero_service.HERO_SERVICE_ACCEPT_TIME_CHANGE
+        .power        => return hero_service.HERO_SERVICE_ACCEPT_POWER
+        .session      => return hero_service.HERO_SERVICE_ACCEPT_SESSION
+
+# The bits of every control in `accepts`, each once however often it is named.
+function accept_bits(accepts: [service.Accept]) -> i64
+    bits @= 0
+
+    for a in accepts
+        if bits / accept_bit(a) % 2 == 0
+            bits @ bits + accept_bit(a)
+
+    return bits
+
+# One report of `state` to the floor, `what` naming it in a message.
+function reported(s: service.Service, state: i64, accepts: [service.Accept], wait_hint: time.Duration, what: str) -> ()?
+    hint_ms = milliseconds_of(wait_hint)
+
+    if hero_service.report(state: state, accepts: accept_bits(accepts), exit_code: 0, wait_hint_ms: hint_ms) < 0
+        return failure.last(asked: f"reporting the service \"{s.name}\" {what}")
+    return ok()
+
+# The face's control for the floor's numbers. A kind the floor adds later is
+# no kind this function knows, and stops the program rather than being told
+# as another.
+function control_of(kind: i64, event: i64, session: i64) -> service.Control
+    if kind == hero_service.HERO_SERVICE_STOP
+        return service.Control(kind: .stop, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_PAUSE
+        return service.Control(kind: .pause, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_CONTINUE
+        return service.Control(kind: .resume, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_SHUTDOWN
+        return service.Control(kind: .shutdown, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_PRESHUTDOWN
+        return service.Control(kind: .preshutdown, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_PARAM_CHANGE
+        return service.Control(kind: .param_change, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_TIME_CHANGE
+        return service.Control(kind: .time_change, event: 0, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_POWER
+        return service.Control(kind: .power, event: event, session: 0)
+
+    if kind == hero_service.HERO_SERVICE_SESSION
+        return service.Control(kind: .session, event: event, session: session)
+
+    if kind == hero_service.HERO_SERVICE_USER
+        return service.Control(kind: .user, event: event, session: 0)
+    assert false
+    return service.Control(kind: .stop, event: 0, session: 0)
+
+# The code a call on no service fails with here: `closed` where the system has
+# services, `unsupported` where it has none.
+function code_without_service() -> str
+    if service.is_supported()
+        return service.CLOSED
+    return service.UNSUPPORTED
+
+# The code of a failed `T?`, "" where it did not fail.
+function code_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code
+
+test "milliseconds_of: zero, a part of a millisecond waits the whole one, and a limit past the floor's wait is for ever"
+    assert milliseconds_of(time.nanoseconds(0)) == 0
+    assert milliseconds_of(time.nanoseconds(1)) == 1
+    assert milliseconds_of(time.nanoseconds(999999)) == 1
+    assert milliseconds_of(time.nanoseconds(1000000)) == 1
+    assert milliseconds_of(time.nanoseconds(1000001)) == 2
+    assert milliseconds_of(time.seconds(30).must()) == 30000
+    assert milliseconds_of(time.nanoseconds(3999999999999999)) == 4000000000
+    assert milliseconds_of(time.nanoseconds(4000000000000000)) == -1
+    assert milliseconds_of(time.max_duration()) == -1
+
+test "accept_bits: none, one, one named twice, and all eight"
+    assert accept_bits([]) == 0
+    assert accept_bits([.stop]) == hero_service.HERO_SERVICE_ACCEPT_STOP
+    assert accept_bits([.stop, .stop]) == hero_service.HERO_SERVICE_ACCEPT_STOP
+    assert accept_bits([.pause_resume, .shutdown]) == 6
+    assert accept_bits([.stop, .pause_resume, .shutdown, .preshutdown, .param_change, .time_change, .power, .session]) == hero_service.HERO_SERVICE_ACCEPT_ALL
+
+test "pending_number: the four pending states have a number and the three others none"
+    assert pending_number(.start_pending) == hero_service.HERO_SERVICE_STATE_START_PENDING
+    assert pending_number(.stop_pending) == hero_service.HERO_SERVICE_STATE_STOP_PENDING
+    assert pending_number(.resume_pending) == hero_service.HERO_SERVICE_STATE_CONTINUE_PENDING
+    assert pending_number(.pause_pending) == hero_service.HERO_SERVICE_STATE_PAUSE_PENDING
+    assert pending_number(.stopped) == -1
+    assert pending_number(.running) == -1
+    assert pending_number(.paused) == -1
+
+test "control_of: each kind of the floor is a kind of the face, its event and session where it has them"
+    assert control_of(kind: hero_service.HERO_SERVICE_STOP, event: 0, session: 0).kind == .stop
+    assert control_of(kind: hero_service.HERO_SERVICE_PAUSE, event: 0, session: 0).kind == .pause
+    assert control_of(kind: hero_service.HERO_SERVICE_CONTINUE, event: 0, session: 0).kind == .resume
+    assert control_of(kind: hero_service.HERO_SERVICE_SHUTDOWN, event: 0, session: 0).kind == .shutdown
+    assert control_of(kind: hero_service.HERO_SERVICE_PRESHUTDOWN, event: 0, session: 0).kind == .preshutdown
+    assert control_of(kind: hero_service.HERO_SERVICE_PARAM_CHANGE, event: 0, session: 0).kind == .param_change
+    assert control_of(kind: hero_service.HERO_SERVICE_TIME_CHANGE, event: 0, session: 0).kind == .time_change
+    power = control_of(kind: hero_service.HERO_SERVICE_POWER, event: 4, session: 0)
+    assert power.kind == .power
+    assert power.event == 4
+    session = control_of(kind: hero_service.HERO_SERVICE_SESSION, event: 5, session: 2)
+    assert session.kind == .session
+    assert session.event == 5
+    assert session.session == 2
+    user = control_of(kind: hero_service.HERO_SERVICE_USER, event: 200, session: 0)
+    assert user.kind == .user
+    assert user.event == 200

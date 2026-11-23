@@ -1,0 +1,121 @@
+# The big-endian numbers of a font file, read without ever reaching outside
+# the file. A read past the end answers 0 and a walker that follows a count
+# or an offset of the file checks the extent it is about to walk first with
+# `fits`, so a short or lying font is refused by the walker, never read as
+# zeros and never aborts.
+
+use bytes
+
+# Whether `length` bytes from `at` lie inside `data`: `at` and `length` are
+# 0 or more and the end is no further than the file's end.
+function fits(data: [u8] lent, at: i64, length: i64) -> bool
+    return at >= 0 && length >= 0 && at <= data.len() && length <= data.len() - at
+
+# The byte at `at`, 0 where `at` is outside `data`.
+function u8_at(data: [u8] lent, at: i64) -> i64
+    if at < 0 || at >= data.len()
+        return 0
+    return to_i64(data[at]).must()
+
+# The unsigned 16-bit number at `at`, 0 where it is not all inside `data`.
+function u16_at(data: [u8] lent, at: i64) -> i64
+    if !fits(data, at: at, length: 2)
+        return 0
+    return u8_at(data, at: at) << 8 | u8_at(data, at: at + 1)
+
+# The signed 16-bit number at `at`, 0 where it is not all inside `data`.
+function i16_at(data: [u8] lent, at: i64) -> i64
+    v = u16_at(data, at: at)
+
+    if v >= 32768
+        return v - 65536
+    return v
+
+# The unsigned 32-bit number at `at`, 0 where it is not all inside `data`.
+function u32_at(data: [u8] lent, at: i64) -> i64
+    if !fits(data, at: at, length: 4)
+        return 0
+    return u16_at(data, at: at) << 16 | u16_at(data, at: at + 2)
+
+# The signed 32-bit number at `at`, 0 where it is not all inside `data`.
+function i32_at(data: [u8] lent, at: i64) -> i64
+    v = u32_at(data, at: at)
+
+    if v >= 2147483648
+        return v - 4294967296
+    return v
+
+# The unsigned number of `size` bytes, 1 to 4, at `at`; the CFF offsets are
+# of such a width.
+function uint_at(data: [u8] lent, at: i64, size: i64) -> i64
+    v @= 0
+
+    for k in range(from: 0, to: size)
+        v @ v << 8 | u8_at(data, at: at + k)
+
+    return v
+
+# The four bytes at `at` as text: a table's tag. A byte that is not ASCII
+# makes a tag no table of the specification has, never an abort.
+function tag_at(data: [u8] lent, at: i64) -> str
+    if !fits(data, at: at, length: 4)
+        return ""
+    return bytes.to_text_lossy(data.slice(from: at, to: at + 4))
+
+# The bytes from `at` for `length`, empty where they do not all lie inside
+# `data`.
+function bytes_at(data: [u8] lent, at: i64, length: i64) -> [u8]
+    if !fits(data, at: at, length: length)
+        return []
+    return data.slice(from: at, to: at + length)
+
+# `v` as two bytes, the high one first; `v` is 0 to 65535.
+function put_u16(@out: [u8], v: i64)
+    out @ out.push(to_u8(v >> 8 & 255).must())
+    out @ out.push(to_u8(v & 255).must())
+
+# `v` as four bytes, the high one first; `v` is 0 to 4294967295.
+function put_u32(@out: [u8], v: i64)
+    put_u16(@out, v: v >> 16 & 65535)
+    put_u16(@out, v: v & 65535)
+
+test "fits: empty and exact ranges, one past, negative and enormous"
+    data: [u8] = [1, 2, 3]
+    assert fits(data, at: 0, length: 0)
+    assert fits(data, at: 0, length: 3)
+    assert fits(data, at: 3, length: 0)
+    assert !fits(data, at: 0, length: 4)
+    assert !fits(data, at: 4, length: 0)
+    assert !fits(data, at: -1, length: 1)
+    assert !fits(data, at: 0, length: -1)
+    assert !fits(data, at: 1, length: 9223372036854775807)
+
+test "u16_at, i16_at, u32_at and i32_at: values, signs and reads past the end"
+    data: [u8] = [18, 52, 255, 254, 128, 0, 0, 0, 255, 255, 255, 255]
+    assert u16_at(data, at: 0) == 4660
+    assert u16_at(data, at: 11) == 0
+    assert u16_at(data, at: 12) == 0
+    assert u16_at(data, at: -1) == 0
+    assert i16_at(data, at: 2) == -2
+    assert i16_at(data, at: 4) == -32768
+    assert u32_at(data, at: 8) == 4294967295
+    assert i32_at(data, at: 8) == -1
+    assert i32_at(data, at: 4) == -2147483648
+    assert u32_at(data, at: 9) == 0
+
+test "uint_at, tag_at and bytes_at: widths, a short tag and an empty range"
+    data: [u8] = [0, 1, 2, 104, 101, 97, 100]
+    assert uint_at(data, at: 0, size: 3) == 258
+    assert uint_at(data, at: 6, size: 2) == 25600
+    assert tag_at(data, at: 3) == "head"
+    assert tag_at(data, at: 4) == ""
+    assert bytes_at(data, at: 1, length: 2) == [1, 2]
+    assert bytes_at(data, at: 6, length: 2) == []
+
+test "put_u16 and put_u32: the high byte first"
+    out: [u8] @= []
+    put_u16(@out, v: 65535)
+    put_u16(@out, v: 258)
+    put_u32(@out, v: 4294967295)
+    put_u32(@out, v: 16909060)
+    assert out == [255, 255, 1, 2, 255, 255, 255, 255, 1, 2, 3, 4]

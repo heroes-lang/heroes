@@ -1,0 +1,330 @@
+# WAV read and written: the RIFF file Microsoft and IBM defined, its `fmt `
+# chunk as `WAVEFORMATEX` and `WAVEFORMATEXTENSIBLE` lay it out, and RF64,
+# the EBU's form for data past 4 GiB (EBU Tech 3306), whose `ds64` chunk holds
+# the sizes the 32-bit fields cannot. Every read is checked against the
+# data's length; nothing here aborts on what a file holds.
+
+use audio
+use audio/internal/samples
+use audio/internal/wav_fixtures as fixtures
+use audio/internal/wav_write
+use math
+
+# A format tag: integer PCM.
+constant PCM: i64
+    1
+
+# A format tag: IEEE floats.
+constant FLOAT: i64
+    3
+
+# A format tag: the extensible form, whose sub-format names the encoding.
+constant EXTENSIBLE: i64
+    65534
+
+# What a 32-bit size holds where the size stands elsewhere: in RF64's `ds64`
+# chunk, or, in a plain RIFF, nowhere, a writer that never went back.
+constant UNKNOWN_SIZE: i64
+    4294967295
+
+# The 14 bytes after the format tag in every sub-format GUID this file reads
+# and writes, `KSDATAFORMAT_SUBTYPE_PCM`'s and `_IEEE_FLOAT`'s alike.
+function guid_tail() -> [u8]
+    return [0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113]
+
+# Whether the four bytes of `data` at `at` are `id`'s.
+#
+# - `data`: the file.
+# - `at`: where the four bytes begin; past the end is no match.
+# - `id`: four ASCII characters.
+function is_id(data: [u8] lent, at: i64, id: str) -> bool
+    if at < 0 || at + 4 > data.len()
+        return false
+    return data[at] == id[0] && data[at + 1] == id[1] && data[at + 2] == id[2] && data[at + 3] == id[3]
+
+# The unsigned 64-bit little-endian size at `at`, or -1 where it passes the
+# largest `i64`, which no file this program can hold reaches.
+#
+# - `data`: the file, holding 8 bytes from `at`.
+# - `at`: where the size begins.
+function size64_at(data: [u8] lent, at: i64) -> i64
+    high = samples.unsigned_at(data, at: at + 4, count: 4)
+
+    if high >= 2147483648
+        return -1
+    return high * 4294967296 + samples.unsigned_at(data, at: at, count: 4)
+
+# What a file's `fmt ` chunk says.
+record Layout
+    # The encoding of a sample.
+    encoding: audio.Encoding
+    # Frames a second.
+    rate: i64
+    # Channels of a frame.
+    channels: i64
+    # The channel mask, 0 where the file has none.
+    speakers: i64
+
+# The failure of a file that is not WAV as this package reads it.
+#
+# - `why`: where and what, a reader's words.
+function refused(why: str) -> audio.Sound?
+    return fail(code: audio.INVALID, msg: f"not a WAV file this package reads: {why}")
+
+# The `fmt ` chunk of `size` bytes at `at` read.
+#
+# - `data`: the file.
+# - `at`: where the chunk's body begins.
+# - `size`: its body's bytes, all inside `data`.
+function layout_of(data: [u8] lent, at: i64, size: i64) -> Layout?
+    if size < 16
+        return fail(code: audio.INVALID, msg: f"the fmt chunk holds {size} bytes, and its fields take 16")
+    written = samples.unsigned_at(data, at: at, count: 2)
+    channels = samples.unsigned_at(data, at: at + 2, count: 2)
+    rate = samples.unsigned_at(data, at: at + 4, count: 4)
+    align = samples.unsigned_at(data, at: at + 12, count: 2)
+    bits = samples.unsigned_at(data, at: at + 14, count: 2)
+    tag @= written
+    speakers @= 0
+
+    if written == EXTENSIBLE
+        if size < 40 || samples.unsigned_at(data, at: at + 16, count: 2) < 22
+            return fail(
+                code: audio.INVALID,
+                msg: f"the fmt chunk is WAVE_FORMAT_EXTENSIBLE and holds {size} bytes, where its fields take 40"
+            )
+        speakers @ samples.unsigned_at(data, at: at + 20, count: 4)
+        tag @ samples.unsigned_at(data, at: at + 24, count: 2)
+
+        if data.slice(from: at + 26, to: at + 40) != guid_tail()
+            return fail(
+                code: audio.UNSUPPORTED,
+                msg: "the fmt chunk's sub-format is no GUID of PCM or IEEE float, the two this package reads"
+            )
+
+    if tag != PCM && tag != FLOAT
+        return fail(
+            code: audio.UNSUPPORTED,
+            msg: f"the format tag {tag} is no PCM (1) or IEEE float (3): a compressed WAV (A-law is 6, mu-law 7, ADPCM 2 and 17) is not read"
+        )
+
+    if channels == 0
+        return fail(code: audio.INVALID, msg: "the fmt chunk says 0 channels")
+
+    if rate == 0 || rate > audio.MAX_RATE
+        return fail(
+            code: audio.INVALID,
+            msg: f"the fmt chunk says {rate} frames a second, where 1 to {audio.MAX_RATE} are read"
+        )
+
+    if align == 0 || align % channels != 0
+        return fail(
+            code: audio.INVALID,
+            msg: f"the fmt chunk's block of {align} bytes is no whole number of samples of its {channels} channels"
+        )
+    width = align / channels
+
+    encoding: audio.Encoding = if tag == FLOAT
+        if width == 4 && bits == 32
+            .float32
+        else if width == 8 && bits == 64
+            .float64
+        else
+            return fail(
+                code: audio.UNSUPPORTED,
+                msg: f"IEEE floats of {bits} bits in {width} bytes: 32 bits in 4 and 64 in 8 are read"
+            )
+    else if bits < 1 || (bits + 7) / 8 != width || width > 4
+        return fail(
+            code: audio.UNSUPPORTED,
+            msg: f"PCM samples of {bits} bits in {width} bytes: 1 to 32 bits, each in the fewest whole bytes that hold it, are read"
+        )
+    else if width == 1
+        .pcm8
+    else if width == 2
+        .pcm16
+    else if width == 3
+        .pcm24
+    else
+        .pcm32
+    return ok(Layout(encoding: encoding, rate: rate, channels: channels, speakers: speakers))
+
+# The sound a WAV file holds, as `audio.decode_wav` reads it.
+#
+# - `data`: the file's bytes.
+function decoded(data: [u8] lent) -> audio.Sound?
+    if data.len() < 12
+        return refused(f"{data.len()} bytes, where a RIFF header takes 12")
+    wide = is_id(data, at: 0, id: "RF64") || is_id(data, at: 0, id: "BW64")
+
+    if is_id(data, at: 0, id: "RIFX")
+        return fail(
+            code: audio.UNSUPPORTED,
+            msg: "the file is RIFX, the big-endian form of RIFF, which this package does not read"
+        )
+
+    if !wide && !is_id(data, at: 0, id: "RIFF")
+        return refused("it does not begin with RIFF or RF64")
+
+    if !is_id(data, at: 8, id: "WAVE")
+        return refused("its RIFF form is not WAVE")
+    wide_size @= -1
+    at @= 12
+
+    if wide
+        if !is_id(data, at: 12, id: "ds64") || data.len() < 48
+            return refused("an RF64 file whose first chunk is no ds64 of 28 bytes or more")
+        wide_size @ size64_at(data, at: 28)
+        at @ 20 + samples.unsigned_at(data, at: 16, count: 4)
+    found: Layout? @= fail(code: audio.INVALID, msg: "no fmt chunk")
+    start @= -1
+    length @= 0
+
+    while at + 8 <= data.len()
+        size @= samples.unsigned_at(data, at: at + 4, count: 4)
+        body = at + 8
+
+        if is_id(data, at: at, id: "data")
+            if size == UNKNOWN_SIZE
+                size @ if wide && wide_size >= 0
+                    wide_size
+                else
+                    data.len() - body
+            start @ body
+            length @ math.min_i64(a: size, b: data.len() - body)
+        else if is_id(data, at: at, id: "fmt ")
+            if size > data.len() - body
+                return refused(f"the fmt chunk at byte {at} says {size} bytes, and {data.len() - body} follow")
+            found @ ok(layout_of(data, at: body, size: size)?)
+
+        if size > data.len() - body
+            break
+        at @ body + size + size % 2
+
+    layout = match found
+        .ok l  => l
+        .err _ => return refused("it holds no fmt chunk")
+
+    if start < 0
+        return refused("it holds no data chunk")
+    align = samples.width(layout.encoding) * layout.channels
+    whole = length - length % align
+    return ok(
+        audio.Sound(format: audio.Format(encoding: layout.encoding, rate: layout.rate, channels: layout.channels, speakers: layout.speakers), data: data.slice(from: start, to: start + whole))
+    )
+
+# Writes the four characters of `id` onto `out`.
+#
+
+test "decoded: Python's 16-bit stereo file, and encoded writes its bytes again"
+    file = fixtures.from_hex(
+        "524946462c00000057415645666d7420100000000100020044ac000010b102000400100064617461080000000100020003000400"
+    )
+    s = decoded(file).must()
+    assert s.format == audio.Format(encoding: .pcm16, rate: 44100, channels: 2, speakers: 0)
+    assert s.data == [1, 0, 2, 0, 3, 0, 4, 0]
+    assert wav_write.encoded(s, wide: false) == file
+
+test "decoded: Python's 8-bit file of an odd length, its pad byte written again"
+    file = fixtures.from_hex(
+        "524946462800000057415645666d74201000000001000100401f0000401f000001000800646174610300000080818200"
+    )
+    s = decoded(file).must()
+    assert s.format.encoding == .pcm8 && s.format.rate == 8000 && s.data == [128, 129, 130]
+    assert wav_write.encoded(s, wide: false) == file
+
+test "decoded: Python's float file, a 16-byte fmt and a fact chunk; 24 and 32-bit PCM under a plain fmt"
+    float = decoded(
+        fixtures.from_hex("524946463400000057415645666d7420100000000300010080bb000000ee02000400200066616374040000000100000064617461040000000000803f")
+    ).must()
+    assert float.format.encoding == .float32 && float.data == [0, 0, 128, 63]
+    pcm24 = decoded(
+        fixtures.from_hex("524946462800000057415645666d7420100000000100010080bb00008032020003001800646174610300000001020300")
+    ).must()
+    assert pcm24.format.encoding == .pcm24 && pcm24.data == [1, 2, 3]
+    pcm32 = decoded(
+        fixtures.from_hex("524946462800000057415645666d7420100000000100010080bb000000ee020004002000646174610400000001020304")
+    ).must()
+    assert pcm32.format.encoding == .pcm32 && pcm32.data == [1, 2, 3, 4]
+
+test "decoded: WAVE_FORMAT_EXTENSIBLE, its mask kept, 20 valid bits in 3 bytes, and floats under it"
+    stereo = decoded(
+        fixtures.riff(fixtures.joined(a: fixtures.chunk(id: "fmt ", body: fixtures.extensible(channels: 2, valid: 24, mask: 3, sub: PCM)), b: fixtures.chunk(id: "data", body: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])))
+    ).must()
+    assert stereo.format == audio.Format(encoding: .pcm24, rate: 48000, channels: 2, speakers: 3)
+    assert stereo.data.len() == 12
+    twenty = decoded(
+        fixtures.riff(fixtures.joined(a: fixtures.chunk(id: "fmt ", body: fixtures.extensible(channels: 1, valid: 20, mask: 4, sub: PCM)), b: fixtures.chunk(id: "data", body: [0, 16, 128])))
+    ).must()
+    assert twenty.format.encoding == .pcm24 && twenty.data == [0, 16, 128]
+    float_format @= fixtures.fmt(tag: EXTENSIBLE, channels: 1, rate: 48000, align: 4, bits: 32)
+    samples.put(@float_format, value: 22, count: 2)
+    samples.put(@float_format, value: 32, count: 2)
+    samples.put(@float_format, value: 4, count: 4)
+    samples.put(@float_format, value: FLOAT, count: 2)
+
+    for b in guid_tail()
+        float_format @ float_format.push(b)
+
+    float = decoded(
+        fixtures.riff(fixtures.joined(a: fixtures.chunk(id: "fmt ", body: float_format), b: fixtures.chunk(id: "data", body: [0, 0, 128, 191])))
+    ).must()
+    assert float.format.encoding == .float32 && float.format.speakers == 4
+
+test "decoded: a data chunk saying more than the file holds read to its end, a frame cut short left out"
+    fmt = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 1, rate: 8000, align: 2, bits: 16))
+    long_data = fixtures.joined(a: fixtures.from_hex("6461746164000000"), b: [1, 0, 2, 0, 3])
+    s = decoded(fixtures.riff(fixtures.joined(a: fmt, b: long_data))).must()
+    assert s.data == [1, 0, 2, 0]
+    unknown = fixtures.joined(a: fixtures.from_hex("64617461ffffffff"), b: [5, 0, 6, 0])
+    assert decoded(fixtures.riff(fixtures.joined(a: fmt, b: unknown))).must().data == [5, 0, 6, 0]
+
+test "decoded: a chunk before fmt passed over, an odd one with its pad, and fmt after data"
+    fmt = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 1, rate: 8000, align: 2, bits: 16))
+    info = fixtures.chunk(id: "LIST", body: [73, 78, 70, 79, 97, 98, 99])
+    data = fixtures.chunk(id: "data", body: [7, 0])
+    first = decoded(fixtures.riff(fixtures.joined(a: info, b: fixtures.joined(a: fmt, b: data)))).must()
+    assert first.data == [7, 0]
+    after = decoded(fixtures.riff(fixtures.joined(a: data, b: fmt))).must()
+    assert after.data == [7, 0] && after.format.rate == 8000
+
+test "decoded: what is no WAV file this package reads, each with its code"
+    fmt = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 1, rate: 8000, align: 2, bits: 16))
+    data = fixtures.chunk(id: "data", body: [0, 0])
+    assert decoded([]).is_err()
+    assert decoded(fixtures.from_hex("52494646")).is_err()
+    assert decoded(fixtures.from_hex("524946460400000041564920")).is_err()
+    rifx = decoded(fixtures.from_hex("524946580400000057415645"))
+
+    match rifx
+        .ok _  => assert false
+        .err e => assert e.code == audio.UNSUPPORTED
+
+    assert decoded(fixtures.riff(fmt)).is_err()
+    assert decoded(fixtures.riff(data)).is_err()
+    no_channels = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 0, rate: 8000, align: 2, bits: 16))
+    assert decoded(fixtures.riff(fixtures.joined(a: no_channels, b: data))).is_err()
+    no_rate = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 1, rate: 0, align: 2, bits: 16))
+    assert decoded(fixtures.riff(fixtures.joined(a: no_rate, b: data))).is_err()
+    misaligned = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: PCM, channels: 2, rate: 8000, align: 3, bits: 16))
+    assert decoded(fixtures.riff(fixtures.joined(a: misaligned, b: data))).is_err()
+    alaw = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: 6, channels: 1, rate: 8000, align: 1, bits: 8))
+
+    match decoded(fixtures.riff(fixtures.joined(a: alaw, b: data)))
+        .ok _  => assert false
+        .err e => assert e.code == audio.UNSUPPORTED && e.msg.len() > 0
+
+    half = fixtures.chunk(id: "fmt ", body: fixtures.fmt(tag: FLOAT, channels: 1, rate: 8000, align: 2, bits: 16))
+
+    match decoded(fixtures.riff(fixtures.joined(a: half, b: data)))
+        .ok _  => assert false
+        .err e => assert e.code == audio.UNSUPPORTED
+
+    other = fixtures.chunk(id: "fmt ", body: fixtures.extensible(channels: 1, valid: 24, mask: 0, sub: 2))
+
+    match decoded(fixtures.riff(fixtures.joined(a: other, b: data)))
+        .ok _  => assert false
+        .err e => assert e.code == audio.UNSUPPORTED
+
+    short_fmt = fixtures.chunk(id: "fmt ", body: [1, 0, 1, 0])
+    assert decoded(fixtures.riff(fixtures.joined(a: short_fmt, b: data))).is_err()

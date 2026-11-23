@@ -1,0 +1,153 @@
+# The ledger of `audio`: what a program can do with sound, one block per
+# capability, and what Rebel answers. Go's and Rust's standard libraries have no
+# audio, and Python's has `wave` and, on Windows alone, `winsound`; so the
+# yardsticks are the ones the author named on 2026-11-22, read on this machine
+# that day: Python 3.15.2's `wave` (its names by `dir()` of `wave`,
+# `wave.Wave_read` and `wave.Wave_write`, and what it writes and reads asked
+# of it); Go's `github.com/go-audio/wav` v1.1.0 and `github.com/go-audio/audio`
+# v1.0.0 for WAV, `github.com/ebitengine/oto/v3` v3.5.1 for playing and
+# `github.com/gen2brain/malgo` v0.11.28 (miniaudio's) for devices and
+# recording, fetched into the scratch folder and read by `go doc -all`; and
+# Rust's `hound` 3.5.1, its items as docs.rs lists them, with no source opened.
+
+capability audio/sound  a sound held in memory: its encoding, rate and channels, its frames and how long it plays
+  heroes  audio.Sound, audio.Format, audio.Encoding, audio.frames_of, audio.duration_of, audio.width_of, audio.MAX_RATE, audio.MAX_CHANNELS
+  go      audio.Format, audio.PCMBuffer, audio.IntBuffer, audio.FloatBuffer, audio.Float32Buffer, audio.Buffer, audio.PCMDataFormat, audio.DataTypeUnknown, audio.FormatMono22500, audio.IntMaxSignedValue, audio.ErrInvalidBuffer
+  rust    WavSpec, WavSpecEx, SampleFormat, Sample, WavReader::duration, WavReader::len, WavWriter::duration, WavWriter::len
+  python  Wave_read.getnchannels, Wave_read.getsampwidth, Wave_read.getframerate, Wave_read.getnframes, Wave_read.getparams, Wave_read.getformat, Wave_write.getnchannels, Wave_write.getsampwidth, Wave_write.getframerate, Wave_write.getnframes, Wave_write.getparams, Wave_write.getformat, Wave_write.setnchannels, Wave_write.setsampwidth, Wave_write.setframerate, Wave_write.setnframes, Wave_write.setparams, Wave_write.setformat
+  note    A sound keeps its samples' bytes as they stand, as Python's `readframes` answers them, so a WAV file read and written back keeps every bit; Go's buffers and Rust's iterators hand out numbers instead, which `to_samples` gives. The channel mask is kept, which none of the three keeps
+
+capability audio/samples  a sound's samples as numbers from -1 to 1, and a sound made from them
+  heroes  audio.to_samples, audio.from_samples
+  go      audio.IntBuffer.AsFloatBuffer, audio.IntBuffer.AsFloat32Buffer, audio.FloatBuffer.AsIntBuffer, audio.Float32Buffer.AsIntBuffer, audio.Int24LETo32, audio.Int24BETo32, audio.Int32toInt24LEBytes, audio.Int32toInt24BEBytes, audio.Uint24to32, audio.Uint32toUint24Bytes
+  rust    WavReader::samples, WavReader::into_samples, WavSamples, WavIntoSamples, WavWriter::write_sample, WavWriter::get_i16_writer, SampleWriter16
+  python  Wave_read.readframes, Wave_write.writeframes, Wave_write.writeframesraw
+  note    An integer sample is divided by 2 to the power of its bits less one, so the most negative is exactly -1 and the most positive one step short of 1, the scale libsndfile and NumPy's conversions use; written back, a value takes the nearest step, ties to the even one, held at the ends, a NaN silent. Python hands bytes alone, Go integers or floats by its own scale, Rust integers or floats as the file holds them
+
+capability audio/encoding  samples written in another encoding
+  heroes  audio.to_encoding
+  go      audio.PCMBuffer.SwitchPrimaryType, audio.PCMBuffer.AsInt, audio.PCMBuffer.AsF32, audio.PCMBuffer.AsF64, audio.PCMBuffer.AsI8, audio.PCMBuffer.AsI16, audio.PCMBuffer.AsI32
+  rust    -
+  python  -
+  note    Python's `audioop`, which did this, left the standard library in 3.13
+
+capability audio/channels  frames remixed to another channel count
+  heroes  audio.to_channels
+  go      -
+  rust    -
+  python  -
+  note    The mean for one channel, a copy from one, ITU-R BS.775's fold from more than two to two, each channel taken by where its speaker stands, and else each kept in its place; none of the three remixes, `audioop.tomono` and `tostereo` having left Python in 3.13
+
+capability audio/rate  frames converted to another rate, or to a whole format at once
+  heroes  audio.to_rate, audio.to_format
+  go      -
+  rust    -
+  python  -
+  note    A sinc under a Kaiser window (16 zero crossings each side, beta 9), its cutoff at 95% of the lower rate's Nyquist frequency, read from a table by a straight line; frame `n` at time `n * from / to` exactly. None of the three converts a rate, `audioop.ratecv`, a linear one, having left Python in 3.13
+
+capability audio/generate  silence and a sine tone made
+  heroes  audio.silence, audio.tone
+  go      -
+  rust    -
+  python  -
+
+capability audio/wav-read  a WAV file read: integer PCM of 1 to 32 bits, floats of 32 and 64, any channel count, WAVE_FORMAT_EXTENSIBLE, RF64
+  heroes  audio.decode_wav, audio.read_wav
+  go      wav.NewDecoder, wav.Decoder, wav.Decoder.IsValidFile, wav.Decoder.ReadInfo, wav.Decoder.FullPCMBuffer, wav.Decoder.PCMBuffer, wav.Decoder.Format, wav.Decoder.Duration, wav.Decoder.Err, wav.Decoder.EOF, wav.Decoder.WasPCMAccessed, wav.Decoder.FwdToPCM, wav.Decoder.NextChunk, wav.Decoder.Rewind, wav.Decoder.SampleBitDepth, wav.Decoder.PCMLen, wav.ErrPCMChunkNotFound
+  rust    WavReader::new, WavReader::open, WavReader::spec, read_wave_header, Error, Result
+  python  open, Wave_read, Wave_read.close, Wave_read.getcomptype, Wave_read.getcompname, Wave_read.getfp, Wave_read.initfp, Error, WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_EXTENSIBLE, KSDATAFORMAT_SUBTYPE_PCM
+  note    Python 3.15 reads PCM under both forms and floats under the plain one, and refuses floats under WAVE_FORMAT_EXTENSIBLE (*unknown extended format*) and 64-bit floats (*bad sample width*), which are read here, as Rust reads them. A `data` chunk saying more than the file holds is read to the end as Python reads it, but a frame cut short is left out where Python hands its bytes; a rate of 0 is refused where Python takes it. RIFX and compressed tags (A-law, mu-law, ADPCM) fail `unsupported`, as all three refuse them
+
+capability audio/wav-write  a WAV file written, the form of its `fmt ` chunk chosen as Microsoft asks
+  heroes  audio.encode_wav, audio.write_wav
+  go      wav.NewEncoder, wav.Encoder, wav.Encoder.Write, wav.Encoder.WriteFrame, wav.Encoder.AddLE, wav.Encoder.AddBE, wav.Encoder.Close
+  rust    WavWriter::new, WavWriter::new_with_spec_ex, WavWriter::create, WavWriter::spec, WavWriter::flush, WavWriter::finalize
+  python  Wave_write, Wave_write.close, Wave_write.initfp, Wave_write.setcomptype, Wave_write.getcomptype, Wave_write.getcompname, Wave_write.tell
+  note    8 and 16-bit integers and floats of one or two channels with no channel mask under the plain form, the rest under WAVE_FORMAT_EXTENSIBLE, as Microsoft's `WAVEFORMATEXTENSIBLE` page asks and Rust writes; Python writes the plain form for every width (measured: its 24-bit file has tag 1) and a 16-byte `fmt ` for floats, both of which `decode_wav` reads. RF64 where 32 bits cannot hold the sizes, which neither Python nor Rust writes
+
+capability audio/devices  the devices listed with their formats
+  heroes  audio.devices, audio.Device, audio.Direction, audio.system
+  go      malgo.Context.Devices, malgo.Context.DeviceInfo, malgo.DeviceInfo, malgo.DeviceID, malgo.ParseDeviceID, malgo.DeviceType, malgo.Playback, malgo.Capture, malgo.InitContext, malgo.AllocatedContext, malgo.AllocatedContext.Free, malgo.Context.Uninit, malgo.ContextConfig, malgo.Backend, malgo.BackendWasapi
+  rust    platform::default_host, platform::available_hosts, platform::host_from_id, platform::HostId, platform::ALL_HOSTS, platform::Host, traits::HostTrait, HostTrait::is_available, HostTrait::devices, HostTrait::input_devices, HostTrait::output_devices, HostTrait::device_by_id, platform::Devices, platform::Device, traits::DeviceTrait, DeviceTrait::description, DeviceTrait::id, DeviceTrait::supports_input, DeviceTrait::supports_output, DeviceTrait::supported_input_configs, DeviceTrait::supported_output_configs, DeviceTrait::default_input_config, DeviceTrait::default_output_config, DeviceId, device_description::DeviceDescription, device_description::DeviceDescriptionBuilder, device_description::DeviceDirection, device_description::DeviceType, device_description::InterfaceType, SupportedStreamConfig, SupportedStreamConfigRange, platform::SupportedInputConfigs, platform::SupportedOutputConfigs, InputDevices, OutputDevices, DevicesFiltered, SampleFormat, SampleRate, ChannelCount, SAMPLE_RATE_48K, SAMPLE_RATE_CD, Error, ErrorKind; rodio: Device, Devices, speakers::available_outputs, microphone::available_inputs, stream::supported_output_configs, SupportedStreamConfig, OutputDevices, InputDevices, speakers::ListError, microphone::ListError, CpalError, CpalErrorKind
+  python  -
+  note    A device is listed once for each direction it has, with the one format the system mixes in for it, which a stream on it runs at, as cpal's default configs and malgo's device info give it; the ranges cpal's supported configs list are not, since every system here converts a stream to its device itself. Its identifier is the system's own (a CoreAudio UID, a WASAPI endpoint identifier, a PulseAudio sink or source name). A host is the system the platform has, never chosen: cpal's JACK and ASIO hosts and malgo's backends are a choice this package leaves to the platform layer
+
+capability audio/default-device  the default output and input device
+  heroes  audio.default_output, audio.default_input
+  go      -
+  rust    HostTrait::default_output_device, HostTrait::default_input_device
+  python  -
+  note    The console role's default on Windows, the server's default sink and source on Linux, the HAL's on macOS; `not_found` where none, where cpal answers `None`
+
+capability audio/play  a sound played on a device, converted to what it takes
+  heroes  audio.play, audio.Stream
+  go      oto.NewContext, oto.NewContextOptions, oto.Context, oto.Context.NewPlayer, oto.Context.Err, oto.Player, oto.Format, oto.FormatFloat32LE
+  rust    DeviceTrait::build_output_stream, DeviceTrait::build_output_stream_raw, StreamConfig, BufferSize, SupportedBufferSize, OutputCallbackInfo, OutputStreamTimestamp, StreamInstant, Data, FrameCount, Sample, SizedSample, FromSample, I24, U24, platform::Stream, traits::StreamTrait, StreamTrait::play, StreamTrait::now, StreamTrait::buffer_size; rodio: Player, Player::connect_new, Player::new, Player::append, stream::play, stream::DeviceSinkBuilder, stream::DeviceSinkConfig, stream::MixerDeviceSink, stream::DeviceSinkError, stream::PlayError, speakers::SpeakersBuilder, speakers::Output, speakers::OutputConfig, speakers::BufferSize, buffer::SamplesBuffer, static_buffer::StaticSamplesBuffer, conversions::SampleRateConverter, conversions::ChannelCountConverter, conversions::SampleTypeConverter, source::UniformSourceIterator
+  python  winsound.PlaySound, winsound.SND_FILENAME, winsound.SND_MEMORY, winsound.SND_ALIAS, winsound.SND_APPLICATION, winsound.SND_SYNC, winsound.SND_ASYNC, winsound.SND_NODEFAULT, winsound.SND_NOSTOP, winsound.SND_NOWAIT, winsound.SND_SENTRY, winsound.SND_SYSTEM
+  note    A sound of any format is converted to the device's, channels then rate then encoding, by `to_format`'s rules, on every system the same, where cpal hands a callback the device's own format and rodio converts by its own; the whole sound is queued at once and the call answers, its end told by `wait`, as rodio's `Player` and `sleep_until_end` give it. Python's `PlaySound` plays a WAV file or a system alias on Windows alone
+
+capability audio/stream-out  frames played as the program makes them
+  heroes  audio.open, audio.open_with, audio.write, audio.finish, audio.BUFFER_MS
+  go      oto.Player.SetBufferSize, oto.Player.BufferedSize, malgo.InitDevice, malgo.Device, malgo.DeviceConfig, malgo.DefaultDeviceConfig, malgo.DeviceCallbacks, malgo.DataProc, malgo.StopProc, malgo.Device.Start, malgo.Device.PlaybackChannels, malgo.Device.PlaybackFormat, malgo.Device.SampleRate, malgo.FormatType, malgo.SampleSizeInBytes, malgo.FrameSizeInBytes
+  rust    rodio: queue::queue, queue::SourcesQueueInput, queue::SourcesQueueOutput, mixer::mixer, mixer::Mixer, mixer::MixerSource, source::Source, source::from_iter, source::from_factory, source::FromIter, source::FromFactoryIter, fixed_source::FixedSource, ChannelCount, SampleRate, Sample, Float, BitDepth
+  python  -
+  note    The program writes and waits for room, a span bounding the wait, where cpal and malgo call the program back on the system's thread: a callback would have to reach the program's state, which no function value here carries. Frames converted and not yet taken stay in the stream and go first at the next write; the rate conversion is carried from one write to the next, so pieces sound as the whole
+
+capability audio/control  a playback's volume, pause, resume and stop, and its end told
+  heroes  audio.pause, audio.resume, audio.stop, audio.set_volume, audio.wait, audio.state_of, audio.State, audio.position_of, audio.dropped_of, audio.close
+  go      oto.Player.Play, oto.Player.Pause, oto.Player.IsPlaying, oto.Player.SetVolume, oto.Player.Volume, oto.Player.Reset, oto.Player.Close, oto.Player.Err, oto.Player.PauseAndStopReading, oto.Context.Suspend, oto.Context.Resume, malgo.Device.Stop, malgo.Device.IsStarted, malgo.Device.Uninit
+  rust    StreamTrait::pause; rodio: Player::play, Player::pause, Player::is_paused, Player::stop, Player::clear, Player::volume, Player::set_volume, Player::sleep_until_end, Player::empty, Player::len, Player::get_pos, Player::detach
+  python  winsound.SND_PURGE
+  note    A volume is a gain from 0 to 1 the layer applies to every sample, the same on every system; above 1 the program scales its own samples, where rodio amplifies. `stop` drops what is queued and ends the stream, as rodio's `stop`; `position_of` is what the device took at its rate, rodio's `get_pos`
+
+capability audio/record  frames recorded from a device, the microphone's permission asked
+  heroes  audio.open, audio.read, audio.ask_permission
+  go      malgo.Device.CaptureChannels, malgo.Device.CaptureFormat
+  rust    DeviceTrait::build_input_stream, DeviceTrait::build_input_stream_raw, InputCallbackInfo, InputStreamTimestamp; rodio: microphone::Microphone, microphone::MicrophoneBuilder, microphone::Input, microphone::InputConfig, microphone::OpenError
+  python  -
+  note    An input keeps what it records until the program reads it, dropping and counting what arrives while its room is full (`dropped_of`). On macOS an input is opened only where AVFoundation reads the microphone allowed, since a queue the person has not allowed records silence and says nothing; `ask_permission` shows the system's dialog and waits a span for the answer, never past it. Windows' privacy setting is told by `open` as `permission`
+
+capability audio/poll  a playback's or a recording's readiness waited on in a set
+  heroes  audio.add_to
+  go      -
+  rust    -
+  python  -
+  note    None of the three gives a descriptor: the layer rings a pipe (Darwin, Linux) or a loopback datagram socket (Windows) of its own while a stream is ready, as `fs/watch` does, so a program waits on sound beside sockets and timers
+
+capability audio/null-device  a device of the package's own that plays and records without hardware
+  heroes  audio.null_device, audio.NULL_DEVICE
+  go      malgo.BackendNull
+  rust    platform::CustomHost, platform::CustomDevice, platform::CustomStream
+  python  -
+  note    An output that takes frames at its rate and an input that records a 440 Hz sine, kept by a thread of the layer's own, the same on every system, so tests play and record without a device
+
+capability audio/beep  the system's beep
+  heroes  audio.beep
+  go      -
+  rust    -
+  python  winsound.MessageBeep, winsound.MB_OK, winsound.MB_ICONASTERISK, winsound.MB_ICONEXCLAMATION, winsound.MB_ICONHAND, winsound.MB_ICONQUESTION, winsound.MB_ICONERROR, winsound.MB_ICONINFORMATION, winsound.MB_ICONSTOP, winsound.MB_ICONWARNING
+  note    The person's alert: `AudioServicesPlayAlertSound` on macOS, `MessageBeep(MB_OK)` on Windows, libcanberra's `bell` on Linux, else a tenth of a second at 880 Hz on the default output. The other alert kinds Windows names have no counterpart elsewhere and stand in `dropped`; `winsound.Beep`, a tone of a frequency and a length, is `tone` and `play`
+
+capability audio/wav-pieces  a WAV file read or written a piece at a time
+  heroes  audio.wav_reader, audio.WavReader, audio.read_frames, audio.wav_writer, audio.WavWriter, audio.write_frames, audio.finish_wav
+  go      wav.Decoder.PCMChunk, wav.Decoder.Seek
+  rust    WavReader::seek, WavReader::into_inner, WavWriter::append, WavWriter::new_append
+  python  Wave_read.setpos, Wave_read.tell, Wave_read.rewind
+  note    Read from a stream in order, so a pipe is read as a file is; a position is the program's, which counts the frames it read, where Python and Go seek. Written with its sizes unknown and a `JUNK` chunk reserved, then its header written again at `finish_wav`, as RF64 past 4 GiB in the same room (EBU Tech 3306), as hound's `finalize` writes its sizes
+
+capability audio/loopback  what an output plays recorded
+  heroes  refused: macOS gives a program what another plays only through ScreenCaptureKit's capture of a display or an application, a permission and a framework of their own; on Linux the server's monitor sources are listed as inputs and recorded as any input is, and on Windows WASAPI's loopback is the one system with it
+  go      malgo.Loopback, malgo.Duplex
+  rust    -
+  python  -
+
+capability audio/compressed  a compressed sound decoded: MP3, AAC, FLAC, Vorbis, Opus
+  heroes  refused: each is a codec's work, a package of its own below this one as `image/png` stands beside `image`, which hands `audio` the samples it decodes; none of the three yardsticks above decodes one
+  go      -
+  rust    -
+  python  -
+
+dropped
+  go      wav.Decoder.Metadata, wav.Metadata, wav.CuePoint, wav.SampleLoop, wav.SamplerInfo, wav.DecodeCueChunk, wav.DecodeListChunk, wav.DecodeSamplerChunk, wav.CIDList, wav.Encoder.Metadata (the metadata chunks of a broadcast or a sampler, which a WAV file carries beside its sound and `decode_wav` passes over); audio.IEEEFloatToInt, audio.IntToIEEEFloat (AIFF's 80-bit float, no WAV's); malgo.AAudioAllowedCapturePolicy, malgo.AAudioContentType, malgo.AAudioDeviceConfig, malgo.AAudioInputPreset, malgo.AAudioUsage, malgo.AlsaContextConfig, malgo.AlsaDeviceConfig, malgo.CoreAudioConfig, malgo.JackContextConfig, malgo.PulseContextConfig, malgo.PulseDeviceConfig, malgo.WasapiDeviceConfig, malgo.IOSSessionCategory, malgo.IOSSessionCategoryOptions, malgo.IOSSessionCategoryOptionMixWithOthers, malgo.BackendAaudio, malgo.BackendAlsa, malgo.BackendAudio, malgo.BackendCoreaudio, malgo.BackendCustom, malgo.BackendDsound, malgo.BackendJack, malgo.BackendOpensl, malgo.BackendOss, malgo.BackendPulseaudio, malgo.BackendSndio, malgo.BackendWebaudio, malgo.BackendWinmm, malgo.ShareMode, malgo.Shared, malgo.PerformanceProfile, malgo.LowLatency, malgo.ThreadPriority, malgo.ThreadPriorityIdle, malgo.SubConfig (a backend's own settings, its sharing mode, latency class and thread priority: the layer chooses one backend for each platform, shared mode, and its own thread); malgo.DataConverter, malgo.InitDataConverter, malgo.DataConverterConfig, malgo.DefaultDataConverterConfig, malgo.DataFormat, malgo.ChannelMixMode, malgo.ChannelMixModeRectangular, malgo.DitherMode, malgo.DitherModeNone, malgo.ResampleAlgorithm, malgo.ResampleAlgorithmLinear, malgo.ResampleConfig, malgo.ResampleLinearConfig (miniaudio's converter, which `to_format` is); malgo.Device.CaptureInternalChannels, malgo.Device.CaptureInternalFormat, malgo.Device.CaptureInternalSampleRate, malgo.Device.PlaybackInternalChannels, malgo.Device.PlaybackInternalFormat, malgo.Device.PlaybackInternalSampleRate, malgo.Device.Type (what the backend negotiated beneath the stream, which the system converts); malgo.LogProc, malgo.Context.SetLogProc, malgo.Result, malgo.ErrGeneric, malgo.AllocationCallbacks, malgo.FormatUnknown (plumbing: errors are a code and words here); oto.Player.Seek (a seek of the reader oto pulls from: a program cuts its own `Sound.data`)
+  rust    assert_stream_send, assert_stream_sync (compile-time checks of cpal's own); rodio: decoder::Decoder, decoder::LoopedDecoder, decoder::DecoderError, decoder::builder::DecoderBuilder, decoder::builder::Settings, decoder::symphonia::SeekError (codecs, refused above); SpatialPlayer, source::Spatial, source::Amplify, source::AutomaticGainControl, source::AutomaticGainControlSettings, source::BltFilter, source::Buffered, source::ChannelVolume, source::Chirp, source::chirp, source::Delay, source::Distortion, source::Done, source::Empty, source::EmptyCallback, source::FadeIn, source::FadeOut, source::Limit, source::LimitSettings, source::LinearGainRamp, source::Mix, source::Pausable, source::PeriodicAccess, source::Repeat, source::SawtoothWave, source::SignalGenerator, source::SineWave, source::SkipDuration, source::Skippable, source::Speed, source::SquareWave, source::Stoppable, source::TakeDuration, source::TrackPosition, source::TriangleWave, source::Zero, source::Function, source::GeneratorFunction, source::Crossfade, source::SeekError, source::dither::Dither, source::dither::Algorithm, source::noise::Blue, source::noise::Brownian, source::noise::Pink, source::noise::Red, source::noise::Velvet, source::noise::Violet, source::noise::WhiteGaussian, source::noise::WhiteTriangular, source::noise::WhiteUniform, source::noise::pink, source::noise::white, Player::speed, Player::set_speed, Player::try_seek, Player::skip_one, math::db_to_linear, math::linear_to_db, math::E, math::LN_10, math::LN_2, math::LOG10_2, math::LOG10_E, math::LOG2_10, math::LOG2_E, math::PI, math::TAU (rodio's effects and generators, each arithmetic over `to_samples` a program writes in a loop, an effects library's and not a device's; `tone` and `silence` are the generators kept); wav_to_file, wav_to_writer (`write_wav`)
+  python  winsound.SND_LOOP (a sound repeated until purged: a program writes it again)

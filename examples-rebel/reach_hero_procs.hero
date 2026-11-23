@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's list of the machine's
+# processes, `hero_procs.h`, so that `heroes test` on this file runs the
+# floor's own tests (spec § 12, § 13). It prints how many fields one entry of
+# the list holds.
+
+use <rebel>/os/hero_procs
+
+function main()
+    print(hero_procs.fields())

@@ -2,17 +2,12 @@
 # its subject the first domain that is a name, its domains in a
 # subjectAltName asked for by an `extensionRequest` attribute, and the whole
 # signed by the certificate's own key, never the account's (RFC 8555
-# § 7.4). `acme` sends a request and does not make one, and `x509` reads one
-# and writes none, so it is written here from `asn1` and checked by
-# `x509.decode_request` before it leaves.
+# § 7.4). `acme` sends a request and does not make one: `x509` makes it, and
+# it is read back and checked again here before it leaves.
 
-use <rebel>/asn1
 use <rebel>/crypto/keypairs
 use <rebel>/net
 use <rebel>/x509
-
-use pki/parts
-use pki/signing
 
 ## Codes
 
@@ -30,24 +25,36 @@ constant INVALID: str
 # - `key`: the certificate's private key, P-256, which stays open.
 #
 # Fails `invalid` where `domains` is empty or the request does not read back
-# as one `x509` takes and whose signature holds; and as `keypairs.sign`
+# as one `x509` takes and whose signature holds; and as `x509.create_request`
 # fails.
 function make(domains: [str], key: keypairs.PrivateKey) -> [u8]?
     if domains.len() == 0
         return fail(code: INVALID, msg: "a request names one domain or address at least")
     common = subject_name(domains)
-    spki = signing.public_der(key)?
-    wanted = parts.alt_names(domains: domains, subject_empty: common == "")?
-    asked: asn1.Value = .sequence(
-        items: [.oid(v: asn1.Oid(dotted: x509.EXTENSION_REQUEST)), .set(items: [.sequence(items: [wanted])])]
-    )
-    attributes = asn1.with_tag(.set(items: [asked]), tag: asn1.Tag(kind: .context_specific, number: 0, constructed: true))?
-    info: asn1.Value = .sequence(
-        items: [.integer(v: 0), parts.name(common_name: common, organization: ""), asn1.decode_der(spki)?, attributes]
-    )
-    der = signing.signed(key, body: info)?
-    checked(der: der, domains: domains)?
-    return ok(der)
+    attributes: [[x509.Attribute]] @= []
+
+    if common != ""
+        attributes @ attributes.push([x509.new_attribute(oid: x509.COMMON_NAME, text: common)?])
+    profile @= x509.default_profile()
+    profile.alt_names @ general_names(domains)
+    template = x509.RequestTemplate(subject: x509.new_name(attributes)?, profile: profile, attributes: [])
+    request = x509.create_request(template, signer: key, scheme: .ecdsa_sha256)?
+    checked(der: request.der, domains: domains)?
+    return ok(request.der)
+
+# The general names of `domains`: an address as an `iPAddress`, any other as a
+# `dNSName`, in their order.
+#
+# - `domains`: host names, ASCII, a wildcard's `*.` kept, and addresses.
+function general_names(domains: [str]) -> [x509.GeneralName]
+    names: [x509.GeneralName] @= []
+
+    for d in domains
+        match net.parse_host(d)
+            .ok address => names @ names.push(.ip(address: address))
+            .err _      => names @ names.push(.dns(name: d))
+
+    return names
 
 # The common name a request for `domains` gives its subject: the first that
 # is a name and fits 64 characters, or "" for none.

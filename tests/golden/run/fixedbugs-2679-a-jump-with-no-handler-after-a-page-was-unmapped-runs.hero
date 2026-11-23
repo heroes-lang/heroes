@@ -1,0 +1,18 @@
+# Fixed 2026-11-23, defect 2679, lane-p255-impl (panel 255's R1, route C):
+# A program jumps to a static buffer after it saved into a mapped page and
+# unmapped it; a correct C program, which prints what it returns.
+# Symptom: a segmentation fault at `hero_jmp_fingerprint` on the jump
+# (plain, exit 139, Linux arm64, 2026-11-22).
+# Cause: the runtime kept a record of every buffer a save filled and read a
+# fingerprint of the buffer at the thread's next save point or jump, by
+# which time the program had given the buffer back.
+# Fix: a jump reads ONE word of the buffer it jumps to, which the C library
+# reads next and so lives, and decodes the stack pointer from it with the
+# key verified before `main` (route C); no buffer a save filled is read at
+# any other moment. Where the key cannot be verified a record is read only
+# of memory that provably lives (route A).
+extern "fixedbugs-2679-shapes.h"
+    function shape_plain_mmap() -> i32
+
+function main()
+    print("plain_mmap: " + shape_plain_mmap().to_str())

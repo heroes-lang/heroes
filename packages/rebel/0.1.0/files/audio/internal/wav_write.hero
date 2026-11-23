@@ -1,0 +1,195 @@
+# WAV written: the file `audio.encode_wav` makes, its `fmt ` chunk chosen as
+# Microsoft asks, a `fact` chunk where a reader needs the frame count, and
+# RF64 where a 32-bit size cannot hold the file.
+
+use audio
+use audio/internal/samples
+use audio/internal/wav
+use math
+
+# - `out`: the bytes written to, which the caller owns.
+# - `id`: four ASCII characters.
+function put_id(@out: [u8], id: str)
+    for i in range(from: 0, to: 4)
+        out @ out.push(id[i])
+
+# The header of a WAV file of `format` whose data chunk holds `data_len`
+# bytes of `frames` frames, everything before the data's first byte: a plain
+# `fmt ` chunk for 8 and 16-bit integers and for floats in one or two
+# channels with no channel mask, WAVE_FORMAT_EXTENSIBLE for the rest; a
+# `fact` chunk for floats and the extensible form; RF64 with its `ds64` where
+# `wide` or where a 32-bit size cannot hold the file.
+#
+# - `format`: a checked format.
+# - `data_len`: the data's bytes, a whole number of frames; -1 says the sizes
+#   are not known yet, each written as `wav.UNKNOWN_SIZE`.
+# - `frames`: the data's frames.
+# - `wide`: whether RF64 is written whatever the size.
+# - `reserve`: whether 28 bytes are kept where a `ds64` stands, as a `JUNK`
+#   chunk in a RIFF file, so the header can be written again as RF64 in the
+#   same room.
+function header_of(format: audio.Format, data_len: i64, frames: i64, wide: bool, reserve: bool) -> [u8]
+    width = samples.width(format.encoding)
+    align = width * format.channels
+    float = format.encoding == .float32 || format.encoding == .float64
+    extensible = format.channels > 2 || format.speakers != 0 || width > 2 && !float
+
+    tag = if float
+        wav.FLOAT
+    else
+        wav.PCM
+
+    fmt_size = if extensible
+        40
+    else if float
+        18
+    else
+        16
+    fact = float || extensible
+    known = data_len >= 0
+
+    pad = if known
+        data_len % 2
+    else
+        0
+    head = 12 + 8 + fmt_size + 8
+
+    head_fact = if fact
+        head + 12
+    else
+        head
+
+    extra = if reserve
+        36
+    else
+        0
+
+    base = if known
+        head_fact + extra + data_len + pad
+    else
+        0
+
+    # Where the reservation is not there, RF64's `ds64` adds its 36 bytes.
+    rf64 = wide || known && (base - 8 > wav.UNKNOWN_SIZE - 36 || data_len > wav.UNKNOWN_SIZE)
+
+    total = if rf64 && !reserve
+        base + 36
+    else
+        base
+    out: [u8] @= []
+
+    if rf64
+        put_id(@out, id: "RF64")
+        samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
+    else
+        put_id(@out, id: "RIFF")
+
+        riff = if known
+            total - 8
+        else
+            wav.UNKNOWN_SIZE
+        samples.put(@out, value: riff, count: 4)
+    put_id(@out, id: "WAVE")
+
+    if rf64
+        put_id(@out, id: "ds64")
+        samples.put(@out, value: 28, count: 4)
+        samples.put(@out, value: total - 8, count: 8)
+        samples.put(@out, value: data_len, count: 8)
+        samples.put(@out, value: frames, count: 8)
+        samples.put(@out, value: 0, count: 4)
+    else if reserve
+        put_id(@out, id: "JUNK")
+        samples.put(@out, value: 28, count: 4)
+
+        for _ in range(from: 0, to: 28)
+            out @ out.push(0)
+    put_id(@out, id: "fmt ")
+    samples.put(@out, value: fmt_size, count: 4)
+
+    if extensible
+        samples.put(@out, value: wav.EXTENSIBLE, count: 2)
+    else
+        samples.put(@out, value: tag, count: 2)
+    samples.put(@out, value: format.channels, count: 2)
+    samples.put(@out, value: format.rate, count: 4)
+    samples.put(@out, value: format.rate * align, count: 4)
+    samples.put(@out, value: align, count: 2)
+    samples.put(@out, value: width * 8, count: 2)
+
+    if fmt_size > 16
+        samples.put(@out, value: fmt_size - 18, count: 2)
+
+    if extensible
+        samples.put(@out, value: width * 8, count: 2)
+        samples.put(@out, value: format.speakers, count: 4)
+        samples.put(@out, value: tag, count: 2)
+
+        for b in wav.guid_tail()
+            out @ out.push(b)
+
+    if fact
+        put_id(@out, id: "fact")
+        samples.put(@out, value: 4, count: 4)
+
+        counted = if known && !rf64
+            math.min_i64(a: frames, b: wav.UNKNOWN_SIZE)
+        else
+            wav.UNKNOWN_SIZE
+        samples.put(@out, value: counted, count: 4)
+    put_id(@out, id: "data")
+
+    if rf64 || !known
+        samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
+    else
+        samples.put(@out, value: data_len, count: 4)
+    return out
+
+# The bytes of the WAV file of `s`, as `audio.encode_wav` writes them, in
+# RF64 where `wide` or where a 32-bit size cannot hold the file.
+#
+# - `s`: a sound whose format and data `audio` has checked.
+# - `wide`: whether RF64 is written whatever the size.
+function encoded(s: audio.Sound lent, wide: bool) -> [u8]
+    frames = s.data.len() / (samples.width(s.format.encoding) * s.format.channels)
+    out @= header_of(s.format, data_len: s.data.len(), frames: frames, wide: wide, reserve: false)
+
+    for b in s.data
+        out @ out.push(b)
+
+    if s.data.len() % 2 == 1
+        out @ out.push(0)
+    return out
+
+test "encoded: RF64 asked, its ds64 sizes read back, every encoding and three channels"
+    every: [audio.Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for e in every
+        for channels in [1, 2, 3]
+            values: [f64] @= []
+
+            for i in range(from: 0, to: 5 * channels)
+                values @ values.push(to_f64(i % 7) / 8.0 - 0.375)
+
+            format = audio.Format(encoding: e, rate: 22050, channels: channels, speakers: 0)
+            s = audio.from_samples(format, values: values).must()
+            assert wav.decoded(encoded(s, wide: false)).must() == s
+            wide = encoded(s, wide: true)
+            assert wav.is_id(wide, at: 0, id: "RF64") && wav.is_id(wide, at: 12, id: "ds64")
+            assert wav.decoded(wide).must() == s
+
+test "encoded: the plain fmt for 16-bit stereo, the extensible one for 24 bits and a mask, a fact chunk for floats"
+    plain = audio.Sound(format: audio.Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0), data: [])
+    assert samples.unsigned_at(encoded(plain, wide: false), at: 16, count: 4) == 16
+    deep = audio.Sound(format: audio.Format(encoding: .pcm24, rate: 8000, channels: 1, speakers: 0), data: [])
+    deep_file = encoded(deep, wide: false)
+    assert samples.unsigned_at(deep_file, at: 20, count: 2) == wav.EXTENSIBLE
+    masked = audio.Sound(format: audio.Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 3), data: [])
+    assert samples.unsigned_at(encoded(masked, wide: false), at: 40, count: 4) == 3
+    float = audio.Sound(
+        format: audio.Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0),
+        data: [0, 0, 0, 0]
+    )
+    float_file = encoded(float, wide: false)
+    assert samples.unsigned_at(float_file, at: 20, count: 2) == wav.FLOAT
+    assert wav.is_id(float_file, at: 38, id: "fact") && samples.unsigned_at(float_file, at: 46, count: 4) == 1

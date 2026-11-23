@@ -107,6 +107,9 @@ constant SIGNAL_SETS_ON_WINDOWS: str
 constant SIGACTION_ON_WINDOWS: str
     "`sigaction` and its struct are POSIX's and not C11's (C11 7.14, read), and the Windows target's clang refuses the case's header at `struct sigaction quiet;`, an incomplete type (`ffi_header_refused`, run on the box 2026-11-13, and read through `--emit-c` by the CI's Windows x86-64 leg, run 43571761187, 2026-11-14), before `unistd.h` is asked, so it is built nowhere there; no signal of POSIX's reaches a Windows program, so a child deaf to one has nothing to be deaf to there, and the grace read on the monotonic clock is judged by the runtime's own Windows path (defect 2503, lane b35-runtime; defect 2523)"
 
+constant POSIX_JUMP_SHAPES_ON_WINDOWS: str
+    "the case's header binds POSIX's `mmap`, `ucontext_t` or `sigaction`, none of C11's (C11 7.13 and 7.14 hold `setjmp` and `signal` alone, read), and the route its program asks about, `hero_signal_jump_route`, is POSIX's, so the Windows target's headers or link refuse it; inferred from the headers and unrun on the box, whose first run decides (panel 255's R5, defect 2679)"
+
 # The cases and rows whose shape Windows cannot hold, by the name the report
 # gives them: each builds there, or is refused there in other words, so only
 # the forms that judge what it does skip it (every `run` case here was built,
@@ -149,6 +152,15 @@ function unbuildable_on_windows() -> [Skip]
     return [
         Skip(name: "tests/golden/run/fixedbugs-2503-a-child-deaf-to-the-signal-is-killed-at-the-end-of-its-runners-grace.hero", why: SIGACTION_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros.hero", why: SIGNAL_SETS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-save-into-a-heap-buffer-freed-before-the-next-save-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-save-into-a-page-unmapped-before-the-next-save-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-context-saved-into-a-heap-buffer-freed-before-the-next-save-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-save-into-a-frame-that-returned-before-the-next-save-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-jump-out-of-a-handler-after-a-heap-buffer-was-freed-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-jump-out-of-a-handler-after-a-page-was-unmapped-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-jump-with-no-handler-after-a-heap-buffer-was-freed-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-a-jump-with-no-handler-after-a-page-was-unmapped-runs.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2679-the-runtime-says-which-route-decides-a-jump.hero", why: POSIX_JUMP_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of

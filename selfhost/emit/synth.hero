@@ -214,6 +214,22 @@ function field_types(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
 
     return out
 
+# The written types of one case's fields: what a value of that case holds,
+# the type a pattern's payload binding has (`.case_ty`).
+function case_field_types(c: state.Checked, decls: [ast.Decl], decl: i64, at: i64) -> [i64]
+    out: [i64] @= []
+
+    match decls[decl].kind
+        .variant_decl v =>
+            for field in v.cases[at].fields
+                written = state.written_type(c, field.ty)
+
+                if !written.is_err()
+                    out @ out.push(written.must())
+        .record_decl | .constant_decl | .function_decl | .test_decl => return out
+
+    return out
+
 ## What one translation unit wants
 
 # The filter a per-module unit applies to the whole-program sections

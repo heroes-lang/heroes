@@ -1,0 +1,59 @@
+# The checks every function of `audio` makes of what it is given: a format's
+# ranges, a sound's bytes a whole number of frames, a length in frames; each
+# failing `invalid` with what was asked and what is wrong (README § A4).
+
+use audio
+use audio/internal/samples
+use math
+use time
+
+# What is wrong with `format`, in words, or the empty text where nothing is.
+function format_problem(format: audio.Format) -> str
+    if format.rate < 1 || format.rate > audio.MAX_RATE
+        return f"a rate of {format.rate} frames a second, where 1 to {audio.MAX_RATE} are taken"
+
+    if format.channels < 1 || format.channels > audio.MAX_CHANNELS
+        return f"{format.channels} channels, where 1 to {audio.MAX_CHANNELS} are taken"
+
+    if format.speakers < 0 || format.speakers > 4294967295
+        return f"a channel mask of {format.speakers}, where 0 to 4294967295 are taken"
+    return ""
+
+# `format` checked, failing `invalid` with `asked` and what is wrong.
+function valid_format(format: audio.Format, asked: str) -> ()?
+    problem = format_problem(format)
+
+    if problem != ""
+        return fail(code: audio.INVALID, msg: f"{asked}: {problem}")
+    return ok()
+
+# `s` checked: its format, and its bytes a whole number of frames.
+function valid_sound(s: audio.Sound lent, asked: str) -> ()?
+    valid_format(s.format, asked: asked)?
+    frame = samples.width(s.format.encoding) * s.format.channels
+
+    if s.data.len() % frame != 0
+        return fail(
+            code: audio.INVALID,
+            msg: f"{asked}: {s.data.len()} bytes are no whole number of frames of {frame} bytes"
+        )
+    return ok()
+
+# The frames `length` takes at `rate`, rounded to the nearest, failing
+# `invalid` where `length` is below zero or the frames pass what an `i64`
+# counts.
+function frames_in(length: time.Duration, rate: i64, asked: str) -> i64?
+    if length.nanoseconds < 0
+        return fail(
+            code: audio.INVALID,
+            msg: f"{asked}: a length of {length.nanoseconds} ns, where zero or more is taken"
+        )
+    whole = math.multiply_i64(a: length.nanoseconds / 1000000000, b: rate)
+    rest = (length.nanoseconds % 1000000000 * rate + 500000000) / 1000000000
+
+    match whole
+        .ok w => return ok(w + rest)
+        .err _ => return fail(
+            code: audio.INVALID,
+            msg: f"{asked}: {length.nanoseconds} ns at {rate} frames a second are more frames than can be counted"
+        )

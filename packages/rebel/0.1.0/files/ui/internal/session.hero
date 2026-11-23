@@ -230,7 +230,7 @@ test "answer_quit: on the headless side each ask told in order, the session's en
     ui.close(@app).must()
     assert fixture.code_of(ui.answer_quit(@app, go: true)) == ui.CLOSED
 
-test "answer_quit: on the native side the system's quit Apple event, a session's end and another quit, each told and held, the app kept by an answer and still waiting after, skipped by the words of a system that holds none (catalogue AP04, defect 2698)"
+test "answer_quit: on the native side the system's quit Apple event, a session's end and another quit, each told and held, the app kept by an answer and still waiting after, skipped by the words of a system that holds none or asks no quit but the session's end (catalogue AP04, defect 2698)"
     if hero_ui.native_here() == 0
         skip_test(reason: desk.NO_NATIVE)
     app @= ui.open(.native).must()
@@ -256,7 +256,17 @@ test "answer_quit: on the native side the system's quit Apple event, a session's
     ending = told.must()
     ui.answer_quit(@app, go: false).must()
     ui.inject(@app, input: .ask_quit(session_end: false)).must()
-    other = quits_of(@app).must()
+    other_told = quits_of(@app)
+    other_refusal = fixture.unsupported_words(other_told)
+
+    # A system whose session manager asks the app to end for the session's
+    # end alone (Linux) refuses this ask: the half run so far stands, and
+    # the case skips by the words.
+    if other_refusal != ""
+        ui.close(@app).must()
+        assert ending == [.quit_asked(session_end: true)]
+        skip_test(reason: other_refusal)
+    other = other_told.must()
     ui.answer_quit(@app, go: false).must()
     ui.answer_quit(@app, go: true).must()
     still = ui.wait(@app, within: time.nanoseconds(0))

@@ -7,7 +7,6 @@
 # server to stop, and reads the WebSocket's close.
 
 use <rebel>/http
-use <rebel>/os
 use <rebel>/websocket
 
 use demo/browse
@@ -19,21 +18,29 @@ use demo/steps_writing
 
 ## The session
 
-# The demo's session against the server at `port`, run as a thread's
+# What the session's thread is handed: where the server listens, and the
+# server's control mailbox.
+record Driven
+    # The server's port on 127.0.0.1.
+    port: i64
+    # A reason sent to it stops that server, and no other wait of the process.
+    control: (mailbox str)
+
+# The demo's session against the server at `d.port`, run as a thread's
 # body; answers whether every step went as written, after a line saying
 # where one did not.
 #
-# - `port`: the server's port on 127.0.0.1.
-function run(port: i64) -> bool
-    return match session(to_str(port))
+# - `d`: the port and the server's control mailbox.
+function run(d: Driven) -> bool
+    return match session(to_str(d.port))
         .ok _ => true
         .err e =>
             print(f"client: failed: {e.code}: {e.msg}")
-            os.ask_stop()
+            _ = d.control.send("client").is_err()
             false
 
 # Every step, in order. A step that fails ends the session, and `run` then
-# asks the process's stop, the signal's own path, so the server's loop ends
+# sends the server's control mailbox a reason, so the server's loop ends
 # rather than waiting for a client that is gone.
 #
 # - `port`: the server's port, as text.

@@ -133,6 +133,11 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
         left @ 0
         top @ 0
 
+    # A group box's children stand in the content its frame and title leave.
+    if n.kind == hero_ui.HERO_UI_GROUP
+        room_w @ most(a: n.w - n.insets[0] - n.insets[2], b: 0)
+        room_h @ most(a: n.h - n.insets[1] - n.insets[3], b: 0)
+
     if n.kind == hero_ui.HERO_UI_SCROLL
         sizes: [[i64]] @= []
 

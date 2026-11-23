@@ -1,0 +1,10 @@
+# Reaches Rebel's floor over the platform layer's printers, `hero_printing.h`,
+# so that `heroes test` on this file runs the floor's own tests (spec § 12,
+# § 13). It asks how many bytes the list of this machine's printers takes and
+# prints that length, or -1 where the machine has no print system.
+
+use <rebel>/printing/hero_printing
+
+function main()
+    room: [u8] @= []
+    print(hero_printing.printers(@room, n: 0))

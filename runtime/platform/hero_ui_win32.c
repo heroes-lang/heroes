@@ -164,6 +164,10 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 /* The message a dialog's thread posts the UI thread's hidden window once
  * its dialog is answered or ended (DIALOGS ANSWERED THROUGH THE QUEUE). */
 #define HERO_UI_WIN_DIALOG_DONE (WM_APP + 0x4A)
+/* The message the thread that listens for a later launch posts the UI
+ * thread's hidden window when it has queued what the launch handed over
+ * (THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM). */
+#define HERO_UI_WIN_HANDED (WM_APP + 0x4B)
 /* How long `press_key` waits for the key it sent to come back through the
  * queue, and how long the clipboard is asked of another program holding it. */
 #define HERO_UI_WIN_KEY_WAIT_MS 2000u
@@ -280,6 +284,11 @@ struct hero_ui_native {
      * the label tied to it, 0 for none (ACCESSIBLE NAMES). */
     wchar_t *access_name;
     int64_t label_for;
+    /* Its tip, UTF-16 as a tooltip shows it (NULL for none), and, of a
+     * window, the tooltip control its widgets' tips are tools of (A TIP OVER
+     * A WIDGET). */
+    wchar_t *tip;
+    HWND tooltips;
     /* A tray's icon of its own (NULL for the app's) and whether Windows
      * shows it (AN ICON IN THE TRAY). */
     HICON tray_icon;
@@ -310,6 +319,18 @@ struct hero_ui_native {
     struct hero_ui_win_node *nodes;
     int64_t node_count;
     int64_t node_room;
+    /* A text widget's text as its control last held it, UTF-16 as the
+     * control keeps it (`known_count` -1 where it could not be kept), and
+     * the edits kept for its undo, the first `step_done` done and the rest
+     * undone; whether the last is a person's run of typed characters the
+     * next one may join (UNDO AND THE SELECTION IN TEXT WIDGETS). */
+    wchar_t *known;
+    int64_t known_count;
+    struct hero_ui_win_step *steps;
+    int64_t step_count;
+    int64_t step_room;
+    int64_t step_done;
+    bool typing;
 };
 
 /* A tree's item: the program's number for it, the item it stands under (0
@@ -325,6 +346,17 @@ typedef struct hero_ui_win_node {
      * fold. */
     bool let_go;
 } hero_ui_win_node;
+
+/* An edit kept for undo: the `gone_count` units it took out of a text at
+ * `at` and the `came_count` units it put in their place, each block ended by
+ * a zero so it can be put back as it stands. */
+typedef struct hero_ui_win_step {
+    int64_t at;
+    wchar_t *gone;
+    int64_t gone_count;
+    wchar_t *came;
+    int64_t came_count;
+} hero_ui_win_step;
 
 /* The scaling functions of `user32` (POINTS ARE MAPPED), NULL where this
  * Windows has none. */
@@ -1305,6 +1337,17 @@ static void hero_ui_win_check_in_group(hero_ui_native *item) {
     }
 }
 
+/* Above 0 while an undo or a redo changes a text control's text, so the
+ * change is no new edit to keep. */
+static _Thread_local int64_t hero_ui_win_replaying;
+static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person);
+static void hero_ui_win_edit_reset(hero_ui_native *widget);
+static void hero_ui_win_edit_end(hero_ui_native *widget);
+static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how);
+static void hero_ui_win_tip_end(hero_ui_native *widget);
+static bool hero_ui_win_tip_apply(hero_ui_native *widget);
+static void hero_ui_win_handed_take(void);
+
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
 static void hero_ui_win_command(UINT code, UINT command, HWND control) {
@@ -1355,6 +1398,9 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_TEXT_AREA:
         if (code == EN_CHANGE) {
+            if (hero_ui_win_replaying == 0 && hero_ui_win_injecting == 0 && !hero_ui_is_muted()) {
+                hero_ui_win_edit_changed(widget, true);
+            }
             hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
         }
         break;
@@ -1602,6 +1648,9 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
     case HERO_UI_WIN_DIALOG_DONE:
         hero_ui_win_dialogs_reap();
         return 0;
+    case HERO_UI_WIN_HANDED:
+        hero_ui_win_handed_take();
+        return 0;
     case HERO_UI_WIN_SETTLE:
         widget = hero_ui_find((int64_t)lparam);
         if (widget != NULL && widget->kind == HERO_UI_TABLE) {
@@ -1848,6 +1897,7 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     /* The box a page or a pane leaves, laid out again once it is gone. */
     hero_ui_native *box = widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE ? owner : NULL;
 
+    hero_ui_win_tip_end(widget);
     switch (widget->kind) {
     case HERO_UI_WINDOW:
         if (hero_ui_win_modal == widget->id) {
@@ -1949,6 +1999,7 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     if (widget->kind == HERO_UI_LABEL) {
         hero_ui_win_label_changed(widget->id, true);
     }
+    hero_ui_win_edit_end(widget);
     hero_layer_free(widget->access_name);
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
@@ -2191,7 +2242,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_TEXT_AREA:
-        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | ES_NOHIDESEL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_CHECKBOX:
         made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_AUTOCHECKBOX | WS_TABSTOP, 0, id);
@@ -2208,6 +2259,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         break;
     case HERO_UI_PROGRESS:
         made->hwnd = hero_ui_win_control(window, inside, PROGRESS_CLASSW, 0, 0, id);
+        break;
+    case HERO_UI_SEPARATOR:
+        made->hwnd = hero_ui_win_control(window, inside, L"STATIC", SS_ETCHEDHORZ, 0, id);
         break;
     case HERO_UI_SLIDER:
         made->hwnd = hero_ui_win_control(window, inside, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
@@ -2465,6 +2519,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     if (set && (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA)) {
         (void)SendMessageW(widget->hwnd, EM_SETSEL, wcslen(wide), (LPARAM)wcslen(wide));
         (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+        hero_ui_win_edit_reset(widget);
     }
     hero_ui_mute(-1);
     hero_layer_free(wide);
@@ -2522,6 +2577,9 @@ static int64_t hero_ui_win_make_radios(hero_ui_native *group, const uint8_t *ite
         group->radio_count = i + 1;
     }
     hero_ui_win_put(group);
+    if (group->tip != NULL) {
+        (void)hero_ui_win_tip_apply(group);
+    }
     return HERO_UI_OK;
 }
 
@@ -2958,6 +3016,19 @@ int64_t hero_ui_arm_set_size(int64_t id, int64_t which, int64_t width, int64_t h
     return HERO_UI_OK;
 }
 
+/* Turns separator `line` to run along the longer side of the rectangle it
+ * was placed in, across where the two are equal: the system's etched line
+ * is a style of its control, horizontal or vertical. */
+static void hero_ui_win_turn_separator(hero_ui_native *line) {
+    LONG_PTR style = GetWindowLongPtrW(line->hwnd, GWL_STYLE);
+    LONG_PTR turned = (style & ~(LONG_PTR)SS_TYPEMASK) | (line->height > line->width ? SS_ETCHEDVERT : SS_ETCHEDHORZ);
+
+    if (turned != style) {
+        (void)SetWindowLongPtrW(line->hwnd, GWL_STYLE, turned);
+        (void)InvalidateRect(line->hwnd, NULL, TRUE);
+    }
+}
+
 int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64_t width, int64_t height) {
     hero_ui_native *widget = hero_ui_find(id);
 
@@ -2992,6 +3063,9 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         widget->width = width;
         widget->height = height;
         widget->placed = true;
+        if (widget->kind == HERO_UI_SEPARATOR) {
+            hero_ui_win_turn_separator(widget);
+        }
     }
     hero_ui_win_put(widget);
     return HERO_UI_OK;
@@ -3111,6 +3185,10 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_PROGRESS:
         *width = 160;
         *height = 16;
+        return HERO_UI_OK;
+    case HERO_UI_SEPARATOR:
+        *width = 1;
+        *height = 1;
         return HERO_UI_OK;
     case HERO_UI_SLIDER: {
         LRESULT thumb = SendMessageW(widget->hwnd, TBM_GETTHUMBLENGTH, 0, 0);
@@ -3467,6 +3545,9 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
             } else if (IsWindowEnabled(widget->hwnd)) {
                 (void)SendMessageW(widget->hwnd, EM_SETSEL, 0, -1);
                 (void)SendMessageW(widget->hwnd, EM_REPLACESEL, TRUE, (LPARAM)wide);
+                /* However many notifications the control sent for it, an
+                 * injected edit is one edit. */
+                hero_ui_win_edit_changed(widget, false);
             }
             hero_layer_free(wide);
         } else {
@@ -3619,7 +3700,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -4922,6 +5003,464 @@ int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
     return hero_ui_win_refill_owner(item);
 }
 
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS ---------------------------------
+ *
+ * An `EDIT` control keeps one level of undo, which its second undo turns into
+ * a redo, so the arm keeps the edits itself: a text area's, every edit since
+ * the program last set its text, and a text field's, those made while it
+ * has the keys and until they pass to another control. An edit is kept as
+ * what it took out of the text and what it put there, found by comparing the
+ * text the control held before with the one it holds after (`EN_CHANGE`), so
+ * the person's typing, a paste and an injected edit are kept alike and the
+ * kept steps hold the changed units alone. A run of characters typed one
+ * after another is one edit, as the person's undo takes a word at a time;
+ * an injected edit is one of its own. The control's own undo is never
+ * reached: its keys (Ctrl+Z, Ctrl+Y, Alt+Backspace) and its messages
+ * (`WM_UNDO`, `EM_UNDO`, `EM_CANUNDO`) answer from the kept steps, so the
+ * person's undo and the program's are one.
+ *
+ * THE SELECTION is in the control's UTF-16 units (a CR LF is two), told in
+ * the bytes of the UTF-8 text the program reads (a CR LF is one line feed);
+ * an end inside a character is refused and a unit inside one is told at its
+ * start. A text area shows its selection while it has not the keys
+ * (`ES_NOHIDESEL`); a text field takes them, where its own does. */
+
+/* The edits one text widget keeps, and the units of text they may hold. */
+#define HERO_UI_WIN_UNDO_STEPS 256
+#define HERO_UI_WIN_UNDO_UNITS ((int64_t)1 << 22)
+
+/* Whether `count` units at `units` are one character a person types: one
+ * unit, or a surrogate pair. */
+static bool hero_ui_win_typed_one(const wchar_t *units, int64_t count) {
+    return count == 1 || (count == 2 && IS_HIGH_SURROGATE(units[0]) && IS_LOW_SURROGATE(units[1]));
+}
+
+/* Forgets the steps of `widget` from the one numbered `from` on. */
+static void hero_ui_win_steps_drop(hero_ui_native *widget, int64_t from) {
+    for (int64_t i = from; i < widget->step_count; i += 1) {
+        hero_layer_free(widget->steps[i].gone);
+        hero_layer_free(widget->steps[i].came);
+    }
+    if (from < widget->step_count) {
+        widget->step_count = from;
+    }
+    if (widget->step_done > widget->step_count) {
+        widget->step_done = widget->step_count;
+    }
+}
+
+/* Forgets every step of `widget` and the run of typing it may join. */
+static void hero_ui_win_steps_forget(hero_ui_native *widget) {
+    hero_ui_win_steps_drop(widget, 0);
+    widget->typing = false;
+}
+
+static void hero_ui_win_edit_end(hero_ui_native *widget) {
+    hero_ui_win_steps_forget(widget);
+    hero_layer_free(widget->steps);
+    hero_layer_free(widget->known);
+    widget->steps = NULL;
+    widget->step_room = 0;
+    widget->known = NULL;
+    widget->known_count = 0;
+}
+
+/* Takes the text control `widget` holds now as its text, no edit of it
+ * kept: the program set it. */
+static void hero_ui_win_edit_reset(hero_ui_native *widget) {
+    wchar_t *text = hero_ui_win_wide_of(widget->hwnd);
+
+    hero_ui_win_steps_forget(widget);
+    hero_layer_free(widget->known);
+    widget->known = text;
+    widget->known_count = text != NULL ? (int64_t)wcslen(text) : -1;
+}
+
+/* Whether `widget`'s control has the keys of its window. */
+static bool hero_ui_win_has_keys(const hero_ui_native *widget) {
+    hero_ui_native *window = hero_ui_win_window(widget->window);
+
+    return window != NULL && widget->hwnd != NULL && hero_ui_win_focus_in(window) == widget->hwnd;
+}
+
+/* Copies `count` units at `units` with a zero after them, or NULL. */
+static wchar_t *hero_ui_win_units_copy(const wchar_t *units, int64_t count) {
+    wchar_t *copy = hero_layer_alloc(((size_t)count + 1) * sizeof(wchar_t));
+
+    if (copy != NULL) {
+        if (count > 0) {
+            memcpy(copy, units, (size_t)count * sizeof(wchar_t));
+        }
+        copy[count] = 0;
+    }
+    return copy;
+}
+
+/* Drops the oldest steps of `widget` while it keeps more than the limits
+ * let it. */
+static void hero_ui_win_steps_trim(hero_ui_native *widget) {
+    for (;;) {
+        int64_t units = 0;
+
+        for (int64_t i = 0; i < widget->step_count; i += 1) {
+            units += widget->steps[i].gone_count + widget->steps[i].came_count;
+        }
+        if (widget->step_count <= 1 || (widget->step_count <= HERO_UI_WIN_UNDO_STEPS && units <= HERO_UI_WIN_UNDO_UNITS)) {
+            return;
+        }
+        hero_layer_free(widget->steps[0].gone);
+        hero_layer_free(widget->steps[0].came);
+        memmove(widget->steps, widget->steps + 1, (size_t)(widget->step_count - 1) * sizeof widget->steps[0]);
+        widget->step_count -= 1;
+        if (widget->step_done > 0) {
+            widget->step_done -= 1;
+        }
+    }
+}
+
+/* Keeps one edit of `widget`: `gone_count` units taken out at `at` and
+ * `came_count` put there. The edits undone are given up, since a new edit
+ * ends their redo; a typed character joins the run before it where it
+ * stands just after it. False where memory ran out. */
+static bool hero_ui_win_step_keep(hero_ui_native *widget, int64_t at, const wchar_t *gone, int64_t gone_count, const wchar_t *came, int64_t came_count, bool person) {
+    bool typed = person && hero_ui_win_typed_one(came, came_count);
+    struct hero_ui_win_step *last;
+    struct hero_ui_win_step *step;
+    wchar_t *took;
+    wchar_t *put;
+
+    hero_ui_win_steps_drop(widget, widget->step_done);
+    last = widget->step_count > 0 ? &widget->steps[widget->step_count - 1] : NULL;
+    if (typed && widget->typing && last != NULL && gone_count == 0 && at == last->at + last->came_count) {
+        wchar_t *grown = hero_layer_grow(last->came, ((size_t)(last->came_count + came_count) + 1) * sizeof(wchar_t));
+
+        if (grown == NULL) {
+            return false;
+        }
+        memcpy(grown + last->came_count, came, (size_t)came_count * sizeof(wchar_t));
+        last->came_count += came_count;
+        grown[last->came_count] = 0;
+        last->came = grown;
+        return true;
+    }
+    if (widget->step_count == widget->step_room) {
+        int64_t room = widget->step_room == 0 ? 16 : widget->step_room * 2;
+        struct hero_ui_win_step *more = hero_layer_grow(widget->steps, (size_t)room * sizeof widget->steps[0]);
+
+        if (more == NULL) {
+            return false;
+        }
+        widget->steps = more;
+        widget->step_room = room;
+    }
+    took = hero_ui_win_units_copy(gone, gone_count);
+    put = hero_ui_win_units_copy(came, came_count);
+    if (took == NULL || put == NULL) {
+        hero_layer_free(took);
+        hero_layer_free(put);
+        return false;
+    }
+    step = &widget->steps[widget->step_count];
+    step->at = at;
+    step->gone = took;
+    step->gone_count = gone_count;
+    step->came = put;
+    step->came_count = came_count;
+    widget->step_count += 1;
+    widget->step_done = widget->step_count;
+    widget->typing = typed;
+    hero_ui_win_steps_trim(widget);
+    return true;
+}
+
+/* The control of `widget` changed its text: keeps the edit that did it,
+ * `person` where the person made it, and takes the new text as the one the
+ * control holds. Nothing is kept where memory ran out, and no step then
+ * stands that the text could have left behind. */
+static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person) {
+    wchar_t *text = hero_ui_win_wide_of(widget->hwnd);
+    const wchar_t *before = widget->known != NULL ? widget->known : L"";
+    int64_t before_count = widget->known_count;
+    int64_t count;
+    int64_t same;
+    int64_t tail = 0;
+    int64_t most;
+
+    if (text == NULL) {
+        hero_ui_win_steps_forget(widget);
+        hero_layer_free(widget->known);
+        widget->known = NULL;
+        widget->known_count = -1;
+        return;
+    }
+    count = (int64_t)wcslen(text);
+    if (before_count < 0) {
+        hero_ui_win_steps_forget(widget);
+        hero_layer_free(widget->known);
+        widget->known = text;
+        widget->known_count = count;
+        return;
+    }
+    most = before_count < count ? before_count : count;
+    same = 0;
+    while (same < most && before[same] == text[same]) {
+        same += 1;
+    }
+    /* A change never starts or ends between the two units of a character. */
+    if (same > 0 && (IS_HIGH_SURROGATE(text[same - 1]) || text[same - 1] == L'\r')) {
+        same -= 1;
+    }
+    while (tail < most - same && before[before_count - 1 - tail] == text[count - 1 - tail]) {
+        tail += 1;
+    }
+    if (tail > 0 && (IS_LOW_SURROGATE(text[count - tail]) || text[count - tail] == L'\n')) {
+        tail -= 1;
+    }
+    if (before_count - same - tail > 0 || count - same - tail > 0) {
+        if (!(widget->kind == HERO_UI_TEXT_AREA || hero_ui_win_has_keys(widget)) || !hero_ui_win_step_keep(widget, same, before + same, before_count - same - tail, text + same, count - same - tail, person)) {
+            hero_ui_win_steps_forget(widget);
+        }
+    }
+    hero_layer_free(widget->known);
+    widget->known = text;
+    widget->known_count = count;
+}
+
+/* Undoes the last edit `widget` keeps, or redoes the last undone; false
+ * where there is none. The change is told as the person's where `told`. */
+static bool hero_ui_win_edit_replay(hero_ui_native *widget, bool undo, bool told) {
+    struct hero_ui_win_step *step;
+    const wchar_t *with;
+    int64_t out;
+    int64_t in;
+    int64_t whole;
+    int64_t held;
+
+    if (undo ? widget->step_done == 0 : widget->step_done == widget->step_count) {
+        return false;
+    }
+    step = &widget->steps[undo ? widget->step_done - 1 : widget->step_done];
+    out = undo ? step->came_count : step->gone_count;
+    in = undo ? step->gone_count : step->came_count;
+    with = undo ? step->gone : step->came;
+    held = (int64_t)GetWindowTextLengthW(widget->hwnd);
+    /* The steps stand on the text the control held when they were kept; a
+     * text changed with no notice leaves none that can be trusted. */
+    if (widget->known_count < 0 || held != widget->known_count || step->at + out > held) {
+        hero_ui_win_steps_forget(widget);
+        return false;
+    }
+    whole = held - out + in;
+    widget->typing = false;
+    hero_ui_win_replaying += 1;
+    if (!told) {
+        hero_ui_mute(1);
+    }
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)step->at, (LPARAM)(step->at + out));
+    (void)SendMessageW(widget->hwnd, EM_REPLACESEL, FALSE, (LPARAM)with);
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)(step->at + in), (LPARAM)(step->at + in));
+    (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+    if (!told) {
+        hero_ui_mute(-1);
+    }
+    hero_ui_win_replaying -= 1;
+    if ((int64_t)GetWindowTextLengthW(widget->hwnd) != whole) {
+        /* The control refused some of it: its text is no longer the steps'. */
+        hero_ui_win_steps_forget(widget);
+    } else {
+        widget->step_done += undo ? -1 : 1;
+    }
+    hero_layer_free(widget->known);
+    widget->known = hero_ui_win_wide_of(widget->hwnd);
+    widget->known_count = widget->known != NULL ? (int64_t)wcslen(widget->known) : -1;
+    return true;
+}
+
+/* The key a control's `WM_CHAR` or `WM_SYSKEYDOWN` carries, answered where
+ * it is an undo or a redo of a text widget: true where it was one. */
+static bool hero_ui_win_edit_key(hero_ui_native *widget, UINT message, WPARAM key) {
+    bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+    if (message == WM_CHAR && key == 0x1A) {
+        (void)hero_ui_win_edit_replay(widget, !shift, true);
+        return true;
+    }
+    if (message == WM_CHAR && key == 0x19) {
+        (void)hero_ui_win_edit_replay(widget, false, true);
+        return true;
+    }
+    if (message == WM_SYSKEYDOWN && key == VK_BACK) {
+        (void)hero_ui_win_edit_replay(widget, !shift, true);
+        return true;
+    }
+    return false;
+}
+
+/* The bytes of the UTF-8 of one UTF-16 unit that stands alone: a lone
+ * surrogate is read as U+FFFD, three bytes, as `hero_ui_win_narrow` reads it. */
+static int64_t hero_ui_win_utf8_length(wchar_t unit) {
+    if (IS_HIGH_SURROGATE(unit) || IS_LOW_SURROGATE(unit) || unit >= 0x800) {
+        return 3;
+    }
+    return unit >= 0x80 ? 2 : 1;
+}
+
+/* The unit of the UTF-16 text `wide` (`units` of them, CR LF one character
+ * where `lines`) at which byte `byte` of its UTF-8 text starts, -1 where
+ * that byte is inside a character or past the text. */
+static int64_t hero_ui_win_unit_of_byte(const wchar_t *wide, int64_t units, bool lines, int64_t byte) {
+    int64_t unit = 0;
+    int64_t bytes = 0;
+
+    while (unit < units) {
+        wchar_t c = wide[unit];
+
+        if (bytes == byte) {
+            return unit;
+        }
+        if (lines && c == L'\r' && unit + 1 < units && wide[unit + 1] == L'\n') {
+            bytes += 1;
+            unit += 2;
+        } else if (IS_HIGH_SURROGATE(c) && unit + 1 < units && IS_LOW_SURROGATE(wide[unit + 1])) {
+            bytes += 4;
+            unit += 2;
+        } else {
+            bytes += hero_ui_win_utf8_length(c);
+            unit += 1;
+        }
+        if (bytes > byte) {
+            return -1;
+        }
+    }
+    return bytes == byte ? units : -1;
+}
+
+/* The byte of the UTF-8 text at which the character holding unit `unit` of
+ * `wide` starts (see `hero_ui_win_unit_of_byte`). */
+static int64_t hero_ui_win_byte_of_unit(const wchar_t *wide, int64_t units, bool lines, int64_t unit) {
+    int64_t at = 0;
+    int64_t bytes = 0;
+
+    while (at < units && at < unit) {
+        wchar_t c = wide[at];
+        int64_t step = 1;
+
+        if (lines && c == L'\r' && at + 1 < units && wide[at + 1] == L'\n') {
+            if (at + 2 > unit) {
+                break;
+            }
+            bytes += 1;
+            step = 2;
+        } else if (IS_HIGH_SURROGATE(c) && at + 1 < units && IS_LOW_SURROGATE(wide[at + 1])) {
+            if (at + 2 > unit) {
+                break;
+            }
+            bytes += 4;
+            step = 2;
+        } else {
+            bytes += hero_ui_win_utf8_length(c);
+        }
+        at += step;
+    }
+    return bytes;
+}
+
+static bool hero_ui_win_is_text(const hero_ui_native *widget) {
+    return widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA;
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *can = (which == HERO_UI_UNDO ? widget->step_done > 0 : widget->step_done < widget->step_count) ? 1 : 0;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *done = hero_ui_win_edit_replay(widget, which == HERO_UI_UNDO, false) ? 1 : 0;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+    wchar_t *wide;
+    int64_t from;
+    int64_t to;
+    bool lines;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    window = hero_ui_win_window(widget->window);
+    if (widget->kind == HERO_UI_TEXT_FIELD && (window == NULL || !hero_ui_win_reachable(widget))) {
+        return HERO_UI_INVALID;
+    }
+    wide = hero_ui_win_wide_of(widget->hwnd);
+    if (wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    lines = widget->kind == HERO_UI_TEXT_AREA;
+    from = hero_ui_win_unit_of_byte(wide, (int64_t)wcslen(wide), lines, start);
+    to = hero_ui_win_unit_of_byte(wide, (int64_t)wcslen(wide), lines, end);
+    hero_layer_free(wide);
+    if (from < 0 || to < 0) {
+        return HERO_UI_INVALID;
+    }
+    /* A field shows its selection by having the keys, which it takes before
+     * the selection is set, a control taking the keys leaving its own. */
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        hero_ui_win_give_keys(window, widget->hwnd);
+    }
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)from, (LPARAM)to);
+    (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t *wide;
+    DWORD from = 0;
+    DWORD to = 0;
+    int64_t units;
+    bool lines;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    wide = hero_ui_win_wide_of(widget->hwnd);
+    if (wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    (void)SendMessageW(widget->hwnd, EM_GETSEL, (WPARAM)&from, (LPARAM)&to);
+    units = (int64_t)wcslen(wide);
+    lines = widget->kind == HERO_UI_TEXT_AREA;
+    *start = hero_ui_win_byte_of_unit(wide, units, lines, (int64_t)from);
+    *end = hero_ui_win_byte_of_unit(wide, units, lines, (int64_t)to);
+    hero_layer_free(wide);
+    return HERO_UI_OK;
+}
+
 /* -- A CONTEXT MENU ---------------------------------------------------------
  *
  * A context menu is a pop-up menu kept by the widget it belongs to, shown by
@@ -4993,9 +5532,40 @@ static const wchar_t hero_ui_win_base_name[] = L"HeroesUiBase";
 
 static LRESULT CALLBACK hero_ui_win_edit_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     WNDPROC base = (WNDPROC)GetPropW(hwnd, hero_ui_win_base_name);
+    hero_ui_native *widget = message == WM_NCDESTROY ? NULL : hero_ui_win_of(hwnd);
 
     if (message == WM_CONTEXTMENU && hero_ui_win_show_context(hwnd, lparam, false)) {
         return 0;
+    }
+    /* The control's own undo gives way to the one this arm keeps (UNDO AND
+     * THE SELECTION IN TEXT WIDGETS). */
+    if (widget != NULL && hero_ui_win_is_text(widget)) {
+        switch (message) {
+        case WM_CHAR:
+        case WM_SYSKEYDOWN:
+            if (hero_ui_win_edit_key(widget, message, wparam)) {
+                return 0;
+            }
+            break;
+        case WM_UNDO:
+        case EM_UNDO:
+            return hero_ui_win_edit_replay(widget, true, true) ? TRUE : FALSE;
+        case EM_CANUNDO:
+            return widget->step_done > 0 ? TRUE : FALSE;
+        case WM_KILLFOCUS: {
+            /* A field's edits are those made while it has the keys, so they
+             * end as the keys pass to another control of its window. */
+            HWND top = GetAncestor(hwnd, GA_ROOT);
+
+            widget->typing = false;
+            if (widget->kind == HERO_UI_TEXT_FIELD && wparam != 0 && top != NULL && IsChild(top, (HWND)wparam)) {
+                hero_ui_win_steps_forget(widget);
+            }
+            break;
+        }
+        default:
+            break;
+        }
     }
     if (message == WM_NCDESTROY) {
         (void)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)base);
@@ -6681,7 +7251,7 @@ int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *rig
 
 /* The cell of table `table` at `row` and `column`, an empty one where none. */
 static wchar_t *hero_ui_win_cell(const hero_ui_native *table, int64_t row, int64_t column) {
-    static wchar_t none[1] = {0};
+    static _Thread_local wchar_t none[1];
     int64_t at = row * table->columns + column;
 
     return table->columns > 0 && column < table->columns && at >= 0 && at < table->cell_count && table->cells[at] != NULL ? table->cells[at] : none;
@@ -7811,7 +8381,7 @@ static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how) {
     icon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     icon.uCallbackMessage = HERO_UI_WIN_TRAY_MESSAGE;
     icon.hIcon = tray->tray_icon != NULL ? tray->tray_icon : hero_ui_win_icon != NULL ? hero_ui_win_icon : LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION);
-    hero_ui_win_copy_units(icon.szTip, sizeof icon.szTip / sizeof icon.szTip[0], tray->label);
+    hero_ui_win_copy_units(icon.szTip, sizeof icon.szTip / sizeof icon.szTip[0], tray->tip != NULL ? tray->tip : tray->label);
     if (!Shell_NotifyIconW(how, &icon)) {
         return false;
     }
@@ -8223,6 +8793,596 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     (void)SendMessageW(window->hwnd, WM_DROPFILES, (WPARAM)block, 0);
     hero_ui_win_own_drop = NULL;
     (void)GlobalFree(block);
+    return HERO_UI_OK;
+}
+
+/* -- THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM --------
+ *
+ * THE IDENTITY is the process's explicit AppUserModelID
+ * (`SetCurrentProcessExplicitAppUserModelID`), by which the task bar groups
+ * the app's windows and pins its icon; its name is taken and shown nowhere,
+ * since Windows has no application menu and the program titles its own
+ * windows.
+ *
+ * ONE INSTANCE is a named mutex of the session (`Local\hero-ui-<identifier>`),
+ * which the system takes back with the process, so a process that ended
+ * leaves no claim behind. The first instance also keeps a named pipe of the
+ * machine (`\\.\pipe\hero-ui-<identifier>-<session>`) that a thread of its
+ * own listens on, one client at a time, each read held to a deadline and the
+ * text it hands bounded; the pipe takes no client of another machine
+ * (`PIPE_REJECT_REMOTE_CLIENTS`) and, by the default access the system gives
+ * it, none that writes from another user's account. A later launch writes
+ * its arguments to it, and the thread queues them and posts the UI thread's
+ * hidden window, which tells them as `HERO_UI_EVENT_OPEN`. Only the session's
+ * own launches meet: a user's second session claims a second instance.
+ *
+ * DOCUMENTS reach an app on Windows as the command line of a new process,
+ * which is a later launch's arguments handed over; the system makes no open
+ * request of its own to a running app. */
+
+/* How long a later launch waits for the first instance's pipe, and the first
+ * instance for a client's bytes, in milliseconds. */
+#define HERO_UI_WIN_CLAIM_WAIT_MS 5000u
+#define HERO_UI_WIN_CLAIM_READ_MS 2000u
+#define HERO_UI_WIN_CLAIM_NAME_ROOM 320
+
+/* One text a later launch handed over, waiting for the UI thread. */
+typedef struct hero_ui_win_handed {
+    struct hero_ui_win_handed *next;
+    int64_t count;
+    uint8_t bytes[1];
+} hero_ui_win_handed;
+
+/* This process's claim of its one instance: the mutex that holds it, the
+ * pipe and the thread that listens, the events that stop the thread and
+ * that its reads wait on, the window it posts, the texts it queued (under
+ * `lock`) and the pipe's name. */
+typedef struct hero_ui_win_claim {
+    HANDLE mutex;
+    HANDLE pipe;
+    HANDLE thread;
+    HANDLE stop;
+    HANDLE io;
+    HWND host;
+    CRITICAL_SECTION lock;
+    hero_ui_win_handed *first;
+    hero_ui_win_handed *last;
+    wchar_t pipe_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+} hero_ui_win_claim;
+
+static _Thread_local hero_ui_win_claim *hero_ui_win_claimed;
+
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
+    wchar_t wide[HERO_UI_IDENTITY_MOST + 1];
+    HRESULT made;
+
+    (void)name;
+    (void)name_count;
+    for (int64_t at = 0; at < identifier_count && at < HERO_UI_IDENTITY_MOST; at += 1) {
+        wide[at] = (wchar_t)identifier[at];
+    }
+    wide[identifier_count < HERO_UI_IDENTITY_MOST ? identifier_count : HERO_UI_IDENTITY_MOST] = 0;
+    made = SetCurrentProcessExplicitAppUserModelID(wide);
+    if (FAILED(made)) {
+        return hero_ui_win_failed("giving the app its identity (SetCurrentProcessExplicitAppUserModelID)", (DWORD)HRESULT_CODE(made));
+    }
+    return HERO_UI_OK;
+}
+
+/* Writes the claim's names for `identifier`: the mutex's into `mutex` and
+ * the pipe's into `pipe`, each `HERO_UI_WIN_CLAIM_NAME_ROOM` units. */
+static void hero_ui_win_claim_names(const uint8_t *identifier, int64_t count, wchar_t *mutex, wchar_t *pipe) {
+    static const wchar_t local[] = L"Local\\hero-ui-";
+    static const wchar_t machine[] = L"\\\\.\\pipe\\hero-ui-";
+    DWORD session = 0;
+    size_t used;
+
+    if (!ProcessIdToSessionId(GetCurrentProcessId(), &session)) {
+        session = 0;
+    }
+    wcscpy(mutex, local);
+    wcscpy(pipe, machine);
+    used = wcslen(machine);
+    for (int64_t at = 0; at < count && at < HERO_UI_IDENTITY_MOST; at += 1) {
+        mutex[wcslen(local) + (size_t)at] = (wchar_t)identifier[at];
+        pipe[used + (size_t)at] = (wchar_t)identifier[at];
+    }
+    mutex[wcslen(local) + (size_t)(count < HERO_UI_IDENTITY_MOST ? count : HERO_UI_IDENTITY_MOST)] = 0;
+    pipe[used + (size_t)(count < HERO_UI_IDENTITY_MOST ? count : HERO_UI_IDENTITY_MOST)] = 0;
+    used = wcslen(pipe);
+    (void)swprintf(pipe + used, HERO_UI_WIN_CLAIM_NAME_ROOM - used, L"-%lu", (unsigned long)session);
+}
+
+/* Reads `count` bytes the client wrote, through the claim's event, within
+ * `HERO_UI_WIN_CLAIM_READ_MS` and no longer than the claim lives. */
+static bool hero_ui_win_claim_read(hero_ui_win_claim *claim, void *into, DWORD count) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_CLAIM_READ_MS;
+    uint8_t *at = into;
+    DWORD got = 0;
+
+    while (got < count) {
+        OVERLAPPED over;
+        DWORD chunk = 0;
+
+        memset(&over, 0, sizeof over);
+        over.hEvent = claim->io;
+        (void)ResetEvent(claim->io);
+        if (!ReadFile(claim->pipe, at + got, count - got, NULL, &over)) {
+            ULONGLONG now = GetTickCount64();
+            HANDLE both[2];
+
+            if (GetLastError() != ERROR_IO_PENDING) {
+                return false;
+            }
+            both[0] = claim->stop;
+            both[1] = claim->io;
+            if (WaitForMultipleObjects(2, both, FALSE, now >= deadline ? 0 : (DWORD)(deadline - now)) != WAIT_OBJECT_0 + 1) {
+                (void)CancelIoEx(claim->pipe, &over);
+                (void)GetOverlappedResult(claim->pipe, &over, &chunk, TRUE);
+                return false;
+            }
+        }
+        if (!GetOverlappedResult(claim->pipe, &over, &chunk, FALSE) || chunk == 0) {
+            return false;
+        }
+        got += chunk;
+    }
+    return true;
+}
+
+/* Takes the one text a connected client wrote, a length of four bytes and
+ * that many bytes of UTF-8 whose every item ends in a zero, queues it for
+ * the UI thread and tells it; anything else is dropped. */
+static void hero_ui_win_claim_take(hero_ui_win_claim *claim) {
+    uint8_t head[4];
+    uint32_t length;
+    hero_ui_win_handed *text;
+
+    if (!hero_ui_win_claim_read(claim, head, sizeof head)) {
+        return;
+    }
+    length = (uint32_t)head[0] | ((uint32_t)head[1] << 8) | ((uint32_t)head[2] << 16) | ((uint32_t)head[3] << 24);
+    if (length > (uint32_t)HERO_UI_TEXT_MOST) {
+        return;
+    }
+    text = hero_layer_alloc(sizeof *text + length);
+    if (text == NULL) {
+        return;
+    }
+    text->next = NULL;
+    text->count = (int64_t)length;
+    if ((length > 0 && !hero_ui_win_claim_read(claim, text->bytes, length)) || !hero_ui_is_utf8(text->bytes, length) || (length > 0 && text->bytes[length - 1] != 0)) {
+        hero_layer_free(text);
+        return;
+    }
+    EnterCriticalSection(&claim->lock);
+    if (claim->last != NULL) {
+        claim->last->next = text;
+    } else {
+        claim->first = text;
+    }
+    claim->last = text;
+    LeaveCriticalSection(&claim->lock);
+    (void)PostMessageW(claim->host, HERO_UI_WIN_HANDED, 0, 0);
+}
+
+/* The thread that listens on the claim's pipe, one client at a time, until
+ * the claim's stop event is set. */
+static DWORD WINAPI hero_ui_win_claim_serve(LPVOID given) {
+    hero_ui_win_claim *claim = given;
+
+    for (;;) {
+        OVERLAPPED over;
+        DWORD ignored = 0;
+        BOOL connected;
+
+        memset(&over, 0, sizeof over);
+        over.hEvent = claim->io;
+        (void)ResetEvent(claim->io);
+        connected = ConnectNamedPipe(claim->pipe, &over);
+        if (!connected && GetLastError() == ERROR_IO_PENDING) {
+            HANDLE both[2];
+
+            both[0] = claim->stop;
+            both[1] = claim->io;
+            if (WaitForMultipleObjects(2, both, FALSE, INFINITE) != WAIT_OBJECT_0 + 1) {
+                (void)CancelIoEx(claim->pipe, &over);
+                (void)GetOverlappedResult(claim->pipe, &over, &ignored, TRUE);
+                return 0;
+            }
+            connected = GetOverlappedResult(claim->pipe, &over, &ignored, FALSE);
+        } else if (!connected && GetLastError() == ERROR_PIPE_CONNECTED) {
+            connected = TRUE;
+        }
+        if (connected) {
+            hero_ui_win_claim_take(claim);
+        }
+        (void)DisconnectNamedPipe(claim->pipe);
+        if (WaitForSingleObject(claim->stop, connected ? 0 : 100) == WAIT_OBJECT_0) {
+            return 0;
+        }
+    }
+}
+
+/* Writes `count` bytes of arguments to the pipe `name` as a later launch
+ * does, waiting for the first instance's pipe up to
+ * `HERO_UI_WIN_CLAIM_WAIT_MS`; 0 where they were taken, else the Windows
+ * error. */
+static DWORD hero_ui_win_claim_send(const wchar_t *name, const uint8_t *arguments, int64_t count) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_CLAIM_WAIT_MS;
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+    uint8_t head[4];
+    DWORD written = 0;
+    DWORD code = 0;
+    int64_t sent = 0;
+
+    for (;;) {
+        ULONGLONG now = GetTickCount64();
+
+        /* The identification level lets the pipe's owner know who writes and
+         * nothing more: it may not act as the writer. */
+        pipe = CreateFileW(name, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION, NULL);
+        if (pipe != INVALID_HANDLE_VALUE) {
+            break;
+        }
+        code = GetLastError();
+        if (now >= deadline || (code != ERROR_PIPE_BUSY && code != ERROR_FILE_NOT_FOUND)) {
+            return code != 0 ? code : ERROR_TIMEOUT;
+        }
+        if (code == ERROR_PIPE_BUSY) {
+            (void)WaitNamedPipeW(name, 100);
+        } else {
+            Sleep(20);
+        }
+    }
+    head[0] = (uint8_t)(count & 0xff);
+    head[1] = (uint8_t)((count >> 8) & 0xff);
+    head[2] = (uint8_t)((count >> 16) & 0xff);
+    head[3] = (uint8_t)((count >> 24) & 0xff);
+    code = 0;
+    if (!WriteFile(pipe, head, sizeof head, &written, NULL) || written != sizeof head) {
+        code = GetLastError() != 0 ? GetLastError() : ERROR_WRITE_FAULT;
+    }
+    while (code == 0 && sent < count) {
+        DWORD part = (DWORD)(count - sent > (int64_t)(1u << 20) ? (int64_t)(1u << 20) : count - sent);
+
+        if (!WriteFile(pipe, arguments + sent, part, &written, NULL) || written == 0) {
+            code = GetLastError() != 0 ? GetLastError() : ERROR_WRITE_FAULT;
+        } else {
+            sent += written;
+        }
+    }
+    /* What is written stays readable by the first instance after this end
+     * closes, so nothing waits here for it. */
+    (void)CloseHandle(pipe);
+    return code;
+}
+
+/* Ends claim `claim`: the thread stopped, every handle given back, the
+ * texts still queued dropped. */
+static void hero_ui_win_claim_free(hero_ui_win_claim *claim) {
+    hero_ui_win_handed *text;
+
+    if (claim->thread != NULL) {
+        (void)SetEvent(claim->stop);
+        (void)WaitForSingleObject(claim->thread, INFINITE);
+        (void)CloseHandle(claim->thread);
+    }
+    if (claim->pipe != INVALID_HANDLE_VALUE && claim->pipe != NULL) {
+        (void)CloseHandle(claim->pipe);
+    }
+    if (claim->stop != NULL) {
+        (void)CloseHandle(claim->stop);
+    }
+    if (claim->io != NULL) {
+        (void)CloseHandle(claim->io);
+    }
+    if (claim->mutex != NULL) {
+        (void)CloseHandle(claim->mutex);
+    }
+    for (text = claim->first; text != NULL;) {
+        hero_ui_win_handed *next = text->next;
+
+        hero_layer_free(text);
+        text = next;
+    }
+    DeleteCriticalSection(&claim->lock);
+    hero_layer_free(claim);
+}
+
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first) {
+    wchar_t mutex_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+    wchar_t pipe_name[HERO_UI_WIN_CLAIM_NAME_ROOM];
+    hero_ui_win_claim *claim;
+    HANDLE mutex;
+    DWORD code;
+    bool taken;
+
+    if (hero_ui_win_claimed != NULL) {
+        *first = 1;
+        return HERO_UI_OK;
+    }
+    hero_ui_win_claim_names(identifier, identifier_count, mutex_name, pipe_name);
+    mutex = CreateMutexW(NULL, FALSE, mutex_name);
+    code = GetLastError();
+    /* A mutex made by a process of another elevation refuses to be opened,
+     * which says as much as finding it made. */
+    taken = (mutex != NULL && code == ERROR_ALREADY_EXISTS) || (mutex == NULL && code == ERROR_ACCESS_DENIED);
+    if (taken) {
+        if (mutex != NULL) {
+            (void)CloseHandle(mutex);
+        }
+        code = hero_ui_win_claim_send(pipe_name, arguments, count);
+        if (code != 0) {
+            return hero_ui_win_failed("handing the arguments to the app's first instance", code);
+        }
+        *first = 0;
+        return HERO_UI_OK;
+    }
+    if (mutex == NULL) {
+        return hero_ui_win_failed("claiming the app's one instance (CreateMutexW)", code);
+    }
+    claim = hero_layer_alloc_zero(1, sizeof *claim);
+    if (claim == NULL) {
+        (void)CloseHandle(mutex);
+        return HERO_UI_LIMIT;
+    }
+    InitializeCriticalSection(&claim->lock);
+    claim->mutex = mutex;
+    claim->pipe = INVALID_HANDLE_VALUE;
+    wcscpy(claim->pipe_name, pipe_name);
+    if (hero_ui_win_dialog_host == NULL) {
+        hero_ui_win_dialog_host = CreateWindowExW(0, hero_ui_win_panel_class, L"", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+    }
+    claim->host = hero_ui_win_dialog_host;
+    claim->stop = CreateEventW(NULL, TRUE, FALSE, NULL);
+    claim->io = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (claim->host == NULL || claim->stop == NULL || claim->io == NULL) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making what the app's one instance listens with", code);
+    }
+    claim->pipe = CreateNamedPipeW(pipe_name, PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS, 1, 4096, 4096, 0, NULL);
+    if (claim->pipe == INVALID_HANDLE_VALUE) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making the pipe a later launch hands its arguments to", code);
+    }
+    claim->thread = CreateThread(NULL, 0, hero_ui_win_claim_serve, claim, 0, NULL);
+    if (claim->thread == NULL) {
+        code = GetLastError();
+        hero_ui_win_claim_free(claim);
+        return hero_ui_win_failed("making the thread that listens for a later launch", code);
+    }
+    hero_ui_win_claimed = claim;
+    *first = 1;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
+    DWORD code;
+
+    if (hero_ui_win_claimed == NULL) {
+        return HERO_UI_INVALID;
+    }
+    code = hero_ui_win_claim_send(hero_ui_win_claimed->pipe_name, arguments, count);
+    return code == 0 ? HERO_UI_OK : hero_ui_win_failed("handing a later launch's arguments to the app", code);
+}
+
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
+    (void)what;
+    (void)items;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows opens a document in an app as the command line of a new process, which the app's one instance takes as a later launch's arguments, and makes no open request of its own to a running app");
+}
+
+void hero_ui_arm_instance_end(void) {
+    if (hero_ui_win_claimed != NULL) {
+        hero_ui_win_claim_free(hero_ui_win_claimed);
+        hero_ui_win_claimed = NULL;
+    }
+}
+
+/* The texts a later launch handed over, told to the program as the
+ * arguments of an opening (`HERO_UI_WIN_HANDED`). */
+static void hero_ui_win_handed_take(void) {
+    hero_ui_win_claim *claim = hero_ui_win_claimed;
+
+    while (claim != NULL) {
+        hero_ui_win_handed *text;
+        int64_t items = 0;
+
+        EnterCriticalSection(&claim->lock);
+        text = claim->first;
+        if (text != NULL) {
+            claim->first = text->next;
+            if (claim->first == NULL) {
+                claim->last = NULL;
+            }
+        }
+        LeaveCriticalSection(&claim->lock);
+        if (text == NULL) {
+            return;
+        }
+        for (int64_t at = 0; at < text->count; at += 1) {
+            items += text->bytes[at] == 0 ? 1 : 0;
+        }
+        hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, text->bytes, text->count);
+        hero_layer_free(text);
+    }
+}
+
+/* -- A TIP OVER A WIDGET ------------------------------------------------------
+ *
+ * A top-level window keeps one tooltip control (`TOOLTIPS_CLASS`, made at its
+ * first tip) and a widget's control is one of its tools, by its handle
+ * (`TTF_IDISHWND`) and with the tooltip subclassing it (`TTF_SUBCLASS`), so
+ * the system shows the tip when the pointer rests on the control, after its
+ * own delay. A tooltip breaks a line wider than its limit unless it is given
+ * one, so the limit stands at a width that keeps a line of words; the
+ * program's own line feeds break lines too. The tip is also kept in the
+ * widget, UTF-16 with CR LF, and read back from there.
+ *
+ * A radio group's tip is shown over its panel and each of its items; a tray
+ * icon's is the text Windows shows over it, which the icon's own text gives
+ * where it was given no tip (at most its first 127 units are held); a menu
+ * item has none, Windows showing no tip over a menu item, and a web view
+ * leaves its tips to its page. */
+
+/* The width a tip may take before it breaks a line, in points. */
+#define HERO_UI_WIN_TIP_WIDTH 320
+
+/* The kinds whose control the pointer rests on: not a window, a menu, a menu
+ * item or separator, a context menu, a page, a timer, a tray icon, which
+ * `hero_ui_arm_set_tip` tells apart. */
+static bool hero_ui_win_tips_over(const hero_ui_native *widget) {
+    switch (widget->kind) {
+    case HERO_UI_WINDOW:
+    case HERO_UI_MENU:
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_MENU_SEPARATOR:
+    case HERO_UI_CONTEXT_MENU:
+    case HERO_UI_PAGE:
+    case HERO_UI_TRAY:
+        return false;
+    default:
+        return widget->hwnd != NULL;
+    }
+}
+
+/* The tooltip control of `window`, made where it has none; NULL where
+ * Windows would not. */
+static HWND hero_ui_win_tooltips_of(hero_ui_native *window) {
+    if (window->tooltips == NULL) {
+        window->tooltips = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, window->hwnd, NULL, GetModuleHandleW(NULL), NULL);
+        if (window->tooltips != NULL) {
+            (void)SendMessageW(window->tooltips, TTM_SETMAXTIPWIDTH, 0, (LPARAM)hero_ui_win_px(HERO_UI_WIN_TIP_WIDTH, window->dpi));
+        }
+    }
+    return window->tooltips;
+}
+
+/* Makes `control` a tool of `tooltips` showing `text`, or takes it out
+ * where `text` is NULL; whether Windows did. */
+static bool hero_ui_win_tool(HWND tooltips, HWND owner, HWND control, wchar_t *text) {
+    TOOLINFOW tool;
+
+    memset(&tool, 0, sizeof tool);
+    tool.cbSize = (UINT)CCSIZEOF_STRUCT(TTTOOLINFOW, lpszText);
+    tool.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    tool.hwnd = owner;
+    tool.uId = (UINT_PTR)control;
+    (void)SendMessageW(tooltips, TTM_DELTOOLW, 0, (LPARAM)&tool);
+    if (text == NULL) {
+        return true;
+    }
+    tool.lpszText = text;
+    return SendMessageW(tooltips, TTM_ADDTOOLW, 0, (LPARAM)&tool) != FALSE;
+}
+
+/* Gives every control of `widget` its tip, or takes the tool of each away
+ * where it has none; whether Windows did. */
+static bool hero_ui_win_tip_apply(hero_ui_native *widget) {
+    hero_ui_native *window = hero_ui_win_top(widget->window);
+    HWND tooltips = window != NULL ? (widget->tip != NULL ? hero_ui_win_tooltips_of(window) : window->tooltips) : NULL;
+    bool done = true;
+
+    if (tooltips == NULL) {
+        return widget->tip == NULL;
+    }
+    /* A static control lets the mouse through to its window unless it is
+     * asked to be notified, and a tip is shown where the mouse rests on
+     * the control. */
+    if (widget->tip != NULL && (widget->kind == HERO_UI_LABEL || widget->kind == HERO_UI_SEPARATOR)) {
+        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, GetWindowLongPtrW(widget->hwnd, GWL_STYLE) | SS_NOTIFY);
+    }
+    done = hero_ui_win_tool(tooltips, window->hwnd, widget->hwnd, widget->tip);
+    for (int64_t i = 0; i < widget->radio_count; i += 1) {
+        done = hero_ui_win_tool(tooltips, window->hwnd, widget->radios[i], widget->tip) && done;
+    }
+    return done;
+}
+
+/* Takes `widget`'s tip and its tools away, as it is destroyed. */
+static void hero_ui_win_tip_end(hero_ui_native *widget) {
+    if (widget->tip == NULL) {
+        return;
+    }
+    if (widget->kind != HERO_UI_TRAY) {
+        hero_layer_free(widget->tip);
+        widget->tip = NULL;
+        (void)hero_ui_win_tip_apply(widget);
+        return;
+    }
+    hero_layer_free(widget->tip);
+    widget->tip = NULL;
+}
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t *wide;
+    bool done;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows shows no tip over a menu item: a menu draws its items as it has them and gives them none");
+    }
+    if (widget->kind == HERO_UI_WEBVIEW) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a web view leaves its tips to its page, which shows an element's own (its title), and the layer gives the view none");
+    }
+    if (widget->kind != HERO_UI_TRAY && !hero_ui_win_tips_over(widget)) {
+        return HERO_UI_INVALID;
+    }
+    wide = count > 0 ? hero_ui_win_wide(text, count, widget->kind == HERO_UI_TRAY ? 0u : HERO_UI_WIN_LINES) : NULL;
+    if (count > 0 && wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_layer_free(widget->tip);
+    widget->tip = wide;
+    if (widget->kind == HERO_UI_TRAY) {
+        return !widget->tray_shown || hero_ui_win_tray_show(widget, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its tip", GetLastError());
+    }
+    done = hero_ui_win_tip_apply(widget);
+    return done ? HERO_UI_OK : hero_ui_win_failed("giving a widget its tip (TTM_ADDTOOLW)", GetLastError());
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t held[128];
+    uint8_t *narrow;
+    int64_t bytes = 0;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows shows no tip over a menu item: a menu draws its items as it has them and gives them none");
+    }
+    if (widget->kind == HERO_UI_WEBVIEW) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a web view leaves its tips to its page, which shows an element's own (its title), and the layer gives the view none");
+    }
+    if (widget->kind != HERO_UI_TRAY && !hero_ui_win_tips_over(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *length = 0;
+    if (widget->tip == NULL) {
+        return HERO_UI_OK;
+    }
+    /* The tray holds the first 127 units of its tip. */
+    if (widget->kind == HERO_UI_TRAY) {
+        hero_ui_win_copy_units(held, sizeof held / sizeof held[0], widget->tip);
+    }
+    narrow = hero_ui_win_narrow(widget->kind == HERO_UI_TRAY ? held : widget->tip, (int)wcslen(widget->kind == HERO_UI_TRAY ? held : widget->tip), widget->kind != HERO_UI_TRAY, &bytes);
+    if (narrow == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    if (bytes <= count && bytes > 0) {
+        memcpy(buffer, narrow, (size_t)bytes);
+    }
+    hero_layer_free(narrow);
+    *length = bytes;
     return HERO_UI_OK;
 }
 
