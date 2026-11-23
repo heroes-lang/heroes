@@ -226,6 +226,7 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-on-the-own-stack-which-calls-the-function-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-that-resumes-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-left-by-setcontext-to-the-runner-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2704-a-handler-that-siglongjmps-out-of-the-function-the-program-gave-c-ends-the-program-quietly.hero", why: SIGACTION_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of

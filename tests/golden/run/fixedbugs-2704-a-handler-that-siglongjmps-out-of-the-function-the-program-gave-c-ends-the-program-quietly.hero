@@ -1,0 +1,26 @@
+# Fixed 2026-11-23, defect 2704, lane-jmp-fixes (panel 257's ffi-pragmatist,
+# `watchdog_h2`): a watchdog gives C a function of the program's, which
+# builds a `str`; a signal's handler of C's `siglongjmp`s out of it and C then
+# calls the program's `after` function, which runs because the handler is
+# left. A correct program: both functions answer and the program ends with
+# status 0.
+# Symptom: `answer ran for 7` and `result 70` were printed and the program
+# then aborted at exit with `1 heap blocks still live at exit (a missing
+# decref) - this is a compiler bug` (3 runs of 3, both platforms).
+# Cause and fix: as the first case of defect 2704, the jump here is a
+# handler's and the abandoned frame the function the handler left.
+extern "fixedbugs-2704-handler.h"
+    function wd_run(work: (function(i64) -> i64), after: (function(i64) -> i64)) -> i64
+    function wd_fire()
+
+function busy(n: i64) -> i64
+    word = f"{n}-held"
+    wd_fire()
+    return word.len()
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("result ", wd_run(work: busy, after: answer))

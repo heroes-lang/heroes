@@ -164,6 +164,12 @@
  * `hero_abort`, by place.c's place line and by os.c's `hero_args_set`. */
 #include "parts/calls.c"
 
+/* The callbacks C is inside, counted: how many thunks were entered and have
+ * not returned, which a C jump over a Heroes frame leaves above zero and the
+ * leak gate reads at the end (defect 2704). Needs nothing; before `sigguard.c`,
+ * whose thunk entry begins the count. */
+#include "parts/callback.c"
+
 /* No Heroes code inside a signal handler (panel 247's R1, defect 2494): the
  * question every thunk asks first, the delivery's address it is asked against,
  * and the one stop every refusal of a signal's re-entrance ends through, which

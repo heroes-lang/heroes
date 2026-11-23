@@ -540,7 +540,17 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
  * `__builtin_return_address(0)` and `__builtin_frame_address(0)`. Each read
  * of the walk is a word between the thunk's frame and the top of its thread's
  * stack, above the stack pointer, so it reads memory the thread has used. */
+static void hero_callback_asked(const char *what, void *ret, void *frame);
+
+/* The thunk's first line: the question, then the count (`parts/callback.c`):
+ * the count is begun only for a call the question let through, which the
+ * thunk's own last line then ends. */
 void hero_callback_entered(const char *what, void *ret, void *frame) {
+    hero_callback_asked(what, ret, frame);
+    hero_callback_in();
+}
+
+static void hero_callback_asked(const char *what, void *ret, void *frame) {
     uintptr_t plain = atomic_load_explicit(&hero_signal_returns[0], memory_order_acquire);
     uintptr_t info = atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed);
     uintptr_t wrapped = atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed);
@@ -601,6 +611,7 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
     (void)what;
     (void)ret;
     (void)frame;
+    hero_callback_in();
 }
 
 static void hero_signal_measure(void) {}

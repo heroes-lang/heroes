@@ -352,6 +352,15 @@ void hero_runtime_check_leaks(void) {
     hero_mail_check_alive();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
+    /* A CALLBACK'S FRAME THAT NEVER FINISHED HOLDS WHAT IT HELD (defect 2704): C
+     * jumped over it (libpng's `png_error`, a watchdog's `siglongjmp`) or its
+     * coroutine was never resumed, and nobody runs the end of scope the jump
+     * skipped. The balance cannot then tell those blocks from a missing decref,
+     * and *this is a compiler bug* was false of the program (panel 257's
+     * ffi-pragmatist: libpng's error path over a Heroes frame, 27 runs of 27).
+     * Not audited, as a program that calls `exit` is not (`hero_exit`); the
+     * count is `parts/callback.c`'s. */
+    if (blocks != 0 && hero_callbacks_unfinished() > 0) blocks = 0;
     if (blocks != 0) {
         hero_report_begin();
         hero_report_printf("panic: %lld heap blocks still live at exit "

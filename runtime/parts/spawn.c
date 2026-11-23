@@ -453,6 +453,9 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
     }
 #endif
     slot->result = slot->body(slot->arg);
+    /* What callbacks of this thread never finished (a C jump over their frames,
+     * defect 2704) joins the sum the leak gate reads (`parts/callback.c`). */
+    hero_callback_thread_ends();
     /* A print span the body left open is given back before anything else
      * ends, so stdout's lock never outlives its holder (`parts/panic.c`). */
     hero_print_thread_leave();
