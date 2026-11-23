@@ -160,6 +160,10 @@ function need(n: model.Node, needs: [[i64]], column: [i64]) -> [i64]
     around_w = n.insets[0] + n.insets[2]
     around_h = n.insets[1] + n.insets[3]
 
+    # A bar fills its window's width at the height the system draws it.
+    if model.is_bar(n.kind)
+        return [0, n.preferred_height]
+
     if n.kind == hero_ui.HERO_UI_TABS
         return [layout.most_of(needs, axis: 0) + around_w, layout.most_of(needs, axis: 1) + around_h]
 

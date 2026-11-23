@@ -308,8 +308,8 @@ function boxed(app: ui.App, into: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: into,
-        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE, hero_ui.HERO_UI_GROUP],
-        what: "a window, a row, a column, a grid, a page, a scrolled box, a pane or a group box"
+        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE, hero_ui.HERO_UI_GROUP, hero_ui.HERO_UI_TOOLBAR],
+        what: "a window, a row, a column, a grid, a page, a scrolled box, a pane, a group box or a toolbar"
     )
 
 # Adds `n`, a node of a new number, to `app`: on the native side its widget
@@ -318,6 +318,16 @@ function boxed(app: ui.App, into: ui.Widget) -> model.Node?
 # refuses, the widget it made is destroyed again and nothing is added.
 function added(@app: ui.App, n: model.Node) -> ui.Widget?
     node @= n
+
+    # A bar holds the leaves `model.bar_holds` names, and no other widget.
+    if n.parent != 0
+        holder = app.table.nodes[n.parent].must()
+
+        if model.is_bar(holder.kind) && !model.bar_holds(bar: holder.kind, kind: n.kind)
+            return fail(
+                code: failure.INVALID,
+                msg: f"a {model.kind_name(n.kind)} cannot be made in {model.kind_name(holder.kind)} {holder.id}, which holds buttons, checkboxes, text fields, combos and separators"
+            )
 
     if app.native && model.is_native(n.kind)
         match native.made(app, n: node)

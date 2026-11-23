@@ -498,18 +498,30 @@ function without(ids: [i64], id: i64) -> [i64]
 # Whether a node of `kind` holds widgets laid out in it: a window, a row, a
 # column or a grid.
 function holds_widgets(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_ROW || kind == hero_ui.HERO_UI_COLUMN || kind == hero_ui.HERO_UI_GRID || is_drawn_box(kind) || kind == hero_ui.HERO_UI_GROUP
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_ROW || kind == hero_ui.HERO_UI_COLUMN || kind == hero_ui.HERO_UI_GRID || is_drawn_box(kind) || kind == hero_ui.HERO_UI_GROUP || is_bar(kind)
 
 # Whether a node of `kind` is a box the system draws: tabs, a page, a
 # scrolled box, a split, a pane.
 function is_drawn_box(kind: i64) -> bool
     return kind >= hero_ui.HERO_UI_TABS && kind <= hero_ui.HERO_UI_PANE
 
+# Whether a node of `kind` is a bar, a toolbar: a box a window holds, docked
+# across the window's content at its top, its widgets side by side in it.
+function is_bar(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_TOOLBAR
+
+# Whether a bar of kind `bar` holds a widget of `kind`: a toolbar holds
+# buttons, checkboxes, text fields, combos and separators.
+function bar_holds(bar: i64, kind: i64) -> bool
+    if bar != hero_ui.HERO_UI_TOOLBAR
+        return false
+    return kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_SEPARATOR
+
 # Whether a node of `kind` is a frame: a window, a page, a scrolled box, a
-# pane or a group box, whose children stand in its own content, placed from
-# its top-left corner.
+# pane, a group box or a bar, whose children stand in its own content,
+# placed from its top-left corner.
 function is_frame(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_PAGE || kind == hero_ui.HERO_UI_SCROLL || kind == hero_ui.HERO_UI_PANE || kind == hero_ui.HERO_UI_GROUP
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_PAGE || kind == hero_ui.HERO_UI_SCROLL || kind == hero_ui.HERO_UI_PANE || kind == hero_ui.HERO_UI_GROUP || is_bar(kind)
 
 # Whether a node of `kind` is a split, its panes side by side or one over
 # the other.
@@ -519,7 +531,7 @@ function is_split(kind: i64) -> bool
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU || kind == hero_ui.HERO_UI_TRAY || kind == hero_ui.HERO_UI_SEPARATOR || kind == hero_ui.HERO_UI_GROUP || kind == hero_ui.HERO_UI_EDITABLE_COMBO || kind == hero_ui.HERO_UI_SPIN
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU || kind == hero_ui.HERO_UI_TRAY || kind == hero_ui.HERO_UI_SEPARATOR || kind == hero_ui.HERO_UI_GROUP || kind == hero_ui.HERO_UI_EDITABLE_COMBO || kind == hero_ui.HERO_UI_SPIN || is_bar(kind)
 
 # The rows list or table `n` holds: a list's items, a table's cells over
 # its columns.
@@ -594,6 +606,7 @@ function kind_name(kind: i64) -> str
         "group"
         "editable_combo"
         "spin"
+        "toolbar"
     ]
 
     if kind < 0 || kind >= names.len()

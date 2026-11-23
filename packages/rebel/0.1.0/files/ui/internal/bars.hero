@@ -1,0 +1,151 @@
+# Bars the system draws across a window, as wxWidgets' `wxToolBar`: the
+# common commands of a window as a row of controls above its content
+# (`ui.toolbar`). A bar is a box a window holds, one of each kind to a window,
+# and a frame as a group box is: the widgets made in it stand in its own
+# content, from its top-left corner, side by side in the order they were
+# made, and on the native side each is a widget of the system's own.
+#
+# **Where a bar stands.** A window docks its bars across its width, a
+# toolbar above the rest of its widgets whatever order they were made in,
+# and lays the rest of its widgets out in the content that is left. The room
+# a bar takes of the content is what the system says it draws it at
+# (`preferred`'s height): the system's toolbar height where it draws one
+# inside the content, `0` where it draws one in the window's frame outside
+# it, as macOS's `NSToolbar` is, so the content below starts at the top.
+# The headless side draws it at `sizes.TOOLBAR_HEIGHT`.
+#
+# **What it holds.** A toolbar holds buttons, checkboxes, text fields, combos
+# and separators (`model.bar_holds`) and no box and no other widget.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/makers
+use ui/internal/model
+use ui/internal/sizes
+
+# The room a bar leaves inside it, on every side, headless.
+constant BAR_PADDING: i64
+    4
+
+# A new toolbar in window `into` (`ui.toolbar`).
+function toolbar(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    return docked_bar(@app, into: into, kind: hero_ui.HERO_UI_TOOLBAR)
+
+# A new bar of `kind` in window `into`, the room its own drawing takes read
+# from the system. Fails `invalid` where `into` is no window or already
+# holds a bar of `kind`.
+function docked_bar(@app: ui.App, into: ui.Widget, kind: i64) -> ui.Widget?
+    parent = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+
+    for child in parent.children
+        if app.table.nodes[child].must().kind == kind
+            return fail(
+                code: failure.INVALID,
+                msg: f"window {parent.id} holds a {model.kind_name(kind)} already, the most a window holds"
+            )
+
+    n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
+    n.padding @ BAR_PADDING
+    return makers.added(@app, n: n)
+
+test "toolbar: docked across the top of its window whatever order its widgets were made in, its items side by side from its corner, one to a window and holding only what a toolbar holds (catalogue CT47)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    below = ui.label(@app, into: w, text: "Body").must()
+    bar = ui.toolbar(@app, into: w).must()
+    assert ui.kind_of(app, widget: bar).must() == .toolbar
+    open = ui.button(@app, into: bar, text: "Open").must()
+    divide = ui.separator(@app, into: bar).must()
+    save = ui.button(@app, into: bar, text: "Save").must()
+    search = ui.text_field(@app, into: bar, text: "").must()
+    toggle = ui.checkbox(@app, into: bar, text: "Wrap", checked: true).must()
+    at = ui.rect_of(@app, widget: bar).must()
+    assert at.x == 0 && at.y == 0 && at.height == sizes.TOOLBAR_HEIGHT
+    assert at.width == ui.rect_of(@app, widget: w).must().width
+
+    # The rest of the window starts under it, in the window's own padding.
+    assert ui.rect_of(@app, widget: below).must().y == sizes.TOOLBAR_HEIGHT + model.WINDOW_PADDING
+    first = ui.rect_of(@app, widget: open).must()
+    next = ui.rect_of(@app, widget: save).must()
+    assert first.x == BAR_PADDING && first.y >= BAR_PADDING && first.y + first.height <= at.height
+    assert next.x > first.x + first.width
+    assert ui.rect_of(@app, widget: search).must().x > next.x + next.width
+    assert ui.rect_of(@app, widget: toggle).must().x > ui.rect_of(@app, widget: search).must().x
+    assert ui.rect_of(@app, widget: divide).must().x > first.x + first.width
+
+    # A button of a toolbar is told as any is.
+    ui.inject(@app, input: .click(widget: save)).must()
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .clicked(widget: save)
+    ui.set_text(@app, widget: open, text: "Open file").must()
+    assert ui.text_of(app, widget: open).must() == "Open file"
+    ui.set_enabled(@app, widget: save, on: false).must()
+
+    # One to a window, in a window only, and no other widget in it.
+    assert fixture.code_of(ui.toolbar(@app, into: w)) == ui.INVALID
+    row = ui.row(@app, into: w).must()
+    assert fixture.code_of(ui.toolbar(@app, into: row)) == ui.INVALID
+    assert fixture.code_of(ui.label(@app, into: bar, text: "No")) == ui.INVALID
+    assert fixture.code_of(ui.group(@app, into: bar, title: "No")) == ui.INVALID
+    assert fixture.code_of(ui.row(@app, into: bar)) == ui.INVALID
+    ui.destroy(@app, widget: bar).must()
+    assert fixture.code_of(ui.rect_of(@app, widget: open)) == ui.CLOSED
+    assert ui.rect_of(@app, widget: below).must().y == model.WINDOW_PADDING
+    again = ui.toolbar(@app, into: w).must()
+    assert ui.rect_of(@app, widget: again).must().height == sizes.TOOLBAR_HEIGHT
+    ui.close(@app).must()
+
+test "toolbar: on the native side the system's own made, its items the system's buttons, fields and checkboxes told as any are, and the room it takes of the content what the system says (catalogue CT47)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Tools", width: 300, height: 200).must()
+    before = ui.frame_of(@app, widget: w).must()
+    offered = ui.toolbar(@app, into: w)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    bar = offered.must()
+    open = ui.button(@app, into: bar, text: "Open").must()
+    _ = ui.separator(@app, into: bar).must()
+    seek = ui.text_field(@app, into: bar, text: "").must()
+    wrap = ui.checkbox(@app, into: bar, text: "Wrap", checked: false).must()
+    body = ui.label(@app, into: w, text: "Body").must()
+
+    # The first widget of the content stands under what the system's toolbar
+    # takes of it: nothing where it draws it outside.
+    room = ui.rect_of(@app, widget: bar).must().height
+    assert ui.rect_of(@app, widget: body).must().y == room + model.WINDOW_PADDING
+    assert fixture.code_of(ui.toolbar(@app, into: w)) == ui.INVALID
+    assert fixture.code_of(ui.label(@app, into: bar, text: "No")) == ui.INVALID
+    ui.set_text(@app, widget: open, text: "Open file").must()
+    assert ui.text_of(app, widget: open).must() == "Open file"
+
+    # A toolbar the system draws outside the content makes the window's frame
+    # taller and the content what it was, and tells the program of no resize.
+    if room == 0
+        assert ui.frame_of(@app, widget: w).must().height > before.height
+        assert ui.rect_of(@app, widget: w).must().height == 200
+    ui.inject(@app, input: .click(widget: open)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .clicked(widget: open)
+    ui.inject(@app, input: .type_text(widget: seek, text: "needle")).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: seek, text: "needle")
+    ui.inject(@app, input: .toggle(widget: wrap)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .toggled(widget: wrap, checked: true)
+    ui.set_enabled(@app, widget: open, on: false).must()
+    ui.set_visible(@app, widget: bar, on: false).must()
+    ui.set_visible(@app, widget: bar, on: true).must()
+    ui.destroy(@app, widget: bar).must()
+    assert fixture.code_of(ui.rect_of(@app, widget: open)) == ui.CLOSED
+
+    # A toolbar made again after the first went with its widgets.
+    again = ui.toolbar(@app, into: w).must()
+    _ = ui.button(@app, into: again, text: "Back").must()
+    ui.close(@app).must()

@@ -78,6 +78,11 @@ constant GROUP_TOP: i64
 constant SPIN_ARROWS: i64
     32
 
+# The height of the headless side's toolbar: the room the system's takes
+# above a window's content where it draws one inside it.
+constant TOOLBAR_HEIGHT: i64
+    38
+
 # The room its tabs and the border above a page take, high.
 constant TAB_TOP: i64
     32
@@ -123,6 +128,10 @@ function of(n: model.Node) -> [i64]
     # A line one point thick, as long as its box gives it.
     if k == hero_ui.HERO_UI_SEPARATOR
         return [1, 1]
+
+    # A toolbar fills its window's width, so none of it is asked for.
+    if k == hero_ui.HERO_UI_TOOLBAR
+        return [0, TOOLBAR_HEIGHT]
 
     if k == hero_ui.HERO_UI_LABEL
         lines = lines_of(n.text)

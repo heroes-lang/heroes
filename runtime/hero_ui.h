@@ -1392,4 +1392,27 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * where it changes the value. */
 #define HERO_UI_SPIN 35
 
+/* -- A TOOLBAR ----------------------------------------------------------------
+ *
+ * wxWidgets' `wxToolBar`: the common commands of a window as a row of
+ * controls above its content, drawn by the system. `HERO_UI_TOOLBAR` is made
+ * with a window as its parent, one to a window (`INVALID` for a second, and
+ * for any other parent). Its items are widgets made with it as their parent,
+ * of the kinds `HERO_UI_BUTTON`, `HERO_UI_CHECKBOX`, `HERO_UI_TEXT_FIELD`,
+ * `HERO_UI_COMBO` and `HERO_UI_SEPARATOR` (`INVALID` for any other kind), and
+ * each behaves as it does anywhere: its text, its enabled state, its tip, its
+ * value and what the person does to it are told as for a widget in a window.
+ *
+ * Where it stands is the arm's: the toolbar is placed (`hero_ui_place`) by
+ * the layout across the top of the window's content, the items placed in it
+ * from its top-left corner, and `hero_ui_preferred` answers the room it takes
+ * of the content, `0` wide and its height high: the system's toolbar height
+ * where it draws one inside the content, `0` where it draws one in the
+ * window's frame outside it (macOS: `NSToolbar` above the content, the items
+ * set out by the system in the order they were made and a `hero_ui_place` of
+ * theirs accepted and ignored). `hero_ui_set_visible` shows and hides it. A
+ * window with no room for every item is the system's to deal with (macOS
+ * folds the rest into a menu). */
+#define HERO_UI_TOOLBAR 36
+
 #endif

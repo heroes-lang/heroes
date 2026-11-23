@@ -124,6 +124,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_SPIN
         return .spin
 
+    if code == hero_ui.HERO_UI_TOOLBAR
+        return .toolbar
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview

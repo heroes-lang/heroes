@@ -83,6 +83,7 @@ use poll
 use printing
 use time
 use ui/hero_ui
+use ui/internal/bars
 use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
@@ -329,6 +330,8 @@ variant Kind
     editable_combo
     # A whole number the person types or steps by arrows.
     spin
+    # The common commands of a window as a row of controls above its content.
+    toolbar
 
 # What `widget` is.
 #
@@ -868,6 +871,24 @@ function separator(@app: App, into: Widget) -> Widget?
 # draws none (Windows and Linux, pending).
 function group(@app: App, into: Widget, title: str) -> Widget?
     return frames.group(@app, into: into, title: title)
+
+# A new toolbar in window `into`, as wxWidgets' `wxToolBar`: the common
+# commands of a window as a row of controls above its content, drawn by the
+# system. Its items are the widgets made in it by passing it as `into`:
+# buttons, checkboxes, text fields, combos and separators, side by side in
+# the order they were made, each told as it is anywhere. The window docks it
+# across its width above the rest of its widgets, whatever order they were
+# made in; the room it takes of the window's content is what the system
+# draws it at, none where it draws it outside the content (macOS).
+#
+# - `app`: the app it is made in.
+# - `into`: a window, which holds one toolbar.
+#
+# Fails `closed`, `invalid` where `into` is no window or holds a toolbar
+# already, `failed`, `unsupported` where the system's arm draws none
+# (Windows and Linux, pending).
+function toolbar(@app: App, into: Widget) -> Widget?
+    return bars.toolbar(@app, into: into)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #

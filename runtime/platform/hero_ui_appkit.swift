@@ -277,6 +277,25 @@ private final class SpinView: NSView {
 
 // One native widget and what it is made of.
 @MainActor
+// What a window's toolbar shows, in the order the widgets were made: AppKit
+// asks its delegate for an item by identifier as it inserts one, and holds the
+// delegate weakly, so the toolbar's widget keeps this.
+private final class ToolbarKeeper: NSObject, NSToolbarDelegate {
+    var items: [NSToolbarItem] = []
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        return items.first { $0.itemIdentifier == itemIdentifier }
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return items.map { $0.itemIdentifier }
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return items.map { $0.itemIdentifier }
+    }
+}
+
 private final class Native {
     let id: Int64
     let kind: Int64
@@ -311,6 +330,11 @@ private final class Native {
     // A text field's selection, in bytes of its text, kept when it last
     // gave the keys up; nil for its text's end.
     var fieldRange: (Int64, Int64)?
+    // A toolbar's own toolbar and the items it shows; the item of a widget
+    // standing in a toolbar.
+    var toolbar: NSToolbar?
+    var keeper: ToolbarKeeper?
+    var toolbarItem: NSToolbarItem?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -626,6 +650,20 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let status = widget.status {
             NSStatusBar.system.removeStatusItem(status)
             widget.status = nil
+        }
+        if let item = widget.toolbarItem, let owner = widgets[widget.parent], let bar = owner.toolbar {
+            if let at = bar.items.firstIndex(where: { $0 === item }) {
+                muted = true
+                bar.removeItem(at: at)
+                muted = false
+            }
+            owner.keeper?.items.removeAll { $0 === item }
+        }
+        if widget.kind == kindToolbar {
+            muted = true
+            widgets[widget.parent]?.window?.toolbar = nil
+            muted = false
+            widget.toolbar = nil
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -952,7 +990,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let window = note.object as? NSWindow, let widget = widgets.values.first(where: { $0.window === window }) else {
             return
         }
-        let size = window.contentLayoutRect.size
+        // The content's own size: a toolbar is part of the frame outside it,
+        // and `contentLayoutRect` then answers the frame less the toolbar.
+        let size = window.contentRect(forFrameRect: window.frame).size
         queue(eventResize, widget.id, Int64(size.width.rounded()), Int64(size.height.rounded()))
     }
 
@@ -1234,6 +1274,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
             } else if let item = widget.item {
                 item.isHidden = !on
+            } else if widget.kind == kindToolbar {
+                widgets[widget.parent]?.window?.toolbar?.isVisible = on
             } else {
                 widget.view?.isHidden = !on
             }
@@ -1358,7 +1400,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             window.contentMinSize = size
             return answerOk
         }
-        if window.contentLayoutRect.size != size {
+        if window.contentRect(forFrameRect: window.frame).size != size {
             // AppKit keeps a window's bottom-left corner where its size
             // changes; `hero_ui.h` places a window by its top-left corner,
             // so that corner is kept, and a window the program placed stays
@@ -1379,6 +1421,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         // The system sizes a page and a pane itself.
         if widget.kind == kindPage || widget.kind == kindPane {
             return answerInvalid
+        }
+        // The toolbar sets its items out itself, in the order they were made.
+        if widget.kind == kindToolbar || widget.toolbarItem != nil {
+            return answerOk
         }
         if index < 0 {
             guard let view = widget.view else {
@@ -2690,7 +2736,27 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
     // Makes `made`, of a kind of BOXES THE SYSTEM DRAWS, in `owner`; nil
     // for every other kind, which `create` makes itself.
     func createBox(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        if owner.kind == kindToolbar {
+            return createToolbarItem(id, kind, owner, made)
+        }
         switch kind {
+        case kindToolbar:
+            // The system draws the toolbar in the window's frame above its
+            // content, one to a window, and takes no room from the content.
+            guard owner.kind == kindWindow, let window = owner.window, window.toolbar == nil else {
+                return answerInvalid
+            }
+            let keeper = ToolbarKeeper()
+            let bar = NSToolbar(identifier: NSToolbar.Identifier("org.heroes-lang.toolbar.\(id)"))
+            bar.delegate = keeper
+            bar.displayMode = .iconOnly
+            bar.allowsUserCustomization = false
+            bar.autosavesConfiguration = false
+            muted = true
+            window.toolbar = bar
+            muted = false
+            made.toolbar = bar
+            made.keeper = keeper
         case kindPage:
             guard owner.kind == kindTabs, let tabs = owner.view as? NSTabView else {
                 return answerInvalid
@@ -2778,6 +2844,36 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         return answerOk
     }
 
+    // A widget made in a toolbar: its view is the toolbar item's, after the
+    // items made before it. Only the leaves a toolbar holds are made.
+    func createToolbarItem(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        guard kind == kindButton || kind == kindCheckbox || kind == kindTextField || kind == kindCombo || kind == kindSeparator,
+              let bar = owner.toolbar, let keeper = owner.keeper, let view = viewOf(kind, made) else {
+            return answerInvalid
+        }
+        view.translatesAutoresizingMaskIntoConstraints = false
+        if let button = view as? NSButton, kind == kindButton {
+            button.bezelStyle = .texturedRounded
+        }
+        if kind == kindTextField {
+            view.widthAnchor.constraint(equalToConstant: fieldWidth).isActive = true
+        }
+        if kind == kindSeparator {
+            view.widthAnchor.constraint(equalToConstant: 1).isActive = true
+            view.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        }
+        let item = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier("org.heroes-lang.toolbar.item.\(id)"))
+        item.view = view
+        keeper.items.append(item)
+        muted = true
+        bar.insertItem(withItemIdentifier: item.itemIdentifier, at: bar.items.count)
+        muted = false
+        made.view = view
+        made.toolbarItem = item
+        widgets[id] = made
+        return answerOk
+    }
+
     // The room tabs or a scrolled box draws around its content.
     func insets(_ id: Int64) -> (Int64, Int64, Int64, Int64)? {
         guard let widget = widgets[id] else {
@@ -2824,7 +2920,7 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         case kindSplitRow, kindSplitColumn:
             let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
             return NSSize(width: thickness, height: thickness)
-        case kindTabs, kindPage, kindScroll, kindPane, kindGroup:
+        case kindTabs, kindPage, kindScroll, kindPane, kindGroup, kindToolbar:
             return NSSize(width: 0, height: 0)
         default:
             return nil
@@ -3484,6 +3580,7 @@ private let kindSeparator: Int64 = 32
 private let kindGroup: Int64 = 33
 private let kindEditableCombo: Int64 = 34
 private let kindSpin: Int64 = 35
+private let kindToolbar: Int64 = 36
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

@@ -298,6 +298,14 @@ capability ui/spin  a number typed, or stepped up and down
   wx      wxSpinCtrl, wxSpinCtrlDouble
   note    catalogue CT22; a whole number between a range's ends, each arrow changing it by 1 (a step of the program's own and a decimal number, `wxSpinCtrlDouble`, are not offered); `set_value`, `value_of` and `set_range` as a slider's, `.slide` giving the value typed or stepped to, `.value_changed` told at each arrow and where a typed number is committed (Return or the field giving the keys up), one past the range clamped and a text that is no number put back; macOS by an `NSTextField` and an `NSStepper` in a view of their own; Windows pending (the up-down control `UPDOWN_CLASS` with `UDS_SETBUDDYINT` over an `EDIT`), Linux pending (`GtkSpinButton`)
 
+capability ui/toolbar  the common commands of a window as a row of controls above its content
+  heroes  ui.toolbar, ui.Kind.toolbar
+  go      -
+  rust    -
+  python  -
+  wx      wxToolBar, wxFrame::CreateToolBar
+  note    catalogue CT47; a box of a window, one to a window, docked across its width above the rest of its widgets and holding buttons, checkboxes, text fields, combos and separators side by side in the order made, each told as it is anywhere; the room it takes of the content is the system's answer (`preferred`'s height) and the headless side's is `sizes.TOOLBAR_HEIGHT`; macOS by an `NSToolbar` in the window's frame above the content (a widget of the toolbar is the view of an `NSToolbarItem`, set out by the system, so the room it takes of the content is none); Windows pending (the toolbar control, `TOOLBARCLASSNAME`, or a plain child window holding the widgets), Linux pending (a `GtkBox` of the widgets, GTK 4 having removed `GtkToolbar`)
+
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture
   go      ui.NewImage, Image.Append

@@ -701,7 +701,7 @@ public func hero_ui_appkit_set_framed(_ window: UnsafeMutableRawPointer?, _ on: 
             said = "a window in full screen keeps its frame until it leaves full screen"
             return answerOther
         }
-        let content = changed.contentLayoutRect.size
+        let content = changed.contentRect(forFrameRect: changed.frame).size
         let resizable = changed.styleMask.contains(.resizable)
         var mask: NSWindow.StyleMask = on == 1 ? [.titled, .closable, .miniaturizable] : [.borderless, .miniaturizable]
         if resizable {
