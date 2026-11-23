@@ -37,10 +37,13 @@
  * THE STOP: `hero_poll_hear_stop`, called by `hero_net.c` at each stop it
  * hears (its readiness thread for a signal on POSIX, the console's thread on
  * Windows, or the thread that asked), writes one byte down a pipe on POSIX
- * and sends one datagram to a loopback socket of its own on Windows. Nobody
- * reads either, so it stays ready from then on, and every set watches it
- * beside its entries: every wait of the process wakes at once, and every
- * later one finds it ready, as the stop is never taken back.
+ * and sends one datagram to a loopback socket of its own on Windows, bound
+ * with its address held exclusively and connected to itself, so it hears no
+ * other socket (defect 2696). Nobody reads either, so it stays ready from
+ * then on, and every set watches it beside its entries: every wait of the
+ * process wakes at once, and every later one finds it ready, as the stop is
+ * never taken back. A wait told the bell asks whether the stop was asked and
+ * never takes the bell's word alone (`hero_poll_bell_heard`).
  *
  * THE DOORBELL, AND A MAILBOX IN A SET (panel 256's R7 and R8, provisional).
  * A mailbox entry stands on no descriptor: it is the number `m.number()`
@@ -261,11 +264,11 @@ static _Thread_local int64_t hero_poll_os;
 
 #if defined(_WIN32)
 static SRWLOCK hero_poll_lock = SRWLOCK_INIT;
-/* The stop's bell: a datagram socket on the loopback, bound to itself, which
- * the hook sends one datagram to and nobody reads. Its address is written
- * once, before the socket is published. */
+/* The stop's bell: a datagram socket on the loopback that hears itself alone
+ * (`hero_poll_loopback`), which the hook sends one datagram to and nobody
+ * reads (defect 2696: bound and never connected, it took any process's
+ * datagram, and every later wait failed `stopped`). */
 static _Atomic SOCKET hero_poll_bell = INVALID_SOCKET;
-static struct sockaddr_in hero_poll_bell_at;
 #else
 static pthread_mutex_t hero_poll_lock = PTHREAD_MUTEX_INITIALIZER;
 /* The stop's pipe: the hook writes `hero_poll_bell_out`, every set watches
@@ -397,7 +400,8 @@ static void hero_poll_hear_stop(void) {
     SOCKET bell = atomic_load(&hero_poll_bell);
 
     if (bell != INVALID_SOCKET) {
-        (void)sendto(bell, "\1", 1, 0, (const struct sockaddr *)&hero_poll_bell_at, (int)sizeof hero_poll_bell_at);
+        /* `send`, the socket being connected to itself. */
+        (void)send(bell, "\1", 1, 0);
     }
 #else
     int out = atomic_load(&hero_poll_bell_out);
@@ -412,35 +416,22 @@ static void hero_poll_hear_stop(void) {
 }
 
 #if defined(_WIN32)
-/* The bell made: a datagram socket bound to the loopback at a port the
- * system chooses, non-blocking and never inherited. False where any of it is
- * refused, the loopback down among the causes, nothing left made. */
+static SOCKET hero_poll_loopback(void);
+
+/* The bell made: a datagram socket on the loopback that hears itself alone,
+ * non-blocking and never inherited. False where any of it is refused, the
+ * loopback down among the causes, nothing left made. */
 static bool hero_poll_bell_made(void) {
     WSADATA data;
 
     if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
         return false;
     }
-    SOCKET bell = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    SOCKET bell = hero_poll_loopback();
 
     if (bell == INVALID_SOCKET) {
         return false;
     }
-    struct sockaddr_in at;
-    int size = (int)sizeof at;
-    u_long on = 1;
-
-    memset(&at, 0, sizeof at);
-    at.sin_family = AF_INET;
-    at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    at.sin_port = 0;
-    /* `FIONBIO` is an unsigned bit pattern the call takes as its `long`. */
-    if (bind(bell, (const struct sockaddr *)&at, (int)sizeof at) != 0 || getsockname(bell, (struct sockaddr *)&at, &size) != 0 ||
-        ioctlsocket(bell, (long)FIONBIO, &on) != 0 || !SetHandleInformation((HANDLE)bell, HANDLE_FLAG_INHERIT, 0)) {
-        (void)closesocket(bell);
-        return false;
-    }
-    hero_poll_bell_at = at;
     atomic_store(&hero_poll_bell, bell);
     return true;
 }
@@ -467,6 +458,35 @@ static bool hero_poll_bell_made(void) {
     return true;
 }
 #endif
+
+/* The bell told ready by the system: the stop where the program's stop was
+ * asked, and nothing else (defect 2696). The flag is set before any bell is
+ * rung (`hero_net.c`), so a bell ready with no stop asked holds bytes no stop
+ * sent: they are drained, and the flag asked again, the bell rung again where
+ * a stop came meanwhile, so no wait sharing it misses that stop. */
+static bool hero_poll_bell_heard(void) {
+    if (hero_net_stop_asked() != 0) {
+        return true;
+    }
+#if defined(_WIN32)
+    SOCKET bell = atomic_load(&hero_poll_bell);
+    char got[16];
+
+    while (bell != INVALID_SOCKET && recv(bell, got, (int)sizeof got, 0) > 0) {
+    }
+#else
+    int in = atomic_load(&hero_poll_bell_in);
+    char got[64];
+
+    while (in >= 0 && read(in, got, sizeof got) > 0) {
+    }
+#endif
+    if (hero_net_stop_asked() != 0) {
+        hero_poll_hear_stop();
+        return true;
+    }
+    return false;
+}
 
 /* The member's once, under the lock: the bell made and `hero_net.c` asked to
  * call the hook at every stop. Where either is refused the waits ask in
@@ -1761,7 +1781,7 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
                 int64_t bits = got[i].filter == EVFILT_WRITE ? HERO_POLL_WRITE : HERO_POLL_READ;
 
                 if (key == 0) {
-                    stopped = true;
+                    stopped = stopped || hero_poll_bell_heard();
                     continue;
                 }
                 if (key == HERO_POLL_DOOR_KEY || got[i].filter == EVFILT_USER) {
@@ -1796,7 +1816,7 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
                 int64_t bits = 0;
 
                 if (key == 0) {
-                    stopped = true;
+                    stopped = stopped || hero_poll_bell_heard();
                     continue;
                 }
                 if (key == HERO_POLL_DOOR_KEY) {
@@ -1850,7 +1870,7 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
                     continue;
                 }
                 if (entry == 0) {
-                    stopped = true;
+                    stopped = stopped || hero_poll_bell_heard();
                     continue;
                 }
                 if (entry == HERO_POLL_DOOR_PLACE) {

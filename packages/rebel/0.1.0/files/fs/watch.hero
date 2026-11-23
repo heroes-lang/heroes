@@ -305,8 +305,8 @@ function count(w: Watch) -> i64?
 #
 # The set waits on a pipe the watch rings on Darwin and Linux, and on a
 # datagram socket of the loopback on Windows, whose readiness waits on sockets
-# alone; there a datagram from another program can make the key readable with
-# no event waiting, so a `wait` of zero may answer none.
+# alone; that socket is connected to itself, so no other program's datagram
+# makes the key readable.
 #
 # Fails `closed` where the set or the watch is closed, `limit` where the set
 # holds the most entries it was made for or no pipe or socket can be made.

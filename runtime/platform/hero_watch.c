@@ -201,7 +201,6 @@ typedef struct hero_watch_state {
     hero_net_socket *bell_socket;
     int64_t bell_hold;
     SOCKET bell_fd;
-    struct sockaddr_in bell_at;
 #else
     hero_stream *bell_in;
     hero_stream *bell_out;
@@ -609,7 +608,8 @@ static void hero_watch_ring(hero_watch_state *st) {
         return;
     }
 #if defined(_WIN32)
-    if (sendto(st->bell_fd, "\1", 1, 0, (const struct sockaddr *)&st->bell_at, (int)sizeof st->bell_at) == 1) {
+    /* `send`, the bell being connected to itself (defect 2696). */
+    if (send(st->bell_fd, "\1", 1, 0) == 1) {
         st->rung = true;
     }
 #else
@@ -627,8 +627,8 @@ static void hero_watch_hush(hero_watch_state *st) {
         return;
     }
 #if defined(_WIN32)
-    /* Every datagram there, a stranger's among them: the socket is the
-     * layer's, non-blocking. */
+    /* Every datagram there, each one of this watch's rings, the socket being
+     * connected to itself: the socket is the layer's, non-blocking. */
     char drop[64];
 
     while (recv(st->bell_fd, drop, (int)sizeof drop, 0) >= 0) {
@@ -2892,8 +2892,16 @@ hero_net_socket *hero_watch_bell_socket(hero_watch *w) {
     int64_t port = hero_net_port(s);
     int64_t fd = -1;
     int64_t hold = port <= 0 ? -1 : hero_net_hold(s, &fd);
+    struct sockaddr_in at;
 
-    if (hold < 0 || port > 65535) {
+    memset(&at, 0, sizeof at);
+    at.sin_family = AF_INET;
+    at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    at.sin_port = htons((u_short)(port > 0 && port <= 65535 ? port : 0));
+    /* Connected to its own address, so Winsock drops a datagram from any
+     * other socket, another process's among them (defect 2696's class): the
+     * key is told readable for this watch's rings alone. */
+    if (hold < 0 || port > 65535 || connect((SOCKET)(uint64_t)fd, (const struct sockaddr *)&at, (int)sizeof at) != 0) {
         if (hold >= 0) {
             hero_net_unhold(hold);
         }
@@ -2911,10 +2919,6 @@ hero_net_socket *hero_watch_bell_socket(hero_watch *w) {
         st->bell_socket = s;
         st->bell_hold = hold;
         st->bell_fd = (SOCKET)(uint64_t)fd;
-        memset(&st->bell_at, 0, sizeof st->bell_at);
-        st->bell_at.sin_family = AF_INET;
-        st->bell_at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        st->bell_at.sin_port = htons((u_short)port);
         st->bell = true;
         if (st->head != NULL) {
             hero_watch_ring(st);
