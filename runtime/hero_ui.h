@@ -1198,4 +1198,74 @@ int64_t hero_ui_set_text_selection(hero_ui_app *app, int64_t id, int64_t start, 
  * never held them since the program set its text. 0, or -1. */
 int64_t hero_ui_text_selection(hero_ui_app *app, int64_t id, int64_t *start, int64_t *end);
 
+/* -- THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM --------
+ *
+ * wxWidgets' `wxApp::SetAppName`, `wxSingleInstanceChecker` and
+ * `wxApp::MacOpenFiles`, Electron's `app.requestSingleInstanceLock` and
+ * `open-file`: the name the system knows the app by, one process of it at a
+ * time, a second launch handing its arguments to the first, and the
+ * documents the system asks the app to open. */
+
+/* The most bytes of an app's identifier. */
+#define HERO_UI_IDENTITY_MOST 128
+
+/* Gives the app its identity: `identifier`, a reverse domain name (two or
+ * more parts joined by dots, each ASCII letters, digits and hyphens, the
+ * first a letter; at most `HERO_UI_IDENTITY_MOST` bytes), which keys its one
+ * instance, and `name`, one line, the name its menus show the person.
+ * Before the app's first window and once: `INVALID` after either. Inside a
+ * macOS application bundle the identifier is the bundle's own
+ * (`CFBundleIdentifier`), and another is `INVALID`, naming it. 0, or -1. */
+int64_t hero_ui_set_identity(hero_ui_app *app, const void *identifier, uint64_t identifier_count, const void *name, uint64_t name_count);
+
+/* Makes this process its identity's one instance: answers 1 where no other
+ * process of it runs for this user, each later launch's arguments then
+ * coming as `HERO_UI_EVENT_OPEN` with `HERO_UI_OPEN_ARGUMENTS`; 0 where one
+ * runs, `arguments` (`count` bytes, each argument followed by one zero
+ * byte, the program's own name left out) having been handed to it, so this
+ * process closes the app and ends; -1, `INVALID` before the identity. The
+ * claim holds until the app closes; a second claim answers 1 again. */
+int64_t hero_ui_claim_instance(hero_ui_app *app, const void *arguments, uint64_t count);
+
+/* Documents, addresses or a later launch's arguments handed to the app:
+ * `value` how many, `second` what they are, the text holding them, each
+ * followed by one zero byte; `id` 0. `hero_ui_inject` with this kind hands
+ * them as the system would: files and addresses by the system's own open
+ * request (on macOS its Apple events), arguments as a later launch of the
+ * claimed instance would, through its hand-over. */
+#define HERO_UI_EVENT_OPEN 21
+/* Paths of files the system asks the app to open: a double click, Open
+ * With, a drop on its Dock icon (on macOS for an app in a bundle that
+ * names their types). */
+#define HERO_UI_OPEN_FILES 1
+/* Addresses of a scheme the app claims (on macOS a bundle's
+ * `CFBundleURLTypes`). */
+#define HERO_UI_OPEN_URLS 2
+/* A later launch's arguments (`hero_ui_claim_instance`). */
+#define HERO_UI_OPEN_ARGUMENTS 3
+
+/* -- A TIP OVER A WIDGET -----------------------------------------------------
+ *
+ * wxWidgets' `wxWindow::SetToolTip`: a few words the system shows over a
+ * widget while the pointer rests on it, saying what a button of an image or
+ * a terse field does. */
+
+/* Gives widget `id` the tip `text`, `count` bytes; none, `count` 0, takes it
+ * back. A widget placed in a box or a window, a menu item or a tray icon;
+ * `INVALID` for another kind. 0, or -1. */
+int64_t hero_ui_set_tip(hero_ui_app *app, int64_t id, const void *text, uint64_t count);
+
+/* Writes the tip widget `id` holds, as the system holds it, into `buffer`
+ * and answers its length, 0 for none; where it is longer than `count`,
+ * nothing is written and the length is answered all the same. -1 on
+ * failure. */
+int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
+
+/* -- A SEPARATOR --------------------------------------------------------------
+ *
+ * wxWidgets' `wxStaticLine`: a thin line between the widgets of a box, the
+ * system's own, across a column or down a row, as its rectangle's longer
+ * side runs. */
+#define HERO_UI_SEPARATOR 32
+
 #endif

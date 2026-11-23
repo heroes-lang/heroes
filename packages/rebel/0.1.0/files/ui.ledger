@@ -162,12 +162,12 @@ capability ui/boxes  widgets side by side and one under another, with spacing, p
   note    the layout is computed by Rebel the same on every system, in wxWidgets' sizers' manner; a widget's place given by hand, `tkinter.Place`'s, is refused: it is what a layout is for
 
 capability ui/grid  widgets in cells of columns and rows, the room left shared by the columns' and rows' weights
-  heroes  ui.grid, ui.set_grid_stretch
+  heroes  ui.grid, ui.set_grid_stretch, ui.set_span
   go      ui.NewGrid, Grid.Append, Grid.InsertAt, Grid.Padded, Grid.SetPadded, ui.At
   rust    -
   python  tkinter.Grid
-  wx      wxFlexGridSizer (AddGrowableCol, AddGrowableRow), wxGridSizer
-  note    a cell spanning several columns is not offered; a box inside a cell holds what would span
+  wx      wxFlexGridSizer (AddGrowableCol, AddGrowableRow), wxGridSizer, wxGridBagSizer, wxGBSpan
+  note    catalogue LY03; a child takes columns from its cell rightwards, cells filling row after row and a child that does not fit in what is left of its row starting the next, its columns widened, the last most, where together narrower than it needs; computed by this package, so every system lays it out alike; a cell spanning rows, and a child placed at a cell of the program's choosing (`wxGridBagSizer`'s position), are not offered
 
 capability ui/form  labelled fields, a label and its field on each line
   heroes  ui.grid
@@ -304,11 +304,12 @@ capability ui/picture  an image shown, from `image`'s pixels
   note    `image` decodes the file; an image of several resolutions, `Image.Append`'s, is one picture per resolution here
 
 capability ui/separator  a line between the widgets of a box
-  heroes  pending
+  heroes  ui.separator, ui.Kind.separator
   go      ui.NewHorizontalSeparator, ui.NewVerticalSeparator
   rust    -
   python  ttk.Separator
   wx      wxStaticLine
+  note    catalogue LY12; one point thick, filling its box across: along a column or a window, down a row; macOS by an `NSBox` of the separator kind, which draws along its longer side; Windows pending (a `STATIC` with `SS_ETCHEDHORZ` or `SS_ETCHEDVERT` by its rectangle), Linux pending (`GtkSeparator`, its orientation by its rectangle)
 
 capability ui/menus  a window's menu bar, its menus, their items and separators, each item's shortcut
   heroes  ui.menu, ui.menu_item, ui.menu_separator, ui.set_shortcut, ui.Shortcut, ui.Event.menu_chosen
@@ -380,7 +381,7 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
-  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, which waits for the person, its answer told through the queue as it returns, Linux by `GtkFileDialog`'s `select_folder` and `select_multiple_folders` (GTK 4.10), `GtkFileChooserNative` before
+  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, owned by the window it stands over and shown by a thread of its own, its answer told through the queue, Linux by `GtkFileDialog`'s `select_folder` and `select_multiple_folders` (GTK 4.10), `GtkFileChooserNative` before
 
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
@@ -388,7 +389,7 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   rust    -
   python  -
   wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
-  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time, which waits for the person, Linux by `GtkAlertDialog`'s buttons, with its cancel and default buttons (GTK 4.10), `GtkMessageDialog` before
+  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time (`unsupported` where this process cannot load them), owned by the window it stands over and shown by a thread of its own, Linux by `GtkAlertDialog`'s buttons, with its cancel and default buttons (GTK 4.10), `GtkMessageDialog` before
 
 capability ui/dialogs-answered-later  a dialog that answers its call at once and the person later, through the queue, the program's timers and windows going on meanwhile
   heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files
@@ -396,7 +397,7 @@ capability ui/dialogs-answered-later  a dialog that answers its call at once and
   rust    -
   python  -
   wx      wxDialog (ShowWindowModal, unread)
-  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Linux by `GtkAlertDialog`'s `choose` and `GtkFileDialog` (GTK 4.10; `GtkMessageDialog` and `GtkFileChooserNative` before), each answering by its callback, an injected answer pressing the button of its label in the alert's own window and a choice in a file dialog refused, only a cancel taken; Windows pending: the layer wraps its waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner)
+  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Linux by `GtkAlertDialog`'s `choose` and `GtkFileDialog` (GTK 4.10; `GtkMessageDialog` and `GtkFileChooserNative` before), each answering by its callback, an injected answer pressing the button of its label in the alert's own window and a choice in a file dialog refused, only a cancel taken; Windows by a thread of its own for each dialog, which waits in Win32's dialog (`MessageBoxW`, `TaskDialogIndirect`, `GetOpenFileNameW` and `GetSaveFileNameW`, `IFileOpenDialog`) while the program goes on, the dialog owned by the window it stands over, which Windows holds disabled meanwhile, and a second dialog over that window waiting for the first to be answered; an injected answer presses its button through the dialog's own window (`TDM_CLICK_BUTTON`, the button's `WM_COMMAND`), a choice in a file or a folder dialog refused and only a cancel taken, and a dialog still waiting for its turn is answered at once
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system
@@ -461,11 +462,12 @@ capability ui/focus  the widget that has the keys, set and asked, and Tab and Sh
   note    text fields, text areas and lists, the widgets every system gives the keys; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows by `SetFocus`, each window keeping its control with the keys across `WM_ACTIVATE`, the Tab order the controls' z-order put in reading order, Linux by `gtk_widget_grab_focus` and `gtk_root_get_focus`, GTK's focus chain by the widgets' places
 
 capability ui/tooltip  a tip shown over a widget
-  heroes  pending
+  heroes  ui.set_tip, ui.tip_of
   go      -
   rust    -
   python  -
   wx      wxToolTip, wxWindow (SetToolTip), wxRichToolTip
+  note    catalogue CT49; a widget in a window, a menu item or a tray icon, its lines kept, "" taking it back; the system shows it when the pointer rests, after its own delay; macOS by `NSView.toolTip`, `NSMenuItem.toolTip` and the status item's button's; a tip of a title and an icon (`wxRichToolTip`) and the delay are not offered; Windows pending (a `TOOLTIPS_CLASS` window with `TTM_ADDTOOLW` per control, `TTF_SUBCLASS`), Linux pending (`gtk_widget_set_tooltip_text`)
 
 capability ui/clipboard  the system's clipboard: text, files and an image copied and pasted by the program
   heroes  ui.set_clipboard, ui.clipboard, ui.Clip, ui.ClipKind, ui.CLIPBOARD_MOST
@@ -488,7 +490,7 @@ capability ui/tray  an icon in the system's tray or menu bar, with the menu its 
   rust    tauri::tray::TrayIcon
   python  -
   wx      wxTaskBarIcon (SetIcon, PopupMenu)
-  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows by `Shell_NotifyIconW` (version 4) with a hidden window of its own, its menu on a click after `SetForegroundWindow`, added again when Explorer restarts ("TaskbarCreated"), Linux refused by name (GTK 4 has no tray, and the arm draws no StatusNotifierItem over D-Bus in its place)
+  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows by `Shell_NotifyIconW` (version 4) with a hidden window of its own, its menu on a click after `SetForegroundWindow`, added again when Explorer restarts ("TaskbarCreated"), Linux by a StatusNotifierItem over the D-Bus session bus (GTK 4 has no tray), each icon on a connection of its own so the watcher forgets it when it is destroyed or hidden, its menu a `com.canonical.dbusmenu` read from the arm's records, an item's click the menu's `Event` and an injected choice that same `Event` sent through the bus, its words its title, its tip and, where it has no image, Ayatana's label, refused by name where no `org.kde.StatusNotifierWatcher` answers (GNOME without an extension); measured in Debian 13 with the Haskell `status-notifier-watcher` and `gtk-sni-tray-standalone`, a desktop's own panel unrun
 
 capability ui/docked  an app out of the Dock and the menu bar, living in the tray alone
   heroes  ui.set_docked
@@ -512,7 +514,7 @@ capability ui/drag-drop  a file dragged onto a window
   rust    -
   python  dnd.dnd_start, dnd.DndHandler, dnd.Icon
   wx      wxFileDropTarget (OnDropFiles), wxDropTarget, wxDropSource, wxWindow (DragAcceptFiles), wxDropFilesEvent
-  note    catalogue DD01 (must); files dropped on a window that takes them, told with the point in its content and the paths in the person's order; a drop on a text area of the window is the window's, on a web view the page's own, on a text field being typed in the path typed, as the system's fields do; text dragged, drag feedback, a drag out of the app and a drop on one widget (DD02 to DD05) are not offered; macOS by the window registered for file URLs, `NSWindow` handing the drag to its delegate, and a text area's text view handing a file drag to its window; an injected drop goes through the same destination methods with a drag of the layer's own making on a pasteboard of its own (a drag by the person's mouse is unrun in a case); Windows pending (`DragAcceptFiles` and `WM_DROPFILES`, `DragQueryFileW`, `DragQueryPoint`), Linux pending (`GtkDropTarget` of `GDK_TYPE_FILE_LIST` on the window)
+  note    catalogue DD01 (must); files dropped on a window that takes them, told with the point in its content and the paths in the person's order; a drop on a text area of the window is the window's, on a web view the page's own, on a text field being typed in the path typed, as the system's fields do; text dragged, drag feedback, a drag out of the app and a drop on one widget (DD02 to DD05) are not offered; macOS by the window registered for file URLs, `NSWindow` handing the drag to its delegate, and a text area's text view handing a file drag to its window; an injected drop goes through the same destination methods with a drag of the layer's own making on a pasteboard of its own (a drag by the person's mouse is unrun in a case); Windows by `DragAcceptFiles` on the window and its `WM_DROPFILES`, the paths read by `DragQueryFileW` and the point by `DragQueryPoint` in the window's content, a text area's `EDIT` control taking no drop of its own so the window takes it; an injected drop is the same message with a `DROPFILES` of the layer's making (a drag by the person's mouse is unrun in a case), Linux by a `GtkDropTarget` of `GDK_TYPE_FILE_LIST` on the window's content in the capture phase, so a text area's drop is the window's and the menu bar takes none, declining over a web view (unread whether WebKitGTK's own target then takes the drop), the paths read by GTK 4.6's `gdk_file_list_get_files` and an injected drop the target's own `drop` with GTK 4.8's `gdk_file_list_new_from_array`, each refused by name on an older GTK; a drag by the person's mouse is unrun under Xvfb
 
 capability ui/bound-values  a value a widget and the program share, which calls back when it changes
   heroes  refused: the program holds its own state and sets the widget, and a value that calls back is a closure the language does not have
@@ -554,7 +556,7 @@ capability ui/session-end  the person logging out or shutting down, asked of the
   rust    -
   python  tkinter.Wm.protocol
   wx      wxCloseEvent (wxEVT_QUERY_END_SESSION, wxEVT_END_SESSION, CanVeto, Veto)
-  note    catalogue AP04 (must); nothing ends until the program answers, `close` answering that the app ends; macOS by the system's quit Apple event taken in a handler of the layer's own and suspended until the answer (resumed with no error to end, with `userCanceledErr` to stay, which cancels the session's end), its reason telling the session's end from the Dock's or another program's quit, and `terminate(_:)` of any other sender cancelled and told the same way; the app menu's Quit still asks each window to close; a real logout is unrun (the case sends the process its own quit event); Windows pending (`WM_QUERYENDSESSION` answered at once, `ShutdownBlockReasonCreate` held until the answer), Linux pending (`GtkApplication`'s `query-end` with `gtk_application_inhibit`)
+  note    catalogue AP04 (must); nothing ends until the program answers, `close` answering that the app ends; macOS by the system's quit Apple event taken in a handler of the layer's own and suspended until the answer (resumed with no error to end, with `userCanceledErr` to stay, which cancels the session's end), its reason telling the session's end from the Dock's or another program's quit, and `terminate(_:)` of any other sender cancelled and told the same way; the app menu's Quit still asks each window to close; a real logout is unrun (the case sends the process its own quit event); Windows by `WM_QUERYENDSESSION` to the app's top-level windows, the session's end told apart from another program's request through the Restart Manager (`ENDSESSION_CLOSEAPP`), each answered at once with FALSE while the ask is held, so Windows shows the app as keeping the session from ending, with the reason `ShutdownBlockReasonCreate` registers, taken back at the answer; with `go` false the app stays and the session's end waits for the person's Cancel on Windows' screen, since no call of an app cancels it; a session's end Windows forces (`ENDSESSION_CRITICAL`) is told and not held, and Windows ends an app with no visible window whatever it answers; an injected ask is the same message sent to a window of the app, and a real logout is unrun (the case sends the message itself), Linux by the protocol `GtkApplication` speaks outside a sandbox, the open app a client of `org.gnome.SessionManager`: its `QueryEndSession` told and the logout held by an inhibitor of the app's until the answer, staying keeping it while the manager's ask waits (the protocol gives a client no cancel, so the person's Cancel in the logout's dialog ends it), `EndSession` and `CancelEndSession` ending every hold; refused by name where no such manager answers (the XDG portal's session monitor of a sandbox or of KDE, and X11's XSMP, are not read), and another quit refused by name everywhere, a desktop's Quit closing the windows; measured against a stand-in manager of the protocol's methods and signals in Debian 13, gnome-session itself unrun
 
 capability ui/appearance  the system's dark or light appearance, and its change
   heroes  ui.appearance_of, ui.Appearance, ui.Event.appearance_changed, ui.Input.change_appearance
@@ -573,9 +575,9 @@ capability ui/accessibility  each widget's name and its label read by the system
   note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows by `IAccPropServices`' `SetHwndPropStr` with `PROPID_ACC_NAME`, a tied label's words kept as it changes, read back by the control's `IAccessible`, Linux by `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL` and `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`, the name read back from the arm's own record, GTK reading none
 
 capability ui/single-instance  one copy of the program running, a second handing its documents to the first
-  heroes  pending
+  heroes  ui.set_identity, ui.claim_instance, ui.Event.handed, ui.Handed, ui.Input.hand
   go      -
   rust    -
   python  -
-  wx      wxSingleInstanceChecker, wxApp (MacOpenFiles)
-  note    catalogue AP23, AP05 and AP06 (must); macOS one instance by the system with `application(_:open:)`, Windows a named mutex and a message to the first window, Linux `GApplication` over D-Bus
+  wx      wxSingleInstanceChecker, wxApp (SetAppName, MacOpenFiles, MacOpenURL)
+  note    catalogue AP23, AP05 and AP06 (must); the identity a reverse domain name given once before the first window, keying the one instance per user; a later launch hands its arguments to the first and is told it should end; the files the system opens the app with are one `.handed`, each address one; macOS by a lock file and a local socket in the user's own temporary folder, each hand-over read off the main thread with a deadline and from a process of the same user alone, the application delegate standing before AppKit's launch so the documents the app is launched with reach it, and `application(_:open:)` for the open and get-address Apple events; an injected opening sends the process those Apple events, an injected launch connects to its own claim; the name shown in the application menu, the bold title in the menu bar staying the file's name outside a bundle; Finder's double click, Open With, a drop on the Dock icon and URL schemes need the application bundle that names the types and schemes (PK01, not offered: a `heroes` flag), unrun here; Windows pending (`SetCurrentProcessExplicitAppUserModelID`, a named mutex and a named pipe or `WM_COPYDATA`, documents as the new process's command line), Linux pending (`GApplication` with `G_APPLICATION_HANDLES_OPEN` over D-Bus, or the same lock file and socket in `XDG_RUNTIME_DIR`)

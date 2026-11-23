@@ -362,3 +362,120 @@ beneath, with its date, and the merge of the two lanes waits for it. Beside it, 
 *2a* and *3c* (the dialogs of the user interface answering through the event queue, and the gaps of the
 catalogue entering the round: the four `must` areas Rebel lacked and every `should`) are recorded on
 `docs/roadmap/milestones/M-rebel-library.md`, not here.
+
+## The blind seat's run, 2026-11-23
+
+Added 2026-11-23 by the session that scored the blind seat, started by the coordinator of M-rebel-library;
+every number below is a command's, each named in `256-reports/llm-ergonomist-blind.md`, the seat's report of
+the run (the blinding key is `256-reports/blind-key.md`, every answer whole `256-reports/llm-ergonomist-blind-answers.tar.xz`).
+**Corrected here, underneath, the lines above that this run falsifies**: the head's *"the llm-ergonomist (the
+blind seat, **prepared and owed**, § The blind seat)"*, the status's *"whose paid run is prepared and not run"*,
+the verdicts table's row *"llm-ergonomist (blind) | **owed** | prepared: 46 sessions drawn, a free preflight clean,
+0 USD spent"*, § Predictions to score's *"the blind run"* in its first two rows (scored below), § The blind
+seat's *"**Prepared, not run, owed.**"* and its *"**What it does to this resolution, registered**"* (applied
+below), § Where the seats disagree's *"**The locality half is the blind run's program 7**"* and R4's *"the blind
+run's program 7 read wrong by two or more of five `gi` readers"* (read: 0 of 5), and § What this sitting files and
+owes on three items *"**unfiled**"* (filed, below): it was run, as follows.
+
+**The registered run.** 46 sessions (t1 arms `w` and `m`; t2 `now`, `gc`, `gi`, `gr`; t3 `gc`, `gi`, `gr`; the
+verdict), 2026-11-22 23:16:32 to 2026-11-23 00:12:56, from the session holding the author's word, by the
+registered `run.sh` (the same bytes by `cmp`): **46 of 46 a success** by the three fields, `claude-opus-5-5`
+alone, **10.775607 USD** of the author's 20 (the runner's 19.50 ceiling never near, every session run);
+`scan.py` over 47 transcripts, prompt-alone=NO 0, git-status=LEAK 0, claude-md-or-memory=YES 0; `reads.py` run
+after, 0 sessions with a path outside their folder; **0 voided**. The 11 input hashes of the registration, read
+again by `shasum -a 256`, equal. The seats had no compiler, so a session's *accepted* is its own reading; the
+scoring session ran no session and spent nothing, and was not blind in fact (the draw is named by `RUN.md`; the
+outcomes were written by letter to a file, sha256 `4e1a113503527f74...`, after the answers were read).
+
+**The counts, right of 5.** t1 `w` 5 and `lost(w)` 0; t1 `m` 5 and `lost(m)` 0. t2 `now`, by the frozen compiler's
+rows 5, 0, 0, 0, 0, 5, 0 on programs 1 to 7, by the frozen text as written 5 on each of the seven; `gc` 5 on each;
+**`gi`, the resolution's arm, 5 on each of the seven programs, p3, p4, p5 and p7 refused at the call and p7's
+chain named, 20 of 20**; `gr` 5 on each. t3 `gc` 5, `gi` 5, `gr` 5 (0 of 5 `gi` readers wrote the single
+`deliver` the text refuses). **D1: E1 = 5 - 5 = 0, `lost(w) = 0`: the waker admits no mistake the build accepts
+here, and the mailbox is not read as the form readers get right more often; the registered consequence applies,
+the waker's case against it rests on the stress runs alone.** **D2 holds for `gc`, `gi` and `gr`, 7 of 7 programs
+each; D3 holds for all three.** The `now` readers read § 11 as judged at each call on p3, p5 and p7 (5 of 5 each),
+which the frozen compiler does not do: the gap between text and compiler is 25 of 25 readings on p2, p3, p4, p5, p7,
+defect 2695 as a reader meets it.
+
+**The predictions this run settles** (the warden's S1 to S28 and the coordinator's C1 to C18, as registered
+before any session; per program and with each command in the report):
+
+| prediction | registered | counted | score |
+|---|---|---|---|
+| S1 and C1, t1 `w` right | 4 (3 to 5) and 4 (2 to 5) | 5 | miss on the point, inside the ranges |
+| S2 and C2, t1 `m` right | 5 (4 to 5) | 5 | hit |
+| S3 and C3, `lost(w)` | 0 (0 to 1) and 1 (0 to 2) | 0 | S3 hit, C3 miss inside its range |
+| S4 and C4, `lost(m)` | 0 | 0 | hit |
+| S5, E1 | 1 (0 to 2) | 0 | miss inside its range |
+| S6, t2 `now` by the compiler, p1 to p6 | 5, 0, 0, 0, 0, 5 | 5, 0, 0, 0, 0, 5 | hit on all six |
+| S7, `now` by the text | 5, 5, 4, 5, 4, 5 | 5 on each | hit on four; p3 and p5 miss inside (3 to 5) |
+| S8, `gc` | 4, 5, 4, 5, 5, 5 | 5 on each | hit on four; p1 and p3 miss inside |
+| S9, `gi` | 5, 5, 5, 4, 5, 5 | 5 on each | hit on five; p4 miss inside |
+| S10, `gr` | 5 on each | 5 on each | hit on all six |
+| S11, S12, S13, t3 `gc`, `gi`, `gr` | 5, 4, 4 | 5, 5, 5 | S11 hit; S12 and S13 miss inside their ranges |
+| S14, S15, S16, D1's three readings | does not hold, holds, does not hold | the same | hit on all three |
+| S17 to S20, D2 for the three and D3 | hold | hold | hit on the rules; *"weakest p1"* and *"`gr` likeliest to fall"* not borne out (all at 5) |
+| S21 and C15, voided | 0 | 0 | hit |
+| S26, a resolution arm on `spec-wadopt.md` | p1 to p6 5, t3 5, D2 and D3 hold | the resolution's cell `gi` (`arm-gi.md`, not `spec-wadopt.md`): the same | hit on the resolution's cell; its own text did not run |
+| S27, `gc` repaired, p1 | 5 (4 to 5) | `arm-gc.md` p1 5 | hit on the neighbour text |
+| S28, either arm against its unrepaired one | no lower | no unrepaired arm ran | unscored |
+| C5, D1's robustness reading holds | yes, weakly | does not hold | miss |
+| C6, t2 `gi` p1 to p7 | 5, 5, 5, 4, 5, 5, 4 | 5 on each | hit on five; p4 and p7 miss inside |
+| C7, `now` p7 by the compiler / by the text | 0 / 4 | 0 / 5 | hit / miss inside |
+| C8, `gc` p7 | 4 | 5 | miss inside (3 to 5) |
+| C9, `gr` p7 | 5 | 5 | hit |
+| C10, C14, C17, C18, D2, D3, no row read wrong, Q2 not reopened | hold | hold | hit on all four |
+| C11, C12, C13, t3 `gc`, `gi`, `gr` | 4, 4, 5 | 5, 5, 5 | C13 hit; C11 and C12 miss inside |
+| C16, the spend | 11.5 (8.5 to 16.0) | 10.775607 | miss inside |
+| the historian's *"some program will break"* the waker's order | some | 0 of 5 `w` programs | miss, on a task whose text names the trap |
+
+The warden's S1 to S21: 14 hits whole, four misses inside their ranges (S1, S5, S12, S13) and S7, S8, S9 with five
+misses of 18 points, each inside its range; **every count of right sessions the warden missed, it missed low**,
+as panel 254 found, and E1, a difference, the other way. The coordinator's C1 to C18: nine whole hits, C6 and C7
+partly, six misses inside their ranges and C5 a miss.
+
+**The resolution's rows, one by one: no row is reopened.** No row was read wrong by two of five readers, nor by
+one, in any cell. Read by `gi`'s sessions: R1's *"a send is written `m.send(@v)` exactly where `v` holds a handle
+or a thread, and `m.send(v)` everywhere else"* (p1 to p4 and t3, 0 of 5 wrong on each), its per-call judgment and
+*"told at that call"* (p3, p4, p5, p7, 0 of 5 on each, `main`'s call named 20 of 20) and its spawn (p5 and p6, 0
+of 5). **R4's registered reopening condition, program 7 read wrong by two or more of five `gi` readers, is not
+met: 0 of 5** (5 of 5 refused it at `main`'s call and named `outer` then `inner`), and its second, a need carried
+three calls deep, has no program (p7 is two deep). R7 was read through the task's own sentence by t1 `m`, 0 of 5
+wrong (the mailbox added before the first wait, the drain until `timeout`, 5 of 5). **Read by no task**: R2, R3
+(not a reader's row), R5, R8 to R12, and in R1 a thread's answer, a mailbox of `()`, a queue holding itself and a
+`ptr` or `cstr` through a generic. **R6's `m.number()` sentence was in no arm**: `arm-gi.md` is the frozen spec
+with R1's sentence alone, and a word-level comparison with `spec-r.md` finds the number sentence and `number` in
+§ 9's list the only difference, so R6 was not read, and **could not have been**: an arm on `spec-r.md` with a task
+that reaches `m.number()` would be needed, about 3 to 4 USD for 15 sessions by this run's 0.17 to 0.38 each (an
+inference, unrun, a question for the author and not run here). The `now` readers, 5 of 5, named *"whether
+`m.send(@v)` is allowed when `v` is not a handle"* as a choice: the `@` rule's missing half (the spec-warden's T0)
+that R1's first sentence states, which `gi` read 5 of 5 on p4.
+
+**The verdict's findings that bear on the resolution.** The A/B verdict (0.294765 USD) approves. **It judged R1's
+sentence, not the resolution's whole text**: its `spec-B.md` is `arm-gi.md` (sha256 `2d14c084...`), its
+`changes.diff` equals `diff -u spec-A.md spec-B.md` below the header, and it never held R6's sentence either. Under
+spec-B it wrote two generics, `deliver` and `hand_over`, and the right program; under spec-A the single
+`deliver<T>(box, @v)`, *"Probably, but spec A does not settle it"* whether the build accepts it. **That spec-A
+program is program 2's `hand<T>` renamed, which the frozen compiler refuses (`marker_mismatch`, measured at the
+frozen commit)**: an inference, the verdict's own program not built. Its conditions: *"A's compiler is shown to
+already judge generic sends at each call and to accept `@` on non-handles"* is shown the other way; *"a model given
+B is shown to write the single `@v` deliver anyway"*, 0 of 5 `gi` t3 readers did; its veto condition, messages that
+*"point into the generic's body rather than at the call"*, is **neither shown nor refuted**: no session read a
+message, and the readers predicted the call line in 20 of 20 refusals.
+
+**What the run could not show.** A build (every *accepted* is a reading, and the `gi`, `gc`, `gr`, `w` and `m` texts
+name forms no compiler has); a message (R1's *"the body's file and line named, and the chain"* is the compiler's
+output and no session read one, so the historian's P0557r1 concern about messages stays what the compiler-engineer's
+built ones answer); a need three calls deep; the rows above no task read; which of `gc`, `gi` and `gr` to adopt, all
+three at 5 of 5 on every cell, so D2 and D3 pass them all and the choice rests on the compiler-engineer's and the
+ffi-pragmatist's measurements; and another model, a longer program or a reader with a compiler (one model, five
+readers per cell, one run). t1 does not test whether a reader forgets a ring: the `w` task's own words name it, and
+5 of 5 named the order as a choice.
+
+**The three items unfiled above were filed**, read on GitHub by the scoring session (`gh issue view 2697`, `gh issue
+list --search`, `gh issue view 2695`): the Windows stop bell as **defect 2696** (open), the decision as **issue
+2697** (closed, the ratification recorded above), and 2695 holds **1 comment** (its text unread).
+
+**No row of the resolution reads wrong by two of five readers, nor by one: none reopens.** The rows no session read
+are listed above and are not rows read wrong.

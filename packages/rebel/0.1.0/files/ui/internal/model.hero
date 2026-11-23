@@ -160,6 +160,11 @@ record Node
     selection_start: i64
     # The byte after its last; -1 for the text's end.
     selection_end: i64
+    # The columns of its grid a widget takes, from its cell rightwards; 1
+    # but in a grid (`ui.set_span`).
+    span: i64
+    # The tip shown over it, "" for none.
+    tip: str
 
 # What a web view keeps on both sides, so each answers alike: the assets as
 # the program put them, without their bodies, which the platform layer
@@ -358,7 +363,9 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         undone: [],
         redone: [],
         selection_start: -1,
-        selection_end: -1
+        selection_end: -1,
+        span: 1,
+        tip: ""
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was
@@ -512,7 +519,7 @@ function is_split(kind: i64) -> bool
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU || kind == hero_ui.HERO_UI_TRAY
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU || kind == hero_ui.HERO_UI_TRAY || kind == hero_ui.HERO_UI_SEPARATOR
 
 # The rows list or table `n` holds: a list's items, a table's cells over
 # its columns.
@@ -574,6 +581,7 @@ function kind_name(kind: i64) -> str
         "tree"
         "context_menu"
         "tray"
+        "separator"
     ]
 
     if kind < 0 || kind >= names.len()

@@ -176,7 +176,10 @@ jobs:
   # lets it be copied and whose source serves only its latest version is kept
   # in the generator's own folder; any other is fetched here by the URL the
   # generator records and held to the SHA-256 it pins, so no generator can rot
-  # unseen. One leg: the tables are text, the same on every platform.
+  # unseen. `generators/rebel_index/` reads no data from outside: it writes the
+  # pages of Rebel's programs and the index of its packages from the tree
+  # itself, and its `check` holds them to it the same way. One leg: the tables
+  # are text, the same on every platform.
   generators:
     name: Linux x86-64, every generated table checked against its generator
     runs-on: ubuntu-26.04
@@ -207,7 +210,8 @@ jobs:
             https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
           ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`.
+      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`;
+      # the generator holds each to the SHA-256 `layout.hero` pins.
       - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
         run: ./heroes run generators/unicode_encodings/main.hero -- check
 
@@ -392,6 +396,15 @@ jobs:
           done
           ./heroes run generators/json_idna/main.hero -- check build/generators/ucd-17.0.0
 
+      # Each program's page, `examples-rebel/<name>/README.md`, the short list
+      # `examples-rebel/INDEX.md`, and `examples-rebel/PACKAGES.md`, read from
+      # what `heroes doc` prints of every face, run by the compiler built
+      # above: a face it refuses fails the step by name. A compiler change that
+      # moves what `heroes doc` prints is seen here at the next run, decision
+      # 7's trade written at this file's head.
+      - name: generators/rebel_index, the pages of Rebel's programs and the index of its packages
+        run: ./heroes run generators/rebel_index/main.hero -- check ./heroes
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's two zips, and `generators/ucdkit/`, which reads the
@@ -501,18 +514,24 @@ jobs:
       # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
       # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui_gtk.c`, the Linux arm,
       # and Xvfb, an X server with no screen, which the drivers' step runs
-      # them under so `ui`'s native tests run here rather than skip. Each
-      # asked for by the name the code asks, after the install.
+      # them under so `ui`'s native tests run here rather than skip; XTest's
+      # `libXtst.so.6`, which the arm opens beside GTK to press a key as the
+      # keyboard does (GTK 4 pulls in none, and without it the key-press case
+      # skips by its words); and openbox, the window manager the drivers'
+      # step starts on that X server, since X11 leaves a window's state, its
+      # stacking and the task bar to one, and with none the window-state
+      # calls answer `unsupported` (xprop, of x11-utils, asks that it runs).
+      # Each asked for by the name the code asks, after the install.
       - name: Install what Rebel binds and opens, Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc libgtk-4-1 xvfb xauth
+          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc libgtk-4-1 xvfb xauth libxtst6 openbox x11-utils
           test -f /usr/include/sqlite3.h \
             || { echo '::error::sqlite3.h is not in /usr/include after the install, so sql/sqlite would be refused `ffi_missing_header`'; exit 1; }
           command -v xvfb-run > /dev/null \
             || { echo '::error::xvfb-run is missing after the install, so ui would answer `unsupported` and skip its native tests'; exit 1; }
-          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2' 'libgtk-4\.so\.1'; do
+          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2' 'libgtk-4\.so\.1' 'libXtst\.so\.6'; do
             ldconfig -p | grep -Eq "^[[:space:]]+$wanted " \
               || { echo "::error::the loader knows no $wanted after the install, so the member that opens it would answer \`unsupported\`"; exit 1; }
           done
@@ -520,6 +539,8 @@ jobs:
             || { echo '::error::unixODBC knows no driver named SQLite3 after the install, so sql/odbc would skip its SQLite tests'; exit 1; }
           command -v dbus-run-session gnome-keyring-daemon secret-tool > /dev/null \
             || { echo '::error::dbus-run-session, gnome-keyring-daemon or secret-tool is missing, so keyring would answer `unsupported`'; exit 1; }
+          command -v openbox xprop > /dev/null \
+            || { echo "::error::openbox or xprop is missing after the install, so ui's window-state calls would answer \`unsupported\`"; exit 1; }
 
       # DARWIN: the SDK carries SQLite (`examples/sqlite` binds it on this leg
       # of `ci.yml`), and the frameworks the floors name (Network, Security,
@@ -653,7 +674,13 @@ jobs:
       # Manager are the runner's own. And inside an X server with no screen,
       # `xvfb-run`'s, GTK told to speak X11 to it (`GDK_BACKEND=x11`), so
       # `ui`'s native tests draw GTK 4's own widgets there; its display is
-      # asked to answer first, as the keyring is. The `sanitize` run is given
+      # asked to answer first, as the keyring is, and openbox is started on
+      # it and asked to name itself on the root window
+      # (`_NET_SUPPORTING_WM_CHECK`, which the arm reads), so the window-state
+      # calls run as on a desktop (measured in Debian 13's arm64 container
+      # with GTK 4.18.6 and libxtst6, 2026-11-23: the key press ran, and the
+      # desk case skipped by the translucent backdrop's words alone, no state
+      # call refused). The `sanitize` run is given
       # no display, so those two tests skip there with their reason: under
       # LeakSanitizer a GTK program's exit reads fontconfig's own allocations,
       # which pango's font cache keeps for the process's life, as leaks (17,433
@@ -689,6 +716,14 @@ jobs:
             [ -n "${DISPLAY:-}" ] && [ -S "/tmp/.X11-unix/X${DISPLAY#:}" ] \
               || { echo "::error::no X server answers at DISPLAY='${DISPLAY:-}', so ui's native tests would skip on a leg meant to run them"; exit 1; }
             echo "an X server with no screen answers at $DISPLAY"
+            openbox > "$RUNNER_TEMP/openbox.log" 2>&1 &
+            for _ in $(seq 1 100); do
+              xprop -root _NET_SUPPORTING_WM_CHECK 2> /dev/null | grep -q 'window id' && break
+              sleep 0.1
+            done
+            xprop -root _NET_SUPPORTING_WM_CHECK 2> /dev/null | grep -q 'window id' \
+              || { echo "::error::openbox names no window manager on $DISPLAY (_NET_SUPPORTING_WM_CHECK), so ui's window-state calls would answer \`unsupported\` on a leg meant to run them"; cat "$RUNNER_TEMP/openbox.log"; exit 1; }
+            echo "openbox manages the windows on $DISPLAY"
           fi
           # `timeout` by its path, since Windows' System32 holds a
           # `timeout.exe` that waits instead: GNU's on Darwin (`gtimeout`) and

@@ -230,7 +230,7 @@ test "press: on the headless side a key chooses the first enabled item whose sho
             .ok event =>
                 match event
                     .menu_chosen m => told @ told.push(f"menu_chosen {m.item.id}")
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                         told @ told.push("another event")
             .err _ => break
 
@@ -280,7 +280,7 @@ function changes(@app: ui.App, widget: ui.Widget) -> i64
                     .text_changed t =>
                         if t.widget == widget
                             found @ found + 1
-                    .clicked _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
+                    .clicked _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                         _ = 0
             .err _ => break
 

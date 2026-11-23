@@ -1,0 +1,265 @@
+# One program of `examples-rebel/`, read from its folder and nothing else:
+# told apart as the check of Rebel's programs tells them
+# (`examples-rebel/README.md` § A10, `tests/harness/rebel_apps_run.hero`),
+# an application by its own `main.expected`, a twin by its original, the
+# program of `examples/` bearing its name; its header comment, the one source
+# of what it is and how it runs for real; its catalogue's `rebel` entry; the
+# words and the input its demo runs with; and what its folders hold.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/toml
+
+use prose
+
+# Where Rebel's programs stand, from the repository's root.
+constant REBEL: str
+    "examples-rebel"
+
+# Where the compiler's own programs stand, a twin's original among them.
+constant ORIGINALS: str
+    "examples"
+
+# The page this generator writes in each program's folder, which its tally
+# leaves out, since a page cannot count itself.
+constant README: str
+    "README.md"
+
+# The folder `heroes add` places a fetched package's tree in: the package's
+# files, not the program's.
+constant PLACED: str
+    "heroes.packages"
+
+# What one folder of a program holds itself, its subfolders' files aside.
+record Tally
+    # The folder below the program's, its parts joined by `/`; "" for the
+    # program's own.
+    folder: str
+    # How many files it holds.
+    files: i64
+    # How many lines they hold, every file counted by its line ends.
+    lines: i64
+    # How many of them are modules, `.hero` files.
+    modules: i64
+    # How many lines the modules hold.
+    module_lines: i64
+
+# One program, as its folder says it.
+record Program
+    # The folder's name, the program's.
+    name: str
+    # The folder, from the repository's root.
+    folder: str
+    # Whether it is a twin; an application otherwise.
+    twin: bool
+    # Its `main.hero`'s opening comment, one line each, `#` taken off.
+    header: [str]
+    # The folder its catalogue's `rebel` entry reads Rebel from, as written.
+    rebel_path: str
+    # The faces its catalogue's `packages` line lists, in its order.
+    faces: [str]
+    # The words its demo runs with: an application's own `main.args`, a
+    # twin's original's, one per non-empty line.
+    words: [str]
+    # The file its demo reads on its input, from the repository's root; ""
+    # for none.
+    stdin: str
+    # Whether it declares `main.varies`, lines another machine prints in
+    # another form; an application alone.
+    varies: bool
+    # Whether it declares `main.skips`, platforms its demo does not run on;
+    # an application alone.
+    skips: bool
+    # What each of its folders holds, its own first, then each below it,
+    # depth first, by the names' bytes.
+    tallies: [Tally]
+
+# The folder of the twin `p`'s original, from the repository's root.
+#
+# - `p`: a twin.
+function original_of(p: Program) -> str
+    return ORIGINALS + "/" + p.name
+
+# The names of the folders of `examples-rebel/`, by their bytes: the
+# programs, the drivers and the files at its top being no folder.
+#
+# Fails where the folder cannot be read.
+function program_names() -> [str]?
+    out: [str] @= []
+
+    for e in fs.read_dir(REBEL)?
+        match e.kind
+            .directory             => out @ out.push(e.name)
+            .file | .link | .other => continue
+
+    return ok(out)
+
+# The program in the folder `name` of `examples-rebel/`.
+#
+# - `name`: the folder's name.
+#
+# Fails `invalid` where the folder holds no `main.hero`, is neither an
+# application nor a twin, or holds a link or a file of another kind;
+# `not_found` where its catalogue has no `rebel` entry reading a folder; and
+# as reading its files fails.
+function read_program(name: str) -> Program?
+    folder = REBEL + "/" + name
+    entry = folder + "/main.hero"
+
+    if !fs.is_file(entry)?
+        return fail(code: "invalid", msg: f"{folder} holds no main.hero, so it is no program")
+    application = fs.is_file(folder + "/main.expected")?
+    original = ORIGINALS + "/" + name
+
+    if !application && !fs.is_file(original + "/main.hero")?
+        return fail(
+            code: "invalid",
+            msg: f"{folder} holds no main.expected and {original} holds no main.hero: it is neither an application nor a twin (examples-rebel/README.md § A10)"
+        )
+
+    runs_from = if application
+        folder
+    else
+        original
+    catalogue = toml.parse(read_file(folder + "/heroes.toml")?)?
+    tallies: [Tally] @= []
+    tallied(root: folder, below: "", @tallies)?
+    return ok(
+        Program(name: name, folder: folder, twin: !application, header: prose.opening_comment(read_file(entry)?), rebel_path: json.text_of(toml.to_json(toml.value_at(catalogue, ["dependencies", "rebel", "path"])?)?)?, faces: listed(catalogue)?, words: arguments(runs_from)?, stdin: fed(runs_from)?, varies: application && fs.is_file(folder + "/main.varies")?, skips: application && fs.is_file(folder + "/main.skips")?, tallies: tallies)
+    )
+
+# The faces the `rebel` entry of `catalogue` lists on its `packages` line.
+#
+# - `catalogue`: a program's `heroes.toml`, read.
+#
+# Fails `not_found` where the entry has no `packages` line, and `invalid`
+# where it is not a list of texts.
+function listed(catalogue: toml.Value) -> [str]?
+    out: [str] @= []
+
+    for item in json.items_of(toml.to_json(toml.value_at(catalogue, ["dependencies", "rebel", "packages"])?)?)?
+        out @ out.push(json.text_of(item)?)
+
+    return ok(out)
+
+# The words of `folder`'s `main.args`, one per non-empty line, none where
+# there is no such file: the rule the check of Rebel's programs and the
+# corpus suite read it by (`rebel_apps_run.hero`, `arguments`).
+#
+# - `folder`: a program's folder, from the repository's root.
+#
+# Fails as reading the file fails.
+function arguments(folder: str) -> [str]?
+    path = folder + "/main.args"
+    out: [str] @= []
+
+    if !fs.is_file(path)?
+        return ok(out)
+
+    for row in strings.lines(read_file(path)?)
+        if row.len() > 0
+            out @ out.push(row)
+
+    return ok(out)
+
+# `folder`'s `main.stdin`, from the repository's root; "" where there is none.
+#
+# - `folder`: a program's folder, from the repository's root.
+#
+# Fails where the system will not say whether it is there.
+function fed(folder: str) -> str?
+    path = folder + "/main.stdin"
+
+    if fs.is_file(path)?
+        return ok(path)
+    return ok("")
+
+# Adds to `out` the tally of the folder `below` of the program at `root`,
+# then each folder under it, depth first, by the names' bytes. The program's
+# own page, `README.md` at its top, and the two names `.gitignore` keeps out
+# of any folder, `.DS_Store` and `*.o`, are no file of it; a `heroes.packages`
+# folder is a placed package's tree, not the program's.
+#
+# - `root`: the program's folder, from the repository's root.
+# - `below`: the folder under it, its parts joined by `/`; "" for `root`.
+# - `out`: the tallies so far, which it adds to.
+#
+# Fails `invalid` where a folder holds a link or a file of another kind, and
+# as reading a folder or a file fails.
+function tallied(root: str, below: str, @out: [Tally]) -> ()?
+    here = if below.len() == 0
+        root
+    else
+        root + "/" + below
+    files @= 0
+    lines @= 0
+    modules @= 0
+    module_lines @= 0
+    inner: [str] @= []
+
+    for e in fs.read_dir(here)?
+        match e.kind
+            .file =>
+                if below.len() == 0 && e.name == README || e.name == ".DS_Store" || strings.has_suffix(s: e.name, suffix: ".o")
+                    continue
+                counted = prose.line_count(fs.read_bytes(here + "/" + e.name)?)
+                files @ files + 1
+                lines @ lines + counted
+
+                if strings.has_suffix(s: e.name, suffix: ".hero")
+                    modules @ modules + 1
+                    module_lines @ module_lines + counted
+            .directory =>
+                if e.name != PLACED
+                    inner @ inner.push(e.name)
+            .link | .other => return fail(code: "invalid", msg: f"{here}/{e.name} is neither a file nor a folder")
+
+    out @ out.push(Tally(folder: below, files: files, lines: lines, modules: modules, module_lines: module_lines))
+
+    for name in inner
+        deeper = if below.len() == 0
+            name
+        else
+            below + "/" + name
+        tallied(root: root, below: deeper, @out)?
+
+    return ok()
+
+# The tallies of `tallies` summed, under the folder "".
+#
+# - `tallies`: a program's folders.
+function total(tallies: [Tally]) -> Tally
+    sum @= Tally(folder: "", files: 0, lines: 0, modules: 0, module_lines: 0)
+
+    for t in tallies
+        sum @ Tally(
+            folder: "",
+            files: sum.files + t.files,
+            lines: sum.lines + t.lines,
+            modules: sum.modules + t.modules,
+            module_lines: sum.module_lines + t.module_lines
+        )
+
+    return sum
+
+## Tests
+
+test "total: every folder's counts summed, and none for no folder"
+    tallies = [
+        Tally(folder: "", files: 3, lines: 40, modules: 1, module_lines: 30)
+        Tally(folder: "store", files: 2, lines: 200, modules: 2, module_lines: 200)
+    ]
+    assert total(tallies) == Tally(folder: "", files: 5, lines: 240, modules: 3, module_lines: 230)
+    assert total([]).files == 0
+
+test "arguments: no `main.args` is no word"
+    assert arguments("generators/rebel_index").must().len() == 0
+
+test "read_program: the twin `rpn`, its original's words, and a folder that is no program refused"
+    rpn = read_program("rpn").must()
+    assert rpn.twin && rpn.folder == "examples-rebel/rpn" && original_of(rpn) == "examples/rpn"
+    assert rpn.rebel_path == "../../packages/rebel/0.1.0/files"
+    assert rpn.faces == ["numbers", "strings"]
+    assert rpn.tallies.len() == 1 && rpn.tallies[0].modules == 1
+    assert read_program("no such program").is_err()

@@ -1,0 +1,416 @@
+# A face's reference read back from what `heroes doc` printed of it
+# (`selfhost/cli/doc.hero`, `reference`): its title `# <rebel>/<face>`, the
+# module doc, then a section `## <kind> <name>` for each declaration in the
+# order the face writes it. A function's section holds its signature on one
+# indented line, what documents it, the call a program writes on its last
+# indented line, and its examples under `### Example`; a record's, a
+# variant's or a constant's holds the declaration as written, indented, then
+# what documents it. The index takes its words from the reference and never
+# from the source, so it says what `heroes doc` says, as the net's `docs`
+# check reads it (`tests/harness/rebel_docs.hero`).
+
+use <rebel>/strings
+
+use prose
+
+# One declaration of a reference.
+record Declaration
+    # `function`, `record`, `variant` or `constant`.
+    kind: str
+    # Its name.
+    name: str
+    # The declaration's printed lines, their four spaces of indentation taken
+    # off: a function's signature alone, or a record's, a variant's or a
+    # constant's whole declaration.
+    block: [str]
+    # What documents it, one line each.
+    doc: [str]
+    # The call a program writes to a function; "" for any other kind.
+    call: str
+
+# A face's reference.
+record Reference
+    # The module doc, one line each.
+    doc: [str]
+    # Its declarations, in the order the face writes them.
+    declarations: [Declaration]
+
+# The reference `printed`, `heroes doc`'s output for `<rebel>/<face>`.
+#
+# - `printed`: the output, whole.
+# - `title`: what its first line names, `<rebel>/<face>`.
+#
+# A comment is Markdown (spec § 1), so a module doc or a declaration's doc
+# may hold a line `## <heading>` of its own (`sql/postgres`'s `## How a value
+# travels`); a section is told from it by its shape, `heading_at`.
+#
+# Fails `invalid` where its first line is not `# <title>`, a section's heading
+# names no kind of the four, or a function's section holds no signature or
+# no call.
+function read_reference(printed: str, title: str) -> Reference?
+    lines = strings.lines(printed)
+
+    if lines.len() == 0 || lines[0] != "# " + title
+        return fail(code: "invalid", msg: f"the reference does not open with \"# {title}\"")
+    at @= 1
+    doc: [str] @= []
+
+    while at < lines.len() && !heading_at(lines: lines, at: at)
+        doc @ doc.push(lines[at])
+        at @ at + 1
+
+    declarations: [Declaration] @= []
+
+    while at < lines.len()
+        heading = lines[at]
+        at @ at + 1
+        body: [str] @= []
+
+        while at < lines.len() && !heading_at(lines: lines, at: at)
+            body @ body.push(lines[at])
+            at @ at + 1
+
+        declarations @ declarations.push(read_section(heading: heading, body: own_lines(body))?)
+
+    return ok(Reference(doc: trimmed(doc), declarations: declarations))
+
+# Whether `lines[at]` heads a declaration's section as `heroes doc` prints
+# one: `## ` and two words, then an empty line, then the declaration
+# indented. A heading a comment holds is followed by its prose, never by an
+# indented line, since a comment holds no code (README § A7).
+#
+# - `lines`: the reference's lines.
+# - `at`: the line asked, an index of `lines`.
+function heading_at(lines: [str], at: i64) -> bool
+    line = lines[at]
+
+    if !strings.has_prefix(s: line, prefix: "## ")
+        return false
+    words = strings.split(s: line.slice(from: 3, to: line.len()), sep: " ")
+    return words.len() == 2 && word_shape(words[0]) && word_shape(words[1]) && opens_block(lines: lines, at: at)
+
+# Whether `lines[at]` is followed by an empty line and then an indented one,
+# the block a heading of `heroes doc` stands over.
+#
+# - `lines`: the reference's lines.
+# - `at`: the heading's index.
+function opens_block(lines: [str], at: i64) -> bool
+    return at + 2 < lines.len() && lines[at + 1].len() == 0 && indented(lines[at + 2])
+
+# Whether `word` is a name: letters, digits and `_`, at least one.
+#
+# - `word`: one word of a heading.
+function word_shape(word: str) -> bool
+    if word.len() == 0
+        return false
+
+    for at in range(from: 0, to: word.len())
+        b = word[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_')
+            return false
+
+    return true
+
+# The lines of a section before its first example, `### Example` over an
+# empty line and the example indented.
+#
+# - `body`: the section's lines after its heading.
+function own_lines(body: [str]) -> [str]
+    out: [str] @= []
+
+    for at in range(from: 0, to: body.len())
+        if body[at] == "### Example" && opens_block(lines: body, at: at)
+            break
+        out @ out.push(body[at])
+
+    return out
+
+# One declaration from its section's heading and its lines before its
+# examples.
+#
+# - `heading`: `## <kind> <name>`.
+# - `body`: the lines after it, its examples left off.
+#
+# Fails `invalid` where the heading names no kind of the four, or a
+# function's lines hold no signature or no call.
+function read_section(heading: str, body: [str]) -> Declaration?
+    words = strings.split(s: strings.trim_prefix(s: heading, prefix: "## "), sep: " ")
+
+    if words.len() != 2 || !strings.has_prefix(s: heading, prefix: "## ")
+        return fail(code: "invalid", msg: f"the heading \"{heading}\" is not `## <kind> <name>`")
+    kind = words[0]
+    name = words[1]
+    lines = trimmed(body)
+
+    if kind == "function"
+        if lines.len() < 2 || !indented(lines[0]) || !indented(lines[lines.len() - 1])
+            return fail(code: "invalid", msg: f"the function {name} is printed with no signature or no call")
+        return ok(
+            Declaration(kind: kind, name: name, block: [unindented(lines[0])], doc: trimmed(lines.slice(from: 1, to: lines.len() - 1)), call: unindented(lines[lines.len() - 1]))
+        )
+
+    if kind != "record" && kind != "variant" && kind != "constant"
+        return fail(code: "invalid", msg: f"the heading \"{heading}\" names no kind a reference prints")
+    block: [str] @= []
+    at @= 0
+
+    while at < lines.len() && (indented(lines[at]) || lines[at].len() == 0)
+        block @ block.push(unindented(lines[at]))
+        at @ at + 1
+
+    return ok(
+        Declaration(kind: kind, name: name, block: trimmed(block), doc: trimmed(lines.slice(from: at, to: lines.len())), call: "")
+    )
+
+# Whether `line` is printed indented, a declaration's or a call's line.
+#
+# - `line`: one line of a reference.
+function indented(line: str) -> bool
+    return strings.has_prefix(s: line, prefix: "    ")
+
+# `line` with its first four spaces taken off; an empty line as it is.
+#
+# - `line`: an indented line, or an empty one.
+function unindented(line: str) -> str
+    return strings.trim_prefix(s: line, prefix: "    ")
+
+# `lines` without the empty lines at either end.
+#
+# - `lines`: lines of text.
+function trimmed(lines: [str]) -> [str]
+    first @= 0
+    last @= lines.len()
+
+    while first < last && strings.trim(lines[first]).len() == 0
+        first @ first + 1
+
+    while last > first && strings.trim(lines[last - 1]).len() == 0
+        last @ last - 1
+
+    return lines.slice(from: first, to: last)
+
+# A declaration's signature on one line, as a program writes or builds it: a
+# function's as `heroes doc` prints it; a record as the call that builds one,
+# `Name(field: type, ...)`, its fields in their declared order (spec § 9); a
+# variant as its cases, `Name = .case | .case(field: type)`; a constant as its
+# declaration, `NAME: type`, the kind's word before each.
+#
+# - `d`: the declaration.
+function signature(d: Declaration) -> str
+    if d.kind == "function" || d.block.len() == 0
+        return d.block.join(" ")
+    head = d.block[0]
+
+    if d.kind == "constant"
+        return head
+
+    if d.kind == "record"
+        return head + "(" + fields_at(lines: d.block, depth: 1).join(", ") + ")"
+    cases: [str] @= []
+    at @= 1
+
+    while at < d.block.len()
+        line = d.block[at]
+
+        if depth_of(line) == 1 && !comment(line)
+            name = strings.trim(line)
+            inner: [str] @= []
+            at @ at + 1
+
+            while at < d.block.len() && (depth_of(d.block[at]) >= 2 || strings.trim(d.block[at]).len() == 0)
+                if depth_of(d.block[at]) == 2 && !comment(d.block[at])
+                    inner @ inner.push(strings.trim(d.block[at]))
+                at @ at + 1
+
+            if inner.len() == 0
+                cases @ cases.push("." + name)
+            else
+                cases @ cases.push("." + name + "(" + inner.join(", ") + ")")
+        else
+            at @ at + 1
+
+    return head + " = " + cases.join(" | ")
+
+# The fields of a record's block: its lines at `depth` that are no comment.
+#
+# - `lines`: the declaration as written, its own indentation off.
+# - `depth`: the level of the fields, 1 for a record's.
+function fields_at(lines: [str], depth: i64) -> [str]
+    out: [str] @= []
+
+    for line in lines.slice(from: 1, to: lines.len())
+        if depth_of(line) == depth && !comment(line)
+            out @ out.push(strings.trim(line))
+
+    return out
+
+# A constant's value where it is written on one line; "" where it takes
+# several, a list's, or the declaration is no constant.
+#
+# - `d`: the declaration.
+function value(d: Declaration) -> str
+    if d.kind != "constant" || d.block.len() != 2
+        return ""
+    return strings.trim(d.block[1])
+
+# How many levels of four spaces `line` stands at.
+#
+# - `line`: a line of a declaration, its own indentation off.
+function depth_of(line: str) -> i64
+    spaces @= 0
+
+    while spaces < line.len() && line[spaces] == ' '
+        spaces @ spaces + 1
+
+    return spaces / 4
+
+# Whether `line` is a comment.
+#
+# - `line`: a line of a declaration.
+function comment(line: str) -> bool
+    return strings.has_prefix(s: strings.trim(line), prefix: "#")
+
+# The codes of `vocabulary` that `doc` names in backticks from each sentence
+# opening with `Fails` to the end of its paragraph, each once, in the order
+# first named: README § A7's `Fails` and each code with its when, read whole,
+# so a code named after a `;` or in a later sentence of the paragraph counts
+# too, and a `Fails` after another sentence of its paragraph is read as well.
+#
+# - `doc`: what documents a function, one line each.
+# - `vocabulary`: README § A4's codes.
+function codes_named(doc: [str], vocabulary: {str: bool}) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for paragraph in prose.paragraphs(doc)
+        reading @= false
+
+        for sentence in prose.sentences(paragraph)
+            if strings.has_prefix(s: sentence, prefix: "Fails ")
+                reading @ true
+
+            if !reading
+                continue
+            pieces = strings.split(s: sentence, sep: "`")
+            at @= 1
+
+            while at < pieces.len()
+                word = pieces[at]
+
+                if !vocabulary[word].is_err() && seen[word].is_err()
+                    out @ out.push(word)
+                    seen[word] @ true
+                at @ at + 2
+
+    return out
+
+# The first sentence of `doc` opening with `Fails`, "" where none does: what
+# a function that names no code says of its failures, `Fails as `refresh`
+# does.`, a failure handed on.
+#
+# - `doc`: what documents a function, one line each.
+function fails_sentence(doc: [str]) -> str
+    for paragraph in prose.paragraphs(doc)
+        for sentence in prose.sentences(paragraph)
+            if strings.has_prefix(s: sentence, prefix: "Fails ")
+                return sentence
+
+    return ""
+
+## Tests
+
+test "read_reference: the module doc, a constant, a record, a variant and a function with its call and an example"
+    rows = [
+        "# <rebel>/kit"
+        ""
+        "What the kit is for. More."
+        ""
+        "## The lock"
+        ""
+        "A heading of the module doc's own."
+        ""
+        "## constant INVALID"
+        ""
+        "    constant INVALID: str"
+        "        \"invalid\""
+        ""
+        "The code of a bad text."
+        ""
+        "## record Pair"
+        ""
+        "    record Pair"
+        "        # The first."
+        "        left: i64"
+        ""
+        "        right: [str]"
+        ""
+        "Two things."
+        ""
+        "## variant Shape"
+        ""
+        "    variant Shape"
+        "        # A dot."
+        "        dot"
+        "        box"
+        "            # Its side."
+        "            side: i64"
+        ""
+        "A shape."
+        ""
+        "## function parse"
+        ""
+        "    function parse(text: str) -> Pair?"
+        ""
+        "Reads a pair. Then more."
+        ""
+        "Fails `invalid` where it is not one; `not_text` and `invalid` where the bytes are not, and `nowhere`."
+        ""
+        "    kit.parse(text)"
+        ""
+        "### Example"
+        ""
+        "    # Shown."
+        "    test \"parse: one\""
+        "        assert true"
+        ""
+    ]
+    printed = rows.join("\n")
+    r = read_reference(printed: printed, title: "<rebel>/kit").must()
+    assert r.doc == ["What the kit is for. More.", "", "## The lock", "", "A heading of the module doc's own."]
+    assert r.declarations.len() == 4
+    assert signature(r.declarations[0]) == "constant INVALID: str" && value(r.declarations[0]) == "\"invalid\""
+    assert signature(r.declarations[1]) == "record Pair(left: i64, right: [str])"
+    assert r.declarations[1].doc == ["Two things."]
+    assert signature(r.declarations[2]) == "variant Shape = .dot | .box(side: i64)"
+    f = r.declarations[3]
+    assert signature(f) == "function parse(text: str) -> Pair?" && f.call == "kit.parse(text)"
+    assert prose.lead(f.doc) == "Reads a pair."
+    vocabulary = {"invalid": true, "not_text": true}
+    assert codes_named(doc: f.doc, vocabulary: vocabulary) == ["invalid", "not_text"]
+    later = [
+        "A row shorter than the header lacks names. Fails `not_text` where"
+        "it is bytes."
+        ""
+        "Not a code: `invalid`."
+    ]
+    assert codes_named(doc: later, vocabulary: vocabulary) == ["not_text"]
+    assert codes_named(doc: ["Says `invalid` and fails nowhere."], vocabulary: vocabulary).len() == 0
+    assert fails_sentence(["Reads it. Fails as `parse` does for a", "block it refuses. See also `x`."]) == "Fails as `parse` does for a block it refuses."
+    assert fails_sentence(["Reads it."]) == ""
+
+test "read_reference: a wrong title, an unknown kind and a function with no call refused"
+    assert read_reference(printed: "# <rebel>/a\n", title: "<rebel>/b").is_err()
+    assert read_reference(printed: "# <rebel>/a\n\n## extern x\n\n    x\n", title: "<rebel>/a").is_err()
+    assert read_reference(printed: "# <rebel>/a\n\n## function f\n\n    function f()\n", title: "<rebel>/a").is_err()
+    assert read_reference(printed: "# <rebel>/a\n", title: "<rebel>/a").must().declarations.len() == 0
+
+test "value: a constant written on several lines has none"
+    d = Declaration(
+        kind: "constant",
+        name: "ALL",
+        block: ["constant ALL: [str]", "    [", "        \"a\"", "    ]"],
+        doc: [],
+        call: ""
+    )
+    assert value(d) == "" && signature(d) == "constant ALL: [str]"

@@ -12,6 +12,7 @@ use time
 use ui
 use ui/hero_ui
 use ui/internal/check
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/frames
@@ -110,6 +111,9 @@ function of_code(code: i64) -> ui.Kind
 
     if code == hero_ui.HERO_UI_TRAY
         return .tray
+
+    if code == hero_ui.HERO_UI_SEPARATOR
+        return .separator
 
     if code == hero_ui.HERO_UI_PANE
         return .pane
@@ -394,6 +398,48 @@ function set_accessible_name(@app: ui.App, widget: ui.Widget, name: str) -> ()?
     n.accessible @ name
     model.put(@app.table, n: n)
     return ok()
+
+# Gives a widget its tip (`ui.set_tip`).
+function set_tip(@app: ui.App, widget: ui.Widget, text: str) -> ()?
+    n @= check.node_of(app, widget: widget)?
+    check.text_ok(text: text, one_line: false, what: "the tip")?
+
+    if !model.is_native(n.kind) || n.kind == hero_ui.HERO_UI_WINDOW || n.kind == hero_ui.HERO_UI_MENU || n.kind == hero_ui.HERO_UI_CONTEXT_MENU || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+        return fail(
+            code: failure.INVALID,
+            msg: f"a {model.kind_name(n.kind)} shows no tip: a widget in a window, a menu item or a tray icon does"
+        )
+
+    if app.native
+        spelled @= bytes.from_text(text)
+
+        if hero_ui.set_tip(app.handle, id: n.id, @spelled, count: to_u64(spelled.len()).must()) < 0
+            return failure.last(f"giving widget {n.id} its tip")
+    n.tip @ text
+    model.put(@app.table, n: n)
+    return ok()
+
+# The tip a widget shows (`ui.tip_of`): on the native side as the system
+# holds it.
+function tip_of(app: ui.App, widget: ui.Widget) -> str?
+    n = check.node_of(app, widget: widget)?
+
+    if !app.native
+        return ok(n.tip)
+    room: i64 @= 256
+
+    for _ in range(from: 0, to: 4)
+        buffer: [u8] @= []
+        got = hero_ui.tip(app.handle, id: n.id, @buffer, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last(f"reading widget {n.id}'s tip")
+
+        if got <= room
+            return bytes.to_text(buffer.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: "the tip kept growing while it was read")
 
 # Ties label `caption` to `widget`, which a screen reader then names by
 # the label's words (`ui.set_label_for`).
@@ -759,3 +805,41 @@ test "set_accessible_name and set_label_for: on the native side the system holds
     ui.set_label_for(@app, caption: words, widget: field).must()
     ui.close(@app).must()
     assert length == 6 && held == "Volume" && emptied == 0
+
+test "set_tip: kept on the headless side and taken back; a window, a menu, a timer and a box refused (catalogue CT49)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    button = ui.button(@app, into: shown, text: "Open").must()
+    ui.set_tip(@app, widget: button, text: "Opens a file\nfrom this computer").must()
+    assert ui.tip_of(app, widget: button).must() == "Opens a file\nfrom this computer"
+    ui.set_tip(@app, widget: button, text: "").must()
+    assert ui.tip_of(app, widget: button).must() == ""
+    box = ui.row(@app, into: shown).must()
+    clock = ui.timer(@app, every: time.milliseconds(10).must()).must()
+
+    for refused in [shown, box, clock]
+        assert fixture.code_of(ui.set_tip(@app, widget: refused, text: "x")) == ui.INVALID
+
+    ui.close(@app).must()
+
+test "set_tip: on the native side the system holds the tip of a button and of a field, gives it back, and takes it back (catalogue CT49)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.window(@app, title: "Tips", width: 200, height: 100).must()
+    button = ui.button(@app, into: shown, text: "Open").must()
+    field = ui.text_field(@app, into: shown, text: "").must()
+    given = ui.set_tip(@app, widget: button, text: "Opens a file")
+    refusal = fixture.unsupported_words(given)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    given.must()
+    ui.set_tip(@app, widget: field, text: "Where to look").must()
+    held = ui.tip_of(app, widget: button).must()
+    held_field = ui.tip_of(app, widget: field).must()
+    ui.set_tip(@app, widget: button, text: "").must()
+    emptied = ui.tip_of(app, widget: button).must()
+    ui.close(@app).must()
+    assert held == "Opens a file" && held_field == "Where to look" && emptied == ""

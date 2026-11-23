@@ -113,10 +113,9 @@
  * drags a window's border or holds a menu open, Windows runs a loop of its
  * own inside `DispatchMessageW`, and `pump` returns when it ends.
  *
- * DIALOGS: `MessageBoxW`, and `GetOpenFileNameW` and `GetSaveFileNameW`,
- * which show the system's current file dialog where no hook or template is
- * asked, need no COM apartment of the program's thread, and are told
- * `OFN_NOCHANGEDIR`, so the process's folder stays where it was.
+ * DIALOGS stand over their window, each shown by a thread of its own, so
+ * the program goes on while the person answers (DIALOGS ANSWERED THROUGH
+ * THE QUEUE).
  *
  * THE LIBRARIES ARE NAMED BY THE MEMBER, as `hero_net.c` names `ws2_32`:
  * `user32`, `gdi32`, `comctl32`, `comdlg32` and `msimg32` (`AlphaBlend`, a
@@ -162,6 +161,9 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 /* The message a table posts itself to tell the rows chosen once a click's
  * notifications have all come (A TABLE). */
 #define HERO_UI_WIN_SETTLE (WM_APP + 0x48)
+/* The message a dialog's thread posts the UI thread's hidden window once
+ * its dialog is answered or ended (DIALOGS ANSWERED THROUGH THE QUEUE). */
+#define HERO_UI_WIN_DIALOG_DONE (WM_APP + 0x4A)
 /* How long `press_key` waits for the key it sent to come back through the
  * queue, and how long the clipboard is asked of another program holding it. */
 #define HERO_UI_WIN_KEY_WAIT_MS 2000u
@@ -261,7 +263,9 @@ struct hero_ui_native {
     bool resizable;
     bool modal;
     bool held_by_modal;
-    bool held_by_dialog;
+    /* Whether a window takes files dropped on it (FILES DROPPED ON A
+     * WINDOW). */
+    bool takes_files;
     int64_t backdrop;
     /* A window's control that had the keys when it was left, given them
      * again when it is activated (THE WIDGET WITH THE KEYS); whether it was
@@ -351,9 +355,6 @@ static _Thread_local bool hero_ui_win_aware;
 static _Thread_local UINT hero_ui_win_next_command;
 /* Above 0 while `inject` acts, so a slider moved to where it stands is told. */
 static _Thread_local int64_t hero_ui_win_injecting;
-/* The paths the last file dialog answered, each followed by one zero byte. */
-static _Thread_local uint8_t *hero_ui_win_paths;
-static _Thread_local int64_t hero_ui_win_paths_count;
 
 /* `shcore`'s scale of a monitor (Windows 8.1) and `comctl32` version 6's
  * task dialog, each found by `GetProcAddress` where this Windows has them,
@@ -368,6 +369,12 @@ static _Thread_local bool hero_ui_win_task_asked;
 /* Above 0 while the program's own call moves a window or changes its
  * state, so WINDOWS ON THE SCREEN tells none of it as the person's. */
 static _Thread_local int64_t hero_ui_win_quiet;
+/* Whether an ask of the session's end, and one of another program's, is
+ * held for the program's answer, and the window whose reason Windows
+ * shows (THE SESSION'S END ASKING THE PROGRAM). */
+static _Thread_local bool hero_ui_win_session_held;
+static _Thread_local bool hero_ui_win_closing_held;
+static _Thread_local HWND hero_ui_win_blocking;
 /* The appearance a program injected, 0 for the system's own; the one last
  * told. */
 static _Thread_local int64_t hero_ui_win_appearance_forced;
@@ -379,6 +386,9 @@ static _Thread_local UINT hero_ui_win_taskbar_created;
 static _Thread_local int64_t hero_ui_win_modal;
 /* The app's icon, NULL for the system's own. */
 static _Thread_local HICON hero_ui_win_icon;
+/* The hidden window a dialog's thread tells once done, made at the first
+ * dialog (DIALOGS ANSWERED THROUGH THE QUEUE). */
+static _Thread_local HWND hero_ui_win_dialog_host;
 /* The hidden window the clipboard is opened by, made at its first use. */
 static _Thread_local HWND hero_ui_win_clip_owner;
 /* What the last read of the clipboard found, in `hero_ui_clipboard_write`'s
@@ -1494,6 +1504,10 @@ static hero_ui_native *hero_ui_win_widget_at(HWND hwnd);
 static void hero_ui_win_setting_changed(LPARAM name);
 static void hero_ui_win_tray_told(HWND hwnd, WPARAM at, LPARAM what);
 static void hero_ui_win_trays_again(void);
+static void hero_ui_win_dialogs_reap(void);
+static LRESULT hero_ui_win_end_asked(HWND hwnd, LPARAM why);
+static void hero_ui_win_quits_answered(void);
+static void hero_ui_win_files_dropped(HWND hwnd, HDROP drop);
 
 /* A notification from a control to its parent (`WM_NOTIFY`): the person's
  * tab, a table's or a tree's. */
@@ -1575,6 +1589,19 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             return 0;
         }
         break;
+    case WM_QUERYENDSESSION:
+        return hero_ui_win_end_asked(hwnd, lparam);
+    case WM_ENDSESSION:
+        if (wparam == FALSE) {
+            hero_ui_win_quits_answered();
+        }
+        return 0;
+    case WM_DROPFILES:
+        hero_ui_win_files_dropped(hwnd, (HDROP)wparam);
+        return 0;
+    case HERO_UI_WIN_DIALOG_DONE:
+        hero_ui_win_dialogs_reap();
+        return 0;
     case HERO_UI_WIN_SETTLE:
         widget = hero_ui_find((int64_t)lparam);
         if (widget != NULL && widget->kind == HERO_UI_TABLE) {
@@ -1827,6 +1854,10 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
             hero_ui_win_modal = 0;
             hero_ui_win_hold_others(widget->id, false);
         }
+        if (widget->hwnd != NULL && widget->hwnd == hero_ui_win_blocking) {
+            /* Its reason goes with it. */
+            hero_ui_win_blocking = NULL;
+        }
         if (widget->hwnd != NULL) {
             (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
             if (GetMenu(widget->hwnd) != NULL) {
@@ -1958,6 +1989,7 @@ static void hero_ui_win_destroy_tree(int64_t id) {
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_win_quits_answered();
     for (;;) {
         int64_t first = 0;
 
@@ -1977,9 +2009,6 @@ void hero_ui_arm_close(void) {
     hero_ui_win_props_end();
     hero_ui_win_notifier_end();
     hero_ui_win_undocked = false;
-    hero_layer_free(hero_ui_win_paths);
-    hero_ui_win_paths = NULL;
-    hero_ui_win_paths_count = 0;
     hero_layer_free(hero_ui_win_clip);
     hero_ui_win_clip = NULL;
     hero_ui_win_clip_count = -1;
@@ -1987,6 +2016,11 @@ void hero_ui_arm_close(void) {
     if (hero_ui_win_clip_owner != NULL) {
         (void)DestroyWindow(hero_ui_win_clip_owner);
         hero_ui_win_clip_owner = NULL;
+    }
+    /* Every dialog ended already (`dialogs_end`, before `close`). */
+    if (hero_ui_win_dialog_host != NULL) {
+        (void)DestroyWindow(hero_ui_win_dialog_host);
+        hero_ui_win_dialog_host = NULL;
     }
     if (hero_ui_win_icon != NULL) {
         (void)DestroyIcon(hero_ui_win_icon);
@@ -3531,67 +3565,6 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     return answer;
 }
 
-/* The top-level window of number `window` for a dialog to stand over, NULL
- * for 0; false where that number is no window. */
-static bool hero_ui_win_owner(int64_t window, HWND *owner, int64_t *answer) {
-    hero_ui_native *found;
-
-    *owner = NULL;
-    if (window == 0) {
-        return true;
-    }
-    found = hero_ui_find(window);
-    if (found == NULL || found->kind != HERO_UI_WINDOW) {
-        *answer = found == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
-        return false;
-    }
-    *owner = found->hwnd;
-    return true;
-}
-
-int64_t hero_ui_arm_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, int64_t *answer) {
-    HWND owner;
-    int64_t refused = HERO_UI_OK;
-    wchar_t *heading;
-    wchar_t *said;
-    UINT style;
-    int pressed;
-    DWORD code;
-
-    if (!hero_ui_win_owner(window, &owner, &refused)) {
-        return refused;
-    }
-    heading = hero_ui_win_wide(title, title_count, 0);
-    said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
-    if (heading == NULL || said == NULL) {
-        hero_layer_free(heading);
-        hero_layer_free(said);
-        return HERO_UI_LIMIT;
-    }
-    style = tone == HERO_UI_TONE_ERROR ? MB_ICONERROR : (tone == HERO_UI_TONE_WARNING ? MB_ICONWARNING : MB_ICONINFORMATION);
-    style |= buttons == HERO_UI_BUTTONS_OK_CANCEL ? MB_OKCANCEL : buttons == HERO_UI_BUTTONS_YES_NO ? MB_YESNO : buttons == HERO_UI_BUTTONS_YES_NO_CANCEL ? MB_YESNOCANCEL : MB_OK;
-    pressed = MessageBoxW(owner, said, heading, style | MB_SETFOREGROUND);
-    code = GetLastError();
-    hero_layer_free(heading);
-    hero_layer_free(said);
-    switch (pressed) {
-    case IDOK:
-        *answer = HERO_UI_ANSWER_OK;
-        return HERO_UI_OK;
-    case IDYES:
-        *answer = HERO_UI_ANSWER_YES;
-        return HERO_UI_OK;
-    case IDNO:
-        *answer = HERO_UI_ANSWER_NO;
-        return HERO_UI_OK;
-    case IDCANCEL:
-        *answer = HERO_UI_ANSWER_CANCEL;
-        return HERO_UI_OK;
-    default:
-        return hero_ui_win_failed("showing a message box", code);
-    }
-}
-
 /* Keeps the UTF-16 path `wide` of `units` units, followed by one zero byte,
  * at the end of the paths answered; one that is no UTF-16 (an unpaired
  * surrogate) is passed over, since no UTF-8 names it. */
@@ -3616,173 +3589,6 @@ static bool hero_ui_win_keep_path(const wchar_t *wide, int units, uint8_t **path
     (*paths)[*count] = 0;
     *count += 1;
     return true;
-}
-
-int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes) {
-    OPENFILENAMEW request;
-    HWND owner;
-    int64_t refused = HERO_UI_OK;
-    wchar_t *heading = hero_ui_win_wide(title, title_count, 0);
-    wchar_t *proposed = hero_ui_win_wide(name, name_count, 0);
-    wchar_t *answer = hero_layer_alloc_zero((size_t)HERO_UI_WIN_PATHS_ROOM, sizeof(wchar_t));
-    wchar_t *spelled = NULL;
-    wchar_t extension[64];
-    int64_t texts = hero_ui_texts_in(filters, filters_count);
-    uint8_t *paths = NULL;
-    int64_t paths_count = 0;
-    int64_t paths_room = 0;
-    BOOL chosen;
-    DWORD code;
-    int64_t result = HERO_UI_OK;
-
-    *bytes = 0;
-    extension[0] = 0;
-    if (!hero_ui_win_owner(window, &owner, &refused)) {
-        hero_layer_free(heading);
-        hero_layer_free(proposed);
-        hero_layer_free(answer);
-        return refused;
-    }
-    if (texts >= 2) {
-        /* Each filter as Win32 takes it: its name, then each extension as
-         * `*.ext`, `;` between, each followed by a zero, and one more after
-         * the last. An extension written with its dot keeps one dot. */
-        size_t room = (size_t)filters_count * 3 + 4;
-        size_t at = 0;
-
-        spelled = hero_layer_alloc(room * sizeof(wchar_t));
-        for (int64_t f = 0; spelled != NULL && f + 1 < texts; f += 2) {
-            int64_t name_length = 0;
-            int64_t list_length = 0;
-            const uint8_t *filter_name = hero_ui_text_at(filters, filters_count, f, &name_length);
-            const uint8_t *list = hero_ui_text_at(filters, filters_count, f + 1, &list_length);
-            wchar_t *wide_name = hero_ui_win_wide(filter_name, name_length, 0);
-            wchar_t *wide_list = hero_ui_win_wide(list, list_length, 0);
-
-            if (wide_name == NULL || wide_list == NULL) {
-                hero_layer_free(wide_name);
-                hero_layer_free(wide_list);
-                hero_layer_free(spelled);
-                spelled = NULL;
-                break;
-            }
-            for (size_t c = 0; wide_name[c] != 0; c += 1) {
-                spelled[at++] = wide_name[c];
-            }
-            spelled[at++] = 0;
-            for (size_t c = 0, start = 0;; c += 1) {
-                if (wide_list[c] == L';' || wide_list[c] == 0) {
-                    size_t from = start < c && wide_list[start] == L'.' ? start + 1 : start;
-
-                    if (from < c) {
-                        if (spelled[at - 1] != 0) {
-                            spelled[at++] = L';';
-                        }
-                        spelled[at++] = L'*';
-                        spelled[at++] = L'.';
-                        for (size_t e = from; e < c; e += 1) {
-                            spelled[at++] = wide_list[e];
-                        }
-                        if (extension[0] == 0 && c - from < 63) {
-                            memcpy(extension, wide_list + from, (c - from) * sizeof(wchar_t));
-                            extension[c - from] = 0;
-                        }
-                    }
-                    start = c + 1;
-                }
-                if (wide_list[c] == 0) {
-                    break;
-                }
-            }
-            if (spelled[at - 1] == 0) {
-                spelled[at++] = L'*';
-                spelled[at++] = L'.';
-                spelled[at++] = L'*';
-            }
-            spelled[at++] = 0;
-            hero_layer_free(wide_name);
-            hero_layer_free(wide_list);
-        }
-        if (spelled != NULL) {
-            spelled[at] = 0;
-        }
-    }
-    if (heading == NULL || proposed == NULL || answer == NULL || (texts >= 2 && spelled == NULL)) {
-        hero_layer_free(heading);
-        hero_layer_free(proposed);
-        hero_layer_free(answer);
-        hero_layer_free(spelled);
-        return HERO_UI_LIMIT;
-    }
-    answer[0] = 0;
-    if (save == 1 && wcslen(proposed) < HERO_UI_WIN_PATHS_ROOM) {
-        memcpy(answer, proposed, (wcslen(proposed) + 1) * sizeof(wchar_t));
-    }
-    memset(&request, 0, sizeof request);
-    request.lStructSize = (DWORD)sizeof request;
-    request.hwndOwner = owner;
-    request.lpstrFilter = spelled;
-    request.nFilterIndex = spelled != NULL ? 1 : 0;
-    request.lpstrFile = answer;
-    request.nMaxFile = HERO_UI_WIN_PATHS_ROOM;
-    request.lpstrTitle = heading[0] != 0 ? heading : NULL;
-    request.lpstrDefExt = save == 1 && extension[0] != 0 ? extension : NULL;
-    request.Flags = OFN_EXPLORER | OFN_NOCHANGEDIR | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | (save == 1 ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST | (multiple == 1 ? OFN_ALLOWMULTISELECT : 0));
-    chosen = save == 1 ? GetSaveFileNameW(&request) : GetOpenFileNameW(&request);
-    code = CommDlgExtendedError();
-    if (chosen) {
-        /* Several files chosen are their folder, then each name, each
-         * followed by a zero, and one more after the last; one file is its
-         * whole path. */
-        size_t first = wcslen(answer);
-        bool several = multiple == 1 && save == 0 && answer[first + 1] != 0;
-        bool kept = true;
-
-        if (!several) {
-            kept = hero_ui_win_keep_path(answer, (int)first, &paths, &paths_count, &paths_room);
-        }
-        for (size_t at = first + 1; several && kept && answer[at] != 0; at += wcslen(answer + at) + 1) {
-            size_t length = wcslen(answer + at);
-            wchar_t *joined = hero_layer_alloc((first + length + 2) * sizeof(wchar_t));
-
-            if (joined == NULL) {
-                kept = false;
-                break;
-            }
-            memcpy(joined, answer, first * sizeof(wchar_t));
-            joined[first] = first > 0 && answer[first - 1] == L'\\' ? 0 : L'\\';
-            memcpy(joined + first + (joined[first] == 0 ? 0 : 1), answer + at, length * sizeof(wchar_t));
-            kept = hero_ui_win_keep_path(joined, (int)(first + length + (joined[first] == 0 ? 0 : 1)), &paths, &paths_count, &paths_room);
-            hero_layer_free(joined);
-        }
-        if (!kept) {
-            hero_layer_free(paths);
-            paths = NULL;
-            paths_count = 0;
-            result = HERO_UI_LIMIT;
-        }
-    } else if (code != 0) {
-        result = code == FNERR_BUFFERTOOSMALL ? HERO_UI_LIMIT : hero_ui_win_failed("showing a file dialog: the common dialog's error", code);
-    }
-    hero_layer_free(heading);
-    hero_layer_free(proposed);
-    hero_layer_free(answer);
-    hero_layer_free(spelled);
-    if (result != HERO_UI_OK) {
-        return result;
-    }
-    hero_layer_free(hero_ui_win_paths);
-    hero_ui_win_paths = paths;
-    hero_ui_win_paths_count = paths_count;
-    *bytes = paths_count;
-    return HERO_UI_OK;
-}
-
-int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
-    if (hero_ui_win_paths_count > 0 && hero_ui_win_paths_count <= count) {
-        memcpy(buffer, hero_ui_win_paths, (size_t)hero_ui_win_paths_count);
-    }
-    return hero_ui_win_paths_count;
 }
 
 int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
@@ -5718,41 +5524,169 @@ int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
     return hero_ui_win_clip_count;
 }
 
-/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS --------------
+/* -- DIALOGS ANSWERED THROUGH THE QUEUE -------------------------------------
  *
- * The folder dialog is the shell's Common Item Dialog, `IFileOpenDialog`
- * told `FOS_PICKFOLDERS`, reached through COM, which the UI thread joins as
- * a single-threaded apartment for the dialog's time where it is in none
- * (and uses as it is where it is in one already); the message box of the
- * program's buttons is version 6 of the common controls' task dialog,
- * found in the module the activation context gives (THE SYSTEM'S CURRENT
- * LOOK), so a program on a Windows without it still loads and is told. The
- * layer hands neither a window to stand over, so each stands over none and
- * holds the app's windows disabled while it waits, as `MessageBoxW` does
- * with `MB_TASKMODAL`. */
+ * Every dialog of Win32 waits for the person inside the call that shows it,
+ * running a loop of its own until answered: `MessageBoxW`; version 6 of the
+ * common controls' task dialog, `TaskDialogIndirect`, a message box of the
+ * program's buttons, found in the module the activation context gives (THE
+ * SYSTEM'S CURRENT LOOK), so a program on a Windows without it still loads
+ * and is told; `GetOpenFileNameW` and `GetSaveFileNameW`, which show the
+ * system's current file dialog where no hook or template is asked and are
+ * told `OFN_NOCHANGEDIR`, so the process's folder stays where it was; and
+ * the shell's Common Item Dialog, `IFileOpenDialog` told `FOS_PICKFOLDERS`,
+ * for a folder. So each dialog is shown by a thread of its own, ITS THREAD,
+ * which waits for the person while the UI thread goes on, and `show_*`
+ * returns once that thread is made. The dialog is owned by the window it
+ * stands over, so Windows holds that window, and no other, disabled while
+ * it stands, as a sheet holds its window on macOS; a second dialog over the
+ * same window waits for its turn until the first is answered, as a second
+ * sheet waits on macOS. Its thread joins COM as a single-threaded apartment
+ * and takes the UI thread's activation context and awareness of scale,
+ * which are each thread's own.
+ *
+ * WHAT CROSSES BETWEEN THE THREADS: what a dialog shows is made as UTF-16 by
+ * the UI thread before its thread starts, and read by that thread alone
+ * after; the answer is written by its thread alone, which then marks the
+ * dialog `finished` and posts the UI thread's hidden window
+ * `HERO_UI_WIN_DIALOG_DONE`, where the UI thread tells the answer and gives
+ * the record back once the thread has ended. No record is given back while
+ * its thread runs. Whether a dialog was ended unanswered is the UI thread's
+ * to write and its thread's to read when its turn comes.
+ *
+ * NO WAIT OF THE UI THREAD FOR A DIALOG LEAVES THE MESSAGES SENT TO IT
+ * UNREAD: a dialog owned by a window of the UI thread sends that window
+ * messages and waits for them (`WM_ENABLE` as Windows disables it), so every
+ * such wait here reads the messages sent to the UI thread meanwhile
+ * (`PM_QS_SENDMESSAGE`), and never the ones posted, which `pump` reads.
+ *
+ * AN ANSWER AS THE PERSON'S is a press of the dialog's button through the
+ * dialog's own window, the visible top-level dialog its thread shows: a task
+ * dialog's `TDM_CLICK_BUTTON`, and the `WM_COMMAND` a click of a message
+ * box's or a file dialog's button sends; the call returns once the dialog
+ * has closed. A file or folder dialog is only cancelled so, no program
+ * choosing in it. A dialog still waiting for its turn is answered at once,
+ * as the person who answers it the moment it shows. ENDING a dialog marks it
+ * ended, so its answer is told to no one, and closes it the same way. */
 
 /* The class and the interface of the Common Item Dialog that opens, as
  * `shobjidl.h` names them, written here so no import library is needed. */
 static const CLSID hero_ui_win_open_dialog_class = {0xDC1C5A9C, 0xE88A, 0x4DDE, {0xA5, 0xA1, 0x60, 0xF8, 0x2A, 0x20, 0xAE, 0xF7}};
 static const IID hero_ui_win_open_dialog_face = {0xD57C7288, 0xD4AD, 0x4768, {0xBE, 0x02, 0x9D, 0x96, 0x95, 0x32, 0xD9, 0x60}};
 
-/* Holds every enabled window of the app disabled, `hold`, or gives back
- * the ones it held, while a dialog standing over none waits. */
-static void hero_ui_win_hold_all(bool hold) {
-    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
-        hero_ui_native *window = hero_ui_at(at);
+#define HERO_UI_WIN_DIALOG_MESSAGE 1
+#define HERO_UI_WIN_DIALOG_ASK 2
+#define HERO_UI_WIN_DIALOG_FILES 3
+#define HERO_UI_WIN_DIALOG_FOLDERS 4
+/* How long the UI thread waits for a dialog's thread to put its dialog on
+ * the screen, and for a dialog to close and its thread to end once its
+ * button is pressed. */
+#define HERO_UI_WIN_DIALOG_WAIT_MS 10000u
 
-        if (window == NULL || window->kind != HERO_UI_WINDOW) {
-            continue;
+/* A dialog shown, or waiting for its turn over its window. */
+typedef struct hero_ui_win_dialog {
+    /* What it shows, made by the UI thread before its thread starts and read
+     * by its thread alone after: its number and its window's, its kind, the
+     * window it stands over, the UI thread's hidden window it tells once
+     * done, its words, a message box's tone and buttons, an ask's buttons
+     * and cancel button (-1 for none), a file dialog's ways, its filters in
+     * Win32's spelling, the name it proposes and the first extension. */
+    int64_t dialog;
+    int64_t window;
+    int kind;
+    HWND owner;
+    HWND host;
+    int64_t tone;
+    int64_t buttons;
+    int64_t count;
+    int64_t cancel;
+    bool save;
+    bool multiple;
+    wchar_t *heading;
+    wchar_t *said;
+    wchar_t *labels[HERO_UI_ASK_BUTTONS_MOST];
+    wchar_t *filters;
+    wchar_t *name;
+    wchar_t extension[64];
+    /* The UI thread's activation context (NULL for none), its awareness of
+     * scale (NULL to leave the thread's) and the task dialog's function,
+     * each a thread-local of the UI thread its thread cannot read. */
+    HANDLE context;
+    hero_ui_win_thread_awareness awareness;
+    hero_ui_win_task_dialog task;
+    /* Its thread, that thread's number, and the event giving it its turn. */
+    HANDLE thread;
+    DWORD thread_id;
+    HANDLE turn;
+    /* The answer, a button or how many paths were chosen, and the paths,
+     * each followed by one zero byte: written by its thread before it marks
+     * the dialog `finished`. */
+    int64_t answer;
+    uint8_t *paths;
+    int64_t paths_count;
+    atomic_bool finished;
+    /* Ended unanswered by the UI thread. */
+    atomic_bool ended;
+    /* The UI thread's own: whether its turn was given, whether its answer
+     * was told. */
+    bool started;
+    bool told;
+    struct hero_ui_win_dialog *next;
+} hero_ui_win_dialog;
+
+/* The dialogs shown or waiting, in the order shown. */
+static _Thread_local hero_ui_win_dialog *hero_ui_win_dialogs;
+
+/* Gives back dialog `dialog`'s record, its thread ended or never made. */
+static void hero_ui_win_dialog_free(hero_ui_win_dialog *dialog) {
+    if (dialog->thread != NULL) {
+        (void)CloseHandle(dialog->thread);
+    }
+    if (dialog->turn != NULL) {
+        (void)CloseHandle(dialog->turn);
+    }
+    hero_layer_free(dialog->heading);
+    hero_layer_free(dialog->said);
+    for (int64_t i = 0; i < HERO_UI_ASK_BUTTONS_MOST; i += 1) {
+        hero_layer_free(dialog->labels[i]);
+    }
+    hero_layer_free(dialog->filters);
+    hero_layer_free(dialog->name);
+    hero_layer_free(dialog->paths);
+    hero_layer_free(dialog);
+}
+
+/* Waits up to `ms` milliseconds for `handle`, reading the messages sent to
+ * the UI thread meanwhile and none posted (NO WAIT ... UNREAD); whether it
+ * came. */
+static bool hero_ui_win_await(HANDLE handle, DWORD ms) {
+    ULONGLONG deadline = GetTickCount64() + ms;
+
+    for (;;) {
+        MSG message;
+        ULONGLONG now;
+        DWORD woke;
+
+        (void)PeekMessageW(&message, NULL, 0, 0, PM_NOREMOVE | PM_QS_SENDMESSAGE);
+        now = GetTickCount64();
+        woke = MsgWaitForMultipleObjectsEx(1, &handle, now >= deadline ? 0 : (DWORD)(deadline - now), QS_SENDMESSAGE, MWMO_INPUTAVAILABLE);
+        if (woke == WAIT_OBJECT_0) {
+            return true;
         }
-        if (hold && IsWindowEnabled(window->hwnd)) {
-            window->held_by_dialog = true;
-            (void)EnableWindow(window->hwnd, FALSE);
-        } else if (!hold && window->held_by_dialog) {
-            window->held_by_dialog = false;
-            (void)EnableWindow(window->hwnd, TRUE);
+        if (woke != WAIT_OBJECT_0 + 1) {
+            return false;
         }
     }
+}
+
+/* How many paths `bytes` bytes of paths hold, each followed by one zero. */
+static int64_t hero_ui_win_paths_in(const uint8_t *paths, int64_t bytes) {
+    int64_t count = 0;
+
+    for (int64_t at = 0; at < bytes; at += 1) {
+        count += paths[at] == 0 ? 1 : 0;
+    }
+    return count;
 }
 
 /* Keeps the file-system path of shell item `item` at the end of the paths
@@ -5769,92 +5703,320 @@ static bool hero_ui_win_keep_item(IShellItem *item, uint8_t **paths, int64_t *co
     return kept;
 }
 
-int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
-    HRESULT joined = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-    IFileOpenDialog *dialog = NULL;
-    wchar_t *heading = hero_ui_win_wide(title, title_count, 0);
-    uint8_t *paths = NULL;
-    int64_t paths_count = 0;
-    int64_t paths_room = 0;
-    int64_t answer = HERO_UI_OK;
-    HRESULT shown;
-    FILEOPENDIALOGOPTIONS options = 0;
+/* Shows message box `dialog` on its thread: its answer `HERO_UI_ANSWER_*`,
+ * Cancel where Windows answered none. A box of OK alone answers OK to
+ * Escape, as `MessageBoxW` does. */
+static void hero_ui_win_show_box(hero_ui_win_dialog *dialog) {
+    UINT style = dialog->tone == HERO_UI_TONE_ERROR ? MB_ICONERROR : (dialog->tone == HERO_UI_TONE_WARNING ? MB_ICONWARNING : MB_ICONINFORMATION);
+    int pressed;
 
-    *bytes = 0;
-    if (heading == NULL) {
-        if (SUCCEEDED(joined)) {
-            CoUninitialize();
-        }
-        return HERO_UI_LIMIT;
+    style |= dialog->buttons == HERO_UI_BUTTONS_OK_CANCEL ? MB_OKCANCEL : dialog->buttons == HERO_UI_BUTTONS_YES_NO ? MB_YESNO : dialog->buttons == HERO_UI_BUTTONS_YES_NO_CANCEL ? MB_YESNOCANCEL : MB_OK;
+    pressed = MessageBoxW(dialog->owner, dialog->said, dialog->heading, style | MB_SETFOREGROUND);
+    dialog->answer = pressed == IDOK ? HERO_UI_ANSWER_OK : pressed == IDYES ? HERO_UI_ANSWER_YES : pressed == IDNO ? HERO_UI_ANSWER_NO : HERO_UI_ANSWER_CANCEL;
+}
+
+/* Shows ask `dialog` on its thread: its answer the index of the button
+ * pressed, its cancel button for Escape and the close box, and that, -1
+ * where it has none, where no task dialog could be shown. */
+static void hero_ui_win_show_ask(hero_ui_win_dialog *dialog) {
+    TASKDIALOG_BUTTON choices[HERO_UI_ASK_BUTTONS_MOST];
+    TASKDIALOGCONFIG config;
+    int button = 0;
+
+    for (int64_t i = 0; i < dialog->count; i += 1) {
+        choices[i].nButtonID = (int)(HERO_UI_WIN_ASK_FIRST + i);
+        choices[i].pszButtonText = dialog->labels[i];
     }
-    if (FAILED(joined) && joined != RPC_E_CHANGED_MODE) {
-        hero_layer_free(heading);
-        return hero_ui_win_failed("joining COM for the folder dialog", (DWORD)joined);
+    memset(&config, 0, sizeof config);
+    config.cbSize = (UINT)sizeof config;
+    config.hwndParent = dialog->owner;
+    config.hInstance = GetModuleHandleW(NULL);
+    config.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW | (dialog->cancel >= 0 ? TDF_ALLOW_DIALOG_CANCELLATION : 0);
+    config.pszWindowTitle = dialog->heading;
+    config.pszMainIcon = dialog->tone == HERO_UI_TONE_ERROR ? TD_ERROR_ICON : dialog->tone == HERO_UI_TONE_WARNING ? TD_WARNING_ICON : TD_INFORMATION_ICON;
+    config.pszContent = dialog->said;
+    config.cButtons = (UINT)dialog->count;
+    config.pButtons = choices;
+    config.nDefaultButton = HERO_UI_WIN_ASK_FIRST;
+    if (FAILED(dialog->task(&config, &button, NULL, NULL))) {
+        button = IDCANCEL;
     }
-    shown = CoCreateInstance(&hero_ui_win_open_dialog_class, NULL, CLSCTX_INPROC_SERVER, &hero_ui_win_open_dialog_face, (void **)&dialog);
-    if (FAILED(shown) || dialog == NULL) {
-        answer = hero_ui_win_failed("making the folder dialog", (DWORD)shown);
-    } else {
-        (void)dialog->lpVtbl->GetOptions(dialog, &options);
-        options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR | (multiple == 1 ? FOS_ALLOWMULTISELECT : 0);
-        (void)dialog->lpVtbl->SetOptions(dialog, options);
-        if (title_count > 0) {
-            (void)dialog->lpVtbl->SetTitle(dialog, heading);
+    dialog->answer = button >= HERO_UI_WIN_ASK_FIRST && button < HERO_UI_WIN_ASK_FIRST + dialog->count ? button - HERO_UI_WIN_ASK_FIRST : dialog->cancel;
+}
+
+/* Shows file dialog `dialog` on its thread: the paths chosen, none where
+ * the person cancelled or Windows refused. Several files chosen are their
+ * folder, then each name, each followed by a zero, and one more after the
+ * last; one file is its whole path. */
+static void hero_ui_win_show_files(hero_ui_win_dialog *dialog) {
+    OPENFILENAMEW request;
+    wchar_t *answer = hero_layer_alloc_zero((size_t)HERO_UI_WIN_PATHS_ROOM, sizeof(wchar_t));
+    int64_t room = 0;
+    bool kept = true;
+
+    if (answer == NULL) {
+        return;
+    }
+    if (dialog->save && wcslen(dialog->name) < HERO_UI_WIN_PATHS_ROOM) {
+        memcpy(answer, dialog->name, (wcslen(dialog->name) + 1) * sizeof(wchar_t));
+    }
+    memset(&request, 0, sizeof request);
+    request.lStructSize = (DWORD)sizeof request;
+    request.hwndOwner = dialog->owner;
+    request.lpstrFilter = dialog->filters;
+    request.nFilterIndex = dialog->filters != NULL ? 1 : 0;
+    request.lpstrFile = answer;
+    request.nMaxFile = HERO_UI_WIN_PATHS_ROOM;
+    request.lpstrTitle = dialog->heading[0] != 0 ? dialog->heading : NULL;
+    request.lpstrDefExt = dialog->save && dialog->extension[0] != 0 ? dialog->extension : NULL;
+    request.Flags = OFN_EXPLORER | OFN_NOCHANGEDIR | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | (dialog->save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST | (dialog->multiple ? OFN_ALLOWMULTISELECT : 0));
+    if (dialog->save ? GetSaveFileNameW(&request) : GetOpenFileNameW(&request)) {
+        size_t first = wcslen(answer);
+        bool several = dialog->multiple && !dialog->save && answer[first + 1] != 0;
+
+        if (!several) {
+            kept = hero_ui_win_keep_path(answer, (int)first, &dialog->paths, &dialog->paths_count, &room);
         }
-        hero_ui_win_hold_all(true);
-        shown = dialog->lpVtbl->Show(dialog, NULL);
-        hero_ui_win_hold_all(false);
-        if (shown == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
-            answer = HERO_UI_OK;
-        } else if (FAILED(shown)) {
-            answer = hero_ui_win_failed("showing the folder dialog", (DWORD)shown);
-        } else {
-            IShellItemArray *chosen = NULL;
-            DWORD each = 0;
+        for (size_t at = first + 1; several && kept && answer[at] != 0; at += wcslen(answer + at) + 1) {
+            size_t length = wcslen(answer + at);
+            wchar_t *joined = hero_layer_alloc((first + length + 2) * sizeof(wchar_t));
 
-            if (SUCCEEDED(dialog->lpVtbl->GetResults(dialog, &chosen)) && chosen != NULL) {
-                (void)chosen->lpVtbl->GetCount(chosen, &each);
-                for (DWORD i = 0; i < each && answer == HERO_UI_OK; i += 1) {
-                    IShellItem *item = NULL;
-
-                    if (SUCCEEDED(chosen->lpVtbl->GetItemAt(chosen, i, &item)) && item != NULL) {
-                        answer = hero_ui_win_keep_item(item, &paths, &paths_count, &paths_room) ? HERO_UI_OK : HERO_UI_LIMIT;
-                        item->lpVtbl->Release(item);
-                    }
-                }
-                chosen->lpVtbl->Release(chosen);
+            if (joined == NULL) {
+                kept = false;
+                break;
             }
+            memcpy(joined, answer, first * sizeof(wchar_t));
+            joined[first] = first > 0 && answer[first - 1] == L'\\' ? 0 : L'\\';
+            memcpy(joined + first + (joined[first] == 0 ? 0 : 1), answer + at, length * sizeof(wchar_t));
+            kept = hero_ui_win_keep_path(joined, (int)(first + length + (joined[first] == 0 ? 0 : 1)), &dialog->paths, &dialog->paths_count, &room);
+            hero_layer_free(joined);
         }
-        dialog->lpVtbl->Release(dialog);
     }
-    hero_layer_free(heading);
+    if (!kept) {
+        hero_layer_free(dialog->paths);
+        dialog->paths = NULL;
+        dialog->paths_count = 0;
+    }
+    hero_layer_free(answer);
+}
+
+/* Shows folder dialog `dialog` on its thread: the folders chosen, none
+ * where the person cancelled or Windows refused. */
+static void hero_ui_win_show_folders(hero_ui_win_dialog *dialog) {
+    IFileOpenDialog *shell = NULL;
+    FILEOPENDIALOGOPTIONS options = 0;
+    HRESULT shown = CoCreateInstance(&hero_ui_win_open_dialog_class, NULL, CLSCTX_INPROC_SERVER, &hero_ui_win_open_dialog_face, (void **)&shell);
+    int64_t room = 0;
+    bool kept = true;
+
+    if (FAILED(shown) || shell == NULL) {
+        return;
+    }
+    (void)shell->lpVtbl->GetOptions(shell, &options);
+    options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR | (dialog->multiple ? FOS_ALLOWMULTISELECT : 0);
+    (void)shell->lpVtbl->SetOptions(shell, options);
+    if (dialog->heading[0] != 0) {
+        (void)shell->lpVtbl->SetTitle(shell, dialog->heading);
+    }
+    if (SUCCEEDED(shell->lpVtbl->Show(shell, dialog->owner))) {
+        IShellItemArray *chosen = NULL;
+        DWORD each = 0;
+
+        if (SUCCEEDED(shell->lpVtbl->GetResults(shell, &chosen)) && chosen != NULL) {
+            (void)chosen->lpVtbl->GetCount(chosen, &each);
+            for (DWORD i = 0; i < each && kept; i += 1) {
+                IShellItem *item = NULL;
+
+                if (SUCCEEDED(chosen->lpVtbl->GetItemAt(chosen, i, &item)) && item != NULL) {
+                    kept = hero_ui_win_keep_item(item, &dialog->paths, &dialog->paths_count, &room);
+                    item->lpVtbl->Release(item);
+                }
+            }
+            chosen->lpVtbl->Release(chosen);
+        }
+    }
+    shell->lpVtbl->Release(shell);
+    if (!kept) {
+        hero_layer_free(dialog->paths);
+        dialog->paths = NULL;
+        dialog->paths_count = 0;
+    }
+}
+
+/* A dialog's thread (ITS THREAD): takes the UI thread's look and scale,
+ * waits for its turn, shows its dialog unless it was ended meanwhile, and
+ * tells the UI thread it is done. Past `finished` it reads nothing of the
+ * record, which the UI thread may give back once the thread has ended. */
+static DWORD WINAPI hero_ui_win_dialog_thread(LPVOID given) {
+    hero_ui_win_dialog *dialog = given;
+    HWND host = dialog->host;
+    HRESULT joined = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    ULONG_PTR cookie = 0;
+    bool activated = dialog->context != NULL && ActivateActCtx(dialog->context, &cookie) != FALSE;
+
+    if (dialog->awareness != NULL && dialog->awareness(HERO_UI_WIN_AWARE_V2) == NULL) {
+        (void)dialog->awareness(HERO_UI_WIN_AWARE);
+    }
+    if (WaitForSingleObject(dialog->turn, INFINITE) == WAIT_OBJECT_0 && !atomic_load(&dialog->ended)) {
+        if (dialog->kind == HERO_UI_WIN_DIALOG_MESSAGE) {
+            hero_ui_win_show_box(dialog);
+        } else if (dialog->kind == HERO_UI_WIN_DIALOG_ASK) {
+            hero_ui_win_show_ask(dialog);
+        } else {
+            if (dialog->kind == HERO_UI_WIN_DIALOG_FILES) {
+                hero_ui_win_show_files(dialog);
+            } else {
+                hero_ui_win_show_folders(dialog);
+            }
+            dialog->answer = hero_ui_win_paths_in(dialog->paths, dialog->paths_count);
+        }
+    }
+    if (activated) {
+        (void)DeactivateActCtx(0, cookie);
+    }
     if (SUCCEEDED(joined)) {
         CoUninitialize();
     }
-    if (answer != HERO_UI_OK) {
-        hero_layer_free(paths);
-        return answer;
-    }
-    hero_layer_free(hero_ui_win_paths);
-    hero_ui_win_paths = paths;
-    hero_ui_win_paths_count = paths_count;
-    *bytes = paths_count;
-    return HERO_UI_OK;
+    atomic_store(&dialog->finished, true);
+    (void)PostMessageW(host, HERO_UI_WIN_DIALOG_DONE, 0, 0);
+    return 0;
 }
 
-int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
-    TASKDIALOG_BUTTON choices[HERO_UI_ASK_BUTTONS_MOST];
-    wchar_t *labels[HERO_UI_ASK_BUTTONS_MOST];
-    TASKDIALOGCONFIG config;
-    wchar_t *heading;
-    wchar_t *said;
-    int64_t count = hero_ui_texts_in(buttons, buttons_count);
-    int64_t answer = HERO_UI_OK;
-    int button = 0;
-    HRESULT shown;
+/* Gives its turn to each dialog waiting where no dialog shown before it
+ * over its window still stands. */
+static void hero_ui_win_dialogs_turn(void) {
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL; each = each->next) {
+        bool waits = false;
 
+        if (each->started) {
+            continue;
+        }
+        for (hero_ui_win_dialog *before = hero_ui_win_dialogs; before != each && !waits; before = before->next) {
+            waits = before->window == each->window && !atomic_load(&before->finished);
+        }
+        if (!waits) {
+            each->started = true;
+            (void)SetEvent(each->turn);
+        }
+    }
+}
+
+/* Tells the answer of each dialog whose thread finished, unless it was
+ * ended or told already, gives back each whose thread has ended, and gives
+ * the dialogs waiting behind them their turn (`HERO_UI_WIN_DIALOG_DONE`).
+ * Paths past what an event's text holds are told as a cancel, which no
+ * program then mistakes for the whole choice. */
+static void hero_ui_win_dialogs_reap(void) {
+    hero_ui_win_dialog **at = &hero_ui_win_dialogs;
+
+    while (*at != NULL) {
+        hero_ui_win_dialog *each = *at;
+
+        if (!atomic_load(&each->finished)) {
+            at = &each->next;
+            continue;
+        }
+        if (!each->told && !atomic_load(&each->ended)) {
+            bool fits = each->paths_count <= HERO_UI_TEXT_MOST;
+
+            hero_ui_tell_text(HERO_UI_EVENT_DIALOG, each->dialog, fits ? each->answer : 0, 0, fits && each->paths_count > 0 ? each->paths : NULL, fits ? each->paths_count : 0);
+        }
+        each->told = true;
+        /* Its thread does nothing past `finished` but post and return. */
+        if (!hero_ui_win_await(each->thread, HERO_UI_WIN_DIALOG_WAIT_MS)) {
+            at = &each->next;
+            continue;
+        }
+        *at = each->next;
+        hero_ui_win_dialog_free(each);
+    }
+    hero_ui_win_dialogs_turn();
+}
+
+/* Whether the visible, enabled top-level dialog (`#32770`) of a thread is
+ * `hwnd`, which `found` then holds: so a box a file dialog shows over
+ * itself, which holds the file dialog disabled, is found before it. */
+static BOOL CALLBACK hero_ui_win_dialog_found(HWND hwnd, LPARAM given) {
+    wchar_t name[8];
+    HWND *found = (HWND *)given;
+
+    if (IsWindowVisible(hwnd) && IsWindowEnabled(hwnd) && GetClassNameW(hwnd, name, 8) == 6 && wcscmp(name, L"#32770") == 0) {
+        *found = hwnd;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/* Dialog `dialog`'s own window, waited for until its thread has put it on
+ * the screen; NULL where its thread finished first or the wait passed. */
+static HWND hero_ui_win_dialog_window(hero_ui_win_dialog *dialog) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_DIALOG_WAIT_MS;
+
+    for (;;) {
+        HWND found = NULL;
+
+        if (atomic_load(&dialog->finished)) {
+            return NULL;
+        }
+        (void)EnumThreadWindows(dialog->thread_id, hero_ui_win_dialog_found, (LPARAM)&found);
+        if (found != NULL) {
+            return found;
+        }
+        if (GetTickCount64() >= deadline) {
+            return NULL;
+        }
+        (void)hero_ui_win_await(dialog->thread, 10);
+    }
+}
+
+/* Presses button `command` of dialog `dialog`, on the screen as `shown`, as
+ * the person's click does, and waits until the dialog has closed and its
+ * thread ended; whether it did. */
+static bool hero_ui_win_dialog_press(hero_ui_win_dialog *dialog, HWND shown, int command) {
+    DWORD_PTR result = 0;
+
+    if (dialog->kind == HERO_UI_WIN_DIALOG_ASK) {
+        (void)SendMessageTimeoutW(shown, TDM_CLICK_BUTTON, (WPARAM)command, 0, SMTO_NORMAL, HERO_UI_WIN_DIALOG_WAIT_MS, &result);
+    } else {
+        (void)SendMessageTimeoutW(shown, WM_COMMAND, MAKEWPARAM(command, BN_CLICKED), (LPARAM)GetDlgItem(shown, command), SMTO_NORMAL, HERO_UI_WIN_DIALOG_WAIT_MS, &result);
+    }
+    return hero_ui_win_await(dialog->thread, HERO_UI_WIN_DIALOG_WAIT_MS);
+}
+
+/* The command of the button answering `answer` in a message box of buttons
+ * `buttons`, 0 where it holds none. A box of OK alone gives its one button
+ * `IDCANCEL`'s command, which closes it answering `IDOK`, so that Escape
+ * answers OK (measured on Windows Server 2025, 2026-11-23). */
+static int hero_ui_win_box_button(int64_t buttons, int64_t answer) {
+    switch (answer) {
+    case HERO_UI_ANSWER_OK:
+        return buttons == HERO_UI_BUTTONS_OK ? IDCANCEL : buttons == HERO_UI_BUTTONS_OK_CANCEL ? IDOK : 0;
+    case HERO_UI_ANSWER_CANCEL:
+        return buttons == HERO_UI_BUTTONS_OK_CANCEL || buttons == HERO_UI_BUTTONS_YES_NO_CANCEL ? IDCANCEL : 0;
+    case HERO_UI_ANSWER_YES:
+        return buttons == HERO_UI_BUTTONS_YES_NO || buttons == HERO_UI_BUTTONS_YES_NO_CANCEL ? IDYES : 0;
+    case HERO_UI_ANSWER_NO:
+        return buttons == HERO_UI_BUTTONS_YES_NO || buttons == HERO_UI_BUTTONS_YES_NO_CANCEL ? IDNO : 0;
+    default:
+        return 0;
+    }
+}
+
+/* The command that closes dialog `dialog` unanswered: an ask's cancel
+ * button, else its first; a message box's No where it holds no Cancel,
+ * else the command of its Cancel or of its one OK; a file or folder
+ * dialog's Cancel. */
+static int hero_ui_win_dismissal(const hero_ui_win_dialog *dialog) {
+    if (dialog->kind == HERO_UI_WIN_DIALOG_ASK) {
+        return (int)(HERO_UI_WIN_ASK_FIRST + (dialog->cancel >= 0 ? dialog->cancel : 0));
+    }
+    return dialog->kind == HERO_UI_WIN_DIALOG_MESSAGE && dialog->buttons == HERO_UI_BUTTONS_YES_NO ? IDNO : IDCANCEL;
+}
+
+/* Whether version 6 of the common controls' task dialog was found, looked
+ * for once: under the activation context the name is version 6's module. */
+static bool hero_ui_win_task_found(void) {
     if (!hero_ui_win_task_asked) {
-        /* Under the activation context the name is version 6's module. */
         HMODULE controls = LoadLibraryW(L"comctl32.dll");
 
         hero_ui_win_task_asked = true;
@@ -5862,57 +6024,316 @@ int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count,
             hero_ui_win_find_function(controls, "TaskDialogIndirect", &hero_ui_win_task, sizeof hero_ui_win_task);
         }
     }
-    if (hero_ui_win_task == NULL) {
+    return hero_ui_win_task != NULL;
+}
+
+/* The record of a dialog `dialog` of kind `kind` over window `window`,
+ * nothing of it shown yet: NULL with `*answer` the kind where `window` is
+ * no window or a dialog of that number still stands, or memory ran out. */
+static hero_ui_win_dialog *hero_ui_win_dialog_new(int64_t dialog, int64_t window, int kind, int64_t *answer) {
+    hero_ui_native *over = hero_ui_find(window);
+    hero_ui_win_dialog *made;
+
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL; each = each->next) {
+        if (each->dialog == dialog && !each->told && !atomic_load(&each->ended)) {
+            *answer = HERO_UI_NOT_FOUND;
+            return NULL;
+        }
+    }
+    if (over == NULL || over->kind != HERO_UI_WINDOW || over->hwnd == NULL) {
+        *answer = over == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+        return NULL;
+    }
+    made = hero_layer_alloc_zero(1, sizeof *made);
+    if (made == NULL) {
+        *answer = HERO_UI_LIMIT;
+        return NULL;
+    }
+    made->dialog = dialog;
+    made->window = window;
+    made->kind = kind;
+    made->owner = over->hwnd;
+    made->cancel = -1;
+    made->context = hero_ui_win_activated ? hero_ui_win_context : NULL;
+    made->awareness = hero_ui_win_aware ? hero_ui_win_awareness : NULL;
+    made->task = hero_ui_win_task;
+    atomic_init(&made->finished, false);
+    atomic_init(&made->ended, false);
+    return made;
+}
+
+/* Gives back dialog `made`, which memory ran out making: `HERO_UI_LIMIT`. */
+static int64_t hero_ui_win_dialog_unmade(hero_ui_win_dialog *made) {
+    hero_ui_win_dialog_free(made);
+    return HERO_UI_LIMIT;
+}
+
+/* Makes dialog `made`'s thread, keeps the dialog at the end of the dialogs
+ * and gives it its turn where none stands over its window: `HERO_UI_OK`,
+ * else the record given back and the failure said. */
+static int64_t hero_ui_win_dialog_start(hero_ui_win_dialog *made) {
+    hero_ui_win_dialog **at = &hero_ui_win_dialogs;
+    int64_t answer = HERO_UI_OK;
+
+    if (hero_ui_win_dialog_host == NULL) {
+        hero_ui_win_dialog_host = CreateWindowExW(0, hero_ui_win_panel_class, L"", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+    }
+    if (hero_ui_win_dialog_host == NULL) {
+        answer = hero_ui_win_failed("making the window a dialog's answer comes to", GetLastError());
+    } else if ((made->turn = CreateEventW(NULL, TRUE, FALSE, NULL)) == NULL) {
+        answer = hero_ui_win_failed("making the event a dialog waits for its turn on", GetLastError());
+    } else {
+        made->host = hero_ui_win_dialog_host;
+        made->thread = CreateThread(NULL, 0, hero_ui_win_dialog_thread, made, 0, &made->thread_id);
+        if (made->thread == NULL) {
+            answer = hero_ui_win_failed("making the thread a dialog is shown by", GetLastError());
+        }
+    }
+    if (answer != HERO_UI_OK) {
+        hero_ui_win_dialog_free(made);
+        return answer;
+    }
+    while (*at != NULL) {
+        at = &(*at)->next;
+    }
+    *at = made;
+    hero_ui_win_dialogs_turn();
+    return HERO_UI_OK;
+}
+
+/* Win32's spelling of the filters `filters` holds, each a name and its
+ * extensions with `;` between, as `lpstrFilter` takes them, into `made`:
+ * each filter's name, then each extension as `*.ext`, `;` between, each
+ * followed by a zero, and one more after the last; an extension written
+ * with its dot keeps one dot. The first extension named is the one a save
+ * adds to a name the person typed without one. None where the filters are
+ * fewer than one name and its list; false where memory ran out. */
+static bool hero_ui_win_spell_filters(const uint8_t *filters, int64_t filters_count, hero_ui_win_dialog *made) {
+    int64_t texts = hero_ui_texts_in(filters, filters_count);
+    size_t room = (size_t)filters_count * 3 + 4;
+    size_t at = 0;
+    wchar_t *spelled;
+
+    made->extension[0] = 0;
+    if (texts < 2) {
+        return true;
+    }
+    spelled = hero_layer_alloc(room * sizeof(wchar_t));
+    for (int64_t f = 0; spelled != NULL && f + 1 < texts; f += 2) {
+        int64_t name_length = 0;
+        int64_t list_length = 0;
+        const uint8_t *filter_name = hero_ui_text_at(filters, filters_count, f, &name_length);
+        const uint8_t *list = hero_ui_text_at(filters, filters_count, f + 1, &list_length);
+        wchar_t *wide_name = hero_ui_win_wide(filter_name, name_length, 0);
+        wchar_t *wide_list = hero_ui_win_wide(list, list_length, 0);
+
+        if (wide_name == NULL || wide_list == NULL) {
+            hero_layer_free(wide_name);
+            hero_layer_free(wide_list);
+            hero_layer_free(spelled);
+            spelled = NULL;
+            break;
+        }
+        for (size_t c = 0; wide_name[c] != 0; c += 1) {
+            spelled[at++] = wide_name[c];
+        }
+        spelled[at++] = 0;
+        for (size_t c = 0, start = 0;; c += 1) {
+            if (wide_list[c] == L';' || wide_list[c] == 0) {
+                size_t from = start < c && wide_list[start] == L'.' ? start + 1 : start;
+
+                if (from < c) {
+                    if (spelled[at - 1] != 0) {
+                        spelled[at++] = L';';
+                    }
+                    spelled[at++] = L'*';
+                    spelled[at++] = L'.';
+                    for (size_t e = from; e < c; e += 1) {
+                        spelled[at++] = wide_list[e];
+                    }
+                    if (made->extension[0] == 0 && c - from < 63) {
+                        memcpy(made->extension, wide_list + from, (c - from) * sizeof(wchar_t));
+                        made->extension[c - from] = 0;
+                    }
+                }
+                start = c + 1;
+            }
+            if (wide_list[c] == 0) {
+                break;
+            }
+        }
+        if (spelled[at - 1] == 0) {
+            spelled[at++] = L'*';
+            spelled[at++] = L'.';
+            spelled[at++] = L'*';
+        }
+        spelled[at++] = 0;
+        hero_layer_free(wide_name);
+        hero_layer_free(wide_list);
+    }
+    if (spelled == NULL) {
+        return false;
+    }
+    spelled[at] = 0;
+    made->filters = spelled;
+    return true;
+}
+
+int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    int64_t answer = HERO_UI_OK;
+    hero_ui_win_dialog *made = hero_ui_win_dialog_new(dialog, window, HERO_UI_WIN_DIALOG_MESSAGE, &answer);
+
+    if (made == NULL) {
+        return answer;
+    }
+    made->tone = tone;
+    made->buttons = buttons;
+    made->heading = hero_ui_win_wide(title, title_count, 0);
+    made->said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
+    return made->heading == NULL || made->said == NULL ? hero_ui_win_dialog_unmade(made) : hero_ui_win_dialog_start(made);
+}
+
+int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel) {
+    int64_t answer = HERO_UI_OK;
+    int64_t count = hero_ui_texts_in(buttons, buttons_count);
+    hero_ui_win_dialog *made;
+    bool whole;
+
+    if (!hero_ui_win_task_found()) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows' task dialog, which shows buttons of the program's words, is version 6 of the common controls', which this process could not load");
     }
     if (count < 1 || count > HERO_UI_ASK_BUTTONS_MOST) {
         return HERO_UI_INVALID;
     }
-    heading = hero_ui_win_wide(title, title_count, 0);
-    said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
-    memset(labels, 0, sizeof labels);
+    made = hero_ui_win_dialog_new(dialog, window, HERO_UI_WIN_DIALOG_ASK, &answer);
+    if (made == NULL) {
+        return answer;
+    }
+    made->tone = tone;
+    made->count = count;
+    made->cancel = cancel;
+    made->heading = hero_ui_win_wide(title, title_count, 0);
+    made->said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
+    whole = made->heading != NULL && made->said != NULL;
     for (int64_t i = 0; i < count; i += 1) {
         int64_t length = 0;
         const uint8_t *label = hero_ui_text_at(buttons, buttons_count, i, &length);
 
-        labels[i] = hero_ui_win_wide(label, length, HERO_UI_WIN_PREFIX);
-        choices[i].nButtonID = (int)(HERO_UI_WIN_ASK_FIRST + i);
-        choices[i].pszButtonText = labels[i];
-        answer = labels[i] == NULL ? HERO_UI_LIMIT : answer;
+        made->labels[i] = hero_ui_win_wide(label, length, HERO_UI_WIN_PREFIX);
+        whole = whole && made->labels[i] != NULL;
     }
-    if (heading == NULL || said == NULL) {
-        answer = HERO_UI_LIMIT;
+    return whole ? hero_ui_win_dialog_start(made) : hero_ui_win_dialog_unmade(made);
+}
+
+int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count) {
+    int64_t answer = HERO_UI_OK;
+    hero_ui_win_dialog *made = hero_ui_win_dialog_new(dialog, window, HERO_UI_WIN_DIALOG_FILES, &answer);
+    bool whole;
+
+    if (made == NULL) {
+        return answer;
     }
-    if (answer == HERO_UI_OK) {
-        memset(&config, 0, sizeof config);
-        config.cbSize = (UINT)sizeof config;
-        config.hInstance = GetModuleHandleW(NULL);
-        config.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW | (cancel >= 0 ? TDF_ALLOW_DIALOG_CANCELLATION : 0);
-        config.pszWindowTitle = heading;
-        config.pszMainIcon = tone == HERO_UI_TONE_ERROR ? TD_ERROR_ICON : tone == HERO_UI_TONE_WARNING ? TD_WARNING_ICON : TD_INFORMATION_ICON;
-        config.pszContent = said;
-        config.cButtons = (UINT)count;
-        config.pButtons = choices;
-        config.nDefaultButton = HERO_UI_WIN_ASK_FIRST;
-        hero_ui_win_hold_all(true);
-        shown = hero_ui_win_task(&config, &button, NULL, NULL);
-        hero_ui_win_hold_all(false);
-        if (FAILED(shown)) {
-            answer = hero_ui_win_failed("showing a message box", (DWORD)shown);
-        } else if (button == IDCANCEL && cancel >= 0) {
-            *pressed = cancel;
-        } else if (button >= HERO_UI_WIN_ASK_FIRST && button < HERO_UI_WIN_ASK_FIRST + count) {
-            *pressed = button - HERO_UI_WIN_ASK_FIRST;
-        } else {
-            *pressed = -1;
+    made->save = save == 1;
+    made->multiple = multiple == 1;
+    made->heading = hero_ui_win_wide(title, title_count, 0);
+    made->name = hero_ui_win_wide(name, name_count, 0);
+    whole = made->heading != NULL && made->name != NULL && hero_ui_win_spell_filters(filters, filters_count, made);
+    return whole ? hero_ui_win_dialog_start(made) : hero_ui_win_dialog_unmade(made);
+}
+
+int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count) {
+    int64_t answer = HERO_UI_OK;
+    hero_ui_win_dialog *made = hero_ui_win_dialog_new(dialog, window, HERO_UI_WIN_DIALOG_FOLDERS, &answer);
+
+    if (made == NULL) {
+        return answer;
+    }
+    made->multiple = multiple == 1;
+    made->heading = hero_ui_win_wide(title, title_count, 0);
+    return made->heading == NULL ? hero_ui_win_dialog_unmade(made) : hero_ui_win_dialog_start(made);
+}
+
+int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count) {
+    hero_ui_win_dialog *shown = NULL;
+    HWND window;
+    int command;
+
+    (void)paths;
+    (void)count;
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL && shown == NULL; each = each->next) {
+        if (each->dialog == dialog && !each->told && !atomic_load(&each->ended) && !atomic_load(&each->finished)) {
+            shown = each;
         }
     }
-    hero_layer_free(heading);
-    hero_layer_free(said);
-    for (int64_t i = 0; i < count; i += 1) {
-        hero_layer_free(labels[i]);
+    if (shown == NULL) {
+        return HERO_UI_NOT_FOUND;
     }
-    return answer;
+    if (shown->kind == HERO_UI_WIN_DIALOG_FILES || shown->kind == HERO_UI_WIN_DIALOG_FOLDERS) {
+        if (value != 0) {
+            return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows' file and folder dialogs take their choice from the person alone: no program chooses in them, though one may cancel them");
+        }
+        command = IDCANCEL;
+    } else if (shown->kind == HERO_UI_WIN_DIALOG_MESSAGE) {
+        command = hero_ui_win_box_button(shown->buttons, value);
+    } else {
+        command = value >= 0 && value < shown->count ? (int)(HERO_UI_WIN_ASK_FIRST + value) : 0;
+    }
+    if (command == 0) {
+        return HERO_UI_INVALID;
+    }
+    if (!shown->started) {
+        /* Still waiting for its turn: told now, and its thread ends without
+         * showing it. */
+        hero_ui_tell_text(HERO_UI_EVENT_DIALOG, shown->dialog, value, 0, NULL, 0);
+        shown->told = true;
+        atomic_store(&shown->ended, true);
+        shown->started = true;
+        (void)SetEvent(shown->turn);
+        return HERO_UI_OK;
+    }
+    window = hero_ui_win_dialog_window(shown);
+    if (window == NULL) {
+        return atomic_load(&shown->finished) ? HERO_UI_NOT_FOUND : hero_ui_refused(HERO_UI_OTHER, "the dialog's thread put no dialog on the screen within ten seconds");
+    }
+    if (!hero_ui_win_dialog_press(shown, window, command)) {
+        return hero_ui_refused(HERO_UI_OTHER, "the dialog did not close within ten seconds of its button pressed");
+    }
+    return HERO_UI_OK;
+}
+
+void hero_ui_arm_dialogs_end(int64_t window) {
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL; each = each->next) {
+        if ((window != 0 && each->window != window) || atomic_load(&each->ended)) {
+            continue;
+        }
+        atomic_store(&each->ended, true);
+        if (!each->started) {
+            each->started = true;
+            (void)SetEvent(each->turn);
+        } else if (!atomic_load(&each->finished)) {
+            HWND shown = hero_ui_win_dialog_window(each);
+
+            if (shown != NULL) {
+                (void)hero_ui_win_dialog_press(each, shown, hero_ui_win_dismissal(each));
+            }
+        }
+    }
+    /* Each gone before its window goes, which owns it. */
+    for (hero_ui_win_dialog *each = hero_ui_win_dialogs; each != NULL; each = each->next) {
+        if (window == 0 || each->window == window) {
+            (void)hero_ui_win_await(each->thread, HERO_UI_WIN_DIALOG_WAIT_MS);
+        }
+    }
+    hero_ui_win_dialogs_reap();
+    if (window == 0) {
+        /* A thread that would not end within the waits keeps its record,
+         * which nothing gives back, so nothing it reads is freed under it. */
+        hero_ui_win_dialogs = NULL;
+    }
+}
+
+int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
 }
 
 /* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
@@ -7601,6 +8022,208 @@ int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint
     hero_layer_free(heading);
     hero_layer_free(said);
     return answer;
+}
+
+
+/* -- THE SESSION'S END ASKING THE PROGRAM ----------------------------------
+ *
+ * Windows asks each top-level window of the app to let the session end, at
+ * the person's logout, restart or shutdown, and asks it to end at another
+ * program's request through the Restart Manager (`ENDSESSION_CLOSEAPP`):
+ * `WM_QUERYENDSESSION`, which is answered at once. The first window asked
+ * queues the ask, `QUIT` 1 for the session's end and 0 for another
+ * program's, and every window answers FALSE while an ask of that kind is
+ * held, so nothing ends until the program answers: Windows shows the person
+ * the app as one keeping the session from ending, with the reason this arm
+ * registers on the window first asked (`ShutdownBlockReasonCreate`), and
+ * the person may end the session anyway or cancel it. `answer_quit` takes
+ * the reason back (`ShutdownBlockReasonDestroy`) and holds nothing more:
+ * with `go` 1 the program then closes the app, and the session's end goes
+ * on without it; with `go` 0 the app stays, and the session's end it held
+ * waits for the person's Cancel on Windows' screen, since no call of an app
+ * cancels it. A session's end Windows forces (`ENDSESSION_CRITICAL`) is
+ * told and not held, since nothing holds it; one cancelled, by the person
+ * or by another program (`WM_ENDSESSION` with FALSE), answers every ask
+ * held as staying. Windows lets no app without a visible window hold the
+ * session's end: it ends such an app. `inject` sends a window of the app
+ * the same `WM_QUERYENDSESSION`, so the ask takes the system's path. */
+
+#ifndef ENDSESSION_CLOSEAPP
+#define ENDSESSION_CLOSEAPP 0x00000001
+#endif
+#ifndef ENDSESSION_CRITICAL
+#define ENDSESSION_CRITICAL 0x40000000
+#endif
+
+/* `WM_QUERYENDSESSION` to window `hwnd`, `why` its reasons: the ask queued
+ * where none of its kind is held, and FALSE, nothing ending, while the
+ * program has not answered, but where Windows forces the end. Told by the
+ * path no setting of the program mutes, so no ask is lost. */
+static LRESULT hero_ui_win_end_asked(HWND hwnd, LPARAM why) {
+    bool session = ((DWORD)why & ENDSESSION_CLOSEAPP) == 0;
+    bool forced = ((DWORD)why & ENDSESSION_CRITICAL) != 0;
+    bool *held = session ? &hero_ui_win_session_held : &hero_ui_win_closing_held;
+
+    if (!*held) {
+        *held = true;
+        if (session && !forced && hero_ui_win_blocking == NULL && ShutdownBlockReasonCreate(hwnd, L"Saving what would be lost before it ends")) {
+            hero_ui_win_blocking = hwnd;
+        }
+        hero_ui_tell_text(HERO_UI_EVENT_QUIT, 0, session ? 1 : 0, 0, NULL, 0);
+    }
+    return forced ? TRUE : FALSE;
+}
+
+/* Answers every ask held, the reason Windows shows taken back. */
+static void hero_ui_win_quits_answered(void) {
+    if (hero_ui_win_blocking != NULL) {
+        (void)ShutdownBlockReasonDestroy(hero_ui_win_blocking);
+        hero_ui_win_blocking = NULL;
+    }
+    hero_ui_win_session_held = false;
+    hero_ui_win_closing_held = false;
+}
+
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    /* Either way the app holds nothing more: `go` 1 is the program's close
+     * to come, and 0 the app staying (THE SESSION'S END). */
+    (void)go;
+    hero_ui_win_quits_answered();
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    hero_ui_native *asked = NULL;
+
+    /* A window of the app, else its tray's hidden window, each top-level
+     * and so asked by Windows. */
+    for (int round = 0; round < 2 && asked == NULL; round += 1) {
+        for (size_t at = 0; at < hero_ui_map_room() && asked == NULL; at += 1) {
+            hero_ui_native *each = hero_ui_at(at);
+
+            if (each != NULL && each->hwnd != NULL && each->kind == (round == 0 ? HERO_UI_WINDOW : HERO_UI_TRAY)) {
+                asked = each;
+            }
+        }
+    }
+    if (asked == NULL) {
+        return hero_ui_refused(HERO_UI_OTHER, "the app shows no window and no tray icon, and Windows asks an app to end through its top-level windows alone");
+    }
+    (void)SendMessageW(asked->hwnd, WM_QUERYENDSESSION, 0, session_end == 1 ? 0 : (LPARAM)ENDSESSION_CLOSEAPP);
+    return HERO_UI_OK;
+}
+
+
+/* -- FILES DROPPED ON A WINDOW ---------------------------------------------
+ *
+ * A window that takes files is registered with the shell's drop of files,
+ * `DragAcceptFiles`, which marks it `WS_EX_ACCEPTFILES`: a drop on it, or on
+ * a control of it that takes no drop of its own (an `EDIT` control takes
+ * none), comes to the window as `WM_DROPFILES`, whose `HDROP` holds the
+ * paths (`DragQueryFileW`) and the point in the window's client area
+ * (`DragQueryPoint`), in pixels, told in points of the window's scale; a web
+ * view takes its drops itself, through WebView2's own drop target. `inject`
+ * sends the window the same message with an `HDROP` of the arm's making, a
+ * `DROPFILES` of UTF-16 paths in a movable global block, the layout
+ * `DragQueryFileW` reads in a drop and in the clipboard alike; the arm gives
+ * that block back itself, and `DragFinish` the shell's. */
+
+/* The drop `inject` is sending, which the arm gives back itself. */
+static _Thread_local HDROP hero_ui_win_own_drop;
+
+/* `WM_DROPFILES` to window `hwnd`: the paths and the point told where the
+ * window takes files, and the shell's drop given back. A path no UTF-8
+ * names (an unpaired surrogate) is passed over, and a drop left with none
+ * tells nothing. */
+static void hero_ui_win_files_dropped(HWND hwnd, HDROP drop) {
+    hero_ui_native *window = hero_ui_win_of(hwnd);
+
+    if (window != NULL && window->kind == HERO_UI_WINDOW && window->takes_files) {
+        UINT files = DragQueryFileW(drop, 0xFFFFFFFFu, NULL, 0);
+        uint8_t *paths = NULL;
+        int64_t count = 0;
+        int64_t room = 0;
+        POINT at = {0, 0};
+        bool kept = true;
+
+        for (UINT i = 0; i < files && kept; i += 1) {
+            UINT units = DragQueryFileW(drop, i, NULL, 0);
+            wchar_t *path = units > 0 ? hero_layer_alloc(((size_t)units + 1) * sizeof(wchar_t)) : NULL;
+
+            if (units > 0 && path == NULL) {
+                kept = false;
+            } else if (path != NULL && DragQueryFileW(drop, i, path, units + 1) == units) {
+                kept = hero_ui_win_keep_path(path, (int)units, &paths, &count, &room);
+            }
+            hero_layer_free(path);
+        }
+        (void)DragQueryPoint(drop, &at);
+        if (kept && count > 0) {
+            hero_ui_tell_text(HERO_UI_EVENT_DROP, window->id, hero_ui_win_pt(at.x > 0 ? at.x : 0, window->dpi), hero_ui_win_pt(at.y > 0 ? at.y : 0, window->dpi), paths, count);
+        }
+        hero_layer_free(paths);
+    }
+    if (drop != hero_ui_win_own_drop) {
+        DragFinish(drop);
+    }
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+
+    if (window == NULL) {
+        return kind;
+    }
+    DragAcceptFiles(window->hwnd, on == 1 ? TRUE : FALSE);
+    window->takes_files = on == 1;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    RECT content;
+    HGLOBAL block;
+    UINT format = 0;
+    int64_t answer = HERO_UI_OK;
+    uint8_t *into;
+    int across;
+    int down;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (!window->takes_files) {
+        return HERO_UI_INVALID;
+    }
+    if (!GetClientRect(window->hwnd, &content)) {
+        return hero_ui_win_failed("reading a window's content to drop on", GetLastError());
+    }
+    across = hero_ui_win_px(x, window->dpi);
+    down = hero_ui_win_px(y, window->dpi);
+    if (across >= content.right || down >= content.bottom) {
+        return HERO_UI_INVALID;
+    }
+    block = hero_ui_win_clip_block(HERO_UI_CLIP_FILES, paths, count, 0, 0, &format, &answer);
+    if (block == NULL) {
+        return answer;
+    }
+    into = GlobalLock(block);
+    if (into == NULL) {
+        answer = hero_ui_win_failed("writing the paths dropped", GetLastError());
+        (void)GlobalFree(block);
+        return answer;
+    }
+    ((DROPFILES *)(void *)into)->pt.x = across;
+    ((DROPFILES *)(void *)into)->pt.y = down;
+    ((DROPFILES *)(void *)into)->fNC = FALSE;
+    (void)GlobalUnlock(block);
+    hero_ui_win_own_drop = (HDROP)block;
+    (void)SendMessageW(window->hwnd, WM_DROPFILES, (WPARAM)block, 0);
+    hero_ui_win_own_drop = NULL;
+    (void)GlobalFree(block);
+    return HERO_UI_OK;
 }
 
 #endif

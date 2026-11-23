@@ -571,6 +571,13 @@ is something this project measured or the specification states.
 - **The applications**, `examples-rebel/<app>/`: programs somebody would use, each doing one
   job through many packages, between them using every face of Rebel (the author, 2026-11-21).
 
+**Each twin and each application has a page of its own**, `README.md` in its folder: its header
+comment, the one source of what it is and how it runs for real, then its demo's command, the
+packages it uses and what its folders hold. [`INDEX.md`](INDEX.md) lists them all, one line each,
+and [`PACKAGES.md`](PACKAGES.md) indexes every face of Rebel with each of its declarations, read
+from what `heroes doc` prints. `generators/rebel_index/` writes the three from the tree, never by
+hand, and its `check` holds them to it in Rebel's pipeline.
+
 **A twin and an application are each a project, made as a user makes one** (the author,
 2026-11-21, meant as: *the apps should be little projects, with folders inside them and their
 own toml of dependencies*): `heroes new examples-rebel/<app>` writes its `main.hero`;

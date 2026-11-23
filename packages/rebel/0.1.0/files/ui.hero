@@ -207,6 +207,12 @@ record App
     appearance: Appearance
     # The asks to end the app the headless side holds, not yet answered.
     quits_held: i64
+    # The app's identifier (`set_identity`), "" until given.
+    identity: str
+    # Whether the app has made a window, after which it takes no identity.
+    windowed: bool
+    # Whether the app claimed its identity's one instance.
+    claimed: bool
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -313,6 +319,8 @@ variant Kind
     context_menu
     # An icon in the system's tray.
     tray
+    # A line between the widgets of a box.
+    separator
 
 # What `widget` is.
 #
@@ -649,9 +657,26 @@ function column(@app: App, into: Widget) -> Widget?
 #   pane.
 # - `columns`: the cells of a row, 1 to `MOST_STRETCH`.
 #
-# Fails `closed`, `invalid`. See also `set_grid_stretch`.
+# Fails `closed`, `invalid`. See also `set_grid_stretch`, `set_span`.
 function grid(@app: App, into: Widget, columns: i64) -> Widget?
     return makers.grid(@app, into: into, columns: columns)
+
+# Has a child of a grid take `columns` of its columns from its cell
+# rightwards, as wxWidgets' `wxGBSpan` in a `wxGridBagSizer`: a field as
+# wide as a label and its neighbour, a row of buttons under a form. Cells
+# fill row after row, and a child that does not fit in what is left of its
+# row starts the next; its columns widen, the last most, where together
+# they are narrower than it needs. On the native side the layout, which
+# this package computes, places it, so every system shows it alike.
+#
+# - `app`: the app holding it.
+# - `widget`: a child of a grid.
+# - `columns`: 1, as every child starts, to the grid's columns.
+#
+# Fails `closed`, `invalid` for a widget no grid holds or a span outside
+# 1 to the grid's columns. See also `grid`.
+function set_span(@app: App, widget: Widget, columns: i64) -> ()?
+    return makers.set_span(@app, widget: widget, columns: columns)
 
 # New tabs in `into`: pages one at a time, each chosen by its tab, as a
 # settings window shows them, wxWidgets' `wxNotebook`. They need the most
@@ -806,6 +831,19 @@ function set_grid_stretch(@app: App, widget: Widget, columns: [i64], rows: [i64]
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function label(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_LABEL, text: text, items: [])
+
+# A new separator in `into`, as wxWidgets' `wxStaticLine`: the system's
+# thin line between the widgets of a box, across a column or a window and
+# down a row, filling its box that way.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid` where `into` holds no widgets, `unsupported`
+# where the system's arm makes none (Windows and Linux, pending).
+function separator(@app: App, into: Widget) -> Widget?
+    return makers.separator(@app, into: into)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
@@ -1328,6 +1366,57 @@ function appearance_of(app: App) -> Appearance?
 function answer_quit(@app: App, go: bool) -> ()?
     return session.answer_quit(@app, go: go)
 
+# Gives the app its identity, as wxWidgets' `wxApp::SetAppName` and
+# Electron's `app.setName`: `identifier`, a reverse domain name such as
+# `org.example.Editor`, which keys its one instance (`claim_instance`), and
+# `name`, which its menus show the person ("About", "Hide", "Quit" on
+# macOS; a program outside an application bundle keeps its file's name in
+# the menu bar's bold title, which the system reads from a bundle alone).
+#
+# - `app`: the app, before its first window.
+# - `identifier`: two or more parts joined by dots, each ASCII letters,
+#   digits and hyphens, the first a letter; at most 128 bytes.
+# - `name`: one line, not empty.
+#
+# Fails `closed`, `invalid` for an identifier or a name of another shape,
+# after the app's first window or a first identity, or inside a macOS
+# application bundle that names itself otherwise; `unsupported` where the
+# system's arm takes no identity (Windows and Linux, pending), `failed`.
+function set_identity(@app: App, identifier: str, name: str) -> ()?
+    return session.set_identity(@app, identifier: identifier, name: name)
+
+# Makes this process the one instance of the app's identity, as
+# wxWidgets' `wxSingleInstanceChecker` and Electron's
+# `app.requestSingleInstanceLock`: true where no other process of it runs
+# for this user, each later launch's arguments then told as `.handed`
+# with `.arguments`; false where one runs, `arguments` having been handed
+# to it, so this program closes the app and ends. The claim holds until the
+# app closes; asked again it answers true. The headless side is always the
+# one instance.
+#
+# - `app`: the app, given its identity.
+# - `arguments`: what this launch was given, the program's own name left
+#   out, as `args()` answers them.
+#
+# Fails `closed`, `invalid` before `set_identity` or for an argument holding
+# a zero byte, `unsupported` where the system's arm keeps no one instance
+# (Windows and Linux, pending), `failed` where another process holds the
+# claim and takes no hand-over.
+function claim_instance(@app: App, arguments: [str]) -> bool?
+    return session.claim_instance(@app, arguments: arguments)
+
+# What the system or a later launch handed the app (`.handed`).
+variant Handed
+    # Paths of files the system asks the app to open: a double click, Open
+    # With, a drop on its Dock icon (on macOS for a program in an
+    # application bundle that names their types).
+    files
+    # Addresses of a scheme the app claims (on macOS a bundle's
+    # `CFBundleURLTypes`), one at a time.
+    addresses
+    # A later launch's arguments (`claim_instance`).
+    arguments
+
 # Has window `widget` take files the person drops on it, `on` true, or
 # take none, as a window does until asked, as wxWidgets'
 # `wxWindow::DragAcceptFiles`: each drop is told as `.files_dropped`, its
@@ -1345,6 +1434,30 @@ function answer_quit(@app: App, go: bool) -> ()?
 # `failed`.
 function set_drop(@app: App, widget: Widget, on: bool) -> ()?
     return drops.set_drop(@app, widget: widget, on: on)
+
+# Gives `widget` a tip, as wxWidgets' `wxWindow::SetToolTip`: a few words
+# the system shows over it while the pointer rests there, saying what a
+# button of an image or a terse field does; "" takes it back.
+#
+# - `app`: the app holding it.
+# - `widget`: a widget in a window, a menu item or a tray icon.
+# - `text`: the tip, its lines kept.
+#
+# Fails `closed`, `invalid` for a window, a box, a menu or a timer, or a
+# zero byte; `unsupported` where the system's arm shows no tip (Windows and
+# Linux, pending), `failed`. See also `tip_of`.
+function set_tip(@app: App, widget: Widget, text: str) -> ()?
+    return state.set_tip(@app, widget: widget, text: text)
+
+# The tip `widget` shows, "" for none: on the native side as the system
+# holds it.
+#
+# - `app`: the app holding it.
+# - `widget`: the widget.
+#
+# Fails as `set_tip` does.
+function tip_of(app: App, widget: Widget) -> str?
+    return state.tip_of(app, widget: widget)
 
 # Gives `widget` the name a screen reader says for it, where it shows no
 # words of its own (a picture, a slider, a button of an image) or its words
@@ -1900,6 +2013,14 @@ variant Event
         # True where the person is logging out, restarting or shutting
         # down; false for another quit, the Dock's or another program's.
         session_end: bool
+    # The system or a later launch handed the app documents, addresses or
+    # arguments, as wxWidgets' `wxApp::MacOpenFiles` and Electron's
+    # `open-file` and `second-instance`.
+    handed
+        # What they are.
+        what: Handed
+        # The paths, the addresses or the arguments, in order.
+        items: [str]
     # The person dropped files on a window that takes them (`set_drop`).
     files_dropped
         # The window.
@@ -2048,6 +2169,17 @@ variant Input
     ask_quit
         # Whether it is the session's end.
         session_end: bool
+    # Hands the app documents, addresses or arguments, as the system or a
+    # later launch would: on macOS files by the system's open Apple event,
+    # each address by its get-address event (one `.handed` each), and
+    # arguments through the claimed instance's own hand-over, which needs
+    # the claim.
+    hand
+        # What they are.
+        what: Handed
+        # The paths or the addresses, one or more, none empty; or the
+        # arguments.
+        items: [str]
     # Drops files on a window that takes them, as the person's drag from
     # the system's file manager would: on macOS through the window's drag
     # destination, or a text area's where one stands at the point.
@@ -2553,7 +2685,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

@@ -55,6 +55,9 @@ private let answerUnsupported: Int64 = 4
 
 private let eventAppearance: Int64 = 18
 private let eventQuit: Int64 = 19
+private let eventOpen: Int64 = 21
+private let openFiles: Int64 = 1
+private let openAddresses: Int64 = 2
 private let answerOther: Int64 = 8
 private let appearanceLight: Int64 = 1
 private let appearanceDark: Int64 = 2
@@ -216,6 +219,8 @@ private final class Session: NSObject, NSApplicationDelegate {
     var held: [NSAppleEventManager.SuspensionID] = []
     // How many asks to end it were told.
     var asks = 0
+    // How many requests to open documents or addresses came.
+    var opens = 0
 
     init(push: @escaping HeroUiSystemPush) {
         self.push = push
@@ -225,6 +230,31 @@ private final class Session: NSObject, NSApplicationDelegate {
         asks += 1
         push(eventQuit, 0, 0, 0, nil, 0)
         return .terminateCancel
+    }
+
+    // The documents and addresses the system asks the app to open (its
+    // open and get-address Apple events): files as their paths, the rest as
+    // the addresses, each kind queued as one `HERO_UI_EVENT_OPEN`.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        opens += 1
+        let files = urls.filter { $0.isFileURL }.map { $0.path }.filter { !$0.isEmpty }
+        let addresses = urls.filter { !$0.isFileURL }.map { $0.absoluteString }.filter { !$0.isEmpty }
+        tell(openFiles, files)
+        tell(openAddresses, addresses)
+    }
+
+    func tell(_ what: Int64, _ items: [String]) {
+        if items.isEmpty {
+            return
+        }
+        var joined: [UInt8] = []
+        for item in items {
+            joined.append(contentsOf: Array(item.utf8).filter { $0 != 0 })
+            joined.append(0)
+        }
+        joined.withUnsafeBufferPointer { bytes in
+            push(eventOpen, 0, Int64(items.count), what, bytes.baseAddress, Int64(bytes.count))
+        }
     }
 
     // Resumes every quit event held: with no error where the app ends, and
@@ -273,16 +303,18 @@ private let quitHandler = QuitHandler()
 @MainActor
 private var handling = false
 
-// Holds the system's asks to end the app from now, queuing
-// `HERO_UI_EVENT_QUIT` by `push` for each; `push` nil answers every ask
-// held as ending and lets AppKit's delegate go.
+// Stands the app's delegate from now, before AppKit's launch so the
+// documents the system opened the app with reach it, queuing by `push`
+// the system's asks to end the app and its documents; `push` nil answers
+// every ask held as ending and lets the delegate go.
 @c
 public func hero_ui_appkit_session_watch(_ push: HeroUiSystemPush?) {
     MainActor.assumeIsolated {
+        let app = NSApplication.shared
         if let open = session {
             open.answer(true)
-            if NSApp.delegate === open {
-                NSApp.delegate = nil
+            if app.delegate === open {
+                app.delegate = nil
             }
             session = nil
         }
@@ -291,7 +323,15 @@ public func hero_ui_appkit_session_watch(_ push: HeroUiSystemPush?) {
         }
         let made = Session(push: push)
         session = made
-        NSApp.delegate = made
+        app.delegate = made
+    }
+}
+
+// Takes the quit Apple event in this member's handler, after AppKit's
+// launch, which installs its own.
+@c
+public func hero_ui_appkit_quit_watch() {
+    MainActor.assumeIsolated {
         if !handling {
             NSAppleEventManager.shared().setEventHandler(quitHandler, andSelector: #selector(QuitHandler.quitAsked(_:withReplyEvent:)), forEventClass: coreEvents, andEventID: quitApplication)
             handling = true
@@ -333,6 +373,53 @@ public func hero_ui_appkit_ask_quit(_ sessionEnd: Int64) -> Int64 {
             if (session?.asks ?? 0) == before {
                 said = "the system refused its own quit event: \(error.localizedDescription)"
                 return answerOther
+            }
+        }
+        return answerOk
+    }
+}
+
+// MARK: documents from the system
+
+// Sends this process the Apple events the system sends to have an app open
+// `count` bytes of items, each followed by one zero byte: one open event
+// for files (`what` 1), their paths as file addresses, or one get-address
+// event per address (2); taken by AppKit and its delegate as the system's.
+@c
+public func hero_ui_appkit_open_items(_ what: Int64, _ items: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let list = textOf(items, count).split(separator: "\u{0}", omittingEmptySubsequences: true).map(String.init)
+    return MainActor.assumeIsolated { () -> Int64 in
+        let target = NSAppleEventDescriptor(processIdentifier: ProcessInfo.processInfo.processIdentifier)
+        var events: [NSAppleEventDescriptor] = []
+        if what == openFiles {
+            let event = NSAppleEventDescriptor(eventClass: coreEvents, eventID: fourCharacters("odoc"), targetDescriptor: target, returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
+            let files = NSAppleEventDescriptor.list()
+            for (at, path) in list.enumerated() {
+                files.insert(NSAppleEventDescriptor(fileURL: URL(fileURLWithPath: path)), at: at + 1)
+            }
+            event.setParam(files, forKeyword: fourCharacters("----"))
+            events.append(event)
+        } else {
+            for address in list {
+                let event = NSAppleEventDescriptor(eventClass: fourCharacters("GURL"), eventID: fourCharacters("GURL"), targetDescriptor: target, returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
+                event.setParam(NSAppleEventDescriptor(string: address), forKeyword: fourCharacters("----"))
+                events.append(event)
+            }
+        }
+        // As the quit event: one the process sends itself is handed to
+        // AppKit's handler at once, which holds its reply past the
+        // delegate (measured 2026-11-23: errAETimeout after the deadline,
+        // the documents told all the same), so the deadline is short and a
+        // send the delegate took is no failure.
+        for event in events {
+            let before = session?.opens ?? 0
+            do {
+                _ = try event.sendEvent(options: [.noReply], timeout: 0.05)
+            } catch {
+                if (session?.opens ?? 0) == before {
+                    said = "the system refused its own open event: \(error.localizedDescription)"
+                    return answerOther
+                }
             }
         }
         return answerOk

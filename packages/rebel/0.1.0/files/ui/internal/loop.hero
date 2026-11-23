@@ -36,6 +36,7 @@ use ui/internal/layout
 use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
+use ui/internal/session
 use ui/internal/tables
 use ui/internal/trees
 
@@ -112,7 +113,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => dialogs.answered_by(@app, answer: a.answer)?
         .pick_files p => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
         .cancel_files => dialogs.chosen_by(@app, choice: .cancelled)?
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ | .hand _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -156,6 +157,12 @@ function read(@app: ui.App, taken: [i64]) -> ()?
 
         app.appearance @ turned
         app.events @ app.events.push(.appearance_changed(appearance: turned))
+        return ok()
+
+    # What the system or a later launch handed is the app's, of no widget.
+    if kind == hero_ui.HERO_UI_EVENT_OPEN
+        items = dialogs.split_zeros(bytes.from_text(native.event_text(app)?))?
+        app.events @ app.events.push(.handed(what: session.handed_of(taken[3]), items: items))
         return ok()
 
     # The system's ask to end is the app's, of no widget.
@@ -330,6 +337,7 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .appearance_changed _ => 0
         .quit_asked _         => 0
         .files_dropped f      => f.window.id
+        .handed _             => 0
 
     return id == 0 || !model.node_of(app.table, id: id).is_err()
 

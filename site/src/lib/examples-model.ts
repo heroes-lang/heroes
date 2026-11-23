@@ -76,6 +76,14 @@ const DRIVER = /^reach_[a-z0-9_]+\.hero$/;
 /** A program's catalogue, beside its `main.hero` (spec § 1). */
 const CATALOGUE = 'heroes.toml';
 
+/**
+ * The two indexes at the top of `examples-rebel/`, written by
+ * `generators/rebel_index/` and held to the tree by its `check`: the programs'
+ * short list and Rebel's packages. Pages for a reader, which no program opens,
+ * so they are shown under no heading, as a program's own `README.md` is.
+ */
+const REBEL_INDEXES = new Set(['INDEX.md', 'PACKAGES.md']);
+
 /** The folder a fetch places packages in, which no `use` can spell (panel 235's R7). */
 const PLACED = 'heroes.packages';
 
@@ -552,7 +560,8 @@ export function examples(): Example[] {
  * its own `main.expected`, read first, and a twin by its original, the
  * program of `examples/` bearing its name, whose words it is run with.
  * `originals` are `examples/`'s programs. The top of the folder holds the
- * drivers, the README and the drivers' catalogue (README § A2, § A10); any
+ * drivers, the README, the drivers' catalogue (README § A2, § A10) and the
+ * two indexes `generators/rebel_index/` writes (`REBEL_INDEXES`); any
  * other file there, a folder holding no `main.hero`, a folder that is neither
  * an application nor a twin, an application bearing an original's name, and
  * a twin holding a file the check reads of an application alone are shapes
@@ -564,14 +573,15 @@ function rebelPrograms(originals: Example[]): Example[] {
   for (const path of walk(REBEL)) {
     const rest = path.slice(REBEL.length + 1);
     if (rest.includes('/')) continue;
-    if (rest === 'README.md' || rest === CATALOGUE) continue;
+    if (rest === 'README.md' || rest === CATALOGUE || REBEL_INDEXES.has(rest)) continue;
     if (DRIVER.test(rest)) {
       drivers += 1;
       continue;
     }
     throw new Error(
       `${path} is at the top of ${REBEL}/ and is none of what stands there: a package's driver\n` +
-        `  \`reach_<package>.hero\`, the README or the drivers' catalogue. A program written with\n` +
+        `  \`reach_<package>.hero\`, the README, the drivers' catalogue or the two indexes\n` +
+        `  generators/rebel_index/ writes, INDEX.md and PACKAGES.md. A program written with\n` +
         `  Rebel is a folder of its own, a project with its own catalogue (examples-rebel/README.md § A10).`
     );
   }

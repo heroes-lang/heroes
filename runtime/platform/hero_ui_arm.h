@@ -198,6 +198,30 @@ int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can);
 int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end);
 int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end);
 
+/* THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM
+ * (`hero_ui.h`): `hero_ui.c` checks the identity and keeps it; `set_identity`
+ * gives the system its name, `claim_instance` writes through `first` 1 for
+ * the one instance and 0 where `arguments` were handed to another,
+ * `hand_over` hands `arguments` to this process's own claim as a later
+ * launch would, `open_items` asks the app to open `count` bytes of paths
+ * (`what` `HERO_UI_OPEN_FILES`) or addresses (`HERO_UI_OPEN_URLS`) as the
+ * system would, and `instance_end` gives the claim up at `close`. On macOS
+ * the claim is `hero_ui.c`'s, a lock file and a local socket in the user's
+ * own temporary folder; refusals for the Win32 and GTK 4 arms in the block
+ * of calls neither draws. */
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count);
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first);
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count);
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count);
+void hero_ui_arm_instance_end(void);
+
+/* A TIP OVER A WIDGET (`hero_ui.h`): `tip` writes the tip where it fits
+ * and its length through `length`, as `text` does. On macOS by
+ * `hero_ui_appkit.swift`; refusals for the Win32 and GTK 4 arms in the
+ * block of calls neither draws. */
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count);
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
  * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits

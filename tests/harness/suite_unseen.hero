@@ -34,7 +34,15 @@
 # 235's R7, `placed_trees.hero`): its files are the package author's, held
 # to their fingerprint and never edited here, so a character in one is read
 # where the package's source is written, the index its programs read, which
-# this walk reads.
+# this walk reads. **And an upstream's resources a generator keeps byte for
+# byte**, `generators/unicode_encodings/whatwg/`: the WHATWG Encoding
+# Standard's indexes, whose third column is the character a byte maps to
+# written as itself, C1 controls, soft hyphens, marks and fillers among them,
+# kept unchanged because the standard serves only its latest version. The
+# generator holds every file of the folder to the SHA-256 of its bytes as
+# fetched before it reads one (`layout.FETCHED_SHA256`), as a placed tree is
+# held to its fingerprint; its tables, which this walk reads, write each
+# character as a number.
 #
 # A record is never rewritten (`.claude/rules/records.md`), so a character
 # already in one stays, its correction underneath: `known` lists each by its
@@ -53,6 +61,11 @@ constant EXEMPT: [str]
         "tests/golden/"
         "tests/emission/"
         "seed/"
+        # An upstream's resources kept byte for byte, the Encoding Standard's
+        # indexes, which write each character as itself: held to a SHA-256 per
+        # file by `generators/unicode_encodings/`, which refuses to run on a
+        # file that moved, as a placed package tree is held to its fingerprint.
+        "generators/unicode_encodings/whatwg/"
     ]
 
 # How many documents the walk read, the count on the day it was written, so
@@ -492,6 +505,15 @@ test "a case's tree is exempt and a document is not"
     assert !exempt("docs/panel/192-reports/historian.md")
     assert !exempt("tests/harness/suite_unseen.hero")
 
+test "an upstream's resources a generator holds to their bytes are exempt, and the generator beside them is not"
+    assert exempt("generators/unicode_encodings/whatwg/index-windows-1252.txt")
+    assert exempt("generators/unicode_encodings/whatwg/encodings.json")
+    assert !exempt("generators/unicode_encodings/main.hero")
+    assert !exempt("generators/unicode_encodings/layout.hero")
+    assert !exempt("generators/unicode_encodings/whatwgx/index-windows-1252.txt")
+    assert !exempt("generators/html_entities/whatwg/entities.json")
+    assert !exempt("packages/rebel/0.1.0/files/unicode/encodings/internal/single_byte_table.hero")
+
 # Panel 235's R7: the folder is left out by its name, at any depth, and
 # nothing beside it is, the package's own source least of all.
 test "a placed tree is exempt by its folder's name, and the package's source beside it is not"
@@ -519,16 +541,31 @@ test "the zero-width kin a data file may carry are refused characters with no es
     assert data_codes("packages/rebel/0.1.0/files/i18n/dates/internal").len() == 0
     assert data_codes("docs/panel/192-reports/historian.md").len() == 0
 
+# Built from `DATA` itself, so a row added is held as the others are: the
+# test named three files while the constant named four, and failed.
 test "a data row is held to its file and to a code that file still carries"
-    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
-    numbers = "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero"
-    cases = "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero"
-    files = [tables, numbers, cases]
-    carried = [
-        Found(path: tables, line: 1, code: 8203)
-        Found(path: numbers, line: 2, code: 8203)
-        Found(path: cases, line: 3, code: 8203)
-    ]
+    files: [str] @= []
+    carried: [Found] @= []
+    lost: [str] @= []
+
+    for row in DATA
+        words = strings.words(row)
+        files @ files.push(words[0])
+        lost @ []
+
+        for word in words.slice(from: 1, to: words.len())
+            code = strings.to_number(word).must()
+            carried @ carried.push(Found(path: words[0], line: 1, code: code))
+            lost @ lost.push(words[0] + ": " + named(code))
+
+    last = files[files.len() - 1]
+    kept: [Found] @= []
+
+    for one in carried
+        if one.path != last
+            kept @ kept.push(one)
+
+    assert files.len() == DATA.len() && lost.len() > 0
     assert data_offences(files: files, carried: carried).len() == 0
-    assert data_offences(files: [tables, numbers], carried: carried) == ["DATA names a file that is not there: " + cases]
-    assert data_offences(files: files, carried: [carried[0], carried[1]]) == [cases + ": U+200B"]
+    assert data_offences(files: files.slice(from: 0, to: files.len() - 1), carried: carried) == ["DATA names a file that is not there: " + last]
+    assert data_offences(files: files, carried: kept) == lost
