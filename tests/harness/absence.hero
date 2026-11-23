@@ -2620,13 +2620,21 @@ test "a refused skip says why only where the compiler named a library"
     assert refused(skipped) == ""
 
 # **The premise the driver's sentence about `pkg-config` rests on**, owed its
-# test (`.claude/rules/module-shape.md`): that sentence names a package and no
-# file, so its witness finds the `pkgconfig` group only in the files a suite
-# hands the compiler, a program's root, and every root holds a `main`. A
-# `pkgconfig` group moved into a module would read as bound by nothing on a
-# machine with no `pkg-config`, and its case would go red there rather than
-# be skipped; this fires first, on every machine.
-test "every package group sits in a program's root, where the pkg-config witness reads"
+# test (`.claude/rules/module-shape.md`): that sentence names a package, and the
+# witness finds the `pkgconfig` group that asked for it in the files a suite
+# hands the compiler, a program's root, and in the file the compiler's own
+# `at` line blames, which it reads when it lies below the root's folder
+# (`read_sources`). A group in a file neither read would look bound by nothing
+# on a machine with no `pkg-config`, and its case would go red there rather
+# than be skipped; this fires first, on every machine. **The premise said "a
+# root and nothing else" until 2026-11-23**: defects 2636 and 2638 put a
+# fetched package's, a path package's and a folder module's groups in files
+# below a case's root on purpose, and the `run` case of 2636, built with
+# `pkg-config` off the PATH, was skipped by the witness through the blamed file
+# (`error[ffi_pkgconfig]` at `fq.hero:4:29`; measured on this Mac), so the
+# walk below asks what the witness needs, a root or a file below one, and the
+# test after it asks that a blamed module's group is found.
+test "every package group sits where the pkg-config witness reads: a program's root, or a file below one"
     roots: [str] = ["examples", "tests/golden"]
     nothing: [str] = []
     seen: i64 @= 0
@@ -2645,12 +2653,46 @@ test "every package group sits in a program's root, where the pkg-config witness
 
             if binds(text.must()).packages.len() > 0
                 seen @ seen + 1
-                assert strings.contains(s: text.must(), substr: "function main")
+                assert strings.contains(s: text.must(), substr: "function main") || below_a_root(file)
 
     # Nineteen such roots on 2026-10-04, counted by a grep for the same lines:
     # `examples/raylib` and `examples/sdl`, eight `check/` cases, five `run/`
-    # and four `unsupported/`. A walk that finds fewer is not reaching the tree.
+    # and four `unsupported/`; 49 files on 2026-11-23, 41 roots among them. A
+    # walk that finds fewer is not reaching the tree.
     assert seen >= 19
+
+# Whether a folder above `file` holds a `main.hero`, the root a case's witness
+# reads from: the compiler's `at` line blames a group's own file, and
+# `read_sources` reads a blamed file that stands in the root's folder or below.
+function below_a_root(file: str) -> bool
+    dir: str @= directory_of(file)
+
+    while dir != "." && dir != ""
+        if shell.exists(dir + "/main.hero")
+            return true
+        dir @ directory_of(dir)
+
+    return false
+
+test "a package a module binds is found through the file the compiler blames, the root binding none"
+    scratch = shell.own_scratch()
+    tree = scratch + "/absence-packages"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree + "/pk").is_err()
+    assert !write_file(path: tree + "/main.hero", text: "use pk/pk\n\nfunction main()\n    print(1)\n").is_err()
+    module = "extern \"zz.h\" pkgconfig \"zz\"\n    constant ZZ: i64\n"
+    assert !write_file(path: tree + "/pk/pk.hero", text: module).is_err()
+    blamed = absences(package_said(package: "zz", at: tree + "/pk/pk.hero:1:26"))
+    assert blamed.len() == 1
+    assert blamed[0].file == tree + "/pk/pk.hero"
+    read = read_sources(path: tree + "/main.hero", modules: [], named: blamed)
+    assert !read.is_err()
+    assert read.must().len() == 2
+    assert binds_of(read.must()).packages == ["zz"]
+    assert needs(binds_of(read.must()), blamed[0])
+    assert below_a_root(tree + "/pk/pk.hero")
+    assert !below_a_root(scratch + "/alone.hero")
+    assert !shell.remove_tree(scratch).is_err()
 
 # What the compiler writes on stderr building `source`, written at `path`: its
 # PATH as it is where `bin` is "", else `bin` before it, or `bin` alone where
