@@ -1,0 +1,68 @@
+# The ledger of `image/colorspace`: what Go's `image/color` (Go 1.27, this
+# machine's `go doc -all image/color`, 2026-11-23), Python's `colorsys`
+# (Python 3.15, `dir(colorsys)` on this machine) and Pillow's colour modes
+# let a program do with colours in other spaces than RGB, one block per
+# capability, and what Rebel answers. Pillow is not installed here and
+# nothing may be installed, so its names are those of its documented API,
+# not read by `dir()`. Rust's standard library has no colour spaces: `-`.
+#
+# The expected values are observed: Go's integer conversions (CMYK and YCbCr
+# both ways) by a Go program run on this machine over 5000 pseudo-random
+# colours and the primaries, weighed by position so a single difference
+# shows, and Python's `colorsys` (floats) on ten colours and the inverses of
+# twelve, the hue turned to degrees.
+
+capability colorspace/hsv  a colour as hue, saturation and value, both ways
+  heroes  image/colorspace.Hsv, image/colorspace.to_hsv, image/colorspace.from_hsv
+  go      -
+  rust    -
+  python  colorsys.rgb_to_hsv, colorsys.hsv_to_rgb, Image.convert("HSV")
+  note    the hue in degrees where colorsys turns it to 0 up to 1, so a picker needs no scaling; the channels are 8-bit colours, and from_hsv rounds each to 8 bits. Black and grays have hue 0, as colorsys answers
+
+capability colorspace/hls  a colour as hue, lightness and saturation, both ways
+  heroes  image/colorspace.Hls, image/colorspace.to_hls, image/colorspace.from_hls
+  go      -
+  rust    -
+  python  colorsys.rgb_to_hls, colorsys.hls_to_rgb
+  note    CSS's `hsl()`, in colorsys's order of components (hue, lightness, saturation); the hue in degrees as under hsv
+
+capability colorspace/cmyk  a colour as the inks of a printer, both ways
+  heroes  image/colorspace.Cmyk, image/colorspace.to_cmyk, image/colorspace.from_cmyk
+  go      color.CMYK, color.CMYKModel, color.RGBToCMYK, color.CMYKToRGB
+  rust    -
+  python  Image.convert("CMYK")
+  note    Go's integer conversion, which Pillow's `convert("CMYK")` shares in effect: black is what the brightest channel lacks and each ink its channel's lack over the brightest, truncated. It is the naive conversion with no ink limit, no under colour removal and no profile, which a press needs (colour management is pending in `image`'s ledger)
+
+capability colorspace/ycbcr  a colour as JPEG's brightness and colour differences, both ways
+  heroes  image/colorspace.YCbCr, image/colorspace.to_ycbcr, image/colorspace.from_ycbcr
+  go      color.YCbCr, color.YCbCrModel, color.RGBToYCbCr, color.YCbCrToRGB
+  rust    -
+  python  Image.convert("YCbCr")
+  note    JFIF's equations in the 16-bit fixed point whose rows sum so that a gray has both differences at 128, rounded to the nearest and held to 0 up to 255, equal to Go's over every colour sampled
+
+capability colorspace/yiq  a colour as NTSC's brightness and two colour axes, both ways
+  heroes  image/colorspace.Yiq, image/colorspace.to_yiq, image/colorspace.from_yiq
+  go      -
+  rust    -
+  python  colorsys.rgb_to_yiq, colorsys.yiq_to_rgb
+  note    colorsys's coefficients; from_yiq holds the channels to 0 up to 255 as colorsys holds them to 0 up to 1
+
+capability colorspace/planes  an image split into the planes of a space and put together again
+  heroes  image/colorspace.Space, image/colorspace.split, image/colorspace.merge
+  go      color.NYCbCrA, color.NYCbCrAModel
+  rust    -
+  python  Image.split, Image.merge
+  note    each plane an 8-bit gray image, which is what Pillow's split answers for a colour mode; a plane is not a pixel format of `image`, whose eight formats stay as they are, so the colour is in the program's hand between a split and a merge. The hue plane is 0 up to 255 for 0 up to 360 degrees. A plane of Go's NYCbCrA (a YCbCr with alpha) is the three of `ycbcr` and `image`'s own alpha
+
+capability colorspace/lab  the Lab and XYZ colour spaces
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.convert("LAB"), ImageCms
+  note    -
+
+dropped
+  go      color.Color, color.Model, color.ModelFunc: interfaces and a function type, which the language has none of; a colour is `image.Color`
+  go      color.RGBA, color.RGBA64, color.NRGBA, color.NRGBA64, color.Gray, color.Gray16, color.Alpha, color.Alpha16, color.Palette, color.RGBAModel, color.NRGBAModel, color.GrayModel, color.AlphaModel and the others of the colour models of RGB and gray: held by `image`'s ledger
+  go      color.NYCbCrA's Palette and Index methods and color.Palette.Convert, color.Palette.Index: held by `image`'s palette block
+  python  colorsys.ONE_THIRD, colorsys.ONE_SIXTH, colorsys.TWO_THIRD, colorsys.__all__: constants of colorsys's own arithmetic

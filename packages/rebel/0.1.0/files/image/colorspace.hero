@@ -1,0 +1,580 @@
+# Colours in other spaces than red, green and blue: HSV and HLS (a colour
+# picker's hue, how much of it and how bright), CMYK (print's inks, as Go's
+# `color.RGBToCMYK` computes them), YCbCr (JPEG's, JFIF's equations) and YIQ
+# (NTSC's), each way for one colour, and a whole image split into the planes
+# of a space and put together again.
+#
+# A colour here is `image.Color`, 8 bits a channel; a conversion that leaves
+# 8 bits does not give the colour back in every case (HSV of 8-bit red,
+# green and blue has more values than 8 bits hold), and the functions say
+# which round. It reads and writes no file: JPEG's YCbCr is `image/jpeg`'s
+# own, and CMYK files, ICC profiles and Lab are not here. CMYK is the naive
+# conversion every library offers, with no ink limit and no profile: it is not
+# what a press needs.
+#
+# A component that is not a number is taken as the smallest its range holds,
+# and one outside its range as the nearest end, so no conversion aborts.
+#
+# It fails with `invalid`.
+#
+# Not written yet, each a `pending` block of its ledger: Lab and XYZ.
+
+use image
+use image/colorspace/internal/channels
+use math
+
+## Codes
+
+# The planes of an image do not fit together: not three or four, not of one
+# size, not 8-bit gray. Failed by `merge`.
+constant INVALID: str
+    "invalid"
+
+## Spaces
+
+# A colour as a person picks it: which colour, how much of it, how bright.
+record Hsv
+    # The hue in degrees, 0 up to 360: 0 red, 120 green, 240 blue.
+    hue: f64
+    # How far from gray, 0 gray to 1 full.
+    saturation: f64
+    # The brightest channel, 0 black to 1.
+    value: f64
+
+# A colour as CSS's `hsl()` writes it: which colour, how light, how much of it.
+record Hls
+    # The hue in degrees, 0 up to 360, as `Hsv.hue`.
+    hue: f64
+    # How light, 0 black, 0.5 the full colour, 1 white.
+    lightness: f64
+    # How far from gray, 0 gray to 1 full.
+    saturation: f64
+
+# A colour as the inks of a printer lay it, in the 8 bits Go holds them.
+record Cmyk
+    # The cyan ink, 0 none to 255.
+    cyan: u8
+    # The magenta ink.
+    magenta: u8
+    # The yellow ink.
+    yellow: u8
+    # The black ink, which takes the lightness out.
+    black: u8
+
+# A colour as JPEG holds it: brightness and two differences of blue and red
+# from it, 8 bits each, 128 meaning no difference.
+record YCbCr
+    # The brightness, 0 to 255.
+    y: u8
+    # Blue less brightness, 0 to 255 around 128.
+    cb: u8
+    # Red less brightness, 0 to 255 around 128.
+    cr: u8
+
+# A colour as NTSC television held it.
+record Yiq
+    # The brightness, 0 to 1.
+    y: f64
+    # The orange to blue axis, about -0.5957 to 0.5957.
+    i: f64
+    # The purple to green axis, about -0.5226 to 0.5226.
+    q: f64
+
+# Which space `split` cuts an image into and `merge` puts together from.
+variant Space
+    # Hue, saturation and value: 3 planes, the hue 0 to 255 for 0 up to 360
+    # degrees.
+    hsv
+    # Hue, lightness and saturation: 3 planes, the hue as in `hsv`.
+    hls
+    # Cyan, magenta, yellow and black: 4 planes.
+    cmyk
+    # Brightness, blue and red differences: 3 planes.
+    ycbcr
+
+# The HSV of `color`, its alpha left out.
+#
+# - `color`: the colour.
+#
+# Black and every gray have hue 0 and saturation 0, as Python's
+# `colorsys.rgb_to_hsv` answers. See also `from_hsv`.
+function to_hsv(color: image.Color) -> Hsv
+    r = to_f64(color.r) / 255.0
+    g = to_f64(color.g) / 255.0
+    b = to_f64(color.b) / 255.0
+    top = math.max(a: r, b: math.max(a: g, b: b))
+    bottom = math.min(a: r, b: math.min(a: g, b: b))
+
+    if top == bottom
+        return Hsv(hue: 0.0, saturation: 0.0, value: top)
+    return Hsv(
+        hue: channels.hue_of(r: r, g: g, b: b, top: top, bottom: bottom) * 360.0,
+        saturation: (top - bottom) / top,
+        value: top
+    )
+
+# The colour of `hsv`, opaque, each channel rounded to 8 bits.
+#
+# - `hsv`: the colour; the hue wraps around 360, saturation and value are held
+#   to 0 up to 1.
+#
+# See also `to_hsv`.
+function from_hsv(hsv: Hsv) -> image.Color
+    h = channels.turn_of(hsv.hue)
+    s = channels.held(v: hsv.saturation, high: 1.0)
+    v = channels.held(v: hsv.value, high: 1.0)
+    sector = math.floor(h * 6.0)
+    f = h * 6.0 - sector
+    p = v * (1.0 - s)
+    q = v * (1.0 - s * f)
+    t = v * (1.0 - s * (1.0 - f))
+    i = to_i64(sector).must() % 6
+
+    if s == 0.0
+        return image.Color(r: channels.channel_of(v), g: channels.channel_of(v), b: channels.channel_of(v), a: 255)
+
+    if i == 0
+        return image.Color(r: channels.channel_of(v), g: channels.channel_of(t), b: channels.channel_of(p), a: 255)
+
+    if i == 1
+        return image.Color(r: channels.channel_of(q), g: channels.channel_of(v), b: channels.channel_of(p), a: 255)
+
+    if i == 2
+        return image.Color(r: channels.channel_of(p), g: channels.channel_of(v), b: channels.channel_of(t), a: 255)
+
+    if i == 3
+        return image.Color(r: channels.channel_of(p), g: channels.channel_of(q), b: channels.channel_of(v), a: 255)
+
+    if i == 4
+        return image.Color(r: channels.channel_of(t), g: channels.channel_of(p), b: channels.channel_of(v), a: 255)
+    return image.Color(r: channels.channel_of(v), g: channels.channel_of(p), b: channels.channel_of(q), a: 255)
+
+# The HLS of `color`, its alpha left out.
+#
+# - `color`: the colour.
+#
+# Every gray has hue 0 and saturation 0, as Python's `colorsys.rgb_to_hls`
+# answers. See also `from_hls`.
+function to_hls(color: image.Color) -> Hls
+    r = to_f64(color.r) / 255.0
+    g = to_f64(color.g) / 255.0
+    b = to_f64(color.b) / 255.0
+    top = math.max(a: r, b: math.max(a: g, b: b))
+    bottom = math.min(a: r, b: math.min(a: g, b: b))
+    light = (top + bottom) / 2.0
+
+    if top == bottom
+        return Hls(hue: 0.0, lightness: light, saturation: 0.0)
+
+    sat = if light <= 0.5
+        (top - bottom) / (top + bottom)
+    else
+        (top - bottom) / (2.0 - top - bottom)
+    return Hls(
+        hue: channels.hue_of(r: r, g: g, b: b, top: top, bottom: bottom) * 360.0,
+        lightness: light,
+        saturation: sat
+    )
+
+# The colour of `hls`, opaque, each channel rounded to 8 bits.
+#
+# - `hls`: the colour; the hue wraps around 360, lightness and saturation are
+#   held to 0 up to 1.
+#
+# See also `to_hls`.
+function from_hls(hls: Hls) -> image.Color
+    h = channels.turn_of(hls.hue)
+    l = channels.held(v: hls.lightness, high: 1.0)
+    s = channels.held(v: hls.saturation, high: 1.0)
+
+    if s == 0.0
+        return image.Color(r: channels.channel_of(l), g: channels.channel_of(l), b: channels.channel_of(l), a: 255)
+
+    m2 = if l <= 0.5
+        l * (1.0 + s)
+    else
+        l + s - l * s
+    m1 = 2.0 * l - m2
+    return image.Color(
+        r: channels.channel_of(channels.hls_channel(m1: m1, m2: m2, hue: h + 1.0 / 3.0)),
+        g: channels.channel_of(channels.hls_channel(m1: m1, m2: m2, hue: h)),
+        b: channels.channel_of(channels.hls_channel(m1: m1, m2: m2, hue: h - 1.0 / 3.0)),
+        a: 255
+    )
+
+# The inks of `color` as Go's `color.RGBToCMYK` computes them, its alpha left
+# out: black takes the least of the three away, and each ink is what its
+# channel lacks of the greatest, over the greatest.
+#
+# - `color`: the colour.
+#
+# See also `from_cmyk`.
+function to_cmyk(color: image.Color) -> Cmyk
+    r = to_i64(color.r).must()
+    g = to_i64(color.g).must()
+    b = to_i64(color.b).must()
+
+    w = if r > g && r > b
+        r
+    else if g > b
+        g
+    else
+        b
+
+    if w == 0
+        return Cmyk(cyan: 0, magenta: 0, yellow: 0, black: 255)
+    return Cmyk(
+        cyan: to_u8((w - r) * 255 / w).must(),
+        magenta: to_u8((w - g) * 255 / w).must(),
+        yellow: to_u8((w - b) * 255 / w).must(),
+        black: to_u8(255 - w).must()
+    )
+
+# The colour of `cmyk`, opaque, as Go's `color.CMYKToRGB` computes it.
+#
+# - `cmyk`: the inks.
+#
+# See also `to_cmyk`.
+function from_cmyk(cmyk: Cmyk) -> image.Color
+    w = 65535 - to_i64(cmyk.black).must() * 257
+    r = (65535 - to_i64(cmyk.cyan).must() * 257) * w / 65535
+    g = (65535 - to_i64(cmyk.magenta).must() * 257) * w / 65535
+    b = (65535 - to_i64(cmyk.yellow).must() * 257) * w / 65535
+    return image.Color(r: to_u8(r >> 8).must(), g: to_u8(g >> 8).must(), b: to_u8(b >> 8).must(), a: 255)
+
+# The YCbCr of `color` by JFIF's equations, its alpha left out: brightness
+# rounded to the nearest, and each difference rounded as Go's fixed point
+# does, which a half pixel's rounding already holds.
+#
+# - `color`: the colour.
+#
+# See also `from_ycbcr`.
+function to_ycbcr(color: image.Color) -> YCbCr
+    r = to_i64(color.r).must()
+    g = to_i64(color.g).must()
+    b = to_i64(color.b).must()
+    y = 19595 * r + 38470 * g + 7471 * b + 32768 >> 16
+    cb = -11056 * r - 21712 * g + 32768 * b + 8421376 >> 16
+    cr = 32768 * r - 27440 * g - 5328 * b + 8421376 >> 16
+    return YCbCr(y: channels.byte_of(y), cb: channels.byte_of(cb), cr: channels.byte_of(cr))
+
+# The colour of `ycbcr` by JFIF's equations, opaque, each channel held to 0
+# up to 255. The brightness is scaled to 24 bits by repeating its byte, which
+# makes 255 exactly full, as Go's does, and each channel is cut, not rounded.
+#
+# - `ycbcr`: the colour.
+#
+# See also `to_ycbcr`.
+function from_ycbcr(ycbcr: YCbCr) -> image.Color
+    y = to_i64(ycbcr.y).must() * 65793
+    cb = to_i64(ycbcr.cb).must() - 128
+    cr = to_i64(ycbcr.cr).must() - 128
+    r = y + 91881 * cr >> 16
+    g = y - 22554 * cb - 46802 * cr >> 16
+    b = y + 116130 * cb >> 16
+    return image.Color(r: channels.byte_of(r), g: channels.byte_of(g), b: channels.byte_of(b), a: 255)
+
+# The YIQ of `color`, its alpha left out, as Python's `colorsys.rgb_to_yiq`.
+#
+# - `color`: the colour.
+#
+# See also `from_yiq`.
+function to_yiq(color: image.Color) -> Yiq
+    r = to_f64(color.r) / 255.0
+    g = to_f64(color.g) / 255.0
+    b = to_f64(color.b) / 255.0
+    y = 0.30 * r + 0.59 * g + 0.11 * b
+    return Yiq(y: y, i: 0.74 * (r - y) - 0.27 * (b - y), q: 0.48 * (r - y) + 0.41 * (b - y))
+
+# The colour of `yiq`, opaque, each channel rounded to 8 bits and held to 0
+# up to 255 as Python's `colorsys.yiq_to_rgb` holds it to 0 up to 1.
+#
+# - `yiq`: the colour; a component that is not a number is taken as 0.
+#
+# See also `to_yiq`.
+function from_yiq(yiq: Yiq) -> image.Color
+    y = if math.is_finite(yiq.y)
+        yiq.y
+    else
+        0.0
+
+    i = if math.is_finite(yiq.i)
+        yiq.i
+    else
+        0.0
+
+    q = if math.is_finite(yiq.q)
+        yiq.q
+    else
+        0.0
+    return image.Color(
+        r: channels.channel_of(y + 0.9468822170900693 * i + 0.6235565819861433 * q),
+        g: channels.channel_of(y - 0.27478764629897834 * i - 0.6356910791873801 * q),
+        b: channels.channel_of(y - 1.1085450346420322 * i + 1.7090069284064666 * q),
+        a: 255
+    )
+
+## Images
+
+# The planes of `space` that `img` holds: `img` as RGB with its alpha dropped
+# (`image.flatten` first where the background matters), each pixel taken to
+# the space, and each value of it a plane of its own, an 8-bit gray image of
+# the size of `img`, in the order of the space: hue, saturation and value;
+# hue, lightness and saturation; cyan, magenta, yellow and black; or
+# brightness, blue and red.
+#
+# - `img`: the image.
+# - `space`: the space cut into.
+#
+# Fails `limit` where `image.from_pixels` does. Aborts where `img` is not
+# valid. See also `merge`.
+function split(img: image.Image, space: Space) -> [image.Image]?
+    assert image.is_valid(img)
+    rgb = image.convert(img, to: .rgb)
+    p0: [u8] @= []
+    p1: [u8] @= []
+    p2: [u8] @= []
+    p3: [u8] @= []
+
+    for i in range(from: 0, to: img.width * img.height)
+        c = image.Color(r: rgb.pixels[3 * i], g: rgb.pixels[3 * i + 1], b: rgb.pixels[3 * i + 2], a: 255)
+
+        match space
+            .hsv =>
+                v = to_hsv(c)
+                p0 @ p0.push(channels.channel_of(v.hue / 360.0))
+                p1 @ p1.push(channels.channel_of(v.saturation))
+                p2 @ p2.push(channels.channel_of(v.value))
+            .hls =>
+                v = to_hls(c)
+                p0 @ p0.push(channels.channel_of(v.hue / 360.0))
+                p1 @ p1.push(channels.channel_of(v.lightness))
+                p2 @ p2.push(channels.channel_of(v.saturation))
+            .cmyk =>
+                v = to_cmyk(c)
+                p0 @ p0.push(v.cyan)
+                p1 @ p1.push(v.magenta)
+                p2 @ p2.push(v.yellow)
+                p3 @ p3.push(v.black)
+            .ycbcr =>
+                v = to_ycbcr(c)
+                p0 @ p0.push(v.y)
+                p1 @ p1.push(v.cb)
+                p2 @ p2.push(v.cr)
+
+    out: [image.Image] @= []
+    out @ out.push(image.from_pixels(width: img.width, height: img.height, format: .gray, pixels: p0)?)
+    out @ out.push(image.from_pixels(width: img.width, height: img.height, format: .gray, pixels: p1)?)
+    out @ out.push(image.from_pixels(width: img.width, height: img.height, format: .gray, pixels: p2)?)
+
+    if space == .cmyk
+        out @ out.push(image.from_pixels(width: img.width, height: img.height, format: .gray, pixels: p3)?)
+    return ok(out)
+
+# The RGB image whose colours are the planes of `space`, as `split` cuts
+# them.
+#
+# - `planes`: 3 gray images of 8 bits, or 4 for `cmyk`, all of one size, in
+#   the order `split` answers.
+# - `space`: the space the planes are in.
+#
+# Fails `invalid` where the planes are not that many gray 8-bit images of one
+# size. Fails `limit` where `image.from_pixels` does. See also `split`.
+function merge(planes: [image.Image], space: Space) -> image.Image?
+    want = if space == .cmyk
+        4
+    else
+        3
+
+    if planes.len() != want
+        return fail(code: INVALID, msg: f"{planes.len()} planes where {want} are needed")
+
+    for p in planes
+        if p.format != .gray || p.width != planes[0].width || p.height != planes[0].height || !image.is_valid(p)
+            return fail(code: INVALID, msg: "the planes are not gray images of 8 bits and one size")
+
+    pixels: [u8] @= []
+
+    for i in range(from: 0, to: planes[0].width * planes[0].height)
+        a = planes[0].pixels[i]
+        b = planes[1].pixels[i]
+        c = planes[2].pixels[i]
+
+        color = match space
+            .hsv => from_hsv(
+                Hsv(hue: to_f64(a) / 255.0 * 360.0, saturation: to_f64(b) / 255.0, value: to_f64(c) / 255.0)
+            )
+            .hls => from_hls(
+                Hls(hue: to_f64(a) / 255.0 * 360.0, lightness: to_f64(b) / 255.0, saturation: to_f64(c) / 255.0)
+            )
+            .cmyk  => from_cmyk(Cmyk(cyan: a, magenta: b, yellow: c, black: planes[3].pixels[i]))
+            .ycbcr => from_ycbcr(YCbCr(y: a, cb: b, cr: c))
+
+        pixels @ pixels.push(color.r)
+        pixels @ pixels.push(color.g)
+        pixels @ pixels.push(color.b)
+
+    return image.from_pixels(width: planes[0].width, height: planes[0].height, format: .rgb, pixels: pixels)
+
+## Tests
+
+test "to_cmyk, from_cmyk, to_ycbcr and from_ycbcr: 5000 pseudo-random colours weigh as Go's colour package weighs them"
+    x @= 1
+    s1 @= 0
+    s2 @= 0
+    s3 @= 0
+    s4 @= 0
+
+    for i in range(from: 1, to: 5001)
+        x @ x * 1103515245 + 12345 & 0x7fffffff
+        a = to_u8(x >> 8 & 255).must()
+        b = to_u8(x >> 16 & 255).must()
+        c = to_u8(x >> 4 & 255).must()
+        d = to_u8(x >> 12 & 255).must()
+        k = to_cmyk(image.Color(r: a, g: b, b: c, a: 255))
+        s1 @ s1 + i * (to_i64(k.cyan).must() + 256 * to_i64(k.magenta).must() + 65536 * to_i64(k.yellow).must() + 16777216 * to_i64(k.black).must())
+        r = from_cmyk(Cmyk(cyan: a, magenta: b, yellow: c, black: d))
+        s2 @ s2 + i * (to_i64(r.r).must() + 256 * to_i64(r.g).must() + 65536 * to_i64(r.b).must())
+        y = to_ycbcr(image.Color(r: a, g: b, b: c, a: 255))
+        s3 @ s3 + i * (to_i64(y.y).must() + 256 * to_i64(y.cb).must() + 65536 * to_i64(y.cr).must())
+        q = from_ycbcr(YCbCr(y: a, cb: b, cr: c))
+        s4 @ s4 + i * (to_i64(q.r).must() + 256 * to_i64(q.g).must() + 65536 * to_i64(q.b).must())
+
+    assert s1 == 13416676001575059
+    assert s2 == 52524910896296
+    assert s3 == 105466263460019
+    assert s4 == 104271841485140
+
+test "to_hsv, to_hls and to_yiq: Python's colorsys on ten colours, to the last digit but one"
+    hsv = to_hsv(image.Color(r: 200, g: 100, b: 50, a: 255))
+    assert math.abs(hsv.hue - 0.05555555555555556 * 360.0) < 0.000000001
+    assert hsv.saturation == 0.75 && math.abs(hsv.value - 0.7843137254901961) < 0.000000000001
+    cyanish = to_hsv(image.Color(r: 17, g: 200, b: 233, a: 255))
+    assert math.abs(cyanish.hue - 0.5254629629629629 * 360.0) < 0.000000001
+    assert math.abs(cyanish.saturation - 0.927038626609442) < 0.000000000001
+    assert to_hsv(image.Color(r: 128, g: 128, b: 128, a: 255)).hue == 0.0
+    assert to_hsv(image.Color(r: 0, g: 0, b: 0, a: 255)) == Hsv(hue: 0.0, saturation: 0.0, value: 0.0)
+    hls = to_hls(image.Color(r: 200, g: 100, b: 50, a: 255))
+    assert math.abs(hls.lightness - 0.49019607843137253) < 0.000000000001 && math.abs(hls.saturation - 0.6) < 0.000000000001
+    dark = to_hls(image.Color(r: 1, g: 2, b: 3, a: 255))
+    assert math.abs(dark.hue - 0.5833333333333334 * 360.0) < 0.000000001 && dark.saturation == 0.5
+    assert to_hls(image.Color(r: 255, g: 255, b: 255, a: 255)) == Hls(hue: 0.0, lightness: 1.0, saturation: 0.0)
+    yiq = to_yiq(image.Color(r: 255, g: 0, b: 0, a: 255))
+    assert math.abs(yiq.y - 0.3) < 0.000000000001 && math.abs(yiq.i - 0.599) < 0.000000000001 && math.abs(yiq.q - 0.213) < 0.000000000001
+    blue = to_yiq(image.Color(r: 0, g: 0, b: 255, a: 255))
+    assert math.abs(blue.i - -0.3217) < 0.000000000001 && math.abs(blue.q - 0.3121) < 0.000000000001
+
+test "from_hsv, from_hls and from_yiq: Python's colorsys read back, the hue wrapping, and a NaN"
+    assert from_hsv(Hsv(hue: 36.0, saturation: 0.5, value: 0.8)) == image.Color(r: 204, g: 163, b: 102, a: 255)
+    assert from_hsv(Hsv(hue: 180.0, saturation: 1.0, value: 1.0)) == image.Color(r: 0, g: 255, b: 255, a: 255)
+    assert from_hsv(Hsv(hue: 396.0, saturation: 0.5, value: 0.8)) == from_hsv(Hsv(hue: 36.0, saturation: 0.5, value: 0.8))
+    assert from_hsv(Hsv(hue: -324.0, saturation: 0.5, value: 0.8)) == from_hsv(Hsv(hue: 36.0, saturation: 0.5, value: 0.8))
+    assert from_hsv(Hsv(hue: 0.0, saturation: 0.0, value: 0.5)) == image.Color(r: 128, g: 128, b: 128, a: 255)
+    assert from_hsv(Hsv(hue: 0.0 / 0.0, saturation: 2.0, value: 1.0 / 0.0)) == image.Color(r: 0, g: 0, b: 0, a: 255)
+    assert from_hls(Hls(hue: 36.0, lightness: 0.5, saturation: 0.8)) == image.Color(r: 230, g: 148, b: 25, a: 255)
+    assert from_hls(Hls(hue: 180.0, lightness: 0.25, saturation: 1.0)) == image.Color(r: 0, g: 127, b: 128, a: 255)
+    assert from_hls(Hls(hue: 324.0, lightness: 0.7, saturation: 0.3)) == image.Color(r: 201, g: 156, b: 183, a: 255)
+    assert from_yiq(Yiq(y: 0.5, i: 0.2, q: -0.1)) == image.Color(r: 160, g: 130, b: 27, a: 255)
+    assert from_yiq(Yiq(y: 1.0, i: 0.5, q: 0.5)) == image.Color(r: 255, g: 139, b: 255, a: 255)
+
+test "to_cmyk, from_cmyk, to_ycbcr and from_ycbcr: the cases Go answers for black, white and the primaries"
+    assert to_cmyk(image.Color(r: 0, g: 0, b: 0, a: 255)) == Cmyk(cyan: 0, magenta: 0, yellow: 0, black: 255)
+    assert to_cmyk(image.Color(r: 200, g: 100, b: 50, a: 9)) == Cmyk(cyan: 0, magenta: 127, yellow: 191, black: 55)
+    assert to_cmyk(image.Color(r: 1, g: 2, b: 3, a: 255)) == Cmyk(cyan: 170, magenta: 85, yellow: 0, black: 252)
+    assert from_cmyk(Cmyk(cyan: 10, magenta: 20, yellow: 30, black: 40)) == image.Color(r: 207, g: 198, b: 190, a: 255)
+    assert from_cmyk(Cmyk(cyan: 255, magenta: 255, yellow: 255, black: 255)) == image.Color(r: 0, g: 0, b: 0, a: 255)
+    assert to_ycbcr(image.Color(r: 255, g: 0, b: 0, a: 255)) == YCbCr(y: 76, cb: 85, cr: 255)
+    assert to_ycbcr(image.Color(r: 17, g: 200, b: 233, a: 255)) == YCbCr(y: 149, cb: 175, cr: 34)
+    assert from_ycbcr(YCbCr(y: 0, cb: 0, cr: 0)) == image.Color(r: 0, g: 135, b: 0, a: 255)
+    assert from_ycbcr(YCbCr(y: 255, cb: 255, cr: 255)) == image.Color(r: 255, g: 121, b: 255, a: 255)
+
+test "split and merge: every space on a 2 by 2 image, the planes' sizes, and planes that do not fit"
+    rgb = image.from_pixels(
+        width: 2,
+        height: 2,
+        format: .rgb,
+        pixels: [200, 100, 50, 0, 0, 0, 255, 255, 255, 17, 200, 233]
+    ).must()
+
+    spaces: [Space] = [.hsv, .hls, .cmyk, .ycbcr]
+
+    for space in spaces
+        planes = split(rgb, space: space).must()
+
+        count = if space == .cmyk
+            4
+        else
+            3
+        assert planes.len() == count
+        assert planes[0].width == 2 && planes[0].height == 2 && planes[0].format == .gray
+        back = merge(planes, space: space).must()
+        assert back.pixels[3] == 0 && back.pixels[4] == 0 && back.pixels[6] == 255
+        assert math.abs(to_f64(back.pixels[0]) - 200.0) <= 2.0 && math.abs(to_f64(back.pixels[10]) - 200.0) <= 2.0
+
+    assert merge([], space: .hsv).is_err()
+    assert merge(split(rgb, space: .cmyk).must(), space: .hsv).is_err()
+    one = image.blank(width: 1, height: 1, format: .gray).must()
+    assert merge([one, one, rgb], space: .ycbcr).is_err()
+    nothing = image.blank(width: 0, height: 0, format: .rgba16).must()
+    assert split(nothing, space: .hsv).must()[0].pixels.len() == 0
+
+## Examples
+
+# Orange as a picker shows it.
+test "to_hsv: 200, 100, 50 is hue 20, saturation 0.75"
+    hsv = to_hsv(image.Color(r: 200, g: 100, b: 50, a: 255))
+    assert math.abs(hsv.hue - 20.0) < 0.000000001
+    assert hsv.saturation == 0.75
+
+# A hue of 36 degrees at half saturation.
+test "from_hsv: hue 36, saturation 0.5, value 0.8 is 204, 163, 102"
+    assert from_hsv(Hsv(hue: 36.0, saturation: 0.5, value: 0.8)) == image.Color(r: 204, g: 163, b: 102, a: 255)
+
+# The same orange in HLS.
+test "to_hls: 200, 100, 50 is lightness 0.49, saturation 0.6"
+    hls = to_hls(image.Color(r: 200, g: 100, b: 50, a: 255))
+    assert math.abs(hls.lightness - 0.49019607843137253) < 0.000000000001
+    assert math.abs(hls.saturation - 0.6) < 0.000000000001
+
+# A dark cyan.
+test "from_hls: hue 180, lightness 0.25, saturation 1 is 0, 127, 128"
+    assert from_hls(Hls(hue: 180.0, lightness: 0.25, saturation: 1.0)) == image.Color(r: 0, g: 127, b: 128, a: 255)
+
+# Inks for a brown.
+test "to_cmyk: 200, 100, 50 is no cyan, 127 magenta, 191 yellow, 55 black"
+    assert to_cmyk(image.Color(r: 200, g: 100, b: 50, a: 255)) == Cmyk(cyan: 0, magenta: 127, yellow: 191, black: 55)
+
+# Inks back to a colour.
+test "from_cmyk: 10, 20, 30, 40 is 207, 198, 190"
+    assert from_cmyk(Cmyk(cyan: 10, magenta: 20, yellow: 30, black: 40)) == image.Color(r: 207, g: 198, b: 190, a: 255)
+
+# Red as JPEG holds it.
+test "to_ycbcr: red is 76, 85, 255"
+    assert to_ycbcr(image.Color(r: 255, g: 0, b: 0, a: 255)) == YCbCr(y: 76, cb: 85, cr: 255)
+
+# JPEG's value back to a colour.
+test "from_ycbcr: 76, 85, 255 is 254, 0, 0"
+    assert from_ycbcr(YCbCr(y: 76, cb: 85, cr: 255)) == image.Color(r: 254, g: 0, b: 0, a: 255)
+
+# Red on a television.
+test "to_yiq: red is 0.3, 0.599, 0.213"
+    yiq = to_yiq(image.Color(r: 255, g: 0, b: 0, a: 255))
+    assert math.abs(yiq.y - 0.3) < 0.000000000001
+    assert math.abs(yiq.i - 0.599) < 0.000000000001
+    assert math.abs(yiq.q - 0.213) < 0.000000000001
+
+# A gray stays gray.
+test "from_yiq: half brightness and no colour is a mid gray"
+    assert from_yiq(Yiq(y: 0.5, i: 0.0, q: 0.0)) == image.Color(r: 128, g: 128, b: 128, a: 255)
+
+# A pixel's brightness plane.
+test "split: a white pixel's YCbCr planes are 255, 128, 128"
+    img = image.from_pixels(width: 1, height: 1, format: .rgb, pixels: [255, 255, 255]).must()
+    planes = split(img, space: .ycbcr).must()
+    assert planes[0].pixels == [255] && planes[1].pixels == [128] && planes[2].pixels == [128]
+
+# Planes back to colour.
+test "merge: the YCbCr planes of white are white"
+    one = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [255]).must()
+    mid = image.from_pixels(width: 1, height: 1, format: .gray, pixels: [128]).must()
+    assert merge([one, mid, mid], space: .ycbcr).must().pixels == [255, 255, 255]

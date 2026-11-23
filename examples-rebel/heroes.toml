@@ -57,6 +57,7 @@ packages = [
     "i18n/numbers",
     "image",
     "image/bmp",
+    "image/colorspace",
     "image/gif",
     "image/jpeg",
     "image/netpbm",

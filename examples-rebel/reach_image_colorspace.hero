@@ -1,0 +1,9 @@
+# Reaches Rebel's `image/colorspace`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It takes orange to HSV and prints it.
+
+use <rebel>/image
+use <rebel>/image/colorspace
+
+function main()
+    hsv = colorspace.to_hsv(image.Color(r: 255, g: 128, b: 0, a: 255))
+    print("hue ", hsv.hue, ", saturation ", hsv.saturation, ", value ", hsv.value)

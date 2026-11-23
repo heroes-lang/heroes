@@ -1,0 +1,67 @@
+# The arithmetic the colour spaces share: a number held to a range, a
+# channel of 0 to 1 made a byte, a hue as a turn, and the pieces of HSV's and
+# HLS's formulas.
+
+use math
+
+# `v` held to 0 up to `high`, a number that is not one answering 0.
+function held(v: f64, high: f64) -> f64
+    if !math.is_finite(v)
+        return 0.0
+
+    if v < 0.0
+        return 0.0
+
+    if v > high
+        return high
+    return v
+
+# `v` of 0 to 1 as a channel of 0 to 255, rounded.
+function channel_of(v: f64) -> u8
+    return to_u8(to_i64(held(v: v, high: 1.0) * 255.0 + 0.5).must()).must()
+
+# `hue` in degrees as a turn of 0 up to 1, a number that is not one answering 0.
+function turn_of(hue: f64) -> f64
+    if !math.is_finite(hue)
+        return 0.0
+    return math.rem_euclid(x: hue / 360.0, by: 1.0)
+
+# The hue, as a turn, of the channels `r`, `g` and `b` of 0 to 1 whose
+# greatest is `top` and least `bottom`, which differ.
+function hue_of(r: f64, g: f64, b: f64, top: f64, bottom: f64) -> f64
+    span = top - bottom
+    rc = (top - r) / span
+    gc = (top - g) / span
+    bc = (top - b) / span
+
+    h = if r == top
+        bc - gc
+    else if g == top
+        2.0 + rc - bc
+    else
+        4.0 + gc - rc
+    return math.rem_euclid(x: h / 6.0, by: 1.0)
+
+# One channel of an HLS colour: `m1` and `m2` the darker and the lighter
+# bounds, `hue` a turn.
+function hls_channel(m1: f64, m2: f64, hue: f64) -> f64
+    h = math.rem_euclid(x: hue, by: 1.0)
+
+    if h < 1.0 / 6.0
+        return m1 + (m2 - m1) * h * 6.0
+
+    if h < 0.5
+        return m2
+
+    if h < 2.0 / 3.0
+        return m1 + (m2 - m1) * (2.0 / 3.0 - h) * 6.0
+    return m1
+
+# `v` held to 0 up to 255, as a byte.
+function byte_of(v: i64) -> u8
+    if v < 0
+        return 0
+
+    if v > 255
+        return 255
+    return to_u8(v).must()

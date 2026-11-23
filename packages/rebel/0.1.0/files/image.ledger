@@ -94,12 +94,19 @@ capability image/flatten  alpha blended over a background colour and dropped
   python  Image.alpha_composite onto Image.new, Image.convert with a background pasted first
   note    each colour weighted by its alpha, rounded
 
-capability image/colour-spaces  CMYK, YCbCr, Lab, HSV and other colour spaces
-  heroes  pending
+capability image/colour-spaces  CMYK, YCbCr, HSV and HLS, and YIQ, both ways, and an image's planes
+  heroes  image/colorspace.to_hsv, image/colorspace.from_hsv, image/colorspace.to_hls, image/colorspace.from_hls, image/colorspace.to_cmyk, image/colorspace.from_cmyk, image/colorspace.to_ycbcr, image/colorspace.from_ycbcr, image/colorspace.to_yiq, image/colorspace.from_yiq, image/colorspace.split, image/colorspace.merge
   go      color.CMYK, color.CMYKModel, color.CMYKToRGB, color.RGBToCMYK, color.YCbCr, color.YCbCrModel, color.YCbCrToRGB, color.RGBToYCbCr, color.NYCbCrA, color.NYCbCrAModel, YCbCrSubsampleRatio, YCbCrSubsampleRatio444, YCbCrSubsampleRatio422, YCbCrSubsampleRatio420, YCbCrSubsampleRatio440, YCbCrSubsampleRatio411, YCbCrSubsampleRatio410, YCbCrSubsampleRatio.String, CMYK, YCbCr, NYCbCrA
   rust    -
-  python  Image.convert("CMYK"), Image.convert("YCbCr"), Image.convert("LAB"), Image.convert("HSV")
-  note    `image/jpeg` turns YCbCr into RGB as it reads, by JFIF's equations; a format of four samples other than RGBA, and the conversions, would need a design of their own
+  python  Image.convert("CMYK"), Image.convert("YCbCr"), Image.convert("HSV")
+  note    in the subpackage `image/colorspace`, with its own ledger; a format of four samples other than RGBA is not a format of `image`, so an image is split into 8-bit planes and merged back. The chroma subsampling ratios of Go's YCbCr image are `image/jpeg`'s own, which reads them
+
+capability image/lab  the Lab and XYZ colour spaces
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.convert("LAB")
+  note    -
 
 capability image/colour-management  ICC profiles applied: one colour space into another
   heroes  pending
