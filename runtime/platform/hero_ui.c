@@ -4035,6 +4035,7 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
 
 #if !defined(__APPLE__)
 
+#if !defined(_WIN32)
 int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
     (void)id;
     (void)which;
@@ -4062,6 +4063,7 @@ int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
     (void)end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a text widget's selection on macOS alone, and this system's arm has no such call");
 }
+#endif
 
 int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
     (void)identifier;

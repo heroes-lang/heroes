@@ -310,6 +310,18 @@ struct hero_ui_native {
     struct hero_ui_win_node *nodes;
     int64_t node_count;
     int64_t node_room;
+    /* A text widget's text as its control last held it, UTF-16 as the
+     * control keeps it (`known_count` -1 where it could not be kept), and
+     * the edits kept for its undo, the first `step_done` done and the rest
+     * undone; whether the last is a person's run of typed characters the
+     * next one may join (UNDO AND THE SELECTION IN TEXT WIDGETS). */
+    wchar_t *known;
+    int64_t known_count;
+    struct hero_ui_win_step *steps;
+    int64_t step_count;
+    int64_t step_room;
+    int64_t step_done;
+    bool typing;
 };
 
 /* A tree's item: the program's number for it, the item it stands under (0
@@ -325,6 +337,17 @@ typedef struct hero_ui_win_node {
      * fold. */
     bool let_go;
 } hero_ui_win_node;
+
+/* An edit kept for undo: the `gone_count` units it took out of a text at
+ * `at` and the `came_count` units it put in their place, each block ended by
+ * a zero so it can be put back as it stands. */
+typedef struct hero_ui_win_step {
+    int64_t at;
+    wchar_t *gone;
+    int64_t gone_count;
+    wchar_t *came;
+    int64_t came_count;
+} hero_ui_win_step;
 
 /* The scaling functions of `user32` (POINTS ARE MAPPED), NULL where this
  * Windows has none. */
@@ -1305,6 +1328,13 @@ static void hero_ui_win_check_in_group(hero_ui_native *item) {
     }
 }
 
+/* Above 0 while an undo or a redo changes a text control's text, so the
+ * change is no new edit to keep. */
+static _Thread_local int64_t hero_ui_win_replaying;
+static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person);
+static void hero_ui_win_edit_reset(hero_ui_native *widget);
+static void hero_ui_win_edit_end(hero_ui_native *widget);
+
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
 static void hero_ui_win_command(UINT code, UINT command, HWND control) {
@@ -1355,6 +1385,9 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_TEXT_AREA:
         if (code == EN_CHANGE) {
+            if (hero_ui_win_replaying == 0 && hero_ui_win_injecting == 0 && !hero_ui_is_muted()) {
+                hero_ui_win_edit_changed(widget, true);
+            }
             hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
         }
         break;
@@ -1949,6 +1982,7 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     if (widget->kind == HERO_UI_LABEL) {
         hero_ui_win_label_changed(widget->id, true);
     }
+    hero_ui_win_edit_end(widget);
     hero_layer_free(widget->access_name);
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
@@ -2191,7 +2225,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_TEXT_AREA:
-        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | ES_NOHIDESEL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_CHECKBOX:
         made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_AUTOCHECKBOX | WS_TABSTOP, 0, id);
@@ -2465,6 +2499,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     if (set && (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA)) {
         (void)SendMessageW(widget->hwnd, EM_SETSEL, wcslen(wide), (LPARAM)wcslen(wide));
         (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+        hero_ui_win_edit_reset(widget);
     }
     hero_ui_mute(-1);
     hero_layer_free(wide);
@@ -3467,6 +3502,9 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
             } else if (IsWindowEnabled(widget->hwnd)) {
                 (void)SendMessageW(widget->hwnd, EM_SETSEL, 0, -1);
                 (void)SendMessageW(widget->hwnd, EM_REPLACESEL, TRUE, (LPARAM)wide);
+                /* However many notifications the control sent for it, an
+                 * injected edit is one edit. */
+                hero_ui_win_edit_changed(widget, false);
             }
             hero_layer_free(wide);
         } else {
@@ -4922,6 +4960,464 @@ int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
     return hero_ui_win_refill_owner(item);
 }
 
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS ---------------------------------
+ *
+ * An `EDIT` control keeps one level of undo, which its second undo turns into
+ * a redo, so the arm keeps the edits itself: a text area's, every edit since
+ * the program last set its text, and a text field's, those made while it
+ * has the keys and until they pass to another control. An edit is kept as
+ * what it took out of the text and what it put there, found by comparing the
+ * text the control held before with the one it holds after (`EN_CHANGE`), so
+ * the person's typing, a paste and an injected edit are kept alike and the
+ * kept steps hold the changed units alone. A run of characters typed one
+ * after another is one edit, as the person's undo takes a word at a time;
+ * an injected edit is one of its own. The control's own undo is never
+ * reached: its keys (Ctrl+Z, Ctrl+Y, Alt+Backspace) and its messages
+ * (`WM_UNDO`, `EM_UNDO`, `EM_CANUNDO`) answer from the kept steps, so the
+ * person's undo and the program's are one.
+ *
+ * THE SELECTION is in the control's UTF-16 units (a CR LF is two), told in
+ * the bytes of the UTF-8 text the program reads (a CR LF is one line feed);
+ * an end inside a character is refused and a unit inside one is told at its
+ * start. A text area shows its selection while it has not the keys
+ * (`ES_NOHIDESEL`); a text field takes them, where its own does. */
+
+/* The edits one text widget keeps, and the units of text they may hold. */
+#define HERO_UI_WIN_UNDO_STEPS 256
+#define HERO_UI_WIN_UNDO_UNITS ((int64_t)1 << 22)
+
+/* Whether `count` units at `units` are one character a person types: one
+ * unit, or a surrogate pair. */
+static bool hero_ui_win_typed_one(const wchar_t *units, int64_t count) {
+    return count == 1 || (count == 2 && IS_HIGH_SURROGATE(units[0]) && IS_LOW_SURROGATE(units[1]));
+}
+
+/* Forgets the steps of `widget` from the one numbered `from` on. */
+static void hero_ui_win_steps_drop(hero_ui_native *widget, int64_t from) {
+    for (int64_t i = from; i < widget->step_count; i += 1) {
+        hero_layer_free(widget->steps[i].gone);
+        hero_layer_free(widget->steps[i].came);
+    }
+    if (from < widget->step_count) {
+        widget->step_count = from;
+    }
+    if (widget->step_done > widget->step_count) {
+        widget->step_done = widget->step_count;
+    }
+}
+
+/* Forgets every step of `widget` and the run of typing it may join. */
+static void hero_ui_win_steps_forget(hero_ui_native *widget) {
+    hero_ui_win_steps_drop(widget, 0);
+    widget->typing = false;
+}
+
+static void hero_ui_win_edit_end(hero_ui_native *widget) {
+    hero_ui_win_steps_forget(widget);
+    hero_layer_free(widget->steps);
+    hero_layer_free(widget->known);
+    widget->steps = NULL;
+    widget->step_room = 0;
+    widget->known = NULL;
+    widget->known_count = 0;
+}
+
+/* Takes the text control `widget` holds now as its text, no edit of it
+ * kept: the program set it. */
+static void hero_ui_win_edit_reset(hero_ui_native *widget) {
+    wchar_t *text = hero_ui_win_wide_of(widget->hwnd);
+
+    hero_ui_win_steps_forget(widget);
+    hero_layer_free(widget->known);
+    widget->known = text;
+    widget->known_count = text != NULL ? (int64_t)wcslen(text) : -1;
+}
+
+/* Whether `widget`'s control has the keys of its window. */
+static bool hero_ui_win_has_keys(const hero_ui_native *widget) {
+    hero_ui_native *window = hero_ui_win_window(widget->window);
+
+    return window != NULL && widget->hwnd != NULL && hero_ui_win_focus_in(window) == widget->hwnd;
+}
+
+/* Copies `count` units at `units` with a zero after them, or NULL. */
+static wchar_t *hero_ui_win_units_copy(const wchar_t *units, int64_t count) {
+    wchar_t *copy = hero_layer_alloc(((size_t)count + 1) * sizeof(wchar_t));
+
+    if (copy != NULL) {
+        if (count > 0) {
+            memcpy(copy, units, (size_t)count * sizeof(wchar_t));
+        }
+        copy[count] = 0;
+    }
+    return copy;
+}
+
+/* Drops the oldest steps of `widget` while it keeps more than the limits
+ * let it. */
+static void hero_ui_win_steps_trim(hero_ui_native *widget) {
+    for (;;) {
+        int64_t units = 0;
+
+        for (int64_t i = 0; i < widget->step_count; i += 1) {
+            units += widget->steps[i].gone_count + widget->steps[i].came_count;
+        }
+        if (widget->step_count <= 1 || (widget->step_count <= HERO_UI_WIN_UNDO_STEPS && units <= HERO_UI_WIN_UNDO_UNITS)) {
+            return;
+        }
+        hero_layer_free(widget->steps[0].gone);
+        hero_layer_free(widget->steps[0].came);
+        memmove(widget->steps, widget->steps + 1, (size_t)(widget->step_count - 1) * sizeof widget->steps[0]);
+        widget->step_count -= 1;
+        if (widget->step_done > 0) {
+            widget->step_done -= 1;
+        }
+    }
+}
+
+/* Keeps one edit of `widget`: `gone_count` units taken out at `at` and
+ * `came_count` put there. The edits undone are given up, since a new edit
+ * ends their redo; a typed character joins the run before it where it
+ * stands just after it. False where memory ran out. */
+static bool hero_ui_win_step_keep(hero_ui_native *widget, int64_t at, const wchar_t *gone, int64_t gone_count, const wchar_t *came, int64_t came_count, bool person) {
+    bool typed = person && hero_ui_win_typed_one(came, came_count);
+    struct hero_ui_win_step *last;
+    struct hero_ui_win_step *step;
+    wchar_t *took;
+    wchar_t *put;
+
+    hero_ui_win_steps_drop(widget, widget->step_done);
+    last = widget->step_count > 0 ? &widget->steps[widget->step_count - 1] : NULL;
+    if (typed && widget->typing && last != NULL && gone_count == 0 && at == last->at + last->came_count) {
+        wchar_t *grown = hero_layer_grow(last->came, ((size_t)(last->came_count + came_count) + 1) * sizeof(wchar_t));
+
+        if (grown == NULL) {
+            return false;
+        }
+        memcpy(grown + last->came_count, came, (size_t)came_count * sizeof(wchar_t));
+        last->came_count += came_count;
+        grown[last->came_count] = 0;
+        last->came = grown;
+        return true;
+    }
+    if (widget->step_count == widget->step_room) {
+        int64_t room = widget->step_room == 0 ? 16 : widget->step_room * 2;
+        struct hero_ui_win_step *more = hero_layer_grow(widget->steps, (size_t)room * sizeof widget->steps[0]);
+
+        if (more == NULL) {
+            return false;
+        }
+        widget->steps = more;
+        widget->step_room = room;
+    }
+    took = hero_ui_win_units_copy(gone, gone_count);
+    put = hero_ui_win_units_copy(came, came_count);
+    if (took == NULL || put == NULL) {
+        hero_layer_free(took);
+        hero_layer_free(put);
+        return false;
+    }
+    step = &widget->steps[widget->step_count];
+    step->at = at;
+    step->gone = took;
+    step->gone_count = gone_count;
+    step->came = put;
+    step->came_count = came_count;
+    widget->step_count += 1;
+    widget->step_done = widget->step_count;
+    widget->typing = typed;
+    hero_ui_win_steps_trim(widget);
+    return true;
+}
+
+/* The control of `widget` changed its text: keeps the edit that did it,
+ * `person` where the person made it, and takes the new text as the one the
+ * control holds. Nothing is kept where memory ran out, and no step then
+ * stands that the text could have left behind. */
+static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person) {
+    wchar_t *text = hero_ui_win_wide_of(widget->hwnd);
+    const wchar_t *before = widget->known != NULL ? widget->known : L"";
+    int64_t before_count = widget->known_count;
+    int64_t count;
+    int64_t same;
+    int64_t tail = 0;
+    int64_t most;
+
+    if (text == NULL) {
+        hero_ui_win_steps_forget(widget);
+        hero_layer_free(widget->known);
+        widget->known = NULL;
+        widget->known_count = -1;
+        return;
+    }
+    count = (int64_t)wcslen(text);
+    if (before_count < 0) {
+        hero_ui_win_steps_forget(widget);
+        hero_layer_free(widget->known);
+        widget->known = text;
+        widget->known_count = count;
+        return;
+    }
+    most = before_count < count ? before_count : count;
+    same = 0;
+    while (same < most && before[same] == text[same]) {
+        same += 1;
+    }
+    /* A change never starts or ends between the two units of a character. */
+    if (same > 0 && (IS_HIGH_SURROGATE(text[same - 1]) || text[same - 1] == L'\r')) {
+        same -= 1;
+    }
+    while (tail < most - same && before[before_count - 1 - tail] == text[count - 1 - tail]) {
+        tail += 1;
+    }
+    if (tail > 0 && (IS_LOW_SURROGATE(text[count - tail]) || text[count - tail] == L'\n')) {
+        tail -= 1;
+    }
+    if (before_count - same - tail > 0 || count - same - tail > 0) {
+        if (!(widget->kind == HERO_UI_TEXT_AREA || hero_ui_win_has_keys(widget)) || !hero_ui_win_step_keep(widget, same, before + same, before_count - same - tail, text + same, count - same - tail, person)) {
+            hero_ui_win_steps_forget(widget);
+        }
+    }
+    hero_layer_free(widget->known);
+    widget->known = text;
+    widget->known_count = count;
+}
+
+/* Undoes the last edit `widget` keeps, or redoes the last undone; false
+ * where there is none. The change is told as the person's where `told`. */
+static bool hero_ui_win_edit_replay(hero_ui_native *widget, bool undo, bool told) {
+    struct hero_ui_win_step *step;
+    const wchar_t *with;
+    int64_t out;
+    int64_t in;
+    int64_t whole;
+    int64_t held;
+
+    if (undo ? widget->step_done == 0 : widget->step_done == widget->step_count) {
+        return false;
+    }
+    step = &widget->steps[undo ? widget->step_done - 1 : widget->step_done];
+    out = undo ? step->came_count : step->gone_count;
+    in = undo ? step->gone_count : step->came_count;
+    with = undo ? step->gone : step->came;
+    held = (int64_t)GetWindowTextLengthW(widget->hwnd);
+    /* The steps stand on the text the control held when they were kept; a
+     * text changed with no notice leaves none that can be trusted. */
+    if (widget->known_count < 0 || held != widget->known_count || step->at + out > held) {
+        hero_ui_win_steps_forget(widget);
+        return false;
+    }
+    whole = held - out + in;
+    widget->typing = false;
+    hero_ui_win_replaying += 1;
+    if (!told) {
+        hero_ui_mute(1);
+    }
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)step->at, (LPARAM)(step->at + out));
+    (void)SendMessageW(widget->hwnd, EM_REPLACESEL, FALSE, (LPARAM)with);
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)(step->at + in), (LPARAM)(step->at + in));
+    (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+    if (!told) {
+        hero_ui_mute(-1);
+    }
+    hero_ui_win_replaying -= 1;
+    if ((int64_t)GetWindowTextLengthW(widget->hwnd) != whole) {
+        /* The control refused some of it: its text is no longer the steps'. */
+        hero_ui_win_steps_forget(widget);
+    } else {
+        widget->step_done += undo ? -1 : 1;
+    }
+    hero_layer_free(widget->known);
+    widget->known = hero_ui_win_wide_of(widget->hwnd);
+    widget->known_count = widget->known != NULL ? (int64_t)wcslen(widget->known) : -1;
+    return true;
+}
+
+/* The key a control's `WM_CHAR` or `WM_SYSKEYDOWN` carries, answered where
+ * it is an undo or a redo of a text widget: true where it was one. */
+static bool hero_ui_win_edit_key(hero_ui_native *widget, UINT message, WPARAM key) {
+    bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+    if (message == WM_CHAR && key == 0x1A) {
+        (void)hero_ui_win_edit_replay(widget, !shift, true);
+        return true;
+    }
+    if (message == WM_CHAR && key == 0x19) {
+        (void)hero_ui_win_edit_replay(widget, false, true);
+        return true;
+    }
+    if (message == WM_SYSKEYDOWN && key == VK_BACK) {
+        (void)hero_ui_win_edit_replay(widget, !shift, true);
+        return true;
+    }
+    return false;
+}
+
+/* The bytes of the UTF-8 of one UTF-16 unit that stands alone: a lone
+ * surrogate is read as U+FFFD, three bytes, as `hero_ui_win_narrow` reads it. */
+static int64_t hero_ui_win_utf8_length(wchar_t unit) {
+    if (IS_HIGH_SURROGATE(unit) || IS_LOW_SURROGATE(unit) || unit >= 0x800) {
+        return 3;
+    }
+    return unit >= 0x80 ? 2 : 1;
+}
+
+/* The unit of the UTF-16 text `wide` (`units` of them, CR LF one character
+ * where `lines`) at which byte `byte` of its UTF-8 text starts, -1 where
+ * that byte is inside a character or past the text. */
+static int64_t hero_ui_win_unit_of_byte(const wchar_t *wide, int64_t units, bool lines, int64_t byte) {
+    int64_t unit = 0;
+    int64_t bytes = 0;
+
+    while (unit < units) {
+        wchar_t c = wide[unit];
+
+        if (bytes == byte) {
+            return unit;
+        }
+        if (lines && c == L'\r' && unit + 1 < units && wide[unit + 1] == L'\n') {
+            bytes += 1;
+            unit += 2;
+        } else if (IS_HIGH_SURROGATE(c) && unit + 1 < units && IS_LOW_SURROGATE(wide[unit + 1])) {
+            bytes += 4;
+            unit += 2;
+        } else {
+            bytes += hero_ui_win_utf8_length(c);
+            unit += 1;
+        }
+        if (bytes > byte) {
+            return -1;
+        }
+    }
+    return bytes == byte ? units : -1;
+}
+
+/* The byte of the UTF-8 text at which the character holding unit `unit` of
+ * `wide` starts (see `hero_ui_win_unit_of_byte`). */
+static int64_t hero_ui_win_byte_of_unit(const wchar_t *wide, int64_t units, bool lines, int64_t unit) {
+    int64_t at = 0;
+    int64_t bytes = 0;
+
+    while (at < units && at < unit) {
+        wchar_t c = wide[at];
+        int64_t step = 1;
+
+        if (lines && c == L'\r' && at + 1 < units && wide[at + 1] == L'\n') {
+            if (at + 2 > unit) {
+                break;
+            }
+            bytes += 1;
+            step = 2;
+        } else if (IS_HIGH_SURROGATE(c) && at + 1 < units && IS_LOW_SURROGATE(wide[at + 1])) {
+            if (at + 2 > unit) {
+                break;
+            }
+            bytes += 4;
+            step = 2;
+        } else {
+            bytes += hero_ui_win_utf8_length(c);
+        }
+        at += step;
+    }
+    return bytes;
+}
+
+static bool hero_ui_win_is_text(const hero_ui_native *widget) {
+    return widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA;
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *can = (which == HERO_UI_UNDO ? widget->step_done > 0 : widget->step_done < widget->step_count) ? 1 : 0;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *done = hero_ui_win_edit_replay(widget, which == HERO_UI_UNDO, false) ? 1 : 0;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+    wchar_t *wide;
+    int64_t from;
+    int64_t to;
+    bool lines;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    window = hero_ui_win_window(widget->window);
+    if (widget->kind == HERO_UI_TEXT_FIELD && (window == NULL || !hero_ui_win_reachable(widget))) {
+        return HERO_UI_INVALID;
+    }
+    wide = hero_ui_win_wide_of(widget->hwnd);
+    if (wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    lines = widget->kind == HERO_UI_TEXT_AREA;
+    from = hero_ui_win_unit_of_byte(wide, (int64_t)wcslen(wide), lines, start);
+    to = hero_ui_win_unit_of_byte(wide, (int64_t)wcslen(wide), lines, end);
+    hero_layer_free(wide);
+    if (from < 0 || to < 0) {
+        return HERO_UI_INVALID;
+    }
+    /* A field shows its selection by having the keys, which it takes before
+     * the selection is set, a control taking the keys leaving its own. */
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        hero_ui_win_give_keys(window, widget->hwnd);
+    }
+    (void)SendMessageW(widget->hwnd, EM_SETSEL, (WPARAM)from, (LPARAM)to);
+    (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t *wide;
+    DWORD from = 0;
+    DWORD to = 0;
+    int64_t units;
+    bool lines;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_win_is_text(widget)) {
+        return HERO_UI_INVALID;
+    }
+    wide = hero_ui_win_wide_of(widget->hwnd);
+    if (wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    (void)SendMessageW(widget->hwnd, EM_GETSEL, (WPARAM)&from, (LPARAM)&to);
+    units = (int64_t)wcslen(wide);
+    lines = widget->kind == HERO_UI_TEXT_AREA;
+    *start = hero_ui_win_byte_of_unit(wide, units, lines, (int64_t)from);
+    *end = hero_ui_win_byte_of_unit(wide, units, lines, (int64_t)to);
+    hero_layer_free(wide);
+    return HERO_UI_OK;
+}
+
 /* -- A CONTEXT MENU ---------------------------------------------------------
  *
  * A context menu is a pop-up menu kept by the widget it belongs to, shown by
@@ -4993,9 +5489,40 @@ static const wchar_t hero_ui_win_base_name[] = L"HeroesUiBase";
 
 static LRESULT CALLBACK hero_ui_win_edit_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     WNDPROC base = (WNDPROC)GetPropW(hwnd, hero_ui_win_base_name);
+    hero_ui_native *widget = message == WM_NCDESTROY ? NULL : hero_ui_win_of(hwnd);
 
     if (message == WM_CONTEXTMENU && hero_ui_win_show_context(hwnd, lparam, false)) {
         return 0;
+    }
+    /* The control's own undo gives way to the one this arm keeps (UNDO AND
+     * THE SELECTION IN TEXT WIDGETS). */
+    if (widget != NULL && hero_ui_win_is_text(widget)) {
+        switch (message) {
+        case WM_CHAR:
+        case WM_SYSKEYDOWN:
+            if (hero_ui_win_edit_key(widget, message, wparam)) {
+                return 0;
+            }
+            break;
+        case WM_UNDO:
+        case EM_UNDO:
+            return hero_ui_win_edit_replay(widget, true, true) ? TRUE : FALSE;
+        case EM_CANUNDO:
+            return widget->step_done > 0 ? TRUE : FALSE;
+        case WM_KILLFOCUS: {
+            /* A field's edits are those made while it has the keys, so they
+             * end as the keys pass to another control of its window. */
+            HWND top = GetAncestor(hwnd, GA_ROOT);
+
+            widget->typing = false;
+            if (widget->kind == HERO_UI_TEXT_FIELD && wparam != 0 && top != NULL && IsChild(top, (HWND)wparam)) {
+                hero_ui_win_steps_forget(widget);
+            }
+            break;
+        }
+        default:
+            break;
+        }
     }
     if (message == WM_NCDESTROY) {
         (void)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)base);
