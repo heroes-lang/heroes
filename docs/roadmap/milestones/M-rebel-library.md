@@ -693,6 +693,21 @@ changes one line; the one generator that reads the examples (`rebel_index`, by t
 seam, noted where it stands; and the instruments of the net that judge Rebel travel with Rebel when it leaves, the
 compiler's own net using no library (CLAUDE.md § 13).
 
+**Corrected the same night, about 23:20, by the coordinator's own reading, asked by the author to think it through**:
+the block above says the pointer *needs no new form* and draws `packages/rebel/0.1.0/` holding *the entry only*. Both
+are true of a program's catalogue and false of the index. An index is a protocol the compiler reads, ratified with
+panel 235 (2026-11-07): `<index>/<name>/versions`, `<index>/<name>/<version>/list` and
+`<index>/<name>/<version>/files/<path>`, every file at its own address and never rewritten once published
+(`selfhost/fetch/index_source.hero`); and the site's build refuses any other file under `packages/` as a build error
+(`checkIndex`, `site/src/lib/examples-model.ts`). So an index that holds a pointer in place of the files is a change
+of that protocol, a sitting's, and belongs to M-package-index's opening one. Measured beside it: `packages/rebel/`
+holds neither `versions` nor `list`, so it is a source tree in an index's shape and no index a client can read;
+`index.heroes-lang.org`, the address a catalogue with no `index` line reads, resolves to nothing (`heroes add rebel`
+in an empty folder: exit 2, *`curl` exited 6 ... Could not resolve host*), while the site and the rules page tell a
+reader to type that command; `runtime/platform/`, the C floor under Rebel, is 59 files and 92,568 lines inside the
+compiler's runtime, and the specification names no way for a package to carry C of its own (searched, nothing found:
+a question, not a premise), so a repository of Rebel's own would hold its Heroes half alone.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
