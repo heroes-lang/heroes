@@ -169,6 +169,92 @@ record Entry
     key: str
     value: json.Value
 
+# The folders directly under `folder` that hold a member named `file`, in the
+# order of their bytes: the locales of a package of the JSON release.
+#
+# - `release`: the open zip.
+# - `folder`: the folder's path in the zip, ending with `/`:
+#   `cldr-localenames-full/main/`.
+# - `file`: the member's name inside each folder: `languages.json`.
+function folders_in(release: Release lent, folder: str, file: str) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(release.members))
+        match strings.after_prefix(s: name, prefix: folder)
+            .ok rest =>
+                match strings.before_suffix(s: rest, suffix: "/" + file)
+                    .ok middle =>
+                        if middle != "" && !strings.contains(s: middle, substr: "/")
+                            out @ out.push(middle)
+                    .err _ => _ = 0
+            .err _ => _ = 0
+
+    return out
+
+# The aliases of the Unicode locale keywords: the long names ICU's locale
+# identifiers and CLDR's display names write a key and a value with, each
+# with the short one BCP 47 writes, in lower case.
+record KeywordAliases
+    # The key each long name of a key names: `calendar` names `ca`.
+    keys: {str: str}
+    # The value each long name of a value names, the long name after its key
+    # and a space: `ca gregorian` names `gregory`.
+    values: {str: str}
+
+# The files of the `u` extension's keys, in `cldr-bcp47/bcp47/`; the others
+# are the `t` extension's.
+constant KEYWORD_FILES: [str]
+    ["calendar", "collation", "currency", "measure", "number", "segmentation", "timezone", "variant"]
+
+# The aliases an `_alias` member of `v` names, separated by spaces, in lower
+# case; none where `v` has no such member.
+#
+# Fails as reading the JSON fails.
+function aliases_of(v: json.Value) -> [str]?
+    match json.member(v, key: "_alias")
+        .ok named =>
+            out: [str] @= []
+
+            for one in strings.split(s: json.text_of(named)?, sep: " ")
+                if one != ""
+                    out @ out.push(strings.to_lower_ascii(one))
+
+            return ok(out)
+        .err _ => return ok([])
+
+# `found` with the aliases of the keys of `u`, the `u` extension's object of
+# one file, and of their values.
+#
+# Fails as reading the JSON fails.
+function read_keyword_aliases(found: KeywordAliases, u: json.Value) -> KeywordAliases?
+    out @= found
+
+    for key in entries(u)?
+        for alias in aliases_of(key.value)?
+            out.keys[alias] @ key.key
+
+        for value in entries(key.value)?
+            if !strings.has_prefix(s: value.key, prefix: "_")
+                for alias in aliases_of(value.value)?
+                    out.values[key.key + " " + alias] @ value.key
+
+    return ok(out)
+
+# The aliases of every key of the `u` extension and of their values, read
+# from the `_alias` members of `cldr-bcp47/bcp47/*.json`.
+#
+# - `release`: the JSON release, open.
+#
+# Fails as reading the files fails.
+function keyword_aliases(release: Release lent) -> KeywordAliases?
+    found @= KeywordAliases(keys: {}, values: {})
+
+    for name in KEYWORD_FILES
+        u = member_at(release, name: f"cldr-bcp47/bcp47/{name}.json", path: ["keyword", "u"])?
+        found @ read_keyword_aliases(found: found, u: u)?
+
+    return ok(found)
+
 ## Tests
 
 test "at_keys: a path found, a key absent, and none"
@@ -187,3 +273,11 @@ test "open and open_common: a file that is not there, and bytes that are not the
     assert open("generators/cldrkit/no such zip").is_err()
     assert open_common("generators/cldrkit/no such zip").is_err()
     assert open_pinned(path: "generators/cldrkit/heroes.toml", url: COMMON_URL, sha256: COMMON_SHA256).is_err()
+
+test "read_keyword_aliases: a key's alias, a value's aliases in lower case, a member of no alias passed over"
+    u = json.parse(
+        "{\"tz\": {\"_alias\": \"timezone\", \"_description\": \"d\", \"usnyc\": {\"_alias\": \"America/New_York US/Eastern\"}, \"utc\": {\"_description\": \"u\"}}}"
+    ).must()
+    found = read_keyword_aliases(found: KeywordAliases(keys: {}, values: {}), u: u).must()
+    assert found.keys == {"timezone": "tz"}
+    assert found.values == {"tz america/new_york": "usnyc", "tz us/eastern": "usnyc"}
