@@ -1,0 +1,28 @@
+# A set's descriptor, which a user interface's loop waits on beside its own
+# events (panel 256's R9, provisional), is readable while a mailbox of the set
+# holds a value: once a value is sent, again after a wait that told the
+# mailbox while a value stays, and no longer once every value is taken and a
+# wait found nothing. The C is in the header beside this file; each line
+# prints 1 where the step held, or on Windows, whose sets hold no descriptor.
+extern "poll-a-sets-descriptor-shown.h"
+    function shown_made(number: i64) -> i64
+    function shown_readable(want: i64) -> i64
+    function shown_told(want: i64) -> i64
+    function shown_closed() -> i64
+
+function main()
+    m: (mailbox i64) = mailbox()
+    print(f"the descriptor handed: {shown_made(m.number())}")
+    print(f"nothing sent, a wait tells nothing: {shown_told(0)}")
+    print(f"then not readable: {shown_readable(0)}")
+    m.send(1).must()
+    m.send(2).must()
+    print(f"two values sent, readable: {shown_readable(1)}")
+    print(f"a wait tells the mailbox: {shown_told(1)}")
+    _ = m.receive(within_ms: 0).must()
+    print(f"one taken of two, readable still: {shown_readable(1)}")
+    print(f"a wait tells it again: {shown_told(1)}")
+    _ = m.receive(within_ms: 0).must()
+    print(f"the last taken, a wait tells nothing: {shown_told(0)}")
+    print(f"then not readable: {shown_readable(0)}")
+    print(f"the set closed, its descriptor refused: {shown_closed()}")

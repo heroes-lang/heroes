@@ -231,6 +231,10 @@ typedef struct {
      * set's own queue. */
     int64_t door_in;
     int64_t door_out;
+    /* Its descriptor was handed out (`hero_poll_descriptor`): a wait that
+     * leaves an entry ready rings the doorbell again, so the descriptor stays
+     * readable while one is. */
+    bool shown;
     uint64_t rounds;
     /* The `kqueue` or the `epoll` of the set, -1 on the array's systems. */
     int queue;
@@ -929,6 +933,7 @@ hero_poll_set *hero_poll_make(int64_t most) {
         slot->mailboxes = 0;
         slot->door_in = -1;
         slot->door_out = -1;
+        slot->shown = false;
         slot->rounds = 0;
         slot->queue = queue;
         slot->next = 0;
@@ -1419,6 +1424,119 @@ int64_t hero_poll_count(hero_poll_set *set) {
     return count;
 }
 
+int64_t hero_poll_descriptor(hero_poll_set *set) {
+#if defined(HERO_POLL_ARRAY)
+    hero_poll_enter();
+    bool open = hero_poll_find(set) != NULL;
+    hero_poll_leave();
+
+    hero_poll_fail(open ? HERO_POLL_UNSUPPORTED : HERO_POLL_NOT_OPEN, 0);
+    return -1;
+#else
+    int64_t kind = HERO_POLL_OK;
+    int64_t answer = -1;
+    hero_poll_slot *slot = NULL;
+    bool door = false;
+
+    hero_poll_enter();
+    slot = hero_poll_find(set);
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else {
+        door = slot->door_in < 0;
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+#if defined(HERO_POLL_EPOLL)
+    if (door) {
+        /* The doorbell made now, so a file or a mailbox told by a wait can
+         * keep the descriptor readable. */
+        int64_t in = -1;
+        int64_t out = -1;
+        int64_t code = 0;
+
+        if (!hero_poll_door_made(&in, &out, &code)) {
+            hero_poll_fail(hero_poll_kind_of(code) == HERO_POLL_LIMIT ? HERO_POLL_LIMIT : HERO_POLL_OTHER, code);
+            return -1;
+        }
+        bool kept = false;
+
+        hero_poll_enter();
+        if (hero_poll_find(set) == slot && slot->door_in < 0 && !slot->waiting) {
+            code = hero_poll_watch(slot->queue, in, HERO_POLL_READ, 0, HERO_POLL_DOOR_KEY);
+            if (code == 0) {
+                slot->door_in = in;
+                slot->door_out = out;
+                kept = true;
+            }
+        }
+        hero_poll_leave();
+
+        if (!kept) {
+            hero_poll_door_close(in, out);
+            if (code != 0) {
+                hero_poll_fail(hero_poll_kind_of(code), code);
+                return -1;
+            }
+        }
+    }
+#else
+    (void)door;
+#endif
+    hero_poll_enter();
+    if (hero_poll_find(set) == slot) {
+        slot->shown = true;
+        answer = slot->queue;
+    }
+    hero_poll_leave();
+
+    if (answer < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    /* Rung once, so whatever is ready now, a mailbox's value or a file, is
+     * told by the descriptor too; a wait that finds nothing blocks again. */
+    hero_poll_ring(slot);
+    hero_poll_clear();
+    return answer;
+#endif
+}
+
+int64_t hero_poll_next_due(hero_poll_set *set) {
+    int64_t now = hero_poll_now();
+    int64_t next = -1;
+
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+
+    if (slot != NULL) {
+        for (uint32_t at = slot->timers; at != 0; at = hero_poll_entries[at - 1].after) {
+            const hero_poll_entry *e = &hero_poll_entries[at - 1];
+
+            if (e->due >= 0 && (next < 0 || e->due < next)) {
+                next = e->due;
+            }
+        }
+    }
+    hero_poll_leave();
+
+    if (slot == NULL) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_poll_clear();
+    if (next < 0) {
+        return -1;
+    }
+    return now < 0 || next <= now ? 0 : next - now;
+}
+
 /* The set released by the one thread that owns its release: its queue closed
  * first, so the system forgets every descriptor before any hold is let go,
  * then each entry given back and let go, then the slot. The set is closing,
@@ -1579,14 +1697,21 @@ static uint64_t hero_poll_due(hero_poll_slot *slot, int64_t now, int64_t *events
  * it once its last copy is gone; one event each, as many as there is room
  * for, the rest told at the next wait, since each is asked again there. The
  * set's entries stay as they are while it waits (ONE CALL AT A TIME). */
-static uint64_t hero_poll_mailboxes_told(uint32_t first, int64_t *events, uint64_t room, uint64_t written) {
-    for (uint32_t at = first; at != 0 && written < room; at = hero_poll_entries[at - 1].after) {
+static uint64_t hero_poll_mailboxes_told(uint32_t first, int64_t *events, uint64_t room, uint64_t written, bool *ready_left) {
+    for (uint32_t at = first; at != 0; at = hero_poll_entries[at - 1].after) {
         const hero_poll_entry *e = &hero_poll_entries[at - 1];
+
+        if (written >= room) {
+            /* Not asked: it may be ready, and is told at the next wait. */
+            *ready_left = true;
+            break;
+        }
         int64_t ready = hero_mail_ready(e->number);
 
         if (ready == 0) {
             continue;
         }
+        *ready_left = true;
         hero_poll_tell(events, written, hero_poll_key(e), ready > 0 ? HERO_POLL_READ : HERO_POLL_READ | HERO_POLL_HANGUP, 0);
         written += 1;
     }
@@ -1713,6 +1838,8 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
         int queue = -1;
         uint32_t mailboxes = 0;
         int64_t door = -1;
+        bool shown = false;
+        bool ready_left = false;
 #if defined(HERO_POLL_ARRAY)
         uint32_t places = 0;
         uint32_t base = 0;
@@ -1732,6 +1859,7 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             queue = slot->queue;
             mailboxes = slot->mailboxes;
             door = slot->door_in;
+            shown = slot->shown;
 #if defined(HERO_POLL_ARRAY)
             places = hero_poll_fill(slot);
             base = slot->base;
@@ -1745,7 +1873,7 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
         }
         /* Asked before the system is: a value sent after this rings the
          * doorbell, which ends the system's wait at once. */
-        written = hero_poll_mailboxes_told(mailboxes, events, room, written);
+        written = hero_poll_mailboxes_told(mailboxes, events, room, written, &ready_left);
         (void)door;
         int ms = written > 0 || (ends >= 0 && now >= ends) ? 0 : hero_poll_ms(now, ends, next, sliced);
         bool stopped = false;
@@ -1909,6 +2037,11 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             return -1;
         }
         if (written > 0) {
+            if (shown && ready_left) {
+                /* The descriptor stays readable while a mailbox told may
+                 * still hold a value: the program may take one of many. */
+                hero_poll_ring(slot);
+            }
             hero_poll_clear();
             return (int64_t)written;
         }

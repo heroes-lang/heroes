@@ -217,6 +217,27 @@ int64_t hero_poll_count(hero_poll_set *set);
  * system's number where its wait failed. */
 int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, uint64_t count);
 
+/* THE SET'S DESCRIPTOR, for a loop that waits in another system's call, a
+ * user interface's (panel 256's R9, provisional): the set's `kqueue` on
+ * Darwin and the BSDs, its `epoll` on Linux, readable while the system holds
+ * an event of the set; and from this call on, a wait that tells a mailbox
+ * that may still hold a value, or a file, rings the set's doorbell again, so
+ * the descriptor stays readable while such an entry is ready. Rung once here,
+ * so what is ready now is told too. Read it, never close it or wait on it
+ * with anything but readability: it is the set's, and goes at its close. A
+ * timer stands on no descriptor: `hero_poll_next_due` says when one falls.
+ * Answers the descriptor, or -1: `HERO_POLL_UNSUPPORTED` on Windows and the
+ * POSIX systems that wait with `poll`, whose sets hold no descriptor of their
+ * own, `HERO_POLL_NOT_OPEN`, `HERO_POLL_INVALID` while another thread waits
+ * on the set, `HERO_POLL_LIMIT` or `HERO_POLL_OTHER` where Linux gave no
+ * doorbell. */
+int64_t hero_poll_descriptor(hero_poll_set *set);
+
+/* How many nanoseconds until the set's first timer falls due, 0 where one is
+ * due now, -1 where no timer is due again; -1 with `HERO_POLL_NOT_OPEN` for a
+ * set that is not open (`hero_poll_last_error` tells the two apart). */
+int64_t hero_poll_next_due(hero_poll_set *set);
+
 /* Closes the set and gives its handle back, every stream and socket in it let
  * go and none of them closed: they are the program's. Answers 0, or -1 with
  * `HERO_POLL_NOT_OPEN`. */
