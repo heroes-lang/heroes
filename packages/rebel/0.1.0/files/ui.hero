@@ -1313,7 +1313,7 @@ function context_menu(@app: App, widget: Widget) -> Widget?
 #   image and its tip.
 #
 # Fails `closed`, `invalid`, `unsupported` where the system's arm draws no
-# tray (Windows and Linux, pending), `failed`. See also `set_docked`.
+# tray, `failed`. See also `set_docked`.
 function tray(@app: App, text: str) -> Widget?
     return makers.tray(@app, text: text)
 
@@ -1325,8 +1325,7 @@ function tray(@app: App, text: str) -> Widget?
 # - `app`: the app.
 # - `on`: whether it stands in the Dock.
 #
-# Fails `closed`, `unsupported` where the system's arm has no such call
-# (Windows and Linux, pending), `failed`. See also `tray`.
+# Fails `closed`, `unsupported` where the system's arm has no such call, `failed`. See also `tray`.
 function set_docked(@app: App, on: bool) -> ()?
     return desk.set_docked(@app, on: on)
 
@@ -1344,8 +1343,7 @@ variant Appearance
 #
 # - `app`: the app.
 #
-# Fails `closed`, `unsupported` where the system's arm has no such call
-# (Windows and Linux, pending), `failed`.
+# Fails `closed`, `unsupported` where the system's arm has no such call, `failed`.
 function appearance_of(app: App) -> Appearance?
     return desk.appearance_of(app)
 
@@ -1361,8 +1359,7 @@ function appearance_of(app: App) -> Appearance?
 # - `app`: the app.
 # - `go`: whether the app ends.
 #
-# Fails `closed`, `unsupported` where the system's arm holds no such ask
-# (Windows and Linux, pending), `failed`.
+# Fails `closed`, `unsupported` where the system's arm holds no such ask, `failed`.
 function answer_quit(@app: App, go: bool) -> ()?
     return session.answer_quit(@app, go: go)
 
@@ -1430,7 +1427,7 @@ variant Handed
 # - `on`: whether it takes them.
 #
 # Fails `closed`, `invalid` for a widget no window, `unsupported` where
-# the system's arm takes no dropped files (Windows and Linux, pending),
+# the system's arm takes no dropped files,
 # `failed`.
 function set_drop(@app: App, widget: Widget, on: bool) -> ()?
     return drops.set_drop(@app, widget: widget, on: on)
@@ -1470,7 +1467,7 @@ function tip_of(app: App, widget: Widget) -> str?
 #   named by its own words.
 #
 # Fails `closed`, `invalid` for a box, a menu or a timer, `unsupported`
-# where the system's arm has no such call (Windows and Linux, pending),
+# where the system's arm has no such call,
 # `failed`. See also `set_label_for`.
 function set_accessible_name(@app: App, widget: Widget, name: str) -> ()?
     return state.set_accessible_name(@app, widget: widget, name: name)
@@ -1485,7 +1482,7 @@ function set_accessible_name(@app: App, widget: Widget, name: str) -> ()?
 # - `widget`: a widget in a window, not a label.
 #
 # Fails `closed`, `invalid`, `unsupported` where the system's arm has no
-# such call (Windows and Linux, pending), `failed`. See also
+# such call, `failed`. See also
 # `set_accessible_name`.
 function set_label_for(@app: App, caption: Widget, widget: Widget) -> ()?
     return state.set_label_for(@app, caption: caption, widget: widget)
@@ -2164,8 +2161,10 @@ variant Input
         # The appearance.
         appearance: Appearance
     # Asks the app to end, as the system would: on macOS through the quit
-    # Apple event the system sends, its reason the session's end where
-    # `session_end` is.
+    # Apple event the system sends, on Windows through the query to end the
+    # session the system sends each window, on Linux through the session
+    # manager's own query, its reason the session's end where `session_end`
+    # is.
     ask_quit
         # Whether it is the session's end.
         session_end: bool
@@ -2182,7 +2181,9 @@ variant Input
         items: [str]
     # Drops files on a window that takes them, as the person's drag from
     # the system's file manager would: on macOS through the window's drag
-    # destination, or a text area's where one stands at the point.
+    # destination, or a text area's where one stands at the point; on
+    # Windows through the window's drop message, on Linux through the
+    # window's drop target.
     drop_files
         # The window.
         window: Widget

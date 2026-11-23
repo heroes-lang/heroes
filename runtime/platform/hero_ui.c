@@ -163,7 +163,7 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 }
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__)
 static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
 #endif
 static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts);
@@ -3010,16 +3010,14 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
 
 /* -- DIALOGS ANSWERED THROUGH THE QUEUE ------------------------------------ */
 
-/* What a dialog's answer is queued by: the queue itself, and on macOS the
+/* What a dialog's answer is queued by on macOS: the queue itself and the
  * wake of the loop `pump` runs, since AppKit hands a sheet's answer to its
- * completion handler outside any event that loop reads. The GTK 4 arm
- * queues its own by `hero_ui_tell_text`. */
-#if defined(__APPLE__) || defined(_WIN32)
+ * completion handler outside any event that loop reads. The Win32 and GTK 4
+ * arms queue their own by `hero_ui_tell_text`. */
+#if defined(__APPLE__)
 static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
     hero_ui_push(kind, id, value, second, text, count);
-#if defined(__APPLE__)
     hero_ui_appkit_wake();
-#endif
 }
 #endif
 
@@ -3993,45 +3991,10 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
 
 #endif
 
-#if !defined(__APPLE__) && !defined(_WIN32)
-
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
  * shared words are (`hero_ui_refused`), so no word another call left is told
  * with it. An arm that draws one defines it in its own member, and its system
  * leaves this block's condition. */
-
-#if defined(_WIN32)
-
-/* The session's end and files dropped on a window: the Win32 arm's
- * refusals; the GTK 4 arm draws them in its member. */
-
-int64_t hero_ui_arm_answer_quit(int64_t go) {
-    (void)go;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer holds the session's end for the program's answer on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_ask_quit(int64_t session_end) {
-    (void)session_end;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
-    (void)id;
-    (void)on;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer takes files dropped on a window on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
-    (void)id;
-    (void)x;
-    (void)y;
-    (void)paths;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
-}
-#endif
-
-#endif
 
 #if !defined(__APPLE__)
 
