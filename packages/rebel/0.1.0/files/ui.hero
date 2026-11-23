@@ -72,10 +72,6 @@
 #
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
-#
-# Not written yet, each a `pending` block of its ledger: an area the program
-# draws into, with its keys and its mouse; a date, a colour or a font chosen
-# in the system's own picker.
 
 use bytes
 use image
@@ -98,6 +94,7 @@ use ui/internal/loop
 use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
+use ui/internal/parts as area_parts
 use ui/internal/pickers
 use ui/internal/render as drawing
 use ui/internal/session
@@ -348,6 +345,8 @@ variant Kind
     font_button
     # An area the program draws, which tells it the pointer and the keys.
     canvas
+    # A month shown whole, a day of it picked.
+    calendar
 
 # What `widget` is.
 #
@@ -939,8 +938,8 @@ function status_bar(@app: App, into: Widget) -> Widget?
 # - `at`: the day shown; its hour, minute, second and nanosecond are ignored.
 #
 # Fails `closed`, `invalid` for a moment no calendar has or a year outside 1
-# to 9999, `failed`, `unsupported` where the system's arm draws none (Windows
-# and Linux, pending). See also `time_picker`, `date_time_picker`.
+# to 9999, `failed`, `unsupported` where the system's arm draws none. See also
+# `time_picker`, `date_time_picker`, `calendar`.
 function date_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
     return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_PICKER, at: at)
 
@@ -970,11 +969,30 @@ function time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
 function date_time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
     return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_TIME_PICKER, at: at)
 
+# A new month's calendar in `into`, as wxWidgets' `wxCalendarCtrl` and Qt's
+# `QCalendarWidget`: the system's month shown whole as a grid of days, the
+# day of `at` picked, with the system's own way to the months before and
+# after. It is a date picker shown open: the same value, the day's midnight
+# in seconds with the fields read as UTC, the same `set_range`, `picked` and
+# `set_picked`, and a day the person picks is `.value_changed`, told once.
+# The month shown is the picked day's, turned by `set_picked` too.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the day picked; its hour, minute, second and nanosecond are
+#   ignored.
+#
+# Fails as `date_picker` does, `unsupported` where the system's arm draws
+# no month's calendar. See also `date_picker`.
+function calendar(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_CALENDAR, at: at)
+
 # The moment picker `widget` shows now, as the program put it or the person
-# picked it: a date picker's at midnight, a time picker's on 1970-01-01.
+# picked it: a date picker's and a calendar's at midnight, a time picker's on
+# 1970-01-01.
 #
 # - `app`: the app holding it.
-# - `widget`: a date, time or date and time picker.
+# - `widget`: a date, time or date and time picker, or a calendar.
 #
 # Fails `closed`, `invalid` for a widget that is no picker.
 function picked(app: App, widget: Widget) -> time.DateTime?
@@ -984,7 +1002,7 @@ function picked(app: App, widget: Widget) -> time.DateTime?
 # comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a date, time or date and time picker.
+# - `widget`: a date, time or date and time picker, or a calendar.
 # - `at`: the moment, within the picker's range.
 #
 # Fails `closed`, `invalid` for a widget that is no picker, a moment no
@@ -2314,8 +2332,8 @@ variant Op
 # keys are pressed in it (`.key`, once it has the keys: `set_focus`, or the
 # person's click). It is `width` by `height` points, clear where its drawing
 # marks nothing, and holds no drawing until `draw` gives it one. A native
-# app's area also reads out as one image to a screen reader, named by
-# `set_accessible_name`; its parts are not offered.
+# app's area reads out to a screen reader as one image, named by
+# `set_accessible_name`, until `set_parts` names the parts it draws.
 #
 # - `app`: the app it is made in.
 # - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
@@ -2360,6 +2378,121 @@ function draw(@app: App, widget: Widget, ops: [Op]) -> ()?
 # `draw`.
 function snapshot(@app: App, widget: Widget) -> image.Image?
     return canvas_of.snapshot(@app, widget: widget)
+
+# What a part of a drawing area is to a screen reader (`set_parts`).
+variant PartRole
+    # Parts gathered under one name: a chart's legend, a row of the
+    # program's own buttons.
+    group
+    # Words: a title, an axis's label, a value written out.
+    text
+    # A mark with no words of its own: a bar, a slice, a point of a plot.
+    image
+    # A control the person presses.
+    button
+    # A control on or off.
+    check_box
+        # Whether it is on.
+        checked: bool
+    # One choice of a group of the program's.
+    radio
+        # Whether it is the one chosen.
+        checked: bool
+    # A value between two ends that the person moves, a step at a time.
+    slider
+        # The value, between `least` and `most`.
+        value: f64
+        # The lower end, below `most`.
+        least: f64
+        # The upper end.
+        most: f64
+    # A value between two ends that the program moves.
+    progress
+        # The value, between `least` and `most`.
+        value: f64
+        # The lower end, below `most`.
+        least: f64
+        # The upper end.
+        most: f64
+    # Words that go somewhere when pressed.
+    link
+
+# A part of a drawing area as a screen reader reads it (`set_parts`).
+record Part
+    # What it is.
+    role: PartRole
+    # What a screen reader says for it: one line, never empty, at most
+    # 65,535 bytes.
+    name: str
+    # What it says after the name: the part's use, or more of what it holds;
+    # one line, "" for none.
+    description: str
+    # Its box in the area, in points from the area's top-left corner, as
+    # the drawing's points before any transform.
+    box: Rect
+    # 0 for a part of the area itself, else the number of an earlier part
+    # holding it, the first part being 1.
+    within: i64
+    # Whether the program gives it the keys as the person moves through the
+    # area.
+    focusable: bool
+    # Whether the program's focus stands on it now: one part at most, and a
+    # focusable one.
+    focused: bool
+
+# What a screen reader does to a part (`.part_acted`).
+variant PartAct
+    # Presses a button, a link, a check box or a radio button.
+    press
+    # Asks that a focusable part take the keys.
+    focus
+    # Moves a slider a step up.
+    increase
+    # Moves a slider a step down.
+    decrease
+
+# Gives drawing area `widget` the parts a screen reader reads it by,
+# replacing the last ones, as wxWidgets' `wxAccessible` and Qt's
+# `QAccessibleInterface` do for a widget the program draws: each part a box
+# of the area with a role, a name and its state, so a person who cannot see
+# the drawing reads, walks and acts on it as on the system's own widgets.
+# The parts are data beside the drawing and change only when given again: a
+# program that redraws a moved focus, a checked box or a slider's new value
+# gives the parts again with them. While the area has the keys the reader
+# follows the part marked `focused`. What the reader does to a part is
+# `.part_acted`. An empty `parts` takes them back, and the area reads as one
+# image again.
+#
+# - `app`: the app holding it.
+# - `widget`: a drawing area.
+# - `parts`: at most 4096, each `within` the area or an earlier part; a
+#   reader walks the parts within one holder in their order here.
+#
+# Fails `closed`, `invalid` for a widget that is no drawing area, a part
+# with no name, a name or description of more than one line, a `within`
+# that is no earlier part, a box of a width or height below 0, a focused
+# part that is not focusable or a second focused one, a slider or progress
+# bar whose ends are turned over or whose value is outside them, or more
+# than 4096 parts; `unsupported` where the system's arm offers a reader no
+# parts; `failed`. See also `parts_of`, `set_accessible_name`.
+function set_parts(@app: App, widget: Widget, parts: [Part]) -> ()?
+    return area_parts.given(@app, widget: widget, parts: parts)
+
+# The parts of drawing area `widget` as a screen reader is offered them: on
+# the native side read back from the system's own accessibility objects (the
+# role each reports, its name, description, box, value and states), on the
+# headless side as given. What a test of a program's parts reads them back
+# by.
+#
+# - `app`: the app holding it; a native one's windows are laid out and shown
+#   first, so each box is where the reader finds it.
+# - `widget`: a drawing area.
+#
+# Fails `closed`, `invalid` for a widget that is no drawing area,
+# `unsupported` where the system's arm offers a reader no parts, `failed`.
+# See also `set_parts`.
+function parts_of(@app: App, widget: Widget) -> [Part]?
+    return area_parts.read(@app, widget: widget)
 
 # What the pointer does in a drawing area.
 variant Phase
@@ -2626,6 +2759,16 @@ variant Event
         # The characters the key types, empty for a key that types none, as
         # an arrow, and while the system's key for shortcuts is held.
         typed: str
+    # A screen reader acted on a part of a drawing area (`set_parts`): the
+    # program answers as it would the person's click or key, and gives the
+    # parts again where they changed.
+    part_acted
+        # The drawing area.
+        widget: Widget
+        # The part's number in the list given, the first being 1.
+        part: i64
+        # What the reader did.
+        act: PartAct
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -2826,6 +2969,17 @@ variant Input
         shift: bool
         # Whether Alt is held.
         alt: bool
+    # Acts on a part of a drawing area as a screen reader does, through the
+    # system's own accessibility actions on the native side: a press on a
+    # button, a link, a check box or a radio button, a focus on a focusable
+    # part, a step on a slider.
+    act_on_part
+        # The drawing area.
+        widget: Widget
+        # The part's number in the list given, the first being 1.
+        part: i64
+        # What the reader does.
+        act: PartAct
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
     # app's own origin, which on the headless side is once `ui/webview`'s
@@ -3416,7 +3570,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ | .part_acted _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -4746,6 +4900,19 @@ test "date_time_picker: a day and a time shown and read back as one number of se
     assert value_of(app, widget: meet).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
     close(@app).must()
 
+# A month shown whole: its value is the picked day's midnight in seconds.
+test "calendar: a month shown whole, the day picked read back as seconds and as a date"
+    app @= open(.headless).must()
+    w = window(@app, title: "Plan", width: 300, height: 260).must()
+    month = calendar(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 15, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: month).must() == 1795392000
+    assert picked(app, widget: month).must() == time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    close(@app).must()
+
 # A picker read back as the moment it shows.
 test "picked: the moment a picker shows, as a calendar date"
     app @= open(.headless).must()
@@ -4847,6 +5014,37 @@ test "draw: a bar filled, a line stroked and the area cleared again"
         ops: [.fill(shape: .rect(x: 10.0, y: 40.0, width: 20.0, height: 30.0), color: ink, even_odd: false), .stroke(shape: .path(steps: [.move_to(x: 0.0, y: 70.0), .line_to(x: 120.0, y: 70.0)]), color: ink, width: 1.0, cap: .butt, join: .miter)]
     ).must()
     draw(@app, widget: chart, ops: []).must()
+    close(@app).must()
+
+# A chart's two bars named for a screen reader, the first holding the focus.
+test "set_parts: a chart's bars named, given roles and a focus for a screen reader"
+    app @= open(.headless).must()
+    w = window(@app, title: "Chart", width: 300, height: 200).must()
+    chart = canvas(@app, into: w, width: 120, height: 80).must()
+    set_parts(
+        @app,
+        widget: chart,
+        parts: [Part(role: .group, name: "Sales by month", description: "", box: Rect(x: 0, y: 0, width: 120, height: 80), within: 0, focusable: false, focused: false), Part(role: .image, name: "March", description: "40 units", box: Rect(x: 10, y: 40, width: 20, height: 30), within: 1, focusable: true, focused: true), Part(role: .image, name: "April", description: "25 units", box: Rect(x: 40, y: 55, width: 20, height: 15), within: 1, focusable: true, focused: false)]
+    ).must()
+    assert parts_of(@app, widget: chart).must().len() == 3
+    close(@app).must()
+
+# The parts read back as a screen reader is offered them.
+test "parts_of: the parts given, read back"
+    app @= open(.headless).must()
+    w = window(@app, title: "Volume", width: 300, height: 200).must()
+    knob = canvas(@app, into: w, width: 100, height: 100).must()
+    level = Part(
+        role: .slider(value: 7.0, least: 0.0, most: 11.0),
+        name: "Volume",
+        description: "",
+        box: Rect(x: 0, y: 0, width: 100, height: 100),
+        within: 0,
+        focusable: true,
+        focused: false
+    )
+    set_parts(@app, widget: knob, parts: [level]).must()
+    assert parts_of(@app, widget: knob).must() == [level]
     close(@app).must()
 
 # What a headless app answers: it draws nothing, so there are no pixels.
