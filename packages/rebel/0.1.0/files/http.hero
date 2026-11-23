@@ -75,9 +75,8 @@
 # and a proxy's; the URL a response came from after redirects, and the redirects
 # before it; the Link field's links; a chunked body's trailer fields kept; a
 # time limit on making a connection; a client certificate presented to the
-# server; a Brotli or Zstandard response undone; the proxies the system's own
-# settings name, macOS's and Windows'; a request's body sent as it is made, not
-# held whole.
+# server; a Brotli or Zstandard response undone; a request's body sent as it is
+# made, not held whole.
 
 use bytes
 use compress
@@ -5583,6 +5582,19 @@ test "proxy_from_env: a client behind the environment's proxy"
     c.proxy @ proxy_from_env()
     assert c.max_redirects == 10
 
+# A client sending through the proxies the system's settings name, where the
+# program asks for them; a setting this package cannot follow, a script or a
+# discovery, is told rather than passed over, and the client then sends
+# directly only where the program chooses to.
+test "proxy_from_system: a client behind the system's proxy"
+    c @= default_client()
+
+    match proxy_from_system()
+        .ok p  => c.proxy @ p
+        .err e => assert e.code == UNSUPPORTED || e.code == FAILED
+
+    assert c.max_redirects == 10
+
 # Which proxy a request goes through, and a host reached directly.
 test "proxy_for: a request through a corporate proxy, an internal host direct"
     p = Proxy(
@@ -5767,3 +5779,28 @@ test "from_h2_response: status, fields and body kept"
         http2.Response(status: 201, headers: [http2.Field(name: "location", value: "/n", sensitive: false)], body: [1], trailers: [])
     )
     assert got.status == 201 && value_of(got.headers, name: "Location").must() == "/n" && got.body == [1]
+
+# A request whose answer is read as it comes: the head first, then the body
+# piece by piece from the connection, which the program closes.
+test "open_stream: a feed read piece by piece"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"]))
+    r = request(method: METHOD_GET, target: f"http://127.0.0.1:{t.port}/feed").must()
+    o @= open_stream(default_client(), r: r).must()
+    assert o.response.status == 200
+    body @= body_reader(o.response, method: METHOD_GET, limits: default_limits()).must()
+    assert read_piece(@o.reader, @body, most: 100).must() == bytes.from_text("hello")
+    io.close(@o.reader.stream).must()
+    _ = threads.wait_text(@t.thread)
+
+# A connection to a host through an HTTP proxy's `CONNECT`, for a protocol of
+# the program's own over it.
+test "tunnel: a connection through an HTTP proxy"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 Connection established\r\n\r\n"]))
+    s @= tunnel(
+        proxy: f"http://127.0.0.1:{t.port}",
+        host: "example.test",
+        port: 443,
+        deadline: time.seconds(5).must()
+    ).must()
+    io.close(@s).must()
+    assert strings.has_prefix(s: threads.wait_text(@t.thread), prefix: "CONNECT example.test:443\n")

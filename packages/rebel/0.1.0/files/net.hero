@@ -2055,6 +2055,15 @@ test "interfaces: the loopback interface, up, with 127.0.0.1 in 8 bits, and ever
 
 ## Examples
 
+# Two sockets standing on one port, as a program stands on 5353 beside the
+# system's own multicast DNS responder.
+test "open_udp_shared: two sockets on one port"
+    a @= open_udp_shared("0.0.0.0", port: 0).must()
+    b @= open_udp_shared("0.0.0.0", port: a.address.port).must()
+    assert b.address.port == a.address.port
+    close_udp(@b).must()
+    close_udp(@a).must()
+
 # A server's socket on a port the system chooses, which it then tells.
 test "listen: a server on a port the system chooses"
     l @= listen("127.0.0.1", port: 0).must()
