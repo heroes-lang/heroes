@@ -590,6 +590,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindColorWell:
+            let well = NSColorWell(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            well.color = colorOf(0)
+            // The chooser lets the person pick the alpha, as the value holds it.
+            NSColorPanel.shared.showsAlpha = true
+            well.target = self
+            well.action = #selector(colorPicked(_:))
+            well.tag = Int(widget.id)
+            return well
         case kindDatePicker, kindTimePicker, kindDateTimePicker:
             let picker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             picker.datePickerStyle = .textFieldAndStepper
@@ -935,6 +944,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventValue, Int64(sender.tag), spin.value, 0)
     }
 
+    @objc func colorPicked(_ sender: NSColorWell) {
+        queue(eventValue, Int64(sender.tag), colorValue(sender.color), 0)
+    }
+
     @objc func picked(_ sender: NSDatePicker) {
         guard let widget = widgets[Int64(sender.tag)] else {
             return
@@ -1210,6 +1223,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             spin.show(value)
+        case kindColorWell:
+            guard let well = widget.view as? NSColorWell, value >= 0, value <= 0xFFFF_FFFF else {
+                return answerInvalid
+            }
+            well.color = colorOf(value)
         case kindDatePicker, kindTimePicker, kindDateTimePicker:
             guard let picker = widget.view as? NSDatePicker, pickerHolds(widget.kind, value),
                   Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
@@ -1533,6 +1551,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
         case kindDatePicker, kindTimePicker, kindDateTimePicker:
             return (widget.view as? NSDatePicker)?.fittingSize ?? NSSize(width: 0, height: 0)
+        case kindColorWell:
+            return NSSize(width: 44, height: 23)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
         case kindSeparator:
@@ -1591,6 +1611,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return Int64(((widget.view as? NSSlider)?.doubleValue ?? 0).rounded())
         case kindSpin:
             return (widget.view as? SpinView)?.value ?? 0
+        case kindColorWell:
+            return colorValue((widget.view as? NSColorWell)?.color ?? NSColor.clear)
         case kindDatePicker, kindTimePicker, kindDateTimePicker:
             guard let picker = widget.view as? NSDatePicker else {
                 return 0
@@ -1735,6 +1757,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
                 if spin.field.isEnabled && spin.value != value {
                     spin.show(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
+            if let well = widget.view as? NSColorWell {
+                guard value >= 0, value <= 0xFFFF_FFFF else {
+                    return answerInvalid
+                }
+                if well.isEnabled && colorValue(well.color) != value {
+                    well.color = colorOf(value)
                     queue(eventValue, id, value, 0)
                 }
                 return answerOk
@@ -3684,6 +3716,22 @@ private let kindStatusBar: Int64 = 37
 private let kindDatePicker: Int64 = 38
 private let kindTimePicker: Int64 = 39
 private let kindDateTimePicker: Int64 = 40
+private let kindColorWell: Int64 = 41
+
+// A colour well's value is its colour as four sRGB bytes, 0xRRGGBBAA.
+private func colorValue(_ color: NSColor) -> Int64 {
+    guard let rgb = color.usingColorSpace(.sRGB) else {
+        return 0
+    }
+    func byte(_ component: CGFloat) -> Int64 {
+        return Int64((min(max(component, 0), 1) * 255).rounded())
+    }
+    return byte(rgb.redComponent) << 24 | byte(rgb.greenComponent) << 16 | byte(rgb.blueComponent) << 8 | byte(rgb.alphaComponent)
+}
+
+private func colorOf(_ value: Int64) -> NSColor {
+    return NSColor(srgbRed: CGFloat((value >> 24) & 255) / 255, green: CGFloat((value >> 16) & 255) / 255, blue: CGFloat((value >> 8) & 255) / 255, alpha: CGFloat(value & 255) / 255)
+}
 
 // The values a picker holds are its fields read as UTC (`hero_ui.h`): a date
 // picker's a whole day's seconds, a time picker's the seconds since midnight.

@@ -14,6 +14,7 @@
 # hour, minute and second a time picker reads and whose year, month and day a
 # date picker reads, and is told it as one by `ui.picked`.
 
+use image
 use time
 use ui
 use ui/hero_ui
@@ -74,6 +75,93 @@ function set_picked(@app: ui.App, widget: ui.Widget, at: time.DateTime) -> ()?
     n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER], what: "a date, time or date and time picker")?
     value = seconds_of(n.kind, at: at)?
     return ui.set_value(@app, widget: widget, value: value)
+
+# The value a colour well holds for `color`: its four bytes, `0xRRGGBBAA`.
+function value_of_color(color: image.Color) -> i64
+    return to_i64(color.r).must() * 16777216 + to_i64(color.g).must() * 65536 + to_i64(color.b).must() * 256 + to_i64(color.a).must()
+
+# The colour a colour well holding `value` shows.
+function color_of_value(value: i64) -> image.Color
+    return image.Color(
+        r: to_u8(value / 16777216 % 256).must(),
+        g: to_u8(value / 65536 % 256).must(),
+        b: to_u8(value / 256 % 256).must(),
+        a: to_u8(value % 256).must()
+    )
+
+# A new colour well in `into`, showing `color` (`ui.color_well`).
+function color_well(@app: ui.App, into: ui.Widget, color: image.Color) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_COLOR_WELL,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.least @ 0
+    n.most @ 4294967295
+    n.value @ value_of_color(color)
+    return makers.added(@app, n: n)
+
+# The colour `widget`, a colour well, shows now (`ui.picked_color`).
+function picked_color(app: ui.App, widget: ui.Widget) -> image.Color?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_COLOR_WELL], what: "a colour well")?
+    value = ui.value_of(app, widget: widget)?
+    return ok(color_of_value(value))
+
+# Puts a colour well at `color` (`ui.set_picked_color`).
+function set_picked_color(@app: ui.App, widget: ui.Widget, color: image.Color) -> ()?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_COLOR_WELL], what: "a colour well")?
+    return ui.set_value(@app, widget: widget, value: value_of_color(color))
+
+test "color_well: a colour as four bytes, set and read as a colour and as a number, a range refused, a value outside the bytes refused, told when the person picks (catalogue CT45)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    well = ui.color_well(@app, into: w, color: image.Color(r: 255, g: 128, b: 0, a: 255)).must()
+    assert ui.kind_of(app, widget: well).must() == .color_well
+    assert ui.value_of(app, widget: well).must() == 4286578943
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 255, g: 128, b: 0, a: 255)
+    ui.set_picked_color(@app, widget: well, color: image.Color(r: 1, g: 2, b: 3, a: 4)).must()
+    assert ui.value_of(app, widget: well).must() == 16909060
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 1, g: 2, b: 3, a: 4)
+    assert fixture.code_of(ui.set_value(@app, widget: well, value: -1)) == ui.INVALID
+    assert fixture.code_of(ui.set_value(@app, widget: well, value: 4294967296)) == ui.INVALID
+    assert fixture.code_of(ui.set_range(@app, widget: well, least: 0, most: 10)) == ui.INVALID
+    b = ui.button(@app, into: w, text: "B").must()
+    assert fixture.code_of(ui.picked_color(app, widget: b)) == ui.INVALID
+    ui.inject(@app, input: .slide(widget: well, value: 4278190335)).must()
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .value_changed(widget: well, value: 4278190335)
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 255, g: 0, b: 0, a: 255)
+    assert fixture.code_of(ui.inject(@app, input: .slide(widget: well, value: 4294967296))) == ui.INVALID
+    ui.close(@app).must()
+
+test "color_well: on the native side the system's colour well, its colour read back byte for byte in sRGB with its alpha, a pick told once and a program's set told none (catalogue CT45)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Colour", width: 300, height: 200).must()
+    offered = ui.color_well(@app, into: w, color: image.Color(r: 255, g: 128, b: 0, a: 255))
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    well = offered.must()
+    assert ui.value_of(app, widget: well).must() == 4286578943
+    ui.set_picked_color(@app, widget: well, color: image.Color(r: 1, g: 2, b: 3, a: 4)).must()
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 1, g: 2, b: 3, a: 4)
+    ui.set_picked_color(@app, widget: well, color: image.Color(r: 0, g: 255, b: 17, a: 128)).must()
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 0, g: 255, b: 17, a: 128)
+    assert fixture.code_of(ui.set_value(@app, widget: well, value: 4294967296)) == ui.INVALID
+    assert fixture.code_of(ui.set_range(@app, widget: well, least: 0, most: 10)) == ui.INVALID
+    ui.inject(@app, input: .slide(widget: well, value: 16711935)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: well, value: 16711935)
+    assert ui.picked_color(app, widget: well).must() == image.Color(r: 0, g: 255, b: 0, a: 255)
+    assert ui.rect_of(@app, widget: well).must().width > 0
+    ui.destroy(@app, widget: well).must()
+    ui.close(@app).must()
 
 test "date_picker, time_picker, date_time_picker: a value of the fields read as UTC, set and read as a moment and as seconds, the bounds the person picks between, refused for a value the kind does not hold, told when the person picks (catalogue CT42, CT43)"
     app @= fixture.test_app()

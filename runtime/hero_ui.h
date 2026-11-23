@@ -1467,4 +1467,21 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
 #define HERO_UI_TIME_PICKER 39
 #define HERO_UI_DATE_TIME_PICKER 40
 
+/* -- A COLOUR PICKED -----------------------------------------------------------
+ *
+ * wxWidgets' `wxColourPickerCtrl`: the system's control that shows a colour and
+ * opens the system's own colour chooser to change it. `HERO_UI_COLOR_WELL` is a
+ * widget as a spin is, but with no range: its value is `hero_ui_set_value`'s
+ * and `hero_ui_value`'s, the colour as four bytes `0xRRGGBBAA` in the sRGB
+ * space, red the highest, alpha the lowest (0 transparent to 255 opaque), so
+ * an `i64` from 0 to 4294967295 (`INVALID` outside it, and for
+ * `hero_ui_set_range`, which a colour has none of); the value 0 until set,
+ * transparent black. A colour the person picks in the chooser is
+ * `HERO_UI_EVENT_VALUE` with the new value, told once per pick as the chooser
+ * gives it; a program's `hero_ui_set_value` tells nothing, and
+ * `hero_ui_inject` of `HERO_UI_EVENT_VALUE` gives the colour as the person
+ * picked it, told only where it changes the value. The chooser lets the
+ * person pick the alpha too. */
+#define HERO_UI_COLOR_WELL 41
+
 #endif

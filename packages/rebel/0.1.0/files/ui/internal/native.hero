@@ -40,7 +40,7 @@ function made(app: ui.App, n: model.Node) -> ()?
     if model.has_range(n.kind)
         push_range(app, n: n)?
 
-    if model.has_range(n.kind) || n.kind == hero_ui.HERO_UI_CHECKBOX
+    if model.has_range(n.kind) || n.kind == hero_ui.HERO_UI_CHECKBOX || n.kind == hero_ui.HERO_UI_COLOR_WELL
         push_value(app, n: n)?
 
     if n.kind == hero_ui.HERO_UI_IMAGE || n.kind == hero_ui.HERO_UI_TRAY && n.pixels.len() > 0

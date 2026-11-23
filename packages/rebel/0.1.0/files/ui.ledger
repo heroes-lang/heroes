@@ -322,6 +322,14 @@ capability ui/pickers  a day, a time of day, or both, picked in the system's own
   wx      wxDatePickerCtrl, wxTimePickerCtrl, wxDateTimePickerCtrl
   note    catalogue CT42, CT43; three kinds, each a widget as a slider is: `set_value`, `value_of`, `set_range` (the bounds the person picks between) and `.value_changed` told once for a pick by the person; the value is the calendar's fields read as UTC, in seconds, so no time zone is involved (a date picker's a whole day, a time picker's the seconds since midnight, a date and time picker's the seconds since 1970-01-01T00:00:00) and `picked` and `set_picked` speak `time.DateTime`; macOS by `NSDatePicker` (text field and stepper) with its calendar and time zone set to UTC; Windows pending (`DATETIMEPICK_CLASS`, `DTS_SHORTDATEFORMAT` and `DTS_TIMEFORMAT`, `DTM_SETSYSTEMTIME`, `DTN_DATETIMECHANGE`), Linux pending (a `GtkCalendar` in a popover over a text field and `GtkSpinButton`s for the time); the month calendar on its own (CT44) is not offered
 
+capability ui/color-picker  a colour picked in the system's own control and chooser
+  heroes  ui.color_well, ui.picked_color, ui.set_picked_color, ui.Kind.color_well
+  go      -
+  rust    -
+  python  tkinter.colorchooser.askcolor
+  wx      wxColourPickerCtrl, wxColourDialog
+  note    catalogue CT45; a widget with no range: its value is `set_value`'s and `value_of`'s, the colour as four sRGB bytes `0xRRGGBBAA` (`picked_color` and `set_picked_color` speak `image.Color`), and `.value_changed` is told once for a pick by the person, the chooser giving the alpha too; macOS by an `NSColorWell` with the shared `NSColorPanel` showing alpha, its colour read in sRGB; Windows pending (a button over `ChooseColor` or the system's colour dialog), Linux pending (`GtkColorDialogButton`)
+
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture
   go      ui.NewImage, Image.Append

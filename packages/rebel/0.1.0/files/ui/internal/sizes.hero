@@ -83,6 +83,10 @@ constant SPIN_ARROWS: i64
 constant TOOLBAR_HEIGHT: i64
     38
 
+# The width of the headless side's colour well.
+constant COLOR_WELL_WIDTH: i64
+    44
+
 # The height of the headless side's status bar, Finder's own.
 constant STATUS_HEIGHT: i64
     22
@@ -191,6 +195,10 @@ function of(n: model.Node) -> [i64]
 
     # A date, a time or both as the system writes them: ten and eight
     # characters, and the arrows.
+    # The system's colour well.
+    if k == hero_ui.HERO_UI_COLOR_WELL
+        return [COLOR_WELL_WIDTH, CONTROL]
+
     if k == hero_ui.HERO_UI_DATE_PICKER
         return [10 * COLUMN + SPIN_ARROWS, CONTROL]
 

@@ -139,6 +139,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_DATE_TIME_PICKER
         return .date_time_picker
 
+    if code == hero_ui.HERO_UI_COLOR_WELL
+        return .color_well
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -297,7 +300,7 @@ function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
 function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
     n @= valued(app, widget: widget, kind: kind)?
 
-    if kind == hero_ui.HERO_UI_SLIDER && (n.kind == hero_ui.HERO_UI_SLIDER || n.kind == hero_ui.HERO_UI_SPIN || model.is_picker(n.kind)) && (value < n.least || value > n.most)
+    if kind == hero_ui.HERO_UI_SLIDER && (n.kind == hero_ui.HERO_UI_SLIDER || n.kind == hero_ui.HERO_UI_SPIN || model.is_picker(n.kind) || n.kind == hero_ui.HERO_UI_COLOR_WELL) && (value < n.least || value > n.most)
         return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
 
     if model.is_picker(n.kind) && !model.picker_holds(kind: n.kind, value: value)
@@ -333,8 +336,8 @@ function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER],
-        what: "a slider, a spin, a progress bar, a split or a date, time or date and time picker"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_COLOR_WELL],
+        what: "a slider, a spin, a progress bar, a split, a picker or a colour well"
     )
 
 # What a picker of `kind` holds, in words.
@@ -349,6 +352,9 @@ function picker_words(kind: i64) -> str
 # Sets a slider's or a progress bar's range (`ui.set_range`).
 function set_range(@app: ui.App, widget: ui.Widget, least: i64, most: i64) -> ()?
     n @= valued(app, widget: widget, kind: hero_ui.HERO_UI_SLIDER)?
+
+    if n.kind == hero_ui.HERO_UI_COLOR_WELL
+        return fail(code: failure.INVALID, msg: "a colour well has no range: its value is a colour, 0 to 4294967295")
 
     if least >= most
         return fail(
