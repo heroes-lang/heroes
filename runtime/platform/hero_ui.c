@@ -3267,12 +3267,14 @@ void hero_ui_arm_unwatch_fd(int64_t id) {
 #elif defined(_WIN32)
 
 /* No descriptor a Win32 wait can watch exists: a set there is a `WSAPoll`
- * over an array, and `hero_poll_descriptor` refuses first. */
+ * over an array, and `hero_poll_descriptor` refuses first, so the arm's wait
+ * is never handed one. When the layer's Windows set gives a handle, this
+ * refusal leaves for the arm's own waiting on it. */
 
 int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
     (void)fd;
     (void)id;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer has the wait watch a set's descriptor on macOS and GTK 4 so far, and the Win32 arm has no such call");
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "a Windows poll set is a `WSAPoll` array that gives the arm's wait no handle to watch, and the Win32 arm waits on none until the layer's set gives one");
 }
 
 void hero_ui_arm_unwatch_fd(int64_t id) {
