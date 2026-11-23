@@ -4353,3 +4353,140 @@ test "remove_source: a headless app answers unsupported"
     app @= open(.headless).must()
     assert fixture.code_of(remove_source(@app, key: 1)) == UNSUPPORTED
     close(@app).must()
+
+# A toolbar docked above what the window holds, whatever order they were made in.
+test "toolbar: docked above the window's content with its buttons side by side"
+    app @= open(.headless).must()
+    w = window(@app, title: "Edit", width: 300, height: 200).must()
+    body = label(@app, into: w, text: "Body").must()
+    bar = toolbar(@app, into: w).must()
+    open_file = button(@app, into: bar, text: "Open").must()
+    assert rect_of(@app, widget: bar).must().y == 0
+    assert rect_of(@app, widget: body).must().y > rect_of(@app, widget: bar).must().height
+    assert rect_of(@app, widget: open_file).must().x > 0
+    close(@app).must()
+
+# A status bar docked below what the window holds, a label in it.
+test "status_bar: docked at the foot of the window with a label in it"
+    app @= open(.headless).must()
+    w = window(@app, title: "Count", width: 300, height: 200).must()
+    bar = status_bar(@app, into: w).must()
+    count = label(@app, into: bar, text: "3 items").must()
+    assert rect_of(@app, widget: bar).must().y + rect_of(@app, widget: bar).must().height == rect_of(@app, widget: w).must().height
+    assert text_of(app, widget: count).must() == "3 items"
+    close(@app).must()
+
+# A day picked: its value is the day's midnight in seconds, read as UTC.
+test "date_picker: a day shown as the fields of a moment and read back as seconds"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: due).must() == 1795392000
+    close(@app).must()
+
+# A time of day picked: its value is the seconds since midnight.
+test "time_picker: a time of day shown and read back as the seconds since midnight"
+    app @= open(.headless).must()
+    w = window(@app, title: "Alarm", width: 300, height: 200).must()
+    alarm = time_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 1970, month: 1, day: 1, hour: 7, minute: 30, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: alarm).must() == 7 * 3600 + 30 * 60
+    close(@app).must()
+
+# A day and a time picked: the fields read as UTC, in seconds.
+test "date_time_picker: a day and a time shown and read back as one number of seconds"
+    app @= open(.headless).must()
+    w = window(@app, title: "Meet", width: 300, height: 200).must()
+    meet = date_time_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 17, minute: 40, second: 9, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: meet).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    close(@app).must()
+
+# A picker read back as the moment it shows.
+test "picked: the moment a picker shows, as a calendar date"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 9, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert picked(app, widget: due).must() == time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    close(@app).must()
+
+# A picker put at another moment by the program.
+test "set_picked: a picker moved to another day, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    set_picked(
+        @app,
+        widget: due,
+        at: time.DateTime(year: 1970, month: 1, day: 2, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: due).must() == 86400
+    close(@app).must()
+
+# A colour shown in a colour well.
+test "color_well: a colour shown and read back as the colour it was given"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 255, g: 128, b: 0, a: 255)).must()
+    assert picked_color(app, widget: well).must() == image.Color(r: 255, g: 128, b: 0, a: 255)
+    close(@app).must()
+
+# The colour a well shows, as a colour.
+test "picked_color: the colour a colour well shows, with its alpha"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 1, g: 2, b: 3, a: 4)).must()
+    assert picked_color(app, widget: well).must().a == 4
+    close(@app).must()
+
+# A colour well put at another colour by the program.
+test "set_picked_color: a colour well moved to another colour, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 0, g: 0, b: 0, a: 255)).must()
+    set_picked_color(@app, widget: well, color: image.Color(r: 9, g: 8, b: 7, a: 255)).must()
+    assert picked_color(app, widget: well).must().r == 9
+    close(@app).must()
+
+# A font shown in a font button, as its descriptor.
+test "font_button: a font shown as one text of size, style and family"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: true, italic: false)).must()
+    assert text_of(app, widget: pick).must() == "13|b|Menlo"
+    close(@app).must()
+
+# The font a button shows, as a record.
+test "picked_font: the font a font button shows, as a family, a size and a style"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: false, italic: true)).must()
+    assert picked_font(app, widget: pick).must() == Font(family: "Menlo", size: 13, bold: false, italic: true)
+    close(@app).must()
+
+# A font button put at another font by the program.
+test "set_picked_font: a font button moved to another font, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: false, italic: false)).must()
+    set_picked_font(@app, widget: pick, font: Font(family: "Menlo", size: 18, bold: true, italic: false)).must()
+    assert text_of(app, widget: pick).must() == "18|b|Menlo"
+    close(@app).must()
