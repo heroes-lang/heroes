@@ -671,7 +671,8 @@ Homebrew's taps are, Rebel another with its generators, and Rebel's examples a t
 evening before the answer (nothing of `examples-rebel`, `generators` or `packages/rebel` is on `origin/main` yet,
 so no public history moves): the catalogue the specification states already has two entry forms, from an index
 (`version`, `sum`) and from git (`git`, `tag`, `commit`, `sum`), so the pointer needs **no new form**, and the
-compiler resolves Rebel through a `path` entry (`examples-rebel/heroes.toml`), the net, the site and the CI being
+compiler resolves Rebel through a `path` entry (`examples-rebel/reach/heroes.toml` since step 127a, at the top of
+`examples-rebel/` that evening, 2026-11-23), the net, the site and the CI being
 what reads `packages/rebel` (28 files). The git form names no subfolder (searched in the specification,
 `docs/design.md` and `M-package-manager.md`, nothing found), so a git pointer needs the package at a repository's
 root: while Rebel is a folder of this repository the entry is a `path`, and it becomes a git entry the day the
@@ -746,7 +747,7 @@ wait for the CI's Windows leg.
    `box-validate` (the round on the Windows box, which stays up to about 06:30).
 2. **Wave B**, opened when the Mac has room (it swapped 4.2 of 5.1 GB with nine lanes running): `gap-webp` (K04's lossy
    half), `gap-os2` (G06, G07, G08, G10), `gap-service2` (H14's three pending blocks, H15, H16), `gap-i18n` (A12, A23,
-   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (M05, K22). N09, files
+   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (plots and charts as images or SVG, K22). N09, files
    embedded in the program, stays a language form for a sitting of its own. The briefs are `coord/round-3b-brief.md`
    and `coord/round-3b-lanes.md`.
 3. **The layout move**, last, one script by one lane after every other lane has merged
@@ -776,6 +777,31 @@ name where a system has none.
 **Waiting on the author**: the push; the 19 faces of Rebel no application lists (issue 2714, a task); the design choice
 of defect 2704 (callback frames abandoned by a C jump are not audited for missing decrefs), reported for the author's
 reading.
+
+## The author's answer of 2026-11-24, about 00:25: a C jump over a callback's frame, *2c*
+
+`/decide` put three questions on 2026-11-23, late evening (the one decision open on GitHub, 2610, was already settled by
+the author's *4a* and stays open until this milestone's close). On the second, the author asked whether the exit audit
+turned off after a C jump over a callback's frame (defect 2704, `runtime/parts/callback.c`) is the most robust answer,
+and the coordinator measured before answering: a callback holding a string of about 1 KB and an array of 50 numbers,
+jumped over by `longjmp` in a loop, a correct program that exits 0, peaks at 6 MB resident after 1,000 jumps and at
+**353 MB after 100,000**, about 3.5 KB lost a jump. So the harm is not the audit turned off but **a leak that grows with
+each jump**, which turning the audit off (*a*) leaves whole and auditing by subtraction (*b*) leaves whole too, since
+whoever knows which blocks the abandoned frames held can release them. The author answered *2c*: **the audit stays off
+as the interim measure, and a sitting of the panel's soundness lane (the compiler-engineer and the ffi-pragmatist)
+decides whether a jump releases what the abandoned frames held.** What the sitting is handed, read on 2026-11-24: the
+runtime already interposes `longjmp`, `_longjmp`, `siglongjmp` and `__longjmp_chk` and decodes the target's stack
+pointer wherever it is neither Windows nor Darwin (`runtime/parts/sigjump_save.c`), Darwin's route is
+`runtime/parts/rebind_jump.c`, and no runtime file named for Windows holds `longjmp`; a callback's thunk already tells
+the runtime its frame (`hero_callback_entered`); and a function's refcounted values are C locals zeroed in its prologue
+and released one by one at its end (read in the emitted C), but **nothing registers them**, so the runtime cannot find
+them at a jump. The briefs are `docs/panel/258-briefs/` (written 2026-11-24).
+
+**Still open from the same `/decide`, with their blockers**: (1) when the CI's `--partial` for the coverage of Rebel's
+applications ends, today 26 applications (the list asked for twenty), 172 faces and 21 of them listed by no application;
+it blocks the CI's first run and the tag; the coordinator recommends keeping the flag to the push and taking it away
+before the tag; (3) whether defect 2745, the residue of 2702, is `adjacent` (as filed) or `blocking`; it blocks the tag
+only if `blocking`; recommended `adjacent`, reachable only under a define no shipped build uses.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

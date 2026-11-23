@@ -1,0 +1,299 @@
+# SSH's private key files: OpenSSH's own form, `openssh-key-v1` inside
+# `-----BEGIN OPENSSH PRIVATE KEY-----` (OpenSSH's `PROTOCOL.key`), read and
+# written unencrypted, and PKCS #8 read as `crypto/keypairs` reads it. A key
+# read becomes a `crypto/keypairs` private key through PKCS #8, whose DER
+# this module builds from the numbers the file holds; RSA's two CRT
+# exponents, which the file does not hold, are computed once by `big`.
+
+use big
+use bytes
+use crypto/keypairs
+use os
+use pem
+use ssh/internal/blobs
+use ssh/internal/der
+use ssh/internal/wire
+
+## Codes
+
+# Bytes or text that are not a key file of a form read here.
+constant INVALID: str
+    "invalid"
+
+# A key file under a passphrase, or of a key type this package does not
+# compute with.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The bytes that open `openssh-key-v1`'s binary form: its name and a zero.
+function magic() -> [u8]
+    out: [u8] @= bytes.from_text("openssh-key-v1")
+    out @ out.push(0)
+    return out
+
+## Reading
+
+# A private key read: the open key, the blob of its public half and the
+# comment the file held.
+record Read
+    # The key, which the caller closes.
+    key: keypairs.PrivateKey
+    # The blob of its public half.
+    blob: [u8]
+    # The comment the file held, empty for none.
+    comment: str
+
+# The key `text` holds, in OpenSSH's form or as PKCS #8.
+function parse(text: str) -> Read?
+    block = pem.parse(text)?
+
+    if block.label == "PRIVATE KEY"
+        key @= keypairs.decode_private_der(block.data)?
+
+        match blob_of_key(key)
+            .ok blob => return ok(Read(key: key, blob: blob, comment: ""))
+            .err e =>
+                keypairs.close_private(@key)?
+                return fail(code: e.code, msg: e.msg)
+
+    if block.label != "OPENSSH PRIVATE KEY"
+        return fail(code: INVALID, msg: f"a PEM block labelled {block.label}, not OPENSSH PRIVATE KEY or PRIVATE KEY")
+    return decode(block.data)
+
+# The key `data`, `openssh-key-v1`'s binary form, holds.
+function decode(data: [u8]) -> Read?
+    head = magic()
+
+    if data.len() < head.len() || data.slice(from: 0, to: head.len()) != head
+        return fail(code: INVALID, msg: "the key file does not begin openssh-key-v1")
+    r @= wire.reader(data)
+    _ = wire.take(@r, n: head.len(), what: "the key file's name")?
+    cipher = wire.read_text(@r, what: "the key file's cipher")?
+    kdf = wire.read_text(@r, what: "the key file's key derivation")?
+    _ = wire.read_string(@r, what: "the key file's derivation options")?
+    count = wire.read_u32(@r, what: "the key file's count of keys")?
+
+    if cipher != "none" || kdf != "none"
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"a private key under a passphrase (cipher {cipher}, derivation {kdf}) is not read: ssh-keygen -p -N '' writes it without one"
+        )
+
+    if count != 1
+        return fail(code: INVALID, msg: f"a key file holding {count} keys, not 1")
+    public = wire.read_string(@r, what: "the key file's public key")?
+    private = wire.read_string(@r, what: "the key file's private part")?
+    wire.expect_end(r, what: "the key file")?
+    p @= wire.reader(private)
+    first = wire.read_u32(@p, what: "the key file's check")?
+    second = wire.read_u32(@p, what: "the key file's check")?
+
+    if first != second
+        return fail(
+            code: INVALID,
+            msg: "the key file's two check numbers differ: a key decrypted wrongly, or a broken file"
+        )
+    key_type = wire.read_text(@p, what: "the private key's type")?
+    der_form = pkcs8_of(@p, key_type: key_type, public: public)?
+    comment = wire.read_text(@p, what: "the private key's comment")?
+    padding = wire.read_rest(@p)
+    at: i64 @= 0
+
+    while at < padding.len()
+        if to_i64(padding[at]).must() != at + 1
+            return fail(code: INVALID, msg: "the key file's padding is not 1, 2, 3 and on")
+        at @ at + 1
+
+    key = keypairs.decode_private_der(der_form)?
+    return ok(Read(key: key, blob: public, comment: comment))
+
+# The PKCS #8 of the private key of type `key_type` whose fields `p` reads
+# next, checked against `public`, the blob the file's header holds.
+function pkcs8_of(@p: wire.Reader, key_type: str, public: [u8]) -> [u8]?
+    parts = blobs.parts_of(public)?
+
+    if parts.key_type != key_type
+        return fail(code: INVALID, msg: f"the key file's public key is {parts.key_type} and its private key {key_type}")
+
+    if key_type == "ssh-ed25519"
+        point = wire.read_string(@p, what: "an Ed25519 public key")?
+        secret = wire.read_string(@p, what: "an Ed25519 private key")?
+
+        if secret.len() != 64 || point != parts.point || secret.slice(from: 32, to: 64) != point
+            return fail(code: INVALID, msg: "an Ed25519 private key that is not its seed and its public key, 64 bytes")
+        seed = secret.slice(from: 0, to: 32)
+        return ok(der.sequence([der.small(0), der.sequence([[6, 3, 43, 101, 112]]), der.octets(der.octets(seed))]))
+
+    if key_type == "ecdsa-sha2-nistp256" || key_type == "ecdsa-sha2-nistp384"
+        curve = wire.read_text(@p, what: "an ECDSA key's curve")?
+        point = wire.read_string(@p, what: "an ECDSA key's point")?
+        scalar = wire.read_mpint(@p, what: "an ECDSA private key")?
+
+        if curve != blobs.curve_of(key_type) || point != parts.point
+            return fail(code: INVALID, msg: "an ECDSA private key whose curve or point is not its public key's")
+        width = (point.len() - 1) / 2
+
+        if scalar.len() > width
+            return fail(code: INVALID, msg: "an ECDSA private key wider than its curve")
+        padded = left_padded(scalar, width: width)
+        curve_oid: [u8] @= [6, 8, 42, 134, 72, 206, 61, 3, 1, 7]
+
+        if key_type == "ecdsa-sha2-nistp384"
+            curve_oid @ [6, 5, 43, 129, 4, 0, 34]
+        algorithm = der.sequence([[6, 7, 42, 134, 72, 206, 61, 2, 1], curve_oid])
+        inner = der.sequence([der.small(1), der.octets(padded), der.tagged(number: 1, inner: der.bits(point))])
+        return ok(der.sequence([der.small(0), algorithm, der.octets(inner)]))
+
+    if key_type == "ssh-rsa"
+        modulus = wire.read_mpint(@p, what: "an RSA key's modulus")?
+        exponent = wire.read_mpint(@p, what: "an RSA key's exponent")?
+        private_exponent = wire.read_mpint(@p, what: "an RSA key's private exponent")?
+        coefficient = wire.read_mpint(@p, what: "an RSA key's coefficient")?
+        first = wire.read_mpint(@p, what: "an RSA key's first prime")?
+        second = wire.read_mpint(@p, what: "an RSA key's second prime")?
+
+        if modulus != parts.modulus || exponent != parts.exponent || first.len() == 0 || second.len() == 0
+            return fail(code: INVALID, msg: "an RSA private key whose numbers are not its public key's")
+        inner = der.sequence(
+            [der.small(0), der.integer(modulus), der.integer(exponent), der.integer(private_exponent), der.integer(first), der.integer(second), der.integer(crt_exponent(private_exponent: private_exponent, prime: first)), der.integer(crt_exponent(private_exponent: private_exponent, prime: second)), der.integer(coefficient)]
+        )
+        return ok(der.sequence([der.small(0), blobs.rsa_algorithm(), der.octets(inner)]))
+    _ = blobs.kind_of(key_type)?
+    return fail(code: UNSUPPORTED, msg: f"{key_type}: no private key this package reads")
+
+# `private_exponent` modulo `prime` less one, big-endian: an RSA key's
+# exponent for that prime, which PKCS #1 holds and OpenSSH's file does not.
+function crt_exponent(private_exponent: [u8], prime: [u8]) -> [u8]
+    by = big.subtract(a: big.from_bytes(prime, order: .big_endian), b: big.from_int(1))
+    rest = big.divide(n: big.from_bytes(private_exponent, order: .big_endian), by: by, rounding: .toward_zero).remainder
+    return big.to_bytes(rest, order: .big_endian).must()
+
+# `data` with zeros before it to `width` bytes; `data` no wider.
+function left_padded(data: [u8], width: i64) -> [u8]
+    out: [u8] @= []
+
+    while out.len() + data.len() < width
+        out @ out.push(0)
+
+    for b in data
+        out @ out.push(b)
+
+    return out
+
+## Writing
+
+# The blob of the public half of `key`, a `crypto/keypairs` private key.
+function blob_of_key(key: keypairs.PrivateKey) -> [u8]?
+    public @= keypairs.public_of(key)?
+    answer = blob_of_public(public)
+    keypairs.close_public(@public)?
+    return answer
+
+# The blob of `key`, a `crypto/keypairs` public key.
+function blob_of_public(key: keypairs.PublicKey) -> [u8]?
+    none: [u8] = []
+
+    match key.kind
+        .ed25519 =>
+            raw = keypairs.encode_public_raw(key)?
+            return ok(blobs.blob_of(blobs.Parts(key_type: "ssh-ed25519", point: raw, exponent: none, modulus: none)))
+        .p256 =>
+            raw = keypairs.encode_public_raw(key)?
+            return ok(
+                blobs.blob_of(blobs.Parts(key_type: "ecdsa-sha2-nistp256", point: raw, exponent: none, modulus: none))
+            )
+        .p384 =>
+            raw = keypairs.encode_public_raw(key)?
+            return ok(
+                blobs.blob_of(blobs.Parts(key_type: "ecdsa-sha2-nistp384", point: raw, exponent: none, modulus: none))
+            )
+        .rsa _ =>
+            spki = der.read(keypairs.encode_public_der(key)?)?
+            fields = der.read_all(spki.content)?
+
+            if fields.len() != 2 || fields[1].tag != 3 || fields[1].content.len() < 2
+                return fail(code: INVALID, msg: "an RSA SubjectPublicKeyInfo of no form read here")
+            inner = der.read(fields[1].content.slice(from: 1, to: fields[1].content.len()))?
+            numbers = der.read_all(inner.content)?
+
+            if numbers.len() != 2
+                return fail(code: INVALID, msg: "an RSAPublicKey that is not two INTEGERs")
+            modulus = der.magnitude_of(numbers[0])?
+            exponent = der.magnitude_of(numbers[1])?
+            return ok(
+                blobs.blob_of(blobs.Parts(key_type: "ssh-rsa", point: none, exponent: exponent, modulus: modulus))
+            )
+        .x25519 => return fail(code: UNSUPPORTED, msg: "an X25519 key agrees and never signs: SSH has no key of it")
+
+# `key`, whose public half's blob is `blob`, written in OpenSSH's form with
+# `comment`, as `ssh-keygen` writes a key with no passphrase: the armour's
+# lines of 70 characters.
+function format(key: keypairs.PrivateKey, blob: [u8], comment: str) -> str?
+    parts = blobs.parts_of(blob)?
+    private: [u8] @= []
+    check = os.random_bytes(4)?
+
+    for b in check
+        private @ private.push(b)
+
+    for b in check
+        private @ private.push(b)
+
+    wire.put_text(@private, text: parts.key_type)
+
+    if parts.key_type == "ssh-ed25519"
+        seed = keypairs.encode_private_raw(key)?
+        wire.put_string(out: @private, data: parts.point)
+        whole: [u8] @= seed
+
+        for b in parts.point
+            whole @ whole.push(b)
+
+        wire.put_string(out: @private, data: whole)
+    else if parts.key_type == "ssh-rsa"
+        info = der.read(keypairs.encode_private_der(key)?)?
+        fields = der.read_all(info.content)?
+
+        if fields.len() < 3 || fields[2].tag != 4
+            return fail(code: INVALID, msg: "an RSA PKCS #8 of no form read here")
+        numbers = der.read_all(der.read(fields[2].content)?.content)?
+
+        if numbers.len() != 9
+            return fail(code: INVALID, msg: "an RSAPrivateKey that is not nine INTEGERs")
+
+        for which in [1, 2, 3, 8, 4, 5]
+            wire.put_mpint(out: @private, magnitude: der.magnitude_of(numbers[which])?)
+    else
+        scalar = keypairs.encode_private_raw(key)?
+        wire.put_text(@private, text: blobs.curve_of(parts.key_type))
+        wire.put_string(out: @private, data: parts.point)
+        wire.put_mpint(out: @private, magnitude: scalar)
+    wire.put_text(@private, text: comment)
+    pad: i64 @= 1
+
+    while private.len() % 8 != 0
+        private @ private.push(to_u8(pad).must())
+        pad @ pad + 1
+
+    out: [u8] @= magic()
+    wire.put_text(@out, text: "none")
+    wire.put_text(@out, text: "none")
+    wire.put_text(@out, text: "")
+    wire.put_u32(@out, n: 1)
+    wire.put_string(out: @out, data: blob)
+    wire.put_string(out: @out, data: private)
+    lines: [str] @= ["-----BEGIN OPENSSH PRIVATE KEY-----"]
+    text = bytes.format_base64(out)
+    at: i64 @= 0
+
+    while at < text.len()
+        end: i64 @= at + 70
+
+        if end > text.len()
+            end @ text.len()
+        lines @ lines.push(text.slice(from: at, to: end))
+        at @ end
+
+    lines @ lines.push("-----END OPENSSH PRIVATE KEY-----")
+    lines @ lines.push("")
+    return ok(join(lines, "\n"))

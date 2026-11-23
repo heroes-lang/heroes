@@ -107,7 +107,7 @@ function session(@app: ui.App, native: bool)
                             .err _ =>
                                 heard @ heard + 1
                                 agreed @ agreed + compared(app, view: view, text: m.text)
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .part_acted _ | .key _ =>
                         _ = 0
 
     if native

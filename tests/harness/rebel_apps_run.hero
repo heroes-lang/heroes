@@ -12,7 +12,8 @@
 #   (`suite_corpus.hero`), and held to the original's `main.expected`, a
 #   twin declaring nothing of its own;
 # - **any other folder** is a failure by name, since a program judged by
-#   nothing would stand green in silence.
+#   nothing would stand green in silence; the drivers' folder, `DRIVERS`,
+#   is the walk's one exception, passed by in `rebel_apps.hero`.
 #
 # Every program runs from the repository's root, where the check runs, as
 # the corpus runs `examples/`: a demo's folders, `build/<app>-demo`, and a
@@ -33,6 +34,13 @@ extern "hero_time.h"
 # The group of programs this check judges.
 constant REBEL: str
     "examples-rebel"
+
+# The folder of `REBEL` holding the drivers, `reach_<package>.hero`, and
+# their one catalogue (README § A2, § A10): a group of programs that are no
+# application and no twin, judged by Rebel's pipeline running each one's
+# `heroes test`, so the check passes it by.
+constant DRIVERS: str
+    "reach"
 
 # The compiler's own programs, whose namesakes in `REBEL` are their twins.
 constant ORIGINALS: str
@@ -403,6 +411,10 @@ test "program_named: an application by its main.expected, a twin by its original
     assert program_named("ingest").kind == "application"
     assert program_named("ingest").expected == "examples-rebel/ingest/main.expected"
     assert program_named("no-such-program").kind == "unknown"
+
+    # The drivers' folder holds neither, so the walk passes it by
+    # (`rebel_apps.hero`'s `folders`) rather than judging it.
+    assert program_named(DRIVERS).kind == "unknown"
 
 test "verdict_of: a folder that is neither, one with no main.hero, and a twin declaring anything, fail by name before any build"
     s = Setting(compiler: "no-such-compiler", scratch: shell.own_scratch(), platform: "linux", building: [])

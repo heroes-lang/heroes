@@ -3,7 +3,8 @@
 #     heroes run tests/harness/rebel_apps.hero -- <compiler> [--partial] [--library <folder>]... [<name>...]
 #
 # from the repository's root. It walks `examples-rebel/` (README § A10) and
-# judges every folder there, or only the folders named:
+# judges every folder there but the drivers', `reach/`, or only the folders
+# named:
 #
 # - **an application**, a folder holding `main.expected`, is built and its
 #   demo run with its `main.args` and `main.stdin`; its transcript is held to
@@ -163,12 +164,17 @@ function asked_of(given: [str]) -> Asked?
 
     return ok(Asked(compiler: given[0], partial: partial, building: building, names: names))
 
-# The name of every folder of `examples-rebel/`, in name order.
+# The name of every folder of `examples-rebel/` that holds a program, in
+# name order: every folder but the drivers' (`rebel_apps_run.DRIVERS`,
+# README § A10), whose programs Rebel's pipeline tests one by one.
 function folders(scratch: str) -> [str]?
     out: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: rebel_apps_run.REBEL)?
-        out @ out.push(strings.base_name(path: dir))
+        name = strings.base_name(path: dir)
+
+        if name != rebel_apps_run.DRIVERS
+            out @ out.push(name)
 
     return ok(out.sort())
 
@@ -478,6 +484,13 @@ test "chosen_of: every folder where no name is given, and a name no folder bears
     assert chosen_of(found: found, names: []).must() == found
     assert chosen_of(found: found, names: ["notes"]).must() == ["notes"]
     assert chosen_of(found: found, names: ["notes", "nope"]).is_err()
+
+test "folders: every folder of examples-rebel/ holding a program, the drivers' folder, which stands there, passed by"
+    assert shell.is_directory(rebel_apps_run.REBEL + "/" + rebel_apps_run.DRIVERS)
+    found = folders(shell.own_scratch()).must()
+    assert !rebel_apps_declared.among(word: rebel_apps_run.DRIVERS, words: found)
+    assert rebel_apps_declared.among(word: "notes", words: found)
+    assert rebel_apps_declared.among(word: "json", words: found)
 
 test "platform: one of the three, or other, and this machine's is one of the three"
     assert rebel_apps_declared.among(word: platform(), words: rebel_apps_declared.PLATFORMS)

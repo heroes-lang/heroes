@@ -1,0 +1,255 @@
+# SSH's public keys and signatures (RFC 4253 § 6.6, RFC 5656 § 3, RFC 8332,
+# RFC 8709): a key's blob read and checked, made into a key of
+# `crypto/keypairs` for the one call that needs it, a signature blob checked
+# and made, and a key's fingerprints as `ssh-keygen -l` prints them. Every
+# computation on a key is `crypto/keypairs`', so the system's; this module
+# moves numbers between SSH's forms and the DER that package reads.
+
+use bytes
+use crypto
+use crypto/keypairs
+use ssh/internal/der
+use ssh/internal/wire
+
+## Codes
+
+# Bytes that are not the form asked for.
+constant INVALID: str
+    "invalid"
+
+# A key type or a signature algorithm this package does not compute with.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Kinds
+
+# The SSH name of each key type this package signs and checks with, in the
+# order a client offers them for a host key.
+function host_key_algorithms() -> [str]
+    return ["ssh-ed25519", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "rsa-sha2-512", "rsa-sha2-256"]
+
+# The key type a signature algorithm signs with: `ssh-rsa` for both RSA
+# signatures over SHA-2, the algorithm itself for the others.
+function key_type_of(algorithm: str) -> str
+    if algorithm == "rsa-sha2-512" || algorithm == "rsa-sha2-256"
+        return "ssh-rsa"
+    return algorithm
+
+# The kind of `crypto/keypairs` key a key type names, failing `unsupported`
+# for one this package does not compute with.
+function kind_of(key_type: str) -> keypairs.Kind?
+    if key_type == "ssh-ed25519"
+        return ok(.ed25519)
+
+    if key_type == "ecdsa-sha2-nistp256"
+        return ok(.p256)
+
+    if key_type == "ecdsa-sha2-nistp384"
+        return ok(.p384)
+
+    if key_type == "ssh-rsa"
+        return ok(.rsa(bits: 0))
+
+    if key_type == "ecdsa-sha2-nistp521"
+        return fail(
+            code: UNSUPPORTED,
+            msg: "ecdsa-sha2-nistp521: the system's cryptography here offers no P-521 (crypto/keypairs)"
+        )
+    return fail(code: UNSUPPORTED, msg: f"{key_type}: no key type this package signs or checks with")
+
+# The signature scheme of `crypto/keypairs` a signature algorithm names.
+function scheme_of(algorithm: str) -> keypairs.Scheme?
+    if algorithm == "ssh-ed25519"
+        return ok(.ed25519)
+
+    if algorithm == "ecdsa-sha2-nistp256"
+        return ok(.ecdsa_sha256)
+
+    if algorithm == "ecdsa-sha2-nistp384"
+        return ok(.ecdsa_sha384)
+
+    if algorithm == "rsa-sha2-512"
+        return ok(.rsa_pkcs1_sha512)
+
+    if algorithm == "rsa-sha2-256"
+        return ok(.rsa_pkcs1_sha256)
+
+    if algorithm == "ssh-rsa"
+        return fail(
+            code: UNSUPPORTED,
+            msg: "ssh-rsa: a signature over SHA-1, which OpenSSH refuses since 8.8 and this package refuses"
+        )
+    return fail(code: UNSUPPORTED, msg: f"{algorithm}: no signature algorithm this package checks")
+
+# The curve name an ECDSA key type's blob holds.
+function curve_of(key_type: str) -> str
+    if key_type == "ecdsa-sha2-nistp384"
+        return "nistp384"
+    return "nistp256"
+
+## Blobs
+
+# The parts of a key blob of a type this package knows: Ed25519's 32 bytes,
+# an EC point, or RSA's exponent and modulus.
+record Parts
+    # The key type's SSH name.
+    key_type: str
+    # Ed25519's key or the EC point, uncompressed; empty for RSA.
+    point: [u8]
+    # RSA's public exponent, its magnitude; empty for the others.
+    exponent: [u8]
+    # RSA's modulus, its magnitude; empty for the others.
+    modulus: [u8]
+
+# The parts of `blob`, checked whole: a known type's fields and nothing
+# after them. A type this package does not know keeps its name and no part.
+function parts_of(blob: [u8]) -> Parts?
+    r @= wire.reader(blob)
+    key_type = wire.read_text(@r, what: "a public key's type")?
+    none: [u8] = []
+
+    if key_type == "ssh-ed25519"
+        point = wire.read_string(@r, what: "an Ed25519 key")?
+
+        if point.len() != 32
+            return fail(code: INVALID, msg: f"an Ed25519 key of {point.len()} bytes, not 32")
+        wire.expect_end(r, what: "an Ed25519 key's blob")?
+        return ok(Parts(key_type: key_type, point: point, exponent: none, modulus: none))
+
+    if key_type == "ecdsa-sha2-nistp256" || key_type == "ecdsa-sha2-nistp384"
+        curve = wire.read_text(@r, what: "an ECDSA key's curve")?
+
+        if curve != curve_of(key_type)
+            return fail(code: INVALID, msg: f"an {key_type} key naming the curve {curve}")
+        point = wire.read_string(@r, what: "an ECDSA key's point")?
+        wanted: i64 @= 97
+
+        if key_type == "ecdsa-sha2-nistp256"
+            wanted @ 65
+
+        if point.len() != wanted || point[0] != 4
+            return fail(code: INVALID, msg: f"an {key_type} point that is not {wanted} bytes uncompressed")
+        wire.expect_end(r, what: "an ECDSA key's blob")?
+        return ok(Parts(key_type: key_type, point: point, exponent: none, modulus: none))
+
+    if key_type == "ssh-rsa"
+        exponent = wire.read_mpint(@r, what: "an RSA key's exponent")?
+        modulus = wire.read_mpint(@r, what: "an RSA key's modulus")?
+
+        if modulus.len() < 128 || modulus.len() > 1024 || exponent.len() == 0
+            return fail(code: INVALID, msg: f"an RSA key of {modulus.len() * 8} bits, outside 1024 to 8192")
+        wire.expect_end(r, what: "an RSA key's blob")?
+        return ok(Parts(key_type: key_type, point: none, exponent: exponent, modulus: modulus))
+    return ok(Parts(key_type: key_type, point: none, exponent: none, modulus: none))
+
+# The blob of `parts`, as `parts_of` reads it.
+function blob_of(parts: Parts lent) -> [u8]
+    out: [u8] @= []
+    wire.put_text(@out, text: parts.key_type)
+
+    if parts.key_type == "ssh-rsa"
+        wire.put_mpint(out: @out, magnitude: parts.exponent)
+        wire.put_mpint(out: @out, magnitude: parts.modulus)
+    else if parts.key_type == "ssh-ed25519"
+        wire.put_string(out: @out, data: parts.point)
+    else
+        wire.put_text(@out, text: curve_of(parts.key_type))
+        wire.put_string(out: @out, data: parts.point)
+    return out
+
+# The OID of RSA's keys, 1.2.840.113549.1.1.1, with its NULL parameters:
+# the AlgorithmIdentifier of PKCS #1.
+function rsa_algorithm() -> [u8]
+    return der.sequence([[6, 9, 42, 134, 72, 134, 247, 13, 1, 1, 1], [5, 0]])
+
+# `parts`' key opened as a `crypto/keypairs` public key, which the caller
+# closes.
+function open_public(parts: Parts lent) -> keypairs.PublicKey?
+    if parts.key_type == "ssh-rsa"
+        inner = der.sequence([der.integer(parts.modulus), der.integer(parts.exponent)])
+        return keypairs.decode_public_der(der.sequence([rsa_algorithm(), der.bits(inner)]))
+    kind = kind_of(parts.key_type)?
+    return keypairs.decode_public_raw(kind, raw: parts.point)
+
+## Signatures
+
+# Whether `signature`, a signature blob, is `algorithm`'s signature of
+# `data` by the key whose blob is `blob`. False where the blob names another
+# algorithm or does not hold; `unsupported` for an algorithm not checked
+# here.
+function verify(blob: [u8], algorithm: str, data: [u8], signature: [u8]) -> bool?
+    parts = parts_of(blob)?
+
+    if parts.key_type != key_type_of(algorithm)
+        return fail(code: INVALID, msg: f"a {parts.key_type} key cannot check a {algorithm} signature")
+    scheme = scheme_of(algorithm)?
+    r @= wire.reader(signature)
+    named = wire.read_text(@r, what: "a signature's algorithm")?
+    raw = wire.read_string(@r, what: "a signature")?
+    wire.expect_end(r, what: "a signature's blob")?
+
+    if named != algorithm
+        return ok(false)
+    checked @= raw
+
+    if parts.key_type == "ssh-rsa"
+        if raw.len() > parts.modulus.len()
+            return ok(false)
+        padded: [u8] @= []
+
+        while padded.len() + raw.len() < parts.modulus.len()
+            padded @ padded.push(0)
+
+        for b in raw
+            padded @ padded.push(b)
+
+        checked @ padded
+    else if parts.key_type != "ssh-ed25519"
+        s @= wire.reader(raw)
+        r_number = wire.read_mpint(@s, what: "an ECDSA signature's r")?
+        s_number = wire.read_mpint(@s, what: "an ECDSA signature's s")?
+        wire.expect_end(s, what: "an ECDSA signature")?
+        checked @ der.sequence([der.integer(r_number), der.integer(s_number)])
+    key @= open_public(parts)?
+    answer = keypairs.verify(key, scheme: scheme, message: data, signature: checked)
+    keypairs.close_public(@key)?
+    return answer
+
+# The signature blob of `data` by `key` under `algorithm`: the algorithm's
+# name and the signature in SSH's form.
+function sign(key: keypairs.PrivateKey, algorithm: str, data: [u8]) -> [u8]?
+    scheme = scheme_of(algorithm)?
+    made = keypairs.sign(key, scheme: scheme, message: data)?
+    out: [u8] @= []
+    wire.put_text(@out, text: algorithm)
+
+    if algorithm == "ecdsa-sha2-nistp256" || algorithm == "ecdsa-sha2-nistp384"
+        outer = der.read(made)?
+        numbers = der.read_all(outer.content)?
+
+        if outer.tag != 48 || numbers.len() != 2
+            return fail(code: INVALID, msg: "an ECDSA signature that is no SEQUENCE of two INTEGERs")
+        pair: [u8] @= []
+        wire.put_mpint(out: @pair, magnitude: der.magnitude_of(numbers[0])?)
+        wire.put_mpint(out: @pair, magnitude: der.magnitude_of(numbers[1])?)
+        wire.put_string(out: @out, data: pair)
+    else
+        wire.put_string(out: @out, data: made)
+    return ok(out)
+
+## Fingerprints
+
+# `blob`'s fingerprint as `ssh-keygen -l` prints it by default: `SHA256:`
+# and the digest in base 64 with no padding.
+function fingerprint(blob: [u8]) -> str
+    return "SHA256:" + bytes.format_base64_unpadded(crypto.sha256(blob))
+
+# `blob`'s fingerprint of before OpenSSH 6.8: `MD5:` and the digest's bytes
+# in hexadecimal joined by colons.
+function fingerprint_md5(blob: [u8]) -> str
+    pairs: [str] @= []
+
+    for b in crypto.md5(blob)
+        pairs @ pairs.push(bytes.format_hex([b]))
+
+    return "MD5:" + join(pairs, ":")

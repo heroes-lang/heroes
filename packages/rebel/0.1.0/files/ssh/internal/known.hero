@@ -1,0 +1,238 @@
+# OpenSSH's `known_hosts` (sshd(8), § SSH_KNOWN_HOSTS FILE FORMAT): a host's
+# key looked up in the file's text, and the line that adds one. A line is
+# `[marker] patterns key-type base64-key [comment]`; a pattern is a name or
+# an address with `*` and `?`, negated by `!`, written `[host]:port` for a
+# port other than 22, or hashed as `|1|salt|HMAC-SHA1(salt, name)` in base
+# 64. Names are compared in lower case, as OpenSSH compares them.
+
+use bytes
+use crypto
+use os
+use strings
+
+## Codes
+
+# A line that is not a known host's.
+constant INVALID: str
+    "invalid"
+
+## Looking up
+
+# What the file says of a host's key.
+variant Verdict
+    # A line names the host with this very key.
+    known
+    # No line names the host.
+    unknown
+    # Lines name the host, none with this key: the key changed, or the host
+    # answered with a key of a type the file does not hold for it.
+    changed
+        # The first line, from 1, naming the host with another key.
+        line: i64
+    # A `@revoked` line holds this key: never to be trusted.
+    revoked
+        # That line, from 1.
+        line: i64
+
+# The name a host is looked up by: the host itself on port 22, else
+# `[host]:port`, in lower case.
+function name_of(host: str, port: i64) -> str
+    lower = strings.to_lower_ascii(host)
+
+    if port == 22
+        return lower
+    return f"[{lower}]:{port}"
+
+# What `text`, a `known_hosts` file's contents, says of `key_type` and
+# `blob` for `host` at `port`. Lines of no form read here, `@cert-authority`
+# lines (they hold certificate authorities, not host keys) and comments are
+# passed over.
+function lookup(text: str, host: str, port: i64, key_type: str, blob: [u8]) -> Verdict
+    name = name_of(host, port: port)
+    changed_at: i64 @= 0
+    number: i64 @= 0
+    known: bool @= false
+
+    for line in strings.split(s: text, sep: "\n")
+        number @ number + 1
+
+        match parse_line(line)
+            .err _ => continue
+            .ok entry =>
+                if entry.marker == "@revoked"
+                    if entry.blob == blob
+                        return .revoked(line: number)
+                    continue
+
+                if entry.marker != "" || !names_host(patterns: entry.patterns, name: name)
+                    continue
+
+                if entry.blob == blob && entry.key_type == key_type
+                    known @ true
+                else if changed_at == 0
+                    changed_at @ number
+
+    if known
+        return .known
+
+    if changed_at > 0
+        return .changed(line: changed_at)
+    return .unknown
+
+# The key types `text` holds for `host` at `port`, in the file's order, each
+# once: the host key algorithms a client offers first, so a host already
+# known is asked for the key the file holds.
+function key_types_of(text: str, host: str, port: i64) -> [str]
+    name = name_of(host, port: port)
+    found: [str] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        match parse_line(line)
+            .err _ => continue
+            .ok entry =>
+                if entry.marker == "" && names_host(patterns: entry.patterns, name: name) && !found.any_is(entry.key_type)
+                    found @ found.push(entry.key_type)
+
+    return found
+
+# Whether `xs` holds `x`.
+function any_is(xs: [str] lent, x: str) -> bool
+    for each in xs
+        if each == x
+            return true
+
+    return false
+
+## Lines
+
+# One line of the file read: its marker, its patterns, its key.
+record Entry
+    # `@revoked`, `@cert-authority`, or empty for none.
+    marker: str
+    # The comma-separated patterns, as written.
+    patterns: str
+    # The key's type, as written.
+    key_type: str
+    # The key's blob, its base 64 read.
+    blob: [u8]
+
+# The entry `line` holds; a comment, a blank line or one of no form read
+# here fails `invalid`.
+function parse_line(line: str) -> Entry?
+    words: [str] @= []
+
+    for word in strings.split(s: strings.trim(line), sep: " ")
+        if word != ""
+            words @ words.push(word)
+
+    if words.len() == 0 || strings.has_prefix(s: words[0], prefix: "#")
+        return fail(code: INVALID, msg: "a blank line or a comment")
+    marker: str @= ""
+    first: i64 @= 0
+
+    if strings.has_prefix(s: words[0], prefix: "@")
+        marker @ words[0]
+        first @ 1
+
+    if words.len() < first + 3
+        return fail(code: INVALID, msg: "a line of fewer than three fields")
+
+    match bytes.parse_base64(words[first + 2])
+        .err _   => return fail(code: INVALID, msg: "a key that is not base 64")
+        .ok blob => return ok(Entry(marker: marker, patterns: words[first], key_type: words[first + 1], blob: blob))
+
+# Whether `patterns` name `name`: one of them matches it and no negated one
+# does.
+function names_host(patterns: str, name: str) -> bool
+    named: bool @= false
+
+    for pattern in strings.split(s: patterns, sep: ",")
+        if strings.has_prefix(s: pattern, prefix: "|1|")
+            if hashed_names(pattern: pattern, name: name)
+                named @ true
+        else if strings.has_prefix(s: pattern, prefix: "!")
+            if glob(pattern: strings.to_lower_ascii(pattern.slice(from: 1, to: pattern.len())), name: name)
+                return false
+        else if glob(pattern: strings.to_lower_ascii(pattern), name: name)
+            named @ true
+
+    return named
+
+# Whether the hashed pattern `|1|salt|hash` names `name`.
+function hashed_names(pattern: str, name: str) -> bool
+    parts = strings.split(s: pattern, sep: "|")
+
+    if parts.len() != 4
+        return false
+
+    match bytes.parse_base64(parts[2])
+        .err _ => return false
+        .ok salt =>
+            match bytes.parse_base64(parts[3])
+                .err _ => return false
+                .ok hash => return crypto.equals_constant_time(
+                    a: crypto.hmac(.sha1, key: salt, data: bytes.from_text(name)),
+                    b: hash
+                )
+
+# Whether `name` matches `pattern`, `*` any run of bytes and `?` one byte:
+# a walk that remembers the last `*` and retries from it, so a pattern of
+# many stars takes time linear in their count times the name.
+function glob(pattern: str, name: str) -> bool
+    p: i64 @= 0
+    n: i64 @= 0
+    star: i64 @= -1
+    resume: i64 @= 0
+
+    while n < name.len()
+        if p < pattern.len() && (pattern[p] == '?' || pattern[p] == name[n])
+            p @ p + 1
+            n @ n + 1
+        else if p < pattern.len() && pattern[p] == '*'
+            star @ p
+            resume @ n
+            p @ p + 1
+        else if star >= 0
+            p @ star + 1
+            resume @ resume + 1
+            n @ resume
+        else
+            return false
+
+    while p < pattern.len() && pattern[p] == '*'
+        p @ p + 1
+
+    return p == pattern.len()
+
+# The line that adds `blob`, of `key_type`, for `host` at `port`: the name
+# in clear, or hashed with a salt of 20 bytes drawn from the system's
+# generator as `ssh-keygen -H` writes it.
+function line_of(host: str, port: i64, key_type: str, blob: [u8], hashed: bool) -> str?
+    name = name_of(host, port: port)
+    written: str @= name
+
+    if hashed
+        salt = os.random_bytes(20)?
+        hash = crypto.hmac(.sha1, key: salt, data: bytes.from_text(name))
+        written @ "|1|" + bytes.format_base64(salt) + "|" + bytes.format_base64(hash)
+    return ok(written + " " + key_type + " " + bytes.format_base64(blob))
+
+## Tests
+
+test "glob: stars at either end and between, a question mark, an empty name, a pattern of stars alone"
+    assert glob(pattern: "*", name: "")
+    assert glob(pattern: "*.example.org", name: "a.b.example.org")
+    assert !glob(pattern: "*.example.org", name: "example.org")
+    assert glob(pattern: "host?", name: "host1")
+    assert !glob(pattern: "host?", name: "host")
+    assert glob(pattern: "a*b*c", name: "aXbYbZc")
+    assert !glob(pattern: "a*b*c", name: "aXbYbZ")
+    assert glob(pattern: "***", name: "anything")
+    assert glob(pattern: "[10.0.0.*]:2222", name: "[10.0.0.7]:2222")
+
+test "parse_line: a comment, a blank line, too few fields and a marker read"
+    assert parse_line("# x").is_err()
+    assert parse_line("   ").is_err()
+    assert parse_line("host ssh-ed25519").is_err()
+    entry = parse_line("@revoked * ssh-ed25519 AAAA").must()
+    assert entry.marker == "@revoked" && entry.patterns == "*"

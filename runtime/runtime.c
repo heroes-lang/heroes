@@ -481,6 +481,8 @@
 #include "platform/hero_ui_web.h"
 #include "hero_ui_gtk.h"
 #include "platform/hero_ui_gtk.c"
+#include "hero_ui_canvas_gtk.h"
+#include "platform/hero_ui_canvas_gtk.c"
 #include "hero_ui_web_gtk.h"
 #include "platform/hero_ui_web_gtk.c"
 #include "hero_ui_web_win32.h"

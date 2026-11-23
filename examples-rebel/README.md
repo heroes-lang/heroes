@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-one packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-two packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -173,8 +173,9 @@ package moves its row in the same change. There is no cycle.
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |
 | 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `threads`, `time` |  |
-| 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `os`, `poll`, `printing`, `time`, `unicode/segment` | `hero_ui.h` |
+| 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `math`, `os`, `poll`, `printing`, `strings`, `time`, `unicode/segment` | `hero_ui.h` |
 | 5 | `ical/vcard` | vCard 3.0 and 4.0 (RFC 6350, 2426): contacts read into names, telephones, addresses and the rest with their groups and types, written; every line a record does not hold kept; version 2.1, photos and keys as bytes, groups of cards and the conversion between versions refused or not written yet | `bytes`, `ical`, `strings` |  |
+| 5 | `ssh` | an SSH 2 client: the host key checked against `known_hosts`, a sign-in by key or password, programs run with their output and exit status, shells and subsystems in a terminal, connections forwarded both ways; SSH's public key lines, OpenSSH's private key files and `known_hosts` lines read and written | `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `fs`, `io`, `net`, `numbers`, `os`, `pem`, `strings`, `time` |  |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` | `hero_proxy.h` |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `strings`, `threads`, `time`, `tls` |  |
@@ -235,7 +236,7 @@ qualified everywhere else, never redefined; among them:
   thin binding of one header, one Heroes function per C function. No policy
   in it; the face turns C's answers into `T?`.
 - **The ledger**, `<package>.ledger` (A8).
-- **The driver**, `examples-rebel/reach_<package>.hero`: a program whose `main`
+- **The driver**, `examples-rebel/reach/reach_<package>.hero`: a program whose `main`
   names something of the package, so that its tests can be run.
 - **A large table or a large capability goes in a subpackage**
   (`unicode/normalize`, `compress/zstd`, `sql/sqlite`), so only the programs
@@ -576,9 +577,14 @@ is something this project measured or the specification states.
 
 `examples-rebel/` holds three kinds of program, told apart by where they stand:
 
-- **The drivers**, `examples-rebel/reach_<package>.hero` (§ A2), one for each face, whose
-  `heroes test` runs that face's tests; they read the one catalogue at the folder's root,
-  `examples-rebel/heroes.toml`.
+- **The drivers**, `examples-rebel/reach/reach_<package>.hero` (§ A2), one for each face,
+  whose `heroes test` runs that face's tests; they stand together in the drivers' folder,
+  `reach/`, and read its one catalogue, `examples-rebel/reach/heroes.toml`, whose `path` to
+  Rebel is the folder's only way out of itself: a driver names no file of another folder, so
+  the folder moves whole with its catalogue's one line changed. That folder is
+  no program: the check of Rebel's programs and the site pass it by under one name each
+  (`DRIVERS` in `tests/harness/rebel_apps_run.hero`, `generators/rebel_index/programs.hero`
+  and `site/src/lib/examples-model.ts`), and Rebel's pipeline runs each driver's tests.
 - **The twins**, `examples-rebel/<name>/`, one for each program of the compiler's own
   `examples/<name>/` that once used a library: the same program written with Rebel, the
   hand-written helpers replaced by Rebel's packages and the program's own logic kept. A twin
@@ -797,13 +803,13 @@ function is_digit(c: str) -> bool
 From the worktree's root, for the package `<p>`:
 
 - **Write the face first, bodies as `???`.** `./heroes check
-  examples-rebel/reach_<p>.hero` accepts a module with holes and lists each
+  examples-rebel/reach/reach_<p>.hero` accepts a module with holes and lists each
   hole with the type it expects; a caller of a function with a hole already
   type-checks.
 - **Format at the moment of writing**: `./heroes fmt <file> --in-place`.
 - **While writing, `./heroes check` only.** It compiles no C and costs little.
 - **When a module is whole, its tests**: `./heroes test
-  examples-rebel/reach_<p>.hero`. A module holding a `???` builds no binary, so
+  examples-rebel/reach/reach_<p>.hero`. A module holding a `???` builds no binary, so
   the tests of a package run once every module the driver reaches is whole.
   The machine is shared and its memory is short (author, 2026-11-16 11:40: two
   test runs at once at most): one test run of yours at a time, and none while

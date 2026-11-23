@@ -1,5 +1,5 @@
 [dependencies.rebel]
-path = "../packages/rebel/0.1.0/files"
+path = "../../packages/rebel/0.1.0/files"
 packages = [
     "acme",
     "amqp",
@@ -160,6 +160,7 @@ packages = [
     "sql/postgres",
     "sql/sqlite",
     "sse",
+    "ssh",
     "stats",
     "strings",
     "template",

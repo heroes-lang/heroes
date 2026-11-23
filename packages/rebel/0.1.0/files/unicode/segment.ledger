@@ -111,4 +111,4 @@ capability segment/version  the version of Unicode the tables hold
   note    17.0.0, as `unicode.UNICODE_VERSION`, whose block holds Python's `unicodedata.unidata_version`; the table was made by a program from the Unicode Character Database 17.0.0 and held to Python 3.15.2's `unicodedata` and ICU 78.3 on every code point. A program using this package carries about 235 KB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS)
 
 dropped
-  python  textwrap.dedent, textwrap.indent  the indentation of a text's lines, not its wrapping: `strings`' area, whose ledger names neither on 2026-11-17 (told to the round's coordinator)
+  python  textwrap.dedent, textwrap.indent  the indentation of a text's lines, not its wrapping: `strings.indent`, `strings.indent_where` and `strings.dedent`, in `strings`' ledger since 2026-11-23
