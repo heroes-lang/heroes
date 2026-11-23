@@ -9,10 +9,10 @@
 # It does not serve the HTTP-01 answer nor publish the DNS-01 record: it
 # says what to serve at which path and what to publish under which name,
 # and the program serves it (`http`) or publishes it (its DNS provider's
-# API). It does not make the certificate request: `x509` reads requests and
-# does not yet write them, so the program hands `finalize` a request's DER
-# made elsewhere, and TLS-ALPN-01, whose answer is a certificate made on the
-# spot, waits for the same. It keeps nothing on disk: the account's key and
+# API). It does not make the certificate request: `x509.create_request` makes
+# one and the program hands `finalize` its DER; TLS-ALPN-01, whose answer is a
+# certificate made on the spot, is not written here, though
+# `x509.create_self_signed` can make the certificate. It keeps nothing on disk: the account's key and
 # URL are the program's to keep.
 #
 # It fails with `invalid`, where an answer of the server is not what RFC

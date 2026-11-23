@@ -53,8 +53,8 @@ capability x509/fields  a certificate's version, serial, validity, the bytes its
   python  x509.Certificate.version, x509.Certificate.serial_number, x509.Certificate.not_valid_before_utc, x509.Certificate.not_valid_after_utc, x509.Certificate.not_valid_before, x509.Certificate.not_valid_after, x509.Certificate.tbs_certificate_bytes, x509.Certificate.signature, x509.Version, x509.InvalidVersion
   note    the validity is a `time.DateTime`, so `99991231235959Z` is read and compared; an `Instant` ends in 2262. A serial of any size, past 64 bits read as Python and Go read it
 
-capability x509/names  a distinguished name's attributes read, written as RFC 4514's text, an attribute's value found
-  heroes  x509.Name, x509.Attribute, x509.to_name, x509.format_name, x509.text_of, x509.COMMON_NAME
+capability x509/names  a distinguished name's attributes read, made, written as RFC 4514's text, an attribute's value found
+  heroes  x509.Name, x509.Attribute, x509.to_name, x509.new_name, x509.format_name, x509.text_of, x509.COMMON_NAME
   go      pkix.Name, pkix.RDNSequence, pkix.RelativeDistinguishedNameSET, pkix.AttributeTypeAndValue, pkix.AttributeTypeAndValueSET, pkix.Name.FillFromRDNSequence, pkix.Name.String, pkix.RDNSequence.String
   rust    -
   python  x509.Name, x509.NameAttribute, x509.RelativeDistinguishedName, x509.Name.rfc4514_string, x509.Name.get_attributes_for_oid, x509.Name.rdns, x509.NameOID, x509.AttributeNotFound
@@ -241,24 +241,68 @@ capability x509/system-roots  the system's own store of trusted roots read
   python  ssl.SSLContext.load_default_certs, ssl.get_default_verify_paths
   note    `tls` checks a connection by the system's store; reading the store's certificates needs a floor on each platform's own store
 
-capability x509/create-certificate  a certificate made and signed
-  heroes  pending
-  go      x509.CreateCertificate, x509.Certificate.CreateCRL
+capability x509/create-certificate  a certificate made and signed by an authority for a key
+  heroes  x509.create_certificate
+  go      x509.CreateCertificate
   rust    -
-  python  x509.CertificateBuilder, x509.random_serial_number
-  note    the signature is `keypairs.sign`'s; the structure is `asn1`'s to write. Not done in this round
+  python  x509.CertificateBuilder
+  note    the signature is `keypairs.sign`'s, its scheme the caller's and never chosen for the key; the structure is `asn1`'s, written as OpenSSL 4.1.0 writes it (the tests compare the bytes of an Ed25519 leaf and an RSA certificate with OpenSSL's, 2026-11-23, and `openssl verify` accepts each scheme's chain). What is made is read back and its signature checked. The serial is positive and 20 octets at most in DER, as Python refuses one of 160 bits (observed on `cryptography` 50.0.2); a validity may end where it starts, Python's `not_valid_after` being asked after the start; an empty subject with no alternative name is refused, which Python makes. The issuer's name is its subject's own bytes, its key identifier the authority key identifier's. The extensions of other documents go through `Profile`'s `extra`, written as given
+
+capability x509/create-self-signed  a certificate a key gives itself: a root authority, a server's own certificate
+  heroes  x509.create_self_signed
+  go      -
+  rust    -
+  python  -
+  note    Go's `CreateCertificate` with the template as its own parent and Python's builder with one name for both make it, and no function of theirs says so; no authority key identifier is written, as RFC 5280 § 4.2.1.1 allows
+
+capability x509/create-extensions  the extensions a certificate or a request writes from fields: the role, the key's usages and purposes, the subject's names
+  heroes  x509.profile_extensions
+  go      -
+  rust    -
+  python  -
+  note    `basicConstraints` and `keyUsage` are written critical, the alternative names critical only where the subject is empty. Refused where RFC 5280 forbids it: `keyCertSign` with no authority, an authority's `keyUsage` without it, `encipherOnly` without `keyAgreement` (Python refuses the last as well, observed). A name that is an address is `.ip`, never a `.dns`; a `.dns` of text that parses as an address is refused
+
+capability x509/create-name  a name and its attributes made from text
+  heroes  x509.new_attribute
+  go      -
+  rust    -
+  python  -
+  note    the string type is RFC 5280's: PrintableString for a country and a serial number, IA5String for an email address and a domain component, UTF8String for the rest, as OpenSSL 4.1.0 writes them with `string_mask = utf8only`; the bounds of Appendix A are counted in characters. `x509.new_name` makes the name of its attributes, the relative names in DER's order
 
 capability x509/create-request  a certificate request made and signed
-  heroes  pending
+  heroes  x509.create_request
   go      x509.CreateCertificateRequest
   rust    -
   python  x509.CertificateSigningRequestBuilder
+  note    the tests compare the bytes of an Ed25519 request with OpenSSL's (`openssl req -new`, 4.1.0, 2026-11-23), and `openssl req -verify` accepts each scheme's. The profile is written as the `extensionRequest` attribute; other attributes (`challengePassword`) are given whole, each with a value at least, an `extensionRequest` among them refused. What is made is read back and its signature checked
 
-capability x509/create-crl  a revocation list made and signed
-  heroes  pending
-  go      x509.CreateRevocationList
+capability x509/create-crl  a revocation list made and signed by its issuer
+  heroes  x509.create_crl
+  go      x509.CreateRevocationList, x509.Certificate.CreateCRL
   rust    -
   python  x509.CertificateRevocationListBuilder, x509.RevokedCertificateBuilder
+  note    version 2, with `authorityKeyIdentifier` and `cRLNumber`, each entry's reason and invalidity date; the tests compare the bytes of an Ed25519 list of three entries with `openssl ca -gencrl`'s (4.1.0, 2026-11-23). An entry's `unspecified` reason writes none, as RFC 5280 § 5.3.1 asks, and `removeFromCRL` is refused, delta lists and indirect ones being unwritten. The issuer's certificate must allow `cRLSign` where it states its usages
+
+capability x509/create-serial  a serial number drawn at random
+  heroes  x509.random_serial
+  go      -
+  rust    -
+  python  x509.random_serial_number
+  note    159 random bits from the system's generator for keys, positive, as Python draws it
+
+capability x509/extension-forms  an extension or a general name written into its ASN.1
+  heroes  x509.from_extension
+  go      -
+  rust    -
+  python  -
+  note    the inverse of `to_extension`; `x509.from_general_name` is the inverse of `to_general_name`, refusing a network, which is a name constraint's
+
+capability x509/render  a request and a list written as PEM
+  heroes  x509.format_request
+  go      -
+  rust    -
+  python  x509.CertificateSigningRequest.public_bytes, x509.CertificateRevocationList.public_bytes
+  note    `x509.format_crl` writes the list's block; a certificate's is `format_certificate`
 
 capability x509/fingerprint  a certificate's fingerprint
   heroes  crypto.sha256

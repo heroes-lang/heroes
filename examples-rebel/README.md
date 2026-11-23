@@ -150,7 +150,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
-| 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
+| 5 | `x509` | certificates, requests and revocation lists read and made and signed, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `net`, `os`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
@@ -173,7 +173,7 @@ package moves its row in the same change. There is no cycle.
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
-| 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made elsewhere until `x509` writes one | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
+| 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made by `x509.create_request` | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
 | 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `errors`, `http`, `json`, `numbers`, `strings`, `unicode` |  |
