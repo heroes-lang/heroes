@@ -5553,16 +5553,17 @@ int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
 }
 
 static bool hero_ui_gtk_takes_keys(int64_t kind) {
-    return kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_TEXT_AREA || kind == HERO_UI_LIST || kind == HERO_UI_LIST_MULTIPLE;
+    return kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_TEXT_AREA || kind == HERO_UI_LIST || kind == HERO_UI_LIST_MULTIPLE || kind == HERO_UI_EDITABLE_COMBO || kind == HERO_UI_SPIN;
 }
 
-/* The GTK widget given the keys for `widget`: the field, the text view, or
+/* The GTK widget given the keys for `widget`: the field, a spin button (its
+ * field's text takes them), an editable combo box's entry, the text view, or
  * a list's first chosen row, else its first row, else the list box. */
 static void *hero_ui_gtk_key_target(const hero_ui_native *widget) {
-    if (widget->kind == HERO_UI_TEXT_FIELD) {
+    if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_SPIN) {
         return widget->widget;
     }
-    if (widget->kind == HERO_UI_TEXT_AREA) {
+    if (widget->kind == HERO_UI_TEXT_AREA || widget->kind == HERO_UI_EDITABLE_COMBO) {
         return widget->inner;
     }
     for (int64_t i = 0; i < widget->items; i += 1) {
@@ -8480,8 +8481,9 @@ int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int
     }
     if (widget != window && hero_ui_gtk_focused(window) != widget) {
         /* Given the keys as the person's click gives them: a field's text
-         * is not chosen whole, as GTK's own focus by Tab chooses it. */
-        void *text = widget->kind == HERO_UI_TEXT_FIELD ? hero_ui_gtk.editable_get_delegate(widget->widget) : NULL;
+         * (an editable combo box's entry and a spin's field are fields) is
+         * not chosen whole, as GTK's own focus by Tab chooses it. */
+        void *text = widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_EDITABLE_COMBO || widget->kind == HERO_UI_SPIN ? hero_ui_gtk.editable_get_delegate(hero_ui_gtk_key_target(widget)) : NULL;
 
         if (!widget->visible || !hero_ui_gtk.widget_get_visible(widget->widget) || !hero_ui_gtk.widget_is_sensitive(widget->widget)) {
             return HERO_UI_INVALID;
