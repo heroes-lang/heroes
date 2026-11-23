@@ -746,7 +746,7 @@ wait for the CI's Windows leg.
    `box-validate` (the round on the Windows box, which stays up to about 06:30).
 2. **Wave B**, opened when the Mac has room (it swapped 4.2 of 5.1 GB with nine lanes running): `gap-webp` (K04's lossy
    half), `gap-os2` (G06, G07, G08, G10), `gap-service2` (H14's three pending blocks, H15, H16), `gap-i18n` (A12, A23,
-   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (M05, K22). N09, files
+   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (plots and charts as images or SVG, K22). N09, files
    embedded in the program, stays a language form for a sitting of its own. The briefs are `coord/round-3b-brief.md`
    and `coord/round-3b-lanes.md`.
 3. **The layout move**, last, one script by one lane after every other lane has merged
