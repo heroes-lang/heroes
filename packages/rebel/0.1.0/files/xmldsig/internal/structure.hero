@@ -1,0 +1,255 @@
+# A `ds:Signature` element read into what checking it needs, by XML Signature
+# 1.1's schema: `SignedInfo` with its canonicalization method, its signature
+# method and one reference or more, then `SignatureValue`, then `KeyInfo` and
+# the `Object`s, in that order. Between elements there may stand white space,
+# comments and instructions, and nothing else; an element out of its place or
+# of another namespace is refused, so no element a signature does not cover
+# is read as one it does.
+
+use xml
+use xmldsig/internal/forms
+use xmldsig/internal/names
+
+# One `Reference`: what it names, how it is turned into bytes, and their
+# digest.
+record Ref
+    # The `URI` attribute as written.
+    uri: str
+    # Each transform's algorithm, in order.
+    transforms: [str]
+    # Each transform's InclusiveNamespaces prefixes, empty for most.
+    prefixes: [[str]]
+    # The digest method's identifier.
+    digest_uri: str
+    # The digest the reference holds.
+    digest: [u8]
+
+# A signature read.
+record Plan
+    # The place of `SignedInfo` in the document.
+    signed_info: [i64]
+    # How `SignedInfo` is written before it is signed.
+    canonical: xml.CanonicalOptions
+    # The signature method's identifier.
+    method: str
+    # `HMACOutputLength` in bits, -1 where it is not written.
+    hmac_bits: i64
+    # The references, in order, at least one.
+    refs: [Ref]
+    # The signature's bytes.
+    value: [u8]
+    # The place of `KeyInfo`, empty where there is none.
+    key_info: [i64]
+
+# The indices of the element children of `e`, failing `invalid` where it holds
+# text that is not white space; `what` names `e` in the message.
+function element_places(e: xml.Element, what: str) -> [i64]?
+    at: [i64] @= []
+    i: i64 @= 0
+
+    for c in e.children
+        match c
+            .element _ => at @ at.push(i)
+            .text t =>
+                if !is_white(t.v)
+                    return fail(code: names.INVALID, msg: f"{what} holds the text \"{t.v}\" between its elements")
+            .comment _ | .instruction _ => _ = 0
+
+        i @ i + 1
+
+    return ok(at)
+
+# Whether `s` is XML's white space alone.
+function is_white(s: str) -> bool
+    for c in s.chars()
+        if c != " " && c != "\t" && c != "\r" && c != "\n"
+            return false
+
+    return true
+
+# The element child `index` of `e`, which `element_places` found.
+function element_child(e: xml.Element, index: i64) -> xml.Element
+    match e.children[index]
+        .element x                            => return x.v
+        .text _ | .comment _ | .instruction _ => return xml.element("none")
+
+# Whether `e` is XML Signature's `local`.
+function is_ds(e: xml.Element, local: str) -> bool
+    return e.name.space == names.SPACE && e.name.local == local
+
+# Fails `invalid` unless `e` is XML Signature's `local`; `what` says where it
+# was looked for.
+function expect(e: xml.Element, local: str, what: str) -> ()?
+    if is_ds(e: e, local: local)
+        return ok()
+    return fail(
+        code: names.INVALID,
+        msg: f"{what}: <{xml.format_name(e.name)}> in \"{e.name.space}\" where XML Signature's <{local}> stands"
+    )
+
+# The `Algorithm` attribute of `e`, which must be there.
+function algorithm_of(e: xml.Element) -> str?
+    match xml.attribute(e, name: "Algorithm")
+        .ok a  => return ok(a)
+        .err _ => return fail(code: names.INVALID, msg: f"<{xml.format_name(e.name)}> without its Algorithm")
+
+# The prefixes of the InclusiveNamespaces element inside `e`, a transform or
+# a canonicalization method, empty where it holds none. Fails `invalid` where
+# it holds another element, or more than one.
+function prefixes_of(e: xml.Element) -> [str]?
+    none: [str] = []
+    kids = element_places(e: e, what: f"<{xml.format_name(e.name)}>")?
+
+    if kids.len() == 0
+        return ok(none)
+    inner = element_child(e: e, index: kids[0])
+
+    if kids.len() > 1 || inner.name.space != names.EXCLUSIVE_SPACE || inner.name.local != "InclusiveNamespaces"
+        return fail(
+            code: names.INVALID,
+            msg: f"<{xml.format_name(e.name)}> holds <{xml.format_name(inner.name)}>, where only the exclusive form's InclusiveNamespaces may stand"
+        )
+    listed = xml.attribute(inner, name: "PrefixList").default("")
+    out: [str] @= []
+
+    for word in listed.split_white()
+        out @ out.push(word)
+
+    return ok(out)
+
+# The words of `s` parted by XML's white space.
+function split_white(s: str) -> [str]
+    words: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= s.len()
+        if i == s.len() || s[i] == ' ' || s[i] == '\t' || s[i] == '\r' || s[i] == '\n'
+            if i > start
+                words @ words.push(s.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    return words
+
+# The signature at `at` in `doc`, read. Fails `invalid` where it is not one by
+# the schema, `unsupported` where its canonicalization method is not read.
+function plan_of(doc: xml.Document, at: [i64]) -> Plan?
+    signature = xml.element_at_place(doc, place: at)?
+    expect(e: signature, local: "Signature", what: "the element checked")?
+    kids = element_places(e: signature, what: "<Signature>")?
+
+    if kids.len() < 2
+        return fail(
+            code: names.INVALID,
+            msg: f"<Signature> holds {kids.len()} elements, where SignedInfo and SignatureValue are the first two"
+        )
+    signed_info = element_child(e: signature, index: kids[0])
+    expect(e: signed_info, local: "SignedInfo", what: "the first element of <Signature>")?
+    value_element = element_child(e: signature, index: kids[1])
+    expect(e: value_element, local: "SignatureValue", what: "the second element of <Signature>")?
+    key_info: [i64] @= []
+
+    for k in kids.slice(from: 2, to: kids.len())
+        later = element_child(e: signature, index: k)
+
+        if is_ds(e: later, local: "KeyInfo") && key_info.len() == 0 && k == kids[2]
+            key_info @ at
+            key_info @ key_info.push(k)
+        else
+            expect(e: later, local: "Object", what: "an element after <SignatureValue>")?
+
+    parts = element_places(e: signed_info, what: "<SignedInfo>")?
+
+    if parts.len() < 3
+        return fail(
+            code: names.INVALID,
+            msg: f"<SignedInfo> holds {parts.len()} elements, where a canonicalization method, a signature method and a reference at least stand"
+        )
+    c14n = element_child(e: signed_info, index: parts[0])
+    expect(e: c14n, local: "CanonicalizationMethod", what: "the first element of <SignedInfo>")?
+    canonical = names.canonical_of(uri: algorithm_of(c14n)?, prefixes: prefixes_of(c14n)?)?
+    method_element = element_child(e: signed_info, index: parts[1])
+    expect(e: method_element, local: "SignatureMethod", what: "the second element of <SignedInfo>")?
+    method = algorithm_of(method_element)?
+    hmac_bits = hmac_length(method_element)?
+    refs: [Ref] @= []
+
+    for p in parts.slice(from: 2, to: parts.len())
+        refs @ refs.push(ref_of(element_child(e: signed_info, index: p))?)
+
+    value = forms.base64_of(s: xml.text_of(value_element), what: "<SignatureValue>")?
+    place: [i64] @= at
+    place @ place.push(kids[0])
+    return ok(
+        Plan(signed_info: place, canonical: canonical, method: method, hmac_bits: hmac_bits, refs: refs, value: value, key_info: key_info)
+    )
+
+# The `HMACOutputLength` inside the signature method `e`, -1 where there is
+# none. Fails `invalid` where it is not a number or another element stands.
+function hmac_length(e: xml.Element) -> i64?
+    kids = element_places(e: e, what: "<SignatureMethod>")?
+
+    if kids.len() == 0
+        return ok(-1)
+    inner = element_child(e: e, index: kids[0])
+
+    if kids.len() > 1 || !is_ds(e: inner, local: "HMACOutputLength")
+        return fail(code: names.INVALID, msg: "<SignatureMethod> holds an element other than one HMACOutputLength")
+    text = xml.text_of(inner)
+    bits: i64 @= 0
+
+    if text.len() == 0 || text.len() > 6
+        return fail(code: names.INVALID, msg: f"HMACOutputLength \"{text}\" is not a number of bits")
+
+    for c in text.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: names.INVALID, msg: f"HMACOutputLength \"{text}\" is not a number of bits")
+        bits @ bits * 10 + (c[0] - '0').to_i64().must()
+
+    return ok(bits)
+
+# The reference `e`. Fails `invalid` where it is not one by the schema,
+# `unsupported` where it has no `URI`, which names what an application alone
+# knows.
+function ref_of(e: xml.Element) -> Ref?
+    expect(e: e, local: "Reference", what: "an element after <SignatureMethod>")?
+
+    uri = match xml.attribute(e, name: "URI")
+        .ok u => u
+        .err _ => return fail(
+            code: names.UNSUPPORTED,
+            msg: "a <Reference> with no URI: what it names is known to an application alone, and none is read"
+        )
+
+    kids = element_places(e: e, what: "<Reference>")?
+    next: i64 @= 0
+    transforms: [str] @= []
+    prefixes: [[str]] @= []
+
+    if kids.len() > 0 && is_ds(e: element_child(e: e, index: kids[0]), local: "Transforms")
+        holder = element_child(e: e, index: kids[0])
+
+        for t in element_places(e: holder, what: "<Transforms>")?
+            transform = element_child(e: holder, index: t)
+            expect(e: transform, local: "Transform", what: "an element of <Transforms>")?
+            transforms @ transforms.push(algorithm_of(transform)?)
+            prefixes @ prefixes.push(prefixes_of(transform)?)
+
+        if transforms.len() == 0
+            return fail(code: names.INVALID, msg: "<Transforms> holds no <Transform>")
+        next @ 1
+
+    if kids.len() != next + 2
+        return fail(
+            code: names.INVALID,
+            msg: f"<Reference URI=\"{uri}\"> holds {kids.len()} elements, where Transforms, DigestMethod and DigestValue stand"
+        )
+    method = element_child(e: e, index: kids[next])
+    expect(e: method, local: "DigestMethod", what: "an element of <Reference>")?
+    value = element_child(e: e, index: kids[next + 1])
+    expect(e: value, local: "DigestValue", what: "an element of <Reference>")?
+    digest = forms.base64_of(s: xml.text_of(value), what: "<DigestValue>")?
+    return ok(
+        Ref(uri: uri, transforms: transforms, prefixes: prefixes, digest_uri: algorithm_of(method)?, digest: digest)
+    )

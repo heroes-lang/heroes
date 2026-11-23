@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-one packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -182,6 +182,7 @@ package moves its row in the same change. There is no cycle.
 | 6 | `jobs/postgres_store` | jobs kept in PostgreSQL: claimed with FOR UPDATE SKIP LOCKED, enqueued in the program's own transaction | `jobs`, `json`, `os`, `sql`, `sql/postgres`, `strings`, `time` |  |
 | 6 | `jobs/redis_store` | jobs kept in Redis: every change a Lua script the server runs whole | `bytes`, `jobs`, `json`, `numbers`, `os`, `redis`, `strings`, `time` |  |
 | 6 | `ui/webview` | a web page as a program's interface, in the manner of Tauri: the system's own web view as a widget of a `ui` app, its HTML, CSS and scripts served from the program's own assets at `app://localhost` with no port, a content security policy on every response, the page held to its own origin, and a bridge of texts and framed calls between the page and the program | `bytes`, `json`, `printing`, `time`, `ui` | `hero_ui.h` |
+| 6 | `xmldsig` | XML Signature checked against a trusted key and made, enveloped or detached, over Canonical XML; SHA-1 refused | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `strings`, `x509`, `xml` |  |
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |

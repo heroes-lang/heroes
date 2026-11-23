@@ -1,0 +1,693 @@
+# XML Signature, checked and made: a `ds:Signature` of XML Signature 1.1
+# (W3C, 2013) read and checked against the key a program trusts, its
+# references to the document itself digested over Canonical XML, and an
+# enveloped or detached signature made by a key pair or an HMAC secret. It is
+# what SAML (`saml`) stands on.
+#
+# **What is checked is what is answered.** `check` answers the places of the
+# elements the signature covers, so a program reads what was signed and never
+# looks the content up again by a name an attacker could have given twice; an
+# identifier two elements hold is refused for the same reason. The signature's
+# value is checked before any reference is followed.
+#
+# **Algorithms.** Digests SHA-224, SHA-256, SHA-384, SHA-512 and SHA-3;
+# signatures RSA PKCS #1 v1.5 and RSA-PSS over SHA-256, SHA-384 and SHA-512,
+# ECDSA on P-256 and P-384 over SHA-256 and SHA-384, Ed25519 (RFC 9231), and
+# HMAC over SHA-2; canonical forms Canonical XML 1.0 and 1.1 and the exclusive
+# form, with comments or without (`xml`). SHA-1 and MD5 are refused wherever
+# they are named, since a collision of either is made at will, and so is an
+# HMAC cut short. Ed25519 fails `unsupported` on Windows, whose CNG lacks it.
+#
+# It reads no reference outside the document and fetches nothing, and runs no
+# XPath, XPath Filter 2.0, XSLT or base 64 transform. It does not decide which
+# key to trust: a key or a certificate a signature carries in `KeyInfo` is
+# read by `certificates_of` and never used to check it. It does not encrypt
+# (XML Encryption).
+#
+# It fails `invalid` (a signature not of the schema, a digest or a value that
+# does not hold, an identifier two elements hold, a key of another kind),
+# `not_found` (a reference naming no element) and `unsupported` (an algorithm,
+# a transform or a reference it does not read, saying why).
+#
+# Not written yet, each a `pending` block of its ledger: an enveloping
+# signature made, its content inside an `Object`; XAdES's qualifying properties
+# read and made: the signing time, the signer's certificate digest, the
+# signature policy.
+
+use bytes
+use crypto/keypairs
+use strings
+use x509
+use xml
+use xmldsig/internal/building
+use xmldsig/internal/dereference
+use xmldsig/internal/forms
+use xmldsig/internal/names
+use xmldsig/internal/samples
+use xmldsig/internal/structure
+use xmldsig/internal/values
+
+## Codes
+
+# A signature not of the schema, a digest or a value that does not hold, two
+# elements of one identifier, a key of another kind: `check`, `sign`,
+# `sign_hmac`, `certificates_of`.
+constant INVALID: str
+    "invalid"
+
+# A reference naming no element: `check`.
+constant NOT_FOUND: str
+    "not_found"
+
+# An algorithm, a transform or a reference not read here: `check`, `sign`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Algorithms
+
+# The namespace of XML Signature's elements.
+constant SPACE: str
+    "http://www.w3.org/2000/09/xmldsig#"
+
+# How a signature is made.
+variant Method
+    # RSA PKCS #1 v1.5 over SHA-256, SAML's usual one.
+    rsa_sha256
+    # RSA PKCS #1 v1.5 over SHA-384.
+    rsa_sha384
+    # RSA PKCS #1 v1.5 over SHA-512.
+    rsa_sha512
+    # RSA-PSS over SHA-256, MGF1 over the same hash and a salt as long (RFC
+    # 6931).
+    rsa_pss_sha256
+    # RSA-PSS over SHA-384.
+    rsa_pss_sha384
+    # RSA-PSS over SHA-512.
+    rsa_pss_sha512
+    # ECDSA over SHA-256, on P-256 or P-384.
+    ecdsa_sha256
+    # ECDSA over SHA-384, on P-256 or P-384.
+    ecdsa_sha384
+    # Ed25519 (RFC 9231).
+    ed25519
+    # HMAC over SHA-256, by a secret both sides hold.
+    hmac_sha256
+    # HMAC over SHA-384.
+    hmac_sha384
+    # HMAC over SHA-512.
+    hmac_sha512
+
+# The digest of a reference.
+variant Digest
+    # SHA-256.
+    sha256
+    # SHA-384.
+    sha384
+    # SHA-512.
+    sha512
+    # SHA3-256 (RFC 6931).
+    sha3_256
+    # SHA3-512.
+    sha3_512
+
+# The identifier XML Signature writes for `method`.
+#
+# - `method`: the signature method.
+#
+# See also `digest_uri`.
+function method_uri(method: Method) -> str
+    return match method
+        .rsa_sha256     => names.MORE + "rsa-sha256"
+        .rsa_sha384     => names.MORE + "rsa-sha384"
+        .rsa_sha512     => names.MORE + "rsa-sha512"
+        .rsa_pss_sha256 => names.MORE_2007 + "sha256-rsa-MGF1"
+        .rsa_pss_sha384 => names.MORE_2007 + "sha384-rsa-MGF1"
+        .rsa_pss_sha512 => names.MORE_2007 + "sha512-rsa-MGF1"
+        .ecdsa_sha256   => names.MORE + "ecdsa-sha256"
+        .ecdsa_sha384   => names.MORE + "ecdsa-sha384"
+        .ed25519        => names.MORE_2021 + "eddsa-ed25519"
+        .hmac_sha256    => names.MORE + "hmac-sha256"
+        .hmac_sha384    => names.MORE + "hmac-sha384"
+        .hmac_sha512    => names.MORE + "hmac-sha512"
+
+# The identifier XML Signature writes for `digest`.
+#
+# - `digest`: the digest method.
+#
+# See also `method_uri`.
+function digest_uri(digest: Digest) -> str
+    return match digest
+        .sha256   => names.ENC + "sha256"
+        .sha384   => names.MORE + "sha384"
+        .sha512   => names.ENC + "sha512"
+        .sha3_256 => names.MORE_2007 + "sha3-256"
+        .sha3_512 => names.MORE_2007 + "sha3-512"
+
+## Checking
+
+# What a signature is checked by: the key a program trusts, never one the
+# signature carries.
+variant Verifier
+    # The public key of a certificate, as SAML's metadata gives an identity
+    # provider's.
+    certificate
+        # The certificate; its validity and chain are the program's to check,
+        # by `x509`.
+        v: x509.Certificate
+    # A public key as SubjectPublicKeyInfo DER.
+    public_key
+        # The key's DER.
+        der: [u8]
+    # The secret of an HMAC.
+    secret
+        # The secret's bytes.
+        key: [u8]
+
+# How `check` finds the element a reference names. Made by
+# `default_check_options`.
+record CheckOptions
+    # The attributes an identifier stands in, `#x` naming the element whose
+    # attribute holds `x`: SAML's `ID`, XML Signature's `Id`, and `id`. An
+    # identifier held by two elements, by any of them, is refused.
+    id_attributes: [str]
+
+# The options that read `ID`, `Id` and `id` as identifiers.
+#
+# See also `check`.
+function default_check_options() -> CheckOptions
+    return CheckOptions(id_attributes: ["ID", "Id", "id"])
+
+# One element a signature covers, as `check` found it.
+record Signed
+    # The reference's `URI` as written: `""`, `#` and an identifier, or an
+    # XPointer of one.
+    uri: str
+    # Whether the whole document is covered, `""` or `#xpointer(/)`, its
+    # root's place then being empty.
+    whole: bool
+    # The element's place in the document checked, as `xml.element_at_place`
+    # reads it.
+    place: [i64]
+    # The element, the signature still inside it where it is enveloped.
+    element: xml.Element
+
+# What a signature that holds covers.
+record Checked
+    # The signature method's identifier.
+    method: str
+    # Each reference's element, in the order of the references.
+    signed: [Signed]
+
+# The places of every `ds:Signature` element of `doc`, in document order.
+#
+# - `doc`: the document.
+#
+# Empty where it holds none.
+#
+# See also `check`.
+function signature_places(doc: xml.Document) -> [[i64]]
+    found: [[i64]] @= []
+    left: [xml.Element] @= [doc.root]
+    places: [[i64]] @= [[]]
+
+    while left.len() > 0
+        last = left.len() - 1
+        e = left[last]
+        here = places[last]
+        left @ left.slice(from: 0, to: last)
+        places @ places.slice(from: 0, to: last)
+
+        if e.name.space == SPACE && e.name.local == "Signature"
+            found @ found.push(here)
+        at: i64 @= e.children.len()
+
+        while at > 0
+            at @ at - 1
+
+            match e.children[at]
+                .element x =>
+                    inner: [i64] @= here
+                    inner @ inner.push(at)
+                    left @ left.push(x.v)
+                    places @ places.push(inner)
+                .text _ | .comment _ | .instruction _ => _ = 0
+
+    return found
+
+# What the signature at `signature` in `doc` covers, once its value holds for
+# `verifier` and every reference's digest matches.
+#
+# - `doc`: the document, as `xml.parse` read it.
+# - `signature`: the place of the `ds:Signature` element, as
+#   `signature_places` answers it.
+# - `verifier`: the key the program trusts for this signature.
+# - `options`: the attributes an identifier stands in.
+#
+# The value is checked first, over `SignedInfo` in its canonical form, then
+# each reference: `""` the whole document and `#id` one element, without
+# comments, `#xpointer(/)` and `#xpointer(id('id'))` with them, the enveloped
+# transform taking this signature out and Canonical XML 1.0 written where no
+# canonical form is named.
+#
+# Fails `invalid` where the signature is not of the schema, its value or a
+# digest does not hold, an identifier stands on two elements, the verifier is
+# of another kind than the method or an HMAC is cut short; `not_found` where a
+# reference names no element; `unsupported` for an algorithm, a transform or a
+# reference not read, the message saying which and why.
+#
+# See also `signature_places`, `certificates_of`, `sign`.
+function check(doc: xml.Document, signature: [i64], verifier: Verifier, options: CheckOptions) -> Checked?
+    plan = structure.plan_of(doc, at: signature)?
+    facts = names.facts_of(plan.method)?
+    info = bytes.from_text(xml.canonicalize_at(doc, place: plan.signed_info, options: plan.canonical)?)
+
+    holds = match verifier
+        .certificate c => values.holds(facts: facts, der: c.v.public_key.der, message: info, value: plan.value)?
+        .public_key k  => values.holds(facts: facts, der: k.der, message: info, value: plan.value)?
+        .secret s => values.hmac_holds(facts: facts, bits: plan.hmac_bits, secret: s.key, message: info, value: plan.value)?
+
+    if !holds
+        return fail(code: INVALID, msg: "the signature's value does not hold for the key given")
+    signed: [Signed] @= []
+
+    for ref in plan.refs
+        r = dereference.resolve(doc: doc, signature: signature, ref: ref, id_attributes: options.id_attributes)?
+        computed = names.digest_of(uri: ref.digest_uri, data: r.data)?
+
+        if computed != ref.digest
+            return fail(code: INVALID, msg: f"the reference \"{ref.uri}\": its digest does not match what it names")
+        e = xml.element_at_place(doc, place: r.place)?
+        signed @ signed.push(Signed(uri: ref.uri, whole: r.whole, place: r.place, element: e))
+
+    return ok(Checked(method: plan.method, signed: signed))
+
+# The certificates the signature at `signature` carries in its `KeyInfo`, in
+# order: what the signer says it signed with, which proves nothing until the
+# program matches one to a key it trusts.
+#
+# - `doc`: the document.
+# - `signature`: the place of the `ds:Signature` element.
+#
+# Empty where it has no `KeyInfo` or no certificate in it.
+#
+# Fails `invalid` where the signature is not of the schema or a certificate
+# is not one, as `x509.decode_certificate` fails.
+#
+# See also `check`.
+function certificates_of(doc: xml.Document, signature: [i64]) -> [x509.Certificate]?
+    plan = structure.plan_of(doc, at: signature)?
+    found: [x509.Certificate] @= []
+
+    if plan.key_info.len() == 0
+        return ok(found)
+    info = xml.element_at_place(doc, place: plan.key_info)?
+
+    for data in xml.children_in(info, space: SPACE, local: "X509Data")
+        for c in xml.children_in(data, space: SPACE, local: "X509Certificate")
+            der = forms.base64_of(s: xml.text_of(c), what: "<X509Certificate>")?
+            found @ found.push(x509.decode_certificate(der)?)
+
+    return ok(found)
+
+## Making
+
+# How `sign` and `sign_hmac` make a signature. Made by
+# `default_sign_options`; a program changes the fields it needs.
+record SignOptions
+    # The signature method; an HMAC's for `sign_hmac`, a key pair's for
+    # `sign`.
+    method: Method
+    # The digest of each reference.
+    digest: Digest
+    # The canonical form of `SignedInfo` and of each reference, written in its
+    # transform too.
+    canonical: xml.CanonicalOptions
+    # The attribute an element's identifier is read from, `ID` for SAML.
+    id_attribute: str
+    # The certificates written in `KeyInfo`, the signer's first; none writes
+    # no `KeyInfo`.
+    certificates: [x509.Certificate]
+
+# The options of `method` with SHA-256, the exclusive form without comments,
+# identifiers in `ID` and no certificate: what SAML 2.0 signs with.
+#
+# - `method`: the signature method.
+#
+# See also `sign`, `sign_hmac`.
+function default_sign_options(method: Method) -> SignOptions
+    none: [x509.Certificate] = []
+    return SignOptions(
+        method: method,
+        digest: .sha256,
+        canonical: xml.canonical_options(.exclusive(prefixes: [])),
+        id_attribute: "ID",
+        certificates: none
+    )
+
+# `doc` with a signature by `key` of the elements at `signed` put in as child
+# `before` of the element at `parent`: enveloped where it stands inside an
+# element it signs, detached where beside it.
+#
+# - `doc`: the document.
+# - `parent`: the place of the element the signature goes into.
+# - `before`: the index among its children the signature takes, 0 to their
+#   count; SAML puts it after `Issuer`.
+# - `signed`: the places of the elements signed, at least one; the root
+#   without an identifier is named by `""`, any other by its identifier.
+# - `key`: the private key, which stays open; its kind is the method's.
+# - `options`: the method, the digest, the canonical form, the identifier's
+#   attribute and the certificates written.
+#
+# Fails `invalid` for an HMAC method, a key of another kind, a `before`
+# outside the children, an element signed with no identifier or with one
+# another element holds too; `unsupported` as `keypairs.sign` fails.
+#
+# See also `sign_hmac`, `check`.
+function sign(doc: xml.Document, parent: [i64], before: i64, signed: [[i64]], key: keypairs.PrivateKey, options: SignOptions) -> xml.Document?
+    facts = names.facts_of(method_uri(options.method))?
+    choice = building.Choice(
+        method: method_uri(options.method),
+        digest: digest_uri(options.digest),
+        canonical: options.canonical,
+        id_attribute: options.id_attribute,
+        certificates: options.certificates
+    )
+    prepared = building.prepare(doc: doc, parent: parent, before: before, signed: signed, choice: choice)?
+    value = values.signature_by(facts: facts, key: key, message: prepared.signed_info)?
+    return building.finished(prepared: prepared, value: value)
+
+# `doc` with an HMAC signature under `secret` of the elements at `signed` put
+# in as child `before` of the element at `parent`, as `sign` puts one.
+#
+# - `doc`: the document.
+# - `parent`: the place of the element the signature goes into.
+# - `before`: the index among its children the signature takes.
+# - `signed`: the places of the elements signed, at least one.
+# - `secret`: the secret both sides hold, not empty.
+# - `options`: as `sign` reads them, the method an HMAC's.
+#
+# Fails `invalid` for a method of a key pair or an empty secret, and as `sign`
+# fails.
+#
+# See also `sign`.
+function sign_hmac(doc: xml.Document, parent: [i64], before: i64, signed: [[i64]], secret: [u8], options: SignOptions) -> xml.Document?
+    facts = names.facts_of(method_uri(options.method))?
+
+    if facts.family != "hmac"
+        return fail(code: INVALID, msg: "a key pair's method made by a secret: `sign` makes it")
+
+    if secret.len() == 0
+        return fail(code: INVALID, msg: "an HMAC under an empty secret, which anybody can make")
+    choice = building.Choice(
+        method: method_uri(options.method),
+        digest: digest_uri(options.digest),
+        canonical: options.canonical,
+        id_attribute: options.id_attribute,
+        certificates: options.certificates
+    )
+    prepared = building.prepare(doc: doc, parent: parent, before: before, signed: signed, choice: choice)?
+    mac = values.hmac_value(facts: facts, secret: secret, message: prepared.signed_info)
+    return building.finished(prepared: prepared, value: mac)
+
+## Tests
+
+test "check: documents the JDK signed, by RSA, RSA-PSS, ECDSA on both curves and Ed25519, each against its certificate"
+    pairs = [
+        [samples.RSA_SIGNED, samples.RSA_CERTIFICATE]
+        [samples.PSS_SIGNED, samples.RSA_CERTIFICATE]
+        [samples.P256_SIGNED, samples.P256_CERTIFICATE]
+        [samples.P384_SIGNED, samples.P384_CERTIFICATE]
+        [samples.ED_SIGNED, samples.ED_CERTIFICATE]
+    ]
+
+    for pair in pairs
+        doc = xml.parse(pair[0]).must()
+        trusted = x509.parse_certificate(pair[1]).must()
+        places = signature_places(doc)
+        assert places.len() == 1
+
+        match check(doc, signature: places[0], verifier: .certificate(v: trusted), options: default_check_options())
+            .ok checked =>
+                assert checked.signed.len() == 1
+                assert checked.signed[0].uri == "#_a1" && checked.signed[0].element.name.local == "Root"
+                assert !checked.signed[0].whole
+            .err e => assert e.code == UNSUPPORTED && !keypairs.is_available(.ed25519)
+
+test "check: an HMAC the JDK made, under its secret, under another, and checked by a certificate"
+    doc = xml.parse(samples.HMAC_SIGNED).must()
+    secret: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        secret @ secret.push(i.to_u8().must())
+
+    at = signature_places(doc)[0]
+    assert at == [0]
+    assert check(doc, signature: at, verifier: .secret(key: secret), options: default_check_options()).must().signed[0].uri == "#_a1"
+    other: [u8] @= secret
+    other[0] @ 1
+
+    match check(doc, signature: at, verifier: .secret(key: other), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match check(doc, signature: at, verifier: .certificate(v: x509.parse_certificate(samples.RSA_CERTIFICATE).must()), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "check: the content changed, the value changed, another key, and a key of another kind all refused"
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+    changed = xml.parse(strings.replace_all(s: samples.RSA_SIGNED, old: "text é", new: "text e")).must()
+
+    match check(changed, signature: signature_places(changed)[0], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "digest")
+
+    valued = xml.parse(
+        strings.replace_all(s: samples.RSA_SIGNED, old: "<ds:SignatureValue>f", new: "<ds:SignatureValue>g")
+    ).must()
+
+    match check(valued, signature: signature_places(valued)[0], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    doc = xml.parse(samples.P256_SIGNED).must()
+
+    match check(doc, signature: [1], verifier: .certificate(v: x509.parse_certificate(samples.P384_CERTIFICATE).must()), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match check(doc, signature: [1], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "check: an identifier a second element holds is refused, so no wrapped content is answered"
+    wrapped = strings.replace_all(
+        s: samples.ASSERTION_SIGNED,
+        old: "</p:Response>",
+        new: "<a:Assertion xmlns:a=\"urn:a\" ID=\"_s\"><a:Subject>evil</a:Subject></a:Assertion></p:Response>"
+    )
+    doc = xml.parse(wrapped).must()
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+
+    match check(doc, signature: signature_places(doc)[0], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "identifier")
+
+    plain = xml.parse(samples.ASSERTION_SIGNED).must()
+    checked = check(
+        plain,
+        signature: [0, 1],
+        verifier: .certificate(v: trusted),
+        options: default_check_options()
+    ).must()
+    assert checked.signed[0].place == [0] && checked.signed[0].element.name.local == "Assertion"
+
+test "check: a signature method of SHA-1, a cut HMAC, and a place that is no signature"
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+    sha1 = xml.parse(
+        strings.replace_all(s: strings.replace_all(s: samples.RSA_SIGNED, old: "xmldsig-more#rsa-sha256", new: "xmldsig#rsa-sha1"), old: "http://www.w3.org/2001/04/xmldsig#rsa-sha1", new: "http://www.w3.org/2000/09/xmldsig#rsa-sha1")
+    ).must()
+
+    match check(sha1, signature: [1], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && strings.contains(s: e.msg, substr: "SHA-1")
+
+    cut = xml.parse(
+        strings.replace_all(s: samples.HMAC_SIGNED, old: "hmac-sha256\"/>", new: "hmac-sha256\"><ds:HMACOutputLength>128</ds:HMACOutputLength></ds:SignatureMethod>")
+    ).must()
+
+    match check(cut, signature: [0], verifier: .secret(key: [1]), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "HMACOutputLength")
+
+    doc = xml.parse(samples.RSA_SIGNED).must()
+
+    match check(doc, signature: [0], verifier: .certificate(v: trusted), options: default_check_options())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "sign and check: every method of a key pair, enveloped after the first child, then the same signature taken by the wrong key"
+    doc = xml.parse(
+        "<r:Root xmlns:r=\"urn:r\" ID=\"_a1\"><r:Issuer>me</r:Issuer><r:Body x=\"1\">é</r:Body></r:Root>"
+    ).must()
+    cases = [[samples.RSA_KEY, "rsa"], [samples.P256_KEY, "p256"], [samples.P384_KEY, "p384"], [samples.ED_KEY, "ed"]]
+
+    for c in cases
+        match keypairs.parse_private_pem(c[0])
+            .ok key =>
+                held @= key
+
+                methods: [Method] = match c[1]
+                    "rsa"  => [.rsa_sha256, .rsa_sha384, .rsa_sha512, .rsa_pss_sha256, .rsa_pss_sha384, .rsa_pss_sha512]
+                    "p256" => [.ecdsa_sha256, .ecdsa_sha384]
+                    "p384" => [.ecdsa_sha384, .ecdsa_sha256]
+                    _      => [.ed25519]
+
+                public @= keypairs.public_of(held).must()
+                public_der = keypairs.encode_public_der(public).must()
+                keypairs.close_public(@public).must()
+
+                for m in methods
+                    options: SignOptions @= default_sign_options(m)
+                    options.digest @ .sha512
+                    root: [i64] = []
+                    signed = sign(doc, parent: root, before: 1, signed: [root], key: held, options: options).must()
+                    checked = check(
+                        signed,
+                        signature: [1],
+                        verifier: .public_key(der: public_der),
+                        options: default_check_options()
+                    ).must()
+                    assert checked.signed[0].uri == "#_a1" && checked.method == method_uri(m)
+
+                keypairs.close_private(@held).must()
+            .err e => assert e.code == "unsupported" && !keypairs.is_available(.ed25519)
+
+test "sign: a detached signature of two siblings, an element with no identifier, a place out of range, and an HMAC method given a key pair"
+    doc = xml.parse("<root><a ID=\"x\">1</a><b ID=\"y\">2</b><c/></root>").must()
+    key @= keypairs.parse_private_pem(samples.P256_KEY).must()
+    options = default_sign_options(.ecdsa_sha256)
+    signed = sign(doc, parent: [], before: 3, signed: [[0], [1]], key: key, options: options).must()
+    public @= keypairs.public_of(key).must()
+    public_der = keypairs.encode_public_der(public).must()
+    keypairs.close_public(@public).must()
+    checked = check(
+        signed,
+        signature: [3],
+        verifier: .public_key(der: public_der),
+        options: default_check_options()
+    ).must()
+    assert checked.signed.len() == 2 && checked.signed[1].element.name.local == "b"
+
+    match sign(doc, parent: [], before: 0, signed: [[2]], key: key, options: options)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match sign(doc, parent: [], before: 4, signed: [[0]], key: key, options: options)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match sign(doc, parent: [], before: 0, signed: [[0]], key: key, options: default_sign_options(.hmac_sha256))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    keypairs.close_private(@key).must()
+
+test "sign_hmac: each HMAC, a prefix list and comments in the canonical form, the certificates in KeyInfo read back, and an empty secret"
+    doc = xml.parse("<p:r xmlns:p=\"urn:p\" xmlns:q=\"urn:q\"><!-- c --><p:v>1</p:v></p:r>").must()
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+
+    hmacs: [Method] = [.hmac_sha256, .hmac_sha384, .hmac_sha512]
+
+    for m in hmacs
+        options: SignOptions @= default_sign_options(m)
+        options.canonical @ xml.CanonicalOptions(method: .exclusive(prefixes: ["q"]), comments: true)
+        options.certificates @ [trusted]
+        signed = sign_hmac(doc, parent: [], before: 0, signed: [[]], secret: [7, 7], options: options).must()
+        assert check(signed, signature: [0], verifier: .secret(key: [7, 7]), options: default_check_options()).must().signed[0].whole
+        assert certificates_of(signed, signature: [0]).must()[0].der == trusted.der
+
+    match sign_hmac(doc, parent: [], before: 0, signed: [[]], secret: [], options: default_sign_options(.hmac_sha256))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "signature_places and certificates_of: none in a plain document, one inside a response, a KeyInfo with one certificate and none"
+    plain = xml.parse("<a><b/></a>").must()
+    assert signature_places(plain).len() == 0
+    response = xml.parse(samples.ASSERTION_SIGNED).must()
+    assert signature_places(response) == [[0, 1]]
+    assert certificates_of(response, signature: [0, 1]).must()[0].der == x509.parse_certificate(samples.RSA_CERTIFICATE).must().der
+    pss = xml.parse(samples.PSS_SIGNED).must()
+    assert certificates_of(pss, signature: [1]).must().len() == 0
+
+## Examples
+
+# The signature an identity provider put on an assertion, checked against the
+# certificate its metadata gives, and the assertion it covers.
+test "check: an assertion signed by an identity provider"
+    doc = xml.parse(samples.ASSERTION_SIGNED).must()
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+    checked = check(
+        doc,
+        signature: signature_places(doc)[0],
+        verifier: .certificate(v: trusted),
+        options: default_check_options()
+    ).must()
+    assert checked.signed[0].element.name.local == "Assertion"
+
+# The places of the signatures a response holds.
+test "signature_places: the one signature inside a response"
+    doc = xml.parse(samples.ASSERTION_SIGNED).must()
+    assert signature_places(doc) == [[0, 1]]
+
+# The certificate a signature says it was made with.
+test "certificates_of: the signer's certificate in KeyInfo"
+    doc = xml.parse(samples.RSA_SIGNED).must()
+    assert certificates_of(doc, signature: [1]).must().len() == 1
+
+# Options read by identifier in `ID`, `Id` and `id`.
+test "default_check_options: the three identifier attributes"
+    assert default_check_options().id_attributes == ["ID", "Id", "id"]
+
+# The identifier SAML's usual signature method is written as.
+test "method_uri: RSA over SHA-256"
+    assert method_uri(.rsa_sha256) == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+
+# The identifier of SHA-256 as a digest method.
+test "digest_uri: SHA-256"
+    assert digest_uri(.sha256) == "http://www.w3.org/2001/04/xmlenc#sha256"
+
+# What SAML signs with by default.
+test "default_sign_options: RSA over SHA-256 with SHA-256 digests"
+    options = default_sign_options(.rsa_sha256)
+    assert options.digest == .sha256 && options.id_attribute == "ID"
+
+# A request signed before it is sent, the signature after its Issuer.
+test "sign: an enveloped signature by an RSA key"
+    doc = xml.parse("<q:Request xmlns:q=\"urn:q\" ID=\"_r1\"><q:Issuer>sp</q:Issuer></q:Request>").must()
+    key @= keypairs.parse_private_pem(samples.RSA_KEY).must()
+    root: [i64] = []
+    signed = sign(
+        doc,
+        parent: root,
+        before: 1,
+        signed: [root],
+        key: key,
+        options: default_sign_options(.rsa_sha256)
+    ).must()
+    keypairs.close_private(@key).must()
+    assert signature_places(signed) == [[1]]
+
+# A message signed under a secret both sides hold.
+test "sign_hmac: an enveloped HMAC over SHA-256"
+    doc = xml.parse("<m ID=\"_1\">hello</m>").must()
+    root: [i64] = []
+    signed = sign_hmac(
+        doc,
+        parent: root,
+        before: 1,
+        signed: [root],
+        secret: [1, 2, 3],
+        options: default_sign_options(.hmac_sha256)
+    ).must()
+    assert check(signed, signature: [1], verifier: .secret(key: [1, 2, 3]), options: default_check_options()).must().signed[0].uri == "#_1"

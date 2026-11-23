@@ -1,0 +1,71 @@
+# A signature value checked or made by a key pair through `crypto/keypairs`,
+# an ECDSA value turned between XML Signature's R and S and the DER the key
+# pairs read; and an HMAC compared in constant time.
+
+use crypto
+use crypto/keypairs
+use xmldsig/internal/forms
+use xmldsig/internal/names
+
+# Whether `value` is the signature of `message` by the method of `facts`,
+# checked against the SubjectPublicKeyInfo `der`. Fails `invalid` for an HMAC
+# method, which a public key does not check, and as `keypairs.verify_der`
+# fails for a key of another kind.
+function holds(facts: names.Facts, der: [u8], message: [u8], value: [u8]) -> bool?
+    if facts.family == "hmac"
+        return fail(
+            code: names.INVALID,
+            msg: "an HMAC signature checked by a public key: an HMAC is checked by its secret"
+        )
+
+    signature = if facts.family == "ecdsa"
+        match forms.ecdsa_der(value)
+            .ok d  => d
+            .err _ => return ok(false)
+    else
+        value
+    return keypairs.verify_der(public_der: der, scheme: facts.scheme, message: message, signature: signature)
+
+# Whether `value` is the HMAC of `message` under `secret` by the method of
+# `facts`, compared in constant time. Fails `invalid` for a method of a key
+# pair, and for an `HMACOutputLength` of `bits` other than the whole output,
+# since a cut HMAC is one an attacker can match (CVE-2009-0217).
+function hmac_holds(facts: names.Facts, bits: i64, secret: [u8], message: [u8], value: [u8]) -> bool?
+    if facts.family != "hmac"
+        return fail(
+            code: names.INVALID,
+            msg: "a signature of a key pair checked by a secret: a secret checks an HMAC alone"
+        )
+
+    if bits != -1 && bits != facts.bits
+        return fail(
+            code: names.INVALID,
+            msg: f"an HMACOutputLength of {bits} bits, where the method's whole output is {facts.bits}: a cut HMAC is refused"
+        )
+    mac = crypto.hmac(algorithm: facts.hmac, key: secret, data: message)
+    return ok(crypto.equals_constant_time(a: mac, b: value))
+
+# The HMAC of `message` under `secret` by the method of `facts`, whole.
+function hmac_value(facts: names.Facts, secret: [u8], message: [u8]) -> [u8]
+    return crypto.hmac(algorithm: facts.hmac, key: secret, data: message)
+
+# `key`'s signature of `message` by the method of `facts`, in XML Signature's
+# form: an ECDSA value as R and S of the curve's size. Fails `invalid` for an
+# HMAC method, and as `keypairs.sign` fails.
+function signature_by(facts: names.Facts, key: keypairs.PrivateKey, message: [u8]) -> [u8]?
+    if facts.family == "hmac"
+        return fail(code: names.INVALID, msg: "an HMAC method signed by a key pair: an HMAC is made by a secret")
+    made = keypairs.sign(key, scheme: facts.scheme, message: message)?
+
+    if facts.family != "ecdsa"
+        return ok(made)
+
+    size = match key.kind
+        .p256 => 32
+        .p384 => 48
+        .ed25519 | .x25519 | .rsa _ => return fail(
+            code: names.INVALID,
+            msg: "an ECDSA method signed by a key that is not on P-256 or P-384"
+        )
+
+    return forms.ecdsa_raw(der: made, size: size)
