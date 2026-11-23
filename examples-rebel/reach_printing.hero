@@ -1,0 +1,10 @@
+# Reaches Rebel's `printing`, so that `heroes test` on this file runs the
+# package's tests (spec § 12). It prints how many printers this machine knows,
+# or the code it fails with where the machine has no print system.
+
+use <rebel>/printing
+
+function main()
+    match printing.printers()
+        .ok found => print(found.len())
+        .err e    => print(e.code)

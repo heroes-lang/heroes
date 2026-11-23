@@ -77,6 +77,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `pem` | PEM blocks read and written, their labels and headers | `bytes`, `strings` |  |
 | 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `bytes`, `unicode` |  |
 | 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `os` | `hero_keyring.h` |
+| 2 | `printing` | the system's printers listed with their state, papers and what each can do; a PDF submitted as a job with a print dialog's settings, its state and pages told, waited for and cancelled; CUPS on macOS and Linux, the spooler and the system's PDF renderer on Windows | `bytes`, `numbers`, `os`, `strings` | `hero_printing.h` |
 | 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `numbers`, `regex`, `strings`, `unicode` |  |
 | 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `math`, `random`, `unicode` |  |
 | 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `math`, `random` |  |

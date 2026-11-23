@@ -1,0 +1,280 @@
+# The lists the floor `printing/hero_printing` writes, read back into the
+# face's records: the fields split at their zero bytes, grouped by the number
+# each item has (`hero_printing.h`, WHAT CROSSES), a number read from its
+# decimal, a yes from `1`, a state from its word. Text is read as UTF-8 with
+# every byte that is not replaced, so a printer whose driver writes another
+# encoding in its description is still listed.
+
+use bytes
+use numbers
+use printing
+use strings
+
+# The fields of `list`, each the text before its zero byte.
+#
+# - `list`: the bytes the floor wrote, every field followed by a zero byte;
+#   empty for no field.
+#
+# Fails `failed` where the last field has no zero byte after it.
+function split(list: [u8]) -> [str]?
+    out: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: list.len())
+        if list[i] == 0
+            out @ out.push(bytes.to_text_lossy(list.slice(from: start, to: i)))
+            start @ i + 1
+
+    if start != list.len()
+        return fail(
+            code: printing.FAILED,
+            msg: f"the layer's list ends in a field with no zero byte after it, {list.len() - start} bytes long"
+        )
+    return ok(out)
+
+# The items of `fields`, `per` fields each, in order.
+#
+# - `fields`: every field of a list.
+# - `per`: the fields of one item, more than 0.
+#
+# Fails `failed` where the fields are not a whole number of items.
+function grouped(fields: [str], per: i64) -> [[str]]?
+    if fields.len() % per != 0
+        return fail(
+            code: printing.FAILED,
+            msg: f"the layer's list holds {fields.len()} fields, not a whole number of items of {per}"
+        )
+    out: [[str]] @= []
+    i @= 0
+
+    while i < fields.len()
+        out @ out.push(fields.slice(from: i, to: i + per))
+        i @ i + per
+
+    return ok(out)
+
+# The number a field writes in decimal.
+#
+# - `field`: the field.
+# - `what`: what the number is, for the message.
+#
+# Fails `failed` where the field is no decimal number.
+function number_of(field: str, what: str) -> i64?
+    match numbers.parse_int(field)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: printing.FAILED, msg: f"the layer wrote \"{field}\" as {what}, which is no number")
+
+# The keywords a field joins with commas; none for the empty field.
+#
+# - `field`: the field.
+function keywords(field: str) -> [str]
+    if field.len() == 0
+        return []
+    return strings.split(s: field, sep: ",")
+
+# A printer's state by its word.
+#
+# - `word`: `idle`, `processing` or `stopped`.
+#
+# Fails `failed` for another word.
+function state_named(word: str) -> printing.State?
+    match word
+        "idle"       => return ok(.idle)
+        "processing" => return ok(.processing)
+        "stopped"    => return ok(.stopped)
+        _            => return fail(code: printing.FAILED, msg: f"the layer wrote \"{word}\" as a printer's state")
+
+# A job's state by its word.
+#
+# - `word`: one of the seven states' words.
+#
+# Fails `failed` for another word.
+function job_state_named(word: str) -> printing.JobState?
+    match word
+        "pending"    => return ok(.pending)
+        "held"       => return ok(.held)
+        "processing" => return ok(.processing)
+        "stopped"    => return ok(.stopped)
+        "cancelled"  => return ok(.cancelled)
+        "aborted"    => return ok(.aborted)
+        "completed"  => return ok(.completed)
+        _            => return fail(code: printing.FAILED, msg: f"the layer wrote \"{word}\" as a job's state")
+
+# The printers a list writes, `HERO_PRINTING_PRINTER_FIELDS` fields each.
+#
+# - `list`: the bytes the floor wrote.
+#
+# Fails `failed` where the list is not what the floor writes.
+function printers_of(list: [u8]) -> [printing.Printer]?
+    out: [printing.Printer] @= []
+
+    for f in grouped(split(list)?, per: 9)?
+        out @ out.push(
+            printing.Printer(name: f[0], description: f[1], location: f[2], model: f[3], state: state_named(f[4])?, reasons: keywords(f[5]), message: f[6], accepting: f[7] == "1", is_default: f[8] == "1")
+        )
+
+    return ok(out)
+
+# Hundredths of a millimetre as millimetres.
+#
+# - `field`: the field, a whole number of hundredths of a millimetre.
+# - `what`: what the length is, for the message.
+#
+# Fails `failed` where the field is no number.
+function millimetres(field: str, what: str) -> f64?
+    return ok(to_f64(number_of(field: field, what: what)?) / 100.0)
+
+# The papers a list writes, `HERO_PRINTING_MEDIA_FIELDS` fields each.
+#
+# - `list`: the bytes the floor wrote.
+#
+# Fails `failed` where the list is not what the floor writes.
+function papers_of(list: [u8]) -> [printing.Paper]?
+    out: [printing.Paper] @= []
+
+    for f in grouped(split(list)?, per: 9)?
+        out @ out.push(
+            printing.Paper(name: f[0], label: f[1], width_mm: millimetres(field: f[2], what: "a paper's width")?, height_mm: millimetres(field: f[3], what: "a paper's height")?, left_mm: millimetres(field: f[4], what: "a paper's left margin")?, right_mm: millimetres(field: f[5], what: "a paper's right margin")?, top_mm: millimetres(field: f[6], what: "a paper's top margin")?, bottom_mm: millimetres(field: f[7], what: "a paper's bottom margin")?, is_default: f[8] == "1")
+        )
+
+    return ok(out)
+
+# What a printer can do, as its list writes it.
+#
+# - `list`: the bytes the floor wrote, `HERO_PRINTING_CAPABILITY_FIELDS`
+#   fields.
+#
+# Fails `failed` where the list is not what the floor writes.
+function capabilities_of(list: [u8]) -> printing.Capabilities?
+    items = grouped(split(list)?, per: 3)?
+
+    if items.len() != 1
+        return fail(
+            code: printing.FAILED,
+            msg: f"the layer wrote {items.len()} lists of what a printer can do, not one"
+        )
+    f = items[0]
+    return ok(
+        printing.Capabilities(two_sided: f[0] == "1", color: f[1] == "1", copies_most: number_of(field: f[2], what: "the most copies")?)
+    )
+
+# A job's status, as its list writes it.
+#
+# - `list`: the bytes the floor wrote, `HERO_PRINTING_JOB_FIELDS` fields.
+#
+# Fails `failed` where the list is not what the floor writes.
+function status_of(list: [u8]) -> printing.Status?
+    items = grouped(split(list)?, per: 4)?
+
+    if items.len() != 1
+        return fail(code: printing.FAILED, msg: f"the layer wrote {items.len()} states of one job, not one")
+    f = items[0]
+    return ok(
+        printing.Status(state: job_state_named(f[0])?, reasons: keywords(f[1]), message: f[2], pages_printed: number_of(field: f[3], what: "the pages printed")?)
+    )
+
+# The jobs a list of numbers writes, each on `printer`.
+#
+# - `list`: the bytes the floor wrote, one decimal field a job.
+# - `printer`: the printer the jobs stand on.
+#
+# Fails `failed` where a field is no number.
+function jobs_of(list: [u8], printer: str) -> [printing.Job]?
+    out: [printing.Job] @= []
+
+    for field in split(list)?
+        out @ out.push(printing.Job(printer: printer, id: number_of(field: field, what: "a job's number")?))
+
+    return ok(out)
+
+# The bytes of `words`, each followed by a zero byte, as the floor writes a
+# list.
+function listed(words: [str]) -> [u8]
+    out: [u8] @= []
+
+    for w in words
+        out @ bytes.concat([out, bytes.from_text(w), [0]])
+
+    return out
+
+test "split: none, one, an empty field, a field of characters of more than one byte, and one with no zero byte after it"
+    assert split([]).must().len() == 0
+    assert split([97, 0]).must() == ["a"]
+    assert split([0, 98, 0]).must() == ["", "b"]
+    assert split(listed(["Papier épais", "x"])).must() == ["Papier épais", "x"]
+
+    match split([97, 0, 98])
+        .ok _  => assert false
+        .err e => assert e.code == printing.FAILED
+
+test "split: a byte that is not UTF-8 is replaced, never a failure"
+    got = split([255, 97, 0]).must()
+    assert got.len() == 1 && strings.has_suffix(s: got[0], suffix: "a")
+
+test "grouped: none, one item, two, and fields that are not a whole number of items"
+    assert grouped([], per: 3).must().len() == 0
+    assert grouped(["a", "b"], per: 2).must() == [["a", "b"]]
+    assert grouped(["a", "b", "c", "d"], per: 2).must() == [["a", "b"], ["c", "d"]]
+    assert grouped(["a", "b", "c"], per: 2).is_err()
+
+test "number_of: zero, the largest i64, a negative, and no number"
+    assert number_of(field: "0", what: "x").must() == 0
+    assert number_of(field: "9223372036854775807", what: "x").must() == 9223372036854775807
+    assert number_of(field: "-12", what: "x").must() == -12
+
+    match number_of(field: "12a", what: "the pages printed")
+        .ok _  => assert false
+        .err e => assert e.code == printing.FAILED && strings.contains(s: e.msg, substr: "the pages printed")
+
+test "keywords: none, one, and several joined with commas"
+    assert keywords("").len() == 0
+    assert keywords("media-empty") == ["media-empty"]
+    assert keywords("media-empty,offline-report") == ["media-empty", "offline-report"]
+
+test "state_named and job_state_named: every word, and one the layer never writes"
+    assert state_named("idle").must() == .idle
+    assert state_named("processing").must() == .processing
+    assert state_named("stopped").must() == .stopped
+    assert state_named("Idle").is_err()
+    words = ["pending", "held", "processing", "stopped", "cancelled", "aborted", "completed"]
+
+    for w in words
+        assert !job_state_named(w).is_err()
+
+    assert job_state_named("canceled").is_err()
+
+test "printers_of: none, two printers as the layer writes them, and a list one field short"
+    assert printers_of([]).must().len() == 0
+    list = listed(
+        ["office", "Office laser", "Hall", "Acme 9", "stopped", "media-empty,offline-report", "Out of paper", "1", "0", "home", "home", "", "", "idle", "", "", "0", "1"]
+    )
+    got = printers_of(list).must()
+    assert got.len() == 2
+    assert got[0].name == "office" && got[0].description == "Office laser" && got[0].location == "Hall" && got[0].model == "Acme 9"
+    assert got[0].state == .stopped && got[0].reasons == ["media-empty", "offline-report"] && got[0].message == "Out of paper"
+    assert got[0].accepting && !got[0].is_default
+    assert got[1].state == .idle && got[1].reasons.len() == 0 && !got[1].accepting && got[1].is_default
+    assert printers_of(listed(["office", "x"])).is_err()
+
+test "papers_of: a paper's lengths in hundredths of a millimetre read as millimetres, its default, and a length that is no number"
+    got = papers_of(listed(["iso_a4_210x297mm", "A4", "21000", "29700", "340", "340", "635", "635", "1"])).must()
+    assert got.len() == 1
+    assert got[0].name == "iso_a4_210x297mm" && got[0].label == "A4"
+    assert got[0].width_mm == 210.0 && got[0].height_mm == 297.0
+    assert got[0].left_mm == 3.4 && got[0].right_mm == 3.4 && got[0].top_mm == 6.35 && got[0].bottom_mm == 6.35
+    assert got[0].is_default
+    assert papers_of(listed(["x", "x", "wide", "1", "0", "0", "0", "0", "0"])).is_err()
+
+test "capabilities_of and status_of: one item each, and none or two refused"
+    c = capabilities_of(listed(["1", "0", "999"])).must()
+    assert c.two_sided && !c.color && c.copies_most == 999
+    assert capabilities_of([]).is_err()
+    s = status_of(listed(["processing", "job-printing", "", "3"])).must()
+    assert s.state == .processing && s.reasons == ["job-printing"] && s.message == "" && s.pages_printed == 3
+    assert status_of(listed(["completed", "", "", "1", "completed", "", "", "1"])).is_err()
+
+test "jobs_of: none, two in the layer's order, and a number that is not one"
+    assert jobs_of([], printer: "p").must().len() == 0
+    got = jobs_of(listed(["7", "12"]), printer: "p").must()
+    assert got == [printing.Job(printer: "p", id: 7), printing.Job(printer: "p", id: 12)]
+    assert jobs_of(listed(["x"]), printer: "p").is_err()

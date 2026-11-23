@@ -1,0 +1,204 @@
+# A job's settings as text and back: UTF-8 lines `<key>=<value>`, IPP's own
+# job-template attributes (RFC 8011, 5.2), the text the print dialogs of `ui`
+# exchange with the platform layer (`runtime/platform/hero_ui_print_win32.h`,
+# THE SETTINGS' TEXT) and a program keeps a person's settings in. The layer's
+# C and Swift readers take the same text and refuse the same.
+
+use numbers
+use printing
+use printing/internal/checks
+use strings
+
+# IPP's `sides` keywords, in `printing.Sides`' order.
+function side_word(s: printing.Sides) -> str
+    return match s
+        .one_sided            => "one-sided"
+        .two_sided_long_edge  => "two-sided-long-edge"
+        .two_sided_short_edge => "two-sided-short-edge"
+
+# IPP's `print-color-mode` keywords, `auto` for the printer's own.
+function color_word(c: printing.ColorMode) -> str
+    return match c
+        .printer_default => "auto"
+        .color           => "color"
+        .monochrome      => "monochrome"
+
+# IPP's `orientation-requested` number.
+function orientation_number(o: printing.Orientation) -> i64
+    return checks.orientation_number(o)
+
+# The text of `settings`, every key in this module's order.
+#
+# - `settings`: the settings.
+#
+# Fails `invalid` where a name holds a line feed, or the settings are outside
+# their values (`checks.settings`).
+function format(settings: printing.Settings) -> str?
+    checks.settings(settings)?
+
+    if strings.contains(s: settings.printer, substr: "\n") || strings.contains(s: settings.paper, substr: "\n")
+        return fail(
+            code: printing.INVALID,
+            msg: "a printer's or a paper's name holds a line feed, which the settings' text cannot hold"
+        )
+    ranges: [str] @= []
+
+    for r in settings.pages
+        ranges @ ranges.push(f"{r.first}-{r.last}")
+
+    joined = join(ranges, ",")
+    collation @= "separate-documents-uncollated-copies"
+
+    if settings.collate
+        collation @ "separate-documents-collated-copies"
+    lines = [
+        f"printer={settings.printer}"
+        f"copies={settings.copies}"
+        f"media={settings.paper}"
+        f"orientation-requested={orientation_number(settings.orientation)}"
+        f"sides={side_word(settings.sides)}"
+        f"print-color-mode={color_word(settings.color)}"
+        f"multiple-document-handling={collation}"
+        f"page-ranges={joined}"
+    ]
+    return ok(join(lines, "\n") + "\n")
+
+# A refusal of line `line`, its words `why`.
+function refused<T>(line: str, why: str) -> T?
+    return fail(code: printing.INVALID, msg: f"the settings' line \"{line}\" {why}")
+
+# The page ranges `value` writes, `<first>-<last>` joined by commas.
+#
+# - `value`: the value; empty for every page.
+# - `line`: the whole line, for the message.
+#
+# Fails `invalid` where a range is not two numbers joined by a dash.
+function ranges_of(value: str, line: str) -> [printing.PageRange]?
+    out: [printing.PageRange] @= []
+
+    if value.len() == 0
+        return ok(out)
+
+    for piece in strings.split(s: value, sep: ",")
+        ends = strings.split(s: piece, sep: "-")
+
+        if ends.len() != 2
+            return refused(line: line, why: f"holds \"{piece}\", no range of two pages")
+
+        match numbers.parse_int(ends[0])
+            .ok first =>
+                match numbers.parse_int(ends[1])
+                    .ok last => out @ out.push(printing.PageRange(first: first, last: last))
+                    .err _   => return refused(line: line, why: f"holds \"{piece}\", whose last page is no number")
+            .err _ => return refused(line: line, why: f"holds \"{piece}\", whose first page is no number")
+
+    return ok(out)
+
+# The settings `text` writes, on printer `fallback` where it names none.
+#
+# - `text`: the lines; a key not given keeps its default (`printing.default_settings`).
+# - `fallback`: the printer where the text names none or an empty one.
+#
+# Fails `invalid` for a line that is no `<key>=<value>` of the eight, a key
+# given twice, a value outside its values, or settings outside theirs.
+function parse(text: str, fallback: str) -> printing.Settings?
+    out @= printing.default_settings(fallback)
+    seen: {str: bool} @= {}
+    lines @= strings.split(s: text, sep: "\n")
+
+    if lines.len() > 0 && lines[lines.len() - 1] == ""
+        lines @ lines.slice(from: 0, to: lines.len() - 1)
+
+    for line in lines
+        match strings.split_once(s: line, sep: "=")
+            .ok halves =>
+                key = halves.before
+                value = halves.after
+
+                if seen[key].default(false)
+                    return refused(line: line, why: "gives a key a second time")
+                seen[key] @ true
+
+                match key
+                    "printer" =>
+                        if value.len() > 0
+                            out.printer @ value
+                    "media" => out.paper @ value
+                    "copies" =>
+                        match numbers.parse_int(value)
+                            .ok n  => out.copies @ n
+                            .err _ => return refused(line: line, why: "gives no number of copies")
+                    "orientation-requested" =>
+                        match value
+                            "3" => out.orientation @ .portrait
+                            "4" => out.orientation @ .landscape
+                            "5" => out.orientation @ .reverse_landscape
+                            "6" => out.orientation @ .reverse_portrait
+                            _   => return refused(line: line, why: "gives no orientation of IPP's, 3 to 6")
+                    "sides" =>
+                        match value
+                            "one-sided"            => out.sides @ .one_sided
+                            "two-sided-long-edge"  => out.sides @ .two_sided_long_edge
+                            "two-sided-short-edge" => out.sides @ .two_sided_short_edge
+                            _                      => return refused(line: line, why: "gives none of IPP's three sides")
+                    "print-color-mode" =>
+                        match value
+                            "auto"       => out.color @ .printer_default
+                            "color"      => out.color @ .color
+                            "monochrome" => out.color @ .monochrome
+                            _ => return refused(
+                                line: line,
+                                why: "gives none of the colour modes auto, color and monochrome"
+                            )
+                    "multiple-document-handling" =>
+                        match value
+                            "separate-documents-collated-copies" => out.collate @ true
+                            "separate-documents-uncollated-copies" => out.collate @ false
+                            _ => return refused(line: line, why: "gives no collation of IPP's")
+                    "page-ranges" => out.pages @ ranges_of(value: value, line: line)?
+                    _             => return refused(line: line, why: "names no key of the eight")
+            .err _ => return refused(line: line, why: "is no <key>=<value>")
+
+    checks.settings(out)?
+    return ok(out)
+
+test "format: the defaults, and every field set, as IPP's words"
+    assert format(printing.default_settings("office")).must() == "printer=office\ncopies=1\nmedia=\norientation-requested=3\nsides=one-sided\nprint-color-mode=auto\nmultiple-document-handling=separate-documents-collated-copies\npage-ranges=\n"
+    s = printing.Settings(
+        printer: "Bureau d'été",
+        copies: 999,
+        paper: "iso_a4_210x297mm",
+        orientation: .reverse_portrait,
+        sides: .two_sided_short_edge,
+        color: .monochrome,
+        pages: [printing.PageRange(first: 1, last: 3), printing.PageRange(first: 5, last: 5)],
+        collate: false
+    )
+    got = format(s).must()
+    assert strings.contains(
+        s: got,
+        substr: "orientation-requested=6\nsides=two-sided-short-edge\nprint-color-mode=monochrome\nmultiple-document-handling=separate-documents-uncollated-copies\npage-ranges=1-3,5-5\n"
+    )
+    assert parse(text: got, fallback: "x").must() == s
+
+test "format: a name holding a line feed, and settings outside their values, refused"
+    s = printing.default_settings("a\nb")
+    assert format(s).is_err()
+    assert format(
+        printing.Settings(printer: "p", copies: 0, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: [], collate: true)
+    ).is_err()
+
+test "parse: none, the fallback printer, a line with no ending line feed, and every key's edges"
+    assert parse(text: "", fallback: "office").must() == printing.default_settings("office")
+    assert parse(text: "copies=2", fallback: "office").must().copies == 2
+    assert parse(text: "printer=\n", fallback: "office").must().printer == "office"
+    assert parse(text: "printer=hall\nmedia=na_letter_8.5x11in\n", fallback: "office").must().paper == "na_letter_8.5x11in"
+    assert parse(text: "orientation-requested=5\n", fallback: "o").must().orientation == .reverse_landscape
+    assert parse(text: "print-color-mode=color\n", fallback: "o").must().color == .color
+    assert parse(text: "page-ranges=2-2,4-9\n", fallback: "o").must().pages == [printing.PageRange(first: 2, last: 2), printing.PageRange(first: 4, last: 9)]
+
+test "parse: refused, a key twice, an unknown key, an empty line, a value out of bounds, and touching ranges"
+    for bad in ["copies=1\ncopies=2\n", "paper=iso_a4_210x297mm\n", "copies=1\n\nsides=one-sided\n", "copies=1000\n", "copies=two\n", "orientation-requested=7\n", "sides=duplex\n", "print-color-mode=grey\n", "page-ranges=3-1\n", "page-ranges=1-2,3-4\n", "page-ranges=1\n", "nothing\n"]
+        match parse(text: bad, fallback: "o")
+            .ok _  => assert false
+            .err e => assert e.code == printing.INVALID && e.msg != ""

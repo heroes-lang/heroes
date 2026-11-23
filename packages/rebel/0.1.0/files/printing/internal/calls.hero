@@ -1,0 +1,85 @@
+# The lists of the floor `printing/hero_printing` read whole: each asked with
+# room for what the last asking answered, since a list may grow between two
+# calls (a printer added, a job submitted), at most `ROUNDS` times, and a
+# failure turned into a code (`printing/internal/failure`).
+
+use printing
+use printing/hero_printing
+use printing/internal/failure
+
+# The rounds a read takes at most, each with room for what the last one
+# answered.
+constant ROUNDS: i64
+    4
+
+# The bytes a list is first given room for: a dozen printers or a hundred
+# papers fit.
+constant FIRST_ROOM: i64
+    16384
+
+# Which list of the floor is read.
+variant Ask
+    # The machine's printers.
+    printers
+    # A printer's papers.
+    media
+        # The printer's name.
+        printer: str
+    # What a printer can do.
+    capabilities
+        # The printer's name.
+        printer: str
+    # A job's state.
+    job
+        # The printer's name.
+        printer: str
+        # The job's number.
+        id: i64
+    # The jobs on a printer that have not ended.
+    jobs
+        # The printer's name.
+        printer: str
+
+# The bytes the floor answers for `ask`, `buffer` filled where they fit in
+# `n`; or -1.
+#
+# - `ask`: which list.
+# - `buffer`: where the list is written; left `n` long.
+# - `n`: the bytes `buffer` holds.
+function asked_once(ask: Ask, @buffer: [u8], n: u64) -> i64
+    return match ask
+        .printers       => hero_printing.printers(@buffer, n: n)
+        .media m        => hero_printing.papers(m.printer, @buffer, n: n)
+        .capabilities c => hero_printing.capabilities(c.printer, @buffer, n: n)
+        .job j          => hero_printing.job_state(j.printer, job: j.id, @buffer, n: n)
+        .jobs j         => hero_printing.jobs(j.printer, @buffer, n: n)
+
+# The whole list `ask` names, as the floor writes it.
+#
+# - `ask`: which list.
+# - `asked`: what the call was asked, for the message.
+#
+# Fails with the code of the floor's kind, or `failed` where the list grew
+# each of the `ROUNDS` times it was read.
+function read(ask: Ask, asked: str) -> [u8]?
+    room: i64 @= FIRST_ROOM
+    round: i64 @= 0
+
+    while round < ROUNDS
+        buffer: [u8] @= []
+        got = asked_once(ask, @buffer, n: to_u64(room).must())
+
+        if got < 0
+            return failure.last(asked)
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+        room @ got
+        round @ round + 1
+
+    return fail(code: printing.FAILED, msg: f"{asked}: the list grew each of the {ROUNDS} times it was read")
+
+test "read: a printer no system names is not found, or this machine has no print system"
+    match read(.media(printer: "heroes-no-such-printer-b2"), asked: "reading its papers")
+        .ok _  => assert false
+        .err e => assert (e.code == printing.NOT_FOUND || e.code == printing.UNSUPPORTED) && e.msg != ""
