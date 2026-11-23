@@ -38,7 +38,7 @@ function held_handle(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
                 for inner in synth.field_types(c, decls, decl: n.decl)
                     stack @ stack.push(inner)
             .case_ty vc =>
-                for inner in synth.field_types(c, decls, decl: vc.decl)
+                for inner in synth.case_field_types(c, decls, decl: vc.decl, at: vc.at)
                     stack @ stack.push(inner)
             .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr => continue
             .mailbox_ty | .function_ty | .failure | .generic | .error          => continue

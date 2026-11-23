@@ -1,0 +1,243 @@
+# What a generic function's body asks of the types its calls give its type
+# parameters (spec § 11; panel 256's R1, defect 2695). A generic body is typed
+# once, where a type parameter holds nothing and reaches nothing, so a rule of
+# § 11 that walks what a value holds answers nothing for a letter. Each such
+# rule the body reaches through a letter is kept here as a NEED of its
+# declaration, and `check/generic_calls.hero` asks it of every call, on the
+# types that call gives the letters.
+#
+# The rules: a send's `@`, written exactly where the value holds a C handle or
+# a thread (`send_at`: some letter it reaches holds one; `send_bare`: none
+# does); a `spawn`'s argument holding no handle (`spawn_handle`); a value that
+# crosses, a `spawn`'s argument and answer and a written `(thread T)` or
+# `(mailbox T)`'s `T`, reaching no `ptr` and no `cstr` (`cross_ptr`); and a
+# mailbox not of `()` (`unit_mailbox`). A need is made only where the body's
+# own rule answered nothing: a type that holds or reaches what it may not
+# without a letter is refused in the body, by `check/thread_ops.hero` and
+# `check/crossing.hero`. A queue holding itself cannot come through a letter:
+# the letter would name an infinite type.
+#
+# The letters a need names are those its type REACHES through what a value of
+# it holds, an element, a payload, a map's key and value: the walks of
+# `check/handed.hero` and `emit/key_pointer.hero` descend there and nowhere
+# else a letter can stand, since a record and a variant name no type
+# parameter, and a mailbox's element, a thread's answer and a function's types
+# are not held.
+
+use ast
+use check/handed
+use check/state
+use check/table
+use check/thread_types
+use emit/key_pointer
+use inventory
+use resolved
+use source
+use token
+
+variant Rule
+    send_at
+    send_bare
+    spawn_handle
+    cross_ptr
+    unit_mailbox
+
+# A rule's name, for the keys a need is kept once by.
+function word(rule: Rule) -> str
+    match rule
+        .send_at      => return "send_at"
+        .send_bare    => return "send_bare"
+        .spawn_handle => return "spawn_handle"
+        .cross_ptr    => return "cross_ptr"
+        .unit_mailbox => return "unit_mailbox"
+
+    return ""
+
+# One rule a generic body asks of some of its letters.
+record Need
+    # The generic declaration whose letters `letters` are, by position.
+    decl: i64
+    rule: Rule
+    letters: [i64]
+    # The operation or the written type the rule was first asked at, in the
+    # innermost body.
+    origin: token.Span
+    # Where in `decl`'s own body: `origin`, or the call that carried it.
+    at: token.Span
+    # The declarations it was carried through, the one `decl` calls first.
+    via: [i64]
+    # The need of the callee it was carried from, by index, or -1.
+    from: i64
+
+# The generic function declarations with a body, by index.
+function generics_of(decls: [ast.Decl]) -> [i64]
+    out: [i64] @= []
+    index: i64 @= 0
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.generics.len() > 0 && !fd.value.body.is_err()
+                    out @ out.push(index)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => _ = 0
+
+        index @ index + 1
+
+    return out
+
+# The generic declaration whose text holds the offset `at`, or -1.
+function owner(decls: [ast.Decl], generic: [i64], at: i64) -> i64
+    for d in generic
+        if decls[d].span.start <= at && at < decls[d].span.end
+            return d
+
+    return 0 - 1
+
+# The letters `ty` reaches through what a value of it holds, ascending.
+function letters_of(c: state.Checked, ty: i64) -> [i64]
+    found: {i64: bool} @= {}
+    seen: {i64: bool} @= {}
+    stack: [i64] @= [ty]
+
+    while stack.len() > 0
+        at = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+
+        match table.get(c.types, at)
+            .generic g                                                         => found[g.at] @ true
+            .array arr                                                         => stack @ stack.push(arr.element)
+            .fallible o                                                        => stack @ stack.push(o.payload)
+            .map m                                                             => stack @ stack.push(m.key).push(
+                m.value
+            )
+            .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr => continue
+            .named | .case_ty | .thread_ty | .mailbox_ty | .function_ty        => continue
+            .failure | .error                                                  => continue
+
+    return sort(keys(found))
+
+# Whether a send's `@` is left to the calls: the value holds nothing without
+# its letters, and reaches one.
+function left_to_calls(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    return !handed.holds(c, decls, ty: ty) && letters_of(c, ty).len() > 0
+
+# Every need the generic bodies make of their own letters, in source order.
+function of_bodies(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], generic: [i64]) -> [Need]
+    out: [Need] @= []
+    id: i64 @= 0
+
+    while id < a.exprs.len()
+        span = a.exprs[id].span
+
+        match a.exprs[id].kind
+            .method m =>
+                if m.args.len() == 1 && m.receiver < c.expr_types.len() && source.span_text(s, m.name) == "send"
+                    element = thread_types.mailbox_element(c.types, c.expr_types[m.receiver])
+                    d = owner(decls, generic, at: span.start)
+
+                    if !element.is_err() && d >= 0 && left_to_calls(c, decls, ty: element.must())
+                        rule: Rule @= .send_bare
+
+                        if m.args[0].mutable
+                            rule @ .send_at
+                        out @ out.push(made(decl: d, rule: rule, letters: letters_of(c, element.must()), span: span))
+            .call k =>
+                match r.uses[k.callee]
+                    .builtin b =>
+                        name = inventory.name_of(b.at)
+                        thread = name == "spawn" || name == "spawn_sized"
+
+                        if thread && k.args.len() >= 2 && k.args[0].value < c.expr_types.len()
+                            d = owner(decls, generic, at: span.start)
+
+                            if d >= 0
+                                for one in spawned(c, decls, fn_ty: c.expr_types[k.args[0].value], decl: d, span: span)
+                                    out @ out.push(one)
+                    .unresolved | .local | .top | .module => _ = 0
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => _ = 0
+            .name | .hole | .unary | .binary | .field | .field_name | .index               => _ = 0
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => _ = 0
+
+        id @ id + 1
+
+    for one in written(c, a, decls, generic: generic)
+        out @ out.push(one)
+
+    return out
+
+# A need asked first in `decl`'s own body.
+function made(decl: i64, rule: Rule, letters: [i64], span: token.Span) -> Need
+    return Need(decl: decl, rule: rule, letters: letters, origin: span, at: span, via: [], from: 0 - 1)
+
+# A `spawn` in a generic body: its argument holds no handle and reaches no
+# `ptr`, and so does its answer, for every letter they reach.
+function spawned(c: state.Checked, decls: [ast.Decl], fn_ty: i64, decl: i64, span: token.Span) -> [Need]
+    out: [Need] @= []
+
+    match table.get(c.types, fn_ty)
+        .function_ty f =>
+            params = table.params_of(c.types, f.params)
+
+            if params.len() == 1
+                into = letters_of(c, params[0])
+                back = letters_of(c, f.result)
+
+                if into.len() > 0 && key_pointer.reaches_pointer(c, decls, ty: params[0]).is_err()
+                    out @ out.push(made(decl: decl, rule: .cross_ptr, letters: into, span: span))
+
+                if into.len() > 0 && !handed.holds(c, decls, ty: params[0])
+                    out @ out.push(made(decl: decl, rule: .spawn_handle, letters: into, span: span))
+
+                if back.len() > 0 && key_pointer.reaches_pointer(c, decls, ty: f.result).is_err()
+                    out @ out.push(made(decl: decl, rule: .cross_ptr, letters: back, span: span))
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => _ = 0
+        .thread_ty | .mailbox_ty | .array | .fixed | .map         => _ = 0
+        .fallible | .named | .case_ty | .failure | .generic       => _ = 0
+        .error                                                    => _ = 0
+
+    return out
+
+# Every `(thread T)` and `(mailbox T)` written in a generic declaration whose
+# `T` reaches a letter: it crosses, so it reaches no `ptr`, and a mailbox's
+# `T` that IS a letter is not `()`.
+function written(c: state.Checked, a: ast.Ast, decls: [ast.Decl], generic: [i64]) -> [Need]
+    out: [Need] @= []
+    node: i64 @= 0
+
+    while node < a.types.len()
+        element: i64 @= 0 - 1
+        is_mailbox: bool @= false
+
+        match a.types[node].kind
+            .thread_of t => element @ t.element
+            .mailbox_of m =>
+                element @ m.element
+                is_mailbox @ true
+            .named | .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error => element @ element
+
+        if element >= 0
+            ty = state.written_type(c, element)
+            span = a.types[node].span
+            d = owner(decls, generic, at: span.start)
+
+            if !ty.is_err() && d >= 0
+                letters = letters_of(c, ty.must())
+
+                if letters.len() > 0 && key_pointer.reaches_pointer(c, decls, ty: ty.must()).is_err()
+                    out @ out.push(made(decl: d, rule: .cross_ptr, letters: letters, span: span))
+
+                if is_mailbox
+                    match table.get(c.types, ty.must())
+                        .generic g                                                         => out @ out.push(
+                            made(decl: d, rule: .unit_mailbox, letters: [g.at], span: span)
+                        )
+                        .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr => _ = 0
+                        .array | .fallible | .map | .named | .case_ty | .thread_ty         => _ = 0
+                        .mailbox_ty | .function_ty | .failure | .error                     => _ = 0
+        node @ node + 1
+
+    return out

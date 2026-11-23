@@ -1,0 +1,43 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R1), the shapes
+# beside it: a generic that hands its value to another generic which sends it
+# is judged at the first call whose types are settled, the message naming the
+# send's own function, its line and the chain of calls; a letter wrapped on
+# the way (`[B]`, `[A]`) is followed, and polymorphic recursion ends (spec
+# § 11).
+use kinds
+
+function inner<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function outer<A>(m: (mailbox A), v: A) -> bool
+    return inner(m, v)
+
+function mid<B>(m: (mailbox [B]), v: [B]) -> bool
+    return inner(m, v)
+
+function top<A>(m: (mailbox [A]), v: A) -> bool
+    return mid(m, [v])
+
+function deep<T>(m: (mailbox T), v: T, n: i64) -> i64
+    if n == 0
+        print(m.send(v).is_err())
+        return 0
+    lower: (mailbox [T]) = mailbox()
+    return deep(lower, [v], n - 1)
+
+function hand_inner<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+function hand_outer<A>(m: (mailbox A), @v: A) -> bool
+    return hand_inner(m, @v)
+
+function main()
+    boxes: (mailbox kinds.Boxed) = mailbox()
+    print(outer(boxes, kinds.boxed()))  #~ marker_mismatch
+    lists: (mailbox [kinds.Boxed]) = mailbox()
+    print(top(lists, kinds.boxed()))  #~ marker_mismatch
+    print(deep(boxes, kinds.boxed(), 2))  #~ marker_mismatch
+    b: kinds.Boxed @= kinds.boxed()
+    print(hand_outer(boxes, @b))
+    numbers: (mailbox i64) = mailbox()
+    print(outer(numbers, 7))

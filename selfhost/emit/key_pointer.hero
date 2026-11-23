@@ -15,9 +15,10 @@ use check/table
 use emit/synth
 
 # Does this type REACH a ptr or a cstr, through fields, payloads or
-# containers? Returns what was found, for the message: a reader told
-# "reaches `ptr`" can look for the pointer; one told "not a valid key"
-# cannot.
+# containers, a variant case's own fields among them (a pattern's binding,
+# which a generic call can hand a thread)? Returns what was found, for the
+# message: a reader told "reaches `ptr`" can look for the pointer; one told
+# "not a valid key" cannot.
 #
 # **TOTAL AND FLAT SINCE DEFECT 140 (2026-10-01).** It stopped at
 # `depth > 16`, citing the checker's partial walk as its model, and that
@@ -42,15 +43,21 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
         inner: [i64] @= []
 
         match table.get(c.types, at)
-            .ptr                                                   => return ok("`ptr`")
-            .cstr                                                  => return ok("`cstr`")
-            .array arr                                             => inner @ [arr.element]
-            .fallible o                                            => inner @ [o.payload]
-            .map m                                                 => inner @ [m.key, m.value]
-            .named n                                               => inner @ synth.field_types(c, decls, decl: n.decl)
-            .int_ty | .float_ty | .bool | .str | .unit | .fixed    => continue
-            .thread_ty | .mailbox_ty                               => continue
-            .function_ty | .case_ty | .failure | .generic | .error => continue
+            .ptr                                                => return ok("`ptr`")
+            .cstr                                               => return ok("`cstr`")
+            .array arr                                          => inner @ [arr.element]
+            .fallible o                                         => inner @ [o.payload]
+            .map m                                              => inner @ [m.key, m.value]
+            .named n                                            => inner @ synth.field_types(c, decls, decl: n.decl)
+            .case_ty vc                                         => inner @ synth.case_field_types(
+                c,
+                decls,
+                decl: vc.decl,
+                at: vc.at
+            )
+            .int_ty | .float_ty | .bool | .str | .unit | .fixed => continue
+            .thread_ty | .mailbox_ty                            => continue
+            .function_ty | .failure | .generic | .error         => continue
 
         back: i64 @= inner.len() - 1
 

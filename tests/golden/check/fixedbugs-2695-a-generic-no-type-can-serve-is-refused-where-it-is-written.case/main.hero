@@ -1,0 +1,44 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R2): a generic
+# whose operations ask one type parameter both to hold a C handle or a thread
+# (a send with `@`) and to hold neither (a send without `@`, a `spawn` of it)
+# can be served by no type, and is refused where it is written, called or not,
+# its own sends and those carried in from two callees alike. Its calls are not
+# blamed, nor a generic that only calls it; two letters asked one each are
+# served (spec § 11).
+use kinds
+
+function both<T>(m: (mailbox T), @v: T, w: T) -> bool
+    first = m.send(@v).is_err()  #~ marker_mismatch
+    second = m.send(w).is_err()
+    return first == second
+
+function begin<T>(m: (mailbox T), @v: T, body: (function(T) -> i64), w: T) -> i64
+    _ = m.send(@v).is_err()  #~ marker_mismatch
+    t = spawn(body, w).must()
+    return t.wait()
+
+function give<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+function lend<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function twice<A>(m: (mailbox A), @v: A, w: A) -> bool
+    first = give(m, @v)  #~ marker_mismatch
+    return first == lend(m, w)
+
+function around<A>(m: (mailbox A), @v: A, w: A) -> bool
+    return both(m, v: @v, w: w)
+
+function pair<A, B>(m: (mailbox A), @v: A, n: (mailbox B), w: B) -> bool
+    return m.send(@v).is_err() == n.send(w).is_err()
+
+function main()
+    boxes: (mailbox kinds.Boxed) = mailbox()
+    b: kinds.Boxed @= kinds.boxed()
+    print(both(boxes, v: @b, w: kinds.boxed()))
+    c: kinds.Boxed @= kinds.boxed()
+    print(around(boxes, v: @c, w: kinds.boxed()))
+    numbers: (mailbox i64) = mailbox()
+    d: kinds.Boxed @= kinds.boxed()
+    print(pair(boxes, @d, numbers, 7))

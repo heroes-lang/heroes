@@ -52,7 +52,7 @@ use cli/refresh
 use cli/table as cli_table
 
 constant SPEC_REAL_TOKENS: i64
-    12897
+    12986
 
 constant SPEC_REAL_MODEL: str
     "claude-opus-5"
@@ -61,7 +61,7 @@ constant SPEC_REAL_TAKEN: str
     "2026-11-23"
 
 constant SPEC_DIGEST: str
-    "02bd05156a724840"
+    "1a37f9da19d77a1a"
 
 # The contract's record. **It carries no digest, and the refusal is measured**
 # (panel 134, the compiler seat's veto). A digest withholds the verdict when the

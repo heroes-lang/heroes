@@ -18,6 +18,7 @@
 
 use ast
 use check/crossing
+use check/generic_needs
 use check/markers
 use check/state
 use check/table
@@ -180,6 +181,11 @@ function marked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     if table.poisoned(c.out.types, element)
         return
     holds = !crossing.held_handle(c, decls, ty: element).is_err()
+
+    # A value that holds nothing but through its letters is judged at each
+    # call, on the types it gives them (`check/generic_calls.hero`).
+    if !holds && generic_needs.letters_of(c.out, ty: element).len() > 0
+        return
 
     if arg.mutable != holds
         blocked: str @= ""

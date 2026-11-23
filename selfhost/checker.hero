@@ -32,6 +32,7 @@ use check/endless
 use check/ffi_sweep
 use check/fixed_judged
 use check/freer_marks
+use check/generic_calls
 use check/kept_cells
 use check/leasing
 use check/lending
@@ -125,6 +126,10 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # itself before it returns or ends, told at the call; after the types,
     # which say whether `x.f()` calls a field of `x` (§4.11).
     endless.every_path_calls_itself(@c, a, r, s, decls)
+
+    # Spec § 11's rules on what a value holds, asked of each call of a generic
+    # function on the types it gives the letters (panel 256).
+    generic_calls.judged(@c, a, r, s, decls)
 
     # Panel 206's R1: a step of a constant's written body that aborts, told
     # where it is written, read or not. After the types, which give each

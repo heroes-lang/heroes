@@ -1,0 +1,30 @@
+# A block C allocates, for defect 2695's case: calloc, free, a read and a
+# write of it, and a pause, each at its header's own width.
+extern "stdlib.h"
+    function calloc(count: u64, size: u64) -> ptr
+    function free(p: ptr)
+
+extern "string.h"
+    function memset(b: ptr, c: i32, len: u64) -> ptr
+    function strlen(s: ptr) -> u64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+record Pointed
+    p: ptr
+
+function block() -> ptr
+    return calloc(count: 1, size: 64)
+
+function give_back(p: ptr)
+    free(p: p)
+
+function fill(p: ptr, c: i32, n: u64)
+    _ = memset(b: p, c: c, len: n)
+
+function length(p: ptr) -> u64
+    return strlen(s: p)
+
+function pause(us: u32)
+    _ = usleep(useconds: us)

@@ -1,0 +1,48 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R1). Symptom:
+# `m.send(@v)` in a generic function was refused for every type, its type
+# parameter holding nothing where the body was typed. Each call is judged now:
+# a generic that hands over serves a type holding a C handle, directly and
+# through another generic, one that copies serves a number, and a generic's
+# `(thread T)` may answer `()`, which only a mailbox may not carry. The two
+# files handed over are received and closed on `main` (spec § 11).
+
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32 when 0
+
+record Boxed
+    f: File
+
+function hand<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+function hand_on<A>(m: (mailbox A), @v: A) -> bool
+    return hand(m, @v)
+
+function copy<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function answer<T>(f: (function(i64) -> T)) -> T
+    t: (thread T) = spawn(f, 0).must()
+    return t.wait()
+
+function quiet(_: i64)
+    _ = 0
+
+function main()
+    boxes: (mailbox Boxed) = mailbox()
+    b: Boxed @= Boxed(f: tmpfile())
+    print(hand(boxes, @b))
+    c: Boxed @= Boxed(f: tmpfile())
+    print(hand_on(boxes, @c))
+    numbers: (mailbox i64) = mailbox()
+    print(copy(numbers, 7))
+    print(numbers.receive(within_ms: 0).must())
+    answer(quiet)
+    k: i64 @= 0
+
+    while k < 2
+        got = boxes.receive(within_ms: 0).must()
+        print(fclose(got.f) == 0)
+        k @ k + 1

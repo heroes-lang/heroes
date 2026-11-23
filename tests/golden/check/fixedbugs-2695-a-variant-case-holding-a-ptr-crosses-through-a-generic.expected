@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2695-a-variant-case-holding-a-ptr-crosses-through-a-generic.hero:23:27: error[thread_crossing]: this call gives `T` the type `Shape.raw`, which reaches `ptr`, and `keep` makes a value of it cross between threads, `(mailbox T)` at line 16
