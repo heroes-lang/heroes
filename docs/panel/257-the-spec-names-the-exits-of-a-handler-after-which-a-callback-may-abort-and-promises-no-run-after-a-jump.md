@@ -229,3 +229,14 @@ None: the historian did not sit, and no precedent is claimed.
 ## Author's verdict
 
 *Pending.*
+
+**Ratified by the author's reading, 2026-11-23, at about 17:00**, in conversation (the answers *1a* and *2a* to the
+coordinator's recommendations, the second with its figure raised, meant as: *ratify R1 to R5 as written; and the blind
+reading is authorized up to 20 dollars*). Recorded with it, so the reading is of what was adopted: **R1's sentence is
+not the text the spec-warden approved** (`w26`, which promises that a callback runs after a jump and is not adopted,
+by the measurement of `n6` and `fp3` on Darwin and of the forced route A on both); the warden objected to the
+adopted text without a veto, the two builder seats objected to `w26` and `w27`, and the sitting went with the
+measurement, as § Where the seats disagree says. **The blind reading's ceiling**: registered at 12.00 USD
+(`257-briefs/blind/registration.md`), allowed by the author up to 20; the run keeps the registered plan and stops
+itself before 19.50. The sentence lands with the runtime lane's repairs (defects 2704 to 2707) and the four spec
+pins re-measured at the landing; the reading's scoring is appended beneath with its date.
