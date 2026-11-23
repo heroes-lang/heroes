@@ -783,8 +783,8 @@ int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key);
  * wxWidgets' `wxWindow::SetFocus` and `FindFocus`; Tab and Shift+Tab move
  * it through the widgets in the order they stand, left to right and top to
  * bottom, the order the layout reads them in. The widgets that take the
- * keys on every system are text fields, text areas and lists, and on macOS
- * an editable combo box, a spin (its number's field) and a drawing area. */
+ * keys on every system are text fields, text areas, lists, an editable combo
+ * box and a spin (its number's field), and on macOS a drawing area. */
 
 /* Gives widget `id`, a text field, a text area or a list, the keys in its
  * window; the person types into it once the window is in front. 0, or -1:

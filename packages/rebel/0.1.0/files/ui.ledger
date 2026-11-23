@@ -511,7 +511,7 @@ capability ui/focus  the widget that has the keys, set and asked, and Tab and Sh
   rust    -
   python  tkinter.Misc.focus_set, tkinter.Misc.focus_get, tkinter.Misc.tk_focusNext, tkinter.Misc.tk_focusPrev
   wx      wxWindow (SetFocus, FindFocus, MoveAfterInTabOrder, Navigate)
-  note    text fields, text areas and lists, the widgets every system gives the keys; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows by `SetFocus`, each window keeping its control with the keys across `WM_ACTIVATE`, the Tab order the controls' z-order put in reading order, Linux by `gtk_widget_grab_focus` and `gtk_root_get_focus`, GTK's focus chain by the widgets' places
+  note    text fields, text areas and lists, the widgets every system gives the keys, and an editable combo box and a spin (a spin's keys are its field's, a combo's its entry's) on macOS, Windows and Linux; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows by `SetFocus`, each window keeping its control with the keys across `WM_ACTIVATE`, the Tab order the controls' z-order put in reading order, a combo's or a spin's text chosen whole as Tab chooses it (so what is typed next replaces it), Linux by `gtk_widget_grab_focus` and `gtk_root_get_focus`, GTK's focus chain by the widgets' places
 
 capability ui/tooltip  a tip shown over a widget
   heroes  ui.set_tip, ui.tip_of
