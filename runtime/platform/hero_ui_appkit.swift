@@ -901,6 +901,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             setTrayText(widget, text)
         case kindWindow:
             widget.window?.title = text
+        case kindGroup:
+            (widget.view as? NSBox)?.title = text
         case kindPage:
             if let tabs = widgets[widget.parent]?.view as? NSTabView {
                 for item in tabs.tabViewItems where item.view === widget.view {
@@ -1313,6 +1315,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         if let text = widget.textView {
             return text.string
+        }
+        if let box = widget.view as? NSBox, widget.kind == kindGroup {
+            return box.title
         }
         return (widget.view as? NSTextField)?.stringValue
     }
@@ -2498,6 +2503,8 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             return owner.view
         case kindScroll:
             return (owner.view as? NSScrollView)?.documentView
+        case kindGroup:
+            return (owner.view as? NSBox)?.contentView
         default:
             return nil
         }
@@ -2542,6 +2549,17 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             pane.clipsToBounds = true
             split.addArrangedSubview(pane)
             made.view = pane
+        case kindGroup:
+            guard let content = contentOf(owner) else {
+                return answerInvalid
+            }
+            let box = NSBox(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+            box.boxType = .primary
+            box.titlePosition = .atTop
+            box.title = ""
+            box.contentView = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            content.addSubview(box)
+            made.view = box
         case kindContextMenu:
             if widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) {
                 return answerInvalid
@@ -2611,6 +2629,20 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             let bottom = tabs.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
             return (left, top, right, bottom)
         }
+        if let box = widget.view as? NSBox, widget.kind == kindGroup {
+            // The content's rectangle inside a frame of a known size is what
+            // the box's own margins and title leave; the box lays it out as
+            // its frame is set, so it is read at a frame of 400 by 300.
+            let saved = box.frame
+            box.frame = NSRect(x: saved.minX, y: saved.minY, width: 400, height: 300)
+            box.layoutSubtreeIfNeeded()
+            let inner = box.contentView?.frame ?? .zero
+            box.frame = saved
+            box.layoutSubtreeIfNeeded()
+            let top = box.isFlipped ? Int64(inner.minY.rounded(.up)) : Int64((300 - inner.maxY).rounded(.up))
+            let bottom = box.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
+            return (Int64(inner.minX.rounded(.up)), top, Int64((400 - inner.maxX).rounded(.up)), bottom)
+        }
         if let scroll = widget.view as? NSScrollView, widget.kind == kindScroll {
             let frame = NSSize(width: 400, height: 300)
             let inner = NSScrollView.contentSize(forFrameSize: frame, horizontalScrollerClass: nil, verticalScrollerClass: NSScroller.self, borderType: scroll.borderType, controlSize: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
@@ -2627,7 +2659,7 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         case kindSplitRow, kindSplitColumn:
             let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
             return NSSize(width: thickness, height: thickness)
-        case kindTabs, kindPage, kindScroll, kindPane:
+        case kindTabs, kindPage, kindScroll, kindPane, kindGroup:
             return NSSize(width: 0, height: 0)
         default:
             return nil
@@ -3284,6 +3316,7 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 private let kindContextMenu: Int64 = 30
 private let kindTray: Int64 = 31
 private let kindSeparator: Int64 = 32
+private let kindGroup: Int64 = 33
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

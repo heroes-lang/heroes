@@ -1268,4 +1268,14 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * side runs. */
 #define HERO_UI_SEPARATOR 32
 
+/* -- A GROUP BOX --------------------------------------------------------------
+ *
+ * wxWidgets' `wxStaticBox`: a box drawn with a title and a frame around the
+ * widgets it holds. `HERO_UI_GROUP` is a frame as a page is: its widgets are
+ * made with it as their parent, stand in its own content and are placed from
+ * that content's top-left corner (`hero_ui_place`); the room its frame and
+ * title take around the content is `hero_ui_insets`'s. Its title is its
+ * `hero_ui_set_text`'s, and `hero_ui_text` reads it back. */
+#define HERO_UI_GROUP 33
+
 #endif

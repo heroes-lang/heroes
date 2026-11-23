@@ -178,11 +178,12 @@ capability ui/form  labelled fields, a label and its field on each line
   note    a form is a grid of two columns, labels in the first
 
 capability ui/group  a box drawn with a title and a frame around it
-  heroes  pending
+  heroes  ui.group, ui.Kind.group
   go      ui.NewGroup, Group.SetChild, Group.SetTitle, Group.Title, Group.Margined, Group.SetMargined
   rust    -
   python  tkinter.LabelFrame, ttk.Labelframe
   wx      wxStaticBox, wxStaticBoxSizer
+  note    catalogue LY11; a frame as a page is: its widgets are made in it, laid out as a column in its own content from the room its frame and title leave (read from the system on the native side, `sizes.GROUP_SIDE` and `GROUP_TOP` on the headless side) and a padding inside it, its title `set_text`'s and `text_of`'s; macOS by an `NSBox` with a flipped content view; Windows pending (`BS_GROUPBOX` draws the frame and title and holds nothing, so a child window over its inner rectangle holds the widgets), Linux pending (`GtkFrame` with a `GtkFixed` child)
 
 capability ui/label  a text the person reads
   heroes  ui.label

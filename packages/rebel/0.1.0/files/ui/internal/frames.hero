@@ -35,13 +35,17 @@ use ui/internal/sizes
 constant SCROLL_HEIGHT: i64
     100
 
+# The room a group box leaves inside what its frame takes, on every side.
+constant GROUP_PADDING: i64
+    4
+
 # New tabs in `into` (`ui.tabs`).
 function tabs(@app: ui.App, into: ui.Widget) -> ui.Widget?
-    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_TABS)
+    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_TABS, text: "")
 
 # A new scrolled box in `into` (`ui.scrolled`).
 function scrolled(@app: ui.App, into: ui.Widget) -> ui.Widget?
-    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_SCROLL)
+    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_SCROLL, text: "")
 
 # A new split in `into` (`ui.split`), its panes side by side where
 # `side_by_side`, one over the other where not.
@@ -51,17 +55,28 @@ function split(@app: ui.App, into: ui.Widget, side_by_side: bool) -> ui.Widget?
     else
         hero_ui.HERO_UI_SPLIT_COLUMN
 
-    return drawn_box(@app, into: into, kind: kind)
+    return drawn_box(@app, into: into, kind: kind, text: "")
 
-# A new box the system draws of `kind`, tabs, a scrolled box or a split, in
-# box `into`, and the room its own drawing takes read from the system.
-function drawn_box(@app: ui.App, into: ui.Widget, kind: i64) -> ui.Widget?
+# A new group box in `into` (`ui.group`), titled `title`: a frame that lays
+# its children out as a column does, in its own content.
+function group(@app: ui.App, into: ui.Widget, title: str) -> ui.Widget?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_GROUP, text: title)
+
+# A new box the system draws of `kind`, tabs, a scrolled box, a split or a
+# group box titled `text`, in box `into`, and the room its own drawing takes
+# read from the system.
+function drawn_box(@app: ui.App, into: ui.Widget, kind: i64, text: str) -> ui.Widget?
     parent = makers.boxed(app, into: into)?
     n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
     n.insets @ sizes.insets_of(kind)
+    n.text @ text
+
+    if kind == hero_ui.HERO_UI_GROUP
+        n.padding @ GROUP_PADDING
     made = makers.added(@app, n: n)?
 
-    if app.native && (kind == hero_ui.HERO_UI_TABS || kind == hero_ui.HERO_UI_SCROLL)
+    if app.native && (kind == hero_ui.HERO_UI_TABS || kind == hero_ui.HERO_UI_SCROLL || kind == hero_ui.HERO_UI_GROUP)
         left @= 0
         top @= 0
         right @= 0
@@ -150,6 +165,9 @@ function need(n: model.Node, needs: [[i64]], column: [i64]) -> [i64]
 
     if n.kind == hero_ui.HERO_UI_SCROLL
         return [column[0] + around_w, layout.least(a: column[1], b: SCROLL_HEIGHT) + around_h]
+
+    if n.kind == hero_ui.HERO_UI_GROUP
+        return [column[0] + around_w, column[1] + around_h]
 
     if model.is_split(n.kind)
         along = axis_of(n)
@@ -339,6 +357,31 @@ test "scrolled: needs its content's width and at most SCROLL_HEIGHT high, its co
     assert ui.render(@app).must()[1] == "  scrolled #2 content 176x654 at 12,12 176x150"
     ui.close(@app).must()
 
+test "group: needs its children's column and the room its frame and title take, its widgets from its content's top-left corner inside its padding, its title set and read back, a group in a group, refused into a widget that holds none and for a title of two lines (catalogue LY11)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    box = ui.group(@app, into: w, title: "Name").must()
+    label = ui.label(@app, into: box, text: "Ada").must()
+    assert ui.kind_of(app, widget: box).must() == .group
+    assert ui.text_of(app, widget: box).must() == "Name"
+    around = sizes.insets_of(hero_ui.HERO_UI_GROUP)
+    assert ui.rect_of(@app, widget: label).must() == ui.Rect(x: GROUP_PADDING, y: GROUP_PADDING, width: 24, height: 16)
+    assert ui.rect_of(@app, widget: box).must() == ui.Rect(x: model.WINDOW_PADDING, y: model.WINDOW_PADDING, width: 24 + 2 * GROUP_PADDING + around[0] + around[2], height: 16 + 2 * GROUP_PADDING + around[1] + around[3])
+    ui.set_text(@app, widget: box, text: "Full name").must()
+    assert ui.text_of(app, widget: box).must() == "Full name"
+    inner = ui.group(@app, into: box, title: "Nick").must()
+    deep = ui.button(@app, into: inner, text: "Ok").must()
+    assert ui.rect_of(@app, widget: deep).must().x == GROUP_PADDING
+    assert ui.rect_of(@app, widget: inner).must().x == GROUP_PADDING
+    assert ui.rect_of(@app, widget: inner).must().y > ui.rect_of(@app, widget: label).must().y
+    assert ui.rect_of(@app, widget: box).must().height > 16 + 2 * GROUP_PADDING + around[1] + around[3]
+    b = ui.button(@app, into: w, text: "B").must()
+    assert fixture.code_of(ui.group(@app, into: b, title: "No")) == ui.INVALID
+    assert fixture.code_of(ui.group(@app, into: w, title: "One\nTwo")) == ui.INVALID
+    ui.destroy(@app, widget: box).must()
+    assert fixture.code_of(ui.rect_of(@app, widget: label)) == ui.CLOSED
+    ui.close(@app).must()
+
 test "split and pane: needs its panes' needs and the divider; the divider in the middle, put by the program and dragged by the person within the panes' needs, told where it moved, kept within them on a resize; one pane over the other; one pane filling the split (catalogue LY09)"
     app @= ui.open(.headless).must()
     w = ui.window(@app, title: "Files", width: 600, height: 200).must()
@@ -434,4 +477,40 @@ test "tabs, a scrolled box and a split: on the native side made with their widge
     assert ui.value_of(app, widget: s).must() == laid.most
     assert ui.rect_of(@app, widget: log).must().height == SCROLL_HEIGHT
     ui.destroy(@app, widget: t).must()
+    ui.close(@app).must()
+
+test "group: on the native side the system's frame made with its title and its widgets in its content, the room it takes around them read from the system, its title read back (catalogue LY11)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Groups", width: 300, height: 200).must()
+    offered = ui.group(@app, into: w, title: "Account")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    box = offered.must()
+    name = ui.text_field(@app, into: box, text: "Ada").must()
+    _ = ui.checkbox(@app, into: box, text: "Admin", checked: false).must()
+    after = ui.button(@app, into: w, text: "Save").must()
+    around = app.table.nodes[box.id].must().insets
+    assert around[0] > 0 && around[1] > around[0] && around[2] > 0 && around[3] > 0
+    assert ui.text_of(app, widget: box).must() == "Account"
+    ui.set_text(@app, widget: box, text: "Sign in").must()
+    assert ui.text_of(app, widget: box).must() == "Sign in"
+    at = ui.rect_of(@app, widget: box).must()
+    inside = ui.rect_of(@app, widget: name).must()
+    under = ui.rect_of(@app, widget: after).must()
+
+    # The field stands in the frame's own content, inside its padding, and
+    # the button after the group under it.
+    assert inside.x == GROUP_PADDING && inside.y == GROUP_PADDING
+    assert at.width >= inside.width + 2 * GROUP_PADDING + around[0] + around[2]
+    assert under.y >= at.y + at.height
+    ui.inject(@app, input: .type_text(widget: name, text: "Grace")).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: name, text: "Grace")
+    ui.destroy(@app, widget: box).must()
     ui.close(@app).must()

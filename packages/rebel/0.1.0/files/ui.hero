@@ -321,6 +321,8 @@ variant Kind
     tray
     # A line between the widgets of a box.
     separator
+    # A frame with a title around the widgets it holds.
+    group
 
 # What `widget` is.
 #
@@ -844,6 +846,22 @@ function label(@app: App, into: Widget, text: str) -> Widget?
 # where the system's arm makes none (Windows and Linux, pending).
 function separator(@app: App, into: Widget) -> Widget?
     return makers.separator(@app, into: into)
+
+# A new group box in `into`, as wxWidgets' `wxStaticBox`: a frame with
+# `title` above it around the widgets made in it, which it lays out one under
+# another as a column does, in its own content. `set_text` changes its title
+# and `text_of` reads it. It is a box: widgets are made in it by passing it
+# as `into`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or another group box.
+# - `title`: one line without a zero byte, "" for a frame with no title.
+#
+# Fails `closed`, `invalid`, `failed`, `unsupported` where the system's arm
+# draws none (Windows and Linux, pending).
+function group(@app: App, into: Widget, title: str) -> Widget?
+    return frames.group(@app, into: into, title: title)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
