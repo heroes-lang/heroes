@@ -3588,7 +3588,7 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
 
 #endif
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(_WIN32)
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
  * shared words are (`hero_ui_refused`), so no word another call left is told
@@ -3604,6 +3604,10 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     (void)session_end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
 }
+
+#endif
+
+#if !defined(__APPLE__)
 
 int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
     (void)id;

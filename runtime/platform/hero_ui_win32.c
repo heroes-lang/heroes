@@ -366,6 +366,12 @@ static _Thread_local bool hero_ui_win_task_asked;
 /* Above 0 while the program's own call moves a window or changes its
  * state, so WINDOWS ON THE SCREEN tells none of it as the person's. */
 static _Thread_local int64_t hero_ui_win_quiet;
+/* Whether an ask of the session's end, and one of another program's, is
+ * held for the program's answer, and the window whose reason Windows
+ * shows (THE SESSION'S END ASKING THE PROGRAM). */
+static _Thread_local bool hero_ui_win_session_held;
+static _Thread_local bool hero_ui_win_closing_held;
+static _Thread_local HWND hero_ui_win_blocking;
 /* The appearance a program injected, 0 for the system's own; the one last
  * told. */
 static _Thread_local int64_t hero_ui_win_appearance_forced;
@@ -1496,6 +1502,8 @@ static void hero_ui_win_setting_changed(LPARAM name);
 static void hero_ui_win_tray_told(HWND hwnd, WPARAM at, LPARAM what);
 static void hero_ui_win_trays_again(void);
 static void hero_ui_win_dialogs_reap(void);
+static LRESULT hero_ui_win_end_asked(HWND hwnd, LPARAM why);
+static void hero_ui_win_quits_answered(void);
 
 /* A notification from a control to its parent (`WM_NOTIFY`): the person's
  * tab, a table's or a tree's. */
@@ -1577,6 +1585,13 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             return 0;
         }
         break;
+    case WM_QUERYENDSESSION:
+        return hero_ui_win_end_asked(hwnd, lparam);
+    case WM_ENDSESSION:
+        if (wparam == FALSE) {
+            hero_ui_win_quits_answered();
+        }
+        return 0;
     case HERO_UI_WIN_DIALOG_DONE:
         hero_ui_win_dialogs_reap();
         return 0;
@@ -1832,6 +1847,10 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
             hero_ui_win_modal = 0;
             hero_ui_win_hold_others(widget->id, false);
         }
+        if (widget->hwnd != NULL && widget->hwnd == hero_ui_win_blocking) {
+            /* Its reason goes with it. */
+            hero_ui_win_blocking = NULL;
+        }
         if (widget->hwnd != NULL) {
             (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
             if (GetMenu(widget->hwnd) != NULL) {
@@ -1963,6 +1982,7 @@ static void hero_ui_win_destroy_tree(int64_t id) {
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_win_quits_answered();
     for (;;) {
         int64_t first = 0;
 
@@ -7995,6 +8015,95 @@ int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint
     hero_layer_free(heading);
     hero_layer_free(said);
     return answer;
+}
+
+
+/* -- THE SESSION'S END ASKING THE PROGRAM ----------------------------------
+ *
+ * Windows asks each top-level window of the app to let the session end, at
+ * the person's logout, restart or shutdown, and asks it to end at another
+ * program's request through the Restart Manager (`ENDSESSION_CLOSEAPP`):
+ * `WM_QUERYENDSESSION`, which is answered at once. The first window asked
+ * queues the ask, `QUIT` 1 for the session's end and 0 for another
+ * program's, and every window answers FALSE while an ask of that kind is
+ * held, so nothing ends until the program answers: Windows shows the person
+ * the app as one keeping the session from ending, with the reason this arm
+ * registers on the window first asked (`ShutdownBlockReasonCreate`), and
+ * the person may end the session anyway or cancel it. `answer_quit` takes
+ * the reason back (`ShutdownBlockReasonDestroy`) and holds nothing more:
+ * with `go` 1 the program then closes the app, and the session's end goes
+ * on without it; with `go` 0 the app stays, and the session's end it held
+ * waits for the person's Cancel on Windows' screen, since no call of an app
+ * cancels it. A session's end Windows forces (`ENDSESSION_CRITICAL`) is
+ * told and not held, since nothing holds it; one cancelled, by the person
+ * or by another program (`WM_ENDSESSION` with FALSE), answers every ask
+ * held as staying. Windows lets no app without a visible window hold the
+ * session's end: it ends such an app. `inject` sends a window of the app
+ * the same `WM_QUERYENDSESSION`, so the ask takes the system's path. */
+
+#ifndef ENDSESSION_CLOSEAPP
+#define ENDSESSION_CLOSEAPP 0x00000001
+#endif
+#ifndef ENDSESSION_CRITICAL
+#define ENDSESSION_CRITICAL 0x40000000
+#endif
+
+/* `WM_QUERYENDSESSION` to window `hwnd`, `why` its reasons: the ask queued
+ * where none of its kind is held, and FALSE, nothing ending, while the
+ * program has not answered, but where Windows forces the end. Told by the
+ * path no setting of the program mutes, so no ask is lost. */
+static LRESULT hero_ui_win_end_asked(HWND hwnd, LPARAM why) {
+    bool session = ((DWORD)why & ENDSESSION_CLOSEAPP) == 0;
+    bool forced = ((DWORD)why & ENDSESSION_CRITICAL) != 0;
+    bool *held = session ? &hero_ui_win_session_held : &hero_ui_win_closing_held;
+
+    if (!*held) {
+        *held = true;
+        if (session && !forced && hero_ui_win_blocking == NULL && ShutdownBlockReasonCreate(hwnd, L"Saving what would be lost before it ends")) {
+            hero_ui_win_blocking = hwnd;
+        }
+        hero_ui_tell_text(HERO_UI_EVENT_QUIT, 0, session ? 1 : 0, 0, NULL, 0);
+    }
+    return forced ? TRUE : FALSE;
+}
+
+/* Answers every ask held, the reason Windows shows taken back. */
+static void hero_ui_win_quits_answered(void) {
+    if (hero_ui_win_blocking != NULL) {
+        (void)ShutdownBlockReasonDestroy(hero_ui_win_blocking);
+        hero_ui_win_blocking = NULL;
+    }
+    hero_ui_win_session_held = false;
+    hero_ui_win_closing_held = false;
+}
+
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    /* Either way the app holds nothing more: `go` 1 is the program's close
+     * to come, and 0 the app staying (THE SESSION'S END). */
+    (void)go;
+    hero_ui_win_quits_answered();
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    hero_ui_native *asked = NULL;
+
+    /* A window of the app, else its tray's hidden window, each top-level
+     * and so asked by Windows. */
+    for (int round = 0; round < 2 && asked == NULL; round += 1) {
+        for (size_t at = 0; at < hero_ui_map_room() && asked == NULL; at += 1) {
+            hero_ui_native *each = hero_ui_at(at);
+
+            if (each != NULL && each->hwnd != NULL && each->kind == (round == 0 ? HERO_UI_WINDOW : HERO_UI_TRAY)) {
+                asked = each;
+            }
+        }
+    }
+    if (asked == NULL) {
+        return hero_ui_refused(HERO_UI_OTHER, "the app shows no window and no tray icon, and Windows asks an app to end through its top-level windows alone");
+    }
+    (void)SendMessageW(asked->hwnd, WM_QUERYENDSESSION, 0, session_end == 1 ? 0 : (LPARAM)ENDSESSION_CLOSEAPP);
+    return HERO_UI_OK;
 }
 
 #endif
