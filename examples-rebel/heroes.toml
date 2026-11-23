@@ -106,6 +106,7 @@ packages = [
     "openapi",
     "os",
     "os/hero_disk",
+    "os/hero_procs",
     "os/hero_sys",
     "otlp",
     "path",

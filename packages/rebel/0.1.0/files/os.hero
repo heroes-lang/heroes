@@ -1,7 +1,8 @@
 # The process's world: its environment, its working folder, the folders the
 # system keeps for a program's data, state, cache, settings and sockets, who it
-# runs as and on what machine, the signals it counts, and a URL or a file
-# handed to the application the user's system keeps for it. Files and folders
+# runs as and on what machine, the machine's processes listed, the signals it
+# counts, and a URL or a file handed to the application the user's system keeps
+# for it. Files and folders
 # by path are the package `fs`'s, and other programs the package `process`'s.
 # The program's arguments and its exit are the language's own, the built-ins
 # `args()` and `exit`, and its arguments read as flags and options are
@@ -28,6 +29,7 @@ use os/internal/counters
 use os/internal/expansion
 use os/internal/filled
 use os/internal/opening
+use os/internal/snapshot
 use os/internal/variables
 
 ## Codes
@@ -591,6 +593,50 @@ record ProcessUsage
     # Nanoseconds the system spent working on its behalf.
     system_ns: i64
 
+# The user that owns a process, as `processes` tells it.
+record Owner
+    # The user's id as the system writes it: the user's number in decimal
+    # digits on Darwin and Linux, the SID of the process's user on Windows
+    # (`S-1-5-18`).
+    id: str
+    # The account's name, without a domain, where the system has a record of
+    # the user that names it: a user number no record names has none.
+    name: str?
+
+# What `processes` answers for one process of the machine, read at one moment.
+#
+# A process is named by its `id` and its `started_unix_ms` together: the
+# system gives an id to another process once the first has ended, but never
+# the same start time.
+record Process
+    # The process's id.
+    id: i64
+    # The id of the process that started it. On Darwin and Linux, once that
+    # one has ended, the id of the one the system gave this process to; on
+    # Windows the id recorded when it was made, which may by now name another
+    # process or none: a parent that started after its child is not its parent.
+    parent_id: i64
+    # The name of its program, which is the name of the executable file: a
+    # name of fifteen bytes or more is given whole where the system lets the
+    # program read the file's own. Each byte of a name that is not UTF-8 is
+    # written as U+FFFD, so one odd name hides no other process.
+    name: str
+    # When it started, in milliseconds since 1970-01-01 00:00:00 UTC. It does
+    # not change while the process lives. On Linux the machine's boot is known
+    # to the second, so it is within a second of the true time, and the same in
+    # every reading while the system's clock is not set.
+    started_unix_ms: i64
+    # The user that owns it: on Darwin and Linux the effective user, on Windows
+    # the process token's user. Fails `not_found` where the system does not tell
+    # this program (on Windows, a process of another user that it may not open
+    # the token of).
+    owner: Owner?
+    # What it holds and has spent, as `process_usage` reads it for the same
+    # process. Fails `not_found` where the system does not tell this program: on
+    # Darwin the processes of other users, and one that has ended and is not yet
+    # waited for.
+    usage: ProcessUsage?
+
 # What `network_counters` answers for one network interface: what it has
 # carried since the machine started, every count at or above 0. A count goes
 # back to 0 where the system starts it again: an interface removed and added,
@@ -736,6 +782,51 @@ function network_counters() -> [NetworkCounters]?
         c = one.counters
         answer @ answer.push(
             NetworkCounters(name: one.name, bytes_received: c[0], bytes_sent: c[1], packets_received: c[2], packets_sent: c[3], errors_received: c[4], errors_sent: c[5], dropped_received: c[6], dropped_sent: c[7])
+        )
+
+    return ok(answer)
+
+# Every process of the machine this program may read, in ascending order of
+# id, at one moment: a monitor's table, with no `ps`.
+#
+# A process that the system hides from this program is not in the list, and
+# so is none whose start time cannot be read: the start time is what tells a
+# process from the next one that is given its id, and no entry is made up for
+# one without. On Windows the idle process (id 0) and a process the program
+# may not open are left out; on Linux a process of another user is left out
+# where `/proc` is mounted with `hidepid`; one that ended while the list was
+# read is left out. Two calls are two readings: processes begin and end
+# between them, and a program that follows a process compares `id` and
+# `started_unix_ms` together.
+#
+# On Darwin the kernel's process list (`sysctl`, which every program may read)
+# and `proc_pidinfo` for the memory of the program's own user's processes; on
+# Linux `/proc`, read as `ps` reads it; on Windows the Toolhelp snapshot, each
+# process opened for `PROCESS_QUERY_LIMITED_INFORMATION`.
+#
+# Fails `unsupported` on a POSIX system neither Darwin nor Linux, and with the
+# system's code where the list cannot be read. See also `process_usage`,
+# `pid`.
+function processes() -> [Process]?
+    answer: [Process] @= []
+
+    for entry in snapshot.read()?
+        owner: Owner? @= fail(code: codes.NOT_FOUND, msg: "the system does not tell who owns this process")
+
+        if entry.owner_id.len() > 0
+            owned: str? @= fail(code: codes.NOT_FOUND, msg: "no account is named for this user")
+
+            if entry.owner_name.len() > 0
+                owned @ ok(entry.owner_name)
+            owner @ ok(Owner(id: entry.owner_id, name: owned))
+        usage: ProcessUsage? @= fail(code: codes.NOT_FOUND, msg: "the system does not tell what this process holds")
+
+        if entry.usage.len() == 4
+            usage @ ok(
+                ProcessUsage(resident_bytes: entry.usage[0], virtual_bytes: entry.usage[1], user_ns: entry.usage[2], system_ns: entry.usage[3])
+            )
+        answer @ answer.push(
+            Process(id: entry.id, parent_id: entry.parent_id, name: entry.name, started_unix_ms: entry.started_unix_ms, owner: owner, usage: usage)
         )
 
     return ok(answer)
@@ -1267,6 +1358,78 @@ test "process_usage: the first process the system started is read, refused to an
         .ok usage => assert usage.resident_bytes >= 0 && usage.user_ns >= 0
         .err e    => assert e.code == PERMISSION || e.code == NOT_FOUND || e.code == UNSUPPORTED && system() == .other
 
+test "processes: this process is listed once, with its parent, its owner and its usage, and the ids ascend with none twice"
+    found = processes().must()
+    previous: i64 @= -1
+    own: i64 @= 0
+
+    for p in found
+        assert p.id > previous
+        previous @ p.id
+        assert p.parent_id >= 0 && p.started_unix_ms > 1700000000000 && p.started_unix_ms < 4000000000000
+
+        if p.id == pid()
+            own @ own + 1
+            assert p.name.len() > 0
+            assert p.parent_id == parent_pid().must()
+
+            match p.owner
+                .ok owner =>
+                    if system() == .windows
+                        assert owner.id.len() > 6 && owner.id[0] == 'S' && owner.id[1] == '-'
+                    else
+                        assert owner.id == f"{effective_user_id().must()}"
+
+                    match owner.name
+                        .ok name => assert name == user_name().must()
+                        .err e   => assert e.code == NOT_FOUND
+                .err _ => assert false
+
+            match p.usage
+                .ok usage => assert usage.resident_bytes > 0 && usage.virtual_bytes > 0 && usage.user_ns >= 0 && usage.system_ns >= 0
+                .err e    => assert e.code == NOT_FOUND && system() == .other
+
+    assert own == 1
+
+test "processes: a second reading names this process by the same id and start time, and a parent started before its child"
+    first = processes().must()
+    second = processes().must()
+    started: i64 @= 0
+    parent_started: i64 @= -1
+    parent = parent_pid().must()
+
+    for p in first
+        if p.id == pid()
+            started @ p.started_unix_ms
+
+        if p.id == parent
+            parent_started @ p.started_unix_ms
+
+    assert started > 0
+    found: i64 @= 0
+
+    for p in second
+        if p.id == pid()
+            assert p.started_unix_ms == started
+            found @ found + 1
+
+    assert found == 1
+
+    if system() != .windows && parent_started >= 0
+        assert parent_started <= started
+
+test "processes: on Darwin and Linux the system's first process, id 1, is listed once and has no parent"
+    found = processes().must()
+    first: i64 @= 0
+
+    for p in found
+        if p.id == 1
+            first @ first + 1
+            assert p.parent_id == 0
+
+    if system() != .windows
+        assert first == 1
+
 test "network_counters: at least one interface, names not empty and not repeated, counts at or above 0, never less a moment later"
     match network_counters()
         .ok first =>
@@ -1721,3 +1884,15 @@ test "signal_of: the signal behind a status's number"
 # The name a shell writes for Ctrl-Z.
 test "signal_name: the name of Ctrl-Z's signal"
     assert signal_name(.terminal_stop) == "SIGTSTP"
+
+# The machine's processes, this one among them.
+test "processes: this process is in the machine's list"
+    found = processes().must()
+    assert found.len() > 0
+    own: i64 @= 0
+
+    for p in found
+        if p.id == pid()
+            own @ own + 1
+
+    assert own == 1
