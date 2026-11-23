@@ -89,6 +89,17 @@ capability printing/settings  what a job asks: copies, paper, orientation, sides
   wx      wxPrintData.SetNoCopies, wxPrintData.SetCollate, wxPrintData.SetOrientation, wxPrintData.SetDuplex, wxPrintData.SetColour, wxPrintData.SetPaperId, wxPrintDialogData.SetFromPage, wxPrintDialogData.SetToPage
   note    one record, which `ui`'s print dialog answers and `submit` takes, as Qt's `QPrinter` is both; the four orientations are IPP's, a reverse one printed half a turn on Windows, whose settings have two; page ranges in order and not touching, as IPP's `page-ranges` holds them
 
+capability printing/settings-text  a job's settings written as text and read back, in IPP's words
+  heroes  printing.format_settings, printing.parse_settings
+  go      -
+  rust    -
+  python  -
+  java    -
+  qt      -
+  dotnet  -
+  wx      -
+  note    IPP's job-template attributes as `<key>=<value>` lines, the words CUPS's options take, so a person's settings are kept in a program's own file; the same text `ui`'s print dialogs exchange with the platform layer, whose C and Swift readers refuse what `parse_settings` refuses (a key twice, a value outside its values)
+
 capability printing/submit  a PDF document submitted to a printer as one job
   heroes  printing.submit, printing.Job
   go      -

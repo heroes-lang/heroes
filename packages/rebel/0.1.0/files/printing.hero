@@ -38,6 +38,7 @@ use printing/internal/calls
 use printing/internal/checks
 use printing/internal/failure
 use printing/internal/fields
+use printing/internal/text
 use printing/internal/trial
 
 ## Codes
@@ -345,6 +346,33 @@ function default_settings(printer: str) -> Settings
         collate: true
     )
 
+# The text of `settings`: UTF-8 lines `<key>=<value>`, each ended by a line
+# feed, the keys and values IPP's own job-template attributes (RFC 8011,
+# 5.2): `printer`, `copies`, `media`, `orientation-requested` (3 to 6),
+# `sides`, `print-color-mode` (`auto` for the printer's own),
+# `multiple-document-handling` and `page-ranges` (`1-3,5-5`). The text `ui`'s
+# print dialogs exchange with the system, and one a program keeps a person's
+# settings in.
+#
+# - `settings`: the settings.
+#
+# Fails `invalid` where a name holds a line feed or a zero byte, or the
+# settings are outside their values. See also `parse_settings`.
+function format_settings(settings: Settings) -> str?
+    return text.format(settings)
+
+# The settings `s` writes, as `format_settings` writes them.
+#
+# - `s`: the text; a key not given keeps `default_settings`' value, and a
+#   last line may end without its line feed.
+# - `printer`: the printer where `s` names none or an empty one.
+#
+# Fails `invalid` for a line that is no `<key>=<value>` of the eight, a key
+# given twice, a value outside its values, or settings outside theirs. See
+# also `format_settings`.
+function parse_settings(s: str, printer: str) -> Settings?
+    return text.parse(text: s, fallback: printer)
+
 ## Jobs
 
 # A job on a printer: what `submit` and `jobs` answer. Built directly by a
@@ -591,6 +619,26 @@ test "default_settings: two copies on A4, both sides"
         collate: s.collate
     )
     assert two.copies == 2 && two.printer == "office" && two.pages.len() == 0
+
+# A person's settings kept as text, and read back.
+test "format_settings: two copies on A4, kept and read back"
+    s = Settings(
+        printer: "office",
+        copies: 2,
+        paper: "iso_a4_210x297mm",
+        orientation: .portrait,
+        sides: .one_sided,
+        color: .printer_default,
+        pages: [],
+        collate: true
+    )
+    kept = format_settings(s).must()
+    assert parse_settings(s: kept, printer: "office").must() == s
+
+# Settings read from the text a dialog answered.
+test "parse_settings: three copies of pages 2 to 4, landscape"
+    s = parse_settings(s: "copies=3\norientation-requested=4\npage-ranges=2-4\n", printer: "office").must()
+    assert s.copies == 3 && s.orientation == .landscape && s.pages == [PageRange(first: 2, last: 4)] && s.printer == "office"
 
 # Whether a state is an end.
 test "is_ended: completed is an end, processing is not"
