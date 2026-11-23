@@ -45,6 +45,7 @@
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
+#include "hero_ui_print_gtk.h"
 #include "hero_ui_web_gtk.h"
 
 /* ==========================================================================
@@ -3804,8 +3805,18 @@ static int64_t hero_ui_gtk_now(void) {
     return (int64_t)now.tv_sec * 1000 + (int64_t)now.tv_nsec / 1000000;
 }
 
+/* The set's or the mailbox's events the watched descriptors queued
+ * (A SET AND A MAILBOX IN THE APP'S WAIT), which the common part queues
+ * without counting them among the arm's own. */
+static uint64_t hero_ui_gtk_readied;
+
+/* What `pump` compares to know that something was queued. */
+static uint64_t hero_ui_gtk_queued(void) {
+    return hero_ui_pushed_count() + hero_ui_gtk_readied;
+}
+
 int64_t hero_ui_arm_pump(int64_t ms) {
-    uint64_t before = hero_ui_pushed_count();
+    uint64_t before = hero_ui_gtk_queued();
     int64_t deadline = hero_ui_gtk_now() + hero_ui_between(ms, 0, INT32_MAX);
 
     for (;;) {
@@ -3813,10 +3824,10 @@ int64_t hero_ui_arm_pump(int64_t ms) {
         bool woke = false;
         unsigned timer;
 
-        while (hero_ui_pushed_count() == before && hero_ui_gtk.main_context_iteration(NULL, 0)) {
+        while (hero_ui_gtk_queued() == before && hero_ui_gtk.main_context_iteration(NULL, 0)) {
         }
         now = hero_ui_gtk_now();
-        if (hero_ui_pushed_count() != before || now >= deadline) {
+        if (hero_ui_gtk_queued() != before || now >= deadline) {
             return HERO_UI_OK;
         }
         timer = hero_ui_gtk.timeout_add((unsigned)(deadline - now), hero_ui_gtk_woke, &woke);
@@ -8210,6 +8221,132 @@ void hero_ui_arm_dialogs_end(int64_t window) {
 
 int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
     return hero_ui_arm_windows_words(words, count);
+}
+
+/* -- A SET AND A MAILBOX IN THE APP'S WAIT ---------------------------------
+ *
+ * The common part hands `hero_ui_arm_watch_fd` the descriptor that stays
+ * readable while an entry of a poll set is ready (an `epoll` or a `kqueue`),
+ * and this arm has GLib's main context watch it by `g_unix_fd_add`, one
+ * source for each watch; the source tells the common part once and removes
+ * itself, and the common part arms it again at its next wait, so a set that
+ * stays ready is told once per wait and never in a spin. The descriptor is
+ * the set's own: never read, never closed, only waited on. */
+
+#define HERO_UI_GTK_WATCHES_MOST 260
+
+static struct {
+    int64_t id;
+    unsigned tag;
+} hero_ui_gtk_watches[HERO_UI_GTK_WATCHES_MOST];
+
+/* The descriptor of watch `id` is readable: tell the common part, and let
+ * the source go (`G_SOURCE_REMOVE`). */
+static int hero_ui_gtk_watch_ready(int fd, unsigned condition, void *data) {
+    int64_t id = (int64_t)(intptr_t)data;
+
+    (void)fd;
+    (void)condition;
+    for (int i = 0; i < HERO_UI_GTK_WATCHES_MOST; i += 1) {
+        if (hero_ui_gtk_watches[i].id == id) {
+            hero_ui_gtk_watches[i].tag = 0;
+        }
+    }
+    if (hero_ui_watch_told(id)) {
+        hero_ui_gtk_readied += 1;
+    }
+    return 0;
+}
+
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
+    int found = -1;
+    int free_place = -1;
+    unsigned tag;
+
+    if (fd < 0 || fd > INT32_MAX || id < 1) {
+        return HERO_UI_INVALID;
+    }
+    for (int i = 0; i < HERO_UI_GTK_WATCHES_MOST; i += 1) {
+        if (hero_ui_gtk_watches[i].id == id) {
+            found = i;
+        } else if (hero_ui_gtk_watches[i].id == 0 && free_place < 0) {
+            free_place = i;
+        }
+    }
+    if (found >= 0 && hero_ui_gtk_watches[found].tag != 0) {
+        /* Armed already and not told yet. */
+        return HERO_UI_OK;
+    }
+    if (found < 0) {
+        found = free_place;
+    }
+    if (found < 0) {
+        return HERO_UI_LIMIT;
+    }
+    tag = hero_ui_gtk.unix_fd_add((int)fd, 1u, hero_ui_gtk_watch_ready, (void *)(intptr_t)id);
+    if (tag == 0) {
+        return hero_ui_refused(HERO_UI_OTHER, "GLib's main context took no watch of the descriptor (g_unix_fd_add)");
+    }
+    hero_ui_gtk_watches[found].id = id;
+    hero_ui_gtk_watches[found].tag = tag;
+    return HERO_UI_OK;
+}
+
+void hero_ui_arm_unwatch_fd(int64_t id) {
+    for (int i = 0; i < HERO_UI_GTK_WATCHES_MOST; i += 1) {
+        if (hero_ui_gtk_watches[i].id != 0 && (id == 0 || hero_ui_gtk_watches[i].id == id)) {
+            if (hero_ui_gtk_watches[i].tag != 0) {
+                (void)hero_ui_gtk.source_remove(hero_ui_gtk_watches[i].tag);
+            }
+            hero_ui_gtk_watches[i].id = 0;
+            hero_ui_gtk_watches[i].tag = 0;
+        }
+    }
+}
+
+/* -- THE PRINT AND PAGE-SETUP DIALOGS ---------------------------------------
+ *
+ * `hero_ui_print_gtk.c` is GTK 4.14's `GtkPrintDialog`; this part hands it
+ * the window's or the web view's own GTK objects and the common part's queue
+ * (`hero_ui_tell_text`), so each answer comes as `HERO_UI_EVENT_DIALOG`
+ * through GTK's main loop. The member's kinds are `hero_ui.h`'s numbers,
+ * its words the last refusal's, which the common part tells with the call's
+ * name; a dialog or a print it cannot find is `NOT_FOUND`, which the common
+ * part takes for a dialog of another family. */
+
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
+    hero_ui_native *owner = hero_ui_gtk_window(window);
+
+    if (owner == NULL) {
+        return hero_ui_find(window) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    return hero_ui_print_gtk_show(owner->widget, dialog, page, settings, count, hero_ui_tell_text);
+}
+
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
+    hero_ui_native *web = hero_ui_find(view);
+    hero_ui_native *owner = web != NULL && web->kind == HERO_UI_WEBVIEW ? hero_ui_gtk_window(web->window) : NULL;
+
+    if (owner == NULL || web->widget == NULL) {
+        return web == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    return hero_ui_print_gtk_web(web->widget, owner->widget, dialog, ask, settings, count, hero_ui_tell_text);
+}
+
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
+    return hero_ui_print_gtk_answer(dialog, value, settings, count);
+}
+
+void hero_ui_arm_print_end(int64_t window) {
+    hero_ui_native *owner = window == 0 ? NULL : hero_ui_gtk_window(window);
+
+    if (window == 0 || owner != NULL) {
+        hero_ui_print_gtk_end(owner != NULL ? owner->widget : NULL);
+    }
+}
+
+int64_t hero_ui_arm_print_words(char *words, int64_t count) {
+    return hero_ui_print_gtk_words(words, count);
 }
 
 /* -- THE DOCK, A NOTIFICATION, THE APPEARANCE, ACCESSIBLE NAMES -------------
