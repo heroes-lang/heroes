@@ -65,6 +65,7 @@ use json_read
 use placed_trees
 use report
 use shell
+use spec_refusals
 use spec_text
 use strings
 use suite_grammar
@@ -97,7 +98,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    142
+    143
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -111,7 +112,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    9967
+    10054
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -172,7 +173,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    13074
+    13185
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -223,7 +224,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "6a5b75776ef6f0f8"
+    "57962078747331a1"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live
@@ -413,6 +414,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     rejected(@r, spec: text.must(), refused: refused)
     fences(@r, scratch: scratch, compiler: compiler, spec: text.must())
     design_copy(@r, spec: text.must())
+    refusal_words(@r, spec: text.must())
     registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
@@ -1630,6 +1632,25 @@ function design_copy(@r: report.Report, spec: str)
         report.keep_failure(@r, label: "spec/design-copy", detail: said)
         return
     report.keep_pass(@r)
+
+# Panel 257's R3: spec § 13's sentence on a callback called after C left a
+# handler says what a refusal says, and the words the runtime prints are held
+# to it (`spec_refusals.hero` says what is read and what is exempt).
+function refusal_words(@r: report.Report, spec: str)
+    c = read_file(REFUSAL_SOURCE)
+
+    if c.is_err()
+        report.keep_failure(@r, label: "spec/refusal-words", detail: "  cannot read " + REFUSAL_SOURCE)
+        return
+    said = spec_refusals.verdict(spec: spec, c: c.must())
+
+    if said.len() > 0
+        report.keep_failure(@r, label: "spec/refusal-words", detail: said)
+        return
+    report.keep_pass(@r)
+
+constant REFUSAL_SOURCE: str
+    "runtime/parts/sigguard.c"
 
 # Empty where design.md §4.19's first fence is spec § 13's first fence byte
 # for byte; else what differs, both texts shown.

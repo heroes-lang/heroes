@@ -110,8 +110,9 @@
 #define HERO_SIGNAL_REMEDY                                                                                   \
     "No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), " \
     "Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 "    \
-    "and a waiting call of that layer answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) "  \
-    "counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call"
+    "and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; "      \
+    "`hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and "                      \
+    "`hero_signal_take(sig: i32) -> i64` gives the count since its last call"
 
 /* 0 until the first refusal takes the stop. */
 static _Atomic int hero_signal_stopping = 0;
@@ -488,7 +489,12 @@ static void hero_signal_measure(void) {
  * frames (a handler left by a jump and jumped back into, panel 255's R3,
  * defect 2702): the runtime decoded the target and saw where it lands, so
  * UNFOLLOWED's words, *a buffer this runtime holds no record of*, were false of
- * it. The handler is held to be running again.
+ * it. The handler is held to be running again, and the function to be called
+ * from inside it: spec § 13's sentence on a callback called after a jump says a
+ * refusal says *the handler was not seen to end, or that C called it from
+ * inside one* (panel 257's R1), and these words, which said neither, now keep
+ * the second. `tests/harness/spec_refusals.hero` holds every arm of this
+ * message but DELIVERED's to one of the two.
  *
  * HERO_SIGNAL_ONSTACK: C jumped (`longjmp`, `siglongjmp`, `_longjmp`) out of
  * the handler onto a stack a context switch had entered and none saw end, a
@@ -533,8 +539,8 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
         : how == HERO_SIGNAL_REENTERED
             ? " was called after C jumped into stack frames the thread had already left (a handler left by a "
               "jump and jumped back into, or frames only a signal's delivery "
-              "puts on the alternate stack): the handler is held to be running again, where neither this "
-              "runtime's memory nor the C library's is safe to use. "
+              "puts on the alternate stack): the handler is held to be running again, and the function to be "
+              "called from inside it, where neither this runtime's memory nor the C library's is safe to use. "
         : how == HERO_SIGNAL_ONSTACK
             ? " was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) "
               "onto a stack a context switch had entered and this runtime has not seen end (a coroutine's, "
