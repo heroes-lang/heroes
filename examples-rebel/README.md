@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-three packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-four packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -190,6 +190,7 @@ package moves its row in the same change. There is no cycle.
 | 8 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `http`, `log`, `otlp`, `random`, `time` |  |
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |
+| 8 | `sse` | server-sent events read and served: a reader that connects again as an `EventSource` does (the last id sent, the stream's `retry` kept, a silent connection given up), through the client's proxy, and a hub that keeps a stream's clients, tells them what happens, replays what a client missed and keeps a silent connection from being closed | `http`, `io`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url`, `web` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 

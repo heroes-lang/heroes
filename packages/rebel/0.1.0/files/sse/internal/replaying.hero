@@ -1,0 +1,71 @@
+# What a hub keeps to tell a client that connects again, and which of it a
+# client that last saw an event is told.
+
+use http
+
+# The events of `kept` that follow the one whose id is `last_id`, in their
+# order: none for an id of "", which a client with no event to speak of sends;
+# every one `kept` holds where the id is that of none of them, so a client
+# whose last event has gone out of the history is told all the history holds
+# and may see an event twice but never misses one. An id that several events
+# hold is the last of them.
+function after(kept: [http.Event], last_id: str) -> [http.Event]
+    if last_id == ""
+        return []
+    found: i64 @= -1
+    at: i64 @= 0
+
+    while at < kept.len()
+        if kept[at].id == last_id
+            found @ at
+        at @ at + 1
+
+    if found < 0
+        return kept
+    return kept.slice(from: found + 1, to: kept.len())
+
+# `kept` and `event` after it, its oldest events dropped to hold `most`; none
+# are held at `most` of 0 or below.
+function kept_with(kept: [http.Event], event: http.Event, most: i64) -> [http.Event]
+    if most <= 0
+        return []
+    out = kept.push(event)
+
+    if out.len() > most
+        return out.slice(from: out.len() - most, to: out.len())
+    return out
+
+test "after: no id tells nothing, an id in the history what follows it, and an id not in it everything"
+    kept = [
+        http.Event(name: "", data: "a", id: "1")
+        http.Event(name: "", data: "b", id: "2")
+        http.Event(name: "x", data: "c", id: "3")
+    ]
+    assert after(kept, last_id: "") == []
+    assert after(kept, last_id: "1") == [kept[1], kept[2]]
+    assert after(kept, last_id: "2") == [kept[2]]
+    assert after(kept, last_id: "3") == []
+    assert after(kept, last_id: "0") == kept
+    assert after(kept, last_id: "4") == kept
+    assert after([], last_id: "1") == []
+    assert after([], last_id: "") == []
+
+test "after: an id several events hold is the last of them"
+    kept = [
+        http.Event(name: "", data: "a", id: "7")
+        http.Event(name: "", data: "b", id: "7")
+        http.Event(name: "", data: "c", id: "9")
+    ]
+    assert after(kept, last_id: "7") == [kept[2]]
+
+test "kept_with: the newest events up to the most, none at 0 or below, and one more than the most drops the oldest"
+    a = http.Event(name: "", data: "a", id: "1")
+    b = http.Event(name: "", data: "b", id: "2")
+    c = http.Event(name: "", data: "c", id: "3")
+    assert kept_with([], event: a, most: 0) == []
+    assert kept_with([a], event: b, most: -3) == []
+    assert kept_with([], event: a, most: 1) == [a]
+    assert kept_with([a], event: b, most: 1) == [b]
+    assert kept_with([a], event: b, most: 2) == [a, b]
+    assert kept_with([a, b], event: c, most: 2) == [b, c]
+    assert kept_with([a, b], event: c, most: 100) == [a, b, c]

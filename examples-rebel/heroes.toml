@@ -153,6 +153,7 @@ packages = [
     "sql/odbc/hero_odbc",
     "sql/postgres",
     "sql/sqlite",
+    "sse",
     "stats",
     "strings",
     "template",

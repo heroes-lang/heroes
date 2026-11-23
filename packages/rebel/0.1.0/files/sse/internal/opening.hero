@@ -1,0 +1,125 @@
+# One attempt to open an event stream: the request a browser's `EventSource`
+# makes, redirects followed, and the answer's head checked, which leaves the
+# connection standing at the first event.
+
+use http
+use io
+use url
+
+# An event stream open: the connection and what its reading keeps.
+record Link
+    # The connection's reader, standing at the body.
+    reader: io.Reader
+    # The stream being read: its last event id and its reconnection time.
+    events: http.EventReader
+
+# The code of an answer that was not what a reconnecting reader waits out.
+constant FAILED: str
+    "failed"
+
+# The code of more redirects than the client follows.
+constant LIMIT: str
+    "limit"
+
+# The request for the stream at `target`: a `GET` with `Accept:
+# text/event-stream` and `Cache-Control: no-cache` where `headers` hold none,
+# and the `Last-Event-ID` of `last_id` where it is not "", a `Last-Event-ID`
+# among `headers` replaced. Fails as `http.request` does.
+function request_of(target: str, headers: [http.Header], last_id: str) -> http.Request?
+    r @= http.request(method: http.METHOD_GET, target: target)?
+    fields: [http.Header] @= headers
+
+    if !http.has_header(fields, name: "Accept")
+        fields @ http.with_header(fields, name: "Accept", value: "text/event-stream")
+
+    if !http.has_header(fields, name: "Cache-Control")
+        fields @ http.with_header(fields, name: "Cache-Control", value: "no-cache")
+    fields @ http.without_header(fields, name: "Last-Event-ID")
+
+    if last_id != ""
+        fields @ http.with_header(fields, name: "Last-Event-ID", value: last_id)
+    r.headers @ fields
+    return ok(r)
+
+# Whether a response of `status` sends the client to its `Location`: 301,
+# 302, 303, 307 and 308, as a browser's fetch follows them.
+function is_redirect(status: i64) -> bool
+    return status == 301 || status == 302 || status == 303 || status == 307 || status == 308
+
+# The connection to the stream at `target`, opened and its head read: `c`'s
+# proxy, deadline for the connection and the head, certificate authorities
+# and limits used, up to `c.max_redirects` redirects followed (a `Location`
+# of another host leaves `Authorization` and `Cookie` behind), and the stream
+# accepted where the answer is 200 and `text/event-stream`. An answer whose
+# status is one of `waits` fails `failed`, with the status, for the caller to
+# wait out; any other is refused as `http.event_reader` refuses it, `invalid`.
+# The connection is closed on every failure. Fails `limit` past the
+# redirects, and as `request_of`, `http.open_stream` and `http.event_reader`
+# fail.
+function attempt(c: http.Client, target: str, headers: [http.Header], last_id: str, waits: [i64]) -> Link?
+    out @= request_of(target: target, headers: headers, last_id: last_id)?
+    hops: i64 @= 0
+
+    while true
+        opened @= http.open_stream(c, r: out)?
+        status = opened.response.status
+
+        if is_redirect(status) && http.has_header(opened.response.headers, name: "Location")
+            where = http.value_of(opened.response.headers, name: "Location").must()
+            shut(@opened.reader.stream)
+            hops @ hops + 1
+
+            if hops > c.max_redirects
+                return fail(
+                    code: LIMIT,
+                    msg: f"the stream at {url.redacted(out.url)} sent the client elsewhere {hops} times, past the {c.max_redirects} it follows"
+                )
+            next = url.resolve(base: out.url, reference: url.parse_loose(where)?)
+
+            if next.host != out.url.host || next.port != out.url.port || next.scheme != out.url.scheme
+                out.headers @ http.without_header(
+                    http.without_header(out.headers, name: "Authorization"),
+                    name: "Cookie"
+                )
+            out.url @ next
+            continue
+
+        for w in waits
+            if w == status
+                shut(@opened.reader.stream)
+                return fail(
+                    code: FAILED,
+                    msg: f"the stream at {url.redacted(out.url)} answered {status} {opened.response.reason}"
+                )
+
+        match http.event_reader(opened.response, limits: c.limits)
+            .ok events => return ok(Link(reader: opened.reader, events: events))
+            .err e =>
+                shut(@opened.reader.stream)
+                return fail(code: e.code, msg: f"the stream at {url.redacted(out.url)}: {e.msg}")
+
+    return fail(code: FAILED, msg: "unreachable")
+
+# Closes `s`, a failure to close being no news to a caller already failing.
+function shut(@s: io.Stream)
+    match io.close(@s)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+test "request_of: the fields an EventSource sends, the last id where there is one, and a program's own kept"
+    r = request_of(target: "http://example.test/feed", headers: [], last_id: "").must()
+    assert http.value_of(r.headers, name: "Accept").must() == "text/event-stream"
+    assert http.value_of(r.headers, name: "Cache-Control").must() == "no-cache"
+    assert !http.has_header(r.headers, name: "Last-Event-ID")
+    again = request_of(
+        target: "http://example.test/feed",
+        headers: [http.Header(name: "Accept", value: "text/x"), http.Header(name: "Last-Event-ID", value: "old")],
+        last_id: "42"
+    ).must()
+    assert http.value_of(again.headers, name: "Accept").must() == "text/x"
+    assert http.value_of(again.headers, name: "Last-Event-ID").must() == "42"
+    assert request_of(target: "not a url", headers: [], last_id: "").is_err()
+
+test "is_redirect: 301, 302, 303, 307 and 308, and no other status"
+    assert is_redirect(301) && is_redirect(302) && is_redirect(303) && is_redirect(307) && is_redirect(308)
+    assert !is_redirect(200) && !is_redirect(300) && !is_redirect(304) && !is_redirect(305) && !is_redirect(309) && !is_redirect(404)

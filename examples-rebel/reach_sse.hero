@@ -1,0 +1,11 @@
+# Reaches Rebel's `sse`, so that `heroes test` on this file runs the tests of
+# its face and its private modules (spec § 12). It prints the id a hub gives
+# the first event it is told of, touching no network.
+
+use <rebel>/http
+use <rebel>/sse
+
+function main()
+    hub @= sse.default_hub()
+    _ = sse.publish(@hub, event: http.Event(name: "", data: "hello", id: "")).default(0)
+    print(hub.events[0].id)
