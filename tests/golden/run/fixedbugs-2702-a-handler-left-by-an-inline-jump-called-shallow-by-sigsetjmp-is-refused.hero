@@ -1,0 +1,25 @@
+# Fixed 2026-11-23, defect 2702, lane-2702 (panel 255's R3, Darwin's C4r
+# rules on Linux): A handler left for good by a jump no function of the C
+# library makes (an inline jump), the function called shallow or deep
+# afterwards: correct C, told as a handler not seen to end.
+# Symptom: before, on Linux the Heroes function ran inside the signal
+# handler's extent (panel 255's evidence, `docs/panel/255-reports/`; defect
+# 2522's class) or the program was refused wrongly.
+# Cause: the runtime dropped a handler's entry by comparing frame addresses
+# lying on two different stacks (a coroutine's, an alternate stack's, the
+# thread's own), or dropped it where a swap had only suspended the handler.
+# Fix: no entry is dropped by a frame's address alone; a swap suspends every
+# standing entry until it returns, a `setcontext` into a `makecontext` range
+# holds them, a landing below the jumping frame or on the alternate stack
+# re-enters a handler, and a landing at or below an entry resumes it.
+# Correct C, refused: R4 of panel 255, the author's to read; the refusal says
+# what the runtime knows and no more.
+extern "fixedbugs-2702-a-handler-left-by-an-inline-jump.h"
+    function ub_run(deep: i32, onstack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("ub_0_0: ", ub_run(deep: 0, onstack: 0, cb: answer))
