@@ -45,6 +45,7 @@
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
+#include "hero_ui_canvas_gtk.h"
 #include "hero_ui_print_gtk.h"
 #include "hero_ui_web_gtk.h"
 
@@ -1497,6 +1498,9 @@ struct hero_ui_native {
      * TIME PICKED), NULL for a part its kind has not; its drop is the button
      * that opens the calendar. */
     void *parts[4];
+    /* A drawing area's record in its member, `hero_ui_canvas_gtk.c`, which
+     * holds the area and its drawing (A DRAWING AREA). */
+    struct hero_ui_canvas_gtk *canvas;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1522,6 +1526,7 @@ static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t val
 static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count);
 static void hero_ui_gtk_close_more(void);
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
+static size_t hero_ui_gtk_key_name(unsigned keyval, char *name, size_t room);
 static hero_ui_gtk_size hero_ui_gtk_natural(void *widget);
 static bool hero_ui_gtk_make_picker(hero_ui_native *made);
 static void hero_ui_gtk_picker_show(hero_ui_native *widget);
@@ -3194,6 +3199,13 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
         if (container != NULL && widget->widget != NULL) {
             hero_ui_gtk.fixed_remove(container, widget->widget);
         }
+        if (widget->canvas != NULL) {
+            /* Nothing is told for the area after, and the member gives back
+             * its reference: GTK frees the member's record as it finalises
+             * the area. */
+            hero_ui_canvas_gtk_forget(widget->canvas);
+            widget->canvas = NULL;
+        }
         hero_ui_gtk_free_view(widget);
         break;
     }
@@ -3488,6 +3500,17 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_FONT_BUTTON:
         ok = hero_ui_gtk_make_font(made);
         break;
+    case HERO_UI_CANVAS: {
+        /* The member makes the area and keeps its drawing (A DRAWING AREA). */
+        char words[HERO_UI_WORDS_MOST];
+        int64_t answer = hero_ui_canvas_gtk_make(id, hero_ui_gtk_key_name, &made->widget, &made->canvas, words, sizeof words);
+
+        if (answer != HERO_UI_OK) {
+            hero_layer_free(made);
+            return hero_ui_refused(answer, words);
+        }
+        break;
+    }
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
         ok = made->menu_model != NULL;
@@ -3554,6 +3577,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (made->action != NULL) {
             hero_ui_gtk.object_unref(made->action);
         }
+        hero_ui_canvas_gtk_forget(made->canvas);
         hero_layer_free(made);
         return ok ? HERO_UI_LIMIT : hero_ui_refused(HERO_UI_OTHER, "GTK made no widget of that kind");
     }
@@ -4132,9 +4156,9 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
     return HERO_UI_INVALID;
 }
 
-/* GDK's key value of the key `hero_ui.h` names; false for a name it does not
- * list. */
-static bool hero_ui_gtk_key_of(const uint8_t *key, int64_t count, unsigned *keyval) {
+/* The `at`th key `hero_ui.h` names by a word, its name and GDK's key value;
+ * false past the last. Letters, digits and F1 to F12 are named by rule. */
+static bool hero_ui_gtk_named_key(size_t at, const char **name, unsigned *keyval) {
     static const struct {
         const char *name;
         unsigned keyval;
@@ -4142,6 +4166,44 @@ static bool hero_ui_gtk_key_of(const uint8_t *key, int64_t count, unsigned *keyv
         {"Enter", 0xFF0Du}, {"Escape", 0xFF1Bu}, {"Tab", 0xFF09u},  {"Space", 0x20u},   {"Delete", 0xFFFFu}, {"Backspace", 0xFF08u}, {"Up", 0xFF52u},
         {"Down", 0xFF54u},  {"Left", 0xFF51u},   {"Right", 0xFF53u}, {"Home", 0xFF50u}, {"End", 0xFF57u},    {"PageUp", 0xFF55u},    {"PageDown", 0xFF56u},
     };
+
+    if (at >= sizeof named / sizeof named[0]) {
+        return false;
+    }
+    *name = named[at].name;
+    *keyval = named[at].keyval;
+    return true;
+}
+
+/* The name `hero_ui.h` gives the key of GDK key value `keyval`, lower case
+ * already, into `name` with its zero byte where it fits in `room`: its
+ * length, 0 for a key it names none (`hero_ui_canvas_gtk_namer`). */
+static size_t hero_ui_gtk_key_name(unsigned keyval, char *name, size_t room) {
+    const char *word;
+    unsigned each;
+    int written;
+
+    if ((keyval >= 'a' && keyval <= 'z') || (keyval >= '0' && keyval <= '9')) {
+        written = snprintf(name, room, "%c", (char)keyval);
+    } else if (keyval >= HERO_GDK_KEY_F1 && keyval < HERO_GDK_KEY_F1 + 12u) {
+        written = snprintf(name, room, "F%u", keyval - HERO_GDK_KEY_F1 + 1u);
+    } else {
+        written = 0;
+        for (size_t at = 0; hero_ui_gtk_named_key(at, &word, &each); at += 1) {
+            if (each == keyval) {
+                written = snprintf(name, room, "%s", word);
+                break;
+            }
+        }
+    }
+    return written > 0 && (size_t)written < room ? (size_t)written : 0;
+}
+
+/* GDK's key value of the key `hero_ui.h` names; false for a name it does not
+ * list. */
+static bool hero_ui_gtk_key_of(const uint8_t *key, int64_t count, unsigned *keyval) {
+    const char *word;
+    unsigned each;
 
     if (count == 1 && ((key[0] >= 'a' && key[0] <= 'z') || (key[0] >= '0' && key[0] <= '9'))) {
         *keyval = key[0];
@@ -4162,9 +4224,9 @@ static bool hero_ui_gtk_key_of(const uint8_t *key, int64_t count, unsigned *keyv
         }
         return false;
     }
-    for (size_t i = 0; i < sizeof named / sizeof named[0]; i += 1) {
-        if (strlen(named[i].name) == (size_t)count && memcmp(named[i].name, key, (size_t)count) == 0) {
-            *keyval = named[i].keyval;
+    for (size_t at = 0; hero_ui_gtk_named_key(at, &word, &each); at += 1) {
+        if (strlen(word) == (size_t)count && memcmp(word, key, (size_t)count) == 0) {
+            *keyval = each;
             return true;
         }
     }
@@ -5553,14 +5615,14 @@ int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
 }
 
 static bool hero_ui_gtk_takes_keys(int64_t kind) {
-    return kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_TEXT_AREA || kind == HERO_UI_LIST || kind == HERO_UI_LIST_MULTIPLE || kind == HERO_UI_EDITABLE_COMBO || kind == HERO_UI_SPIN;
+    return kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_TEXT_AREA || kind == HERO_UI_LIST || kind == HERO_UI_LIST_MULTIPLE || kind == HERO_UI_EDITABLE_COMBO || kind == HERO_UI_SPIN || kind == HERO_UI_CANVAS;
 }
 
 /* The GTK widget given the keys for `widget`: the field, a spin button (its
  * field's text takes them), an editable combo box's entry, the text view, or
  * a list's first chosen row, else its first row, else the list box. */
 static void *hero_ui_gtk_key_target(const hero_ui_native *widget) {
-    if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_SPIN) {
+    if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_SPIN || widget->kind == HERO_UI_CANVAS) {
         return widget->widget;
     }
     if (widget->kind == HERO_UI_TEXT_AREA || widget->kind == HERO_UI_EDITABLE_COMBO) {
@@ -11828,6 +11890,100 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
     return HERO_UI_OK;
 }
 
+/* -- A DRAWING AREA ---------------------------------------------------------
+ *
+ * The area and its drawing are `hero_ui_canvas_gtk.c`'s: these calls find
+ * the widget and its window, hand the member its record, and keep the
+ * words of a refusal for `hero_ui.c`. */
+
+/* Drawing area `id`, or NULL with `*answer` the refusal. */
+static hero_ui_native *hero_ui_gtk_canvas(int64_t id, int64_t *answer) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        *answer = HERO_UI_NOT_FOUND;
+        return NULL;
+    }
+    if (widget->kind != HERO_UI_CANVAS || widget->canvas == NULL) {
+        *answer = HERO_UI_INVALID;
+        return NULL;
+    }
+    return widget;
+}
+
+/* Whether drawing area `data` is mapped and laid out with a size, which
+ * GTK's hit test reads. */
+static bool hero_ui_gtk_canvas_laid(void *data) {
+    const hero_ui_native *widget = data;
+
+    return hero_ui_gtk.widget_get_mapped(widget->widget) && hero_ui_gtk.widget_get_width(widget->widget) > 0 && hero_ui_gtk.widget_get_height(widget->widget) > 0;
+}
+
+int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_canvas_gtk_set_drawing(widget->canvas, list, count, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+/* The area's size is the one the layer placed it at, which GTK lays out at
+ * its next turn: a snapshot taken at once reads the size the program
+ * asked, as the person will see it. */
+int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+    int64_t columns;
+    int64_t rows;
+
+    if (widget == NULL) {
+        return answer;
+    }
+    columns = widget->placed ? widget->width : 0;
+    rows = widget->placed ? widget->height : 0;
+    answer = hero_ui_canvas_gtk_snapshot(widget->canvas, columns, rows, rgba, count, words, sizeof words);
+    if (answer != HERO_UI_OK) {
+        return hero_ui_refused(answer, words);
+    }
+    *width = columns;
+    *height = rows;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+    hero_ui_native *window;
+
+    if (widget == NULL) {
+        return answer;
+    }
+    window = hero_ui_gtk_window(widget->window);
+    if (window == NULL || window->widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!window->visible || !widget->visible) {
+        return hero_ui_refused(HERO_UI_OTHER, "the drawing area stands in no window the system has shown");
+    }
+    if (phase == HERO_UI_POINTER_DOWN || phase == HERO_UI_POINTER_UP || phase == HERO_UI_POINTER_DRAG) {
+        /* GTK's hit test reads the window as GTK has laid it out, so the
+         * area is given the time to be shown at its size first, as a
+         * person sees it before pressing. */
+        hero_ui_gtk_settle(window);
+        if (!hero_ui_gtk_spin(2000, hero_ui_gtk_canvas_laid, widget)) {
+            return hero_ui_refused(HERO_UI_OTHER, "the drawing area was not drawn on the screen at a size within two seconds, so no press can reach it");
+        }
+    }
+    answer = hero_ui_canvas_gtk_pointer(widget->canvas, window->widget, x, y, phase, button, clicks, modifiers, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
 /* Every kind of `hero_ui.h` and every act of it is
@@ -11835,9 +11991,9 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
  * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the font button is drawn here: one the contract gains is
+    /* No kind past the drawing area is drawn here: one the contract gains is
      * refused by name until this arm makes it. */
-    return kind <= HERO_UI_FONT_BUTTON;
+    return kind <= HERO_UI_CANVAS;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
