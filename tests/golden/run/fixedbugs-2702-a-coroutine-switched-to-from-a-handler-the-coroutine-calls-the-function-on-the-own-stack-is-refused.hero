@@ -1,0 +1,28 @@
+# Fixed 2026-11-23, defect 2702, lane-2702 (panel 255's R3, Darwin's C4r
+# rules on Linux): A handler of C's switches to a coroutine (shape A) by
+# `swapcontext`: the coroutine calls the program's function while the handler
+# is suspended (how 1), or switches back and the handler calls it (how 2). A
+# coroutine on the thread's own stack and a handler on an alternate stack are
+# two stacks, which an address compared across them cannot order.
+# Symptom: before, on Linux the Heroes function ran inside the signal
+# handler's extent (panel 255's evidence, `docs/panel/255-reports/`; defect
+# 2522's class) or the program was refused wrongly.
+# Cause: the runtime dropped a handler's entry by comparing frame addresses
+# lying on two different stacks (a coroutine's, an alternate stack's, the
+# thread's own), or dropped it where a swap had only suspended the handler.
+# Fix: no entry is dropped by a frame's address alone; a swap suspends every
+# standing entry until it returns, a `setcontext` into a `makecontext` range
+# holds them, a landing below the jumping frame or on the alternate stack
+# re-enters a handler, and a landing at or below an entry resumes it.
+# Refused, in words that say what the runtime knows: the handler had not been
+# seen to end, or had switched to another context and had not been seen to
+# switch back.
+extern "fixedbugs-2702-contexts-and-jumps-out-of-a-handler.h"
+    function xr_coarray(how: i32, onstack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("a_1_0: ", xr_coarray(how: 1, onstack: 0, cb: answer))

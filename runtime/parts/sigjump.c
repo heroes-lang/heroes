@@ -10,9 +10,11 @@
 /* parts/sigjump.c — the C library's own save points and jumps, found before
  * `main`, and the one word of a jump's target that tells a handler left from
  * a handler jumped within (route J, panel 249's R3; panel 251's R1; panel
- * 255's R1, defect 2679; defect 2522; design.md §1.12). On Linux and every
- * POSIX system but Darwin, whose route is `parts/rebind.c`. The route is
- * split by concern over five files, included in this order by `runtime.c`:
+ * 255's R1 and R3, defects 2679 and 2702; defect 2522; design.md §1.12). On
+ * Linux and every POSIX system but Darwin, whose route is `parts/rebind.c`.
+ * The route is split by concern over six files, included in this order by
+ * `runtime.c`, after `sigentries.c` (the handlers a thread is inside and the
+ * rules that drop one) and `siginstall.c`:
  *
  *   sigjump.c         the C library's own functions, the accessor's state
  *   sigjump_probe.c   the assembly the calibration saves through
@@ -20,13 +22,14 @@
  *                     jump will install
  *   sigjump_record.c  route A, the record, where the key is not verified
  *   sigjump_save.c    the save points and the jumps themselves
+ *   sigjump_make.c    `makecontext`, which learns a context's stack
  *
- * WHAT IT TELLS. `parts/siginstall.c` keeps, per claimed thread, the frames of
- * the wrappers it runs around a program's C handlers. A handler left by a
+ * WHAT IT TELLS. `parts/siginstall.c` keeps, per claimed thread, an entry for
+ * each wrapper it runs around a program's C handlers. A handler left by a
  * jump leaves its entry, and the entries alone cannot tell a jump OUT of the
  * handler (the entry is dead) from a jump WITHIN it (the entry is live). The
- * jump is told apart at the jump, by the stack pointer it will land at: the
- * entries deeper than it are dropped, by `hero_sig_prune`'s rule.
+ * jump is told apart at the jump, by the stack pointer it will land at and the
+ * stack that lies on: `parts/sigentries.c`'s rules 4 to 7.
  *
  * ROUTE C: THE TARGET'S OWN STACK POINTER, read from the buffer the jump is
  * given. At a jump that buffer lives (the C library reads it next), so one
@@ -60,12 +63,16 @@
  * AddressSanitizer a jump first calls `__asan_handle_no_return`, as ASan's own
  * interceptor would, since a definition here displaces it.
  *
- * WHAT IT DOES NOT REACH, said: a context switched inside a handler (defect
- * 2702, `hero_sig_prune` compares a coroutine's stack with an alternate
- * stack's entries by address); a C++ exception or `_Unwind_*` out of a
- * handler (no jump is called, so `hero_sig_prune` alone drops the entry
- * later, which errs toward refusal). A program library defining one of these
- * ten names is told `ffi_defined_elsewhere` (panel 239's member). */
+ * WHAT IT DOES NOT REACH, said: a save the runtime never sees, which a
+ * program's own `dlvsym` reaches (`dlsym` is answered with this file's since
+ * the author's ruling C of 2026-11-20, `parts/siglookup.c`; `dlvsym` is not);
+ * a handler left by a switch or a jump this file never sees (an inline
+ * `__builtin_longjmp`, hand-written assembly, a C++ exception or
+ * `_Unwind_*`), which keeps its entry and is told in words that name it; and
+ * the one residue panel 255's R3 leaves by design, `rr_2`, a handler left by a
+ * jump and landed in again from a coroutine on another range (no range's
+ * bottom is recorded where the thread leaves it). A program library defining
+ * one of these ten names is told `ffi_defined_elsewhere` (panel 239's member). */
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 

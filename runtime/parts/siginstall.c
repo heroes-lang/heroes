@@ -31,17 +31,19 @@
  * address on the claimed thread's entries (`HeroSignalStack`,
  * `parts/sigguard.c`), calls the program's handler with the kernel's own
  * `siginfo_t` and context, and pops; the thunk refuses wherever an entry
- * stands above its frame (`hero_sig_inside`), whatever the handler kept of
- * frame records.
+ * stands (`hero_sig_inside`), whatever the handler kept of frame records.
  *
- * A HANDLER LEFT BY A JUMP leaves its entry. The thunk and the next wrapper
- * drop the entries an address proves left (`hero_sig_prune`: deeper on the
- * same stack, or on an alternate stack while the address is on the thread's
- * own); `parts/sigjump.c` drops, at the jump itself, the entries its target
- * leaves, by the validated record of the buffer it jumps to. Without that, a
- * correct program that jumped out of a handler and later called a Heroes
- * function deeper than the dead entry was refused (panel 249's twelve depth
- * programs, three at `-O0`).
+ * THE ENTRIES, AND WHAT DROPS ONE (`parts/sigentries.c`, panel 255's R3,
+ * defect 2702): a handler's entry is dropped when its wrapper ends, and by
+ * the jump or the swap this runtime sees (`parts/sigjump_save.c`) that
+ * proves the handler left, judged by the stack the target lies on and never
+ * by comparing two addresses on two stacks. No frame's address alone drops
+ * an entry, neither the wrapper's nor the thunk's: a context switched where
+ * this runtime cannot see it would pass for the same stack. A correct program
+ * that jumped out of a handler by a jump this runtime sees and later called
+ * a Heroes function deeper than the dead entry is not refused (panel 249's
+ * twelve depth programs); one that left it by a jump this runtime does not
+ * see is, in words that name that jump.
  *
  * THE C LIBRARY'S OWN `sigaction` is found by the C library's own
  * `dlsym(RTLD_NEXT)` (`parts/siglookup.c`) before `main` (a constructor),
@@ -133,36 +135,16 @@ static void hero_sig_answer(int sig, struct sigaction *old) {
     }
 }
 
-/* The claimed thread's record, through the thread key `parts/sigguard.c`
- * makes, never a thread-local access (which may allocate inside a signal on
- * a thread nothing claimed); NULL on such a thread. */
-static HeroSignalStack *hero_sig_own(void) {
-    if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) != 2) return NULL;
-    return pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed));
-}
-
-static bool hero_sig_on_own(const HeroSignalStack *own, uintptr_t at) { return at >= own->lo && at < own->hi; }
-
-/* The entries, from the innermost, whose wrappers `at` proves left: one on
- * the same stack as `at` and deeper (the stack has unwound past it), and one
- * on an alternate stack while `at` is on the thread's own (the thread has
- * left the alternate stack, which only a jump or a return does). */
-static void hero_sig_prune(HeroSignalStack *own, uintptr_t at) {
-    bool here = hero_sig_on_own(own, at);
-    while (own->depth > 0) {
-        uintptr_t w = own->entries[own->depth - 1];
-        bool there = hero_sig_on_own(own, w);
-        bool left = (there == here && w <= at) || (!there && here);
-        if (!left) break;
-        own->depth -= 1;
-    }
-    if (own->unsure > own->depth) own->unsure = own->depth;
-}
+/* `parts/sigjump_record.c`: under route A, the pending buffers read where
+ * they provably live, at a handler's begin (`x_unseen0`: a refill by a save no
+ * slot sees, with no save or jump between, is told by its bytes). */
+static void hero_jmp_observe(HeroSignalStack *own);
 
 /* What the kernel runs for every handler a program's C installed: the entry
- * pushed, the handler called as the program asked, the entry popped. The
- * signal fences order the entry before the depth that publishes it, for a
- * nested signal on this thread.
+ * pushed (no prune by this wrapper's own frame, rule 5), the handler called as
+ * the program asked, the entry dropped with every entry pushed after it that
+ * nothing suspends (`parts/sigentries.c`). The signal fences order the entry
+ * before the depth that publishes it, for a nested signal on this thread.
  *
  * THE CALL IS THE KERNEL'S, SO ITS TYPE IS NOT CHECKED: the kernel calls a
  * handler's address whatever C type its program gave it, and a handler a
@@ -178,16 +160,16 @@ __attribute__((no_sanitize("function"))) static void hero_sig_wrapper(int sig, s
     if ((flags & (int)SA_RESETHAND) != 0) atomic_store_explicit(&hero_sig_handlers[sig], 0, memory_order_release);
     if (h == 0) return;
     HeroSignalStack *own = hero_sig_own();
-    int at = -1;
+    uint64_t mine = 0;
+    bool lost = false;
     if (own != NULL) {
+        hero_jmp_observe(own);
         uintptr_t me = (uintptr_t)__builtin_frame_address(0);
-        hero_sig_prune(own, me);
-        if (own->depth < HERO_SIG_DEPTH) {
-            at = own->depth;
-            own->entries[at] = me;
-            atomic_signal_fence(memory_order_seq_cst);
-            own->depth = at + 1;
-            atomic_signal_fence(memory_order_seq_cst);
+        uintptr_t al = 0, ah = 0;
+        if (!hero_sig_alt_now(&al, &ah) || me < al || me >= ah) al = ah = 0;
+        if (!hero_sig_push(own, me, al, ah, 0, &mine)) {
+            own->lost += 1;
+            lost = true;
         }
     }
     if ((flags & SA_SIGINFO) != 0) {
@@ -195,29 +177,16 @@ __attribute__((no_sanitize("function"))) static void hero_sig_wrapper(int sig, s
     } else {
         ((hero_sig_handler_fn)h)(sig);
     }
-    if (at >= 0) {
-        atomic_signal_fence(memory_order_seq_cst);
-        own->depth = at;
-        /* This handler returned, so it was running, and every handler it
-         * interrupted with it: a jump J could not follow, made while they
-         * stood, landed inside this one. */
-        if (own->unsure > at) own->unsure = 0;
+    if (own != NULL) {
+        if (mine != 0) {
+            for (int i = own->depth - 1; i >= 0; i -= 1) {
+                HeroSigEntry *e = &own->entries[i];
+                if (e->dead) continue;
+                if (e->serial == mine || (e->serial > mine && !hero_sig_pinned(e))) hero_sig_drop(own, i);
+            }
+        }
+        if (lost) own->lost -= 1;
     }
-}
-
-/* The thunk's question (`parts/sigguard.c`): is a wrapper on this thread
- * still running above the thunk's frame? The entries it proves left are
- * dropped first; one that remains above it, on the same stack, refuses, told
- * as unsure where a jump J could not follow passed over it. */
-static int hero_sig_inside(HeroSignalStack *own, uintptr_t frame) {
-    if (own == NULL || own->depth == 0) return HERO_SIG_OUTSIDE;
-    hero_sig_prune(own, frame);
-    bool here = hero_sig_on_own(own, frame);
-    for (int i = own->depth - 1; i >= 0; i -= 1) {
-        uintptr_t w = own->entries[i];
-        if (hero_sig_on_own(own, w) == here && w > frame) return i < own->unsure ? HERO_SIG_UNSURE : HERO_SIG_INSIDE;
-    }
-    return HERO_SIG_OUTSIDE;
 }
 
 int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict old) {

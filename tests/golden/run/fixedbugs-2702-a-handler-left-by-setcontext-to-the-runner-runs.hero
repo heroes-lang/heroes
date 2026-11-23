@@ -1,0 +1,23 @@
+# Fixed 2026-11-23, defect 2702, lane-2702 (panel 255's R3, Darwin's C4r
+# rules on Linux): A handler resumes the runner's context taken by
+# `getcontext` and the runner, the handler left, calls the function 64 KiB
+# deeper. Correct: a jump out, as `siglongjmp` is.
+# Symptom: none; this case pins that the rules of `parts/sigentries.c` do not
+# refuse what they may not.
+# Cause: the runtime dropped a handler's entry by comparing frame addresses
+# lying on two different stacks (a coroutine's, an alternate stack's, the
+# thread's own), or dropped it where a swap had only suspended the handler.
+# Fix: no entry is dropped by a frame's address alone; a swap suspends every
+# standing entry until it returns, a `setcontext` into a `makecontext` range
+# holds them, a landing below the jumping frame or on the alternate stack
+# re-enters a handler, and a landing at or below an entry resumes it.
+# A correct program, which the rules must not refuse.
+extern "fixedbugs-2702-contexts-and-jumps-out-of-a-handler.h"
+    function xr_escape(onstack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("b_0: ", xr_escape(onstack: 0, cb: answer))

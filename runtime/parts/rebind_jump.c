@@ -38,7 +38,7 @@ static void hero_rebind_reenter_by_record(HeroSignalStack *own, const void *buf)
     HeroRebindRecord *r = hero_rebind_record(buf);
     if (r == NULL || atomic_load(&r->entry) == 0) return;
     uint64_t serial = 0;
-    if (!hero_rebind_push(own, 0, 0, 0, 1, &serial)) own->lost += 1;
+    if (!hero_rebind_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
 }
 
 /* A jump of the setjmp family to `env`: its target decoded at every jump,

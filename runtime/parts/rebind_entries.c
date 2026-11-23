@@ -223,14 +223,14 @@ static void hero_rebind_reenter(HeroSignalStack *own, uintptr_t t) {
         }
     }
     uint64_t serial = 0;
-    if (!hero_rebind_push(own, t, alt ? al : 0, alt ? ah : 0, 1, &serial)) own->lost += 1;
+    if (!hero_rebind_push(own, t, alt ? al : 0, alt ? ah : 0, 2, &serial)) own->lost += 1;
 }
 
 /* Every standing entry marked as one a jump this file could not follow may
  * have left: the refusal then says so. */
 static void hero_rebind_mark_unsure(HeroSignalStack *own) {
     for (int i = 0; i < own->depth; i += 1) {
-        if (!own->entries[i].dead) own->entries[i].unsure = 1;
+        if (!own->entries[i].dead && own->entries[i].unsure == 0) own->entries[i].unsure = 1;
     }
 }
 
@@ -293,7 +293,7 @@ __attribute__((noinline)) static int hero_rebind_inside(void) {
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroRebindEntry *e = &own->entries[i];
         if (e->dead) continue;
-        if (e->unsure) return HERO_SIG_UNSURE;
+        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : HERO_SIG_UNSURE;
         return hero_rebind_pinned(e) ? HERO_SIG_SWITCHED : HERO_SIG_INSIDE;
     }
     return HERO_SIG_INSIDE;

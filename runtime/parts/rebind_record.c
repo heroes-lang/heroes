@@ -227,7 +227,7 @@ static void hero_rebind_jump_by_record(HeroSignalStack *own, const void *buf) {
     }
     if (!named) {
         uint64_t serial = 0;
-        if (!hero_rebind_push(own, 0, 0, 0, 1, &serial)) own->lost += 1;
+        if (!hero_rebind_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
     }
 }
 

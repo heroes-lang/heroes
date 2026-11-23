@@ -1,0 +1,24 @@
+# Fixed 2026-11-23, defect 2702, lane-2702 (panel 255's R3, Darwin's C4r
+# rules on Linux): A coroutine on a heap stack takes its own context, raises,
+# and the handler on the coroutine's stack leaves by `setcontext` to that
+# context; the coroutine then calls the function twelve frames down. Correct:
+# the handler is left for good.
+# Symptom: none; this case pins that the rules of `parts/sigentries.c` do not
+# refuse what they may not.
+# Cause: the runtime dropped a handler's entry by comparing frame addresses
+# lying on two different stacks (a coroutine's, an alternate stack's, the
+# thread's own), or dropped it where a swap had only suspended the handler.
+# Fix: no entry is dropped by a frame's address alone; a swap suspends every
+# standing entry until it returns, a `setcontext` into a `makecontext` range
+# holds them, a landing below the jumping frame or on the alternate stack
+# re-enters a handler, and a landing at or below an entry resumes it.
+# A correct program, which the rules must not refuse.
+extern "fixedbugs-2702-a-handler-left-by-setcontext.h"
+    function cs_run(onstack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("cs_0: ", cs_run(onstack: 0, cb: answer))

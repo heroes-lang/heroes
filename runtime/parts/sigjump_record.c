@@ -7,23 +7,27 @@
  * `WITH` in the tag above, because that operator takes an exception from
  * SPDX's own registry and this one is not in it. */
 
-/* parts/sigjump_record.c — route A and route C's jump, the drop of the
- * entries a jump leaves (panel 255's R1, defect 2679; panel 251's R1;
- * design.md §1.12). Needs `sigjump.c` and `sigjump_decode.c`.
+/* parts/sigjump_record.c — route A: the records of the save points, for a
+ * family whose decode did not verify (panel 255's R1 and R3, defects 2679 and
+ * 2702; panel 251's R1; design.md §1.12). Needs `sigjump.c` and
+ * `sigjump_decode.c`.
  *
  * WHERE THE KEY IS NOT VERIFIED the save points record, per claimed thread,
- * which buffer they filled and the frame of the call, and a jump to a buffer
- * with a record drops the entries deeper than that frame. A record is
- * VALIDATED by a fingerprint of the buffer's bytes, and the fingerprint is
- * read ONLY of a buffer the runtime can prove lives: on the thread's own
- * stack, its current alternate stack, or a writable segment of an image
- * loaded before any library's constructor ran (read at `.preinit_array`, so
- * none of them can be unloaded). A pair whose buffer may have been given back
- * loses its record unread (defect 2679), and a jump to a buffer with no
- * record keeps every entry and marks them `unsure`: the told refusal.
+ * which buffer they filled and the serial of the innermost handler standing at
+ * the save (0 for none): the handler's own order, never an address on a stack.
+ * A record is VALIDATED by a fingerprint of the buffer's bytes, and the
+ * fingerprint is read ONLY of a buffer the runtime can prove lives: on the
+ * thread's own stack, its current alternate stack, or a writable segment of an
+ * image loaded before any library's constructor ran (read at
+ * `.preinit_array`, so none of them can be unloaded). A pair whose buffer may
+ * have been given back loses its record unread (defect 2679), and a jump to a
+ * buffer with no trusted record keeps every entry and marks them `unsure`: the
+ * told refusal. Where the record is trusted every entry pushed after its save
+ * that nothing suspends is left, and a record naming an entry that no longer
+ * stands is a jump back into a handler left earlier (shape R).
  *
- * WHERE THE KEY IS VERIFIED nothing of this is read: `hero_jmp_leave` prunes
- * by the stack pointer the jump itself will install. */
+ * WHERE THE KEY IS VERIFIED nothing of this is read: `sigjump_save.c` judges
+ * the stack pointer the jump itself will install, by `sigentries.c`'s rules. */
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 
@@ -108,9 +112,9 @@ static void hero_jmp_read_pending(HeroSignalStack *own, uintptr_t except) {
 /* The record: a buffer's pair taken back where it has one, else the oldest
  * overwritten. Only this thread writes it; a handler interrupting a write here
  * finds the pair's buffer still 0, which matches no jump. */
-static void hero_jmp_note(const void *buf, uintptr_t frame, uint32_t size) {
+static void hero_jmp_note(const void *buf, uint32_t size) {
     HeroSignalStack *own = hero_sig_own();
-    if (own == NULL) return;
+    if (own == NULL || buf == NULL) return;
     uintptr_t key = (uintptr_t)buf;
     hero_jmp_read_pending(own, key);
     int slot = -1;
@@ -126,40 +130,87 @@ static void hero_jmp_note(const void *buf, uintptr_t frame, uint32_t size) {
     }
     own->jump_buf[slot] = 0;
     atomic_signal_fence(memory_order_seq_cst);
-    own->jump_frame[slot] = frame;
+    own->jump_entry[slot] = hero_sig_innermost(own);
     own->jump_print[slot] = 0;
     own->jump_size[slot] = size;
     atomic_signal_fence(memory_order_seq_cst);
     own->jump_buf[slot] = key;
 }
 
-/* Before a jump to `buf`: the entries its target leaves, dropped. Under C by
- * the stack pointer it will install; under A where its record stands and its
- * bytes are the C library's, otherwise none, every entry standing marked as
- * one this jump may have left (`unsure`). */
-static void hero_jmp_leave(const void *buf, bool context) {
+/* `buf`'s record dropped, its context now naming another stack. */
+static void hero_jmp_forget(const void *buf) {
     HeroSignalStack *own = hero_sig_own();
-    if (own == NULL || own->depth == 0) return;
-    if (context && atomic_load_explicit(&hero_ctx_decoding, memory_order_acquire) != 0) {
-        hero_sig_prune(own, hero_jmp_context_sp((const ucontext_t *)buf));
-        return;
-    }
-    if (!context && atomic_load_explicit(&hero_jmp_decoding, memory_order_acquire) != 0) {
-        hero_sig_prune(own, hero_jmp_sp_of((const struct __jmp_buf_tag *)buf));
-        return;
-    }
+    if (own == NULL) return;
     uintptr_t key = (uintptr_t)buf;
+    for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
+        if (own->jump_buf[i] == key) own->jump_buf[i] = 0;
+    }
+}
+
+/* Under route A at a handler's begin (`parts/siginstall.c`'s wrapper): every
+ * pending buffer read where it provably lives, so a refill inside the handler
+ * by a save this file never saw, with no save or jump between, is told by its
+ * bytes (`x_unseen0` ran inside the signal under panel 255's R1 and A). */
+static void hero_jmp_observe(HeroSignalStack *own) {
+    if (atomic_load_explicit(&hero_jmp_decoding, memory_order_acquire) == 0 ||
+        atomic_load_explicit(&hero_ctx_decoding, memory_order_acquire) == 0) {
+        hero_jmp_read_pending(own, 0);
+    }
+}
+
+/* The record of `buf` this thread trusts, or -1: one with its bytes still the
+ * C library's own, which no later write by the program refilled. */
+static int hero_jmp_trusted(HeroSignalStack *own, uintptr_t key) {
     hero_jmp_read_pending(own, key);
     for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
         if (own->jump_buf[i] != key) continue;
         bool refilled = own->jump_print[i] != 0 && own->jump_print[i] != hero_jmp_fingerprint(key, own->jump_size[i]);
-        if (!refilled) {
-            hero_sig_prune(own, own->jump_frame[i]);
-            return;
-        }
-        break;
+        return refilled ? -1 : i;
     }
-    own->unsure = own->depth;
+    return -1;
+}
+
+/* Route A at a jump to `buf` while a handler stands (rules 5 and 6 obeyed):
+ * where the record is trusted, every entry pushed after its save that nothing
+ * pins is left, and the entry it names runs again; where the entry it names no
+ * longer stands, the jump re-enters a handler left earlier, which stands again
+ * as an entry, unsure; where no record is trusted, every entry is kept and
+ * marked unsure. */
+static void hero_jmp_by_record(HeroSignalStack *own, const void *buf) {
+    int slot = hero_jmp_trusted(own, (uintptr_t)buf);
+    if (slot < 0) {
+        hero_sig_mark_unsure(own);
+        return;
+    }
+    uint64_t entry = own->jump_entry[slot];
+    bool named = entry == 0;
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        HeroSigEntry *e = &own->entries[i];
+        if (e->dead) continue;
+        if (e->serial == entry) {
+            named = true;
+            hero_sig_resumed(e);
+        }
+        if (e->serial > entry && !hero_sig_pinned(e)) hero_sig_drop(own, i);
+    }
+    if (!named) {
+        uint64_t serial = 0;
+        if (!hero_sig_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
+    }
+}
+
+/* Route A outside every handler: the target's record asked, nothing read of
+ * any buffer; a record naming an entry is a save made inside a handler, and a
+ * jump to it now re-enters that handler's frames, whether or not its bytes
+ * could be fingerprinted (a refusal is the safe side of a stale record). */
+static void hero_jmp_reenter_by_record(HeroSignalStack *own, const void *buf) {
+    uintptr_t key = (uintptr_t)buf;
+    for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
+        if (own->jump_buf[i] != key || own->jump_entry[i] == 0) continue;
+        uint64_t serial = 0;
+        if (!hero_sig_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
+        return;
+    }
 }
 
 #endif
