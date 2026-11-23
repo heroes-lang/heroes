@@ -724,6 +724,59 @@ a question, not a premise), so a repository of Rebel's own would hold its Heroes
   `path` entry from a clone of this repository (`heroes add --path ... --as rebel`), and `heroes add rebel` by name
   waits for the index's row; no page tells a reader to type a command that exits 2.
 
+## The plan as it stands, 2026-11-23 about 23:30: the order to the one push and past it
+
+Written at the author's request, so that it is not lost. It is a snapshot of the evening: **the truth afterwards is
+`git log` and GitHub's open issues** (`heroes run tests/harness/issues.hero -- open`), which this section never
+replaces; the coordinator's day-to-day state is `rebel-scratch/coord/agents-live.md` (ignored by git).
+
+**Where it stands.** `main` at `128e5eb66` is 877 commits past `origin/main` and not pushed; every lane works in a
+worktree under `.claude/worktrees/` cut from `main`, and the coordinator merges each commit in with `merge-tree` first.
+The two-stage build from the seed and the site's build passed on `e8e3f3662`, an older `main`; the whole net and every
+platform leg are the CI's, as the author decided. 96 repaired issues were closed on GitHub on 2026-11-23 (163 open
+became 67), then 2702 (its residue is 2745), 2746 to 2748 (Windows error codes, run on the Windows box: 10, 2, 1 and 7
+tests passed) and 2522, 2583 and 2578. **Open `blocking`: 2572 alone**, whose two FIFO tests are the compiler's own and
+wait for the CI's Windows leg.
+
+**Before the one push** (the author's answers *1a 2b 3b 4a* and *1a 2a*, above), in this order:
+
+1. **The lanes in flight**, each merged as it commits: `rebel-suite2` (the `rebel` suite read 11 passed and 68 failed
+   at `e8e3f3662`), `ui-canvas-win32` and `ui-canvas-gtk` (DR01 to DR03), `ui-ax-cal` (CT44 on the three systems, AX04),
+   `gap-ssh` (I29), `gap-pki2` (B08, J15, J09, J10), `reach-move` (the 194 reach programs into one folder),
+   `box-validate` (the round on the Windows box, which stays up to about 06:30).
+2. **Wave B**, opened when the Mac has room (it swapped 4.2 of 5.1 GB with nine lanes running): `gap-webp` (K04's lossy
+   half), `gap-os2` (G06, G07, G08, G10), `gap-service2` (H14's three pending blocks, H15, H16), `gap-i18n` (A12, A23,
+   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (M05, K22). N09, files
+   embedded in the program, stays a language form for a sitting of its own. The briefs are `coord/round-3b-brief.md`
+   and `coord/round-3b-lanes.md`.
+3. **The layout move**, last, one script by one lane after every other lane has merged
+   (`coord/layout-move-brief.md`): `rebel/library/0.1.0/files`, `rebel/examples` (the reach programs in
+   `rebel/examples/reach`), `rebel/generators`; `packages/` leaves the tree; the 85 generated files that carry their
+   generator's path are regenerated, never edited; the site and the rules page say a program takes Rebel today by a path
+   entry from a clone.
+4. **The last check on the exact tree pushed**: the two-stage build and its fixpoint, the compiler's own tests, the
+   net's own tests, the site's build.
+5. **The author's *yes*, for one push**, which publishes the site (762 of the 853 commits then counted touched the
+   paths `deploy-site.yml` watches). Asked every time.
+
+**After the push, to close the milestone**: the CI's first run of Rebel's own pipeline is the largest unknown, and what
+it reds is repaired on `main`, one commit per cause, each red a new `blocking` defect naming its leg; zero `blocking` and
+`systemic` issues (2572 waits on its Windows leg); decision 2610 closed with its comments as the register; then
+`/step` § 5's checklist: the emissions of the cases this Mac skips blessed on Linux arm64 where the emitted C moved, the
+latency ledger's row and its comparison with `m-package-manager`'s compiler, the journal, the beat, the ROADMAP's
+status, the predictions scored (the one registered on 2026-11-15 above), the `/learn` offers written and none put to the
+author, the open features and tasks two tags old re-checked; beside the CI, the census and the formatter's strided
+pass if `selfhost/print/` moved; then the tag `m-rebel-library`, whose push is asked.
+
+**Left for after the milestone**: the catalogue's `could` rows and its 32 refusals; N09 (a sitting); M-rebel-packages-manager
+(row 78) and M-package-index (row 79), whose opening sitting measures the author's pointer variant and the index's
+address; Rebel, its examples and the index as repositories of their own; the `ui` package's native arms still refused by
+name where a system has none.
+
+**Waiting on the author**: the push; the 19 faces of Rebel no application lists (issue 2714, a task); the design choice
+of defect 2704 (callback frames abandoned by a C jump are not audited for missing decrefs), reported for the author's
+reading.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
