@@ -1,0 +1,58 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check (panel 256's R1). Symptom:
+# `m.send(v)` in a generic function crossed a C handle unhanded where a call
+# gave `T` a type holding one, and `m.send(@v)` was refused for every type.
+# Cause: a generic body is typed once, where a type parameter holds nothing,
+# so the send's rule was decided for no instance. Each call is judged now, on
+# the types it gives the letters, and told there with the body's line (spec
+# § 11): a send with `@` serves the types holding a handle or a thread, one
+# without serves the others, through a dot's call and a function value too.
+use kinds
+
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function hand<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+# A value naming two letters holds a handle where either does.
+function hand_map<A, B>(m: (mailbox {A: B}), @v: {A: B}) -> bool
+    return m.send(@v).is_err()
+
+function relay_last<T>(v: T, m: (mailbox T)) -> bool
+    return m.send(v).is_err()
+
+function send_it<T>(v: T) -> i64
+    m: (mailbox T) = mailbox()
+
+    if m.send(v).is_err()
+        return 1
+    return 0
+
+function apply<A>(f: (function(A) -> i64), a: A) -> i64
+    return f(a)
+
+function one(x: i64) -> i64
+    return x
+
+function main()
+    boxes: (mailbox kinds.Boxed) = mailbox()
+    print(relay(boxes, kinds.boxed()))  #~ marker_mismatch
+    b: kinds.Boxed @= kinds.boxed()
+    print(hand(boxes, @b))
+    numbers: (mailbox i64) = mailbox()
+    print(relay(numbers, 7))
+    n: i64 @= 7
+    print(hand(numbers, @n))  #~ marker_mismatch
+    threads: (mailbox (thread i64)) = mailbox()
+    t = spawn(one, 1).must()
+    print(relay(threads, t))  #~ marker_mismatch
+    got = threads.receive(within_ms: 0).must()
+    print(got.wait())
+    good: (mailbox {str: kinds.Boxed}) = mailbox()
+    g: {str: kinds.Boxed} @= {}
+    print(hand_map(good, @g))
+    bad: (mailbox {str: i64}) = mailbox()
+    x: {str: i64} @= {}
+    print(hand_map(bad, @x))  #~ marker_mismatch
+    print(kinds.boxed().relay_last(boxes))  #~ marker_mismatch
+    print(apply(send_it, kinds.boxed()))  #~ marker_mismatch

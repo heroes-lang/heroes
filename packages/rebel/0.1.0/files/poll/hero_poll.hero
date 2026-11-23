@@ -46,6 +46,7 @@ extern "hero_poll.h"
     function hero_poll_add_stream(set: Set, s: hero_stream.Stream, interest: i64) -> i64
     function hero_poll_add_timer(set: Set, first_ns: i64, every_ns: i64) -> i64
     function hero_poll_add_signals(set: Set) -> i64
+    function hero_poll_add_mailbox(set: Set, number: i64) -> i64
     function hero_poll_set_timer(set: Set, key: i64, first_ns: i64, every_ns: i64) -> i64
     function hero_poll_change(set: Set, key: i64, interest: i64) -> i64
     function hero_poll_remove(set: Set, key: i64) -> i64
@@ -109,6 +110,17 @@ function add_timer(set: Set, first_ns: i64, every_ns: i64) -> i64
 # - `set`: the set added to; it stays open.
 function add_signals(set: Set) -> i64
     return hero_poll_add_signals(set)
+
+# The entry's key once the mailbox `number` names is added, or -1: told
+# readable while a receive on it would not wait (it holds a value, is closed
+# or answers `stopped`), and hangup beside it once its last copy is gone;
+# rung by the send itself. `HERO_POLL_NOT_OPEN` for a number that names no
+# mailbox.
+#
+# - `set`: the set added to; it stays open.
+# - `number`: the mailbox's, as `m.number()` gives it; the set holds no copy.
+function add_mailbox(set: Set, number: i64) -> i64
+    return hero_poll_add_mailbox(set, number: number)
 
 # 0 once the timer `key` is set again from now, or -1.
 #

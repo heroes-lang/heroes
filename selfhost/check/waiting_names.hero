@@ -123,7 +123,7 @@ function through(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
 
     if markers.refused_as_value(@c, s, decls, decl: decl, span: span)
         return ok(state.error_ty_of(c))
-    c.out.instantiations[span.end] @ bound
+    function_value.recorded(@c, span: span, decl: decl, bound: bound)
     return ok(function_value.instance_type(@c, s, decls, decl: decl, signature: signature, bindings: own))
 
 # The value's signature walked beside the callee's parameter type. `concrete`

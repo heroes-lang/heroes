@@ -1,0 +1,24 @@
+# A mailbox's `number()` is an `i64` above 0 naming its queue to C, the same
+# through every copy, on every thread, and another for another mailbox; it
+# reaches no value, so the mailbox is used as before (spec § 11; panel 256's
+# R6, provisional).
+
+function numbered(m: (mailbox i64)) -> i64
+    m.send(7).must()
+    return m.number()
+
+function main()
+    m: (mailbox i64) = mailbox()
+    copy = m
+    other: (mailbox i64) = mailbox()
+    first = m.number()
+    print(first > 0)
+    print(copy.number() == first)
+    print(m.number() == first)
+    print(other.number() != first)
+    t = spawn(numbered, m).must()
+    print(t.wait() == first)
+    print(m.receive(within_ms: 0).must())
+    _ = other.number()
+    other.close()
+    print(other.number() > 0)

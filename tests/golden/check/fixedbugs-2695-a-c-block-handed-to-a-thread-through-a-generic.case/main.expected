@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2695-a-c-block-handed-to-a-thread-through-a-generic.case/main.hero:28:9: error[thread_crossing]: this call gives `S` the type `cmem.Pointed`, which reaches `ptr`, and `begin` makes a value of it cross between threads, `spawn(body, setup)` at line 11
+tests/golden/check/fixedbugs-2695-a-c-block-handed-to-a-thread-through-a-generic.case/main.hero:32:9: error[thread_crossing]: this call gives `S` the type `cmem.Pointed`, which reaches `ptr`, and `begin` makes a value of it cross between threads, `spawn(body, setup)` at line 11

@@ -289,9 +289,11 @@
 /* Threads that exchange any value while they run (feature 2647; panel 254):
  * the language's `spawn` on `spawn.c`'s table, the crossing walk and the
  * mailbox. After the map, whose entries the walk reads, and the platform
- * layer's word for the stop, declared by the header the layer's members
- * include, so clang checks the definition. */
+ * layer's word for the stop and its questions of a numbered queue, declared
+ * by the headers the layer's members include, so clang checks each
+ * definition. */
 #include "platform/hero_layer_stop.h"
+#include "platform/hero_layer_mail.h"
 #include "parts/mail.c"
 
 /* The code page a narrow name is read in on Windows, and the manifest that makes

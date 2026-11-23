@@ -1,0 +1,361 @@
+# Each call of a generic function judged on the types it gives the type
+# parameters (spec § 11; panel 256's R1 and R2, defect 2695): every need
+# `check/generic_needs.hero` finds in a body is asked of every call recorded
+# for its declaration (`function_value.recorded`, where the checker held the
+# callee). A type that breaks a need is told at that call, the body's line
+# named; a type naming the CALLER's own letters makes the need the caller's,
+# carried through it, so a generic calling a generic is judged at the first
+# call whose types are settled, and the message names the chain. Needs are
+# kept once per declaration, rule and letters, a finite set, so the walk ends
+# under polymorphic recursion too (`f<T>` calling `f<[T]>` reaches `T` again).
+#
+# A declaration no type can serve (R2) is refused where it is written: a send
+# with `@` of letters every one of which another of its needs forbids to hold
+# a handle, `m.send(@v)` beside `m.send(w)`. Its calls are not blamed for it,
+# nor the needs carried out of it; and where the contradiction was carried in
+# from a callee already refused, the caller is not refused again. Every need
+# so set aside leads, through the needs it was carried from, to a refusal
+# told, so a program is never accepted for it.
+
+use ast
+use check/generic_needs
+use check/handed
+use check/state
+use check/table
+use diag
+use emit/key_pointer
+use generic_errors
+use resolved
+use source
+use token
+
+# One recorded call of a generic function: who calls whom, at which types.
+record Site
+    # The generic declaration whose body holds the call, or -1.
+    caller: i64
+    callee: i64
+    bound: [i64]
+    span: token.Span
+
+# A need one call breaks: the letter, and what its type holds or reaches.
+record Break
+    need: i64
+    site: Site
+    letter: i64
+    words: str
+
+# Every need, own and carried, and what the calls broke.
+record Carried
+    needs: [generic_needs.Need]
+    breaks: [Break]
+
+# The rule over the program, after every body is typed.
+function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    generic = generic_needs.generics_of(decls)
+
+    if generic.len() == 0
+        return
+    made = carried(c.out, a, r, s, decls, generic: generic)
+    conflicting: {i64: bool} @= {}
+
+    for pair in contradictions(made.needs, conflicting: @conflicting)
+        need = made.needs[pair[0]]
+
+        if need.from < 0 || conflicting[need.from].is_err()
+            state.push_diagnostic(@c, generic_errors.unsatisfiable(s, decls, need: need, other: made.needs[pair[1]]))
+
+    skip: [bool] @= []
+
+    for need in made.needs
+        inherited = need.from >= 0 && skip[need.from]
+        skip @ skip.push(inherited || !conflicting[skip.len()].is_err())
+
+    told: {str: bool} @= {}
+
+    for b in made.breaks
+        said = b.site.span.end.to_str() + ":" + b.letter.to_str() + ":" + generic_needs.word(made.needs[b.need].rule)
+
+        if !skip[b.need] && told[said].is_err()
+            told[said] @ true
+            state.push_diagnostic(@c, told_at(c, s, decls, need: made.needs[b.need], b: b))
+
+# What `heroes doc` prints under each generic declaration (R4): every need
+# of its own body and carried in from its callees, in words, once each.
+function described(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: [str]}
+    out: {i64: [str]} @= {}
+    generic = generic_needs.generics_of(decls)
+
+    if generic.len() == 0
+        return out
+
+    needs = carried(c, a, r, s, decls, generic: generic).needs
+
+    # In the order a reader meets them, by where each stands in the body.
+    placed: [i64] @= []
+    index: i64 @= 0
+
+    for need in needs
+        placed @ placed.push(need.at.start * needs.len() + index)
+        index @ index + 1
+
+    for one in sort(placed)
+        need = needs[one % needs.len()]
+        line = generic_errors.described(s, decls, need: need)
+        list: [str] @= []
+
+        if !out[need.decl].is_err()
+            list @ out[need.decl].must()
+
+        if !holds_text(list, line)
+            out[need.decl] @ list.push(line)
+
+    return out
+
+function holds_text(list: [str], text: str) -> bool
+    for x in list
+        if x == text
+            return true
+
+    return false
+
+# Every need of every generic body, carried through every call until none
+# is new, and every call that breaks one.
+function carried(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], generic: [i64]) -> Carried
+    needs: [generic_needs.Need] @= []
+    breaks: [Break] @= []
+    known: {str: bool} @= {}
+
+    # One need per declaration, rule and letters: the first a body asks.
+    for n in generic_needs.of_bodies(c, a, r, s, decls, generic: generic)
+        if known[key(n)].is_err()
+            known[key(n)] @ true
+            needs @ needs.push(n)
+
+    if needs.len() == 0
+        return Carried(needs: needs, breaks: breaks)
+    by_callee = sites(c, decls, generic: generic)
+    at: i64 @= 0
+
+    while at < needs.len()
+        need = needs[at]
+
+        if !by_callee[need.decl].is_err()
+            for site in by_callee[need.decl].must()
+                answer = asked(c, decls, need: need, index: at, site: site)
+
+                if answer.letter >= 0
+                    breaks @ breaks.push(Break(need: at, site: site, letter: answer.letter, words: answer.words))
+
+                for further in answer.carried
+                    if known[key(further)].is_err()
+                        known[key(further)] @ true
+                        needs @ needs.push(further)
+        at @ at + 1
+
+    return Carried(needs: needs, breaks: breaks)
+
+# The recorded calls, by the declaration they call. Every call recorded with
+# its bindings is recorded with its callee, by one function, so a binding
+# with no callee is a compiler fault, never a call left unjudged.
+function sites(c: state.Checked, decls: [ast.Decl], generic: [i64]) -> {i64: [Site]}
+    out: {i64: [Site]} @= {}
+
+    for end in sort(keys(c.instantiations))
+        assert !c.instantiated[end].is_err()
+        pair = c.instantiated[end].must()
+        site = Site(
+            caller: generic_needs.owner(decls, generic, at: pair[1]),
+            callee: pair[0],
+            bound: c.instantiations[end].must(),
+            span: token.Span(start: pair[1], end: end)
+        )
+        list: [Site] @= []
+
+        if !out[site.callee].is_err()
+            list @ out[site.callee].must()
+        out[site.callee] @ list.push(site)
+
+    return out
+
+function key(n: generic_needs.Need) -> str
+    words: [str] @= []
+
+    for l in n.letters
+        words @ words.push(l.to_str())
+
+    return n.decl.to_str() + ":" + generic_needs.word(n.rule) + ":" + words.join(",")
+
+# What one need asked at one call answers: the letter it breaks, or -1, and
+# the needs it hands the caller.
+record Answer
+    letter: i64
+    words: str
+    carried: [generic_needs.Need]
+
+# One need asked of one call. A bound that is the error type belongs to a
+# program already refused, and asks nothing.
+function asked(c: state.Checked, decls: [ast.Decl], need: generic_needs.Need, index: i64, site: Site) -> Answer
+    broken: i64 @= 0 - 1
+    words: str @= ""
+    satisfied: bool @= false
+    asked_any: bool @= false
+    found: {i64: bool} @= {}
+
+    for l in need.letters
+        if l < site.bound.len() && !table.poisoned(c.types, site.bound[l])
+            ty = site.bound[l]
+            asked_any @ true
+            held = handed.held_handle(c, decls, ty: ty)
+
+            match need.rule
+                .send_at => satisfied @ satisfied || !held.is_err()
+                .send_bare | .spawn_handle =>
+                    if !held.is_err() && broken < 0
+                        broken @ l
+                        words @ held.must()
+                .cross_ptr =>
+                    reached = key_pointer.reaches_pointer(c, decls, ty: ty)
+
+                    if !reached.is_err() && broken < 0
+                        broken @ l
+                        words @ reached.must()
+                .unit_mailbox =>
+                    if ty == table.unit_ty(c.types)
+                        broken @ l
+                        words @ "`()`"
+
+            for x in reached_letters(c, need: need, ty: ty)
+                found[x] @ true
+
+    letters = sort(keys(found))
+
+    if !asked_any || satisfied
+        return Answer(letter: 0 - 1, words: "", carried: [])
+
+    if need.rule == .send_at && (letters.len() == 0 || site.caller < 0)
+        return Answer(letter: need.letters[0], words: "no C handle and no thread", carried: [])
+
+    if broken >= 0 || site.caller < 0
+        return Answer(letter: broken, words: words, carried: [])
+    out: [generic_needs.Need] @= []
+
+    if need.rule == .send_at
+        out @ out.push(handed_on(need, index: index, site: site, letters: letters))
+    else
+        for x in letters
+            out @ out.push(handed_on(need, index: index, site: site, letters: [x]))
+
+    return Answer(letter: 0 - 1, words: "", carried: out)
+
+# The caller's letters a bound type names, where the need may stand on them:
+# a mailbox's `T` is `()` only where the bound IS a letter.
+function reached_letters(c: state.Checked, need: generic_needs.Need, ty: i64) -> [i64]
+    if need.rule != .unit_mailbox
+        return generic_needs.letters_of(c, ty)
+
+    match table.get(c.types, ty)
+        .generic g                                                         => return [g.at]
+        .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr => return []
+        .array | .fallible | .map | .named | .case_ty | .thread_ty         => return []
+        .mailbox_ty | .function_ty | .failure | .error                     => return []
+
+    return []
+
+# A need handed to the caller of `site`: the caller's letters, the chain
+# grown by the callee.
+function handed_on(need: generic_needs.Need, index: i64, site: Site, letters: [i64]) -> generic_needs.Need
+    via: [i64] @= [site.callee]
+
+    for d in need.via
+        via @ via.push(d)
+
+    return generic_needs.Need(
+        decl: site.caller,
+        rule: need.rule,
+        letters: letters,
+        origin: need.origin,
+        at: site.span,
+        via: via,
+        from: index
+    )
+
+# Each send with `@` no type can serve, with the first need forbidding one of
+# its letters, by index; every need of the pair is marked `conflicting`.
+function contradictions(needs: [generic_needs.Need], @conflicting: {i64: bool}) -> [[i64]]
+    by_decl: {i64: [i64]} @= {}
+    index: i64 @= 0
+
+    for need in needs
+        list: [i64] @= []
+
+        if !by_decl[need.decl].is_err()
+            list @ by_decl[need.decl].must()
+        by_decl[need.decl] @ list.push(index)
+        index @ index + 1
+
+    out: [[i64]] @= []
+
+    for decl in sort(keys(by_decl))
+        own = by_decl[decl].must()
+
+        for i in own
+            if needs[i].rule == .send_at
+                covering = forbidding(needs, own: own, letters: needs[i].letters)
+
+                if covering.len() == needs[i].letters.len()
+                    conflicting[i] @ true
+
+                    for m in covering
+                        conflicting[m] @ true
+
+                    out @ out.push([i, covering[0]])
+
+    return out
+
+# For each letter, the first need of `own` that asks it to hold no handle;
+# shorter than `letters` where one is asked nothing of the kind.
+function forbidding(needs: [generic_needs.Need], own: [i64], letters: [i64]) -> [i64]
+    out: [i64] @= []
+
+    for l in letters
+        for j in own
+            rule = needs[j].rule
+
+            if (rule == .send_bare || rule == .spawn_handle) && holds_number(needs[j].letters, l)
+                out @ out.push(j)
+                break
+
+    return out
+
+function holds_number(list: [i64], n: i64) -> bool
+    for x in list
+        if x == n
+            return true
+
+    return false
+
+# The message for one call that breaks one need, in the caller's words.
+function told_at(c: state.Checker, s: source.Source, decls: [ast.Decl], need: generic_needs.Need, b: Break) -> diag.Diagnostic
+    letters: [i64] @= [b.letter]
+
+    if need.rule == .send_at
+        letters @ need.letters
+    names: [str] @= []
+    shown: [str] @= []
+
+    for l in letters
+        if l < b.site.bound.len()
+            names @ names.push(generic_errors.letter_name(s, decls, decl: b.site.callee, letter: l))
+            shown @ shown.push(state.show_at(c, s, decls, id: b.site.bound[l], at: b.site.span.start))
+
+    call = generic_errors.Call(
+        rule: need.rule,
+        names: names,
+        shown: shown,
+        words: b.words,
+        chain: generic_errors.chain(s, decls, first: b.site.callee, via: need.via),
+        operation: source.span_text(s, need.origin),
+        place: source.elsewhere(s, here: b.site.span.start, there: need.origin.start),
+        span: b.site.span
+    )
+    return generic_errors.at_call(call)

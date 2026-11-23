@@ -1,0 +1,10 @@
+the descriptor handed: 1
+nothing sent, a wait tells nothing: 1
+then not readable: 1
+two values sent, readable: 1
+a wait tells the mailbox: 1
+one taken of two, readable still: 1
+a wait tells it again: 1
+the last taken, a wait tells nothing: 1
+then not readable: 1
+the set closed, its descriptor refused: 1

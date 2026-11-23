@@ -84,6 +84,8 @@ record Checked
     # because a composite expression inherits its start from a child. Any
     # future table keyed by a span belongs on the first side of that line.
     instantiations: {i64: [i64]}
+    # Each one's callee and the call's start, by its key (`check/generic_calls.hero`).
+    instantiated: {i64: [i64]}
     # One entry per interned type: does a value of it own a reference the
     # compiler must count. Built by the counted pass after checking.
     counted: [bool]
@@ -228,6 +230,7 @@ function new_checker(out_of: resolved.Resolved, expr_count: i64) -> Checker
         holes: holes,
         type_order: type_order,
         instantiations: instantiations,
+        instantiated: {},
         counted: counted,
         freers: freers,
         diagnostics: diagnostics,

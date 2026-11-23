@@ -1,0 +1,64 @@
+# The second wall behind spec § 11's rule that a value reaching a `ptr` or a
+# `cstr` never crosses between threads (panel 256's R3; panel 155's veto
+# condition: a stop at run time behind any check that could give up). The
+# checker refuses every such crossing it can see: a written `(mailbox T)` or
+# `(thread T)`, a `spawn`, and, at each call of a generic function, the types
+# that call gives its type parameters (`check/generic_calls.hero`). The
+# emitter writes a put for every type a unit crosses after `mono`, and this
+# asks each the same walk, so a crossing the checker did not refuse aborts
+# before a byte is copied, never hands a second thread an address C owns.
+
+use ast
+use bytes
+use check/state
+use check/table
+use checker
+use emit/key_pointer
+use emit/writer
+use parse
+use resolve
+use source
+
+constant ABORT: str
+    "    (void)b; (void)p; hero_panic(\"a value reaching a ptr or a cstr crosses between threads (spec section 11)\");"
+
+# Whether the put of `ty` is the abort, written in its place.
+function refused_put(@w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    if key_pointer.reaches_pointer(c, decls, ty: ty).is_err()
+        return false
+    writer.line(@w, text: ABORT)
+    return true
+
+## Tests
+
+constant RECORDS: str
+    "record Pointed\n    p: ptr\n\nrecord Plain\n    n: i64\n\nfunction main()\n    print(Pointed(p: nullptr).p == nullptr)\n    print(Plain(n: 1).n)\n"
+
+# The type a record of `RECORDS` named `name` is.
+function record_type(name: str) -> i64
+    p = parse.parse(RECORDS)
+    s = source.new_source(name: "t.hero", text: RECORDS)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    index: i64 @= 0
+
+    for d in p.decls
+        if source.span_text(s, d.name) == name
+            return table.lookup(c.types, .named(decl: index)).must()
+        index @ index + 1
+
+    return 0 - 1
+
+# The wall fires where the walk finds an address, and is silent elsewhere.
+test "a put of a value reaching a ptr is the abort, and one reaching none is not"
+    p = parse.parse(RECORDS)
+    s = source.new_source(name: "t.hero", text: RECORDS)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    assert refused_put(@w, c, p.decls, ty: record_type("Pointed"))
+    assert !bytes.locate(text: writer.finish(w), needle: "hero_panic(", from: 0).is_err()
+    quiet: writer.Writer @= writer.new_writer("t")
+    assert !refused_put(@quiet, c, p.decls, ty: record_type("Plain"))
+    assert bytes.locate(text: writer.finish(quiet), needle: "hero_panic(", from: 0).is_err()

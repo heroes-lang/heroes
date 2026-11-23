@@ -81,8 +81,9 @@ function demo() -> i64?
     print(f"notes demo: a fresh database, its migrations applied: {app.migrated.join(", ")}")
     print(f"the server: {app.router.routes.len()} routes, listening on loopback")
     l @= net.listen(host: s.host, port: s.port)?
-    driver = spawn(client.run, l.address.port)?
-    served = server.run(@app, l: l)
+    control: (mailbox str) = mailbox()
+    driver = spawn(client.run, client.Driven(port: l.address.port, control: control))?
+    served = server.run(@app, l: l, control: control)
     went = driver.wait()
     net.close_listener(@l)?
     state.close(@app)?

@@ -24,6 +24,7 @@ function example(name: str) -> str
         "send"    => "m.send(v)"
         "receive" => "m.receive(within_ms: 100)"
         "close"   => "m.close()"
+        "number"  => "m.number()"
         _         => "x." + name + "()"
 
 # Whose operation the name is, in words.
@@ -41,7 +42,7 @@ function not_its_operation(name: str, got: str, span: token.Span) -> diag.Diagno
         span: span
     )
     d.notes @ d.notes.push(
-        "a thread's one operation is `wait`; a mailbox's are `send`, `receive` and `close`; a function of the program's own named `" + name + "` is called with its receiver first, `" + name + "(x, ...)`, where no thread or mailbox stands before the dot"
+        "a thread's one operation is `wait`; a mailbox's are `send`, `receive`, `close` and `number`; a function of the program's own named `" + name + "` is called with its receiver first, `" + name + "(x, ...)`, where no thread or mailbox stands before the dot"
     )
     return d
 

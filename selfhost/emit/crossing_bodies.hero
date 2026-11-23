@@ -16,6 +16,7 @@ use check/state
 use check/table
 use emit/counted
 use emit/crossing
+use emit/crossing_guard
 use emit/ctype
 use emit/descriptors
 use emit/large_value
@@ -94,6 +95,9 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
 
 # One function's body: `verb` is `put`, `take` or `sent`.
 function body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, verb: str)
+    if verb == "put" && crossing_guard.refused_put(@w, c, decls, ty: ty)
+        return
+
     if verb != "sent" && crossing.plain(c, decls, ty: ty)
         writer.line(
             @w,

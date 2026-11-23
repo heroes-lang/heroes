@@ -30,13 +30,13 @@ function element_of(t: table.Types, id: i64) -> i64?
     return mailbox_element(t, id)
 
 # Whether `x.name(...)` on a value of type `receiver` is a thread's or a
-# mailbox's own operation: a thread's `wait`, a mailbox's `send`, `receive`
-# or `close`. Every pass that follows a dotted call asks this before the
+# mailbox's own operation: a thread's `wait`, a mailbox's `send`, `receive`,
+# `close` or `number`. Every pass that follows a dotted call asks this before the
 # resolver's answer, which names a program's own function of that name.
 function operates(t: table.Types, receiver: i64, name: str) -> bool
     if name == "wait"
         return !thread_element(t, receiver).is_err()
-    return (name == "send" || name == "receive" || name == "close") && !mailbox_element(t, receiver).is_err()
+    return (name == "send" || name == "receive" || name == "close" || name == "number") && !mailbox_element(t, receiver).is_err()
 
 # The same kind of handle as `id`, carrying `element` instead.
 function with_element(@t: table.Types, id: i64, element: i64) -> i64

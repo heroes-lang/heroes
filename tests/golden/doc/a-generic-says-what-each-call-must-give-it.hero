@@ -1,0 +1,59 @@
+# Generic functions over mailboxes and threads: under each, the reference
+# `heroes doc` prints says what each call must give its type parameters, every
+# rule of spec § 11 its body asks of them and the operation that asks it,
+# carried in from a generic it calls too, and nothing under a generic that
+# asks nothing (panel 256's R4).
+
+# Sends a copy of `v` into `m`.
+#
+# - `m`: the mailbox
+# - `v`: the value, left as it was
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+# Hands `v` over into `m`, emptying it.
+#
+# - `m`: the mailbox
+# - `v`: the value, emptied
+function hand<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+# Hands `v` over through `hand`.
+#
+# - `m`: the mailbox
+# - `v`: the value, emptied
+function hand_on<A>(m: (mailbox A), @v: A) -> bool
+    return hand(m, @v)
+
+# Hands over a map whose keys or values hold a handle.
+#
+# - `m`: the mailbox
+# - `v`: the map, emptied
+function hand_map<A, B>(m: (mailbox {A: B}), @v: {A: B}) -> bool
+    return m.send(@v).is_err()
+
+# Runs `body` on `setup` on a thread of its own and waits for its answer.
+#
+# - `body`: what the thread runs
+# - `setup`: what it runs on, copied to the thread
+function start<S>(body: (function(S) -> i64), setup: S) -> i64
+    t = spawn(body, setup).must()
+    return t.wait()
+
+# A new mailbox holding `x`.
+#
+# - `x`: the first value it holds
+function fresh<T>(x: T) -> (mailbox T)
+    m: (mailbox T) = mailbox()
+    m.send(x).must()
+    return m
+
+# `a` or `b`, asking nothing of their type.
+#
+# - `a`: the first
+# - `b`: the second
+# - `first`: whether `a` is the answer
+function either<T>(a: T, b: T, first: bool) -> T
+    if first
+        return a
+    return b

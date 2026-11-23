@@ -36,6 +36,7 @@
 # refusal naming the form that reads it (`cli/doc_operand.hero`, defect 2615).
 
 use ast
+use check/generic_calls
 use check/state
 use check/type_fit
 use checker
@@ -174,14 +175,15 @@ function reading(s: source.Source, inv: argv.Invocation, target: str, folder: st
     for note in doc_text.unattached(s, decls: parsed.decls, target: target)
         io.eprint(text: "note: " + note)
 
+    obligations = generic_calls.described(c, parsed.tree, out, s, parsed.decls)
     return Answered(
         exit: .ok_exit,
-        reference: reference(parsed.tree, s, decls: parsed.decls, c: c, target: target, file: file)
+        reference: reference(parsed.tree, s, decls: parsed.decls, c: c, obligations: obligations, target: target, file: file)
     )
 
 # The reference of `target`: its title and module doc, then each declaration
 # in the order it is written.
-function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.Checked, target: str, file: i64) -> str
+function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.Checked, obligations: {i64: [str]}, target: str, file: i64) -> str
     binding = doc_text.last_component(target)
     out: [str] @= ["# " + target + "\n"]
     said = doc_text.module_doc(s, decls: decls, file: file)
@@ -189,13 +191,21 @@ function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.
     if said.len() > 0
         out @ out.push("\n" + said)
     own: [ast.Decl] @= []
+    places: [i64] @= []
+    index: i64 @= 0
 
     for d in decls
         if source.module_at(s, d.name.start) == target
             own @ own.push(d)
+            places @ places.push(index)
+        index @ index + 1
+
+    at: i64 @= 0
 
     for d in own
         name = source.span_text(s, d.name)
+        place = places[at]
+        at @ at + 1
 
         match d.kind
             .function_decl fd =>
@@ -204,6 +214,9 @@ function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.
                 )
                 out @ out.push(doc_text.doc_text(s, doc: d.doc))
                 out @ out.push("\n    " + call_of(s, binding: binding, name: name, fd: fd.value, c: c) + "\n")
+
+                if !obligations[place].is_err()
+                    out @ out.push(asks(obligations[place].must()))
 
                 for t in own
                     if doc_text.is_example_of(s, example: t, name: name, target: target)
@@ -216,6 +229,17 @@ function reference(tree: ast.Ast, s: source.Source, decls: [ast.Decl], c: state.
             .test_decl     => continue
 
     return out.join("")
+
+# What each call of a generic must give its type parameters, every rule of
+# spec § 11 its body asks of them (panel 256's R4,
+# `check/generic_calls.hero`), so the obligation is read without the body.
+function asks(lines: [str]) -> str
+    out: [str] @= []
+
+    for line in lines
+        out @ out.push("- " + line + "\n")
+
+    return "\nWhat each call must give its type parameters (spec § 11):\n\n" + out.join("")
 
 # A record, a variant or a constant: its heading, the declaration as written,
 # and what documents it.

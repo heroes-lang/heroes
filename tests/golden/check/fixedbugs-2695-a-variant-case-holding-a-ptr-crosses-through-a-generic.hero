@@ -1,0 +1,24 @@
+# Fixed defect 2695, 2026-11-23, lane-p256-check, a shape beside it (panel
+# 256's R1 and R3): a pattern's binding of a variant's case is a value of
+# that case, which no program can write as a type, so only a generic can
+# hand it to a thread, and the walk that asks whether a type reaches a `ptr`
+# passed over a case. A case holding a `ptr` sent through a generic built and
+# ran, the address crossing; a case is judged by its own fields now, at the
+# call and at the put the emitter writes (spec § 11).
+
+variant Shape
+    raw
+        p: ptr
+    plain
+        n: i64
+
+function keep<T>(v: T) -> bool
+    m: (mailbox T) = mailbox()
+    return m.send(v).is_err()
+
+function main()
+    s: Shape = .raw(p: nullptr)
+
+    match s
+        .raw r   => print(keep(r))  #~ thread_crossing
+        .plain n => print(keep(n))

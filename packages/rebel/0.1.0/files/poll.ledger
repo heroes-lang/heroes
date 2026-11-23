@@ -138,11 +138,11 @@ capability poll/stop  a wait ended when the program is asked to stop
   note    every wait fails `stopped` once the program's stop is asked, a signal caught by `os.catch_stop` or `os.ask_stop` from any thread, even with entries ready, so a loop ends under load as `net.accept` does
 
 capability poll/wake  a wait woken by another thread of the program, for a reason of its own
-  heroes  pending
+  heroes  poll.add_mailbox
   go      a channel send seen by a select
   rust    mio::Waker, tokio::sync::Notify
   python  - (a pipe written by the other thread, registered in the selector)
-  note    a set crosses to no thread, a thread being handed one `i64` (spec § 13): a waker needs a number another thread rings, as `net`'s socket numbers are, and a channel of its own per set (`EVFILT_USER`, an `eventfd`, a loopback socket on Windows); the stop, which wakes every wait, is what crosses today
+  note    added 2026-11-23 (panel 256's R7 and R8, provisional; feature 2693): the reason is a value, so the other thread sends it to a mailbox the set holds, and the send rings the set itself; a set crosses to no thread, and a mailbox does, named to the layer by `m.number()`. Told readable while the mailbox holds a value, is closed or answers `stopped`, so no ring is written by the program, none forgotten, none before its value: a waker the program rings, mio's and tokio's shape, lost up to 397,379 of 400,000 values to a loop taking one per wake in the sitting's stress; on the real runtime and layer, 4 and 16 senders x 100,000 sends, one value per wake and every value per wake, no wait slept past a value: Darwin plain, ASan and TSan, Linux arm64 plain and ASan, Windows plain (2026-11-23)
 
 capability poll/signals  the signals the program counts waited on beside the rest
   heroes  poll.add_signals

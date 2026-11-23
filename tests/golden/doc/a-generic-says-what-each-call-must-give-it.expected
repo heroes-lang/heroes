@@ -1,0 +1,118 @@
+# a-generic-says-what-each-call-must-give-it
+
+Generic functions over mailboxes and threads: under each, the reference
+`heroes doc` prints says what each call must give its type parameters, every
+rule of spec § 11 its body asks of them and the operation that asks it,
+carried in from a generic it calls too, and nothing under a generic that
+asks nothing (panel 256's R4).
+
+## function relay
+
+    function relay<T>(m: (mailbox T), v: T) -> bool
+
+Sends a copy of `v` into `m`.
+
+- `m`: the mailbox
+- `v`: the value, left as it was
+
+    relay(m, v)
+
+What each call must give its type parameters (spec § 11):
+
+- `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 11
+- `T` is not `()`: `(mailbox T)` is a mailbox of it, line 11
+- `T` holds no C handle and no thread: `m.send(v)` copies it, line 12
+
+## function hand
+
+    function hand<T>(m: (mailbox T), @v: T) -> bool
+
+Hands `v` over into `m`, emptying it.
+
+- `m`: the mailbox
+- `v`: the value, emptied
+
+    hand(m, @v)
+
+What each call must give its type parameters (spec § 11):
+
+- `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 18
+- `T` is not `()`: `(mailbox T)` is a mailbox of it, line 18
+- `T` holds a C handle or a thread: `m.send(@v)` hands it over, line 19
+
+## function hand_on
+
+    function hand_on<A>(m: (mailbox A), @v: A) -> bool
+
+Hands `v` over through `hand`.
+
+- `m`: the mailbox
+- `v`: the value, emptied
+
+    hand_on(m, @v)
+
+What each call must give its type parameters (spec § 11):
+
+- `A` reaches no `ptr` and no `cstr`: `(mailbox A)` makes it cross between threads, line 25
+- `A` is not `()`: `(mailbox A)` is a mailbox of it, line 25
+- `A` holds a C handle or a thread: `hand(m, @v)` reaches `m.send(@v)` in `hand`, which hands it over, line 26
+
+## function hand_map
+
+    function hand_map<A, B>(m: (mailbox {A: B}), @v: {A: B}) -> bool
+
+Hands over a map whose keys or values hold a handle.
+
+- `m`: the mailbox
+- `v`: the map, emptied
+
+    hand_map(m, @v)
+
+What each call must give its type parameters (spec § 11):
+
+- `A` and `B` reach no `ptr` and no `cstr`: `(mailbox {A: B})` makes it cross between threads, line 32
+- `A` or `B` holds a C handle or a thread: `m.send(@v)` hands it over, line 33
+
+## function start
+
+    function start<S>(body: (function(S) -> i64), setup: S) -> i64
+
+Runs `body` on `setup` on a thread of its own and waits for its answer.
+
+- `body`: what the thread runs
+- `setup`: what it runs on, copied to the thread
+
+    start(body, setup)
+
+What each call must give its type parameters (spec § 11):
+
+- `S` reaches no `ptr` and no `cstr`: `spawn(body, setup)` makes it cross between threads, line 40
+- `S` holds no C handle and no thread: `spawn(body, setup)` hands it to a new thread, line 40
+
+## function fresh
+
+    function fresh<T>(x: T) -> (mailbox T)
+
+A new mailbox holding `x`.
+
+- `x`: the first value it holds
+
+    fresh(x)
+
+What each call must give its type parameters (spec § 11):
+
+- `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 46
+- `T` is not `()`: `(mailbox T)` is a mailbox of it, line 46
+- `T` holds no C handle and no thread: `m.send(x)` copies it, line 48
+
+## function either
+
+    function either<T>(a: T, b: T, first: bool) -> T
+
+`a` or `b`, asking nothing of their type.
+
+- `a`: the first
+- `b`: the second
+- `first`: whether `a` is the answer
+
+    either(a: a, b: b, first)
