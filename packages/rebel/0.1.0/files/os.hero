@@ -1,10 +1,10 @@
 # The process's world: its environment, its working folder, the folders the
 # system keeps for a program's data, state, cache, settings and sockets, who it
-# runs as and on what machine, the machine's processes listed, the signals it
-# counts, and a URL or a file handed to the application the user's system keeps
-# for it. Files and folders
-# by path are the package `fs`'s, and other programs the package `process`'s.
-# The program's arguments and its exit are the language's own, the built-ins
+# runs as and on what machine, the machine's processes listed, users and groups
+# found and the user changed, the signals it counts, and a URL or a file handed
+# to the application the user's system keeps for it. Files and folders by path
+# are the package `fs`'s, and other programs the package `process`'s. The
+# program's arguments and its exit are the language's own, the built-ins
 # `args()` and `exit`, and its arguments read as flags and options are
 # `flags`'.
 #
@@ -13,17 +13,18 @@
 # variable, and a child is given another environment through `process`. Every
 # answer the system can refuse is a `T?`, and a code says why.
 #
-# Not written yet, each a `pending` block of its ledger: the groups a named user
-# belongs to; the user or the groups the process runs as changed; a limit or a
-# setting of the system asked by its name; the time of each processor apart; the
-# prefix and suffix of a shared library's file; the process's scheduling
-# priority, read or changed; the mask of permissions a new file is made without;
-# a wait that ends when a counted signal comes.
+# Not written yet, each a `pending` block of its ledger: the rest of a user's
+# record: its real name and its login shell; a limit or a setting of the system
+# asked by its name; the time of each processor apart; the prefix and suffix of
+# a shared library's file; the process's scheduling priority, read or changed;
+# the mask of permissions a new file is made without; a wait that ends when a
+# counted signal comes.
 
 use os/hero_disk
 use os/hero_os
 use os/hero_stop
 use os/hero_sys
+use os/internal/accounts
 use os/internal/codes
 use os/internal/counters
 use os/internal/expansion
@@ -559,6 +560,46 @@ function memory() -> Memory?
         return codes.sys_failed(asked: "the machine's memory")
     return ok(Memory(total_bytes: total, available_bytes: available))
 
+## Users and groups
+
+# The id of a user or of a group as the system writes it: a number where the
+# system numbers its accounts, a security identifier where it does not. A
+# program that hands the number to `fs.set_owner` matches on it, and so meets
+# Windows, which has none.
+variant AccountId
+    # A number, 0 or above: Darwin and Linux.
+    number
+        # The number.
+        value: i64
+    # A security identifier, as text (`S-1-5-18`): Windows.
+    sid
+        # The identifier's text.
+        text: str
+
+# A user as the system records it, found by `user_named` or `user_identified`.
+record User
+    # The user's name as the system holds it: on Windows without its domain, in
+    # the case the account was made with.
+    name: str
+    # The user's id.
+    id: AccountId
+    # The id of the user's primary group. Fails `not_found` where the system
+    # does not tell it: on Windows an account of a domain this machine cannot
+    # ask, and the service accounts.
+    group_id: AccountId?
+    # The user's home folder. Fails `not_found` where the user has none: a
+    # Windows user that has never logged on has no profile.
+    home: str?
+
+# A group as the system records it, found by `group_named` or
+# `group_identified`, or listed by `groups_of`.
+record Group
+    # The group's name. Fails `not_found` where the system holds no record of a
+    # group a user belongs to, which `groups_of` lists by its id alone.
+    name: str?
+    # The group's id.
+    id: AccountId
+
 ## What a monitor reads
 
 # What `cpu_times` answers: the time every processor of the machine has spent
@@ -595,10 +636,9 @@ record ProcessUsage
 
 # The user that owns a process, as `processes` tells it.
 record Owner
-    # The user's id as the system writes it: the user's number in decimal
-    # digits on Darwin and Linux, the SID of the process's user on Windows
-    # (`S-1-5-18`).
-    id: str
+    # The user's id as the system writes it: its number on Darwin and Linux,
+    # the SID of the process's user on Windows.
+    id: AccountId
     # The account's name, without a domain, where the system has a record of
     # the user that names it: a user number no record names has none.
     name: str?
@@ -818,7 +858,13 @@ function processes() -> [Process]?
 
             if entry.owner_name.len() > 0
                 owned @ ok(entry.owner_name)
-            owner @ ok(Owner(id: entry.owner_id, name: owned))
+            read = accounts.id_of(entry.owner_id)?
+
+            id: AccountId = if read.sid
+                .sid(text: read.text)
+            else
+                .number(value: read.number)
+            owner @ ok(Owner(id: id, name: owned))
         usage: ProcessUsage? @= fail(code: codes.NOT_FOUND, msg: "the system does not tell what this process holds")
 
         if entry.usage.len() == 4
@@ -830,6 +876,174 @@ function processes() -> [Process]?
         )
 
     return ok(answer)
+
+# The user named `name`: its id, home and primary group, as the system's record
+# of users holds them, which a directory service may be the source of.
+#
+# - `name`: the user's name, not empty and holding no zero byte. On Windows also
+#   `DOMAIN\user` and `user@domain`, and the service accounts `SYSTEM`,
+#   `LOCAL SERVICE` and `NETWORK SERVICE`.
+#
+# Fails `invalid` for a name that is empty, holds a zero byte, or is not UTF-8
+# where the system reads only that, and `not_found` where no user has the name
+# or it names a group. On POSIX it is `getpwnam_r`; on Windows
+# `LookupAccountNameW`, the primary group `NetUserGetInfo`'s and the home the
+# machine's list of profiles. See also `user_identified`, `groups_of`.
+function user_named(name: str) -> User?
+    entry = accounts.user_of(accounts.bytes_of(.user_named, name)?)?
+    read = accounts.id_of(entry.id)?
+
+    id: AccountId = if read.sid
+        .sid(text: read.text)
+    else
+        .number(value: read.number)
+    group: AccountId? @= fail(code: codes.NOT_FOUND, msg: "the system tells no primary group for this user")
+    home: str? @= fail(code: codes.NOT_FOUND, msg: "this user has no home folder")
+
+    if entry.group.len() > 0
+        parent = accounts.id_of(entry.group)?
+
+        chosen: AccountId = if parent.sid
+            .sid(text: parent.text)
+        else
+            .number(value: parent.number)
+        group @ ok(chosen)
+
+    if entry.home.len() > 0
+        home @ ok(entry.home)
+    return ok(User(name: entry.name, id: id, group_id: group, home: home))
+
+# The user whose id is `id`, as `user_named` answers it.
+#
+# - `id`: the user's id: a number, 0 or above, on Darwin and Linux, and a SID on
+#   Windows.
+#
+# Fails `invalid` for a number below 0, one past what a user's number holds, an
+# id of the other kind of system, or a SID that is none; and `not_found` where no
+# user has the id. See also `user_named`.
+function user_identified(id: AccountId) -> User?
+    key: str @= ""
+
+    match id
+        .number n => key @ accounts.number_key(n.value)?
+        .sid s    => key @ s.text
+
+    entry = accounts.user_of(accounts.bytes_of(.user_identified, key)?)?
+    read = accounts.id_of(entry.id)?
+
+    found: AccountId = if read.sid
+        .sid(text: read.text)
+    else
+        .number(value: read.number)
+    group: AccountId? @= fail(code: codes.NOT_FOUND, msg: "the system tells no primary group for this user")
+    home: str? @= fail(code: codes.NOT_FOUND, msg: "this user has no home folder")
+
+    if entry.group.len() > 0
+        parent = accounts.id_of(entry.group)?
+
+        chosen: AccountId = if parent.sid
+            .sid(text: parent.text)
+        else
+            .number(value: parent.number)
+        group @ ok(chosen)
+
+    if entry.home.len() > 0
+        home @ ok(entry.home)
+    return ok(User(name: entry.name, id: found, group_id: group, home: home))
+
+# The group named `name`: its id.
+#
+# - `name`: the group's name, not empty and holding no zero byte.
+#
+# Fails as `user_named` does, and `not_found` where the name is a user's. See
+# also `group_identified`, `groups_of`.
+function group_named(name: str) -> Group?
+    entry = accounts.group_of(accounts.bytes_of(.group_named, name)?)?
+    read = accounts.id_of(entry.id)?
+
+    id: AccountId = if read.sid
+        .sid(text: read.text)
+    else
+        .number(value: read.number)
+    given: str? @= fail(code: codes.NOT_FOUND, msg: "the system holds no record of this group")
+
+    if entry.name.len() > 0
+        given @ ok(entry.name)
+    return ok(Group(name: given, id: id))
+
+# The group whose id is `id`, as `group_named` answers it.
+#
+# - `id`: the group's id: a number, 0 or above, on Darwin and Linux, and a SID on
+#   Windows.
+#
+# Fails as `user_identified` does. See also `group_named`.
+function group_identified(id: AccountId) -> Group?
+    key: str @= ""
+
+    match id
+        .number n => key @ accounts.number_key(n.value)?
+        .sid s    => key @ s.text
+
+    entry = accounts.group_of(accounts.bytes_of(.group_identified, key)?)?
+    read = accounts.id_of(entry.id)?
+
+    found: AccountId = if read.sid
+        .sid(text: read.text)
+    else
+        .number(value: read.number)
+    given: str? @= fail(code: codes.NOT_FOUND, msg: "the system holds no record of this group")
+
+    if entry.name.len() > 0
+        given @ ok(entry.name)
+    return ok(Group(name: given, id: found))
+
+# The groups the user named `user` belongs to, in the system's order, each once.
+# On POSIX the user's primary group is among them and the groups come from the
+# system's record of groups (`getgrouplist`), not the groups this process runs
+# with, which `group_ids` tells; on Darwin the system keeps at most sixteen for
+# a user. On Windows they are the machine's groups the user is a member of,
+# directly or through a group of a domain.
+#
+# - `user`: the user's name, as `user_named` reads it.
+#
+# Fails as `user_named` does. See also `group_ids`, `user_named`.
+function groups_of(user: str) -> [Group]?
+    answer: [Group] @= []
+
+    for entry in accounts.groups_in(accounts.bytes_of(.groups_of, user)?)?
+        read = accounts.id_of(entry.id)?
+
+        id: AccountId = if read.sid
+            .sid(text: read.text)
+        else
+            .number(value: read.number)
+        given: str? @= fail(code: codes.NOT_FOUND, msg: "the system holds no record of this group")
+
+        if entry.name.len() > 0
+            given @ ok(entry.name)
+        answer @ answer.push(Group(name: given, id: id))
+
+    return ok(answer)
+
+# Changes the user and the groups this process runs as to those of the user
+# named `name`: its other groups, then its group, then its user, all of the real,
+# effective and saved ids at once, every thread of the process changed, and the
+# process unable to take back the user it was. It is how a daemon started by
+# root gives up root.
+#
+# - `name`: the user's name, as `user_named` reads it.
+#
+# Only a process run by root changes to another user. One that is not changes
+# nothing, and answers once it runs as that user and that group already, ids all
+# equal. Where the change began and failed the process may be changed in part,
+# and the caller ends it.
+#
+# Fails `invalid` for a name that is empty or holds a zero byte, `not_found`
+# where no user has it, `permission` where this process may not, `failed` where
+# the change did not hold, and `unsupported` on Windows, where a process keeps
+# the user it started as. See also `user_named`, `effective_user_id`.
+function change_user(name: str) -> ()?
+    return accounts.changed(name)
 
 ## Random bytes and the terminal
 
@@ -1375,10 +1589,11 @@ test "processes: this process is listed once, with its parent, its owner and its
 
             match p.owner
                 .ok owner =>
-                    if system() == .windows
-                        assert owner.id.len() > 6 && owner.id[0] == 'S' && owner.id[1] == '-'
-                    else
-                        assert owner.id == f"{effective_user_id().must()}"
+                    expected: AccountId = .number(value: effective_user_id().default(0))
+
+                    match owner.id
+                        .sid s    => assert system() == .windows && s.text.len() > 6
+                        .number _ => assert system() != .windows && owner.id == expected
 
                     match owner.name
                         .ok name => assert name == user_name().must()
@@ -1429,6 +1644,131 @@ test "processes: on Darwin and Linux the system's first process, id 1, is listed
 
     if system() != .windows
         assert first == 1
+
+test "user_named: the user this process runs as, by its name and again by its id, and the system's own first user"
+    me = user_named(user_name().must()).must()
+    assert me.name.len() > 0
+
+    match me.id
+        .sid s    => assert system() == .windows && s.text.len() > 6
+        .number n => assert system() != .windows && n.value >= 0
+
+    again = user_identified(me.id).must()
+    assert again.name == me.name && again.id == me.id && again.group_id == me.group_id
+
+    if system() != .windows
+        root = user_named("root").must()
+        zero: AccountId = .number(value: 0)
+        assert root.id == zero && root.name == "root" && root.group_id.must() == zero
+        assert root.home.must().len() > 0
+        expected: AccountId = .number(value: effective_user_id().must())
+        assert me.id == expected
+
+test "user_named fails: an empty name, a zero byte, a name no one has, and a group's name"
+    with_zero: [u8] = [97, 0, 98]
+
+    for bad in ["", with_zero.validated_bytes().must()]
+        match user_named(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match user_named("no-such-user-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match user_named("Administrators")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "user_identified and group_identified fail: a number below 0, one past a user's number, and an id nobody holds or of the other kind of system"
+    low: AccountId = .number(value: -1)
+    none: AccountId = .number(value: 4294967295)
+    past: AccountId = .number(value: 4294967296)
+    sid: AccountId = .sid(text: "S-1-5-21-1-2-3-999999")
+    not_sid: AccountId = .sid(text: "not an id")
+
+    for bad in [low, past, not_sid]
+        match user_identified(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        match group_identified(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match user_identified(none)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID && system() == .windows
+
+    match group_identified(sid)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && system() != .windows || e.code == NOT_FOUND && system() == .windows
+
+test "group_named, group_identified and groups_of: a user's primary group found again by id and by name, listed once among the user's groups"
+    me = user_named(user_name().must()).must()
+    listed = groups_of(me.name).must()
+    ids: [AccountId] @= []
+
+    for g in listed
+        for before in ids
+            assert before != g.id
+
+        ids @ ids.push(g.id)
+
+    match me.group_id
+        .ok primary =>
+            found = group_identified(primary).must()
+            assert found.id == primary
+            held: bool @= false
+
+            for id in ids
+                if id == primary
+                    held @ true
+
+            if system() != .windows
+                assert held
+                again = group_named(found.name.must()).must()
+                assert again.id == primary && again.name == found.name
+        .err e => assert e.code == NOT_FOUND
+
+test "group_named fails: an empty name, a name no one has, and a user's name; and groups_of a user no one has"
+    match group_named("")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match group_named("no-such-group-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match group_named(user_name().must())
+        .ok _  => assert system() != .windows
+        .err e => assert e.code == NOT_FOUND
+
+    match groups_of("no-such-user-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match groups_of("")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "change_user: a user no one has and an empty name are refused; on Windows it is unsupported; on Darwin and Linux root is refused to a process that is not root"
+    match change_user("no-such-user-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match change_user("")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    if system() == .windows
+        match change_user(user_name().must())
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+    else if effective_user_id().must() != 0 && user_id().must() != 0
+        match change_user("root")
+            .ok _  => assert false
+            .err e => assert e.code == PERMISSION
 
 test "network_counters: at least one interface, names not empty and not repeated, counts at or above 0, never less a moment later"
     match network_counters()
@@ -1896,3 +2236,47 @@ test "processes: this process is in the machine's list"
             own @ own + 1
 
     assert own == 1
+
+# The user this process runs as, found by the name `user_name` gives.
+test "user_named: the user running this program"
+    me = user_named(user_name().must()).must()
+    assert me.name.len() > 0
+
+# A user found again by the id it was found with.
+test "user_identified: a user found by its id"
+    me = user_named(user_name().must()).must()
+    assert user_identified(me.id).must().name == me.name
+
+# A user's primary group, found by its id and then by the name it has.
+test "group_named: the primary group of the user running this program"
+    me = user_named(user_name().must()).must()
+
+    match me.group_id
+        .ok primary =>
+            match group_identified(primary).must().name
+                .ok name => assert group_named(name).must().id == primary
+                .err e   => assert e.code == NOT_FOUND
+        .err e => assert e.code == NOT_FOUND
+
+# A user's primary group, found by its id.
+test "group_identified: the primary group of the user running this program"
+    me = user_named(user_name().must()).must()
+
+    match me.group_id
+        .ok primary => assert group_identified(primary).must().id == primary
+        .err e      => assert e.code == NOT_FOUND
+
+# The groups the user running this program belongs to.
+test "groups_of: the groups of the user running this program"
+    me = user_named(user_name().must()).must()
+    assert groups_of(me.name).must().len() >= 0
+
+# A change to a user the system does not have is refused, and the process stays as it is.
+test "change_user: a user that is not there"
+    before = user_id().default(0)
+
+    match change_user("no-such-user-in-rebel-tests")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert user_id().default(0) == before

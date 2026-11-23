@@ -108,6 +108,7 @@ packages = [
     "os/hero_disk",
     "os/hero_procs",
     "os/hero_sys",
+    "os/hero_users",
     "otlp",
     "path",
     "pdf",
