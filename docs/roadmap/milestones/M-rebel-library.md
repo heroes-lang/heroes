@@ -643,6 +643,25 @@ the coordinator's own choice DG04), the author answered *1a 2a 3c*:
   *we add nothing more* of the afternoon of 2026-11-22 by the author's own later word, as the audio and
   printing answer did.
 
+## The author's answers of 2026-11-23, about 22:30: everything before the one push
+
+Put as four questions with the picture of what stood before and after the push (`main` 867 commits past GitHub's,
+five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*:
+
+- **The push waits** for the lanes then running (the Windows box's round, the three `blocking` defects 2522, 2578
+  and 2583, the reach programs moved into `examples-rebel/reach/`) and for the last check on the exact tree pushed:
+  the two-stage build and its fixpoint, the compiler's own tests, the net's own tests and the site's build; the whole
+  net stays the CI's, as decided before.
+- **The drawing area, its mouse and its keys (DR01 to DR03) on Win32 and GTK 4, and the month calendar (CT44) on the
+  three systems, land before the push**, as the author's answer of 2026-11-22 afternoon already said of the ui
+  catalogue. With them **AX04**, a drawing area a screen reader can read: the catalogue's own line makes it `must` the
+  day DR01 lands, and DR01 landed on macOS at `015506dd5`, its area one image element.
+- **The 19 `should` rows of `gap-3c-rows.tsv` never started, and the three delivered in part (K04's lossy WebP, F05's
+  limit shared through the stores, H14's pending blocks), land before the push**, as the answer *3c* said. N09, files
+  embedded in the program, stays a language form for a sitting of its own.
+- **Decision 2610, the register of the decisions this milestone invalidates, closes at the milestone's close**, its
+  dated comments standing as the register.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
