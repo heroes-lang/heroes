@@ -438,6 +438,30 @@ typedef struct hero_ui_gtk_functions {
     void *(*color_dialog_button_new)(void *dialog);
     void (*color_dialog_button_set_rgba)(void *button, const hero_ui_gtk_rgba *color);
     const hero_ui_gtk_rgba *(*color_dialog_button_get_rgba)(void *button);
+    /* GTK 4.10's font dialog and the button that opens it, found where the
+     * library has them, and Pango's font descriptions and the families and
+     * faces of the font map a widget draws with (A FONT PICKED). */
+    void *(*font_dialog_new)(void);
+    void *(*font_dialog_button_new)(void *dialog);
+    void (*font_dialog_button_set_font_desc)(void *button, const void *description);
+    const void *(*font_dialog_button_get_font_desc)(void *button);
+    void *(*font_description_new)(void);
+    void *(*font_description_from_string)(const char *text);
+    void (*font_description_free)(void *description);
+    void (*font_description_set_family)(void *description, const char *family);
+    void (*font_description_set_size)(void *description, int size);
+    void (*font_description_set_weight)(void *description, int weight);
+    void (*font_description_set_style)(void *description, int style);
+    const char *(*font_description_get_family)(const void *description);
+    int (*font_description_get_size)(const void *description);
+    int (*font_description_get_weight)(const void *description);
+    int (*font_description_get_style)(const void *description);
+    void *(*widget_get_pango_context)(void *widget);
+    void *(*pango_context_get_font_map)(void *context);
+    void (*font_map_list_families)(void *map, void ***families, int *count);
+    const char *(*font_family_get_name)(void *family);
+    void (*font_family_list_faces)(void *family, void ***faces, int *count);
+    void *(*font_face_describe)(void *face);
     void *(*menu_new)(void);
     void (*menu_remove_all)(void *menu);
     void (*menu_append_section)(void *menu, const char *label, void *section);
@@ -961,6 +985,27 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_MAY(color_dialog_button_new, "gtk_color_dialog_button_new");
     HERO_UI_GTK_MAY(color_dialog_button_set_rgba, "gtk_color_dialog_button_set_rgba");
     HERO_UI_GTK_MAY(color_dialog_button_get_rgba, "gtk_color_dialog_button_get_rgba");
+    HERO_UI_GTK_MAY(font_dialog_new, "gtk_font_dialog_new");
+    HERO_UI_GTK_MAY(font_dialog_button_new, "gtk_font_dialog_button_new");
+    HERO_UI_GTK_MAY(font_dialog_button_set_font_desc, "gtk_font_dialog_button_set_font_desc");
+    HERO_UI_GTK_MAY(font_dialog_button_get_font_desc, "gtk_font_dialog_button_get_font_desc");
+    HERO_UI_GTK_NEED(font_description_new, "pango_font_description_new");
+    HERO_UI_GTK_NEED(font_description_from_string, "pango_font_description_from_string");
+    HERO_UI_GTK_NEED(font_description_free, "pango_font_description_free");
+    HERO_UI_GTK_NEED(font_description_set_family, "pango_font_description_set_family");
+    HERO_UI_GTK_NEED(font_description_set_size, "pango_font_description_set_size");
+    HERO_UI_GTK_NEED(font_description_set_weight, "pango_font_description_set_weight");
+    HERO_UI_GTK_NEED(font_description_set_style, "pango_font_description_set_style");
+    HERO_UI_GTK_NEED(font_description_get_family, "pango_font_description_get_family");
+    HERO_UI_GTK_NEED(font_description_get_size, "pango_font_description_get_size");
+    HERO_UI_GTK_NEED(font_description_get_weight, "pango_font_description_get_weight");
+    HERO_UI_GTK_NEED(font_description_get_style, "pango_font_description_get_style");
+    HERO_UI_GTK_NEED(widget_get_pango_context, "gtk_widget_get_pango_context");
+    HERO_UI_GTK_NEED(pango_context_get_font_map, "pango_context_get_font_map");
+    HERO_UI_GTK_NEED(font_map_list_families, "pango_font_map_list_families");
+    HERO_UI_GTK_NEED(font_family_get_name, "pango_font_family_get_name");
+    HERO_UI_GTK_NEED(font_family_list_faces, "pango_font_family_list_faces");
+    HERO_UI_GTK_NEED(font_face_describe, "pango_font_face_describe");
     HERO_UI_GTK_NEED(menu_new, "g_menu_new");
     HERO_UI_GTK_NEED(menu_remove_all, "g_menu_remove_all");
     HERO_UI_GTK_NEED(menu_append_section, "g_menu_append_section");
@@ -1485,6 +1530,8 @@ static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, boo
 static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most);
 static bool hero_ui_gtk_is_picker(int64_t kind);
 static bool hero_ui_gtk_make_color(hero_ui_native *made);
+static bool hero_ui_gtk_make_font(hero_ui_native *made);
+static int64_t hero_ui_gtk_font_text(hero_ui_native *widget, const char *text, bool told);
 static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool told);
 static bool hero_ui_gtk_make_bar(hero_ui_native *made);
 static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar);
@@ -2685,6 +2732,282 @@ static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool
     return HERO_UI_OK;
 }
 
+/* -- A FONT PICKED ---------------------------------------------------------------
+ *
+ * `GtkFontDialogButton` (GTK 4.10), whose `font-desc` is a Pango font
+ * description. The layer's text is the font as `<size>|<style>|<family>`
+ * (`hero_ui.h`): the size in whole points from 1 to 1024 (Pango's size is
+ * points times 1024, rounded back), the style `-`, `b`, `i` or `bi` (bold is
+ * a weight of 700 or more, italic a style that is not normal), and the
+ * family as the font map the button draws with lists it, a name matching
+ * whatever its case and read back as the map spells it. A family the map
+ * lacks is refused, and a style the family has no face for is dropped, so
+ * that the text read back is the font as the system holds it. The text held
+ * is `widget->label`, the program's or the person's last. A GTK older than
+ * 4.10 is refused by name where the kind is made. */
+
+#define HERO_UI_GTK_PANGO_SCALE 1024
+#define HERO_UI_GTK_WEIGHT_NORMAL 400
+#define HERO_UI_GTK_WEIGHT_BOLD 700
+#define HERO_UI_GTK_STYLE_ITALIC 2
+#define HERO_UI_GTK_FONT_LEAST 1
+#define HERO_UI_GTK_FONT_MOST 1024
+
+/* A font taken apart: its size, its two styles and its family, in a block of
+ * `hero_layer_alloc`. */
+typedef struct hero_ui_gtk_font {
+    int64_t size;
+    bool bold;
+    bool italic;
+    char *family;
+} hero_ui_gtk_font;
+
+/* The family of `widget`'s font map that is called `name` (letters of the
+ * ASCII's alphabet compared whatever their case), as a copy of the map's
+ * spelling, with whether it has a bold face and an italic one; NULL where it
+ * has none. `*failed` is set where the copy could not be made. */
+static char *hero_ui_gtk_font_family(void *widget, const char *name, bool *bold, bool *italic, bool *failed) {
+    void *map = hero_ui_gtk.pango_context_get_font_map(hero_ui_gtk.widget_get_pango_context(widget));
+    void **families = NULL;
+    int count = 0;
+    char *found = NULL;
+
+    *failed = false;
+    if (map == NULL) {
+        return NULL;
+    }
+    hero_ui_gtk.font_map_list_families(map, &families, &count);
+    for (int i = 0; i < count && found == NULL; i += 1) {
+        const char *spelling = hero_ui_gtk.font_family_get_name(families[i]);
+        void **faces = NULL;
+        int kinds = 0;
+
+        if (spelling == NULL || strcasecmp(spelling, name) != 0) {
+            continue;
+        }
+        found = hero_layer_alloc(strlen(spelling) + 1);
+        if (found == NULL) {
+            *failed = true;
+            break;
+        }
+        memcpy(found, spelling, strlen(spelling) + 1);
+        hero_ui_gtk.font_family_list_faces(families[i], &faces, &kinds);
+        *bold = false;
+        *italic = false;
+        for (int face = 0; face < kinds; face += 1) {
+            void *description = hero_ui_gtk.font_face_describe(faces[face]);
+
+            if (description != NULL) {
+                *bold = *bold || hero_ui_gtk.font_description_get_weight(description) >= HERO_UI_GTK_WEIGHT_BOLD;
+                *italic = *italic || hero_ui_gtk.font_description_get_style(description) != 0;
+                hero_ui_gtk.font_description_free(description);
+            }
+        }
+        hero_ui_gtk.g_free(faces);
+    }
+    hero_ui_gtk.g_free(families);
+    return found;
+}
+
+/* `text` taken apart as a descriptor and checked against the system:
+ * `invalid` with words for another shape, a size outside 1 to 1024 and a
+ * family the system lacks, `limit` where memory ran out. */
+static int64_t hero_ui_gtk_font_check(void *widget, const char *text, hero_ui_gtk_font *font) {
+    const char *at = text;
+    const char *name;
+    bool has_bold = false;
+    bool has_italic = false;
+    bool failed = false;
+    bool bold;
+    bool italic;
+    int64_t size = 0;
+    size_t digits = 0;
+
+    for (; *at >= '0' && *at <= '9' && digits < 6; at += 1) {
+        size = size * 10 + (*at - '0');
+        digits += 1;
+    }
+    if (digits == 0 || *at != '|' || size < HERO_UI_GTK_FONT_LEAST || size > HERO_UI_GTK_FONT_MOST) {
+        return hero_ui_refused(HERO_UI_INVALID, "a font is `<size>|<style>|<family>`: the size in points, a whole number from 1 to 1024");
+    }
+    at += 1;
+    if (strncmp(at, "bi|", 3) == 0) {
+        bold = true;
+        italic = true;
+        at += 3;
+    } else if ((at[0] == 'b' || at[0] == 'i' || at[0] == '-') && at[1] == '|') {
+        bold = at[0] == 'b';
+        italic = at[0] == 'i';
+        at += 2;
+    } else {
+        return hero_ui_refused(HERO_UI_INVALID, "a font's style is `-`, `b` (bold), `i` (italic) or `bi`, between two `|`");
+    }
+    name = at;
+    if (name[0] == '\0' || strpbrk(name, "\r\n") != NULL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a font's family is a name, any bytes but a zero or a line break, after the second `|`");
+    }
+    font->family = hero_ui_gtk_font_family(widget, name, &has_bold, &has_italic, &failed);
+    if (font->family == NULL) {
+        return failed ? HERO_UI_LIMIT : hero_ui_refused(HERO_UI_INVALID, "the system has no font family of that name");
+    }
+    font->size = size;
+    font->bold = bold && has_bold;
+    font->italic = italic && has_italic;
+    return HERO_UI_OK;
+}
+
+/* The descriptor of `font`, in a block of `hero_layer_alloc`. */
+static char *hero_ui_gtk_font_describe(const hero_ui_gtk_font *font) {
+    size_t room = strlen(font->family) + 16;
+    char *text = hero_layer_alloc(room);
+
+    if (text != NULL) {
+        (void)snprintf(text, room, "%lld|%s|%s", (long long)font->size, font->bold && font->italic ? "bi" : font->bold ? "b" : font->italic ? "i" : "-", font->family);
+    }
+    return text;
+}
+
+/* Puts `font` in `widget`'s button, muted, and keeps its descriptor as the
+ * text held; `limit` where memory ran out. */
+static int64_t hero_ui_gtk_font_apply(hero_ui_native *widget, const hero_ui_gtk_font *font) {
+    char *text = hero_ui_gtk_font_describe(font);
+    void *description = text != NULL ? hero_ui_gtk.font_description_new() : NULL;
+
+    if (description == NULL) {
+        hero_layer_free(text);
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.font_description_set_family(description, font->family);
+    hero_ui_gtk.font_description_set_size(description, (int)(font->size * HERO_UI_GTK_PANGO_SCALE));
+    hero_ui_gtk.font_description_set_weight(description, font->bold ? HERO_UI_GTK_WEIGHT_BOLD : HERO_UI_GTK_WEIGHT_NORMAL);
+    hero_ui_gtk.font_description_set_style(description, font->italic ? HERO_UI_GTK_STYLE_ITALIC : 0);
+    widget->setting = true;
+    hero_ui_mute(1);
+    hero_ui_gtk.font_dialog_button_set_font_desc(widget->widget, description);
+    hero_ui_mute(-1);
+    widget->setting = false;
+    hero_ui_gtk.font_description_free(description);
+    hero_layer_free(widget->label);
+    widget->label = text;
+    return HERO_UI_OK;
+}
+
+/* Gives font button `widget` the font `text` names. Told where `told` and
+ * the font is not the one held, as the person's pick is. */
+static int64_t hero_ui_gtk_font_text(hero_ui_native *widget, const char *text, bool told) {
+    hero_ui_gtk_font font = {0, false, false, NULL};
+    int64_t answer = hero_ui_gtk_font_check(widget->widget, text, &font);
+    char *described;
+    bool changed;
+
+    if (answer != HERO_UI_OK) {
+        return answer;
+    }
+    described = hero_ui_gtk_font_describe(&font);
+    changed = described != NULL && (widget->label == NULL || strcmp(described, widget->label) != 0);
+    hero_layer_free(described);
+    answer = hero_ui_gtk_font_apply(widget, &font);
+    hero_layer_free(font.family);
+    if (answer == HERO_UI_OK && told && changed) {
+        hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+    }
+    return answer;
+}
+
+/* The person picked a font in the chooser: told once, where it is not the
+ * font held. */
+static void hero_ui_gtk_fonted(void *button, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, button);
+    const void *description;
+    hero_ui_gtk_font font;
+    const char *family;
+    int64_t size;
+    char *text;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_FONT_BUTTON || widget->setting) {
+        return;
+    }
+    description = hero_ui_gtk.font_dialog_button_get_font_desc(button);
+    family = description != NULL ? hero_ui_gtk.font_description_get_family(description) : NULL;
+    if (family == NULL) {
+        return;
+    }
+    size = (hero_ui_gtk.font_description_get_size(description) + HERO_UI_GTK_PANGO_SCALE / 2) / HERO_UI_GTK_PANGO_SCALE;
+    font.size = size < HERO_UI_GTK_FONT_LEAST ? HERO_UI_GTK_FONT_LEAST : size > HERO_UI_GTK_FONT_MOST ? HERO_UI_GTK_FONT_MOST : size;
+    font.bold = hero_ui_gtk.font_description_get_weight(description) >= HERO_UI_GTK_WEIGHT_BOLD;
+    font.italic = hero_ui_gtk.font_description_get_style(description) != 0;
+    font.family = (char *)(uintptr_t)family;
+    text = hero_ui_gtk_font_describe(&font);
+    if (text != NULL && (widget->label == NULL || strcmp(text, widget->label) != 0)) {
+        hero_layer_free(widget->label);
+        widget->label = text;
+        hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+        return;
+    }
+    hero_layer_free(text);
+}
+
+/* The family of the system's own font (`gtk-font-name`'s first), as the font
+ * map lists it, else the map's own "Sans"; in a block of `hero_layer_alloc`. */
+static char *hero_ui_gtk_font_system(void *widget) {
+    void *settings = hero_ui_gtk.settings_get_default();
+    char *name = NULL;
+    char *found = NULL;
+    bool bold;
+    bool italic;
+    bool failed;
+
+    if (settings != NULL) {
+        hero_ui_gtk.object_get(settings, "gtk-font-name", &name, NULL);
+    }
+    if (name != NULL) {
+        void *description = hero_ui_gtk.font_description_from_string(name);
+        const char *family = description != NULL ? hero_ui_gtk.font_description_get_family(description) : NULL;
+        char first[256];
+        size_t length = 0;
+
+        while (family != NULL && family[length] != '\0' && family[length] != ',' && length + 1 < sizeof first) {
+            first[length] = family[length];
+            length += 1;
+        }
+        first[length] = '\0';
+        if (length > 0) {
+            found = hero_ui_gtk_font_family(widget, first, &bold, &italic, &failed);
+        }
+        if (description != NULL) {
+            hero_ui_gtk.font_description_free(description);
+        }
+        hero_ui_gtk.g_free(name);
+    }
+    return found != NULL ? found : hero_ui_gtk_font_family(widget, "Sans", &bold, &italic, &failed);
+}
+
+static bool hero_ui_gtk_make_font(hero_ui_native *made) {
+    void *dialog = hero_ui_gtk.font_dialog_new();
+    hero_ui_gtk_font font = {13, false, false, NULL};
+
+    if (dialog == NULL) {
+        return false;
+    }
+    /* The button takes the dialog's reference. */
+    made->widget = hero_ui_gtk.font_dialog_button_new(dialog);
+    if (made->widget == NULL) {
+        return false;
+    }
+    font.family = hero_ui_gtk_font_system(made->widget);
+    if (font.family == NULL) {
+        return false;
+    }
+    if (hero_ui_gtk_font_apply(made, &font) != HERO_UI_OK) {
+        hero_layer_free(font.family);
+        return false;
+    }
+    hero_layer_free(font.family);
+    hero_ui_gtk_connect(made->widget, "notify::font-desc", (hero_ui_gtk_callback)hero_ui_gtk_fonted, made->id);
+    return true;
+}
+
 /* -- The arm ------------------------------------------------------------------ */
 
 /* Whether `name` names something in the environment. */
@@ -3031,6 +3354,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
                                        hero_ui_gtk.color_dialog_button_get_rgba == NULL)) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "a colour well is GTK 4.10's GtkColorDialogButton, which this GTK lacks");
     }
+    if (kind == HERO_UI_FONT_BUTTON && (hero_ui_gtk.font_dialog_new == NULL || hero_ui_gtk.font_dialog_button_new == NULL || hero_ui_gtk.font_dialog_button_set_font_desc == NULL || hero_ui_gtk.font_dialog_button_get_font_desc == NULL)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a font button is GTK 4.10's GtkFontDialogButton, which this GTK lacks");
+    }
     if (kind != HERO_UI_WINDOW && kind != HERO_UI_TRAY) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
@@ -3158,6 +3484,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         break;
     case HERO_UI_COLOR_WELL:
         ok = hero_ui_gtk_make_color(made);
+        break;
+    case HERO_UI_FONT_BUTTON:
+        ok = hero_ui_gtk_make_font(made);
         break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
@@ -3303,6 +3632,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_PAGE:
     case HERO_UI_GROUP:
     case HERO_UI_TRAY:
+    case HERO_UI_FONT_BUTTON:
         break;
     default:
         return HERO_UI_INVALID;
@@ -3310,6 +3640,12 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     made = hero_ui_gtk_text(text, count, false);
     if (made == NULL) {
         return HERO_UI_LIMIT;
+    }
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        int64_t answer = hero_ui_gtk_font_text(widget, made, false);
+
+        hero_layer_free(made);
+        return answer;
     }
     hero_ui_mute(1);
     switch (widget->kind) {
@@ -4050,6 +4386,7 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
     case HERO_UI_COLOR_WELL:
+    case HERO_UI_FONT_BUTTON:
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_EDITABLE_COMBO:
@@ -4138,6 +4475,15 @@ int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *le
         *length = (int64_t)bytes;
         if (bytes > 0 && *length <= count) {
             memcpy(buffer, text, bytes);
+        }
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        size_t bytes = widget->label != NULL ? strlen(widget->label) : 0;
+
+        *length = (int64_t)bytes;
+        if (bytes > 0 && *length <= count) {
+            memcpy(buffer, widget->label, bytes);
         }
         return HERO_UI_OK;
     }
@@ -4367,6 +4713,22 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
             } else if (usable && hero_ui_gtk.editable_get_editable(hero_ui_gtk_entry_of(widget))) {
                 hero_ui_gtk.editable_delete_text(hero_ui_gtk_entry_of(widget), 0, -1);
                 hero_ui_gtk.editable_insert_text(hero_ui_gtk_entry_of(widget), typed, (int)count, &position);
+            }
+            hero_layer_free(typed);
+        } else if (widget->kind == HERO_UI_FONT_BUTTON) {
+            char *typed = hero_ui_gtk_text(text, count, false);
+
+            /* Picked as the person does: the button's font changed, told
+             * where it is not the one held. */
+            if (typed == NULL) {
+                answer = HERO_UI_LIMIT;
+            } else if (usable) {
+                answer = hero_ui_gtk_font_text(widget, typed, true);
+            } else {
+                hero_ui_gtk_font probe = {0, false, false, NULL};
+
+                answer = hero_ui_gtk_font_check(widget->widget, typed, &probe);
+                hero_layer_free(probe.family);
             }
             hero_layer_free(typed);
         } else if (widget->kind == HERO_UI_TEXT_AREA) {
@@ -11466,14 +11828,14 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the colour well and every act of `hero_ui.h` is
+/* Every kind of `hero_ui.h` and every act of it is
  * drawn here, so neither switch refuses one before `create` and `inject`,
  * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the colour well is drawn here: one the contract gains is
+    /* No kind past the font button is drawn here: one the contract gains is
      * refused by name until this arm makes it. */
-    return kind <= HERO_UI_COLOR_WELL;
+    return kind <= HERO_UI_FONT_BUTTON;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
