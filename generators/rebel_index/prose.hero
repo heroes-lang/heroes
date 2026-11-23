@@ -1,0 +1,259 @@
+# The words both indexes are written with: a comment read as the Markdown it
+# holds (spec § 1), its first sentence, a code span that holds any text, a
+# word as a shell reads it back, and a number written for a reader.
+
+use <rebel>/strings
+
+# The comment `text` opens with, one line each, its `#` and the one space after
+# it taken off: the lines up to the first that does not open with `#`. A line
+# holding `#` alone is an empty line, a paragraph's end.
+#
+# - `text`: a whole `.hero` file.
+function opening_comment(text: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.lines(text)
+        if !strings.has_prefix(s: line, prefix: "#")
+            break
+        out @ out.push(strings.trim_prefix(s: strings.trim_prefix(s: line, prefix: "#"), prefix: " "))
+
+    return out
+
+# The paragraphs of `lines`, each its lines joined by one space: an empty line
+# ends one, and lines before the first text or after the last end none.
+#
+# - `lines`: prose, one line each.
+function paragraphs(lines: [str]) -> [str]
+    out: [str] @= []
+    open: [str] @= []
+
+    for line in lines
+        if strings.trim(line).len() == 0
+            if open.len() > 0
+                out @ out.push(open.join(" "))
+            open @ []
+        else
+            open @ open.push(strings.trim(line))
+
+    if open.len() > 0
+        out @ out.push(open.join(" "))
+    return out
+
+# The first sentence of `paragraph`: through the first `.` outside a code span
+# that ends the paragraph or stands before a space and then anything but a
+# lower-case letter, so `e.g. a` runs on and the `.` of `strings.trim` inside
+# backticks ends nothing; the whole paragraph where it holds no such `.`. The
+# rule is the one the net reads a module's first sentence by
+# (`tests/harness/module_docs.hero`, `first_sentence`).
+#
+# - `paragraph`: one paragraph, its lines joined by spaces.
+function first_sentence(paragraph: str) -> str
+    spanned @= false
+    at @= 0
+
+    while at < paragraph.len()
+        byte = paragraph[at]
+
+        if byte == '`'
+            spanned @ !spanned
+        else if byte == '.' && !spanned && ends_sentence(text: paragraph, at: at)
+            return paragraph.slice(from: 0, to: at + 1)
+        at @ at + 1
+
+    return paragraph
+
+# The sentences of `paragraph`, in order, each as `first_sentence` ends one,
+# the spaces between them left off.
+#
+# - `paragraph`: one paragraph, its lines joined by spaces.
+function sentences(paragraph: str) -> [str]
+    out: [str] @= []
+    rest @= strings.trim(paragraph)
+
+    while rest.len() > 0
+        one = first_sentence(rest)
+        out @ out.push(one)
+        rest @ strings.trim(rest.slice(from: one.len(), to: rest.len()))
+
+    return out
+
+# Whether the `.` at `at` of `text` ends a sentence: it ends the text, or a
+# space and then no lower-case letter follow it.
+#
+# - `text`: the paragraph.
+# - `at`: the byte index of a `.`.
+function ends_sentence(text: str, at: i64) -> bool
+    if at + 1 == text.len()
+        return true
+
+    if text[at + 1] != ' '
+        return false
+    return at + 2 == text.len() || text[at + 2] < 'a' || text[at + 2] > 'z'
+
+# The first sentence of the first paragraph of `lines`, "" where they hold no
+# text.
+#
+# - `lines`: prose, one line each.
+function lead(lines: [str]) -> str
+    found = paragraphs(lines)
+
+    if found.len() == 0
+        return ""
+    return first_sentence(found[0])
+
+# `text` as one Markdown code span, whatever it holds: fenced by one backtick
+# more than its longest run of them, and padded with a space where it opens
+# or ends with one, so CommonMark reads back exactly `text`.
+#
+# - `text`: the code, one line.
+function code(text: str) -> str
+    longest: u64 @= 0
+    run: u64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '`'
+            run @ run + 1
+
+            if run > longest
+                longest @ run
+        else
+            run @ 0
+
+    fence = repeat("`", longest + 1)
+
+    pad = if strings.has_prefix(s: text, prefix: "`") || strings.has_suffix(s: text, suffix: "`")
+        " "
+    else
+        ""
+    return fence + pad + text + pad + fence
+
+# `word` as a POSIX shell reads it back as one word: as it is where every byte
+# is a letter, a digit or one of `_./:=@%+,-`, else between single quotes,
+# each quote inside written `'\''`; the empty word is `''`.
+#
+# - `word`: one argument.
+function shell_word(word: str) -> str
+    if word.len() == 0
+        return "''"
+    plain @= true
+
+    for at in range(from: 0, to: word.len())
+        if !plain_byte(word[at])
+            plain @ false
+
+    if plain
+        return word
+    return "'" + strings.replace_all(s: word, old: "'", new: "'\\''") + "'"
+
+# Whether `b` stands in a shell word unquoted and means itself.
+#
+# - `b`: one byte of the word.
+function plain_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    marks = "_./:=@%+,-"
+
+    for at in range(from: 0, to: marks.len())
+        if marks[at] == b
+            return true
+
+    return false
+
+# `n` in decimal with a comma between each group of three digits.
+#
+# - `n`: a count, 0 or more.
+function thousands(n: i64) -> str
+    digits = to_str(n)
+    out: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        if at > 0 && (digits.len() - at) % 3 == 0
+            out @ out.push(",")
+        out @ out.push(digits.slice(from: at, to: at + 1))
+        at @ at + 1
+
+    return out.join("")
+
+# How many lines `data` holds: its line ends, and one more where its last byte
+# is not one; none for no bytes.
+#
+# - `data`: a file's bytes.
+function line_count(data: [u8]) -> i64
+    ends @= 0
+
+    for b in data
+        if b == '\n'
+            ends @ ends + 1
+
+    if data.len() > 0 && data[data.len() - 1] != '\n'
+        return ends + 1
+    return ends
+
+# `count` and the noun for one or for several: `1 file`, `3 files`.
+#
+# - `count`: how many.
+# - `one`: the noun for one.
+# - `many`: the noun for any other count.
+function counted(count: i64, one: str, many: str) -> str
+    if count == 1
+        return "1 " + one
+    return thousands(count) + " " + many
+
+## Tests
+
+test "opening_comment: the lines up to the first that is no comment, `#` and one space off"
+    text = "# chat: a service.\n#\n#     chat serve\n#   - a bullet\nuse x\n# not this\n"
+    assert opening_comment(text) == ["chat: a service.", "", "    chat serve", "  - a bullet"]
+    assert opening_comment("use x\n").len() == 0
+    assert opening_comment("").len() == 0
+
+test "paragraphs: joined by spaces, empty lines at either end and between ending none"
+    assert paragraphs(["", "a b", "c", "", "", "d", ""]) == ["a b c", "d"]
+    assert paragraphs([]).len() == 0
+
+test "first_sentence: a full stop before a capital, inside backticks, before a lower-case word, and none"
+    assert first_sentence("One. Two.") == "One."
+    assert first_sentence("Uses `strings.trim` here. Then.") == "Uses `strings.trim` here."
+    assert first_sentence("As e.g. this one. Next") == "As e.g. this one."
+    assert first_sentence("No stop at all") == "No stop at all"
+    assert first_sentence("Ends.") == "Ends."
+    assert first_sentence("A `.` alone. B") == "A `.` alone."
+
+test "sentences: each in order, none for no text"
+    assert sentences("One. Two `a.b` here. three.") == ["One.", "Two `a.b` here. three."]
+    assert sentences("  ").len() == 0
+
+test "lead: the first paragraph's first sentence, and nothing for no text"
+    assert lead(["", "First one. Second", "line.", "", "Next."]) == "First one."
+    assert lead(["", ""]) == ""
+
+test "code: a plain span, a backtick inside, and one at an end"
+    assert code("a: i64") == "`a: i64`"
+    assert code("say `x`") == "`` say `x` ``"
+    assert code("a`b") == "``a`b``"
+    assert code("") == "``"
+
+test "shell_word: plain, with a space and a bracket, with a quote, and empty"
+    assert shell_word("examples/json/sample.json") == "examples/json/sample.json"
+    assert shell_word("--listen=127.0.0.1:8080") == "--listen=127.0.0.1:8080"
+    assert shell_word(".albums[] | .title") == "'.albums[] | .title'"
+    assert shell_word("it's") == "'it'\\''s'"
+    assert shell_word("") == "''"
+
+test "thousands: below a thousand, at it, and past a million"
+    assert thousands(0) == "0" && thousands(999) == "999" && thousands(2231) == "2,231" && thousands(1234567) == "1,234,567"
+
+test "line_count: none, ended, unended, and empty lines"
+    none: [u8] = []
+    ended: [u8] = [97, 10, 98, 10]
+    unended: [u8] = [97, 10, 98]
+    empty_lines: [u8] = [10, 10]
+    assert line_count(none) == 0
+    assert line_count(ended) == 2
+    assert line_count(unended) == 2
+    assert line_count(empty_lines) == 2
+
+test "counted: one and several"
+    assert counted(count: 1, one: "file", many: "files") == "1 file"
+    assert counted(count: 1200, one: "file", many: "files") == "1,200 files"

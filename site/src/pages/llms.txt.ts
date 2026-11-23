@@ -12,10 +12,28 @@
  * build does not know is a build error, never a brace shipped to a reader.
  */
 import type { APIRoute } from 'astro';
-import { readText } from '../lib/repo.ts';
+import { isFile, readText } from '../lib/repo.ts';
 import { ceilingK, specReal, jsonSchema, staleOpenness } from '../lib/claims.ts';
 
 const SOURCE = 'site/src/llms.txt';
+
+/**
+ * A link to one file of the repository on its `main` branch, the branch whose
+ * pushes publish this site (`deploy-site.yml`), raw or as GitHub shows it; its
+ * group is the path. Each is asked of the tree at every build, so a file moved
+ * or removed is a red build and never a dead address handed to a model.
+ */
+const REPOSITORY_FILE =
+  /https:\/\/(?:raw\.githubusercontent\.com\/heroes-lang\/heroes\/main|github\.com\/heroes-lang\/heroes\/blob\/main)\/([^)\s]+)/g;
+
+/** The files of the repository `text` links that the tree does not hold. */
+function missingFiles(text: string): string[] {
+  const out: string[] = [];
+  for (const link of text.matchAll(REPOSITORY_FILE)) {
+    if (!isFile(link[1])) out.push(`${SOURCE} links ${link[0]}, and the tree holds no file ${link[1]}.`);
+  }
+  return out;
+}
 
 function filled(): string {
   const real = specReal();
@@ -33,6 +51,8 @@ function filled(): string {
   if (text.includes('{{')) throw new Error(`${SOURCE}: a placeholder survived the fill.`);
   const stale = staleOpenness(text, SOURCE);
   if (stale.length > 0) throw new Error(stale.join('\n'));
+  const missing = missingFiles(text);
+  if (missing.length > 0) throw new Error(missing.join('\n'));
   return text;
 }
 
