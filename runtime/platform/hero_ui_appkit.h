@@ -144,6 +144,8 @@ int64_t hero_ui_appkit_set_text_selection(int64_t id, int64_t start, int64_t end
 
 int64_t hero_ui_appkit_text_selection(int64_t id, int64_t *start, int64_t *end);
 
+int64_t hero_ui_appkit_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);

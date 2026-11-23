@@ -51,7 +51,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], shown: [], dialogs_made: 0, docked: true, notices: [], appearance: .light, quits_held: 0, clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], shown: [], dialogs_made: 0, docked: true, notices: [], appearance: .light, quits_held: 0, identity: "", windowed: false, claimed: false, clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).
@@ -82,7 +82,9 @@ function window(@app: ui.App, title: str, width: i64, height: i64) -> ui.Widget?
     n.width @ width
     n.height @ height
     n.padding @ model.WINDOW_PADDING
-    return added(@app, n: n)
+    made = added(@app, n: n)?
+    app.windowed @ true
+    return ok(made)
 
 # A new widget or box of `kind` in `into`, showing `text` or holding
 # `items`: the first item chosen for a combo box or a radio group.

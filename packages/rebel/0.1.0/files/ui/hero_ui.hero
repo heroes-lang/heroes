@@ -212,6 +212,14 @@ extern "hero_ui.h"
     function hero_ui_can_undo(app: App, id: i64, which: i64) -> i64
     function hero_ui_set_text_selection(app: App, id: i64, start: i64, end: i64) -> i64
     function hero_ui_text_selection(app: App, id: i64, @start: i64, @end: i64) -> i64
+    # The app's identity, one instance, and documents from the system.
+    constant HERO_UI_IDENTITY_MOST: i64
+    constant HERO_UI_EVENT_OPEN: i64
+    constant HERO_UI_OPEN_FILES: i64
+    constant HERO_UI_OPEN_URLS: i64
+    constant HERO_UI_OPEN_ARGUMENTS: i64
+    function hero_ui_set_identity(app: App, @identifier: [u8] counted_by identifier_count lent, identifier_count: u64, @name: [u8] counted_by name_count lent, name_count: u64) -> i64
+    function hero_ui_claim_instance(app: App, @arguments: [u8] counted_by count lent, count: u64) -> i64
     # Accessible names, and a label tied to its field.
     function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
@@ -1093,6 +1101,29 @@ function set_text_selection(app: App, id: i64, start: i64, end: i64) -> i64
 # - `end`: where the byte after its last is written.
 function text_selection(app: App, id: i64, @start: i64, @end: i64) -> i64
     return hero_ui_text_selection(app, id: id, start: @start, end: @end)
+
+# 0 once the app has its identity, `identifier` and `name`; or -1.
+#
+# - `app`: the app.
+# - `identifier`: a reverse domain name's UTF-8; left as it was handed.
+# - `name`: one line's UTF-8; left as it was handed.
+function set_identity(app: App, @identifier: [u8], @name: [u8]) -> i64
+    return hero_ui_set_identity(
+        app,
+        identifier: @identifier,
+        identifier_count: to_u64(identifier.len()).must(),
+        name: @name,
+        name_count: to_u64(name.len()).must()
+    )
+
+# 1 where this process is its identity's one instance, 0 where `arguments`
+# were handed to another; or -1.
+#
+# - `app`: the app.
+# - `arguments`: each argument's UTF-8 followed by one zero byte; left as it
+#   was handed.
+function claim_instance(app: App, @arguments: [u8]) -> i64
+    return hero_ui_claim_instance(app, @arguments, count: to_u64(arguments.len()).must())
 
 # 0 once widget `id` holds the accessible name `name`, none taking it back;
 # or -1.

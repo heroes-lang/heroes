@@ -3807,3 +3807,25 @@ public func hero_ui_appkit_text_selection(_ id: Int64, _ start: UnsafeMutablePoi
     end.pointee = to
     return answer
 }
+
+// MARK: the app's identity
+
+// Gives the app its name, which the application menu shows ("About",
+// "Hide", "Quit"), where the identifier is the bundle's own or the app
+// stands in none. A process outside a bundle keeps the executable's name
+// in the menu bar's bold title, which the system reads from the bundle
+// alone.
+@c
+public func hero_ui_appkit_set_identity(_ identifier: UnsafePointer<UInt8>?, _ identifierCount: Int64, _ name: UnsafePointer<UInt8>?, _ nameCount: Int64) -> Int64 {
+    let named = text(identifier, identifierCount)
+    let shown = text(name, nameCount)
+    return MainActor.assumeIsolated { () -> Int64 in
+        if let bundled = Bundle.main.bundleIdentifier, bundled != named {
+            backend()?.words = "the app's bundle names itself \(bundled), and an app in a bundle is the bundle's identity"
+            return answerInvalid
+        }
+        ProcessInfo.processInfo.processName = shown
+        backend()?.refreshMenuBar()
+        return answerOk
+    }
+}
