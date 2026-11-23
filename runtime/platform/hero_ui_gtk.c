@@ -663,6 +663,8 @@ typedef struct hero_ui_gtk_functions {
     void (*texture_downloader_free)(void *downloader);
     void *(*column_view_sorter_get_primary_sort_column)(void *sorter);
     int (*column_view_sorter_get_primary_sort_order)(void *sorter);
+    void *(*separator_new)(int orientation);
+    void (*orientable_set_orientation)(void *orientable, int orientation);
     double (*monitor_get_scale)(void *monitor);
     size_t (*x11_display_get_type)(void);
     void *(*x11_display_get_xdisplay)(void *display);
@@ -1116,6 +1118,8 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_MAY(texture_downloader_free, "gdk_texture_downloader_free");
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_column, "gtk_column_view_sorter_get_primary_sort_column");
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_order, "gtk_column_view_sorter_get_primary_sort_order");
+    HERO_UI_GTK_NEED(separator_new, "gtk_separator_new");
+    HERO_UI_GTK_NEED(orientable_set_orientation, "gtk_orientable_set_orientation");
     HERO_UI_GTK_MAY(monitor_get_scale, "gdk_monitor_get_scale");
     HERO_UI_GTK_MAY(x11_display_get_type, "gdk_x11_display_get_type");
     HERO_UI_GTK_MAY(x11_display_get_xdisplay, "gdk_x11_display_get_xdisplay");
@@ -2283,6 +2287,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_IMAGE:
         made->widget = hero_ui_gtk.picture_new();
         break;
+    case HERO_UI_SEPARATOR:
+        made->widget = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
+        break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
         ok = made->menu_model != NULL;
@@ -3049,6 +3056,10 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         width = widget->image_width;
         height = widget->image_height;
     }
+    if (widget->kind == HERO_UI_SEPARATOR) {
+        /* The line runs along its place's longer side. */
+        hero_ui_gtk.orientable_set_orientation(widget->widget, width > height ? HERO_GTK_ORIENTATION_HORIZONTAL : HERO_GTK_ORIENTATION_VERTICAL);
+    }
     hero_ui_gtk.fixed_move(container, widget->widget, (double)hero_ui_gtk_int(x), (double)hero_ui_gtk_int(y));
     hero_ui_gtk.widget_set_size_request(widget->widget, hero_ui_gtk_int(width), hero_ui_gtk_int(height));
     if (widget->kind == HERO_UI_RADIO_GROUP) {
@@ -3146,6 +3157,11 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_IMAGE:
         *width = widget->image_width;
         *height = widget->image_height;
+        return HERO_UI_OK;
+    case HERO_UI_SEPARATOR:
+        /* One point thick across its box, whichever way it runs. */
+        *width = 1;
+        *height = 1;
         return HERO_UI_OK;
     case HERO_UI_WEBVIEW:
         /* The headless side's size of a web view, where nothing else decides
@@ -9258,12 +9274,14 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind and act of `hero_ui.h` is drawn here, so neither switch
- * refuses one before `create` and `inject`, which check each. */
+/* Every kind up to the separator and every act of `hero_ui.h` is drawn
+ * here, so neither switch refuses one before `create` and `inject`, which
+ * check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
-    (void)kind;
     (void)parent;
-    return true;
+    /* No kind past the separator is drawn here: one the contract gains is
+     * refused by name until this arm makes it. */
+    return kind <= HERO_UI_SEPARATOR;
 }
 
 bool hero_ui_arm_acts(int64_t act) {

@@ -309,7 +309,7 @@ capability ui/separator  a line between the widgets of a box
   rust    -
   python  ttk.Separator
   wx      wxStaticLine
-  note    catalogue LY12; one point thick, filling its box across: along a column or a window, down a row; macOS by an `NSBox` of the separator kind, which draws along its longer side; Windows pending (a `STATIC` with `SS_ETCHEDHORZ` or `SS_ETCHEDVERT` by its rectangle), Linux pending (`GtkSeparator`, its orientation by its rectangle)
+  note    catalogue LY12; one point thick, filling its box across: along a column or a window, down a row; macOS by an `NSBox` of the separator kind, which draws along its longer side; Windows pending (a `STATIC` with `SS_ETCHEDHORZ` or `SS_ETCHEDVERT` by its rectangle), Linux by a `GtkSeparator`, its orientation set by `gtk_orientable_set_orientation` from the rectangle it is placed at, the longer side giving the direction, a square running across, measured in a container under Xvfb with openbox
 
 capability ui/menus  a window's menu bar, its menus, their items and separators, each item's shortcut
   heroes  ui.menu, ui.menu_item, ui.menu_separator, ui.set_shortcut, ui.Shortcut, ui.Event.menu_chosen
