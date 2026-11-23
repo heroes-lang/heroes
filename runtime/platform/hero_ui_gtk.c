@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include "hero_layer_alloc.h"
 
@@ -310,6 +311,10 @@ typedef struct hero_ui_gtk_functions {
     void (*scrolled_window_set_child)(void *scrolled, void *child);
     void (*scrolled_window_set_policy)(void *scrolled, int across, int down);
     void (*scrolled_window_set_has_frame)(void *scrolled, int frame);
+    void *(*frame_new)(const char *label);
+    void (*frame_set_child)(void *frame, void *child);
+    void (*frame_set_label)(void *frame, const char *label);
+    const char *(*frame_get_label)(void *frame);
     void *(*text_view_new)(void);
     void *(*text_view_get_buffer)(void *view);
     void (*text_view_set_wrap_mode)(void *view, int mode);
@@ -330,6 +335,13 @@ typedef struct hero_ui_gtk_functions {
     void (*check_button_set_group)(void *button, void *group);
     void *(*list_box_new)(void);
     void (*list_box_set_selection_mode)(void *box, int mode);
+    void *(*popover_new)(void);
+    void (*popover_set_child)(void *popover, void *child);
+    void *(*menu_button_new)(void);
+    void (*menu_button_set_popover)(void *button, void *popover);
+    void (*menu_button_popdown)(void *button);
+    void (*scrolled_window_set_max_content_height)(void *scrolled, int height);
+    void (*scrolled_window_set_propagate_natural_height)(void *scrolled, int propagate);
     void (*list_box_append)(void *box, void *child);
     void (*list_box_remove)(void *box, void *child);
     void *(*list_box_get_row_at_index)(void *box, int index);
@@ -351,6 +363,13 @@ typedef struct hero_ui_gtk_functions {
     void (*range_set_range)(void *range, double least, double most);
     void (*range_set_value)(void *range, double value);
     double (*range_get_value)(void *range);
+    void *(*spin_button_new_with_range)(double least, double most, double step);
+    void (*spin_button_set_range)(void *spin, double least, double most);
+    void (*spin_button_set_value)(void *spin, double value);
+    double (*spin_button_get_value)(void *spin);
+    void (*spin_button_set_digits)(void *spin, unsigned digits);
+    void (*spin_button_set_numeric)(void *spin, int numeric);
+    void (*spin_button_update)(void *spin);
     void (*range_set_increments)(void *range, double step, double page);
     void *(*picture_new)(void);
     void (*picture_set_paintable)(void *picture, void *paintable);
@@ -807,6 +826,17 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(scrolled_window_set_child, "gtk_scrolled_window_set_child");
     HERO_UI_GTK_NEED(scrolled_window_set_policy, "gtk_scrolled_window_set_policy");
     HERO_UI_GTK_NEED(scrolled_window_set_has_frame, "gtk_scrolled_window_set_has_frame");
+    HERO_UI_GTK_NEED(popover_new, "gtk_popover_new");
+    HERO_UI_GTK_NEED(popover_set_child, "gtk_popover_set_child");
+    HERO_UI_GTK_NEED(menu_button_new, "gtk_menu_button_new");
+    HERO_UI_GTK_NEED(menu_button_set_popover, "gtk_menu_button_set_popover");
+    HERO_UI_GTK_NEED(menu_button_popdown, "gtk_menu_button_popdown");
+    HERO_UI_GTK_NEED(scrolled_window_set_max_content_height, "gtk_scrolled_window_set_max_content_height");
+    HERO_UI_GTK_NEED(scrolled_window_set_propagate_natural_height, "gtk_scrolled_window_set_propagate_natural_height");
+    HERO_UI_GTK_NEED(frame_new, "gtk_frame_new");
+    HERO_UI_GTK_NEED(frame_set_child, "gtk_frame_set_child");
+    HERO_UI_GTK_NEED(frame_set_label, "gtk_frame_set_label");
+    HERO_UI_GTK_NEED(frame_get_label, "gtk_frame_get_label");
     HERO_UI_GTK_NEED(text_view_new, "gtk_text_view_new");
     HERO_UI_GTK_NEED(text_view_get_buffer, "gtk_text_view_get_buffer");
     HERO_UI_GTK_NEED(text_view_set_wrap_mode, "gtk_text_view_set_wrap_mode");
@@ -848,6 +878,13 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(range_set_range, "gtk_range_set_range");
     HERO_UI_GTK_NEED(range_set_value, "gtk_range_set_value");
     HERO_UI_GTK_NEED(range_get_value, "gtk_range_get_value");
+    HERO_UI_GTK_NEED(spin_button_new_with_range, "gtk_spin_button_new_with_range");
+    HERO_UI_GTK_NEED(spin_button_set_range, "gtk_spin_button_set_range");
+    HERO_UI_GTK_NEED(spin_button_set_value, "gtk_spin_button_set_value");
+    HERO_UI_GTK_NEED(spin_button_get_value, "gtk_spin_button_get_value");
+    HERO_UI_GTK_NEED(spin_button_set_digits, "gtk_spin_button_set_digits");
+    HERO_UI_GTK_NEED(spin_button_set_numeric, "gtk_spin_button_set_numeric");
+    HERO_UI_GTK_NEED(spin_button_update, "gtk_spin_button_update");
     HERO_UI_GTK_NEED(range_set_increments, "gtk_range_set_increments");
     HERO_UI_GTK_NEED(picture_new, "gtk_picture_new");
     HERO_UI_GTK_NEED(picture_set_paintable, "gtk_picture_set_paintable");
@@ -1365,6 +1402,17 @@ struct hero_ui_native {
     /* A tray icon's tip, NULL for none: the host draws it, so it is kept
      * here; every other widget's is GTK's own. */
     char *tip;
+    /* A group box's insets (left, top, right, bottom), measured once as it
+     * was made. */
+    int64_t insets[4];
+    /* An editable combo box: its menu button, the list box in the button's
+     * popover, the text its entry held when it last changed, and whether the
+     * combo itself is setting the entry (an item chosen, a completion). */
+    void *drop;
+    void *choices;
+    char *seen;
+    char *completing;
+    bool setting;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1487,7 +1535,7 @@ static hero_ui_native *hero_ui_gtk_of(void *data, void *instance) {
         return NULL;
     }
     if (widget->widget == instance || widget->inner == instance || widget->buffer == instance || widget->action == instance || widget->area == instance || widget->selection == instance || widget->sorter == instance ||
-        widget->gesture == instance) {
+        widget->gesture == instance || widget->choices == instance) {
         return widget;
     }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
@@ -1933,6 +1981,285 @@ static void hero_ui_gtk_slid(void *range, void *data) {
     }
 }
 
+/* The entry of `widget`: the field of a text field, the entry an editable
+ * combo box holds. */
+static void *hero_ui_gtk_entry_of(const hero_ui_native *widget) {
+    return widget->kind == HERO_UI_EDITABLE_COMBO ? widget->inner : widget->widget;
+}
+
+/* The characters of UTF-8 `text`, which a GTK editable counts a place in. */
+static int hero_ui_gtk_characters(const char *text) {
+    int characters = 0;
+
+    for (const char *at = text; *at != '\0'; at += 1) {
+        if (((unsigned char)*at & 0xC0u) != 0x80u) {
+            characters += 1;
+        }
+    }
+    return characters;
+}
+
+/* The first item of editable combo box `combo` that begins with `text`,
+ * letters of the ASCII's alphabet compared whatever their case, and is
+ * longer than it; else NULL. */
+static const char *hero_ui_gtk_combo_completing(const hero_ui_native *combo, const char *text) {
+    size_t bytes = strlen(text);
+
+    for (int64_t i = 0; i < combo->items; i += 1) {
+        const char *item = hero_ui_gtk.string_list_get_string(combo->strings, (unsigned)i);
+
+        if (item != NULL && strlen(item) > bytes && strncasecmp(item, text, bytes) == 0) {
+            return item;
+        }
+    }
+    return NULL;
+}
+
+/* Completes what the person typed into editable combo box `data`, from an
+ * idle source (GTK refuses to set an entry's text inside the edit that
+ * typed it): the text becomes the first item that begins with it, the rest
+ * left selected so that the next key replaces it, and the change is told
+ * once, as the completed text. Nothing is done where the text is no longer
+ * the one that was to be completed. */
+static int hero_ui_gtk_combo_complete(void *data) {
+    hero_ui_native *combo = hero_ui_find((int64_t)(intptr_t)data);
+    const char *text;
+    const char *item;
+
+    if (combo == NULL || combo->kind != HERO_UI_EDITABLE_COMBO || combo->completing == NULL) {
+        return 0;
+    }
+    text = hero_ui_gtk.editable_get_text(combo->inner);
+    item = text != NULL && strcmp(text, combo->completing) == 0 ? hero_ui_gtk_combo_completing(combo, text) : NULL;
+    if (item != NULL) {
+        int typed = hero_ui_gtk_characters(text);
+
+        hero_layer_free(combo->completing);
+        combo->completing = NULL;
+        combo->setting = true;
+        hero_ui_gtk.editable_set_text(combo->inner, item);
+        hero_ui_gtk.editable_select_region(combo->inner, typed, -1);
+        combo->setting = false;
+        hero_layer_free(combo->seen);
+        combo->seen = hero_ui_gtk_text((const uint8_t *)item, (int64_t)strlen(item), false);
+        hero_ui_tell(HERO_UI_EVENT_TEXT, combo->id, 0, 0);
+    }
+    return 0;
+}
+
+/* The combo's entry changed: typed by the person, set by the program
+ * (muted), by `inject` or by the combo's own choice. What the person types
+ * at the end of the text is completed from the first item it begins (the
+ * combo "completes what the person types", as AppKit's does), which is told
+ * once the completion is made; a deletion, an injection and the program's
+ * own set are never completed. */
+static void hero_ui_gtk_combo_typed(void *entry, void *data) {
+    hero_ui_native *combo = hero_ui_gtk_of(data, entry);
+    const char *text;
+    size_t seen;
+    bool completing = false;
+
+    if (combo == NULL || combo->kind != HERO_UI_EDITABLE_COMBO || combo->setting) {
+        return;
+    }
+    text = hero_ui_gtk.editable_get_text(entry);
+    seen = combo->seen != NULL ? strlen(combo->seen) : 0;
+    hero_layer_free(combo->completing);
+    combo->completing = NULL;
+    if (text != NULL && !hero_ui_is_muted() && hero_ui_gtk_injecting == 0 && strlen(text) > seen && strncmp(text, combo->seen != NULL ? combo->seen : "", seen) == 0 && hero_ui_gtk_combo_completing(combo, text) != NULL) {
+        combo->completing = hero_ui_gtk_text((const uint8_t *)text, (int64_t)strlen(text), false);
+        completing = combo->completing != NULL && hero_ui_gtk.idle_add(hero_ui_gtk_combo_complete, data) != 0;
+    }
+    hero_layer_free(combo->seen);
+    combo->seen = text != NULL ? hero_ui_gtk_text((const uint8_t *)text, (int64_t)strlen(text), false) : NULL;
+    if (!completing) {
+        hero_ui_tell(HERO_UI_EVENT_TEXT, combo->id, 0, 0);
+    }
+}
+
+/* Chooses item `item` of editable combo box `combo` as the person does:
+ * its choice told, the text become the item's and told, the list closed. */
+static void hero_ui_gtk_combo_pick(hero_ui_native *combo, int64_t item) {
+    const char *text = item >= 0 && item < combo->items ? hero_ui_gtk.string_list_get_string(combo->strings, (unsigned)item) : NULL;
+    const char *held;
+    bool same;
+
+    if (text == NULL) {
+        return;
+    }
+    held = hero_ui_gtk.editable_get_text(combo->inner);
+    same = held != NULL && strcmp(held, text) == 0;
+    hero_layer_free(combo->completing);
+    combo->completing = NULL;
+    hero_ui_tell(HERO_UI_EVENT_SELECT, combo->id, item, 0);
+    hero_ui_gtk.menu_button_popdown(combo->drop);
+    if (same) {
+        hero_ui_tell(HERO_UI_EVENT_TEXT, combo->id, 0, 0);
+        return;
+    }
+    combo->setting = true;
+    hero_ui_gtk.editable_set_text(combo->inner, text);
+    hero_ui_gtk.editable_set_position(combo->inner, -1);
+    combo->setting = false;
+    hero_layer_free(combo->seen);
+    combo->seen = hero_ui_gtk_text((const uint8_t *)text, (int64_t)strlen(text), false);
+    hero_ui_tell(HERO_UI_EVENT_TEXT, combo->id, 0, 0);
+}
+
+static void hero_ui_gtk_combo_picked(void *list, void *row, void *data) {
+    hero_ui_native *combo = hero_ui_gtk_of(data, list);
+
+    if (combo != NULL && combo->kind == HERO_UI_EDITABLE_COMBO && row != NULL) {
+        hero_ui_gtk_combo_pick(combo, hero_ui_gtk.list_box_row_get_index(row));
+    }
+}
+
+/* The item editable combo box `combo` has chosen: the first equal to its
+ * text, -1 for none. */
+static int64_t hero_ui_gtk_combo_text_choice(const hero_ui_native *combo) {
+    const char *text = hero_ui_gtk.editable_get_text(combo->inner);
+
+    for (int64_t i = 0; text != NULL && i < combo->items; i += 1) {
+        const char *item = hero_ui_gtk.string_list_get_string(combo->strings, (unsigned)i);
+
+        if (item != NULL && strcmp(item, text) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* Makes editable combo box `made`: a `GtkBox` of a `GtkEntry` and a
+ * `GtkMenuButton`, whose popover holds the items as a `GtkListBox` of
+ * labels; GTK 4 has no widget that is both (`GtkDropDown` only searches its
+ * items, and `GtkComboBox` with an entry and `GtkEntryCompletion` are
+ * deprecated since 4.10). Its items' texts stand in a `GtkStringList`. */
+static bool hero_ui_gtk_make_combo(hero_ui_native *made) {
+    void *popover = hero_ui_gtk.popover_new();
+    void *scroll = hero_ui_gtk.scrolled_window_new();
+
+    made->widget = hero_ui_gtk.box_new(HERO_GTK_ORIENTATION_HORIZONTAL, 0);
+    made->inner = hero_ui_gtk.entry_new();
+    made->drop = hero_ui_gtk.menu_button_new();
+    made->choices = hero_ui_gtk.list_box_new();
+    made->strings = hero_ui_gtk.string_list_new(NULL);
+    if (popover == NULL || scroll == NULL || made->widget == NULL || made->inner == NULL || made->drop == NULL || made->choices == NULL || made->strings == NULL) {
+        return false;
+    }
+    hero_ui_gtk.widget_set_hexpand(made->inner, 1);
+    hero_ui_gtk.list_box_set_selection_mode(made->choices, 0);
+    hero_ui_gtk.scrolled_window_set_policy(scroll, HERO_GTK_POLICY_NEVER, HERO_GTK_POLICY_AUTOMATIC);
+    hero_ui_gtk.scrolled_window_set_propagate_natural_height(scroll, 1);
+    hero_ui_gtk.scrolled_window_set_max_content_height(scroll, 240);
+    hero_ui_gtk.scrolled_window_set_child(scroll, made->choices);
+    hero_ui_gtk.popover_set_child(popover, scroll);
+    hero_ui_gtk.menu_button_set_popover(made->drop, popover);
+    hero_ui_gtk.box_append(made->widget, made->inner);
+    hero_ui_gtk.box_append(made->widget, made->drop);
+    hero_ui_gtk_connect(made->inner, "changed", (hero_ui_gtk_callback)hero_ui_gtk_combo_typed, made->id);
+    hero_ui_gtk_connect(made->choices, "row-activated", (hero_ui_gtk_callback)hero_ui_gtk_combo_picked, made->id);
+    return true;
+}
+
+/* Gives editable combo box `combo` the items of the packed list `items`,
+ * its text kept. */
+static int64_t hero_ui_gtk_combo_items(hero_ui_native *combo, const uint8_t *items, int64_t count, int64_t texts) {
+    void *row;
+
+    hero_ui_gtk.string_list_splice(combo->strings, 0, (unsigned)combo->items, NULL);
+    while ((row = hero_ui_gtk.list_box_get_row_at_index(combo->choices, 0)) != NULL) {
+        hero_ui_gtk.list_box_remove(combo->choices, row);
+    }
+    combo->items = 0;
+    for (int64_t i = 0; i < texts; i += 1) {
+        int64_t length = 0;
+        const uint8_t *text = hero_ui_text_at(items, count, i, &length);
+        char *made = hero_ui_gtk_text(text, length, false);
+        void *label = made != NULL ? hero_ui_gtk.label_new(made) : NULL;
+
+        if (label == NULL) {
+            hero_layer_free(made);
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.string_list_append(combo->strings, made);
+        hero_layer_free(made);
+        hero_ui_gtk.label_set_xalign(label, 0.0f);
+        hero_ui_gtk.list_box_append(combo->choices, label);
+        combo->items += 1;
+    }
+    return HERO_UI_OK;
+}
+
+/* A spin's number as GTK holds it, as a whole number: the adjustment is a
+ * double, and a whole number within 2^53 of 0 is exact in one. */
+static int64_t hero_ui_gtk_spin_number(const hero_ui_native *spin) {
+    double held = hero_ui_gtk.spin_button_get_value(spin->widget);
+
+    return hero_ui_between(held >= 0 ? (int64_t)(held + 0.5) : -(int64_t)(-held + 0.5), spin->least, spin->most);
+}
+
+/* The number the spin's text names, read as the person typed it: spaces
+ * around it trimmed, an optional sign and digits, so "1.5" and "abc" name
+ * none (false); a number past what a double holds is saturated, for the
+ * range to clamp. */
+static bool hero_ui_gtk_spin_parse(const char *text, double *number) {
+    const char *at = text != NULL ? text : "";
+    bool negative = false;
+    double held = 0;
+    size_t digits = 0;
+
+    while (*at == ' ' || *at == '\t') {
+        at += 1;
+    }
+    if (*at == '+' || *at == '-') {
+        negative = *at == '-';
+        at += 1;
+    }
+    for (; *at >= '0' && *at <= '9'; at += 1) {
+        held = held < 1e18 ? held * 10 + (double)(*at - '0') : held;
+        digits += 1;
+    }
+    while (*at == ' ' || *at == '\t') {
+        at += 1;
+    }
+    if (digits == 0 || *at != '\0') {
+        return false;
+    }
+    *number = negative ? -held : held;
+    return true;
+}
+
+/* GTK asks the spin for the number its text names (`input`, when the typing
+ * is committed): the text read as a whole number, or, where it names none,
+ * the value held, so that the field shows it again. The range clamps. */
+static int hero_ui_gtk_spin_input(void *spin, double *number, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, spin);
+
+    if (widget == NULL || widget->kind != HERO_UI_SPIN) {
+        return 0;
+    }
+    if (!hero_ui_gtk_spin_parse(hero_ui_gtk.editable_get_text(spin), number)) {
+        *number = (double)widget->value;
+    }
+    return 1;
+}
+
+/* The spin's number changed: by an arrow, by a number committed, or by the
+ * program (muted); told where it is not the number held. */
+static void hero_ui_gtk_spun(void *spin, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, spin);
+    int64_t value;
+
+    if (widget == NULL || widget->kind != HERO_UI_SPIN) {
+        return;
+    }
+    value = hero_ui_gtk_spin_number(widget);
+    if (value != widget->value) {
+        widget->value = value;
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+    }
+}
+
 /* -- The arm ------------------------------------------------------------------ */
 
 /* Whether `name` names something in the environment. */
@@ -1974,9 +2301,9 @@ int64_t hero_ui_arm_open(void) {
 }
 
 /* Whether a frame, a window or one of the boxes the system draws whose
- * content holds widgets: a page, a scrolled box, a pane. */
+ * content holds widgets: a page, a scrolled box, a pane, a group box. */
 static bool hero_ui_gtk_is_frame(int64_t kind) {
-    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE;
+    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE || kind == HERO_UI_GROUP;
 }
 
 /* The `GtkFixed` `widget` stands in: the content of the window, page,
@@ -2088,6 +2415,11 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
             (void)hero_ui_gtk.source_remove(widget->pulse);
             widget->pulse = 0;
         }
+        if (widget->kind == HERO_UI_EDITABLE_COMBO && widget->strings != NULL) {
+            /* The combo made its list of texts, which no drop-down holds. */
+            hero_ui_gtk.object_unref(widget->strings);
+            widget->strings = NULL;
+        }
         if (container != NULL && widget->widget != NULL) {
             hero_ui_gtk.fixed_remove(container, widget->widget);
         }
@@ -2100,6 +2432,8 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
     hero_layer_free(widget->label);
     hero_layer_free(widget->accessible);
     hero_layer_free(widget->tip);
+    hero_layer_free(widget->seen);
+    hero_layer_free(widget->completing);
     hero_ui_ids_free(&widget->order);
     hero_ui_forget(widget->id);
     hero_layer_free(widget);
@@ -2346,6 +2680,18 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_IMAGE:
         made->widget = hero_ui_gtk.picture_new();
         break;
+    case HERO_UI_EDITABLE_COMBO:
+        ok = hero_ui_gtk_make_combo(made);
+        break;
+    case HERO_UI_SPIN:
+        made->widget = hero_ui_gtk.spin_button_new_with_range(0, 100, 1);
+        if (made->widget != NULL) {
+            hero_ui_gtk.spin_button_set_digits(made->widget, 0);
+            hero_ui_gtk.spin_button_set_numeric(made->widget, 1);
+            hero_ui_gtk_connect(made->widget, "input", (hero_ui_gtk_callback)hero_ui_gtk_spin_input, id);
+            hero_ui_gtk_connect(made->widget, "value-changed", (hero_ui_gtk_callback)hero_ui_gtk_spun, id);
+        }
+        break;
     case HERO_UI_SEPARATOR:
         made->widget = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
         break;
@@ -2369,6 +2715,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_TABS:
     case HERO_UI_PAGE:
     case HERO_UI_SCROLL:
+    case HERO_UI_GROUP:
     case HERO_UI_SPLIT_ROW:
     case HERO_UI_SPLIT_COLUMN:
     case HERO_UI_PANE:
@@ -2484,11 +2831,13 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_LABEL:
     case HERO_UI_BUTTON:
     case HERO_UI_TEXT_FIELD:
+    case HERO_UI_EDITABLE_COMBO:
     case HERO_UI_TEXT_AREA:
     case HERO_UI_CHECKBOX:
     case HERO_UI_MENU:
     case HERO_UI_MENU_ITEM:
     case HERO_UI_PAGE:
+    case HERO_UI_GROUP:
     case HERO_UI_TRAY:
         break;
     default:
@@ -2513,8 +2862,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
         hero_ui_gtk.check_button_set_label(widget->widget, made);
         break;
     case HERO_UI_TEXT_FIELD:
-        hero_ui_gtk.editable_set_text(widget->widget, made);
-        hero_ui_gtk.editable_set_position(widget->widget, -1);
+    case HERO_UI_EDITABLE_COMBO:
+        hero_ui_gtk.editable_set_text(hero_ui_gtk_entry_of(widget), made);
+        hero_ui_gtk.editable_set_position(hero_ui_gtk_entry_of(widget), -1);
         break;
     case HERO_UI_TEXT_AREA:
         hero_ui_gtk_area_text(widget, made);
@@ -2527,6 +2877,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
         }
         break;
     }
+    case HERO_UI_GROUP:
+        hero_ui_gtk.frame_set_label(widget->widget, made);
+        break;
     default:
         hero_layer_free(widget->label);
         widget->label = made;
@@ -2574,6 +2927,14 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
     }
     if (widget->kind == HERO_UI_TABLE) {
         return hero_ui_gtk_table_rows(widget, items, count);
+    }
+    if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+        int64_t answer;
+
+        hero_ui_mute(1);
+        answer = hero_ui_gtk_combo_items(widget, items, count, texts);
+        hero_ui_mute(-1);
+        return answer;
     }
     if (widget->kind != HERO_UI_LIST && widget->kind != HERO_UI_LIST_MULTIPLE && widget->kind != HERO_UI_COMBO && widget->kind != HERO_UI_RADIO_GROUP) {
         return HERO_UI_INVALID;
@@ -2730,6 +3091,22 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
         widget->value = value;
         hero_ui_gtk_show_range(widget);
         break;
+    case HERO_UI_SPIN:
+        if (value < widget->least || value > widget->most) {
+            answer = HERO_UI_INVALID;
+            break;
+        }
+        widget->value = value;
+        hero_ui_gtk.spin_button_set_value(widget->widget, (double)value);
+        break;
+    case HERO_UI_EDITABLE_COMBO:
+        if (value < -1 || value >= widget->items) {
+            answer = HERO_UI_INVALID;
+        } else if (value >= 0) {
+            hero_ui_gtk.editable_set_text(widget->inner, hero_ui_gtk.string_list_get_string(widget->strings, (unsigned)value));
+            hero_ui_gtk.editable_set_position(widget->inner, -1);
+        }
+        break;
     case HERO_UI_COMBO:
         if (value < -1 || value >= widget->items) {
             answer = HERO_UI_INVALID;
@@ -2785,6 +3162,19 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
         /* Where the person may drag the divider: kept by `hero_ui_gtk_divided`. */
         widget->least = least;
         widget->most = most;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_SPIN) {
+        if (least < -HERO_UI_GTK_EXACT || most > HERO_UI_GTK_EXACT) {
+            return hero_ui_refused(HERO_UI_LIMIT, "a spin holds its number as GTK's double, which keeps a whole number exactly within 2^53 of 0, and this range reaches past it");
+        }
+        widget->least = least;
+        widget->most = most;
+        widget->value = hero_ui_between(widget->value, least, most);
+        hero_ui_mute(1);
+        hero_ui_gtk.spin_button_set_range(widget->widget, (double)least, (double)most);
+        hero_ui_gtk.spin_button_set_value(widget->widget, (double)widget->value);
+        hero_ui_mute(-1);
         return HERO_UI_OK;
     }
     if (widget->kind != HERO_UI_SLIDER && widget->kind != HERO_UI_PROGRESS) {
@@ -3174,6 +3564,14 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_COMBO:
         size = hero_ui_gtk_natural(widget->widget);
         break;
+    case HERO_UI_SPIN:
+        size = hero_ui_gtk_natural(widget->widget);
+        break;
+    case HERO_UI_EDITABLE_COMBO:
+        /* GTK's height, and at least the width of a text field. */
+        size = hero_ui_gtk_natural(widget->widget);
+        size.width = size.width > 160 ? size.width : 160;
+        break;
     case HERO_UI_RADIO_GROUP:
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             hero_ui_gtk_size item = hero_ui_gtk_natural(widget->radios[i]);
@@ -3242,13 +3640,23 @@ int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *le
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (widget->kind == HERO_UI_TEXT_FIELD) {
-        const char *text = hero_ui_gtk.editable_get_text(widget->widget);
+    if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_EDITABLE_COMBO) {
+        const char *text = hero_ui_gtk.editable_get_text(hero_ui_gtk_entry_of(widget));
         size_t bytes = text != NULL ? strlen(text) : 0;
 
         *length = (int64_t)bytes;
         if (bytes > 0 && *length <= count) {
             memcpy(buffer, text, bytes);
+        }
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_GROUP) {
+        const char *title = hero_ui_gtk.frame_get_label(widget->widget);
+        size_t bytes = title != NULL ? strlen(title) : 0;
+
+        *length = (int64_t)bytes;
+        if (bytes > 0 && *length <= count) {
+            memcpy(buffer, title, bytes);
         }
         return HERO_UI_OK;
     }
@@ -3297,6 +3705,7 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
         return HERO_UI_OK;
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
+    case HERO_UI_SPIN:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -3359,6 +3768,8 @@ int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64
     }
     if (widget->kind == HERO_UI_COMBO) {
         one = hero_ui_gtk_combo_choice(widget);
+    } else if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+        one = hero_ui_gtk_combo_text_choice(widget);
     } else if (widget->kind == HERO_UI_RADIO_GROUP) {
         one = hero_ui_gtk_checked_radio(widget);
     } else if (widget->kind == HERO_UI_TABS) {
@@ -3442,15 +3853,15 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
         }
         break;
     case HERO_UI_EVENT_TEXT:
-        if (widget->kind == HERO_UI_TEXT_FIELD) {
+        if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_EDITABLE_COMBO) {
             char *typed = hero_ui_gtk_text(text, count, false);
             int position = 0;
 
             if (typed == NULL) {
                 answer = HERO_UI_LIMIT;
-            } else if (usable && hero_ui_gtk.editable_get_editable(widget->widget)) {
-                hero_ui_gtk.editable_delete_text(widget->widget, 0, -1);
-                hero_ui_gtk.editable_insert_text(widget->widget, typed, (int)count, &position);
+            } else if (usable && hero_ui_gtk.editable_get_editable(hero_ui_gtk_entry_of(widget))) {
+                hero_ui_gtk.editable_delete_text(hero_ui_gtk_entry_of(widget), 0, -1);
+                hero_ui_gtk.editable_insert_text(hero_ui_gtk_entry_of(widget), typed, (int)count, &position);
             }
             hero_layer_free(typed);
         } else if (widget->kind == HERO_UI_TEXT_AREA) {
@@ -3505,6 +3916,12 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                     hero_ui_gtk.drop_down_set_selected(widget->inner, (unsigned)value);
                 }
             }
+        } else if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+            if (value < 0 || value >= widget->items) {
+                answer = HERO_UI_INVALID;
+            } else if (usable) {
+                hero_ui_gtk_combo_pick(widget, value);
+            }
         } else if (widget->kind == HERO_UI_RADIO_GROUP) {
             if (value < 0 || value >= widget->radio_count) {
                 answer = HERO_UI_INVALID;
@@ -3522,6 +3939,18 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_VALUE:
         if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
             answer = hero_ui_gtk_act(kind, widget, value, second, usable);
+        } else if (widget->kind == HERO_UI_SPIN) {
+            if (value < widget->least || value > widget->most) {
+                answer = HERO_UI_INVALID;
+            } else if (usable) {
+                /* Typed and committed as the person does: the field's text
+                 * replaced, then the number asked of it. */
+                char typed[32];
+
+                (void)snprintf(typed, sizeof typed, "%lld", (long long)value);
+                hero_ui_gtk.editable_set_text(widget->widget, typed);
+                hero_ui_gtk.spin_button_update(widget->widget);
+            }
         } else if (widget->kind != HERO_UI_SLIDER) {
             answer = HERO_UI_INVALID;
         } else if (usable) {
@@ -3851,6 +4280,36 @@ static void hero_ui_gtk_divided(void *paned, void *spec, void *data) {
     }
 }
 
+/* A group box: a `GtkFrame` holding a `GtkFixed` the widgets stand in. The
+ * frame always holds its title row, empty where the program gave no title,
+ * so the insets measured here (the frame's natural size around a content
+ * of 400 by 300 points, the room beside and below it the border and the
+ * room above it the title and the border, as tabs are measured) hold
+ * whatever the title becomes. */
+static bool hero_ui_gtk_make_group(hero_ui_native *made) {
+    hero_ui_gtk_size whole;
+    int64_t wide;
+    int64_t high;
+
+    made->widget = hero_ui_gtk.frame_new("");
+    made->fixed = hero_ui_gtk.fixed_new();
+    if (made->widget == NULL || made->fixed == NULL) {
+        return false;
+    }
+    hero_ui_gtk.widget_set_overflow(made->fixed, HERO_GTK_OVERFLOW_HIDDEN);
+    hero_ui_gtk.widget_set_size_request(made->fixed, 400, 300);
+    hero_ui_gtk.frame_set_child(made->widget, made->fixed);
+    whole = hero_ui_gtk_natural(made->widget);
+    hero_ui_gtk.widget_set_size_request(made->fixed, -1, -1);
+    wide = whole.width > 400 ? whole.width - 400 : 0;
+    high = whole.height > 300 ? whole.height - 300 : 0;
+    made->insets[0] = wide / 2;
+    made->insets[2] = wide - wide / 2;
+    made->insets[3] = made->insets[0] < high ? made->insets[0] : 0;
+    made->insets[1] = high - made->insets[3];
+    return true;
+}
+
 static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner) {
     (void)owner;
     switch (made->kind) {
@@ -3881,6 +4340,8 @@ static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner) {
         hero_ui_gtk.scrolled_window_set_policy(made->widget, HERO_GTK_POLICY_NEVER, HERO_GTK_POLICY_AUTOMATIC);
         hero_ui_gtk.scrolled_window_set_child(made->widget, made->fixed);
         return true;
+    case HERO_UI_GROUP:
+        return hero_ui_gtk_make_group(made);
     default:
         made->widget = hero_ui_gtk.paned_new(made->kind == HERO_UI_SPLIT_ROW ? HERO_GTK_ORIENTATION_HORIZONTAL : HERO_GTK_ORIENTATION_VERTICAL);
         if (made->widget == NULL) {
@@ -4003,6 +4464,13 @@ int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *rig
             /* The scroll bar stands beside the content rather than over it. */
             *right = hero_ui_gtk_natural(hero_ui_gtk.scrolled_window_get_vscrollbar(widget->widget)).width;
         }
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_GROUP) {
+        *left = widget->insets[0];
+        *top = widget->insets[1];
+        *right = widget->insets[2];
+        *bottom = widget->insets[3];
         return HERO_UI_OK;
     }
     if (widget->kind == HERO_UI_TABS) {
@@ -10298,14 +10766,15 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the separator and every act of `hero_ui.h` is drawn
- * here, so neither switch refuses one before `create` and `inject`, which
- * check each. */
+/* Every kind up to the separator, the group box, the editable combo box, the
+ * spin and every act of `hero_ui.h` is drawn here, so neither switch refuses one before `create` and
+ * `inject`, which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the separator is drawn here: one the contract gains is
-     * refused by name until this arm makes it. */
-    return kind <= HERO_UI_SEPARATOR;
+    /* No kind past the separator but the group box, the spin and the
+     * editable combo box is drawn here: one the
+     * contract gains is refused by name until this arm makes it. */
+    return kind <= HERO_UI_SEPARATOR || kind == HERO_UI_GROUP || kind == HERO_UI_SPIN || kind == HERO_UI_EDITABLE_COMBO;
 }
 
 bool hero_ui_arm_acts(int64_t act) {

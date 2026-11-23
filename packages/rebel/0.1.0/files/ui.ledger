@@ -183,7 +183,7 @@ capability ui/group  a box drawn with a title and a frame around it
   rust    -
   python  tkinter.LabelFrame, ttk.Labelframe
   wx      wxStaticBox, wxStaticBoxSizer
-  note    catalogue LY11; a frame as a page is: its widgets are made in it, laid out as a column in its own content from the room its frame and title leave (read from the system on the native side, `sizes.GROUP_SIDE` and `GROUP_TOP` on the headless side) and a padding inside it, its title `set_text`'s and `text_of`'s; macOS by an `NSBox` with a flipped content view; Windows pending (`BS_GROUPBOX` draws the frame and title and holds nothing, so a child window over its inner rectangle holds the widgets), Linux pending (`GtkFrame` with a `GtkFixed` child)
+  note    catalogue LY11; a frame as a page is: its widgets are made in it, laid out as a column in its own content from the room its frame and title leave (read from the system on the native side, `sizes.GROUP_SIDE` and `GROUP_TOP` on the headless side) and a padding inside it, its title `set_text`'s and `text_of`'s; macOS by an `NSBox` with a flipped content view; Windows pending (`BS_GROUPBOX` draws the frame and title and holds nothing, so a child window over its inner rectangle holds the widgets), Linux by a `GtkFrame` holding a `GtkFixed`, its title row always there (empty for no title) so the insets measured once as it is made, around a content of 400 by 300 points, hold whatever the title becomes
 
 capability ui/label  a text the person reads
   heroes  ui.label
@@ -266,7 +266,7 @@ capability ui/editable-combo  a combo box the person may type into
   rust    -
   python  ttk.Combobox
   wx      wxComboBox
-  note    catalogue CT28; a field with a list of items beside it, the items `set_items`'s (the text kept) and the text `set_text`'s and `text_of`'s; typing is `.text_changed`, choosing an item makes it the text and is `.selection_changed` with its index and then `.text_changed`; the choice read is the first item equal to the text, or none, and `set_selection` takes one index and types that item; macOS by an `NSComboBox` with no data source and completion on; Windows pending (`CBS_DROPDOWN`, `CBN_EDITCHANGE` and `CBN_SELCHANGE`), Linux has no widget for it (`GtkDropDown` only searches its items, `GtkComboBox` and `GtkEntryCompletion` are deprecated since 4.10), so the arm builds a `GtkEntry` with a popover of items, or answers unsupported with words
+  note    catalogue CT28; a field with a list of items beside it, the items `set_items`'s (the text kept) and the text `set_text`'s and `text_of`'s; typing is `.text_changed`, choosing an item makes it the text and is `.selection_changed` with its index and then `.text_changed`; the choice read is the first item equal to the text, or none, and `set_selection` takes one index and types that item; macOS by an `NSComboBox` with no data source and completion on; Windows pending (`CBS_DROPDOWN`, `CBN_EDITCHANGE` and `CBN_SELCHANGE`), Linux has no widget for it (`GtkDropDown` only searches its items, `GtkComboBox` and `GtkEntryCompletion` are deprecated since 4.10), so the arm builds a `GtkEntry` beside a `GtkMenuButton` whose popover lists the items, choosing one tells the choice and then the text, and what the person types at the end of the text is completed from the first item it begins, the rest left selected, as AppKit's combo completes (a deletion, an injection and the program's own set are never completed)
 
 capability ui/progress  a bar filled as far as a value goes
   heroes  ui.progress, ui.set_value, ui.value_of, ui.set_range
@@ -296,7 +296,7 @@ capability ui/spin  a number typed, or stepped up and down
   rust    -
   python  tkinter.Spinbox, ttk.Spinbox
   wx      wxSpinCtrl, wxSpinCtrlDouble
-  note    catalogue CT22; a whole number between a range's ends, each arrow changing it by 1 (a step of the program's own and a decimal number, `wxSpinCtrlDouble`, are not offered); `set_value`, `value_of` and `set_range` as a slider's, `.slide` giving the value typed or stepped to, `.value_changed` told at each arrow and where a typed number is committed (Return or the field giving the keys up), one past the range clamped and a text that is no number put back; macOS by an `NSTextField` and an `NSStepper` in a view of their own; Windows pending (the up-down control `UPDOWN_CLASS` with `UDS_SETBUDDYINT` over an `EDIT`), Linux pending (`GtkSpinButton`)
+  note    catalogue CT22; a whole number between a range's ends, each arrow changing it by 1 (a step of the program's own and a decimal number, `wxSpinCtrlDouble`, are not offered); `set_value`, `value_of` and `set_range` as a slider's, `.slide` giving the value typed or stepped to, `.value_changed` told at each arrow and where a typed number is committed (Return or the field giving the keys up), one past the range clamped and a text that is no number put back; macOS by an `NSTextField` and an `NSStepper` in a view of their own; Windows pending (the up-down control `UPDOWN_CLASS` with `UDS_SETBUDDYINT` over an `EDIT`), Linux by a `GtkSpinButton` with no decimals, its typed text read by the arm's own `input` as a whole number or put back (a range beyond 2^53 answers `limit`, GTK's adjustment being a double)
 
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture
