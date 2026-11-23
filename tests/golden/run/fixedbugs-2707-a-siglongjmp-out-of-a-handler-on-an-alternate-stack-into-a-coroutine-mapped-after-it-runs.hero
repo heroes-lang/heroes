@@ -1,0 +1,24 @@
+# Fixed 2026-11-23, defect 2707, lane-jmp-fixes (panel 257 compiler-engineer, § 10; the
+# runtime of step 118a, defect 2702, had already made the verdict independent of the
+# order): a correct C program leaves a handler that runs on an alternate stack by a
+# `siglongjmp` for a coroutine that runs on a stack of its own, and the coroutine then
+# calls the program. Both stacks are mapped by the program, the coroutine's mapped second.
+# Symptom: before step 118a, on Linux the program aborted in the words of S when the
+# coroutine's stack lay BELOW the alternate stack in memory and ran when it lay above
+# (`cs2`, 3 of 3 on glibc 2.41 and 2.43), and the same program built on another
+# allocator's placement answered the other way (panel 255's `c_1`: 18 of 20 on Ubuntu,
+# 0 of 20 on Debian).
+# Cause: `hero_sig_prune` and `hero_sig_inside` compared the raw addresses of two stacks
+# the runtime does not know, so the allocator's address decided.
+# Fix (step 118a, held here): no two addresses on two different stacks are compared; a
+# jump that leaves the alternate stack an entry stands on leaves that entry, whichever
+# stack it lands on. The pair of cases holds both orders to one verdict.
+extern "fixedbugs-2707-two-stacks.h"
+    function cs2_run(order: i64, how: i64, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("cs2: ", cs2_run(order: 1, how: 0, cb: answer))
