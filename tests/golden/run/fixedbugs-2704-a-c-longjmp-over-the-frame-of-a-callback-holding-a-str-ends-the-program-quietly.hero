@@ -1,0 +1,26 @@
+# Fixed 2026-11-23, defect 2704, lane-jmp-fixes (panel 257's ffi-pragmatist,
+# § 3e): a C function `longjmp`s over the frame of a Heroes callback that
+# holds a `str`, as libpng's `png_error` does over a read function. A correct
+# program: the jump did what C says, the program prints its result and ends
+# with status 0.
+# Symptom: the program printed `result 7` and then aborted at exit with
+# `2 heap blocks still live at exit (a missing decref) - this is a compiler
+# bug`, 3 runs of 3 on both platforms, plain and `--sanitize`.
+# Cause: the jump runs no code, so the end of scope of the frames it left, the
+# release of the `str` the callback held, never ran, and the exit gate read
+# the balance as the compiler's.
+# Fix: a thunk counts the callbacks entered and not yet returned
+# (`runtime/parts/callback.c`); a program ending with a callback that never
+# finished (here, jumped over) is not audited for a missing decref, as a
+# program that calls `exit` is not (`hero_exit`).
+extern "fixedbugs-2704-longjmp.h"
+    function ab_try(cb: (function(i64) -> i64)) -> i64
+    function ab_throw()
+
+function body(n: i64) -> i64
+    word = f"{n}-held"
+    ab_throw()
+    return word.len()
+
+function main()
+    print("result ", ab_try(cb: body))

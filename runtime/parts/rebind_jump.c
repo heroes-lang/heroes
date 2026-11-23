@@ -69,6 +69,7 @@ static void hero_rebind_set(const void *uc) {
     bool standing = hero_rebind_standing(own);
     if (hero_rebind_decoding(HERO_REBIND_CTX)) {
         uintptr_t t = hero_rebind_ctx_sp(uc);
+        hero_rebind_range_entered(t);
         if (standing) {
             hero_rebind_landing(own, t);
             uintptr_t lo = 0, hi = 0;
@@ -99,8 +100,13 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
+    uintptr_t entered = 0;
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
-        if (hero_rebind_decoding(HERO_REBIND_CTX)) hero_rebind_landing(own, hero_rebind_ctx_sp(to));
+        if (hero_rebind_decoding(HERO_REBIND_CTX)) {
+            entered = hero_rebind_ctx_sp(to);
+            hero_rebind_range_entered(entered);
+            hero_rebind_landing(own, entered);
+        }
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {
             HeroRebindEntry *e = &own->entries[i];
             if (e->dead) continue;
@@ -121,6 +127,10 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
         }
     }
     int r = atomic_load_explicit(&hero_rebind_real_swapcontext, memory_order_relaxed)(from, to);
+    /* The context switched to came back unchanged: nothing saved a point in
+     * it, so its coroutine ended (or left without a save) and the range holds
+     * no frames of it any more (defect 2706, `rebind_entries.c`). */
+    if (entered != 0 && r == 0 && hero_rebind_ctx_sp(to) == entered) hero_rebind_range_ended(entered);
     if (own != NULL) {
         for (int j = 0; j < n; j += 1) {
             for (int i = 0; i < own->depth; i += 1) {

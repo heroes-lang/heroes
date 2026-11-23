@@ -1,0 +1,18 @@
+# Fixed 2026-11-23, defect 2707, lane-jmp-fixes (panel 257 compiler-engineer, § 10): the
+# same shape as the pair of `siglongjmp` cases, left by a `setcontext` to a context the
+# coroutine saved with `getcontext`, the coroutine's stack mapped second. Correct C, refused,
+# in the same words whichever stack lies lower: a `setcontext` onto a coroutine's stack
+# holds the handler until it ends, since the coroutine may resume the handler through its
+# `uc_link` (panel 255's R3, rule 6; the refusal of a correct program is its R4).
+# Symptom: before step 118a the verdict followed the order of the two mappings (S when
+# the coroutine lay below, a run when above); the pair holds it to the one it has now.
+# Cause and fix: as the `siglongjmp` cases of this defect.
+extern "fixedbugs-2707-two-stacks.h"
+    function cs2_run(order: i64, how: i64, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("cs2: ", cs2_run(order: 1, how: 1, cb: answer))

@@ -235,6 +235,7 @@
 #pragma push_macro("hero_array_unshare")
 #pragma push_macro("hero_bool_to_str")
 #pragma push_macro("hero_callback_entered")
+#pragma push_macro("hero_callback_left")
 #pragma push_macro("hero_cstr_nonnull")
 #pragma push_macro("hero_cstr_nonnull_at")
 #pragma push_macro("hero_desc_array")

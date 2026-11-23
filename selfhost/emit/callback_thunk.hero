@@ -99,10 +99,15 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
 
     invocation = real + "(" + forwarded.join(", ") + ")"
 
+    # The call, and the line that ends the count the first line began
+    # (`hero_callback_left`, defect 2704): a thunk C jumped over never reaches
+    # it, which the end of the program reads as a frame that never finished.
     if result == "void"
         writer.line(@w, text: "    " + invocation + ";")
+        writer.line(@w, text: "    hero_callback_left();")
     else
         writer.line(@w, text: "    " + result + " hero_result = " + invocation + ";")
+        writer.line(@w, text: "    hero_callback_left();")
 
         # The message names the field or element the dead handle sat in, as
         # an argument's crossing does (design.md §4.17: a result reaching two
@@ -342,6 +347,32 @@ test "a thunk's first line asks whether a signal called it, and the table learns
         text: got,
         needle: ") {\n    hero_callback_entered(\"t.on_signal\", __builtin_return_address(0), __builtin_frame_address(0));\n"
     )
+
+# Defect 2704: the count the thunk's first line begins is ended on the line
+# after its call, for a function with no result and for one with a result
+# alike, so a thunk C jumped over, which never reaches it, stays counted and
+# the end of the program tells a frame that never finished from a missing
+# decref (`runtime/parts/callback.c`).
+test "a thunk's call is followed by the line that ends the count its first line began, with a result or without"
+    text = "extern \"signal.h\"\n    function signal(sig: i32, handler: (function(i32) -> ())) -> ptr\n    function raise(sig: i32) -> i32\n\nfunction on_signal(sig: i32)\n    print(sig)\n\nfunction main()\n    _ = signal(10, on_signal)\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = program_of(text)
+    names0 = ctype.new_names(s, p.decls)
+    names1 = ctype.with_options(names0, c: c, s: s, decls: p.decls)
+    names = ctype.with_functions(names1, c: c, s: s, decls: p.decls, p: low)
+    callbacks = callback_guard.callbacks_of(low, c, p.decls)
+    w: writer.Writer @= writer.new_writer("t")
+    lookup_table(@w, low, c, names, s, p.decls, callbacks: callbacks)
+
+    for f in low.functions
+        definition(@w, c, names, s, p.decls, f, guarded_decls: callbacks.decls)
+
+    got = writer.finish(w)
+    assert strings.holds(text: got, needle: ");\n    hero_callback_left();\n}")
 
 # Defect 2533: the last words of every refusal `in_signal`'s line can give
 # are spec § 13's own sentence (panel 247's R5), and the runtime holds a copy

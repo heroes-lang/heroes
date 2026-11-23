@@ -38,6 +38,23 @@ static _Atomic int hero_rebind_stack_writing = 0;
  * for (a jump outside every handler then costs one decode and two compares). */
 static _Atomic int hero_rebind_stack_any = 0;
 
+/* THE LIFE OF A RANGE (defect 2706). A range `makecontext` was given may hold a
+ * coroutine's frames only between two events this file sees: a switch INTO it
+ * (a `swapcontext` or `setcontext` whose target lies there) and the end of that
+ * switch's coroutine, which a `swapcontext` that returns with the context it
+ * switched to unchanged saw (a coroutine that yields saves itself into a
+ * context, so the one switched to changes; one that returns through
+ * `uc_link`, or leaves by a `setcontext` that saves nothing, does not). A
+ * range no switch entered, or whose coroutine ended, holds no coroutine's
+ * frames: a save point in it was made by the thread's own code in memory a
+ * helper's returned frame once lent `makecontext` (panel 257's `fp3` and the
+ * critic's `n6`), and a jump to it is judged on the stack it lies on, the
+ * thread's own, where a target above a handler leaves it. A switch into the
+ * range clears its end again. */
+#define HERO_REBIND_RANGE_ENTERED 1
+#define HERO_REBIND_RANGE_ENDED 2
+static _Atomic int hero_rebind_stack_state[HERO_REBIND_STACKS];
+
 static void hero_rebind_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_rebind_stack_seq[i], 1);
     atomic_store(&hero_rebind_stack_lo[i], lo);
@@ -59,14 +76,15 @@ void hero_rebind_known_stack(const void *context) {
         if (h > l && l < hi && lo < h) hero_rebind_stack_put(i, 0, 0);
     }
     unsigned at = atomic_fetch_add(&hero_rebind_stack_next, 1) % HERO_REBIND_STACKS;
+    atomic_store_explicit(&hero_rebind_stack_state[at], 0, memory_order_relaxed);
     hero_rebind_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_rebind_stack_any, 1, memory_order_release);
     atomic_store(&hero_rebind_stack_writing, 0);
 }
 
-/* The known range holding `at`, where one does. */
-static bool hero_rebind_known_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
-    if (!atomic_load_explicit(&hero_rebind_stack_any, memory_order_acquire)) return false;
+/* The slot of the known range holding `at`, -1 where none does. */
+static int hero_rebind_range_slot(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
+    if (!atomic_load_explicit(&hero_rebind_stack_any, memory_order_acquire)) return -1;
     for (int i = 0; i < HERO_REBIND_STACKS; i += 1) {
         unsigned before = atomic_load(&hero_rebind_stack_seq[i]);
         uintptr_t l = atomic_load(&hero_rebind_stack_lo[i]), h = atomic_load(&hero_rebind_stack_hi[i]);
@@ -74,10 +92,39 @@ static bool hero_rebind_known_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) 
         if (h > l && at >= l && at < h) {
             *lo = l;
             *hi = h;
-            return true;
+            return i;
         }
     }
-    return false;
+    return -1;
+}
+
+/* The known range holding `at`, where one does: every range `makecontext`
+ * handed out and nothing overlapped since, whether or not it may hold frames. */
+static bool hero_rebind_known_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { return hero_rebind_range_slot(at, lo, hi) >= 0; }
+
+/* The known range holding `at` that may hold a coroutine's frames now: a
+ * switch entered it and none saw its coroutine end. */
+static bool hero_rebind_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
+    int i = hero_rebind_range_slot(at, lo, hi);
+    if (i < 0) return false;
+    int state = atomic_load_explicit(&hero_rebind_stack_state[i], memory_order_relaxed);
+    return (state & HERO_REBIND_RANGE_ENTERED) != 0 && (state & HERO_REBIND_RANGE_ENDED) == 0;
+}
+
+/* A switch whose target's stack pointer is `at` enters the range holding it
+ * (a `swapcontext` or `setcontext`, called before anything judges the target). */
+static void hero_rebind_range_entered(uintptr_t at) {
+    uintptr_t lo = 0, hi = 0;
+    int i = hero_rebind_range_slot(at, &lo, &hi);
+    if (i >= 0) atomic_store_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENTERED, memory_order_relaxed);
+}
+
+/* A `swapcontext` to a context whose stack pointer was `at` returned with
+ * that context unchanged: its coroutine ended (or left without a save). */
+static void hero_rebind_range_ended(uintptr_t at) {
+    uintptr_t lo = 0, hi = 0;
+    int i = hero_rebind_range_slot(at, &lo, &hi);
+    if (i >= 0) atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
 }
 
 /* The alternate stack registered now, where one is. */
@@ -92,10 +139,12 @@ static bool hero_rebind_alt_now(uintptr_t *lo, uintptr_t *hi) {
 /* Rule 4: the range of the stack a jump's target lies on, a coroutine's
  * first (a target inside a range `makecontext` handed out lies on that
  * coroutine, even where the range was carved out of the thread's own stack:
- * shape A), then the thread's own, then the alternate stack registered now;
+ * shape A, but only while the range may hold the coroutine's frames,
+ * defect 2706: a range no switch entered or whose coroutine ended is the
+ * thread's own memory again), then the thread's own, then the alternate stack registered now;
  * false where its extent is unknown, which proves no entry left. */
 static bool hero_rebind_target_range(const HeroSignalStack *own, uintptr_t t, uintptr_t *lo, uintptr_t *hi) {
-    if (hero_rebind_known_range(t, lo, hi)) return true;
+    if (hero_rebind_live_range(t, lo, hi)) return true;
     if (t >= own->lo && t < own->hi) {
         *lo = own->lo;
         *hi = own->hi;
@@ -184,12 +233,20 @@ static bool hero_rebind_standing(const HeroSignalStack *own) { return own->depth
 static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
     uintptr_t lo = 0, hi = 0;
     bool ranged = hero_rebind_target_range(own, t, &lo, &hi);
+    /* A jump onto a coroutine's stack that an entry survives is told as such
+     * (`unsure` 3, defect 2705): the words say what the runtime judged. */
+    uintptr_t clo = 0, chi = 0;
+    bool oncoroutine = by_jump && hero_rebind_live_range(t, &clo, &chi);
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroRebindEntry *e = &own->entries[i];
         if (e->dead || hero_rebind_pinned(e)) continue;
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !(t >= e->alt_lo && t < e->alt_hi);
-        if (above || left_alt) hero_rebind_drop(own, i);
+        if (above || left_alt) {
+            hero_rebind_drop(own, i);
+        } else if (oncoroutine && e->unsure == 0) {
+            e->unsure = 3;
+        }
     }
 }
 
@@ -293,7 +350,7 @@ __attribute__((noinline)) static int hero_rebind_inside(void) {
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroRebindEntry *e = &own->entries[i];
         if (e->dead) continue;
-        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : HERO_SIG_UNSURE;
+        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : e->unsure == 3 ? HERO_SIG_ONSTACK : HERO_SIG_UNSURE;
         return hero_rebind_pinned(e) ? HERO_SIG_SWITCHED : HERO_SIG_INSIDE;
     }
     return HERO_SIG_INSIDE;
