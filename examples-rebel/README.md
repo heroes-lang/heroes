@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and sixty-three packages, in layers. **A package may use any package of a layer below
+A hundred and sixty-four packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -169,7 +169,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |
 | 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time` |  |
 | 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `os`, `poll`, `printing`, `time`, `unicode/segment` | `hero_ui.h` |
-| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` | `hero_proxy.h` |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `strings`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `bytes`, `fs`, `io`, `lists`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
@@ -190,6 +190,7 @@ package moves its row in the same change. There is no cycle.
 | 8 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `bytes`, `http`, `log`, `otlp`, `random`, `time` |  |
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |
+| 8 | `sse` | server-sent events read and served: a reader that connects again as an `EventSource` does (the last id sent, the stream's `retry` kept, a silent connection given up), through the client's proxy, and a hub that keeps a stream's clients, tells them what happens, replays what a client missed and keeps a silent connection from being closed | `http`, `io`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url`, `web` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 

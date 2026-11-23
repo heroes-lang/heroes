@@ -1,0 +1,11 @@
+# Reaches Rebel's floor over the platform layer's proxy settings,
+# `hero_proxy.h`, so that `heroes test` on this file runs the floor's own
+# tests (spec § 12, § 13). It asks for the settings with no room and prints
+# the kind the layer answers: 3 where this system has settings, 0 where it has
+# none set, 1 where it keeps no store a program can read.
+
+use <rebel>/http/hero_proxy
+
+function main()
+    none: [u8] @= []
+    print(hero_proxy.settings(@none, n: 0) >> 32)

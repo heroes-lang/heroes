@@ -1,0 +1,55 @@
+# The clients of a hub: a connection and when it was last written to, and the
+# writes a hub makes to one, each bounded by the wait a hub allows.
+
+use http
+use io
+use time
+use tls
+use web
+
+# One client of a hub: its connection and when it was last written to.
+record Member
+    # The number `subscribe` gave it.
+    id: i64
+    # The connection, which the hub closes.
+    stream: io.Stream
+    # When it was last written to.
+    quiet: time.Mark
+
+# `d` where it is zero or more, else zero.
+function bounded(d: time.Duration) -> time.Duration
+    if d.nanoseconds < 0
+        return time.Duration(nanoseconds: 0)
+    return d
+
+# The head of an event stream written to `s`, then the `retry` where `retry`
+# is above zero, then `replay`, the events a client missed; each write waits
+# at most `wait`. Fails as `web.start_events`, `web.write_retry` and
+# `web.write_event` fail.
+function opened(s: io.Stream, wait: time.Duration, retry: time.Duration, replay: [http.Event], headers: [http.Header]) -> ()?
+    tls.set_deadline(s, deadline: bounded(wait))?
+    web.start_events(s, headers: headers)?
+
+    if retry.nanoseconds > 0
+        web.write_retry(s, ms: time.to_units(retry, unit: .millisecond))?
+
+    for event in replay
+        web.write_event(s, event: event)?
+
+    return ok()
+
+# `text` written to the client `m`, the write waiting at most `wait`.
+function written(m: Member, wait: time.Duration, text: str) -> ()?
+    tls.set_deadline(m.stream, deadline: bounded(wait))?
+    return io.write_text(m.stream, text: text)
+
+# The comment a heartbeat writes to the client `m`, waiting at most `wait`.
+function commented(m: Member, wait: time.Duration) -> ()?
+    tls.set_deadline(m.stream, deadline: bounded(wait))?
+    return web.write_comment(m.stream, text: "")
+
+test "bounded: a wait of zero or more as it is, and below zero none"
+    assert bounded(time.seconds(3).must()) == time.seconds(3).must()
+    assert bounded(time.Duration(nanoseconds: 0)) == time.Duration(nanoseconds: 0)
+    assert bounded(time.Duration(nanoseconds: -9)) == time.Duration(nanoseconds: 0)
+    assert bounded(time.max_duration()) == time.max_duration()

@@ -1,0 +1,263 @@
+# The proxies the system's own settings name, read from the text the platform
+# layer writes (`hero_proxy.h` says each system's keys): macOS's proxies of
+# the active network service, with a SOCKS one that serves any scheme where
+# no proxy is named for it, and Windows' Internet Options, whose proxy list
+# `([<scheme>=][<scheme>"://"]<server>[":"<port>])` is parted by semicolons or
+# white space and whose bypass list may hold `<local>`. What a proxy is, and
+# who it serves, is decided here and never in C.
+
+use bytes
+use http/hero_proxy
+use http/internal/syntax
+use strings
+
+# The code of a system that keeps no settings a program can read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What the settings name.
+record Found
+    # The proxy for `http://` requests, as `http.Proxy.http` writes it; "" for
+    # none.
+    http: str
+    # The proxy for `https://` requests; "" for none.
+    https: str
+    # The hosts reached directly, as `http.Proxy.bypass` writes them.
+    bypass: [str]
+    # Where the settings name a proxy by a script or by discovery, which is
+    # not read here: the words for it, "" where they name neither.
+    automatic: str
+
+# The proxy servers a Windows list names.
+record Servers
+    # `http=`'s, `https=`'s, `socks=`'s and a bare entry's, which serves every
+    # scheme not named; "" where the list holds none.
+    http: str
+    https: str
+    socks: str
+    every: str
+
+# The settings `text` says, a line a key and its values parted by tabs. A line
+# of another key, or with too few values, is left out; a text with no line
+# names no proxy.
+function found_of(text: str) -> Found
+    http: str @= ""
+    https: str @= ""
+    socks: str @= ""
+    windows: Servers @= Servers(http: "", https: "", socks: "", every: "")
+    bypass: [str] @= []
+    automatic: str @= ""
+    simple: bool @= false
+
+    for line in strings.split(s: text, sep: "\n")
+        parts = strings.split(s: line, sep: "\t")
+
+        match parts[0]
+            "http" =>
+                if parts.len() >= 3
+                    http @ server_of(host: parts[1], port: parts[2])
+            "https" =>
+                if parts.len() >= 3
+                    https @ server_of(host: parts[1], port: parts[2])
+            "socks" =>
+                if parts.len() >= 3
+                    socks @ "socks5h://" + server_of(host: parts[1], port: parts[2])
+            "exception" =>
+                if parts.len() >= 2 && parts[1] != ""
+                    bypass @ bypass.push(entry_of(parts[1]))
+            "simple" => simple @ true
+            "ie-proxy" =>
+                if parts.len() >= 2
+                    windows @ servers_of(parts[1])
+            "ie-bypass" =>
+                if parts.len() >= 2
+                    for word in words_of(parts[1])
+                        bypass @ bypass.push(entry_of(word))
+            "pac" =>
+                if parts.len() >= 2 && parts[1] != ""
+                    automatic @ f"a proxy auto-configuration script at {parts[1]}"
+                else
+                    automatic @ "a proxy auto-configuration script"
+            "discover" =>
+                if automatic == ""
+                    automatic @ "automatic proxy discovery"
+            _ => _ = 0
+
+    if simple
+        bypass @ bypass.push("<local>")
+    return Found(
+        http: first_of([http, windows.http, windows.every, socks, windows.socks]),
+        https: first_of([https, windows.https, windows.every, socks, windows.socks]),
+        bypass: bypass,
+        automatic: automatic
+    )
+
+# The first of `choices` that is not "", "" where all are.
+function first_of(choices: [str]) -> str
+    for c in choices
+        if c != ""
+            return c
+
+    return ""
+
+# `host` and `port` as a proxy is written: the host in brackets where it is
+# an IPv6 address, the port after a colon unless it is 0 or no number, which
+# is the system's "none".
+function server_of(host: str, port: str) -> str
+    named = if strings.contains(s: host, substr: ":")
+        "[" + host + "]"
+    else
+        host
+
+    if port == "0" || port == "" || syntax.decimal(s: port, what: "a proxy's port").is_err()
+        return named
+    return named + ":" + port
+
+# The words of a Windows list, parted by semicolons or white space.
+function words_of(list: str) -> [str]
+    out: [str] @= []
+
+    for piece in strings.split(s: strings.replace_all(s: list, old: ";", new: " "), sep: " ")
+        if piece != ""
+            out @ out.push(piece)
+
+    return out
+
+# The servers a Windows proxy list names: an entry `scheme=server` serves that
+# scheme, a bare entry every other; a `socks=` server is read as SOCKS 4, as
+# Microsoft's page names no version for it, and an entry of another scheme
+# (`ftp=`) serves no request this package sends.
+function servers_of(list: str) -> Servers
+    out: Servers @= Servers(http: "", https: "", socks: "", every: "")
+
+    for item in words_of(list)
+        match strings.split_once(s: item, sep: "=")
+            .err _ => out.every @ item
+            .ok halves =>
+                match strings.to_lower_ascii(halves.before)
+                    "http"  => out.http @ halves.after
+                    "https" => out.https @ halves.after
+                    "socks" =>
+                        if strings.contains(s: halves.after, substr: "://")
+                            out.socks @ halves.after
+                        else
+                            out.socks @ "socks4://" + halves.after
+                    _ => _ = 0
+
+    return out
+
+# A bypass entry as `http.Proxy.bypass` reads it: macOS writes a network with
+# its leading bytes alone, `169.254/16`, written here in full.
+function entry_of(raw: str) -> str
+    match strings.split_once(s: raw, sep: "/")
+        .err _ => return raw
+        .ok halves =>
+            octets = strings.split(s: halves.before, sep: ".")
+
+            if octets.len() >= 4 || halves.after == ""
+                return raw
+
+            for o in octets
+                if o == "" || syntax.decimal(s: o, what: "an octet").is_err()
+                    return raw
+
+            padded: str @= halves.before
+
+            for _ in range(from: octets.len(), to: 4)
+                padded @ padded + ".0"
+
+            return padded + "/" + halves.after
+
+# What the system's settings name, or why they cannot be read: `unsupported`
+# where this system keeps none a program can read, `failed` where it does and
+# will not say, and `limit` where they grow past what is asked for.
+function read() -> Found?
+    room: i64 @= 4_096
+    round: i64 @= 0
+
+    while round < 5
+        buffer: [u8] @= []
+        got = hero_proxy.settings(@buffer, n: to_u64(room).must())
+        kind = got >> 32
+        text = bytes.to_text(buffer.slice(from: 0, to: got & 4_294_967_295))?
+
+        if kind == hero_proxy.HERO_PROXY_OK
+            return ok(found_of(text))
+
+        if kind == hero_proxy.HERO_PROXY_UNSUPPORTED
+            return fail(code: UNSUPPORTED, msg: f"reading the system's proxy settings: {text}")
+
+        if kind != hero_proxy.HERO_PROXY_LIMIT
+            return fail(code: "failed", msg: f"reading the system's proxy settings: {text}")
+        room @ room * 8
+        round @ round + 1
+
+    return fail(code: "limit", msg: "reading the system's proxy settings: they pass 1,048,576 bytes")
+
+## Tests
+
+test "found_of: no text, a line of no key, and a line with too few values name no proxy"
+    assert found_of("") == Found(http: "", https: "", bypass: [], automatic: "")
+    assert found_of("nothing\tat all\n\n").http == ""
+    assert found_of("http\tonly-a-host\n").http == ""
+    assert found_of("exception\t\n").bypass == []
+
+test "found_of: macOS's keys, a proxy for each scheme, the exceptions, hosts with no dot, and the port 0"
+    got = found_of(
+        "http\tweb.example\t3128\nhttps\tsecure.example\t3129\nexception\t*.local\nexception\t169.254/16\nsimple\t1\n"
+    )
+    assert got.http == "web.example:3128" && got.https == "secure.example:3129"
+    assert got.bypass == ["*.local", "169.254.0.0/16", "<local>"]
+    assert got.automatic == ""
+    assert found_of("http\tweb.example\t0\n").http == "web.example"
+    assert found_of("http\tfe80::1\t8080\n").http == "[fe80::1]:8080"
+
+test "found_of: a SOCKS proxy serves the schemes no proxy is named for, SOCKS 5 with the name sent"
+    only = found_of("socks\tsox.example\t1080\n")
+    assert only.http == "socks5h://sox.example:1080" && only.https == "socks5h://sox.example:1080"
+    both = found_of("socks\tsox.example\t1080\nhttp\tweb.example\t8080\n")
+    assert both.http == "web.example:8080" && both.https == "socks5h://sox.example:1080"
+
+test "found_of: Windows' list, a scheme each, one for all, a SOCKS one, an ftp one left out, and the bypass list"
+    named = found_of(
+        "ie-proxy\thttp=a.example:80;https=b.example:443 ftp=c.example:21;socks=d.example:1080\nie-bypass\t<local>;*.corp.example 10.*\n"
+    )
+    assert named.http == "a.example:80" && named.https == "b.example:443"
+    assert named.bypass == ["<local>", "*.corp.example", "10.*"]
+    one = found_of("ie-proxy\tproxy.example:8080\n")
+    assert one.http == "proxy.example:8080" && one.https == "proxy.example:8080"
+    scheme = found_of("ie-proxy\thttp://p.example:3128\n")
+    assert scheme.http == "http://p.example:3128"
+    only_http = found_of("ie-proxy\thttp=a.example:80\n")
+    assert only_http.http == "a.example:80" && only_http.https == ""
+    socks = found_of("ie-proxy\tsocks=d.example:1080\n")
+    assert socks.http == "socks4://d.example:1080" && socks.https == "socks4://d.example:1080"
+    assert found_of("ie-proxy\tsocks=socks5://d.example\n").http == "socks5://d.example"
+    assert found_of("ie-proxy\tftp=c.example:21\n").http == ""
+
+test "found_of: a script or discovery is named and no proxy made of it"
+    script = found_of("pac\thttp://wpad.example/proxy.pac\n")
+    assert script.http == "" && script.automatic == "a proxy auto-configuration script at http://wpad.example/proxy.pac"
+    assert found_of("discover\t1\n").automatic == "automatic proxy discovery"
+    assert found_of("pac\t\n").automatic == "a proxy auto-configuration script"
+    beside = found_of("http\tweb.example\t8080\ndiscover\t1\n")
+    assert beside.http == "web.example:8080" && beside.automatic == "automatic proxy discovery"
+
+test "entry_of: a network written with its leading bytes alone is written in full, and no other entry moves"
+    assert entry_of("169.254/16") == "169.254.0.0/16"
+    assert entry_of("10/8") == "10.0.0.0/8"
+    assert entry_of("192.168.1/24") == "192.168.1.0/24"
+    assert entry_of("10.0.0.0/8") == "10.0.0.0/8"
+    assert entry_of("*.local") == "*.local"
+    assert entry_of("example.com/x") == "example.com/x"
+    assert entry_of("1.2/") == "1.2/"
+    assert entry_of("/8") == "/8"
+
+test "words_of: semicolons and white space part a list, and none is empty"
+    assert words_of(" a;b  c;;d ") == ["a", "b", "c", "d"]
+    assert words_of("") == []
+
+test "read: this system's settings are read, or its refusal is told in a code of this library"
+    match read()
+        .ok found => assert found.http == "" || found.http != ""
+        .err e    => assert e.code == UNSUPPORTED || e.code == "failed"

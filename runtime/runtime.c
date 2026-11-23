@@ -439,6 +439,8 @@
 #include "platform/hero_proc.c"
 #include "hero_procs.h"
 #include "platform/hero_procs.c"
+#include "hero_proxy.h"
+#include "platform/hero_proxy.c"
 #include "hero_serial.h"
 #include "platform/hero_serial.c"
 #include "hero_sys.h"

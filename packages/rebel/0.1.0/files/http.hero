@@ -18,7 +18,8 @@
 # its `proxy` names, an `http://` request with its whole URL as its target
 # and an `https://` one through a tunnel opened at `CONNECT` with TLS over
 # it, which macOS's TLS does not begin (`tls.client_over`), so there it
-# fails `unsupported`; the environment's `HTTP_PROXY`, `HTTPS_PROXY` and
+# fails `unsupported`; a SOCKS 4, 4a, 5 or 5h proxy carries a request the same
+# way, by its own CONNECT; the environment's `HTTP_PROXY`, `HTTPS_PROXY` and
 # `NO_PROXY` are read only by `proxy_from_env`. A cookie's `Domain` is held
 # to the Public Suffix List where a `Session`'s `is_public_suffix` is the
 # subpackage `http/suffixes`'s, which only a program that asks carries.
@@ -85,6 +86,7 @@ use http/internal/charset
 use http/internal/coding
 use http/internal/conditional
 use http/internal/cookies
+use http/internal/dialing
 use http/internal/form_parts
 use http/internal/h2bridge
 use http/internal/memory
@@ -95,6 +97,7 @@ use http/internal/policy
 use http/internal/proxying
 use http/internal/read
 use http/internal/ready
+use http/internal/settings
 use http/internal/status as texts
 use http/internal/streaming
 use http/internal/syntax
@@ -1352,7 +1355,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
         via = proxy_for(c.proxy, target: out.url).default("")
 
         outcome = if via != ""
-            proxying.exchange(
+            dialing.exchange(
                 proxy: via,
                 scheme: out.url.scheme,
                 host: out.url.host,
@@ -1526,7 +1529,13 @@ record Proxy
     # request's whole URL as its target: `http://proxy.example:3128`, a user
     # and a password in it (`http://user:secret@proxy.example:3128`) sent as
     # `Proxy-Authorization: Basic`; a proxy written with no scheme is read as
-    # `http://`, and one with no port at 80. "" sends them directly.
+    # `http://`, and one with no port at 80. A SOCKS proxy is named by its
+    # scheme, `socks5://proxy.example:1080` (the port 1080 where none is
+    # written): `socks5` and `socks4` resolve the target's name here and send
+    # an address, `socks5h` and `socks4a` send the name for the proxy to
+    # resolve; `socks4` and `socks4a` carry IPv4 alone, send the user as
+    # their user id and have no password, and `socks5` sends a user and a
+    # password where the proxy asks for them. "" sends them directly.
     http: str
     # The proxy `https://` requests are tunnelled through: it is asked to
     # `CONNECT` to the server, and TLS runs over the tunnel with the server's
@@ -1538,7 +1547,10 @@ record Proxy
     # (`example.com` matches `api.example.com`), or a name after a dot, which
     # matches the names under it alone; an address; a network,
     # `10.0.0.0/8`; any of them with `:port`, then for that port alone.
-    # `localhost` and the loopback addresses are always reached directly.
+    # a pattern with a `*` for any run of characters (`*.corp.example`,
+    # `192.168.*`); `<local>` for every name written with no dot, as Windows'
+    # settings write it. `localhost` and the loopback addresses are always reached
+    # directly.
     bypass: [str]
 
 # No proxy: every request sent directly, as `default_client` sends them.
@@ -1564,6 +1576,43 @@ function proxy_from_env() -> Proxy
         bypass: proxying.bypass_of(proxying.env_of("NO_PROXY"))
     )
 
+# The proxies the environment names where it names any, else the ones the
+# system's own settings name: on macOS the proxies of the active network
+# service (System Settings, Network), on Windows the current user's Internet
+# Options, as Python's `getproxies` reads them. A SOCKS proxy the settings
+# name serves the schemes no proxy is named for: SOCKS 5 on macOS, which
+# Apple's pages do not say and which is the version CFNetwork's streams speak,
+# and SOCKS 4 for Windows' `socks=`, Microsoft's page naming none. On any
+# other system the environment is all there is, and an empty `Proxy` is
+# answered where it names none.
+#
+# Read only where a program asks, as `proxy_from_env` is. A setting that
+# names a proxy by a script (PAC) or by discovery (WPAD) is JavaScript or a
+# network search this package does not run: where it names no proxy
+# besides, the call fails `unsupported`, saying which, so a program does not
+# send directly what the network would have sent through a proxy; where it
+# names one, that one is used. Fails `failed` where the system refuses its
+# settings, with its words, and `limit` past a megabyte of them. See also
+# `proxy_from_env`, `proxy_for`.
+function proxy_from_system() -> Proxy?
+    from_env = proxy_from_env()
+
+    if from_env.http != "" || from_env.https != ""
+        return ok(from_env)
+
+    match settings.read()
+        .err e =>
+            if e.code == settings.UNSUPPORTED
+                return ok(from_env)
+            return fail(code: e.code, msg: e.msg)
+        .ok found =>
+            if found.http == "" && found.https == "" && found.automatic != ""
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: f"the system's settings name {found.automatic}, which this package does not run: set `Client.proxy` to the proxy it would choose"
+                )
+            return ok(Proxy(http: found.http, https: found.https, bypass: found.bypass))
+
 # The proxy a request to `target` goes through by `p`: its `https` proxy for
 # an `https://` target, its `http` one for any other.
 #
@@ -1588,6 +1637,101 @@ function proxy_for(p: Proxy, target: url.Url) -> str?
     if proxying.is_bypassed(p.bypass, host: target.host, port: port)
         return fail(code: NOT_FOUND, msg: f"{target.host} is reached directly, as the proxies' bypass says")
     return ok(chosen)
+
+## Connections held
+
+# A request sent on a connection of its own, the head of its answer read and
+# its body left on the connection: what `open_stream` makes. A body that
+# comes as it is made, an event stream's or a download's, is read from
+# `reader` by `body_reader` and `read_piece`, and the connection closed by
+# `io.close(@opened.reader.stream)`, which ends the answer.
+record Opened
+    # The answer's status, reason and fields, its `body` empty and its
+    # `closing` whether the connection carries nothing after the answer.
+    response: Response
+    # The connection's reader, standing at the body.
+    reader: io.Reader
+
+# Sends `r` on a connection of its own, through the proxy `c.proxy` names for
+# it, and reads the head of the answer, leaving the body on the connection.
+#
+# - `c`: how it is sent: `deadline` bounds the connection's making and the
+#   head, and is taken away once the head is read, so a body is waited for
+#   as long as the program lets it (`tls.set_deadline` on `reader.stream`
+#   sets one, and takes one away with `time.max_duration()`); `roots`,
+#   `proxy`, `limits` and `user_agent` as `send` reads them. `retries` and
+#   `max_redirects` are not used.
+# - `r`: the request; its target an absolute `http://` or `https://` URL.
+#
+# HTTP/1.1 alone is spoken, also over `https://`, whatever a server offers
+# by ALPN. No `Accept-Encoding` is sent, no cookie is sent or kept and no
+# redirect is followed: a 3xx is answered as it came, for a program that
+# reads a stream to follow by its `Location`. The answer is returned whatever
+# its status. Fails `unsupported` for a scheme other than `http` and
+# `https`, and where the platform's TLS cannot run over a proxy's tunnel (as
+# on macOS); `invalid` for a target that is not absolute, a deadline below
+# zero, or an answer that is not HTTP/1.1; `limit` past `c.limits`;
+# `timeout` past `c.deadline`; `failed` where a proxy refuses; and as
+# `net.connect` and `tls.connect` fail. See also `send`, `body_reader`,
+# `event_reader`.
+function open_stream(c: Client, r: Request) -> Opened?
+    if !url.is_abs(r.url)
+        return fail(code: INVALID, msg: f"opening a stream: {syntax.shown(url.redacted(r.url))} is no absolute URL")
+
+    if c.deadline.nanoseconds < 0
+        return fail(
+            code: INVALID,
+            msg: f"opening a stream: a deadline of {time.format_duration(c.deadline)}, below zero"
+        )
+    fields: [wire.Field] @= []
+
+    for h in r.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    if c.user_agent != "" && !has_header(r.headers, name: "User-Agent")
+        fields @ fields.push(wire.Field(name: "User-Agent", value: c.user_agent))
+    via = proxy_for(c.proxy, target: r.url).default("")
+
+    got = dialing.open(proxy: via, scheme: r.url.scheme, host: r.url.host, port: r.url.port, deadline_ms: policy.ms_of(c.deadline), roots: c.roots, method: r.method, target: url.request_target(r.url), host_value: value_of(r.headers, name: "Host").default(policy.host_field(scheme: r.url.scheme, host: r.url.host, port: r.url.port)), fields: fields, content: r.body, bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes))?
+    headers: [Header] @= []
+
+    for f in got.head.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(
+        Opened(response: Response(status: got.head.status, reason: got.head.reason, headers: headers, body: [], closing: got.closing), reader: got.reader)
+    )
+
+# A TCP connection to `host` at `port` through the proxy `proxy` names, the
+# stream a tunnel the proxy opened: `CONNECT` for an `http://` proxy, the
+# SOCKS handshake for a `socks4://`, `socks4a://`, `socks5://` or
+# `socks5h://` one, written as `Proxy`'s fields write them. The stream
+# carries the target's bytes and nothing of the proxy's, for a protocol of
+# the program's own, or one that is begun over it (`tls.client_over`).
+#
+# - `proxy`: the proxy, as `Proxy.http` reads it.
+# - `host`: the target, a name or an address without brackets.
+# - `port`: the target's port, 1 to 65535.
+# - `deadline`: how long the connection's making may take, and then every
+#   read and write on the stream; `time.max_duration()` for no limit.
+#
+# Fails `invalid` where the proxy or the target cannot be read or the
+# deadline is below zero, `unsupported` for a proxy of another scheme,
+# `failed` where the proxy refuses (its words in the message), `permission`
+# where a SOCKS proxy refuses the user and the password, and as
+# `net.connect` fails. See also `proxy_for`, `open_stream`.
+function tunnel(proxy: str, host: str, port: i64, deadline: time.Duration) -> io.Stream?
+    if deadline.nanoseconds < 0
+        return fail(code: INVALID, msg: f"opening a tunnel: a deadline of {time.format_duration(deadline)}, below zero")
+    place = proxying.place_of(proxy)?
+    limits = default_limits()
+    return dialing.tunnel(
+        place,
+        host: host,
+        port: port,
+        deadline_ms: policy.ms_of(deadline),
+        bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes)
+    )
 
 ## Bodies as they come
 
@@ -4068,6 +4212,13 @@ test "proxy_from_env: read without failing, its bypass holding no empty entry"
     for entry in p.bypass
         assert entry != "" && strings.trim(entry) == entry
 
+test "proxy_from_system: read without failing past a code of this library, its bypass holding no empty entry"
+    match proxy_from_system()
+        .ok p =>
+            for entry in p.bypass
+                assert entry != "" && strings.trim(entry) == entry
+        .err e => assert e.code == UNSUPPORTED || e.code == "failed"
+
 test "send: an http:// request through a proxy, its whole URL its target, the proxy's credentials sent"
     t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"]))
     c @= default_client()
@@ -4108,6 +4259,115 @@ test "send: a tunnel opened, then TLS over it, which macOS's TLS does not begin"
         .err e => assert e.code == UNSUPPORTED || e.code == CLOSED || e.code == FAILED || e.code == INVALID
 
     _ = threads.wait_text(@t.thread)
+
+test "send: an http:// request through a SOCKS 5 proxy that is sent the name, the request in its usual form"
+    ok_reply = bytes.format_hex(bytes.from_text("HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"))
+    t @= canned.start_steps(["r3", "w0500", "r19", "w05000001" + "7f0000011f90", "t", "w" + ok_reply])
+    c @= default_client()
+    c.proxy @ Proxy(http: f"socks5h://127.0.0.1:{t.port}", https: "", bypass: [])
+    got = get(c, target: "http://example.test:8080/a?b=1").must()
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert got.status == 200 && got.body == [111, 107]
+    assert seen[0] == "050100" && seen[1] == "050100030c6578616d706c652e746573741f90"
+    written = wire.text_of(bytes.parse_hex(seen[2]).must())
+    assert strings.has_prefix(s: written, prefix: "GET /a?b=1 HTTP/1.1\r\nHost: example.test:8080\r\n")
+
+test "send: a SOCKS 5 proxy that refuses, its words and its address said"
+    t @= canned.start_steps(["r3", "w0500", "r19", "w05050001" + "000000000000"])
+    c @= default_client()
+    c.proxy @ Proxy(http: f"socks5h://127.0.0.1:{t.port}", https: "", bypass: [])
+
+    match get(c, target: "http://example.test:8080/")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "failed"
+            assert strings.contains(s: e.msg, substr: "connection refused") && strings.contains(s: e.msg, substr: f"127.0.0.1:{t.port}")
+
+    _ = threads.wait_text(@t.thread)
+
+test "open_stream: the head read and the body left on the connection, read piece by piece"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: 5\r\n\r\nhello"])
+    )
+    r = request(method: METHOD_GET, target: f"http://127.0.0.1:{t.port}/feed").must()
+    o @= open_stream(default_client(), r: r).must()
+    assert o.response.status == 200 && o.response.body == []
+    assert value_of(o.response.headers, name: "Content-Type").must() == "text/event-stream"
+    body @= body_reader(o.response, method: METHOD_GET, limits: default_limits()).must()
+    assert read_piece(@o.reader, @body, most: 100).must() == [104, 101, 108, 108, 111]
+    assert read_piece(@o.reader, @body, most: 100).must() == []
+    io.close(@o.reader.stream).must()
+    seen = threads.wait_text(@t.thread)
+    assert strings.has_prefix(s: seen, prefix: "GET /feed\n") && strings.contains(s: seen, substr: "User-Agent: ")
+    assert !strings.contains(s: seen, substr: "Accept-Encoding")
+
+test "open_stream: a redirect answered as it came, and a refused target said before a byte is sent"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 302 Found\r\nLocation: /elsewhere\r\nContent-Length: 0\r\n\r\n"])
+    )
+    r = request(method: METHOD_GET, target: f"http://127.0.0.1:{t.port}/feed").must()
+    o @= open_stream(default_client(), r: r).must()
+    assert o.response.status == 302 && value_of(o.response.headers, name: "Location").must() == "/elsewhere"
+    io.close(@o.reader.stream).must()
+    _ = threads.wait_text(@t.thread)
+    relative = Request(
+        method: METHOD_GET,
+        url: url.parse_loose("/feed").must(),
+        headers: [],
+        body: [],
+        closing: false,
+        remote: ""
+    )
+    assert open_stream(default_client(), r: relative).is_err()
+    ftp = request(method: METHOD_GET, target: "ftp://127.0.0.1/feed").must()
+    assert open_stream(default_client(), r: ftp).is_err()
+    c @= default_client()
+    c.deadline @ time.Duration(nanoseconds: -1)
+    assert open_stream(c, r: r).is_err()
+
+test "open_stream: through an HTTP proxy the whole URL is the target, and through SOCKS 5 the usual one"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"]))
+    c @= default_client()
+    c.proxy @ Proxy(http: f"u:p@127.0.0.1:{t.port}", https: "", bypass: [])
+    r = request(method: METHOD_GET, target: "http://example.test/feed").must()
+    o @= open_stream(c, r: r).must()
+    io.close(@o.reader.stream).must()
+    seen = threads.wait_text(@t.thread)
+    assert strings.has_prefix(s: seen, prefix: "GET http://example.test/feed\n")
+    assert strings.contains(s: seen, substr: "Proxy-Authorization: Basic dTpw\n")
+    ok_reply = bytes.format_hex(bytes.from_text("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"))
+    s @= canned.start_steps(["r3", "w0500", "r19", "w05000001" + "7f0000011f90", "t", "w" + ok_reply])
+    c.proxy @ Proxy(http: f"socks5h://127.0.0.1:{s.port}", https: "", bypass: [])
+    r2 = request(method: METHOD_GET, target: "http://example.test:8080/feed").must()
+    o2 @= open_stream(c, r: r2).must()
+    assert o2.response.status == 200
+    io.close(@o2.reader.stream).must()
+    chunks = strings.split(s: threads.wait_text(@s.thread), sep: canned.SEPARATOR)
+    assert strings.has_prefix(s: wire.text_of(bytes.parse_hex(chunks[2]).must()), prefix: "GET /feed HTTP/1.1\r\n")
+
+test "tunnel: CONNECT to an HTTP proxy, a SOCKS proxy's handshake, and what is refused"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 Connection established\r\n\r\n"]))
+    s @= tunnel(
+        proxy: f"http://u:p@127.0.0.1:{t.port}",
+        host: "example.test",
+        port: 443,
+        deadline: time.seconds(5).must()
+    ).must()
+    io.close(@s).must()
+    seen = threads.wait_text(@t.thread)
+    assert strings.has_prefix(s: seen, prefix: "CONNECT example.test:443\n") && strings.contains(s: seen, substr: "Proxy-Authorization: Basic dTpw\n")
+    k @= canned.start_steps(["r3", "w0500", "r19", "w05000001" + "7f0000011f90", "t"])
+    s2 @= tunnel(
+        proxy: f"socks5h://127.0.0.1:{k.port}",
+        host: "example.test",
+        port: 8080,
+        deadline: time.seconds(5).must()
+    ).must()
+    io.write(s2, data: [7]).must()
+    assert strings.split(s: threads.wait_text(@k.thread), sep: canned.SEPARATOR)[2] == "07"
+    io.close(@s2).must()
+    assert tunnel(proxy: "ftp://127.0.0.1:1", host: "a", port: 1, deadline: time.seconds(1).must()).is_err()
+    assert tunnel(proxy: "127.0.0.1:1", host: "a", port: 1, deadline: time.Duration(nanoseconds: -1)).is_err()
 
 test "matching_cookies: an ended cookie, a secure one and a host-only one of another host are not sent"
     now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()

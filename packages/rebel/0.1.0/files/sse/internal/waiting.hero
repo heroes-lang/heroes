@@ -1,0 +1,129 @@
+# The waits of a reconnecting reader: how long to wait after the n-th failure
+# in a row, and the wait itself, which ends where the program is asked to stop.
+
+use os
+use time
+
+# The code of a program asked to stop while it waited.
+constant STOPPED: str
+    "stopped"
+
+# The code of a connection that failed in a way another attempt may mend.
+constant CLOSED: str
+    "closed"
+
+# Whether a failure of code `code` of opening or reading a connection is the
+# network's, so another attempt may mend it: the other end closed or never
+# answered, the time ran out, the system could not complete it, or a name was
+# not found. What the server answered or the certificate showed (`invalid`),
+# what this package does not speak (`unsupported`) and the rest are not.
+function is_transient(code: str) -> bool
+    return code == CLOSED || code == "timeout" || code == "failed" || code == "not_found"
+
+# The milliseconds to wait before the attempt that follows `failures` failures
+# in a row: `base_ms` after the first, doubled after each next, and never past
+# `longest_ms`. A `base_ms` or a `longest_ms` below 0 is 0.
+function wait_ms(base_ms: i64, longest_ms: i64, failures: i64) -> i64
+    cap = if longest_ms < 0
+        0
+    else
+        longest_ms
+
+    wait: i64 @= if base_ms < 0
+        0
+    else
+        base_ms
+    n: i64 @= 1
+
+    while n < failures && wait < cap
+        wait @ wait * 2
+        n @ n + 1
+
+    if wait > cap
+        return cap
+    return wait
+
+# What a failure means for a reader that connects again.
+record Verdict
+    # Whether the reader has ended.
+    ends: bool
+    # The code the reader fails with where it has ended.
+    code: str
+    # Whether it ended for the number of failures in a row, as `limit`.
+    gave_up: bool
+    # The failures in a row, this one counted.
+    failures: i64
+    # The milliseconds to wait before the next attempt.
+    wait_ms: i64
+
+# The verdict on a failure of code `code`, the `failures` before it in a row
+# not counted: the end of the reader where the failure is no network's, or
+# where this one is past `most_failures`; else the wait `wait_ms` says.
+function verdict(code: str, failures: i64, most_failures: i64, base_ms: i64, longest_ms: i64) -> Verdict
+    if !is_transient(code)
+        return Verdict(ends: true, code: code, gave_up: false, failures: failures, wait_ms: 0)
+    counted = failures + 1
+
+    if counted > most_failures
+        return Verdict(ends: true, code: "limit", gave_up: true, failures: counted, wait_ms: 0)
+    return Verdict(
+        ends: false,
+        code: code,
+        gave_up: false,
+        failures: counted,
+        wait_ms: wait_ms(base_ms: base_ms, longest_ms: longest_ms, failures: counted)
+    )
+
+# Waits `ms` milliseconds, in slices short enough to see a stop asked. Fails
+# `stopped` where it was.
+function pause(ms: i64) -> ()?
+    left: i64 @= ms
+
+    while left > 0
+        if os.is_stop_asked()
+            return fail(code: STOPPED, msg: "the program was asked to stop while it waited to connect again")
+
+        part = if left < 100
+            left
+        else
+            100
+        time.sleep(time.milliseconds(part).default(time.max_duration()))
+        left @ left - part
+
+    if os.is_stop_asked()
+        return fail(code: STOPPED, msg: "the program was asked to stop while it waited to connect again")
+    return ok()
+
+test "is_transient: the network's failures, and not what the server answered or the certificate showed"
+    assert is_transient("closed") && is_transient("timeout") && is_transient("failed") && is_transient("not_found")
+    assert !is_transient("invalid") && !is_transient("unsupported") && !is_transient("limit") && !is_transient("permission") && !is_transient("stopped")
+    assert !is_transient("")
+
+test "wait_ms: the base after the first failure, doubled after each, held to the longest, and below 0 none"
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 1) == 3_000
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 2) == 6_000
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 5) == 48_000
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 6) == 60_000
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 1_000_000_000) == 60_000
+    assert wait_ms(base_ms: 3_000, longest_ms: 1_000, failures: 1) == 1_000
+    assert wait_ms(base_ms: 0, longest_ms: 60_000, failures: 9) == 0
+    assert wait_ms(base_ms: -5, longest_ms: 60_000, failures: 2) == 0
+    assert wait_ms(base_ms: 5, longest_ms: -1, failures: 2) == 0
+    assert wait_ms(base_ms: 3_000, longest_ms: 60_000, failures: 0) == 3_000
+
+test "pause: no wait, a short one, and a negative one return at once"
+    assert pause(0).is_err() == false
+    assert pause(-7).is_err() == false
+    assert pause(20).is_err() == false
+
+test "verdict: a failure the network may mend waits, one that it may not ends the reader, and too many in a row give up"
+    mended = verdict("closed", failures: 0, most_failures: 3, base_ms: 100, longest_ms: 1_000)
+    assert !mended.ends && mended.failures == 1 && mended.wait_ms == 100
+    again = verdict("timeout", failures: 2, most_failures: 3, base_ms: 100, longest_ms: 1_000)
+    assert !again.ends && again.failures == 3 && again.wait_ms == 400
+    last = verdict("closed", failures: 3, most_failures: 3, base_ms: 100, longest_ms: 1_000)
+    assert last.ends && last.gave_up && last.code == "limit" && last.failures == 4
+    refused = verdict("invalid", failures: 0, most_failures: 3, base_ms: 100, longest_ms: 1_000)
+    assert refused.ends && !refused.gave_up && refused.code == "invalid"
+    never = verdict("closed", failures: 0, most_failures: 0, base_ms: 100, longest_ms: 1_000)
+    assert never.ends && never.gave_up

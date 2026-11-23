@@ -173,3 +173,48 @@ function three_clients(arg: str) -> str
         writing.close_all(@streams[i], @states[i], b: handmade.bounds(), code: 1000, reason: "").must()
 
     return heard.join(", ")
+
+# A proxy on a thread: it listens on the loopback, tells its port to the
+# datagram socket whose port `arg` begins with, accepts one connection and
+# reads its request head by lines, which `http.next_request` would not for a
+# `CONNECT`, a method a server of this package answers 501. Where the rest of `arg` is `refuse` it answers 407 and
+# closes; else it answers a `CONNECT` 200 and echoes as `echo_server` does
+# in the mode that rest names (`plain`). Answers `<method> <host field>`, then
+# ` | ` and the echo's own line.
+function proxy_server(arg: str) -> str
+    words = strings.split(s: arg, sep: " ")
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(told: words[0], port: l.address.port)
+    accepted = net.accept(l, deadline_ms: 10_000).must()
+    net.close_listener(@l).must()
+    reader @= io.reader(accepted.stream)
+
+    first = match io.read_line(@reader)
+        .ok got => got
+        .err _ =>
+            io.close(@reader.stream).must()
+            return "refused"
+
+    host: str @= "-"
+
+    while true
+        match io.read_line(@reader)
+            .ok field =>
+                if field == ""
+                    break
+
+                if strings.has_prefix(s: strings.to_lower_ascii(field), prefix: "host: ")
+                    host @ field.slice(from: 6, to: field.len())
+            .err _ => break
+
+    line = f"{strings.split(s: first, sep: " ")[0]} {host}"
+
+    if words[1] == "refuse"
+        io.write_text(
+            reader.stream,
+            text: "HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"
+        ).must()
+        io.close(@reader.stream).must()
+        return line
+    io.write_text(reader.stream, text: "HTTP/1.1 200 Connection established\r\n\r\n").must()
+    return line + " | " + echoed_on(reader.stream, mode: words[1])

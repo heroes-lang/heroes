@@ -157,6 +157,58 @@ function serve(arg: str) -> str
     net.close_listener(@l).must()
     return seen.join(SEPARATOR)
 
+# A SOCKS proxy's stand-in: `start_steps` starts `steps` on a thread, which
+# gives back every chunk it read as hex, parted by `SEPARATOR`.
+function start_steps(steps: [str]) -> Started
+    return started(body: serve_steps, text: steps.join(SEPARATOR))
+
+# Accepts one connection and takes the steps of its script in order: `r<n>`
+# reads exactly n bytes, `w<hex>` writes those bytes, and `t` takes whatever
+# the client sends next in one read of at most 4,096 bytes. Gives back each read as hex, parted by `SEPARATOR`, and
+# `EXC <code>` where a step fails or 5 s pass without the client.
+function serve_steps(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = syntax.decimal(s: parts[0], what: "the control port").must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(control: control, port: l.address.port)
+    net.set_accept_deadline(l, deadline_ms: 10_000).must()
+    seen: [str] @= []
+
+    match net.accept(l, deadline_ms: 10_000)
+        .err e => seen @ seen.push("EXC " + e.code)
+        .ok c =>
+            held @= c.stream
+            net.set_deadline(held, deadline_ms: 5_000).must()
+            at: i64 @= 1
+
+            while at < parts.len()
+                step = parts[at]
+                at @ at + 1
+                kind = step.slice(from: 0, to: 1)
+                rest = step.slice(from: 1, to: step.len())
+
+                if kind == "r"
+                    match io.read_exact(held, n: syntax.decimal(s: rest, what: "a count").must())
+                        .ok b => seen @ seen.push(bytes.format_hex(b))
+                        .err e =>
+                            seen @ seen.push("EXC " + e.code)
+                            break
+                else if kind == "t"
+                    match io.read(held, n: 4_096)
+                        .ok b  => seen @ seen.push(bytes.format_hex(b))
+                        .err e => seen @ seen.push("EXC " + e.code)
+                else
+                    match io.write(held, data: bytes.parse_hex(rest).must())
+                        .ok _ => _ = 0
+                        .err e =>
+                            seen @ seen.push("EXC " + e.code)
+                            break
+
+            io.close(@held).must()
+
+    net.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
 # The script `serve_tls` reads: the certificate it presents, `localhost` or
 # `wrong` (one for `wrong.example`), how many connections it accepts, then
 # each response.
