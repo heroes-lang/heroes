@@ -57,6 +57,7 @@
 #include "hero_layer_alloc.h"
 /* The runtime's own number for a thread, the UI owner's on Windows. */
 #include "hero_layer_thread.h"
+#include "hero_poll.h"
 #include "hero_ui_arm.h"
 #include "hero_ui_web.h"
 
@@ -81,6 +82,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <poll.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -89,6 +91,7 @@
 #include "hero_ui_appkit_system.h"
 #else
 #include <dlfcn.h>
+#include <poll.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/syscall.h>
@@ -163,6 +166,7 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 }
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+static void hero_ui_watches_end(void);
 #if defined(__APPLE__)
 static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
 #endif
@@ -1858,6 +1862,7 @@ int64_t hero_ui_close(hero_ui_app *app) {
     if (slot->backend == HERO_UI_NATIVE) {
         hero_ui_arm_dialogs_end(0);
         hero_ui_arm_print_end(0);
+        hero_ui_watches_end();
         hero_ui_arm_instance_end();
         hero_ui_identity_count = 0;
         hero_ui_identity[0] = '\0';
@@ -2139,9 +2144,212 @@ int64_t hero_ui_selection(hero_ui_app *app, int64_t id, int64_t *indices, uint64
     return chosen;
 }
 
+/* -- THE SETS AND MAILBOXES AN APP'S WAIT WATCHES --------------------------- */
+
+#define HERO_UI_WATCH_MOST 256
+#define HERO_UI_WATCH_SET 1
+#define HERO_UI_WATCH_MAILBOX 2
+#define HERO_UI_WATCH_OWN 3
+/* The number the app's own set is watched as, which no program is given. */
+#define HERO_UI_WATCH_OWN_ID INT64_MAX
+
+/* One entry the wait watches: a program's set, a mailbox (an entry `key` of
+ * the app's own set), or the app's own set itself. `queued` is whether its
+ * `HERO_UI_EVENT_READY` waits in the queue, so it is queued once. */
+typedef struct hero_ui_watch {
+    int64_t id;
+    int64_t what;
+    hero_poll_set *set;
+    int64_t fd;
+    int64_t key;
+    bool queued;
+} hero_ui_watch;
+
+static _Thread_local hero_ui_watch hero_ui_watches[HERO_UI_WATCH_MOST];
+static _Thread_local int64_t hero_ui_watch_last;
+/* The app's own set, which the mailboxes stand in; NULL until the first. */
+static _Thread_local hero_poll_set *hero_ui_own_set;
+
+static hero_ui_watch *hero_ui_watch_find(int64_t id) {
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        if (hero_ui_watches[at].what != 0 && hero_ui_watches[at].id == id) {
+            return &hero_ui_watches[at];
+        }
+    }
+    return NULL;
+}
+
+static hero_ui_watch *hero_ui_watch_vacant(void) {
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        if (hero_ui_watches[at].what == 0) {
+            return &hero_ui_watches[at];
+        }
+    }
+    return NULL;
+}
+
+/* Whether any entry stands on a descriptor, which is where a wait has
+ * anything to arm. */
+static bool hero_ui_watching(void) {
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        if (hero_ui_watches[at].what == HERO_UI_WATCH_SET || hero_ui_watches[at].what == HERO_UI_WATCH_OWN) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Whether the set of `watch` is open still: a program that closed its set
+ * without taking it away is told nothing more for it. */
+static bool hero_ui_watch_open(const hero_ui_watch *watch) {
+    return hero_poll_count(watch->set) >= 0;
+}
+
+/* Whether descriptor `fd` is readable now. A run loop's source for it needs a
+ * pass of the loop to tell, which a wait of 0 does not give, so the wait asks
+ * first and tells an entry that is ready at once. Windows has no such
+ * descriptor to ask (`hero_poll_descriptor` refuses first). */
+static bool hero_ui_fd_readable(int64_t fd) {
+#if defined(_WIN32)
+    (void)fd;
+    return false;
+#else
+    struct pollfd asked;
+
+    asked.fd = (int)fd;
+    asked.events = POLLIN;
+    asked.revents = 0;
+    return poll(&asked, 1, 0) > 0 && (asked.revents & POLLIN) != 0;
+#endif
+}
+
+/* `watch` taken away: its descriptor let go and its place free, the mailboxes
+ * standing in the app's own set not touched. */
+static void hero_ui_watch_drop(hero_ui_watch *watch) {
+    if (watch->what == HERO_UI_WATCH_SET || watch->what == HERO_UI_WATCH_OWN) {
+        hero_ui_arm_unwatch_fd(watch->id);
+    }
+    memset(watch, 0, sizeof *watch);
+}
+
+/* Queues `watch`'s event unless it waits in the queue already; whether it
+ * queued one. A full queue loses the event, which leaves the entry free to
+ * be told again. */
+static bool hero_ui_watch_ready(hero_ui_watch *watch) {
+    hero_ui_slot *slot;
+    int64_t lost;
+
+    if (watch->queued || hero_ui_native_slot == 0) {
+        return false;
+    }
+    slot = &hero_ui_slots[hero_ui_native_slot - 1];
+    lost = slot->lost;
+    hero_ui_push(HERO_UI_EVENT_READY, watch->id, 0, 0, NULL, 0);
+    if (slot->lost != lost) {
+        return false;
+    }
+    watch->queued = true;
+    return true;
+}
+
+/* What the app's own set says is ready, turned into the mailboxes' events. */
+static bool hero_ui_watch_drain(void) {
+    int64_t events[3 * HERO_UI_WATCH_MOST];
+    int64_t told;
+    bool queued = false;
+
+    told = hero_poll_wait(hero_ui_own_set, 0, events, (uint64_t)(sizeof events / sizeof events[0]));
+    for (int64_t at = 0; at < told; at += 1) {
+        for (size_t each = 0; each < HERO_UI_WATCH_MOST; each += 1) {
+            hero_ui_watch *watch = &hero_ui_watches[each];
+
+            if (watch->what == HERO_UI_WATCH_MAILBOX && watch->key == events[3 * at]) {
+                queued = hero_ui_watch_ready(watch) || queued;
+            }
+        }
+    }
+    return queued;
+}
+
+bool hero_ui_watch_told(int64_t id) {
+    hero_ui_watch *watch = hero_ui_watch_find(id);
+
+    if (watch == NULL || (watch->what != HERO_UI_WATCH_SET && watch->what != HERO_UI_WATCH_OWN)) {
+        return false;
+    }
+    if (!hero_ui_watch_open(watch)) {
+        hero_ui_watch_drop(watch);
+        return false;
+    }
+    return watch->what == HERO_UI_WATCH_OWN ? hero_ui_watch_drain() : hero_ui_watch_ready(watch);
+}
+
+/* Before a wait pumps: every descriptor armed again, each timer due told,
+ * and `*ms` cut short to the first timer that falls due within it. 0, or the
+ * kind the arm refused with. */
+static int64_t hero_ui_watch_arm(int64_t *ms) {
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        hero_ui_watch *watch = &hero_ui_watches[at];
+        int64_t kind;
+        int64_t due;
+
+        if (watch->what != HERO_UI_WATCH_SET && watch->what != HERO_UI_WATCH_OWN) {
+            continue;
+        }
+        if (!hero_ui_watch_open(watch)) {
+            hero_ui_watch_drop(watch);
+            continue;
+        }
+        kind = hero_ui_arm_watch_fd(watch->fd, watch->id);
+        if (kind != HERO_UI_OK) {
+            return kind;
+        }
+        if (hero_ui_fd_readable(watch->fd)) {
+            (void)hero_ui_watch_told(watch->id);
+        }
+        if (watch->what == HERO_UI_WATCH_SET) {
+            due = hero_poll_next_due(watch->set);
+            if (due == 0) {
+                (void)hero_ui_watch_ready(watch);
+            } else if (due > 0) {
+                int64_t bound = due / 1000000 + (due % 1000000 != 0 ? 1 : 0);
+
+                if (bound < *ms) {
+                    *ms = bound;
+                }
+            }
+        }
+    }
+    return HERO_UI_OK;
+}
+
+/* After a wait pumped: each timer that fell due in it told. */
+static void hero_ui_watch_after(void) {
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        hero_ui_watch *watch = &hero_ui_watches[at];
+
+        if (watch->what == HERO_UI_WATCH_SET && hero_poll_next_due(watch->set) == 0) {
+            (void)hero_ui_watch_ready(watch);
+        }
+    }
+}
+
+/* The app's wait taking every entry away, the app closing: the descriptors
+ * let go, the app's own set closed, the program's sets left open. */
+static void hero_ui_watches_end(void) {
+    hero_ui_arm_unwatch_fd(0);
+    if (hero_ui_own_set != NULL) {
+        (void)hero_poll_close(hero_ui_own_set);
+        hero_ui_own_set = NULL;
+    }
+    memset(hero_ui_watches, 0, sizeof hero_ui_watches);
+    hero_ui_watch_last = 0;
+}
+
 int64_t hero_ui_wait(hero_ui_app *app, int64_t ms) {
     hero_ui_slot *slot = hero_ui_enter(app);
     int64_t kind;
+    bool watching;
 
     if (slot == NULL) {
         return -1;
@@ -2152,12 +2360,27 @@ int64_t hero_ui_wait(hero_ui_app *app, int64_t ms) {
     if (slot->held > 0 || slot->backend != HERO_UI_NATIVE) {
         return slot->held > 0 ? 1 : 0;
     }
+    /* The sets and mailboxes the app watches are armed again at each wait, so
+     * an entry that stays ready is told once to each and never in a spin. */
+    watching = hero_ui_watching();
+    if (watching) {
+        kind = hero_ui_watch_arm(&ms);
+        if (kind != HERO_UI_OK) {
+            return hero_ui_answered(kind, "watching the sets and mailboxes of the app's wait", 0);
+        }
+        if (slot->held > 0) {
+            return 1;
+        }
+    }
     /* While a window is modal its session runs in place of the system's
      * loop, so the app's other windows take no input (WINDOWS ON THE
      * SCREEN, below). */
     kind = hero_ui_arm_modal_here() ? hero_ui_arm_modal_pump(ms) : hero_ui_arm_pump(ms);
     if (kind != HERO_UI_OK) {
         return hero_ui_answered(kind, "running the system's loop", 0);
+    }
+    if (watching && slot->held == 0) {
+        hero_ui_watch_after();
     }
     return slot->held > 0 ? 1 : 0;
 }
@@ -2189,6 +2412,13 @@ int64_t hero_ui_next(hero_ui_app *app, int64_t *kind, int64_t *id, int64_t *valu
     oldest->text_count = 0;
     slot->head = (slot->head + 1) % (int64_t)HERO_UI_QUEUE_MOST;
     slot->held -= 1;
+    if (*kind == HERO_UI_EVENT_READY) {
+        hero_ui_watch *watch = hero_ui_watch_find(*id);
+
+        if (watch != NULL) {
+            watch->queued = false;
+        }
+    }
     return 1;
 }
 
@@ -3013,6 +3243,221 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
         return -1;
     }
     *focus = found;
+    return 0;
+}
+
+/* -- A SET AND A MAILBOX IN THE APP'S WAIT: THE CALLS ----------------------- */
+
+#if defined(__APPLE__)
+
+/* What the main run loop tells a watched descriptor readable by: the watch's
+ * number, and the wake of the loop `pump` runs where an event was queued. */
+static void hero_ui_ready_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
+    (void)kind;
+    (void)value;
+    (void)second;
+    (void)text;
+    (void)count;
+    if (hero_ui_watch_told(id)) {
+        hero_ui_appkit_wake();
+    }
+}
+
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
+    return hero_ui_appkit_watch_fd(fd, id, hero_ui_ready_told);
+}
+
+void hero_ui_arm_unwatch_fd(int64_t id) {
+    hero_ui_appkit_unwatch_fd(id);
+}
+
+#elif defined(_WIN32)
+
+/* No descriptor a Win32 wait can watch exists: a set there is a `WSAPoll`
+ * over an array, and `hero_poll_descriptor` refuses first. */
+
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
+    (void)fd;
+    (void)id;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer has the wait watch a set's descriptor on macOS and GTK 4 so far, and the Win32 arm has no such call");
+}
+
+void hero_ui_arm_unwatch_fd(int64_t id) {
+    (void)id;
+}
+
+#else
+
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
+    (void)fd;
+    (void)id;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer has the wait watch a set's descriptor on macOS and GTK 4 so far, and the GTK 4 arm has no such call yet");
+}
+
+void hero_ui_arm_unwatch_fd(int64_t id) {
+    (void)id;
+}
+
+#endif
+
+/* -1 with the failure of the poll layer's last call, `what` the call, told
+ * in the kinds of this layer. */
+static int64_t hero_ui_poll_refused(const char *what) {
+    char words[HERO_UI_WORDS_MOST];
+    int64_t answer = hero_poll_last_error();
+
+    if (answer == HERO_POLL_UNSUPPORTED) {
+        (void)snprintf(words, sizeof words, "%s: this system's poll set holds no descriptor for a loop to wait on (a Windows set, and a POSIX system that waits with `poll`, wait in their own call)", what);
+        return hero_ui_said(HERO_UI_UNSUPPORTED, words);
+    }
+    if (answer == HERO_POLL_NOT_OPEN || answer == HERO_POLL_INVALID) {
+        (void)snprintf(words, sizeof words, "%s: the set is closed, no mailbox has that number, or another thread waits on the set", what);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (answer == HERO_POLL_LIMIT) {
+        (void)snprintf(words, sizeof words, "%s: the process holds the most sets or entries it can", what);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    (void)snprintf(words, sizeof words, "%s: the system gave the set no descriptor or doorbell", what);
+    return hero_ui_said(HERO_UI_OTHER, words);
+}
+
+/* The entry `watch` stands for, on descriptor `fd` of `set`, number `id`, and
+ * armed: 0, or -1 with the arm's refusal said and the entry free again. */
+static int64_t hero_ui_watch_start(hero_ui_watch *watch, int64_t what, hero_poll_set *set, int64_t fd, int64_t id, int64_t key) {
+    int64_t kind = HERO_UI_OK;
+
+    if (what != HERO_UI_WATCH_MAILBOX) {
+        kind = hero_ui_arm_watch_fd(fd, id);
+    }
+    if (kind != HERO_UI_OK) {
+        return hero_ui_answered(kind, "watching a descriptor in the app's wait", id);
+    }
+    watch->id = id;
+    watch->what = what;
+    watch->set = set;
+    watch->fd = fd;
+    watch->key = key;
+    watch->queued = false;
+    return 0;
+}
+
+int64_t hero_ui_add_set(hero_ui_app *app, hero_poll_set *set) {
+    hero_ui_watch *watch;
+    char words[HERO_UI_WORDS_MOST];
+    int64_t fd;
+    int64_t id;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (set == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no set was given to watch");
+    }
+    for (size_t at = 0; at < HERO_UI_WATCH_MOST; at += 1) {
+        if (hero_ui_watches[at].what == HERO_UI_WATCH_SET && hero_ui_watches[at].set == set) {
+            (void)snprintf(words, sizeof words, "watching a set: the app watches it already, as %lld", (long long)hero_ui_watches[at].id);
+            return hero_ui_said(HERO_UI_INVALID, words);
+        }
+    }
+    watch = hero_ui_watch_vacant();
+    if (watch == NULL || hero_ui_watch_last >= INT64_MAX - 1) {
+        (void)snprintf(words, sizeof words, "watching a set: the app watches %d entries already", HERO_UI_WATCH_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    fd = hero_poll_descriptor(set);
+    if (fd < 0) {
+        return hero_ui_poll_refused("watching a set");
+    }
+    id = hero_ui_watch_last + 1;
+    if (hero_ui_watch_start(watch, HERO_UI_WATCH_SET, set, fd, id, 0) != 0) {
+        return -1;
+    }
+    hero_ui_watch_last = id;
+    hero_ui_fine();
+    return id;
+}
+
+int64_t hero_ui_add_mailbox(hero_ui_app *app, int64_t number) {
+    hero_ui_watch *watch;
+    hero_ui_watch *own = NULL;
+    char words[HERO_UI_WORDS_MOST];
+    int64_t key;
+    int64_t id;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    watch = hero_ui_watch_vacant();
+    if (watch == NULL || hero_ui_watch_last >= INT64_MAX - 1) {
+        (void)snprintf(words, sizeof words, "watching a mailbox: the app watches %d entries already", HERO_UI_WATCH_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (hero_ui_own_set == NULL) {
+        int64_t fd;
+        hero_ui_watch *held;
+
+        hero_ui_own_set = hero_poll_make(HERO_UI_WATCH_MOST);
+        if (hero_ui_own_set == NULL) {
+            return hero_ui_poll_refused("watching a mailbox");
+        }
+        fd = hero_poll_descriptor(hero_ui_own_set);
+        if (fd < 0) {
+            int64_t refused = hero_ui_poll_refused("watching a mailbox");
+
+            (void)hero_poll_close(hero_ui_own_set);
+            hero_ui_own_set = NULL;
+            return refused;
+        }
+        held = watch;
+        if (hero_ui_watch_start(held, HERO_UI_WATCH_OWN, hero_ui_own_set, fd, HERO_UI_WATCH_OWN_ID, 0) != 0) {
+            (void)hero_poll_close(hero_ui_own_set);
+            hero_ui_own_set = NULL;
+            return -1;
+        }
+        own = held;
+        watch = hero_ui_watch_vacant();
+        if (watch == NULL) {
+            hero_ui_watch_drop(own);
+            (void)hero_poll_close(hero_ui_own_set);
+            hero_ui_own_set = NULL;
+            (void)snprintf(words, sizeof words, "watching a mailbox: the app watches %d entries already", HERO_UI_WATCH_MOST);
+            return hero_ui_said(HERO_UI_LIMIT, words);
+        }
+    }
+    key = hero_poll_add_mailbox(hero_ui_own_set, number);
+    if (key < 0) {
+        return hero_ui_poll_refused("watching a mailbox");
+    }
+    id = hero_ui_watch_last + 1;
+    if (hero_ui_watch_start(watch, HERO_UI_WATCH_MAILBOX, hero_ui_own_set, 0, id, key) != 0) {
+        return -1;
+    }
+    hero_ui_watch_last = id;
+    /* A mailbox that holds a value already is ready now, and nothing rings the
+     * set's descriptor for a value sent before the entry stood in the set. */
+    (void)hero_ui_watch_drain();
+    hero_ui_fine();
+    return id;
+}
+
+int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id) {
+    hero_ui_watch *watch;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    watch = hero_ui_watch_find(id);
+    if (watch == NULL || watch->what == HERO_UI_WATCH_OWN) {
+        (void)snprintf(words, sizeof words, "taking a set or a mailbox away: the app watches none as %lld", (long long)id);
+        return hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    if (watch->what == HERO_UI_WATCH_MAILBOX) {
+        (void)hero_poll_remove(hero_ui_own_set, watch->key);
+    }
+    hero_ui_watch_drop(watch);
+    hero_ui_fine();
     return 0;
 }
 

@@ -36,8 +36,10 @@
 # runs on, and `open` from another thread fails `unsupported`. An `App` is a
 # value no thread can be handed (a thread takes an `i64` or a `str`), so
 # every call on it is on that thread. Another thread's work reaches the user
-# interface through what the program shares with it, read when a `timer`
-# fires; the mailbox of feature 2647 will be the way once it lands.
+# interface as a value sent to a mailbox the app waits on (`add_mailbox`),
+# which ends `wait` as `.ready` at once; a program that waits on sockets,
+# streams and timers beside its windows makes `wait` watch their `poll.Set`
+# (`add_set`).
 #
 # **The layout is computed here, the same on every platform**, in the
 # manner of wxWidgets' sizers: a window lays its children out in a column,
@@ -82,6 +84,7 @@
 
 use bytes
 use image
+use poll
 use printing
 use time
 use ui/hero_ui
@@ -100,6 +103,7 @@ use ui/internal/menus
 use ui/internal/model
 use ui/internal/render as drawing
 use ui/internal/session
+use ui/internal/sources
 use ui/internal/state
 use ui/internal/tables
 use ui/internal/trees
@@ -2061,6 +2065,16 @@ variant Event
         dialog: Dialog
         # What they chose.
         choice: Choice
+    # A set or a mailbox the app's wait watches (`add_set`, `add_mailbox`) is
+    # ready: the program then asks `poll.wait(set, limit: 0)` or
+    # `m.receive(within_ms: 0)` what is. Told once to each wait: where the
+    # entry stays ready it is told again at the next wait, never twice within
+    # one, and never while an earlier one is not taken. A set is told once as
+    # it is added, whether it holds anything ready or not, so the program asks
+    # and takes what it finds, which may be nothing.
+    ready
+        # The number `add_set` or `add_mailbox` answered.
+        key: i64
     # The person chose in a print or a page-setup dialog, or cancelled it;
     # or a web view's page was printed (`webview.print_page`), or was not.
     print_chosen
@@ -2109,8 +2123,9 @@ variant Event
 # timers come in the order they happened.
 #
 # - `app`: the app waited on.
-# - `within`: the most time to wait, 0 to answer only what is ready; a
-#   headless app's clock moves by it, a native app waits it.
+# - `within`: the most time to wait, 0 to answer only what is ready (a
+#   native app's system is asked once, without waiting); a headless app's
+#   clock moves by it, a native app waits it.
 #
 # Fails `timeout` where nothing came in `within`; `closed` where `app` is,
 # or where a headless app's injected inputs are spent and no timer runs, so
@@ -2540,6 +2555,48 @@ function print_dialog(@app: App, over: Widget, settings: printing.Settings) -> D
 function page_dialog(@app: App, over: Widget, settings: printing.Settings) -> Dialog?
     return dialogs.printed(@app, over: over, settings: settings, page: true)
 
+# Makes the app's wait watch `set`, so that `wait` ends with `.ready` naming
+# the answer where an entry of the set is ready (a socket readable, a stream
+# at its end, a timer due, a mailbox that holds a value), whichever thread
+# or timer made it so. The set stays the program's: `remove_source` or
+# `close` lets it go, and a set the program closes first is dropped at the
+# next wait. The program takes what is ready with `poll.wait(set, limit: 0)`,
+# which the app never does for it. Native apps only.
+#
+# - `app`: the app.
+# - `set`: the set, open, and waited on by no other thread.
+#
+# Fails `closed`; `invalid` for a set closed, watched already or waited on
+# by another thread; `unsupported` on a headless app and where the system's
+# sets hold no descriptor a loop can wait on (Windows, and the POSIX systems
+# that wait with `poll`), the words saying which; `limit`; `failed`. See also
+# `add_mailbox`.
+function add_set(@app: App, set: poll.Set) -> i64?
+    return sources.watch_set(@app, set: set)
+
+# Makes the app's wait watch the mailbox `m`, so that `wait` ends with
+# `.ready` naming the answer while a receive on it would not wait: a value
+# another thread sent, the mailbox closed or stopped. The program takes the
+# value with `m.receive(within_ms: 0)`; a value left is told again at the
+# next wait. A mailbox watched twice is two entries. Native apps only.
+#
+# - `app`: the app.
+# - `m`: the mailbox.
+#
+# Fails `closed`; `invalid`; `unsupported` as `add_set` does; `limit`;
+# `failed`. See also `add_set`.
+function add_mailbox<T>(@app: App, m: (mailbox T)) -> i64?
+    return sources.watch_mailbox(@app, m: m)
+
+# Takes the set or the mailbox `add_set` or `add_mailbox` answered `key` for
+# out of the app's wait; the set stays the program's and the mailbox keeps
+# its values.
+#
+# Fails `closed`; `invalid` for a key the app does not watch; `unsupported`
+# on a headless app; `failed`.
+function remove_source(@app: App, key: i64) -> ()?
+    return sources.remove(@app, key: key)
+
 # Shows a message box over window `over` whose buttons say the program's
 # own words, as "Save", "Don't Save" and "Cancel" before a document closes,
 # and answers at once with it: the button the person presses comes later
@@ -2815,7 +2872,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

@@ -1,0 +1,162 @@
+# The sets and the mailboxes an app's wait watches (`hero_ui.h`'s A SET AND A
+# MAILBOX IN THE APP'S WAIT): another thread's value, or a socket, a stream
+# or a timer of the program's own, ends `ui.wait` as `.ready` naming the entry.
+# Native apps only: a headless app has no wait on the system, and its person
+# is the program, which asks the set or the mailbox itself.
+
+use poll
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/loop
+
+# The failure of the floor's last call, as a `T?`: a number the app does not
+# watch is the call's `invalid`, not a widget that has ended.
+function refused<T>(asked: str) -> T?
+    if hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+        return fail(code: failure.INVALID, msg: failure.told(asked: asked, said: failure.words()))
+    return failure.last(asked)
+
+# What a headless app answers: it has no wait that a thread's value or a
+# descriptor could end.
+function headless<T>(asked: str) -> T?
+    return fail(
+        code: failure.UNSUPPORTED,
+        msg: f"{asked}: a headless app has no wait on the system, and its person is the program, which asks the set or the mailbox itself"
+    )
+
+# The number `ui.add_set` answers.
+function watch_set(@app: ui.App, set: poll.Set) -> i64?
+    asked = "making the app's wait watch a set"
+    check.opened(app)?
+
+    if !app.native
+        return headless(asked)
+    loop.settle(@app)?
+    key = hero_ui.add_set(app.handle, set: set.handle)
+
+    if key < 0
+        return refused(asked)
+    return ok(key)
+
+# The number `ui.add_mailbox` answers.
+function watch_mailbox<T>(@app: ui.App, m: (mailbox T)) -> i64?
+    asked = "making the app's wait watch a mailbox"
+    check.opened(app)?
+
+    if !app.native
+        return headless(asked)
+    loop.settle(@app)?
+    key = hero_ui.add_mailbox(app.handle, box: m.number())
+
+    if key < 0
+        return refused(asked)
+    return ok(key)
+
+# The entry `ui.remove_source` takes away.
+function remove(@app: ui.App, key: i64) -> ()?
+    asked = "taking a set or a mailbox out of the app's wait"
+    check.opened(app)?
+
+    if !app.native
+        return headless(asked)
+    loop.settle(@app)?
+
+    if hero_ui.remove_source(app.handle, id: key) < 0
+        return refused(asked)
+    return ok()
+
+# What a sender thread of a case is given: the mailbox, and how long it
+# sleeps before it sends.
+record Job
+    m: (mailbox i64)
+    pause_ms: i64
+
+# Sends 7 to the mailbox after the pause.
+function sender(job: Job) -> i64
+    time.sleep(time.milliseconds(job.pause_ms).must())
+    job.m.send(7).must()
+    return 1
+
+test "add_set and add_mailbox: a headless app answers unsupported, saying its person is the program"
+    app @= fixture.test_app()
+    m: (mailbox i64) = mailbox()
+    assert fixture.code_of(ui.add_mailbox(@app, m: m)) == ui.UNSUPPORTED
+    assert fixture.code_of(ui.remove_source(@app, key: 1)) == ui.UNSUPPORTED
+    ui.close(@app).must()
+
+test "add_mailbox and add_set: on the native side a value another thread sends ends the wait as ready naming the mailbox, told again at the next wait while it is not taken and none once it is, a set told for a socket or a timer, and an entry taken away told no more (panel 256's R9)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    _ = ui.window(@app, title: "Sources", width: 300, height: 200).must()
+    m: (mailbox i64) = mailbox()
+    added = ui.add_mailbox(@app, m: m)
+    refusal = fixture.unsupported_words(added)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    key = added.must()
+    sent = spawn(sender, Job(m: m, pause_ms: 300)).must()
+    started = time.mark().must()
+    assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: key)
+    assert time.elapsed(started).must().nanoseconds < 4000000000
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .ready(key: key)
+    assert m.receive(within_ms: 0).must() == 7
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    _ = sent.wait()
+    second = ui.add_mailbox(@app, m: m).must()
+    assert second != key
+    spare: (mailbox i64) = mailbox()
+    spare.send(9).must()
+    third = ui.add_mailbox(@app, m: spare).must()
+    ui.remove_source(@app, key: second).must()
+    assert fixture.code_of(ui.remove_source(@app, key: second)) == ui.INVALID
+    assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: third)
+    assert spare.receive(within_ms: 0).must() == 9
+    ui.remove_source(@app, key: third).must()
+    ui.remove_source(@app, key: key).must()
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    ui.close(@app).must()
+
+test "add_set: on the native side a poll set's timer ends the wait as ready naming the set, the program takes the timer itself, a set watched twice is refused, and a set the program closes is dropped at the next wait (panel 256's R9)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    _ = ui.window(@app, title: "Sources", width: 300, height: 200).must()
+    set @= poll.make(4).must()
+    tick = poll.add_timer(set, first: time.milliseconds(200).must(), every: time.nanoseconds(0)).must()
+    added = ui.add_set(@app, set: set)
+    refusal = fixture.unsupported_words(added)
+
+    if refusal != ""
+        poll.close(@set).must()
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    key = added.must()
+    assert fixture.code_of(ui.add_set(@app, set: set)) == ui.INVALID
+    started = time.mark().must()
+    told @= poll.wait(set, limit: time.nanoseconds(0)).must()
+    turns @= 0
+
+    while told.len() == 0 && turns < 20
+        assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: key)
+        told @ poll.wait(set, limit: time.nanoseconds(0)).must()
+        turns @ turns + 1
+
+    assert time.elapsed(started).must().nanoseconds < 4000000000
+    assert told.len() == 1
+    assert told[0].key == tick
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    poll.close(@set).must()
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    assert fixture.code_of(ui.remove_source(@app, key: key)) == ui.INVALID
+    ui.close(@app).must()

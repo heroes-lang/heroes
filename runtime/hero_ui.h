@@ -1272,6 +1272,14 @@ int64_t hero_ui_claim_instance(hero_ui_app *app, const void *arguments, uint64_t
  * request (on macOS its Apple events), arguments as a later launch of the
  * claimed instance would, through its hand-over. */
 #define HERO_UI_EVENT_OPEN 21
+
+/* A set or a mailbox the app's wait watches (`hero_ui_add_set`,
+ * `hero_ui_add_mailbox`) is ready: `id` is the number those calls answered,
+ * `value` and `second` 0. Told at most once to each wait: where the entry
+ * stays ready it is told again at the next wait, never in a spin within one,
+ * and never while its earlier event waits in the queue. `hero_ui_inject`
+ * does not give it. */
+#define HERO_UI_EVENT_READY 22
 /* Paths of files the system asks the app to open: a double click, Open
  * With, a drop on its Dock icon (on macOS for an app in a bundle that
  * names their types). */
@@ -1329,6 +1337,44 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * nothing; `hero_ui_set_value` with an index sets the text to that item,
  * with -1 it does nothing, and `hero_ui_set_items` keeps the text. */
 #define HERO_UI_EDITABLE_COMBO 34
+
+/* -- A SET AND A MAILBOX IN THE APP'S WAIT -----------------------------------
+ *
+ * Panel 256's R9: another thread's work reaches the user interface as a
+ * value sent to a mailbox the app waits on, and a program that waits on
+ * sockets, streams and timers beside its windows holds them in a poll set
+ * the app waits on. Both are watched through `hero_poll.h`'s
+ * `hero_poll_descriptor`, the descriptor that stays readable while an entry
+ * of the set is ready, which the arm's loop waits on beside the system's
+ * own events; the event is `HERO_UI_EVENT_READY`, and the program then asks
+ * the set (`hero_poll_wait` with a limit of 0) or the mailbox (a receive
+ * within 0) what is ready, which is why the watch tells and never takes.
+ * Native apps only, on the main thread, as every call here. */
+
+typedef struct hero_poll_set hero_poll_set;
+
+/* Has the app's wait watch the poll set `set`, and answers the number its
+ * `HERO_UI_EVENT_READY` names, 1 or more; or -1: `INVALID` for a set closed
+ * already, one watched already or one another thread waits on, `UNSUPPORTED`
+ * where the set holds no descriptor to wait on (a Windows set, and the
+ * POSIX systems that wait with `poll`: the words say so), `LIMIT`, `OTHER`.
+ * The set stays the program's: closing the app lets it go, never closes it,
+ * and a set the program closes first is dropped without a word at the next
+ * wait. Where a timer of the set falls due the same event is told, the wait
+ * having been cut short to the first timer due. */
+int64_t hero_ui_add_set(hero_ui_app *app, hero_poll_set *set);
+
+/* Has the app's wait watch the mailbox `number` names (`m.number()`),
+ * through a set of the app's own, and answers the number its event names,
+ * as `hero_ui_add_set` does; the event is told while a receive on the
+ * mailbox would not wait, because it holds a value, is closed or answers
+ * `stopped`. -1: `INVALID` for a number that names no mailbox, `UNSUPPORTED`
+ * and `LIMIT` as above. A mailbox watched twice is two entries. */
+int64_t hero_ui_add_mailbox(hero_ui_app *app, int64_t number);
+
+/* Takes the set or the mailbox watched as `id` away: 0, or -1: `NOT_FOUND`
+ * for a number the app does not watch, `INVALID`. */
+int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
 
 /* -- A SPIN -------------------------------------------------------------------
  *

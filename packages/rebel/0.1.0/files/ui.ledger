@@ -89,13 +89,13 @@ capability ui/webview  the system's web view as a widget, with a bridge to its s
   wx      wxWebView (RunScriptAsync, AddScriptMessageHandler, RegisterHandler), wxWebViewHandler
   note    the web view, its assets, its policy and its bridge are `ui/webview`'s, a subpackage so only the programs that show a page carry its rules, and `ui/webview.ledger` holds each capability; this package's `ui.Kind.webview`, `ui.Event.message` and `ui.Input.send` are what its app reads and gives of them
 
-capability ui/mailbox  a thread's message to the user interface, through feature 2647's mailbox
-  heroes  pending
+capability ui/mailbox  a thread's message to the user interface, and a poll set the wait watches
+  heroes  ui.add_mailbox, ui.add_set, ui.remove_source, ui.Event.ready
   go      ui.QueueMain
   rust    -
   python  -
   wx      wxThreadEvent, wxEvtHandler (QueueEvent, CallAfter)
-  note    until it lands, a thread's work is read by the program when a `timer` fires
+  note    panel 256's R9: another thread's work reaches the user interface as a value sent to a mailbox the app's wait watches, ending `wait` as `.ready` at once (feature 2647's mailbox, the set's own doorbell: no lock is taken by the send); a program that waits on sockets, streams and timers beside its windows has `wait` watch their `poll.Set` the same way, a timer cutting the wait short; the program then takes what is ready itself (`poll.wait` of 0, `receive` within 0), an entry that stays ready told again at the next wait and never twice within one; macOS by a `CFFileDescriptor` on the set's `kqueue` in the main run loop, GTK 4 by `g_unix_fd_add` on its `epoll`; Windows and the headless side answer `unsupported`, saying why (a Windows set is `WSAPoll` over an array and holds no handle to wait on; a headless app has no wait on the system)
 
 capability ui/window  a window: its title, its size, whether the person may resize it, and its close button asked
   heroes  ui.window, ui.set_text, ui.set_size, ui.set_resizable, ui.rect_of, ui.Event.close_asked

@@ -81,7 +81,7 @@ function drops_of(@app: ui.App) -> [ui.Event]?
             .ok event =>
                 match event
                     .files_dropped _ => out @ out.push(event)
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .appearance_changed _ | .quit_asked _ | .handed _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .handed _ =>
                         _ = 0
             .err e =>
                 if e.code != failure.TIMEOUT

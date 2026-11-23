@@ -53,6 +53,7 @@ function wait(@app: ui.App, within: time.Duration) -> ui.Event?
         return fail(code: failure.INVALID, msg: f"a wait of {within.nanoseconds} nanoseconds; it takes 0 or more")
     deadline = clock.later(at: clock.now(app)?, more: within.nanoseconds)
     settle(@app)?
+    asked @= false
 
     while true
         if app.events.len() > 0
@@ -91,6 +92,14 @@ function wait(@app: ui.App, within: time.Duration) -> ui.Event?
             )
 
         if now >= deadline
+            # A native app's system is asked once more at the deadline, without
+            # waiting, so that a wait of 0 answers what the system holds ready
+            # now (a set or a mailbox still ready) and not only what an earlier
+            # turn of its loop queued.
+            if app.native && !asked
+                asked @ true
+                native.pump(app, ms: 0)?
+                continue
             return fail(code: failure.TIMEOUT, msg: f"nothing happened in {within.nanoseconds} nanoseconds")
         target @= deadline
 
@@ -148,6 +157,11 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         for event in dialogs.read(@app, id: id, value: taken[2])?
             app.events @ app.events.push(event)
 
+        return ok()
+
+    # A set or a mailbox the wait watches is ready: its number is no widget's.
+    if kind == hero_ui.HERO_UI_EVENT_READY
+        app.events @ app.events.push(.ready(key: id))
         return ok()
 
     # The appearance is the app's, of no widget.
@@ -340,6 +354,7 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .dialog_answered _    => 0
         .files_chosen _       => 0
         .print_chosen _       => 0
+        .ready _              => 0
         .appearance_changed _ => 0
         .quit_asked _         => 0
         .files_dropped f      => f.window.id

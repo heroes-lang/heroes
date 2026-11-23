@@ -172,6 +172,24 @@ int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *s
 void hero_ui_arm_print_end(int64_t window);
 int64_t hero_ui_arm_print_words(char *words, int64_t count);
 
+/* THE DESCRIPTORS A WAIT WATCHES (`hero_ui.h`'s `hero_ui_add_set`).
+ * `watch_fd` has the arm's loop wake, and `hero_ui_watch_told(id)` be called
+ * on the main thread, once descriptor `fd` is readable, `id` being the
+ * watch's number (a descriptor the program never closes through the arm, only
+ * waits on for readability); once told it is not watched again until
+ * `watch_fd` is called for it again, which `hero_ui.c` does at each wait, so a
+ * descriptor that stays readable is told once per wait and never in a spin;
+ * called for a number watched already it arms that watch again. `unwatch_fd`
+ * takes watch `id` away, or every watch where it is 0. `hero_ui.c` defines
+ * them on macOS (a `CFFileDescriptor` source of the main run loop); the Win32
+ * and GTK 4 arms define their own (`g_unix_fd_add` on GTK 4, whose callback
+ * calls `hero_ui_watch_told` and returns `G_SOURCE_REMOVE`), `hero_ui.c`
+ * answering `HERO_UI_UNSUPPORTED` for them until they do. `hero_ui_watch_told`
+ * answers whether it queued an event. */
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id);
+void hero_ui_arm_unwatch_fd(int64_t id);
+bool hero_ui_watch_told(int64_t id);
+
 /* THE TRAY (`hero_ui.h`): a tray icon is a kind `hero_ui_arm_makes` and
  * `create` answer, its words and its image `set_text`'s and `set_image`'s;
  * `set_docked` keeps the app in the Dock or out of it. `hero_ui.c` defines

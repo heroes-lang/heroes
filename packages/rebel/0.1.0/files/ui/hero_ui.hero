@@ -16,6 +16,8 @@
 # Every text crosses as bytes and a count, so a text holding a zero byte is
 # the layer's `HERO_UI_INVALID` and never an abort at `.cstr()`.
 
+use poll/hero_poll
+
 extern "hero_ui.h"
     # An app open on the layer. It is a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
@@ -215,6 +217,7 @@ extern "hero_ui.h"
     # The app's identity, one instance, and documents from the system.
     constant HERO_UI_IDENTITY_MOST: i64
     constant HERO_UI_EVENT_OPEN: i64
+    constant HERO_UI_EVENT_READY: i64
     constant HERO_UI_OPEN_FILES: i64
     constant HERO_UI_OPEN_URLS: i64
     constant HERO_UI_OPEN_ARGUMENTS: i64
@@ -274,6 +277,9 @@ extern "hero_ui.h"
     function hero_ui_web_allow(app: App, id: i64, @origin: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_web_navigate(app: App, id: i64, @path: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_web_post(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_add_set(app: App, set: hero_poll.Set) -> i64
+    function hero_ui_add_mailbox(app: App, box: i64) -> i64
+    function hero_ui_remove_source(app: App, id: i64) -> i64
     function hero_ui_web_print(app: App, dialog: i64, id: i64, first: i64, @settings: [u8] counted_by count lent, count: u64) -> i64
 
 # 1 where the calling thread is the one an app may open on, the process's
@@ -710,6 +716,29 @@ function web_post(app: App, id: i64, @text: [u8], count: u64) -> i64
 # - `count`: how many of its first bytes.
 function web_print(app: App, dialog: i64, id: i64, first: i64, @settings: [u8], count: u64) -> i64
     return hero_ui_web_print(app, dialog: dialog, id: id, first: first, @settings, count: count)
+
+# The number `HERO_UI_EVENT_READY` names once the wait watches poll set `set`,
+# or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `set`: the set; it stays the program's.
+function add_set(app: App, set: hero_poll.Set) -> i64
+    return hero_ui_add_set(app, set: set)
+
+# The number `HERO_UI_EVENT_READY` names once the wait watches the mailbox
+# `number` names, or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `box`: the number `m.number()` gives.
+function add_mailbox(app: App, box: i64) -> i64
+    return hero_ui_add_mailbox(app, box: box)
+
+# 0 once the set or the mailbox watched as `id` is taken away; or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `id`: the number `add_set` or `add_mailbox` answered.
+function remove_source(app: App, id: i64) -> i64
+    return hero_ui_remove_source(app, id: id)
 
 # The kind of the last call's failure on this thread, `HERO_UI_OK` after a
 # call that did not fail.
