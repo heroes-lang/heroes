@@ -1900,9 +1900,9 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
         return hero_ui_said(HERO_UI_INVALID, words);
     }
 #if defined(_WIN32)
-    /* The kinds after the tray the Win32 arm makes not yet: refused by name
-     * here, before its `makes` that knows them not. */
-    if (kind > HERO_UI_TRAY) {
+    /* The kinds after the separator the Win32 arm makes not yet: refused by
+     * name here, before its `makes` that knows them not. */
+    if (kind > HERO_UI_SEPARATOR) {
         return hero_ui_elsewhere(hero_ui_making(kind));
     }
 #endif
@@ -4008,6 +4008,7 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
  * instance, documents from the system and a tip over a widget: the Win32
  * arm's refusals; the GTK 4 arm draws them. */
 
+#if !defined(_WIN32)
 int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
     (void)id;
     (void)which;
@@ -4083,6 +4084,7 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
     (void)length;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's tip on macOS alone, and this system's arm has no such call");
 }
+#endif
 
 #endif
 
