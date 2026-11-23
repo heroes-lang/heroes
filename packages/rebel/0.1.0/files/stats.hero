@@ -10,9 +10,11 @@
 # `does_not_fit` where Python raises or answers an infinity, and a nan in data
 # that must be ordered fails `invalid` where Python answers what its sort left.
 #
-# A percentile is a point of `quantiles` with `parts` of 100. It does not
-# draw random samples, which is `random`'s, nor hold a normal distribution;
-# nor count values into the bins of a histogram, which a program chooses, nor
+# A percentile is a point of `quantiles` with `parts` of 100. A `Normal` holds a
+# mean and a deviation, with its density, cumulative probability, quantiles,
+# overlap with another and the arithmetic on two, to a ten-trillionth of
+# Python's `NormalDist`. The package does not draw random samples, which is
+# `random`'s, nor count values into the bins of a histogram, which a program chooses, nor
 # keep a mean as values arrive one at a time: such a mean is a sum and a
 # count the program holds, and `mean` answers for the values it kept.
 #
@@ -20,10 +22,11 @@
 # a nan to order, lists of different lengths), and `does_not_fit`.
 #
 # Not written yet, each a `pending` block of its ledger: the harmonic mean with
-# a weight for each value; a normal distribution: its density, cumulative
-# probability, inverse, overlap, z-score, samples, and arithmetic on two.
+# a weight for each value; numbers drawn at random from a normal distribution.
 
+use math
 use stats/internal/exact
+use stats/internal/gauss
 use stats/internal/order
 use stats/internal/pairs
 
@@ -305,6 +308,140 @@ function proportional_regression(x: [f64], y: [f64]) -> Line?
     fit = pairs.proportional_regression(x: x, y: y)?
     return ok(Line(slope: fit.slope, intercept: fit.intercept))
 
+## A normal distribution
+
+# A normal distribution: the bell curve of a mean and a deviation. It is a
+# value, built by `normal` or fitted to data by `normal_of`; two are equal where
+# their fields are.
+record Normal
+    # The centre of the curve, which is also its median and its mode.
+    mean: f64
+    # The standard deviation, the width of the curve: 0 or more, and 0 is a point.
+    sigma: f64
+
+# The normal distribution of a mean and a deviation.
+#
+# - `center`: the mean, the middle of the curve.
+# - `sigma`: the standard deviation, 0 or more.
+#
+# Fails `invalid` where `sigma` is below 0 or a nan.
+function normal(center: f64, sigma: f64) -> Normal?
+    if math.is_nan(sigma) || sigma < 0.0
+        return fail(code: INVALID, msg: f"the deviation {sigma} is not 0 or more")
+    return ok(Normal(mean: center, sigma: sigma))
+
+# The normal distribution fitted to data: its mean and its sample standard
+# deviation, as Python's `NormalDist.from_samples` fits it.
+#
+# - `data`: at least two values.
+#
+# Fails as `fast_mean` and `standard_deviation` do, `invalid` for fewer than two values.
+function normal_of(data: [f64]) -> Normal?
+    return ok(Normal(mean: fast_mean(data)?, sigma: standard_deviation(data)?))
+
+# The height of the bell curve at `x`: how likely a value is near it.
+#
+# - `dist`: the distribution.
+# - `x`: the point.
+#
+# Fails `invalid` where `dist.sigma` is 0. See also `normal_cumulative`.
+function normal_density(dist: Normal, x: f64) -> f64?
+    return gauss.density(dist: dist, x: x)
+
+# The probability of a value of the distribution up to `x`, found through the
+# complementary error function, so that a tail keeps its digits.
+#
+# - `dist`: the distribution.
+# - `x`: the point.
+#
+# Fails `invalid` where `dist.sigma` is 0. See also `normal_quantile`.
+function normal_cumulative(dist: Normal, x: f64) -> f64?
+    return gauss.cumulative(dist: dist, x: x)
+
+# The point a value of the distribution falls below with probability `p`, the
+# inverse of `normal_cumulative`, found to the last float.
+#
+# - `dist`: the distribution.
+# - `p`: the probability, above 0 and below 1.
+#
+# Fails `invalid` where `p` is not above 0 and below 1. See also `normal_quantiles`.
+function normal_quantile(dist: Normal, p: f64) -> f64?
+    return gauss.quantile(dist: dist, p: p)
+
+# The cut points that divide the distribution into `parts` of equal
+# probability: `parts - 1` of them, in order.
+#
+# - `dist`: the distribution.
+# - `parts`: how many parts, 1 or more; 4 gives the quartiles.
+#
+# Fails `invalid` where `parts` is below 1. See also `normal_quantile`.
+function normal_quantiles(dist: Normal, parts: i64) -> [f64]?
+    if parts < 1
+        return fail(code: INVALID, msg: f"{parts} parts: at least one")
+    cuts: [f64] @= []
+
+    for k in range(from: 1, to: parts)
+        cuts @ cuts.push(gauss.quantile(dist: dist, p: to_f64(k) / to_f64(parts))?)
+
+    return ok(cuts)
+
+# How many deviations from the mean `x` is.
+#
+# - `dist`: the distribution.
+# - `x`: the point.
+#
+# Fails `invalid` where `dist.sigma` is 0.
+function normal_z_score(dist: Normal, x: f64) -> f64?
+    if dist.sigma == 0.0
+        return fail(code: INVALID, msg: "the z-score is not defined where the deviation is zero")
+    return ok((x - dist.mean) / dist.sigma)
+
+# The overlap of two distributions: the area under both curves, 1 where they are
+# the same and near 0 where they are far apart.
+#
+# - `a`: one distribution.
+# - `b`: the other.
+#
+# Fails `invalid` where either `sigma` is 0.
+function normal_overlap(a: Normal, b: Normal) -> f64?
+    return gauss.overlap(a: a, b: b)
+
+# The distribution of the variance, the square of the deviation.
+#
+# - `dist`: the distribution.
+function normal_variance(dist: Normal) -> f64
+    return dist.sigma * dist.sigma
+
+# The distribution of the sum of two independent values: the means add and the
+# deviations add as the sides of a right triangle.
+#
+# - `a`: one distribution.
+# - `b`: the other.
+function normal_sum(a: Normal, b: Normal) -> Normal
+    return Normal(mean: a.mean + b.mean, sigma: math.hypot(x: a.sigma, y: b.sigma))
+
+# The distribution of the difference of two independent values: the means
+# subtract and the deviations add as the sides of a right triangle.
+#
+# - `a`: the distribution of the first value.
+# - `b`: the distribution of the second.
+function normal_difference(a: Normal, b: Normal) -> Normal
+    return Normal(mean: a.mean - b.mean, sigma: math.hypot(x: a.sigma, y: b.sigma))
+
+# The distribution of the values of `dist` with `by` added to each.
+#
+# - `dist`: the distribution.
+# - `by`: the number added, negative to subtract.
+function normal_shift(dist: Normal, by: f64) -> Normal
+    return Normal(mean: dist.mean + by, sigma: dist.sigma)
+
+# The distribution of the values of `dist` each multiplied by `by`.
+#
+# - `dist`: the distribution.
+# - `by`: the factor, negative to flip the curve; dividing is multiplying by the inverse.
+function normal_scale(dist: Normal, by: f64) -> Normal
+    return Normal(mean: dist.mean * by, sigma: dist.sigma * math.abs(by))
+
 ## Examples
 
 # The mean of a week's temperatures.
@@ -395,3 +532,68 @@ test "linear_regression: a line through three points"
 # The line through the origin.
 test "proportional_regression: a price per unit"
     assert proportional_regression(x: [1.0, 2.0, 4.0], y: [2.5, 5.0, 10.0]).must().slope == 2.5
+
+# Heights of adults, a mean of 170 and a deviation of 10.
+test "normal: a curve with a mean and a deviation"
+    heights = normal(center: 170.0, sigma: 10.0).must()
+    assert heights.mean == 170.0 && heights.sigma == 10.0
+
+    match normal(center: 170.0, sigma: -1.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# The curve fitted to five readings: Python's `NormalDist.from_samples` answers 5.6 and 2.9717419134238425.
+test "normal_of: five readings"
+    fitted = normal_of([2.5, 3.25, 5.0, 7.75, 9.5]).must()
+    assert fitted.mean == 5.6 && fitted.sigma == 2.9717419134238425
+
+# How likely a value at the mean is, of the standard curve.
+test "normal_density: the top of the standard curve"
+    assert normal_density(dist: normal(center: 0.0, sigma: 1.0).must(), x: 0.0).must() == 0.3989422804014327
+
+# The share of a population below a value: half below the mean.
+test "normal_cumulative: half below the mean"
+    assert normal_cumulative(dist: normal(center: 170.0, sigma: 10.0).must(), x: 170.0).must() == 0.5
+
+# The height that 97.5 of a hundred stay below.
+test "normal_quantile: the 97.5th percentile"
+    top = normal_quantile(dist: normal(center: 10.0, sigma: 2.5).must(), p: 0.975).must()
+    assert top > 14.89990996135 && top < 14.89990996136
+
+# The quartiles: the first and the third a little over half a deviation from the median.
+test "normal_quantiles: the quartiles"
+    cuts = normal_quantiles(dist: normal(center: 10.0, sigma: 2.5).must(), parts: 4).must()
+    assert cuts.len() == 3 && cuts[1] == 10.0 && cuts[0] > 8.3137756245 && cuts[0] < 8.3137756246 && cuts[2] > 11.6862243754 && cuts[2] < 11.6862243755
+
+# Two deviations above the mean.
+test "normal_z_score: a value two deviations up"
+    assert normal_z_score(dist: normal(center: 170.0, sigma: 10.0).must(), x: 190.0).must() == 2.0
+
+# Two curves the same: all of their area is shared.
+test "normal_overlap: the same curve twice"
+    same = normal(center: 0.0, sigma: 1.0).must()
+    assert normal_overlap(a: same, b: same).must() == 1.0
+
+# The square of the deviation.
+test "normal_variance: a deviation of three"
+    assert normal_variance(normal(center: 0.0, sigma: 3.0).must()) == 9.0
+
+# Two independent values added: the deviations 3 and 4 make 5.
+test "normal_sum: a deviation of three and one of four"
+    total = normal_sum(a: normal(center: 10.0, sigma: 3.0).must(), b: normal(center: 5.0, sigma: 4.0).must())
+    assert total.mean == 15.0 && total.sigma == 5.0
+
+# Two independent values subtracted: the deviations still make 5.
+test "normal_difference: a deviation of three and one of four"
+    gap = normal_difference(a: normal(center: 10.0, sigma: 3.0).must(), b: normal(center: 5.0, sigma: 4.0).must())
+    assert gap.mean == 5.0 && gap.sigma == 5.0
+
+# Every value two higher.
+test "normal_shift: two added"
+    assert normal_shift(dist: normal(center: 10.0, sigma: 3.0).must(), by: 2.0) == Normal(mean: 12.0, sigma: 3.0)
+
+# Every value times three, and flipped.
+test "normal_scale: times three, and times minus two"
+    base = normal(center: 10.0, sigma: 3.0).must()
+    assert normal_scale(dist: base, by: 3.0) == Normal(mean: 30.0, sigma: 9.0)
+    assert normal_scale(dist: base, by: -2.0) == Normal(mean: -20.0, sigma: 6.0)
