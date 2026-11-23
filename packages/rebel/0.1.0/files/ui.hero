@@ -73,14 +73,9 @@
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: a thread's message to
-# the user interface, through feature 2647's mailbox; a box drawn with a title
-# and a frame around it; a combo box the person may type into; a number
-# typed, or stepped up and down; a line between the widgets of a box; an area
-# the program draws into, with its keys and its mouse; a tip shown over a
-# widget; a date, a colour or a font chosen in the system's own picker; an
-# icon in the system's tray or menu bar, and its notifications; a file
-# dragged onto a window.
+# Not written yet, each a `pending` block of its ledger: an area the program
+# draws into, with its keys and its mouse; a date, a colour or a font chosen
+# in the system's own picker.
 
 use bytes
 use image

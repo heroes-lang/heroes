@@ -24,7 +24,8 @@
 # message names which.
 #
 # Not written yet, each a `pending` block of its ledger: the least-squares
-# solution of a system whose columns are not independent, of least length.
+# solution of least length where the columns are not independent or are more
+# than the rows.
 
 use big
 use math

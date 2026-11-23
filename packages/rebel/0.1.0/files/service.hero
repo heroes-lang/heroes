@@ -37,8 +37,13 @@
 # It fails with `invalid`, `exists`, `closed`, `timeout`, `stopped`, `limit`,
 # `unsupported` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: a program that hosts
-# several services in one process.
+# Not written yet, each a `pending` block of its ledger: a Windows error
+# number reported as the service's exit code; device arrivals and hardware
+# profile changes told to the program; a power setting's change told with its
+# value; why the system started the service; services installed, started,
+# stopped, queried and removed; Unix-domain sockets, FIFOs and special files
+# handed over; the pidfd check of `$LISTEN_PIDFDID`; the notice variables of
+# bus services and tuning.
 
 use fs
 use net
