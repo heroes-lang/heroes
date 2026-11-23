@@ -16,7 +16,7 @@
 # read `-`.
 #
 # Measured against Python's `mcp` 2.3.0 client on 2026-11-18: the example
-# server `examples-rebel/reach_mcp.hero`, built, answered every call of that
+# server `examples-rebel/reach/reach_mcp.hero`, built, answered every call of that
 # client over standard streams and over Streamable HTTP (discovery, the four
 # tools with a structured result, the program's own state, an elicitation by
 # multi round-trip, `x-mcp-header` with text of more than one byte through

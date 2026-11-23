@@ -17,6 +17,11 @@ use prose
 constant REBEL: str
     "examples-rebel"
 
+# The folder of `REBEL` holding the drivers, `reach_<package>.hero`, and
+# their one catalogue (README § A2, § A10): no program, so no page.
+constant DRIVERS: str
+    "reach"
+
 # Where the compiler's own programs stand, a twin's original among them.
 constant ORIGINALS: str
     "examples"
@@ -82,7 +87,8 @@ function original_of(p: Program) -> str
     return ORIGINALS + "/" + p.name
 
 # The names of the folders of `examples-rebel/`, by their bytes: the
-# programs, the drivers and the files at its top being no folder.
+# programs, the files at its top being no folder and the drivers' folder,
+# `DRIVERS`, no program.
 #
 # Fails where the folder cannot be read.
 function program_names() -> [str]?
@@ -90,7 +96,9 @@ function program_names() -> [str]?
 
     for e in fs.read_dir(REBEL)?
         match e.kind
-            .directory             => out @ out.push(e.name)
+            .directory =>
+                if e.name != DRIVERS
+                    out @ out.push(e.name)
             .file | .link | .other => continue
 
     return ok(out)
@@ -263,3 +271,11 @@ test "read_program: the twin `rpn`, its original's words, and a folder that is n
     assert rpn.faces == ["numbers", "strings"]
     assert rpn.tallies.len() == 1 && rpn.tallies[0].modules == 1
     assert read_program("no such program").is_err()
+
+    # The drivers' folder is no program, and the walk passes it by.
+    assert read_program(DRIVERS).is_err()
+    names = program_names().must()
+    assert names.len() > 0
+
+    for name in names
+        assert name != DRIVERS

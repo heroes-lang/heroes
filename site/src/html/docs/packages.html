@@ -14,7 +14,7 @@
   <p>
     Rebel publishes all its packages together under one name, <code>rebel</code>, and a program names each one it uses. This small program reads a table written as CSV, comma-separated values, the plain text a spreadsheet saves, with Rebel&rsquo;s <code>csv</code>:
   </p>
-  <figure class="example" data-src="examples-rebel/reach_csv.hero" data-lines="5-16">
+  <figure class="example" data-src="examples-rebel/reach/reach_csv.hero" data-lines="5-16">
 <pre><code>use &lt;rebel&gt;/csv
 
 function main()
@@ -27,7 +27,7 @@ function main()
                 rows @ rows.push([r["album"].default("?")])
 
             print(csv.format(rows))</code></pre>
-    <figcaption>examples-rebel/reach_csv.hero, lines 5&ndash;16</figcaption>
+    <figcaption>examples-rebel/reach/reach_csv.hero, lines 5&ndash;16</figcaption>
   </figure>
   <p>
     Check it before it has fetched anything, and the line that names the package says what is missing:
@@ -303,7 +303,7 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
 
   <footer>
     <p>The program is a file of the repository,
-    <code>examples-rebel/reach_csv.hero</code>, the test program of Rebel&rsquo;s
+    <code>examples-rebel/reach/reach_csv.hero</code>, the test program of Rebel&rsquo;s
     <code>csv</code>. The transcripts ran on a copy of it, in a folder beside
     a small index that publishes the repository&rsquo;s
     <code>packages/rebel/0.1.0/files/</code> as Rebel 0.1.0, made for the

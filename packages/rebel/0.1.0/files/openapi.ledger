@@ -21,7 +21,7 @@
 # one rule at a time (20 cases) and for the full document,
 # `fixture.full_yaml`; FastAPI 0.165.0 for the pages of Swagger UI and Redoc.
 #
-# Measured on 2026-11-18: the driver `examples-rebel/reach_openapi.hero`,
+# Measured on 2026-11-18: the driver `examples-rebel/reach/reach_openapi.hero`,
 # built, prints a document openapi-spec-validator finds valid and openapi-core
 # loads, and with `--serve` answers its document as JSON and YAML, both
 # pages, a valid request 200, a request its document refuses 400 with a
