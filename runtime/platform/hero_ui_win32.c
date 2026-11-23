@@ -263,6 +263,9 @@ struct hero_ui_native {
     bool resizable;
     bool modal;
     bool held_by_modal;
+    /* Whether a window takes files dropped on it (FILES DROPPED ON A
+     * WINDOW). */
+    bool takes_files;
     int64_t backdrop;
     /* A window's control that had the keys when it was left, given them
      * again when it is activated (THE WIDGET WITH THE KEYS); whether it was
@@ -1504,6 +1507,7 @@ static void hero_ui_win_trays_again(void);
 static void hero_ui_win_dialogs_reap(void);
 static LRESULT hero_ui_win_end_asked(HWND hwnd, LPARAM why);
 static void hero_ui_win_quits_answered(void);
+static void hero_ui_win_files_dropped(HWND hwnd, HDROP drop);
 
 /* A notification from a control to its parent (`WM_NOTIFY`): the person's
  * tab, a table's or a tree's. */
@@ -1591,6 +1595,9 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         if (wparam == FALSE) {
             hero_ui_win_quits_answered();
         }
+        return 0;
+    case WM_DROPFILES:
+        hero_ui_win_files_dropped(hwnd, (HDROP)wparam);
         return 0;
     case HERO_UI_WIN_DIALOG_DONE:
         hero_ui_win_dialogs_reap();
@@ -8103,6 +8110,119 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
         return hero_ui_refused(HERO_UI_OTHER, "the app shows no window and no tray icon, and Windows asks an app to end through its top-level windows alone");
     }
     (void)SendMessageW(asked->hwnd, WM_QUERYENDSESSION, 0, session_end == 1 ? 0 : (LPARAM)ENDSESSION_CLOSEAPP);
+    return HERO_UI_OK;
+}
+
+
+/* -- FILES DROPPED ON A WINDOW ---------------------------------------------
+ *
+ * A window that takes files is registered with the shell's drop of files,
+ * `DragAcceptFiles`, which marks it `WS_EX_ACCEPTFILES`: a drop on it, or on
+ * a control of it that takes no drop of its own (an `EDIT` control takes
+ * none), comes to the window as `WM_DROPFILES`, whose `HDROP` holds the
+ * paths (`DragQueryFileW`) and the point in the window's client area
+ * (`DragQueryPoint`), in pixels, told in points of the window's scale; a web
+ * view takes its drops itself, through WebView2's own drop target. `inject`
+ * sends the window the same message with an `HDROP` of the arm's making, a
+ * `DROPFILES` of UTF-16 paths in a movable global block, the layout
+ * `DragQueryFileW` reads in a drop and in the clipboard alike; the arm gives
+ * that block back itself, and `DragFinish` the shell's. */
+
+/* The drop `inject` is sending, which the arm gives back itself. */
+static _Thread_local HDROP hero_ui_win_own_drop;
+
+/* `WM_DROPFILES` to window `hwnd`: the paths and the point told where the
+ * window takes files, and the shell's drop given back. A path no UTF-8
+ * names (an unpaired surrogate) is passed over, and a drop left with none
+ * tells nothing. */
+static void hero_ui_win_files_dropped(HWND hwnd, HDROP drop) {
+    hero_ui_native *window = hero_ui_win_of(hwnd);
+
+    if (window != NULL && window->kind == HERO_UI_WINDOW && window->takes_files) {
+        UINT files = DragQueryFileW(drop, 0xFFFFFFFFu, NULL, 0);
+        uint8_t *paths = NULL;
+        int64_t count = 0;
+        int64_t room = 0;
+        POINT at = {0, 0};
+        bool kept = true;
+
+        for (UINT i = 0; i < files && kept; i += 1) {
+            UINT units = DragQueryFileW(drop, i, NULL, 0);
+            wchar_t *path = units > 0 ? hero_layer_alloc(((size_t)units + 1) * sizeof(wchar_t)) : NULL;
+
+            if (units > 0 && path == NULL) {
+                kept = false;
+            } else if (path != NULL && DragQueryFileW(drop, i, path, units + 1) == units) {
+                kept = hero_ui_win_keep_path(path, (int)units, &paths, &count, &room);
+            }
+            hero_layer_free(path);
+        }
+        (void)DragQueryPoint(drop, &at);
+        if (kept && count > 0) {
+            hero_ui_tell_text(HERO_UI_EVENT_DROP, window->id, hero_ui_win_pt(at.x > 0 ? at.x : 0, window->dpi), hero_ui_win_pt(at.y > 0 ? at.y : 0, window->dpi), paths, count);
+        }
+        hero_layer_free(paths);
+    }
+    if (drop != hero_ui_win_own_drop) {
+        DragFinish(drop);
+    }
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+
+    if (window == NULL) {
+        return kind;
+    }
+    DragAcceptFiles(window->hwnd, on == 1 ? TRUE : FALSE);
+    window->takes_files = on == 1;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    RECT content;
+    HGLOBAL block;
+    UINT format = 0;
+    int64_t answer = HERO_UI_OK;
+    uint8_t *into;
+    int across;
+    int down;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (!window->takes_files) {
+        return HERO_UI_INVALID;
+    }
+    if (!GetClientRect(window->hwnd, &content)) {
+        return hero_ui_win_failed("reading a window's content to drop on", GetLastError());
+    }
+    across = hero_ui_win_px(x, window->dpi);
+    down = hero_ui_win_px(y, window->dpi);
+    if (across >= content.right || down >= content.bottom) {
+        return HERO_UI_INVALID;
+    }
+    block = hero_ui_win_clip_block(HERO_UI_CLIP_FILES, paths, count, 0, 0, &format, &answer);
+    if (block == NULL) {
+        return answer;
+    }
+    into = GlobalLock(block);
+    if (into == NULL) {
+        answer = hero_ui_win_failed("writing the paths dropped", GetLastError());
+        (void)GlobalFree(block);
+        return answer;
+    }
+    ((DROPFILES *)(void *)into)->pt.x = across;
+    ((DROPFILES *)(void *)into)->pt.y = down;
+    ((DROPFILES *)(void *)into)->fNC = FALSE;
+    (void)GlobalUnlock(block);
+    hero_ui_win_own_drop = (HDROP)block;
+    (void)SendMessageW(window->hwnd, WM_DROPFILES, (WPARAM)block, 0);
+    hero_ui_win_own_drop = NULL;
+    (void)GlobalFree(block);
     return HERO_UI_OK;
 }
 

@@ -3605,10 +3605,6 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
 }
 
-#endif
-
-#if !defined(__APPLE__)
-
 int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
     (void)id;
     (void)on;
@@ -3623,6 +3619,10 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     (void)count;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
 }
+
+#endif
+
+#if !defined(__APPLE__)
 
 int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
     (void)id;
