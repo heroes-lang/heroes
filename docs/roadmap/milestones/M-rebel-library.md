@@ -662,6 +662,68 @@ five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*
 - **Decision 2610, the register of the decisions this milestone invalidates, closes at the milestone's close**, its
   dated comments standing as the register.
 
+## The author's answers of 2026-11-23, about 23:00: where Rebel's folders stand, with three repositories in view
+
+Asked whether `generators/` and `examples-rebel/` belong beside `packages/rebel`, the author answered, meant as:
+*all of it inside one folder `rebel`; the index must not hold Rebel's files, only a pointer, a sort of link, saying
+how to fetch them; and this is for the future, since the index may one day be a repository of its own, as
+Homebrew's taps are, Rebel another with its generators, and Rebel's examples a third.* So, measured the same
+evening before the answer (nothing of `examples-rebel`, `generators` or `packages/rebel` is on `origin/main` yet,
+so no public history moves): the catalogue the specification states already has two entry forms, from an index
+(`version`, `sum`) and from git (`git`, `tag`, `commit`, `sum`), so the pointer needs **no new form**, and the
+compiler resolves Rebel through a `path` entry (`examples-rebel/heroes.toml`), the net, the site and the CI being
+what reads `packages/rebel` (28 files). The git form names no subfolder (searched in the specification,
+`docs/design.md` and `M-package-manager.md`, nothing found), so a git pointer needs the package at a repository's
+root: while Rebel is a folder of this repository the entry is a `path`, and it becomes a git entry the day the
+repository exists.
+
+The layout, made **once, at the round's end, by a script, after every lane has merged**:
+
+```
+rebel/library/0.1.0/files/   the package, today packages/rebel/0.1.0/files
+rebel/examples/              today examples-rebel, its reach programs in rebel/examples/reach/
+rebel/generators/            today generators
+packages/rebel/0.1.0/        the entry only: a catalogue entry, a path now, git, tag, commit and sum later
+```
+
+What the three future repositories ask of it, so that each folder can be lifted out as it stands: the folders
+depend on one another **only through catalogue entries**, never by a relative path into a sibling; every place of
+the net, the site and the CI that reads the library's folder reads it through one named constant, so a later split
+changes one line; the one generator that reads the examples (`rebel_index`, by the Rebel CI's own comment) is the
+seam, noted where it stands; and the instruments of the net that judge Rebel travel with Rebel when it leaves, the
+compiler's own net using no library (CLAUDE.md § 13).
+
+**Corrected the same night, about 23:20, by the coordinator's own reading, asked by the author to think it through**:
+the block above says the pointer *needs no new form* and draws `packages/rebel/0.1.0/` holding *the entry only*. Both
+are true of a program's catalogue and false of the index. An index is a protocol the compiler reads, ratified with
+panel 235 (2026-11-07): `<index>/<name>/versions`, `<index>/<name>/<version>/list` and
+`<index>/<name>/<version>/files/<path>`, every file at its own address and never rewritten once published
+(`selfhost/fetch/index_source.hero`); and the site's build refuses any other file under `packages/` as a build error
+(`checkIndex`, `site/src/lib/examples-model.ts`). So an index that holds a pointer in place of the files is a change
+of that protocol, a sitting's, and belongs to M-package-index's opening one. Measured beside it: `packages/rebel/`
+holds neither `versions` nor `list`, so it is a source tree in an index's shape and no index a client can read;
+`index.heroes-lang.org`, the address a catalogue with no `index` line reads, resolves to nothing (`heroes add rebel`
+in an empty folder: exit 2, *`curl` exited 6 ... Could not resolve host*), while the site and the rules page tell a
+reader to type that command; `runtime/platform/`, the C floor under Rebel, is 59 files and 92,568 lines inside the
+compiler's runtime, and the specification names no way for a package to carry C of its own (searched, nothing found:
+a question, not a premise), so a repository of Rebel's own would hold its Heroes half alone.
+
+**The author's answer to that reading, about 23:30, *1a 2a***, on two questions put with it:
+
+- **The folders move, the index's protocol does not** (*1a*). At the round's end, once, by a script: the package's
+  source to `rebel/library/0.1.0/files/`, the examples to `rebel/examples/` with their reach programs in
+  `rebel/examples/reach/`, the generators to `rebel/generators/`, and **`packages/` leaves the tree** until
+  M-package-index gives it an index a client can read. The reason outranks tidiness: the source every lane rewrites
+  stood at the address of a published version, which the index's own rule says is never rewritten. The version folder
+  stays in the source's path tonight, since taking it out changes how the net and the site find the newest version and
+  not only where. The author's pointer, an index that says where a package is fetched from as Homebrew's taps do, is
+  written on `M-package-index.md` as a variant its opening sitting measures. This supersedes, for where Rebel's source
+  stands, the local static index at the repository's root of panel 235's R15 and panel 238's R10; the register
+  (decision 2610) takes its line when the move lands.
+- **The site and the rules page say what works on the day of the push** (*2a*): a program takes Rebel today by a
+  `path` entry from a clone of this repository (`heroes add --path ... --as rebel`), and `heroes add rebel` by name
+  waits for the index's row; no page tells a reader to type a command that exits 2.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds

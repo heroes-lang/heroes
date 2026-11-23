@@ -219,12 +219,40 @@ capability xml/escape  a text escaped to stand as content or as an attribute's v
   python  saxutils.escape, saxutils.quoteattr, saxutils.unescape
   note    text escapes `&`, `<`, `>` and a carriage return, which saxutils' escape leaves raw and reading would change; a value adds `"`, tab and line feed, as quoteattr, always between double quotes where quoteattr may choose single ones. A character XML cannot hold fails `invalid`. `unescape` reads the five entities and character references, where saxutils reads three, and refuses any other
 
-capability xml/canonical  the one text Canonical XML gives a document
+capability xml/canonical  a document written as Canonical XML 1.0 or 1.1, with comments or without
+  heroes  xml.canonicalize, xml.canonical_options
+  go      -
+  rust    -
+  python  -
+  note    none of the three writes it; the yardstick is Java's javax.xml.crypto (CanonicalizationMethod.INCLUSIVE, INCLUSIVE_WITH_COMMENTS, INCLUSIVE_11, INCLUSIVE_11_WITH_COMMENTS), whose answers in OpenJDK 27.0.1 on this Mac (2026-11-23) are the tests' expected texts, Canonical XML 1.0's own examples among them with their DTDs left out, since `parse` reads none
+
+capability xml/canonical-exclusive  a document or an element written as Exclusive XML Canonicalization 1.0, with an InclusiveNamespaces prefix list
+  heroes  xml.canonicalize, xml.canonicalize_at
+  go      -
+  rust    -
+  python  -
+  note    Java's CanonicalizationMethod.EXCLUSIVE and EXCLUSIVE_WITH_COMMENTS, its answers the tests' expected texts, the specification's own example of three elements among them
+
+capability xml/canonical-subset  one element written as Canonical XML where it stands, with the namespaces and the `xml:` attributes the elements around it give
+  heroes  xml.canonicalize_at
+  go      -
+  rust    -
+  python  -
+  note    the subset XML Signature digests for a reference to an element. Where an `xml:` attribute stands on two elements above, Canonical XML 1.1 § 2.4 carries the nearest and Java 27's library the outermost (run 2026-11-23); the specification is taken. `xml:base` is joined by § 2.4's changes to RFC 3986, held by the specification's own table of paths
+
+capability xml/canonical-2  the text Canonical XML 2.0 gives a document, with its parameters
   heroes  pending
   go      -
   rust    -
   python  canonicalize, C14NWriterTarget, ElementTree.write_c14n, ElementTree.write(method="c14n")
-  note    Canonical XML 2.0, which Python's canonicalize writes, is not written yet
+  note    its parameters are comments kept, text trimmed, prefixes rewritten and names in content read as names; a W3C Working Group Note of 2013 that XML Signature 1.1, and so SAML, does not name; 1.0, 1.1 and the exclusive form are the ones a signature is checked by
+
+capability xml/places  an element found by an attribute's value and reached again by its place, and a node taken out of a tree
+  heroes  xml.places_with_attribute, xml.element_at_place, xml.without_node
+  go      -
+  rust    -
+  python  -
+  note    a place is the indices of the children walked from the root, what XML Signature's reference by `ID` and its enveloped transform need of a tree that holds no parent; ElementTree's `iter` and `remove` do the like on a tree of shared nodes
 
 capability xml/cdata-written  text written as a CDATA section
   heroes  refused: a CDATA section is read as text (decided 2026-11-16), so the tree holds none to write; text written escaped reads back as the same characters
