@@ -1,0 +1,196 @@
+# Messages written and read as multicast DNS has them: questions and records
+# with the class bits `flags` carries, a message that does not fit one packet
+# split into several (RFC 6762 §§ 7.2 and 17), and a message read with its bits
+# apart.
+
+use dns
+use mdns/internal/failure
+use mdns/internal/flags
+use net
+
+# The most bytes a packet this module writes holds: what an Ethernet frame
+# leaves a datagram, so no packet is split by the network (RFC 6762 § 17).
+constant PACKET_BYTES: i64
+    1400
+
+# What a message's header says that a query and a response differ in.
+record Head
+    # Whether it is a response.
+    response: bool
+    # Its identifier: 0 on the network's own messages, the query's on an
+    # answer to a legacy unicast query.
+    id: i64
+
+# A question and its unicast-response bit.
+record Asked
+    # The question, in class IN.
+    question: dns.Question
+    # Whether the unicast answer is asked for.
+    unicast: bool
+
+# A record and its cache-flush bit.
+record Held
+    # The record.
+    item: dns.Record
+    # Whether it replaces what is cached under its name and type.
+    flush: bool
+
+# A message read: its parts and the bits.
+record Heard
+    # The message as `dns` reads it.
+    message: dns.Message
+    # The unicast-response bit of each question, in order.
+    unicast: [bool]
+    # The cache-flush bit of each record of the answer, authority and
+    # additional sections in that order, one after another.
+    flush: [bool]
+
+# The message `data` holds, its class bits apart. Fails `invalid` as
+# `dns.decode` does.
+function read(data: [u8]) -> Heard?
+    cut = flags.cleared(data)?
+    message = dns.decode(cut.data)?
+    asked = message.questions.len()
+    return ok(
+        Heard(message: message, unicast: cut.flags.slice(from: 0, to: asked), flush: cut.flags.slice(from: asked, to: cut.flags.len()))
+    )
+
+# The message with these parts, as one packet's bytes.
+#
+# Fails `invalid` where `dns.encode` refuses a part.
+function build(head: Head, truncated: bool, asked: [Asked], answers: [Held], authorities: [Held], additionals: [Held]) -> [u8]?
+    questions: [dns.Question] @= []
+    bits: [bool] @= []
+
+    for a in asked
+        questions @ questions.push(a.question)
+        bits @ bits.push(a.unicast)
+
+    replies: [dns.Record] @= []
+
+    for h in answers
+        replies @ replies.push(h.item)
+        bits @ bits.push(h.flush)
+
+    served: [dns.Record] @= []
+
+    for h in authorities
+        served @ served.push(h.item)
+        bits @ bits.push(h.flush)
+
+    more: [dns.Record] @= []
+
+    for h in additionals
+        more @ more.push(h.item)
+        bits @ bits.push(h.flush)
+
+    message = dns.Message(
+        id: head.id,
+        response: head.response,
+        opcode: dns.OPCODE_QUERY,
+        authoritative: head.response,
+        truncated: truncated,
+        recursion_desired: false,
+        recursion_available: false,
+        authenticated_data: false,
+        checking_disabled: false,
+        rcode: dns.RCODE_NO_ERROR,
+        questions: questions,
+        answers: replies,
+        authorities: served,
+        additionals: more,
+        edns: fail(code: failure.NOT_FOUND, msg: "multicast DNS carries no EDNS")
+    )
+    return flags.flagged(dns.encode(message)?, flags: bits)
+
+# The bytes `h` takes in a message, as an upper bound: its name written whole.
+function size_of(h: Held) -> i64?
+    one = build(Head(response: true, id: 0), truncated: false, asked: [], answers: [h], authorities: [], additionals: [])?
+    return ok(one.len() - 12)
+
+# The packets that hold these parts, none past `PACKET_BYTES` where the parts
+# allow it: the questions in the first, the answers, then the authorities,
+# then the additionals in order, a part that is alone too large kept whole in
+# a packet of its own. Where `split` is true a packet followed by another
+# carries the truncated bit, the way a query says its known answers go on
+# (RFC 6762 § 7.2).
+#
+# Fails `invalid` where `dns.encode` refuses a part.
+function pack(head: Head, split: bool, asked: [Asked], answers: [Held], authorities: [Held], additionals: [Held]) -> [[u8]]?
+    sizes: i64 @= 0
+
+    for a in asked
+        one = build(head, truncated: false, asked: [a], answers: [], authorities: [], additionals: [])?
+        sizes @ sizes + one.len() - 12
+
+    # Each group of parts is cut where the packet it fills would pass the
+    # limit; `used` is the estimate of the packet being filled.
+    out: [[u8]] @= []
+    now_asked: [Asked] @= asked
+    now_answers: [Held] @= []
+    now_authorities: [Held] @= []
+    now_additionals: [Held] @= []
+    used: i64 @= 12 + sizes
+    held: i64 @= 0
+
+    for slot in range(from: 0, to: 3)
+        parts = match slot
+            0 => answers
+            1 => authorities
+            _ => additionals
+
+        for h in parts
+            size = size_of(h)?
+
+            if used + size > PACKET_BYTES && held > 0
+                out @ out.push(
+                    build(head, truncated: split, asked: now_asked, answers: now_answers, authorities: now_authorities, additionals: now_additionals)?
+                )
+                now_asked @ []
+                now_answers @ []
+                now_authorities @ []
+                now_additionals @ []
+                used @ 12
+                held @ 0
+
+            if slot == 0
+                now_answers @ now_answers.push(h)
+            else if slot == 1
+                now_authorities @ now_authorities.push(h)
+            else
+                now_additionals @ now_additionals.push(h)
+            used @ used + size
+            held @ held + 1
+
+    out @ out.push(
+        build(head, truncated: false, asked: now_asked, answers: now_answers, authorities: now_authorities, additionals: now_additionals)?
+    )
+    return ok(out)
+
+# The question of `name` and `type_code` in class IN.
+function question(name: str, type_code: i64) -> dns.Question
+    return dns.Question(name: name, type_code: type_code, class_code: dns.CLASS_IN)
+
+test "build and read: a question with its unicast bit, an answer with its flush bit"
+    answer = dns.Record(
+        name: "a.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .a(address: net.parse_host("10.0.0.1").must())
+    )
+    wire = build(
+        Head(response: true, id: 0),
+        truncated: false,
+        asked: [Asked(question: question("a.local.", type_code: dns.TYPE_A), unicast: true)],
+        answers: [Held(item: answer, flush: true)],
+        authorities: [],
+        additionals: []
+    ).must()
+    got = read(wire).must()
+    assert got.message.response
+    assert got.message.authoritative
+    assert got.unicast == [true]
+    assert got.flush == [true]
+    assert got.message.answers[0].class_code == dns.CLASS_IN
+    assert got.message.answers[0].data == answer.data
+    assert got.message.questions[0].class_code == dns.CLASS_IN

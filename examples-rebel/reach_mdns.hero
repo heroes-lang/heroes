@@ -1,0 +1,9 @@
+# Reaches Rebel's `mdns`, so that `heroes test` on this file runs the tests of
+# its face and its private modules (spec § 12). It prints the name a service
+# of a printer goes by in multicast DNS, touching no network.
+
+use <rebel>/mdns
+
+function main()
+    s = mdns.service(instance: "Front Desk Printer", type: "_ipp._tcp", port: 631)
+    print(mdns.name_of(s).default("(no name)"))

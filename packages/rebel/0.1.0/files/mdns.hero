@@ -1,0 +1,617 @@
+# Multicast DNS (RFC 6762) and DNS-based service discovery (RFC 6763): the
+# devices, printers and peers of the local network found by name, and a
+# program's own service made known to them. A program browses a service type
+# (`_ipp._tcp`) and is told each instance with its host, port, addresses and
+# attributes; it resolves one instance, looks a `.local` name up, or lists the
+# types that are offered; it watches a type and is told what appears, changes
+# and goes; and it publishes a service, whose name it probes for and announces,
+# and answers the queries about it.
+#
+# **What it does not do.** Unicast DNS-SD, a service's records in a zone of
+# a name server, is `dns`'s: this package speaks to the group `224.0.0.251`
+# and `ff02::fb` on port 5353 alone and knows no domain but `local.`. It keeps
+# no cache between calls: a browse hears for the time it is given and forgets.
+# The system's own responder (Bonjour, Avahi, the Windows DNS client) is not
+# asked: this package shares the port with it and answers for itself, so a
+# service published here is found by the system's tools and the other way
+# round. Proxying of a service for a host that does not speak mDNS, and
+# DNS-SD's service registration over unicast with an update, are not done.
+#
+# **Which interfaces.** A call that takes `interfaces` is on the interfaces it
+# names, by their names (`en0`); with none named, on every interface that is
+# up, running, able to carry multicast, neither a loopback nor a tunnel, and
+# has an address. A datagram arrives without the interface it came in by (`net`
+# has no packet information), so a responder answers a multicast query on
+# every interface it is on, each answer carrying that interface's own addresses
+# (RFC 6762 § 6.2).
+#
+# **A response is waited for, never completed.** Nothing says when every host
+# has answered, so `browse`, `browse_types` and `lookup_addresses` listen for
+# the whole `wait` they are given and answer what they heard; `resolve` and
+# `lookup_addresses` end early on the answer they asked for.
+#
+# **Nothing a host on the network sends can end the program**: a packet is read
+# within its bytes, one that cannot be read is passed over, and every name is
+# held to its limits.
+#
+# The codes it fails with: `invalid`, `not_found`, `not_text`, `exists`,
+# `limit`, `unsupported`, `failed`, `timeout` and `stopped`.
+
+use bytes
+use dns
+use mdns/internal/cache
+use mdns/internal/failure
+use mdns/internal/hosting
+use mdns/internal/model
+use mdns/internal/names
+use mdns/internal/serving
+use mdns/internal/session
+use mdns/internal/spans
+use mdns/internal/txt
+use mdns/internal/watching
+use net
+use strings
+use time
+
+## Codes
+
+# A name that names nothing found in the time given, an instance not
+# published, or an interface that does not exist.
+constant NOT_FOUND: str
+    failure.NOT_FOUND
+
+# A service type, an instance name, a host name, an attribute, a port or a
+# number is not what the function takes; the message says which.
+constant INVALID: str
+    failure.INVALID
+
+# A label heard is not UTF-8.
+constant NOT_TEXT: str
+    failure.NOT_TEXT
+
+# The service's instance name is published already.
+constant EXISTS: str
+    failure.EXISTS
+
+# The names tried for a service were all held by other hosts.
+constant LIMIT: str
+    failure.LIMIT
+
+# The platform has no such thing.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
+
+# The system refused: a socket, a group, a send; the message carries its words.
+constant FAILED: str
+    failure.FAILED
+
+# Nothing happened in the time given.
+constant TIMEOUT: str
+    failure.TIMEOUT
+
+# The program was asked to stop while the call waited.
+constant STOPPED: str
+    failure.STOPPED
+
+## Services
+
+# One attribute of a service, a key and, where it has one, a value
+# (RFC 6763 § 6).
+record Attribute
+    # The key: one or more printable ASCII characters but `=`, compared
+    # without regard to case.
+    key: str
+    # The value, any bytes, where the attribute has one: empty for `key=`,
+    # absent (fails `not_found`) for `key` alone.
+    value: [u8]?
+
+# One instance of a service: what a browse finds, and what `publish` takes.
+record Service
+    # The instance's name as people read it, any UTF-8 text of 1 to 63 bytes,
+    # dots and spaces included: `Living Room Printer`.
+    instance: str
+    # The type: `_name._tcp` or `_name._udp`, the name 1 to 62 letters, digits
+    # or hyphens.
+    type: str
+    # The subtypes the instance answers to, `_printer`, none where it has none
+    # (RFC 6763 § 7.1). Browsing finds none: a subtype is browsed as
+    # `_printer._sub._ipp._tcp`.
+    subtypes: [str]
+    # The host's name under `local.`, `printer.local.`; "" where the machine's
+    # own name is taken, when publishing.
+    host: str
+    # The port, 0 to 65535.
+    port: i64
+    # The SRV record's priority and weight, 0 to 65535, 0 and 0 where nothing
+    # says otherwise.
+    priority: i64
+    weight: i64
+    # The host's addresses: those of the host as far as they were heard when
+    # browsing; the addresses a published service gives, those of every
+    # interface the responder is on where it gives none.
+    addresses: [net.Host]
+    # The attributes of the TXT record.
+    attributes: [Attribute]
+
+# A service to publish: `instance` of `type` on `port`, the machine's own host
+# name and addresses, no attributes and no subtypes.
+#
+# - `instance`: the instance's name, 1 to 63 bytes.
+# - `type`: `_name._tcp` or `_name._udp`.
+# - `port`: 0 to 65535.
+#
+# Nothing is checked until `publish`.
+function service(instance: str, type: str, port: i64) -> Service
+    return Service(
+        instance: instance,
+        type: type,
+        subtypes: [],
+        host: "",
+        port: port,
+        priority: 0,
+        weight: 0,
+        addresses: [],
+        attributes: []
+    )
+
+# The name `s` goes by in the records, `Joe's Printer._ipp._tcp.local.`, a dot
+# or a backslash in the instance written after a backslash.
+#
+# - `s`: the service.
+#
+# Fails `invalid` where its instance or its type is wrong.
+function name_of(s: Service) -> str?
+    return names.instance_name(instance: s.instance, type: s.type)
+
+# The value of the attribute `key` of `attributes`, its key compared without
+# regard to case.
+#
+# - `attributes`: a service's attributes.
+# - `key`: the key.
+#
+# Fails `not_found` where `attributes` holds no such key or the key stands
+# without a value.
+function attribute_of(attributes: [Attribute], key: str) -> [u8]?
+    folded = strings.to_lower_ascii(key)
+
+    for a in attributes
+        if strings.to_lower_ascii(a.key) == folded
+            return a.value
+
+    return fail(code: NOT_FOUND, msg: f"no attribute \"{key}\"")
+
+# The attributes the strings of a TXT record hold (RFC 6763 § 6): `key=value`,
+# `key=` and `key`. A string that is empty, or begins with `=`, or whose key
+# holds a byte no key does is passed over, and where a key stands twice the
+# first is kept.
+#
+# - `texts`: the character strings of the record, as `dns.Data.txt` holds
+#   them.
+function parse_attributes(texts: [[u8]]) -> [Attribute]
+    out: [Attribute] @= []
+
+    for a in txt.decode(texts)
+        out @ out.push(Attribute(key: a.key, value: a.value))
+
+    return out
+
+# The strings of the TXT record that holds `attributes`: the one empty string
+# where there are none, as RFC 6763 § 6.1 asks.
+#
+# - `attributes`: the attributes, in the order they are written.
+#
+# Fails `invalid` where a key is empty or holds a byte that is not printable
+# ASCII or is `=`, where a string would pass 255 bytes, and where a key
+# stands twice, its letters compared without regard to case.
+function format_attributes(attributes: [Attribute]) -> [[u8]]?
+    items: [txt.Attribute] @= []
+
+    for a in attributes
+        items @ items.push(txt.Attribute(key: a.key, value: a.value))
+
+    return txt.encode(items)
+
+## Finding
+
+# The instances of the service type `type` found on the network, each with its
+# host, port, addresses and attributes.
+#
+# - `type`: `_name._tcp` or `_name._udp`, or a subtype of one, `Sub._sub._name._tcp`.
+# - `wait`: how long to listen, zero or more; the whole time is waited, since
+#   nothing says when the last host has answered.
+# - `interfaces`: the names of the interfaces to browse on; none for the usual
+#   ones.
+#
+# An instance is answered where its SRV record was heard; its addresses are
+# those heard by then, which may be none. The order is the order the pointers
+# were heard in.
+#
+# Fails `invalid` where `type` is no service type or `wait` is negative,
+# `not_found` where an interface is not found, `failed` where the system
+# refuses a socket or a group, `stopped` where the stop is asked. See also
+# `watch`, `resolve`.
+function browse(type: str, wait: time.Duration, interfaces: [str]) -> [Service]?
+    owner = names.type_name(type)?
+    ms = spans.millis_of(wait)?
+    s @= session.open(interfaces)?
+    first = [session.plain(owner, type_code: dns.TYPE_PTR)]
+    gathered = session.gather(@s, first: first, owner: owner, goal: .never, wait_ms: ms)
+    found = cache.instances(s.heard, type_name: owner, now_ms: session.elapsed_ms(s).default(0))
+    closed = session.close(@s)
+
+    failure.settled(first: gathered, second: closed)?
+    out: [Service] @= []
+
+    for d in found
+        out @ out.push(
+            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+        )
+
+    return ok(out)
+
+# The service types offered on the network, as `_ipp._tcp` (RFC 6763 § 9).
+#
+# - `wait`: how long to listen, zero or more.
+# - `interfaces`: as `browse`'s.
+#
+# Fails as `browse` fails. See also `browse`.
+function browse_types(wait: time.Duration, interfaces: [str]) -> [str]?
+    ms = spans.millis_of(wait)?
+    s @= session.open(interfaces)?
+    first = [session.plain(names.ENUMERATION, type_code: dns.TYPE_PTR)]
+    gathered = session.gather(@s, first: first, owner: "", goal: .never, wait_ms: ms)
+    out: [str] @= []
+
+    for target in cache.pointers(s.heard, owner: names.ENUMERATION, now_ms: session.elapsed_ms(s).default(0))
+        labels = dns.labels_of(target)
+
+        if !labels.is_err() && labels.must().len() == 3 && labels.must()[2] == "local"
+            out @ out.push(labels.must()[0] + "." + labels.must()[1])
+
+    closed = session.close(@s)
+
+    failure.settled(first: gathered, second: closed)?
+    return ok(out)
+
+# The instance `instance` of `type`, with its host, port, addresses and
+# attributes, asked for and waited for until its addresses are known.
+#
+# - `instance`: the instance's name as people read it.
+# - `type`: `_name._tcp` or `_name._udp`.
+# - `wait`: the longest to wait, zero or more.
+# - `interfaces`: as `browse`'s.
+#
+# Fails `not_found` where no SRV record came in time, or the SRV record
+# came and the host's addresses did not (the service is answered, with no
+# addresses, by `browse`); `invalid` as `browse` does; `timeout` is never
+# its code. See also `browse`.
+function resolve(instance: str, type: str, wait: time.Duration, interfaces: [str]) -> Service?
+    full = names.instance_name(instance: instance, type: type)?
+    ms = spans.millis_of(wait)?
+    s @= session.open(interfaces)?
+    first = [session.plain(full, type_code: dns.TYPE_SRV), session.plain(full, type_code: dns.TYPE_TXT)]
+    gathered = session.gather(@s, first: first, owner: "", goal: .resolved(instance: full), wait_ms: ms)
+    found = cache.described(s.heard, name: full, now_ms: session.elapsed_ms(s).default(0))
+    closed = session.close(@s)
+
+    failure.settled(first: gathered, second: closed)?
+
+    if found.is_err()
+        return fail(code: NOT_FOUND, msg: f"\"{full}\" did not answer in {ms} ms")
+
+    if found.must().addresses.len() == 0
+        return fail(
+            code: NOT_FOUND,
+            msg: f"\"{full}\" answered, and its host {found.must().host} gave no address in {ms} ms"
+        )
+    d = found.must()
+    return ok(
+        Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+    )
+
+# The addresses of the host `name` under `local.`, asked for and waited for
+# until one is heard.
+#
+# - `name`: `printer.local` or `printer.local.`.
+# - `wait`: the longest to wait, zero or more.
+# - `interfaces`: as `browse`'s.
+#
+# Every A and AAAA record heard by the time one came is answered, the IPv4
+# ones and the IPv6 ones. Fails `not_found` where none came in time, `invalid`
+# where `name` is no name under `local.`, and as `browse` fails. See also
+# `lookup_reverse`.
+function lookup_addresses(name: str, wait: time.Duration, interfaces: [str]) -> [net.Host]?
+    absolute = dns.canonical_name(name)?
+
+    if !dns.is_subdomain(name: absolute, of: "local.") || absolute == "local."
+        return fail(code: INVALID, msg: f"\"{name}\" is no name under local.")
+    ms = spans.millis_of(wait)?
+    s @= session.open(interfaces)?
+    first = [session.plain(absolute, type_code: dns.TYPE_A), session.plain(absolute, type_code: dns.TYPE_AAAA)]
+    gathered = session.gather(@s, first: first, owner: "", goal: .address(host: absolute), wait_ms: ms)
+    found = cache.addresses_of(s.heard, host: absolute, now_ms: session.elapsed_ms(s).default(0))
+    closed = session.close(@s)
+
+    failure.settled(first: gathered, second: closed)?
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no address for {name} was heard in {ms} ms")
+    return ok(found)
+
+# The names the host `address` goes by on the network, asked of the network by
+# its reverse name (RFC 6762 § 4).
+#
+# - `address`: an IPv4 or IPv6 address, its zone ignored.
+# - `wait`: the longest to wait, zero or more.
+# - `interfaces`: as `browse`'s.
+#
+# Fails `not_found` where no name came in time, and as `browse` fails. See also
+# `lookup_addresses`.
+function lookup_reverse(address: net.Host, wait: time.Duration, interfaces: [str]) -> [str]?
+    reverse = net.to_reverse_name(net.Host(bytes: address.bytes, zone: ""))
+    ms = spans.millis_of(wait)?
+    s @= session.open(interfaces)?
+    gathered = session.gather(
+        @s,
+        first: [session.plain(reverse, type_code: dns.TYPE_PTR)],
+        owner: reverse,
+        goal: .never,
+        wait_ms: ms
+    )
+    found = cache.pointers(s.heard, owner: reverse, now_ms: session.elapsed_ms(s).default(0))
+    closed = session.close(@s)
+
+    failure.settled(first: gathered, second: closed)?
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no name for {net.format_host(address)} was heard in {ms} ms")
+    return ok(found)
+
+## Watching
+
+# A browser that keeps listening: it asks for a service type again and again,
+# asks for each record again as its time runs down (RFC 6762 § 5.2), and tells
+# what appears, changes and goes. Made by `watch`; `close_watch` closes it.
+record Watch
+    # The browser's state.
+    state: watching.Watch
+
+# What `next_change` tells about one instance.
+variant Change
+    # An instance appeared, or came back.
+    appeared
+        # It, as the records say.
+        service: Service
+    # An instance already told of has other records: another host, port,
+    # address or attribute.
+    changed
+        # It, as it now stands.
+        service: Service
+    # An instance is gone: its records ran out, or it said goodbye.
+    disappeared
+        # It, as it last stood.
+        service: Service
+
+# A browser on the service type `type`, on the interfaces `interfaces` names,
+# the usual ones where it names none. It sends its first question at once.
+#
+# - `type`: as `browse`'s.
+# - `interfaces`: as `browse`'s.
+#
+# The browser is closed with `close_watch`. Fails as `browse` fails. See also
+# `next_change`.
+function watch(type: str, interfaces: [str]) -> Watch?
+    return ok(Watch(state: watching.begin(type, interfaces: interfaces)?))
+
+# The next change of the instances of the watched type, waiting for one.
+#
+# - `w`: the browser.
+# - `wait`: the longest to wait, zero or more.
+#
+# A change is told once, in the order it was found. Fails `timeout` where none
+# came in time, `stopped` where the stop was asked, and `failed` where the
+# system refuses a send. See also `watch`.
+function next_change(@w: Watch, wait: time.Duration) -> Change?
+    ms = spans.millis_of(wait)?
+    moved = watching.next(@w.state, wait_ms: ms)?
+    d = moved.found
+    found = Service(
+        instance: d.instance,
+        type: d.type,
+        subtypes: d.subtypes,
+        host: d.host,
+        port: d.port,
+        priority: d.priority,
+        weight: d.weight,
+        addresses: d.addresses,
+        attributes: parse_attributes(d.texts)
+    )
+
+    if moved.kind == 0
+        return ok(.appeared(service: found))
+
+    if moved.kind == 1
+        return ok(.changed(service: found))
+    return ok(.disappeared(service: found))
+
+# Closes the browser's sockets.
+#
+# - `w`: the browser; it is empty afterwards.
+function close_watch(@w: Watch) -> ()?
+    return session.close(@w.state.session)
+
+## Publishing
+
+# A responder: the sockets of a program that publishes services, and the
+# services it publishes. Made by `responder`; `close_responder` says goodbye
+# for each service and closes it.
+record Responder
+    # The responder's state.
+    state: hosting.State
+
+# A responder on the interfaces `interfaces` names, the usual ones where it
+# names none. It publishes nothing yet.
+#
+# - `interfaces`: as `browse`'s.
+#
+# The responder is closed with `close_responder`. Fails as `browse` fails. See
+# also `publish`, `serve`.
+function responder(interfaces: [str]) -> Responder?
+    return ok(Responder(state: hosting.open(interfaces)?))
+
+# Publishes `s`: its instance and host names are probed for three times, 250 ms
+# apart, and where another host holds either the next name is tried (`Name
+# (2)`, `Name (3)`; `host-2`), then the service is announced twice, a second
+# apart (RFC 6762 §§ 8 and 9). From then on `serve` answers the questions
+# about it.
+#
+# - `r`: the responder.
+# - `s`: the service. Its host is the machine's own name where it is "", its
+#   addresses those of the interfaces where it gives none.
+#
+# Answers the service as published, its names as they were settled on. Takes
+# about a second and a half. Fails `exists` where the instance is published by
+# this responder, `limit` where 16 names were all taken, `invalid` where `s`
+# is wrong, and as `serve` fails.
+function publish(@r: Responder, s: Service) -> Service?
+    spans.checked(port: s.port, priority: s.priority, weight: s.weight, host: s.host)?
+    d = model.Described(
+        instance: s.instance,
+        type: s.type,
+        subtypes: s.subtypes,
+        host: s.host,
+        port: s.port,
+        priority: s.priority,
+        weight: s.weight,
+        addresses: s.addresses,
+        texts: format_attributes(s.attributes)?
+    )
+    p = hosting.publish(@r.state, d: d)?
+    return ok(
+        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: parse_attributes(p.texts))
+    )
+
+# Serves for `wait` milliseconds: every query heard about a published service
+# is answered, with what the querier does not hold already, multicast or to
+# the querier alone where it asks that or is a resolver of the old kind.
+# Where another host announces a record that contradicts a name this responder
+# holds, the service is published again under another name.
+#
+# - `r`: the responder.
+# - `wait`: how long to serve, zero or more.
+#
+# Answers the services published again under other names, as they now stand;
+# none, usually. Fails `stopped` where the stop was asked, and `failed` where
+# the system refuses a send.
+function serve(@r: Responder, wait: time.Duration) -> [Service]?
+    ms = spans.millis_of(wait)?
+    again = serving.serve(@r.state, wait_ms: ms)?
+    out: [Service] @= []
+
+    for d in again
+        out @ out.push(
+            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+        )
+
+    return ok(out)
+
+# Changes what is published about a service already published: its port,
+# priority, weight, addresses and attributes. Every record is announced twice,
+# a second apart, with its cache-flush bit set, which makes every cache that holds the old
+# ones replace them (RFC 6762 § 8.4); a program that browses is told the
+# service `changed`.
+#
+# - `r`: the responder.
+# - `s`: the service, with the instance and the type it was published under;
+#   its host is "" or the one published, and its subtypes the ones published.
+#
+# Answers the service as it now stands. Fails `not_found` where it is not
+# published, `invalid` where `s` changes the host or the subtypes or is wrong.
+function update(@r: Responder, s: Service) -> Service?
+    spans.checked(port: s.port, priority: s.priority, weight: s.weight, host: s.host)?
+    d = model.Described(
+        instance: s.instance,
+        type: s.type,
+        subtypes: s.subtypes,
+        host: s.host,
+        port: s.port,
+        priority: s.priority,
+        weight: s.weight,
+        addresses: s.addresses,
+        texts: format_attributes(s.attributes)?
+    )
+    p = hosting.update(@r.state, d: d)?
+    return ok(
+        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: parse_attributes(p.texts))
+    )
+
+# Withdraws the service `instance` of `type`: a goodbye is multicast, which
+# tells every cache to drop it (RFC 6762 § 10.1), and it is answered for no
+# more.
+#
+# - `r`: the responder.
+# - `instance`: the instance's name as it was published.
+# - `type`: its type.
+#
+# Fails `not_found` where it is not published, `invalid` where the names are
+# wrong.
+function withdraw(@r: Responder, instance: str, type: str) -> ()?
+    return hosting.withdraw(@r.state, full: names.instance_name(instance: instance, type: type)?)
+
+# Says goodbye for every service published and closes the responder's sockets.
+#
+# - `r`: the responder; it is empty afterwards.
+function close_responder(@r: Responder) -> ()?
+    return hosting.close(@r.state)
+
+## Examples
+
+# The name of a service with a space and a dot in its instance, and its
+# attribute read back by its key.
+test "name_of and attribute_of: a name with escapes, a value, an empty value and a key alone"
+    s = Service(
+        instance: "Joe's Printer. 2",
+        type: "_ipp._tcp",
+        subtypes: [],
+        host: "",
+        port: 631,
+        priority: 0,
+        weight: 0,
+        addresses: [],
+        attributes: [Attribute(key: "rp", value: ok(bytes.from_text("ipp/print"))), Attribute(key: "Empty", value: ok([])), Attribute(key: "flag", value: fail(code: NOT_FOUND, msg: "none"))]
+    )
+    assert name_of(s).must() == "Joe's Printer\\. 2._ipp._tcp.local."
+    assert attribute_of(s.attributes, key: "RP").must() == bytes.from_text("ipp/print")
+    assert attribute_of(s.attributes, key: "empty").must() == []
+    assert attribute_of(s.attributes, key: "flag").is_err()
+    assert attribute_of(s.attributes, key: "absent").is_err()
+
+test "service, format_attributes and parse_attributes: the defaults, attributes written and read back, and one that is wrong"
+    s = service(instance: "Desk", type: "_http._tcp", port: 8080)
+    assert s.host == "" && s.addresses == [] && s.priority == 0
+    assert format_attributes(s.attributes).must() == [[]]
+    assert parse_attributes([[]]) == []
+    written = format_attributes(
+        [Attribute(key: "path", value: ok(bytes.from_text("/a=b"))), Attribute(key: "secure", value: fail(code: NOT_FOUND, msg: "none"))]
+    ).must()
+    assert written == [bytes.from_text("path=/a=b"), bytes.from_text("secure")]
+    read = parse_attributes(written)
+    assert read.len() == 2
+    assert attribute_of(read, key: "path").must() == bytes.from_text("/a=b")
+    assert attribute_of(read, key: "secure").is_err()
+    assert format_attributes([Attribute(key: "a=b", value: ok([]))]).is_err()
+    assert format_attributes([Attribute(key: "k", value: ok([])), Attribute(key: "K", value: ok([]))]).is_err()
+
+test "browse, browse_types, resolve, lookup_addresses and lookup_reverse: what is refused before a socket is opened"
+    wait = time.milliseconds(1).must()
+    absent = ["no-such-interface"]
+    assert browse("ipp._tcp", wait: wait, interfaces: []).is_err()
+    assert browse("_ipp._tcp", wait: time.milliseconds(-1).must(), interfaces: []).is_err()
+    assert failure.code_of(browse("_ipp._tcp", wait: wait, interfaces: absent)) == NOT_FOUND
+    assert failure.code_of(browse_types(wait, interfaces: absent)) == NOT_FOUND
+    assert failure.code_of(resolve(instance: "", type: "_ipp._tcp", wait: wait, interfaces: [])) == INVALID
+    assert failure.code_of(lookup_addresses("example.com", wait: wait, interfaces: [])) == INVALID
+    assert failure.code_of(lookup_addresses("local", wait: wait, interfaces: [])) == INVALID
+    assert failure.code_of(lookup_addresses("bad..local", wait: wait, interfaces: [])) == INVALID
+    assert failure.code_of(watch("ipp._tcp", interfaces: [])) == INVALID
+    assert failure.code_of(responder(absent)) == NOT_FOUND

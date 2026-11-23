@@ -1,0 +1,358 @@
+# A responder at work (RFC 6762 §§ 5.4, 6, 7 and 9): the queries it hears
+# answered, multicast or by unicast where the question asks or the querier
+# is a resolver of the old kind, and a name that another host claims after
+# it was announced given up for another.
+
+use bytes
+use dns
+use mdns/internal/answer
+use mdns/internal/cache
+use mdns/internal/claim
+use mdns/internal/failure
+use mdns/internal/hosting
+use mdns/internal/message
+use mdns/internal/model
+use mdns/internal/names
+use mdns/internal/session
+use mdns/internal/transport
+use net
+use random
+use time
+
+# The answer for one interface.
+record Job
+    # The interface it goes out by.
+    line: transport.Line
+    # The packets, each a message of its own.
+    packets: [[u8]]
+    # The records in them, whose last multicast is told once they went.
+    texts: [str]
+
+# The questions of `m` as questions of a querier that wants multicast
+# answers, to be repeated in an answer to a legacy unicast one.
+function echoed(m: dns.Message) -> [message.Asked]
+    out: [message.Asked] @= []
+
+    for q in m.questions
+        out @ out.push(message.Asked(question: q, unicast: false))
+
+    return out
+
+# `held` as a legacy unicast resolver may be told it: no cache-flush bit and
+# a time to live of 10 seconds at most (RFC 6762 § 6.7).
+function legacy_of(held: [message.Held]) -> [message.Held]
+    out: [message.Held] @= []
+
+    for h in held
+        ttl: i64 @= h.item.ttl
+
+        if ttl > hosting.LEGACY_TTL
+            ttl @ hosting.LEGACY_TTL
+        out @ out.push(
+            message.Held(item: dns.Record(name: h.item.name, class_code: h.item.class_code, ttl: ttl, data: h.item.data), flush: false)
+        )
+
+    return out
+
+# The key a record multicast on `line` is remembered under.
+function sent_key(line: transport.Line, h: message.Held) -> str
+    return f"{line.index} " + dns.format_record(h.item).default("")
+
+# `found` without the records multicast on `line` less than a second ago.
+function fresh(st: hosting.State, line: transport.Line, found: [message.Held], now_ms: i64) -> [message.Held]
+    out: [message.Held] @= []
+
+    for h in found
+        last = st.sent[sent_key(line, h: h)]
+
+        if last.is_err() || now_ms - last.must() >= hosting.REPEAT_MS
+            out @ out.push(h)
+
+    return out
+
+# Answers the query `heard`, which came in the packet `p`: the records that
+# answer its questions, less those it lists as known and, for a multicast
+# answer, those sent a second ago; with the records that ride along. A
+# question with the unicast bit and every question of a legacy resolver are
+# answered to the sender alone; the rest are multicast on every interface,
+# after 20 to 120 ms where a shared record is among them.
+function respond(@st: hosting.State, heard: message.Heard, p: transport.Packet) -> ()?
+    m = heard.message
+
+    if m.opcode != dns.OPCODE_QUERY || m.rcode != dns.RCODE_NO_ERROR || m.questions.len() == 0 || st.published.len() == 0
+        return ok()
+    legacy = p.sender.port != transport.PORT
+    direct: bool @= legacy
+
+    if !legacy && heard.unicast.len() > 0
+        direct @ true
+
+        for u in heard.unicast
+            if !u
+                direct @ false
+    lines: [transport.Line] @= st.line.lines
+
+    if direct
+        lines @ [transport.line_of_sender(st.line, sender: p.sender.host)]
+    now = hosting.now_ms(st)?
+    jobs: [Job] @= []
+    delayed: bool @= false
+
+    for line in lines
+        zone = answer.zone_of(st.published, addresses: transport.hosts_of(line))?
+        found: [message.Held] @= []
+
+        for q in m.questions
+            for h in answer.answers_to(zone, q: q)
+                answer.put(@found, h: h)
+
+        found @ answer.unknown_to(found, known: m.answers)
+
+        if !direct
+            found @ fresh(st, line: line, found: found, now_ms: now)
+
+        if found.len() == 0
+            continue
+        extras @= answer.unknown_to(answer.additionals_of(zone: zone, answers: found), known: m.answers)
+        head @= message.Head(response: true, id: 0)
+        asked: [message.Asked] @= []
+
+        if legacy
+            head @ message.Head(response: true, id: m.id)
+            asked @ echoed(m)
+            found @ legacy_of(found)
+            extras @ legacy_of(extras)
+        packets = message.pack(head, split: false, asked: asked, answers: found, authorities: [], additionals: extras)?
+        texts: [str] @= []
+
+        for h in found
+            texts @ texts.push(sent_key(line, h: h))
+
+        if answer.has_shared(found) && !direct
+            delayed @ true
+        jobs @ jobs.push(Job(line: line, packets: packets, texts: texts))
+
+    if jobs.len() == 0
+        return ok()
+
+    if delayed
+        time.sleep(time.milliseconds(random.int_in(@st.generator, from: 20, to: 121))?)
+
+    for job in jobs
+        for packet in job.packets
+            if direct
+                transport.send_to(st.line, data: packet, to: p.sender)?
+            else
+                transport.send_line(st.line, line: job.line, data: packet)?
+
+        if !direct
+            at = hosting.now_ms(st)?
+
+            for t in job.texts
+                st.sent[t] @ at
+
+    return ok()
+
+# What happens when `p` arrives: a query is answered; a response holding a
+# record that conflicts with one this responder announced gives the name up
+# (RFC 6762 § 9): the service is published again under the next instance name,
+# or, where the host's name is the one taken, the next host name. Answers the
+# services published again, as they now stand.
+function handle(@st: hosting.State, p: transport.Packet) -> [model.Described]?
+    none: [model.Described] = []
+
+    match message.read(p.data)
+        .err _ => return ok(none)
+        .ok heard =>
+            if !heard.message.response
+                respond(@st, heard: heard, p: p)?
+                return ok(none)
+            return conflicted(@st, heard: heard)
+
+# The services whose records a response `heard` contradicts, published again
+# under another name, as `hosting.publish` does it.
+function conflicted(@st: hosting.State, heard: message.Heard) -> [model.Described]?
+    out: [model.Described] @= []
+    own = hosting.known_addresses(st)
+    records: [dns.Record] @= heard.message.answers
+
+    for r in heard.message.additionals
+        records @ records.push(r)
+
+    wanted: [model.Described] @= []
+
+    for d in st.published
+        ours = hosting.unique_of(st, d, with_host: true)?
+        hosts = [dns.canonical_name(d.host)?]
+
+        for r in records
+            if claim.conflicts(ours, hosts: hosts, own: own, theirs: r)
+                renamed: model.Described @= d
+
+                if hosting.is_host_named(r.name, hosts: hosts)
+                    renamed @ model.Described(
+                        instance: d.instance,
+                        type: d.type,
+                        subtypes: d.subtypes,
+                        host: claim.renamed_host(d.host),
+                        port: d.port,
+                        priority: d.priority,
+                        weight: d.weight,
+                        addresses: d.addresses,
+                        texts: d.texts
+                    )
+                else
+                    renamed @ model.Described(
+                        instance: claim.renamed(d.instance),
+                        type: d.type,
+                        subtypes: d.subtypes,
+                        host: d.host,
+                        port: d.port,
+                        priority: d.priority,
+                        weight: d.weight,
+                        addresses: d.addresses,
+                        texts: d.texts
+                    )
+                wanted @ wanted.push(renamed)
+                full = names.instance_name(instance: d.instance, type: d.type)?
+                hosting.withdraw(@st, full: full)?
+                break
+
+    for d in wanted
+        out @ out.push(hosting.publish(@st, d: d)?)
+
+    return ok(out)
+
+# Serves for `wait_ms` milliseconds: every packet that arrives is handled.
+# Answers the services that were published again under other names. Fails
+# `stopped` where the stop was asked.
+function serve(@st: hosting.State, wait_ms: i64) -> [model.Described]?
+    end = hosting.now_ms(st)? + wait_ms
+    out: [model.Described] @= []
+
+    while true
+        left = end - hosting.now_ms(st)?
+
+        if left <= 0
+            return ok(out)
+
+        match transport.receive(st.line, wait_ms: left)
+            .err e =>
+                if e.code == failure.TIMEOUT
+                    return ok(out)
+                return fail(code: e.code, msg: e.msg)
+            .ok p =>
+                again = handle(@st, p: p)?
+
+                for d in again
+                    out @ out.push(d)
+
+    return ok(out)
+
+# The name of an interface that carries multicast and is the machine's
+# loopback, "" where there is none: a test that needs the network runs on it
+# alone, so that nothing it sends leaves the machine.
+function loopback_name() -> str
+    match net.interfaces()
+        .err _ => return ""
+        .ok found =>
+            for i in found
+                if i.loopback && i.multicast && i.up && i.index > 0
+                    return i.name
+
+    return ""
+
+# Reads packets into the querier `s` for `ms` milliseconds, and answers how
+# many of them added records.
+function listen_into(@s: session.Session, ms: i64) -> i64
+    end = session.elapsed_ms(s).default(0) + ms
+    took: i64 @= 0
+
+    while session.elapsed_ms(s).default(end) < end
+        match session.pump(@s, wait_ms: 50)
+            .ok kept =>
+                if kept
+                    took @ took + 1
+            .err _ => took @ took
+
+    return took
+
+test "serve: a service published on the loopback is found by a querier, changed, and said goodbye for"
+    name = loopback_name()
+
+    if name == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    suffix = random.secure_token_hex(count: 3).must()
+    instance = "Hero Test " + suffix
+    st = hosting.open([name])
+    s = session.open([name])
+
+    if st.is_err() || s.is_err()
+        print("skipped: multicast DNS could not be joined on " + name)
+        return
+    responder @= st.must()
+    querier @= s.must()
+    host = net.parse_host("127.0.0.1").must()
+    d = model.Described(
+        instance: instance,
+        type: "_hero-test._tcp",
+        subtypes: ["_blue"],
+        host: "hero-test-" + suffix + ".local.",
+        port: 4242,
+        priority: 0,
+        weight: 0,
+        addresses: [host],
+        texts: [bytes.from_text("k=v")]
+    )
+    published = hosting.publish(@responder, d: d).must()
+    assert published.instance == instance
+    kind = "_hero-test._tcp.local."
+    session.ask(
+        querier,
+        questions: [session.plain(kind, type_code: dns.TYPE_PTR), session.plain("_blue._sub._hero-test._tcp.local.", type_code: dns.TYPE_PTR)]
+    ).must()
+    served = serve(@responder, wait_ms: 500).must()
+    assert served.len() == 0
+    assert listen_into(@querier, ms: 600) >= 1
+    now = session.elapsed_ms(querier).must()
+    found = cache.instances(querier.heard, type_name: kind, now_ms: now)
+    assert found.len() == 1
+    assert found[0].instance == instance
+    assert found[0].port == 4242
+    assert found[0].host == "hero-test-" + suffix + ".local."
+    assert found[0].addresses == [host]
+    assert found[0].texts == [bytes.from_text("k=v")]
+    assert cache.pointers(querier.heard, owner: "_blue._sub._hero-test._tcp.local.", now_ms: now).len() == 1
+    session.ask(querier, questions: [session.plain(names.ENUMERATION, type_code: dns.TYPE_PTR)]).must()
+    _ = serve(@responder, wait_ms: 400).must()
+    assert listen_into(@querier, ms: 400) >= 1
+    assert cache.pointers(querier.heard, owner: names.ENUMERATION, now_ms: session.elapsed_ms(querier).must()).len() >= 1
+    _ = listen_into(@querier, ms: 1100)
+    changed = model.Described(
+        instance: instance,
+        type: "_hero-test._tcp",
+        subtypes: ["_blue"],
+        host: "",
+        port: 4343,
+        priority: 0,
+        weight: 0,
+        addresses: [host],
+        texts: [bytes.from_text("k=w")]
+    )
+    assert hosting.update(@responder, d: changed).must().port == 4343
+    _ = serve(@responder, wait_ms: 100).must()
+    assert listen_into(@querier, ms: 500) >= 1
+    now2 = session.elapsed_ms(querier).must()
+    found2 = cache.instances(querier.heard, type_name: kind, now_ms: now2)
+    assert found2.len() == 1 && found2[0].port == 4343 && found2[0].texts == [bytes.from_text("k=w")]
+    hosting.withdraw(@responder, full: names.instance_name(instance: instance, type: "_hero-test._tcp").must()).must()
+    assert listen_into(@querier, ms: 1500) >= 1
+    cache.purge(@querier.heard, now_ms: session.elapsed_ms(querier).must())
+    assert cache.instances(querier.heard, type_name: kind, now_ms: session.elapsed_ms(querier).must()).len() == 0
+    assert hosting.withdraw(
+        @responder,
+        full: names.instance_name(instance: instance, type: "_hero-test._tcp").must()
+    ).is_err()
+    hosting.close(@responder).must()
+    session.close(@querier).must()

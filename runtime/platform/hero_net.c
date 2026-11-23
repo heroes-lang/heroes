@@ -2830,11 +2830,16 @@ static bool hero_net_literal(const char *address, int family, int64_t port, stru
 }
 
 /* A datagram socket of `family` bound to `where`, readied and non-blocking,
- * or NO_FD with the platform's number in `code`. No `SO_REUSEADDR`: a
- * datagram socket leaves no port in TIME_WAIT to take again, the one thing
- * a listener sets it for. On Windows the port is this socket's alone, as a
- * listener's is. */
-static hero_net_fd hero_net_bound(int family, const struct sockaddr_storage *where, hero_net_len size, int64_t *code) {
+ * or NO_FD with the platform's number in `code`. Unless `shared`, no
+ * `SO_REUSEADDR`: a datagram socket leaves no port in TIME_WAIT to take
+ * again, the one thing a listener sets it for. On Windows the port is then
+ * this socket's alone, as a listener's is. A `shared` one asks the system to
+ * let other sockets that ask the same stand on its port, and every one of
+ * them hears a datagram sent to a multicast group they joined (the system's
+ * own mDNS responder holds port 5353 this way): `SO_REUSEADDR`, and
+ * `SO_REUSEPORT` where the system has it, which Darwin asks of both
+ * sockets. A shared socket of IPv6 is IPv6's alone (`IPV6_V6ONLY`). */
+static hero_net_fd hero_net_bound(int family, const struct sockaddr_storage *where, hero_net_len size, bool shared, int64_t *code) {
     hero_net_fd fd = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 
     if (fd == HERO_NET_NO_FD) {
@@ -2846,13 +2851,24 @@ static hero_net_fd hero_net_bound(int family, const struct sockaddr_storage *whe
         (void)hero_net_close_fd(fd);
         return HERO_NET_NO_FD;
     }
-#if defined(_WIN32)
     int one = 1;
-    int failed = setsockopt(fd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&one, (hero_net_len)sizeof one);
+#if defined(_WIN32)
+    int failed = setsockopt(fd, SOL_SOCKET, shared ? SO_REUSEADDR : SO_EXCLUSIVEADDRUSE, (const char *)&one, (hero_net_len)sizeof one);
 #else
-    int failed = 0;
+    int failed = shared ? setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, (hero_net_len)sizeof one) : 0;
+#if defined(SO_REUSEPORT)
+    if (failed == 0 && shared) {
+        failed = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, (hero_net_len)sizeof one);
+    }
+#endif
 #endif
 
+    /* A shared socket of IPv6 hears IPv6 alone: left dual-stack (Darwin's
+     * and Linux's default) it would hear the IPv4 datagrams to the same
+     * port beside the shared socket of IPv4, each twice. */
+    if (failed == 0 && shared && family == AF_INET6) {
+        failed = setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&one, (hero_net_len)sizeof one);
+    }
     if (failed == 0) {
         failed = bind(fd, (const struct sockaddr *)where, size);
     }
@@ -2882,7 +2898,9 @@ static hero_net_socket *hero_net_keep_datagram(hero_net_fd fd, int family) {
     return handle;
 }
 
-hero_net_socket *hero_net_udp(const char *address, int64_t port) {
+/* The datagram socket `hero_net_udp` and `hero_net_udp_shared` make, the
+ * port its own or shared as `hero_net_bound` says. */
+static hero_net_socket *hero_net_udp_made(const char *address, int64_t port, bool shared) {
     hero_net_info *found = NULL;
 
     if (address == NULL || port < 0 || port > 65535 || (address[0] != '\0' && !hero_net_nameable(address))) {
@@ -2909,7 +2927,7 @@ hero_net_socket *hero_net_udp(const char *address, int64_t port) {
         if (!hero_net_placed(at, port, &where, &size)) {
             continue;
         }
-        hero_net_fd fd = hero_net_bound(at->ai_family, &where, size, &code);
+        hero_net_fd fd = hero_net_bound(at->ai_family, &where, size, shared, &code);
 
         if (fd == HERO_NET_NO_FD) {
             kind = hero_net_kind_of(code);
@@ -2927,6 +2945,14 @@ hero_net_socket *hero_net_udp(const char *address, int64_t port) {
     }
     hero_net_clear();
     return handle;
+}
+
+hero_net_socket *hero_net_udp(const char *address, int64_t port) {
+    return hero_net_udp_made(address, port, false);
+}
+
+hero_net_socket *hero_net_udp_shared(const char *address, int64_t port) {
+    return hero_net_udp_made(address, port, true);
 }
 
 /* The kind a datagram call's failure is: the system's word for one too long

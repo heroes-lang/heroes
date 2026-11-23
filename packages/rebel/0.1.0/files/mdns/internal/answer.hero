@@ -1,0 +1,283 @@
+# What a responder says (RFC 6762 §§ 6 and 7, RFC 6763 §§ 4 to 9): every
+# record a set of published services comes to, which of them answer a
+# question, which ride along in the additional section, and which a querier
+# already holds and need not be sent again.
+
+use dns
+use mdns/internal/kinds
+use mdns/internal/message
+use mdns/internal/model
+use mdns/internal/names
+use net
+
+# Whether the records `a` and `b` are the same: name, type, class and data,
+# the TTL not counted.
+function is_same(a: dns.Record, b: dns.Record) -> bool
+    ka = dns.canonical_name(a.name)
+    kb = dns.canonical_name(b.name)
+    return !ka.is_err() && !kb.is_err() && ka.must() == kb.must() && a.class_code == b.class_code && dns.type_of(a) == dns.type_of(b) && a.data == b.data
+
+# Adds `h` to `into` unless the same record is there.
+function put(@into: [message.Held], h: message.Held)
+    for have in into
+        if is_same(a: have.item, b: h.item)
+            return
+
+    into @ into.push(h)
+
+# The record of `name` that gives `host` as an address, an A or an AAAA by
+# the host's size.
+function address_record(name: str, host: net.Host) -> dns.Record
+    if net.is_v4(host)
+        return dns.Record(name: name, class_code: dns.CLASS_IN, ttl: model.HOST_TTL, data: .a(address: host))
+    return dns.Record(name: name, class_code: dns.CLASS_IN, ttl: model.HOST_TTL, data: .aaaa(address: host))
+
+# Every record `services` come to, with `addresses` as the addresses of every
+# host that gives none of its own: the pointer from the type to each
+# instance, from each subtype, and from the list of types; each instance's
+# SRV and TXT; each host's A and AAAA. The records of an instance and a host
+# are unique, their cache-flush bit set; the pointers are shared.
+#
+# Fails `invalid` where a name or a subtype is wrong.
+function zone_of(services: [model.Described], addresses: [net.Host]) -> [message.Held]?
+    zone: [message.Held] @= []
+
+    for d in services
+        full = names.instance_name(instance: d.instance, type: d.type)?
+        kind = names.type_name(d.type)?
+        pointer: dns.Data = .ptr(target: full)
+        put(
+            @zone,
+            h: message.Held(item: dns.Record(name: kind, class_code: dns.CLASS_IN, ttl: model.POINTER_TTL, data: pointer), flush: false)
+        )
+
+        for sub in d.subtypes
+            under = names.type_name(sub + "._sub." + d.type)?
+            put(
+                @zone,
+                h: message.Held(item: dns.Record(name: under, class_code: dns.CLASS_IN, ttl: model.POINTER_TTL, data: pointer), flush: false)
+            )
+
+        listed: dns.Data = .ptr(target: kind)
+        put(
+            @zone,
+            h: message.Held(item: dns.Record(name: names.ENUMERATION, class_code: dns.CLASS_IN, ttl: model.POINTER_TTL, data: listed), flush: false)
+        )
+        srv: dns.Data = .srv(priority: d.priority, weight: d.weight, port: d.port, target: d.host)
+        put(
+            @zone,
+            h: message.Held(item: dns.Record(name: full, class_code: dns.CLASS_IN, ttl: model.HOST_TTL, data: srv), flush: true)
+        )
+        put(
+            @zone,
+            h: message.Held(item: dns.Record(name: full, class_code: dns.CLASS_IN, ttl: model.POINTER_TTL, data: .txt(texts: d.texts)), flush: true)
+        )
+        hosts: [net.Host] @= d.addresses
+
+        if hosts.len() == 0
+            hosts @ addresses
+
+        for h in hosts
+            put(@zone, h: message.Held(item: address_record(d.host, host: h), flush: true))
+
+    return ok(zone)
+
+# The records of `zone` whose name is `name` and whose type is `type_code`
+# (`dns.TYPE_ANY` for every type), for a question of class IN or ANY.
+function matching(zone: [message.Held], name: str, type_code: i64, class_code: i64) -> [message.Held]
+    key = dns.canonical_name(name)
+
+    if key.is_err() || class_code != dns.CLASS_IN && class_code != dns.CLASS_ANY
+        return []
+    out: [message.Held] @= []
+
+    for h in zone
+        owner = dns.canonical_name(h.item.name)
+
+        if !owner.is_err() && owner.must() == key.must() && (type_code == dns.TYPE_ANY || dns.type_of(h.item) == type_code)
+            out @ out.push(h)
+
+    return out
+
+# The records that answer `q`: those of `zone` under its name and of its type.
+function answers_to(zone: [message.Held], q: dns.Question) -> [message.Held]
+    return matching(zone, name: q.name, type_code: q.type_code, class_code: q.class_code)
+
+# The NSEC record that says `name` holds only the types `types`, so that a
+# querier told of an A record is not left waiting for an AAAA (RFC 6762
+# § 6.1).
+function negative(name: str, types: [i64]) -> message.Held
+    return message.Held(
+        item: dns.Record(name: name, class_code: dns.CLASS_IN, ttl: model.HOST_TTL, data: .nsec(next: name, types: types)),
+        flush: true
+    )
+
+# The records that ride along with `answers`, which a querier would ask for
+# next (RFC 6763 § 12): for a pointer, the instance's SRV and TXT; for an SRV,
+# its host's addresses; and for an address of one kind, the other kind's or an
+# NSEC saying there is none. None of them is one of `answers`.
+function additionals_of(zone: [message.Held], answers: [message.Held]) -> [message.Held]
+    out: [message.Held] @= []
+    pending: [message.Held] @= answers
+    done: i64 @= 0
+
+    while done < pending.len()
+        item = pending[done].item
+        done @ done + 1
+
+        code = dns.type_of(item)
+
+        if code == dns.TYPE_PTR
+            target = kinds.pointer_of(item.data)
+
+            if !target.is_err()
+                for h in matching(zone, name: target.must(), type_code: dns.TYPE_ANY, class_code: dns.CLASS_IN)
+                    if dns.type_of(h.item) == dns.TYPE_SRV || dns.type_of(h.item) == dns.TYPE_TXT
+                        put(@out, h: h)
+                        pending @ pending.push(h)
+
+        if code == dns.TYPE_SRV
+            found = kinds.target_of(item.data)
+
+            if !found.is_err()
+                for h in matching(zone, name: found.must().host, type_code: dns.TYPE_ANY, class_code: dns.CLASS_IN)
+                    put(@out, h: h)
+                    pending @ pending.push(h)
+
+        if code == dns.TYPE_A || code == dns.TYPE_AAAA
+            other: i64 @= dns.TYPE_A
+
+            if code == dns.TYPE_A
+                other @ dns.TYPE_AAAA
+            others = matching(zone, name: item.name, type_code: other, class_code: dns.CLASS_IN)
+
+            if others.len() == 0
+                put(@out, h: negative(item.name, types: [code]))
+
+            for h in others
+                put(@out, h: h)
+
+    kept: [message.Held] @= []
+
+    for h in out
+        listed: bool @= false
+
+        for a in answers
+            if is_same(a: a.item, b: h.item)
+                listed @ true
+
+        if !listed
+            kept @ kept.push(h)
+
+    return kept
+
+# `answers` without the records a querier lists as known with at least half
+# the time to live the answer would give (RFC 6762 § 7.1).
+function unknown_to(answers: [message.Held], known: [dns.Record]) -> [message.Held]
+    out: [message.Held] @= []
+
+    for h in answers
+        held: bool @= false
+
+        for k in known
+            if is_same(a: k, b: h.item) && k.ttl * 2 >= h.item.ttl
+                held @ true
+
+        if !held
+            out @ out.push(h)
+
+    return out
+
+# Whether a record of `answers` is a shared one, a pointer: the answers to a
+# question about a name nobody owns alone are held back a little (RFC 6762
+# § 6).
+function has_shared(answers: [message.Held]) -> bool
+    for h in answers
+        if !h.flush
+            return true
+
+    return false
+
+function sample() -> model.Described
+    return model.Described(
+        instance: "Desk",
+        type: "_ipp._tcp",
+        subtypes: ["_printer"],
+        host: "desk.local.",
+        port: 631,
+        priority: 0,
+        weight: 0,
+        addresses: [],
+        texts: [[97, 61, 49]]
+    )
+
+test "zone_of: a service comes to its pointers, SRV, TXT and an address of each interface"
+    zone = zone_of([sample()], addresses: [net.parse_host("10.0.0.5").must()]).must()
+    assert zone.len() == 6
+    assert matching(zone, name: "_ipp._tcp.local.", type_code: dns.TYPE_PTR, class_code: dns.CLASS_IN).len() == 1
+    assert matching(zone, name: "_printer._sub._ipp._tcp.local.", type_code: dns.TYPE_PTR, class_code: dns.CLASS_IN).len() == 1
+    assert matching(zone, name: "_SERVICES._dns-sd._udp.local.", type_code: dns.TYPE_PTR, class_code: dns.CLASS_IN).len() == 1
+    srv = matching(zone, name: "desk._ipp._tcp.local.", type_code: dns.TYPE_ANY, class_code: dns.CLASS_ANY)
+    assert srv.len() == 2
+    assert srv[0].flush && srv[1].flush
+    assert !matching(zone, name: "_ipp._tcp.local.", type_code: dns.TYPE_PTR, class_code: dns.CLASS_IN)[0].flush
+    assert matching(zone, name: "desk.local.", type_code: dns.TYPE_A, class_code: dns.CLASS_IN).len() == 1
+    assert matching(zone, name: "desk.local.", type_code: dns.TYPE_A, class_code: dns.CLASS_CH).len() == 0
+
+test "zone_of: two services on one host hold its address once, and a bad name is refused"
+    other = model.Described(
+        instance: "Desk 2",
+        type: "_http._tcp",
+        subtypes: [],
+        host: "desk.local.",
+        port: 80,
+        priority: 0,
+        weight: 0,
+        addresses: [],
+        texts: [[]]
+    )
+    zone = zone_of([sample(), other], addresses: [net.parse_host("10.0.0.5").must()]).must()
+    assert matching(zone, name: "desk.local.", type_code: dns.TYPE_A, class_code: dns.CLASS_IN).len() == 1
+    bad = model.Described(
+        instance: "",
+        type: "_http._tcp",
+        subtypes: [],
+        host: "h.local.",
+        port: 80,
+        priority: 0,
+        weight: 0,
+        addresses: [],
+        texts: [[]]
+    )
+    assert zone_of([bad], addresses: []).is_err()
+
+test "additionals_of: a pointer brings the instance's records and the host's address and an NSEC for the missing kind"
+    zone = zone_of([sample()], addresses: [net.parse_host("10.0.0.5").must()]).must()
+    asked = answers_to(zone, q: message.question("_ipp._tcp.local.", type_code: dns.TYPE_PTR))
+    assert asked.len() == 1
+    more = additionals_of(zone: zone, answers: asked)
+    assert more.len() == 4
+    assert matching(more, name: "desk._ipp._tcp.local.", type_code: dns.TYPE_SRV, class_code: dns.CLASS_IN).len() == 1
+    assert matching(more, name: "desk._ipp._tcp.local.", type_code: dns.TYPE_TXT, class_code: dns.CLASS_IN).len() == 1
+    assert matching(more, name: "desk.local.", type_code: dns.TYPE_A, class_code: dns.CLASS_IN).len() == 1
+    assert matching(more, name: "desk.local.", type_code: dns.TYPE_NSEC, class_code: dns.CLASS_IN).len() == 1
+
+test "additionals_of: an address answered brings its other kind where there is one and nothing the answer holds"
+    both = zone_of([sample()], addresses: [net.parse_host("10.0.0.5").must(), net.parse_host("fe80::1").must()]).must()
+    asked = answers_to(both, q: message.question("desk.local.", type_code: dns.TYPE_ANY))
+    assert asked.len() == 2
+    assert additionals_of(zone: both, answers: asked).len() == 0
+    one = answers_to(both, q: message.question("desk.local.", type_code: dns.TYPE_A))
+    more = additionals_of(zone: both, answers: one)
+    assert more.len() == 1
+    assert dns.type_of(more[0].item) == dns.TYPE_AAAA
+
+test "unknown_to: a known answer with half the time left is held back, one with less is sent"
+    zone = zone_of([sample()], addresses: []).must()
+    asked = answers_to(zone, q: message.question("_ipp._tcp.local.", type_code: dns.TYPE_PTR))
+    known = dns.Record(name: "_ipp._tcp.local.", class_code: dns.CLASS_IN, ttl: 2250, data: asked[0].item.data)
+    assert unknown_to(asked, known: [known]).len() == 0
+    stale = dns.Record(name: "_ipp._tcp.local.", class_code: dns.CLASS_IN, ttl: 2249, data: asked[0].item.data)
+    assert unknown_to(asked, known: [stale]).len() == 1
+    assert unknown_to(asked, known: []).len() == 1
+    assert has_shared(asked)

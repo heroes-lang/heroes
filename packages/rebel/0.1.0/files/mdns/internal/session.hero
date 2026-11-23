@@ -1,0 +1,268 @@
+# A querier's session (RFC 6762 §§ 5 and 7): the transport, the records heard,
+# and a clock; questions sent with the answers already held listed as known,
+# repeated a second, two, four seconds on until the time given runs out or
+# what was asked for is there, and what arrives taken into the cache.
+
+use dns
+use mdns/internal/cache
+use mdns/internal/failure
+use mdns/internal/kinds
+use mdns/internal/message
+use mdns/internal/transport
+use net
+use poll
+use time
+
+# The longest the gap between two sends of one question grows to.
+constant MOST_INTERVAL_MS: i64
+    3_600_000
+
+# One querier's state.
+record Session
+    # The sockets.
+    line: transport.Transport
+    # What has been heard.
+    heard: cache.Cache
+    # The clock every time here is read from.
+    start: time.Mark
+    # The questions a follow-up has asked already, by their text.
+    asked: {str: bool}
+
+# What a gathering of answers waits for before its time is out.
+variant Goal
+    # Nothing: the whole time is waited.
+    never
+    # An address for the host `host` (an A or an AAAA record).
+    address
+        # The host's name.
+        host: str
+    # The instance named `instance` described, an address among it.
+    resolved
+        # The instance's full name.
+        instance: str
+
+# A session on the interfaces `interfaces` names, the usual ones where it names
+# none. Fails as `transport.open` does.
+function open(interfaces: [str]) -> Session?
+    line = transport.open(interfaces)?
+    return ok(Session(line: line, heard: cache.empty(), start: time.mark()?, asked: {}))
+
+# A session with no socket, on an empty set: what it hears is put into its
+# cache by hand, which is how the modules above it are tested without a
+# network.
+function detached() -> Session?
+    line = transport.Transport(sockets: [], wide: [], keys: [], lines: [], set: poll.make(1)?)
+    return ok(Session(line: line, heard: cache.empty(), start: time.mark()?, asked: {}))
+
+# Closes the session's sockets.
+function close(@s: Session) -> ()?
+    return transport.close(@s.line)
+
+# The milliseconds since the session began.
+function elapsed_ms(s: Session) -> i64?
+    return ok(time.to_units(time.elapsed(s.start)?, unit: .millisecond))
+
+# Takes in the records of a response: those of its answer and additional
+# sections, in class IN, with their cache-flush bits. A packet that is no
+# response, has an operation or a code other than none, or did not come from
+# port 5353 is passed over (RFC 6762 § 11), and so is one that cannot be read.
+# True where a record was kept.
+function absorb(@s: Session, p: transport.Packet, now_ms: i64) -> bool
+    if p.sender.port != transport.PORT
+        return false
+
+    match message.read(p.data)
+        .err _ => return false
+        .ok heard =>
+            if !heard.message.response || heard.message.opcode != dns.OPCODE_QUERY || heard.message.rcode != dns.RCODE_NO_ERROR
+                return false
+            kept: bool @= false
+            records: [dns.Record] @= heard.message.answers
+            at: i64 @= 0
+
+            for r in heard.message.additionals
+                records @ records.push(r)
+
+            for r in records
+                bit = at < heard.flush.len() && heard.flush[at]
+                at @ at + 1
+
+                if r.class_code == dns.CLASS_IN
+                    cache.add(@s.heard, r: r, flush: bit, now_ms: now_ms)
+                    kept @ true
+
+            return kept
+
+# Waits up to `wait_ms` for one packet and takes it in. True where it added
+# records; fails `timeout` where none came, `stopped` where the stop was
+# asked.
+function pump(@s: Session, wait_ms: i64) -> bool?
+    p = transport.receive(s.line, wait_ms: wait_ms)?
+    return ok(absorb(@s, p: p, now_ms: elapsed_ms(s)?))
+
+# Sends `questions` to the group, the records held that answer them listed as
+# known.
+function ask(s: Session, questions: [message.Asked]) -> ()?
+    now = elapsed_ms(s)?
+    known: [message.Held] @= []
+
+    for a in questions
+        for r in cache.known_for(s.heard, name: a.question.name, type_code: a.question.type_code, now_ms: now)
+            known @ known.push(message.Held(item: r, flush: false))
+
+    packets = message.pack(message.Head(response: false, id: 0), split: true, asked: questions, answers: known, authorities: [], additionals: [])?
+
+    for p in packets
+        transport.send_group(s.line, data: p)?
+
+    return ok()
+
+# The questions of `type_code` about `name`, in class IN, multicast.
+function plain(name: str, type_code: i64) -> message.Asked
+    return message.Asked(question: message.question(name, type_code: type_code), unicast: false)
+
+# Asks, once for the session, the questions `wanted` holds and no follow-up
+# asked before; the key of each is its name lowered and its type.
+function ask_once(@s: Session, wanted: [message.Asked]) -> ()?
+    fresh: [message.Asked] @= []
+
+    for a in wanted
+        key = dns.canonical_name(a.question.name)
+
+        if key.is_err()
+            continue
+        text = f"{a.question.type_code} {key.must()}"
+
+        if s.asked[text].is_err()
+            s.asked[text] @ true
+            fresh @ fresh.push(a)
+
+    if fresh.len() > 0
+        return ask(s, questions: fresh)
+    return ok()
+
+# The follow-up questions the records held call for about `instances`, the
+# full names of service instances: an instance with no SRV record is asked
+# for its SRV and TXT, one with an SRV record and no address for the host's A
+# and AAAA (RFC 6763 § 12).
+function follow_up(@s: Session, instances: [str]) -> ()?
+    now = elapsed_ms(s)?
+    wanted: [message.Asked] @= []
+
+    for name in instances
+        srv = cache.matching(s.heard, name: name, type_code: dns.TYPE_SRV, now_ms: now)
+
+        if srv.len() == 0
+            wanted @ wanted.push(plain(name, type_code: dns.TYPE_SRV))
+            wanted @ wanted.push(plain(name, type_code: dns.TYPE_TXT))
+            continue
+
+        for r in srv
+            found = kinds.target_of(r.data)
+
+            if !found.is_err() && cache.addresses_of(s.heard, host: found.must().host, now_ms: now).len() == 0
+                wanted @ wanted.push(plain(found.must().host, type_code: dns.TYPE_A))
+                wanted @ wanted.push(plain(found.must().host, type_code: dns.TYPE_AAAA))
+
+    return ask_once(@s, wanted: wanted)
+
+# Whether `goal` is met by what is held at `now_ms`.
+function is_met(s: Session, goal: Goal, now_ms: i64) -> bool
+    match goal
+        .never     => return false
+        .address a => return cache.addresses_of(s.heard, host: a.host, now_ms: now_ms).len() > 0
+        .resolved r =>
+            match cache.described(s.heard, name: r.instance, now_ms: now_ms)
+                .ok d  => return d.addresses.len() > 0
+                .err _ => return false
+
+# Sends `first` and repeats it at one, two, four seconds on and so on until
+# `wait_ms` have passed or `goal` is met, taking in what arrives; after each
+# arrival the follow-up questions about `follow` (a function of the cache's
+# instance names, `owner` the name whose pointers name them, or ""
+# for the instance `goal` names) are asked once.
+#
+# Fails `stopped` where the stop was asked, and as `ask` fails.
+function gather(@s: Session, first: [message.Asked], owner: str, goal: Goal, wait_ms: i64) -> ()?
+    began = elapsed_ms(s)?
+    deadline = began + wait_ms
+    next_send: i64 @= began
+    interval: i64 @= 1000
+
+    while true
+        now = elapsed_ms(s)?
+        cache.purge(@s.heard, now_ms: now)
+
+        if is_met(s, goal: goal, now_ms: now) || now >= deadline
+            return ok()
+
+        if now >= next_send
+            ask(s, questions: first)?
+            next_send @ now + interval
+            interval @ interval * 2
+
+            if interval > MOST_INTERVAL_MS
+                interval @ MOST_INTERVAL_MS
+        instances: [str] @= []
+
+        if owner != ""
+            instances @ cache.pointers(s.heard, owner: owner, now_ms: now)
+        else
+            match goal
+                .never      => instances @ instances
+                .address _  => instances @ instances
+                .resolved r => instances @ [r.instance]
+        follow_up(@s, instances: instances)?
+        limit @= next_send
+        left = deadline - elapsed_ms(s)?
+
+        if next_send - elapsed_ms(s)? > left
+            limit @ elapsed_ms(s)? + left
+        pause @= limit - elapsed_ms(s)?
+
+        if pause < 1
+            pause @ 1
+
+        match pump(@s, wait_ms: pause)
+            .ok _ => instances @ instances
+            .err e =>
+                if e.code != failure.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+    return ok()
+
+test "absorb: a response is kept, a query is not, and a source port other than 5353 is passed over"
+    answer = message.Held(
+        item: cache.address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 120),
+        flush: true
+    )
+    response = message.build(
+        message.Head(response: true, id: 0),
+        truncated: false,
+        asked: [],
+        answers: [answer],
+        authorities: [],
+        additionals: []
+    ).must()
+    query = message.build(
+        message.Head(response: false, id: 0),
+        truncated: false,
+        asked: [plain("a.local.", type_code: dns.TYPE_A)],
+        answers: [],
+        authorities: [],
+        additionals: []
+    ).must()
+    s @= Session(
+        line: transport.Transport(sockets: [], wide: [], keys: [], lines: [], set: poll.make(1).must()),
+        heard: cache.empty(),
+        start: time.mark().must(),
+        asked: {}
+    )
+    from = net.Address(host: net.parse_host("10.0.0.2").must(), port: 5353)
+    assert !absorb(@s, p: transport.Packet(data: query, sender: from, wide: false), now_ms: 0)
+    assert !absorb(@s, p: transport.Packet(data: response, sender: net.Address(host: from.host, port: 4000), wide: false), now_ms: 0)
+    assert !absorb(@s, p: transport.Packet(data: [1, 2, 3], sender: from, wide: false), now_ms: 0)
+    assert s.heard.entries.len() == 0
+    assert absorb(@s, p: transport.Packet(data: response, sender: from, wide: false), now_ms: 0)
+    assert cache.matching(s.heard, name: "a.local.", type_code: dns.TYPE_A, now_ms: 0).len() == 1
+    close(@s).must()

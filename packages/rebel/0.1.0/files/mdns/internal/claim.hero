@@ -1,0 +1,311 @@
+# Claiming a name (RFC 6762 §§ 8 and 9): whether a record heard conflicts with
+# a name being claimed or held, which of two simultaneous claims wins, and the
+# name tried next after a conflict.
+
+use bytes
+use dns
+use mdns/internal/failure
+use mdns/internal/kinds
+use mdns/internal/names
+use net
+use numbers
+use strings
+
+# The most a renamed instance's label holds, so " (2)" and its kin still fit.
+constant MOST_BASE: i64
+    55
+
+# The uncompressed form `name` is written in inside a record's data, its
+# letters lowered (RFC 6762 § 8.2.1 compares data so). Fails `invalid` where
+# `name` is no name.
+function wire_name(name: str) -> [u8]?
+    labels = dns.labels_of(dns.canonical_name(name)?)?
+    out: [u8] @= []
+
+    for text in labels
+        label = names.label_bytes(text)?
+        out @ out.push(to_u8(label.len()).must())
+        out @ bytes.concat([out, label])
+
+    out @ out.push(0)
+    return ok(out)
+
+# The two bytes of `n`, the higher first.
+function two(n: i64) -> [u8]
+    return [to_u8(n >> 8 & 255).must(), to_u8(n & 255).must()]
+
+# The data of a record as the wire carries it, the names in it uncompressed.
+# Fails `unsupported` for a type this does not write: it is asked of the
+# types a responder claims alone, A, AAAA, SRV, TXT and PTR.
+function rdata_of(r: dns.Record) -> [u8]?
+    code = dns.type_of(r)
+
+    if code == dns.TYPE_A || code == dns.TYPE_AAAA
+        return ok(kinds.address_of(r.data)?.bytes)
+
+    if code == dns.TYPE_PTR
+        return wire_name(kinds.pointer_of(r.data)?)
+
+    if code == dns.TYPE_SRV
+        v = kinds.target_of(r.data)?
+        return ok(bytes.concat([two(v.priority), two(v.weight), two(v.port), wire_name(v.host)?]))
+
+    if code == dns.TYPE_TXT
+        out: [u8] @= []
+
+        for text in kinds.texts_of(r.data)?
+            out @ out.push(to_u8(text.len()).must())
+            out @ bytes.concat([out, text])
+
+        return ok(out)
+    return fail(code: failure.UNSUPPORTED, msg: f"the data of a {dns.type_name(code)} record is not compared here")
+
+# The record's class, type and data as one run of bytes, which orders records
+# the way a simultaneous probe's tie is broken.
+function key_of(r: dns.Record) -> [u8]?
+    return ok(bytes.concat([two(r.class_code), two(dns.type_of(r)), rdata_of(r)?]))
+
+# The keys of `records`, ascending, the order a set of records is compared in.
+function sorted_keys(records: [dns.Record]) -> [[u8]]?
+    held: [[u8]] @= []
+
+    for r in records
+        key = key_of(r)?
+        at: i64 @= held.len()
+
+        while at > 0 && bytes.compare(a: held[at - 1], b: key) > 0
+            at @ at - 1
+
+        held @ insert_at(held, at: at, key: key)
+
+    return ok(held)
+
+# `rows` with `key` put in at `at`.
+function insert_at(rows: [[u8]], at: i64, key: [u8]) -> [[u8]]
+    out: [[u8]] @= []
+
+    for i in range(from: 0, to: rows.len())
+        if i == at
+            out @ out.push(key)
+        out @ out.push(rows[i])
+
+    if at >= rows.len()
+        out @ out.push(key)
+    return out
+
+# Whether the claim `theirs` wins over `ours`, two probes for one name heard
+# at once: the sets of records sorted and compared one by one, class, then
+# type, then data, the lexicographically later winning, and where one set is
+# the head of the other the longer (RFC 6762 § 8.2.1). Equal sets are no
+# conflict, and so neither wins.
+function loses_to(ours: [dns.Record], theirs: [dns.Record]) -> bool?
+    mine = sorted_keys(ours)?
+    other = sorted_keys(theirs)?
+    count @= mine.len()
+
+    if other.len() < count
+        count @ other.len()
+
+    for i in range(from: 0, to: count)
+        order = bytes.compare(a: mine[i], b: other[i])
+
+        if order < 0
+            return ok(true)
+
+        if order > 0
+            return ok(false)
+
+    return ok(other.len() > mine.len())
+
+# Whether the record `theirs`, heard in a response, conflicts with what is
+# claimed: `ours` are the records claimed, `hosts` the names that are hosts'
+# among them (lowered), `own` the addresses of this machine. A record under
+# a claimed name conflicts where it differs from every record claimed under
+# that name of its type; an address under a host's name conflicts where it is
+# none of `own`, since a host's several addresses are not one claim (RFC 6762
+# § 9); an NSEC is no claim.
+function conflicts(ours: [dns.Record], hosts: [str], own: [net.Host], theirs: dns.Record) -> bool
+    if theirs.class_code != dns.CLASS_IN
+        return false
+    key = dns.canonical_name(theirs.name)
+
+    if key.is_err()
+        return false
+    claimed: bool @= false
+    held: bool @= false
+
+    for r in ours
+        owner = dns.canonical_name(r.name)
+
+        if !owner.is_err() && owner.must() == key.must()
+            claimed @ true
+
+            if dns.type_of(r) == dns.type_of(theirs) && r.data == theirs.data
+                held @ true
+
+    if !claimed
+        return false
+    is_host: bool @= false
+
+    for h in hosts
+        if h == key.must()
+            is_host @ true
+
+    if kinds.is_nsec(theirs.data)
+        return false
+    address = kinds.address_of(theirs.data)
+
+    if is_host && !address.is_err()
+        return !contains(own, host: address.must())
+    return !held
+
+# Whether `hosts` holds `host`, its zone not counted.
+function contains(hosts: [net.Host], host: net.Host) -> bool
+    for h in hosts
+        if h.bytes == host.bytes
+            return true
+
+    return false
+
+# The label tried after `instance` conflicted: `Name` becomes `Name (2)` and
+# `Name (2)` `Name (3)`, the base cut so that the label fits 63 bytes
+# (RFC 6763 § D.2).
+function renamed(instance: str) -> str
+    base: str @= instance
+    next: i64 @= 2
+
+    if strings.has_suffix(s: instance, suffix: ")")
+        open = strings.index_of_last(s: instance, substr: " (")
+
+        if !open.is_err()
+            digits = instance.slice(from: open.must() + 2, to: instance.len() - 1)
+            number = numbers.parse_int(digits)
+
+            if digits.len() > 0 && digits.len() < 9 && !number.is_err()
+                base @ instance.slice(from: 0, to: open.must())
+                next @ number.must() + 1
+
+    while base.len() > MOST_BASE
+        cut: i64 @= MOST_BASE
+
+        while cut > 0 && to_i64(base[cut]).must() & 192 == 128
+            cut @ cut - 1
+
+        base @ base.slice(from: 0, to: cut)
+
+    return f"{base} ({next})"
+
+# The host name tried after `host` conflicted: `printer.local.` becomes
+# `printer-2.local.` and `printer-2.local.` `printer-3.local.`.
+function renamed_host(host: str) -> str
+    labels = names.labels_unescaped(host)
+
+    if labels.is_err() || labels.must().len() < 2
+        return host
+    first = labels.must()[0]
+    base: str @= first
+    next: i64 @= 2
+    dash = strings.index_of_last(s: first, substr: "-")
+
+    if !dash.is_err()
+        digits = first.slice(from: dash.must() + 1, to: first.len())
+        number = numbers.parse_int(digits)
+
+        if digits.len() > 0 && digits.len() < 9 && !number.is_err()
+            base @ first.slice(from: 0, to: dash.must())
+            next @ number.must() + 1
+    return names.label_text(bytes.from_text(f"{base}-{next}")) + ".local."
+
+test "renamed: a number appended, counted up, and a long label cut before its suffix"
+    assert renamed("Printer") == "Printer (2)"
+    assert renamed("Printer (2)") == "Printer (3)"
+    assert renamed("Printer (9)") == "Printer (10)"
+    assert renamed("A (b)") == "A (b) (2)"
+    assert renamed("A ()") == "A () (2)"
+    assert renamed(repeat("x", 63)).len() <= 63
+    assert renamed(repeat("é", 31)).len() <= 63
+    assert renamed("é") == "é (2)"
+
+test "renamed_host: a dash and a number, counted up"
+    assert renamed_host("printer.local.") == "printer-2.local."
+    assert renamed_host("printer-2.local.") == "printer-3.local."
+    assert renamed_host("my-printer.local.") == "my-printer-2.local."
+    assert renamed_host("x-.local.") == "x--2.local."
+
+test "loses_to: the later data wins, a longer set beats its head, and equal sets tie"
+    a = dns.Record(
+        name: "h.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .a(address: net.parse_host("10.0.0.1").must())
+    )
+    b = dns.Record(
+        name: "h.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .a(address: net.parse_host("10.0.0.2").must())
+    )
+    assert loses_to(ours: [a], theirs: [b]).must()
+    assert !loses_to(ours: [b], theirs: [a]).must()
+    assert !loses_to(ours: [a], theirs: [a]).must()
+    assert loses_to(ours: [a], theirs: [a, b]).must()
+    assert !loses_to(ours: [a, b], theirs: [a]).must()
+    assert !loses_to(ours: [a, b], theirs: [b, a]).must()
+    txt = dns.Record(name: "h.local.", class_code: dns.CLASS_IN, ttl: 120, data: .txt(texts: [[1, 65]]))
+    assert loses_to(ours: [a], theirs: [txt]).must()
+    pointer = dns.Record(name: "h.local.", class_code: dns.CLASS_IN, ttl: 120, data: .cname(target: "x."))
+    assert loses_to(ours: [a], theirs: [pointer]).is_err()
+
+test "conflicts: other data under a claimed name, an own address under a host's name, and an NSEC"
+    srv = dns.Record(
+        name: "Desk._ipp._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .srv(priority: 0, weight: 0, port: 631, target: "desk.local.")
+    )
+    mine = net.parse_host("10.0.0.1").must()
+    other = net.parse_host("10.0.0.2").must()
+    address = dns.Record(name: "desk.local.", class_code: dns.CLASS_IN, ttl: 120, data: .a(address: mine))
+    ours = [srv, address]
+    hosts = ["desk.local."]
+    elsewhere = dns.Record(
+        name: "DESK._IPP._TCP.LOCAL.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .srv(priority: 0, weight: 0, port: 632, target: "desk.local.")
+    )
+    assert conflicts(ours, hosts: hosts, own: [mine], theirs: elsewhere)
+    assert !conflicts(ours, hosts: hosts, own: [mine], theirs: srv)
+    assert conflicts(
+        ours,
+        hosts: hosts,
+        own: [mine],
+        theirs: dns.Record(name: "desk._ipp._tcp.local.", class_code: dns.CLASS_IN, ttl: 120, data: .txt(texts: [[]]))
+    )
+    assert conflicts(
+        ours,
+        hosts: hosts,
+        own: [mine],
+        theirs: dns.Record(name: "desk.local.", class_code: dns.CLASS_IN, ttl: 120, data: .a(address: other))
+    )
+    assert !conflicts(ours, hosts: hosts, own: [mine, other], theirs: dns.Record(name: "desk.local.", class_code: dns.CLASS_IN, ttl: 120, data: .a(address: other)))
+    assert !conflicts(ours, hosts: hosts, own: [mine], theirs: dns.Record(name: "desk.local.", class_code: dns.CLASS_IN, ttl: 120, data: .nsec(next: "desk.local.", types: [1])))
+    assert !conflicts(ours, hosts: hosts, own: [mine], theirs: dns.Record(name: "unrelated.local.", class_code: dns.CLASS_IN, ttl: 120, data: .a(address: other)))
+    assert !conflicts(ours, hosts: hosts, own: [mine], theirs: dns.Record(name: "desk.local.", class_code: dns.CLASS_CH, ttl: 120, data: .a(address: other)))
+    assert conflicts(
+        ours,
+        hosts: hosts,
+        own: [mine],
+        theirs: dns.Record(name: "desk._ipp._tcp.local.", class_code: dns.CLASS_IN, ttl: 120, data: .a(address: mine))
+    )
+
+test "rdata_of: the data of the types a claim holds, names uncompressed and lowered"
+    srv = dns.Record(
+        name: "x.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .srv(priority: 1, weight: 2, port: 631, target: "Desk.local.")
+    )
+    assert rdata_of(srv).must() == [0, 1, 0, 2, 2, 119, 4, 100, 101, 115, 107, 5, 108, 111, 99, 97, 108, 0]
+    txt = dns.Record(name: "x.local.", class_code: dns.CLASS_IN, ttl: 120, data: .txt(texts: [[65, 66], []]))
+    assert rdata_of(txt).must() == [2, 65, 66, 0]

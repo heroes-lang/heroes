@@ -1,0 +1,34 @@
+# What multicast DNS says about a service instance, as the modules below the
+# face hold it. The face's `Service` is made from it and makes it, the
+# attributes as the strings of their TXT record.
+
+use net
+
+# The TTL of a record that names a host or an instance (RFC 6762 § 10: 120
+# seconds), and of one that points at an instance (75 minutes).
+constant HOST_TTL: i64
+    120
+
+constant POINTER_TTL: i64
+    4500
+
+# One instance of a service type, with the records that describe it.
+record Described
+    # The instance's label, UTF-8, as people read it.
+    instance: str
+    # The type, `_ipp._tcp`.
+    type: str
+    # The subtypes the instance answers to, `_printer`, none where it has
+    # none; a record found by browsing never holds any.
+    subtypes: [str]
+    # The host's name, `printer.local.`.
+    host: str
+    # The port, 0 to 65535.
+    port: i64
+    # The SRV record's priority and weight, 0 to 65535.
+    priority: i64
+    weight: i64
+    # The host's addresses, IPv4 and IPv6, as far as they are known.
+    addresses: [net.Host]
+    # The strings of the TXT record.
+    texts: [[u8]]

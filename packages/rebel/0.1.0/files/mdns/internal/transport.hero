@@ -1,0 +1,332 @@
+# The network side of multicast DNS (RFC 6762 §§ 3 and 11): one datagram
+# socket for IPv4 and one for IPv6 on port 5353, each sharing the port with
+# the system's own responder, joined to the group on every interface the
+# program is given, and sent to the group through each of them in turn.
+
+use mdns/internal/failure
+use net
+use poll
+use time
+
+# The port every multicast DNS message is sent to, and from.
+constant PORT: i64
+    5353
+
+# The group of IPv4's, and of IPv6's link scope.
+constant GROUP_V4: str
+    "224.0.0.251"
+
+constant GROUP_V6: str
+    "ff02::fb"
+
+# One interface the transport is on, and the families it carries.
+record Line
+    # The interface's name, `en0`.
+    name: str
+    # Its index, which a group is joined on and a datagram leaves by.
+    index: i64
+    # Whether the transport is on it for IPv4, and for IPv6.
+    v4: bool
+    v6: bool
+    # Its addresses, each with the bits of its network.
+    addresses: [net.Network]
+
+# The sockets and the interfaces they stand on.
+record Transport
+    # One socket for each family the interfaces carry.
+    sockets: [net.UdpSocket]
+    # Whether the socket at the same place is IPv6's.
+    wide: [bool]
+    # The keys the sockets have in `set`, in the same order.
+    keys: [i64]
+    # The interfaces, with the families each is joined on.
+    lines: [Line]
+    # The set a wait is made on.
+    set: poll.Set
+
+# A datagram received.
+record Packet
+    # Its bytes.
+    data: [u8]
+    # Who sent it, and from which port.
+    sender: net.Address
+    # Whether it came by IPv6.
+    wide: bool
+
+# Whether `i` is an interface a program is on when it names none: up, running,
+# carrying multicast, neither the loopback nor a tunnel, with an address.
+function is_usual(i: net.Interface) -> bool
+    return i.up && i.running && i.multicast && !i.loopback && !i.point_to_point && i.addresses.len() > 0
+
+# The line `i` makes: the families its addresses are of.
+function line_of(i: net.Interface) -> Line
+    v4: bool @= false
+    v6: bool @= false
+
+    for a in i.addresses
+        if net.is_v4(a.host)
+            v4 @ true
+        else
+            v6 @ true
+
+    return Line(name: i.name, index: i.index, v4: v4, v6: v6, addresses: i.addresses)
+
+# The interfaces named, or the usual ones where `names` is empty, as lines.
+# Fails `not_found` where a name names no interface or none is usual.
+function lines_for(names: [str]) -> [Line]?
+    listed = net.interfaces()?
+    out: [Line] @= []
+
+    if names.len() == 0
+        for i in listed
+            if is_usual(i) && i.index > 0
+                out @ out.push(line_of(i))
+
+        if out.len() == 0
+            return fail(
+                code: failure.NOT_FOUND,
+                msg: "no network interface is up, running and able to carry multicast: name one"
+            )
+        return ok(out)
+
+    for name in names
+        found: bool @= false
+
+        for i in listed
+            if i.name == name && i.index > 0
+                out @ out.push(line_of(i))
+                found @ true
+
+        if !found
+            return fail(code: failure.NOT_FOUND, msg: f"no network interface is named \"{name}\"")
+
+    return ok(out)
+
+# A socket of one family joined to its group on each line that carries it, or
+# the failure of the last join where none took. The line list comes back with
+# the families that did not join cleared.
+record Joined
+    # The socket.
+    socket: net.UdpSocket
+    # The lines, `v4` or `v6` cleared on those it did not join.
+    lines: [Line]
+
+# The group of the family: IPv6's or IPv4's.
+function group_text(wide: bool) -> str
+    if wide
+        return GROUP_V6
+    return GROUP_V4
+
+# The address a socket of the family is bound to for every interface.
+function any_address(wide: bool) -> str
+    if wide
+        return "::"
+    return "0.0.0.0"
+
+# Whether `line` carries the family.
+function carries(line: Line, wide: bool) -> bool
+    if wide
+        return line.v6
+    return line.v4
+
+# Opens the shared socket of one family and joins its group on each line.
+function joined(lines: [Line], wide: bool) -> Joined?
+    host = net.parse_host(group_text(wide))?
+    socket @= net.open_udp_shared(any_address(wide), port: PORT)?
+    net.set_multicast_hops(socket, hops: 255)?
+    out: [Line] @= []
+    took: i64 @= 0
+    last: str @= "no interface carries the family"
+
+    for line in lines
+        if !carries(line, wide: wide)
+            out @ out.push(line)
+            continue
+
+        match net.join_group(socket, group: host, interface_index: line.index)
+            .ok _ =>
+                took @ took + 1
+                out @ out.push(line)
+            .err e =>
+                last @ f"on {line.name}: {e.msg}"
+                out @ out.push(
+                    Line(name: line.name, index: line.index, v4: line.v4 && wide, v6: line.v6 && !wide, addresses: line.addresses)
+                )
+
+    if took == 0
+        match net.close_udp(@socket)
+            .ok _  => took @ took
+            .err _ => took @ took
+
+        return fail(code: failure.FAILED, msg: f"joining {net.format_host(host)}: {last}")
+    return ok(Joined(socket: socket, lines: out))
+
+# Opens the transport on the interfaces `interfaces` names, the usual ones
+# where it names none.
+#
+# Fails `not_found` as `lines_for` does, `failed` where no family could be
+# joined on any interface, and as `net.open_udp_shared` fails.
+function open(interfaces: [str]) -> Transport?
+    chosen: [Line] @= lines_for(interfaces)?
+    sockets: [net.UdpSocket] @= []
+    wide: [bool] @= []
+    problem: str @= ""
+
+    for is_wide in [false, true]
+        needed: bool @= false
+
+        for line in chosen
+            if carries(line, wide: is_wide)
+                needed @ true
+
+        if !needed
+            continue
+
+        match joined(chosen, wide: is_wide)
+            .ok j =>
+                sockets @ sockets.push(j.socket)
+                wide @ wide.push(is_wide)
+                chosen @ j.lines
+            .err e => problem @ e.msg
+
+    if sockets.len() == 0
+        return fail(code: failure.FAILED, msg: f"multicast DNS could not be joined: {problem}")
+    set = poll.make(4)?
+    ids: [i64] @= []
+
+    for socket in sockets
+        ids @ ids.push(poll.add_udp(set, u: socket, interest: .read)?)
+
+    return ok(Transport(sockets: sockets, wide: wide, keys: ids, lines: chosen, set: set))
+
+# Closes the sockets, which leaves the groups, and the set.
+function close(@t: Transport) -> ()?
+    failed: str @= ""
+
+    for i in range(from: 0, to: t.sockets.len())
+        s @= t.sockets[i]
+
+        match net.close_udp(@s)
+            .ok _  => failed @ failed
+            .err e => failed @ e.msg
+
+    closed = poll.close(@t.set)
+
+    if failed != ""
+        return fail(code: failure.FAILED, msg: f"closing a multicast DNS socket: {failed}")
+    return closed
+
+# The address of the group of one family, with the port.
+function group_address(wide: bool) -> net.Address?
+    host = net.parse_host(group_text(wide))?
+    return ok(net.Address(host: host, port: PORT))
+
+# Sends `data` to the group through `line` alone, by the socket of each
+# family the line carries. Fails `failed` where not one send went, with the
+# first failure's words.
+function send_line(t: Transport, line: Line, data: [u8]) -> ()?
+    sent: i64 @= 0
+    first: str @= ""
+
+    for i in range(from: 0, to: t.sockets.len())
+        if !carries(line, wide: t.wide[i])
+            continue
+        target = group_address(t.wide[i])?
+
+        match net.set_multicast_interface(t.sockets[i], interface_index: line.index)
+            .err e =>
+                if first == ""
+                    first @ f"on {line.name}: {e.msg}"
+            .ok _ =>
+                match net.send_to(t.sockets[i], data: data, to: target)
+                    .ok _ => sent @ sent + 1
+                    .err e =>
+                        if first == ""
+                            first @ f"on {line.name}: {e.msg}"
+
+    if sent == 0
+        return fail(code: failure.FAILED, msg: f"sending to the multicast DNS group: {first}")
+    return ok()
+
+# Sends `data` to the group on every interface. Fails `failed` where not one
+# interface took it.
+function send_group(t: Transport, data: [u8]) -> ()?
+    sent: i64 @= 0
+    first: str @= ""
+
+    for line in t.lines
+        match send_line(t, line: line, data: data)
+            .ok _ => sent @ sent + 1
+            .err e =>
+                if first == ""
+                    first @ e.msg
+
+    if sent == 0
+        return fail(code: failure.FAILED, msg: first)
+    return ok()
+
+# The line a datagram from `sender` came in by, as far as the sender's
+# address says: the one whose network holds it, else the first that carries
+# its family.
+function line_of_sender(t: Transport, sender: net.Host) -> Line
+    for line in t.lines
+        for a in line.addresses
+            if net.contains(a, h: sender)
+                return line
+
+    wide = !net.is_v4(sender)
+
+    for line in t.lines
+        if carries(line, wide: wide)
+            return line
+
+    return t.lines[0]
+
+# The addresses of `line`, zones left off, as a record of an address holds
+# them: IPv4's and IPv6's, the loopback's and the unspecified address left out.
+function hosts_of(line: Line) -> [net.Host]
+    out: [net.Host] @= []
+
+    for a in line.addresses
+        if net.is_loopback(a.host) || a.host.bytes == [0, 0, 0, 0] || a.host.bytes == repeated_zero()
+            continue
+        out @ out.push(net.Host(bytes: a.host.bytes, zone: ""))
+
+    return out
+
+# Sixteen zero bytes, IPv6's unspecified address.
+function repeated_zero() -> [u8]
+    return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# Sends `data` to one address, through the socket of its family. Fails
+# `unsupported` where the transport has no socket of that family, and as
+# `net.send_to` fails.
+function send_to(t: Transport, data: [u8], to: net.Address) -> ()?
+    want = !net.is_v4(to.host)
+
+    for i in range(from: 0, to: t.sockets.len())
+        if t.wide[i] == want
+            return net.send_to(t.sockets[i], data: data, to: to)
+
+    return fail(code: failure.UNSUPPORTED, msg: f"no socket of the transport is of {net.format_host(to.host)}'s family")
+
+# The next datagram, waited for `wait_ms` milliseconds at most. Fails
+# `timeout` where none came, and `stopped` where the stop was asked.
+function receive(t: Transport, wait_ms: i64) -> Packet?
+    waited: i64 @= wait_ms
+
+    if waited < 0
+        waited @ 0
+    limit = time.milliseconds(waited)?
+    events = poll.wait(t.set, limit: limit)?
+
+    for e in events
+        if !e.readable
+            continue
+
+        for i in range(from: 0, to: t.keys.len())
+            if t.keys[i] == e.key
+                d = net.receive(t.sockets[i])?
+                return ok(Packet(data: d.data, sender: d.sender, wide: t.wide[i]))
+
+    return fail(code: failure.TIMEOUT, msg: f"no datagram came in {wait_ms} ms")

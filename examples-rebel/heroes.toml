@@ -98,6 +98,7 @@ packages = [
     "math/matrix",
     "math/sparse",
     "mcp",
+    "mdns",
     "metrics",
     "mongodb",
     "mqtt",
