@@ -1,0 +1,790 @@
+# The drawing area (`ui.canvas`), as wxWidgets' `wxPanel` painted through a
+# `wxGraphicsContext` and Go libui's `Area`: a widget the program draws
+# itself, and which tells the program its pointer and its keys. The program's
+# drawing is a list of operations (`ui.Op`) which this module writes out as
+# the display list `hero_ui.h`'s A DRAWING AREA, WITH ITS MOUSE AND ITS KEYS
+# defines, bytes the arm replays whenever the system draws the area; the
+# headless side keeps the bytes it was given and draws nothing, its person
+# being the program. A pointer act (`ui.Input.point`) and a key pressed in
+# the area come back as `.pointer` and `.key` events.
+
+use bytes
+use image
+use math
+use strings
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/give
+use ui/internal/makers
+use ui/internal/model
+
+# The most a number of a drawing is, in either direction: a float of 32 bits
+# holds whole points exactly to 16 million, and no screen is a billion points.
+constant NUMBER_MOST: f64
+    1000000000.0
+
+# The most the bytes of a drawing are, `hero_ui.h`'s `HERO_UI_DRAWING_MOST`.
+constant DRAWING_MOST: i64
+    16777216
+
+# The most a side of a picture in a drawing is, in pixels.
+constant PICTURE_MOST: i64
+    8192
+
+# The most a pointer's x or y is, in points either way.
+constant POINT_MOST: f64
+    65536.0
+
+# A new drawing area of `width` by `height` points in `into` (`ui.canvas`).
+function made(@app: ui.App, into: ui.Widget, width: i64, height: i64) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+
+    if width < 1 || width > ui.MOST_SIZE || height < 1 || height > ui.MOST_SIZE
+        return fail(
+            code: failure.INVALID,
+            msg: f"a drawing area of {width} by {height} points: each side is 1 to {ui.MOST_SIZE}"
+        )
+    n @= model.blank(id: 0, kind: hero_ui.HERO_UI_CANVAS, parent: parent.id, window: parent.window)
+    n.width @ width
+    n.height @ height
+    n.id @ model.take_id(@app.table)
+    return makers.added(@app, n: n)
+
+# Gives drawing area `widget` the drawing `ops` (`ui.draw`).
+function drawn(@app: ui.App, widget: ui.Widget, ops: [ui.Op]) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+    list = encode(ops)?
+
+    if list.len() > DRAWING_MOST
+        return fail(
+            code: failure.LIMIT,
+            msg: f"the drawing is {list.len()} bytes once written out, and the most is {DRAWING_MOST}"
+        )
+
+    if app.native
+        kept @= list
+
+        if hero_ui.set_drawing(app.handle, id: n.id, @kept, count: to_u64(kept.len()).must()) < 0
+            return failure.last(f"drawing in area {n.id}")
+    n.pixels @ list
+    model.put(@app.table, n: n)
+    return ok()
+
+# The drawing area as it draws at a pixel to a point (`ui.snapshot`).
+function snapshot(@app: ui.App, widget: ui.Widget) -> image.Image?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+
+    if !app.native
+        return fail(
+            code: failure.UNSUPPORTED,
+            msg: "a headless app draws nothing: its person is the program, which holds the drawing it gave"
+        )
+    loop_settled(@app)?
+    width @= 0
+    height @= 0
+    none: [u8] @= []
+    size = hero_ui.snapshot(app.handle, id: n.id, @none, count: 0, width: @width, height: @height)
+
+    if size < 0
+        return failure.last(f"reading the pixels of area {n.id}")
+    pixels: [u8] @= []
+
+    if size > 0
+        got = hero_ui.snapshot(
+            app.handle,
+            id: n.id,
+            @pixels,
+            count: to_u64(size).must(),
+            width: @width,
+            height: @height
+        )
+
+        if got != size
+            return failure.last(f"reading the pixels of area {n.id}")
+    return ok(image.Image(width: width, height: height, format: .rgba, pixels: pixels.slice(from: 0, to: size)))
+
+# Lays the windows out and shows them, so the area has the size the layout
+# gives it (what `ui.rect_of` does before it answers).
+function loop_settled(@app: ui.App) -> ()?
+    _ = ui.rect_of(@app, widget: ui.Widget(app: app.number, id: 1))?
+    return ok()
+
+## The display list
+
+# A number of a drawing as four bytes, `f32`, little-endian.
+function real(x: f64, what: str) -> [u8]?
+    if !math.is_finite(x) || x > NUMBER_MOST || x < -NUMBER_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"{what} is {x}: a number of a drawing is finite and within 1,000,000,000 either way"
+        )
+    return ok(bytes.encode_f32_le(to_f32(x)))
+
+# Several numbers of a drawing, one after another.
+function reals(values: [f64], what: str) -> [u8]?
+    parts: [[u8]] @= []
+
+    for value in values
+        parts @ parts.push(real(value, what: what)?)
+
+    return ok(bytes.concat(parts))
+
+# A colour as its four bytes.
+function color_bytes(color: image.Color) -> [u8]
+    return [color.r, color.g, color.b, color.a]
+
+# 1 where `even_odd`, the even-odd rule's byte, else 0.
+function rule_of(even_odd: bool) -> u8
+    if even_odd
+        return 1
+    return 0
+
+# The operations that make `shape` the current path: BEGIN, then its parts.
+function shape_bytes(shape: ui.Shape) -> [u8]?
+    parts: [[u8]] @= [[0x10]]
+
+    match shape
+        .rect r =>
+            if r.width < 0.0 || r.height < 0.0
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"a rectangle {r.width} wide and {r.height} high: a side is 0 or more"
+                )
+            parts @ parts.push([0x16])
+            parts @ parts.push(reals([r.x, r.y, r.width, r.height], what: "a rectangle's number")?)
+        .ellipse e =>
+            if e.width < 0.0 || e.height < 0.0
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"an ellipse {e.width} wide and {e.height} high: a side is 0 or more"
+                )
+            parts @ parts.push([0x17])
+            parts @ parts.push(reals([e.x, e.y, e.width, e.height], what: "an ellipse's number")?)
+        .path p =>
+            for step in p.steps
+                match step
+                    .move_to m =>
+                        parts @ parts.push([0x11])
+                        parts @ parts.push(reals([m.x, m.y], what: "a path's number")?)
+                    .line_to l =>
+                        parts @ parts.push([0x12])
+                        parts @ parts.push(reals([l.x, l.y], what: "a path's number")?)
+                    .quad_to q =>
+                        parts @ parts.push([0x13])
+                        parts @ parts.push(reals([q.control_x, q.control_y, q.x, q.y], what: "a path's number")?)
+                    .curve_to c =>
+                        parts @ parts.push([0x14])
+                        parts @ parts.push(
+                            reals([c.first_x, c.first_y, c.second_x, c.second_y, c.x, c.y], what: "a path's number")?
+                        )
+                    .close => parts @ parts.push([0x15])
+
+    return ok(bytes.concat(parts))
+
+# The byte of a line end.
+function cap_of(cap: ui.Cap) -> u8
+    return match cap
+        .butt   => 0
+        .round  => 1
+        .square => 2
+
+# The byte of a line join.
+function join_of(corner: ui.Join) -> u8
+    return match corner
+        .miter => 0
+        .round => 1
+        .bevel => 2
+
+# One operation of a drawing written out.
+function op_bytes(op: ui.Op) -> [u8]?
+    match op
+        .fill f =>
+            return ok(bytes.concat([shape_bytes(f.shape)?, [0x20, rule_of(f.even_odd)], color_bytes(f.color)]))
+        .stroke s =>
+            if !(s.width > 0.0)
+                return fail(code: failure.INVALID, msg: f"a stroke {s.width} wide: its width is above 0")
+            return ok(
+                bytes.concat([shape_bytes(s.shape)?, [0x21], real(s.width, what: "a stroke's width")?, [cap_of(s.cap), join_of(s.join)], color_bytes(s.color)])
+            )
+        .clip c => return ok(bytes.concat([shape_bytes(c.shape)?, [0x22, rule_of(c.even_odd)]]))
+        .text t =>
+            if !(t.size > 0.0)
+                return fail(code: failure.INVALID, msg: f"text of size {t.size}: a size is above 0")
+            family = bytes.from_text(t.family)
+            words = bytes.from_text(t.text)
+
+            if family.len() > 65535
+                return fail(code: failure.INVALID, msg: f"a font family of {family.len()} bytes: at most 65535")
+            style = rule_of(t.bold) + 2 * rule_of(t.italic)
+            return ok(
+                bytes.concat([[0x30], reals([t.x, t.y, t.size], what: "a text's number")?, [style], color_bytes(t.color), bytes.encode_u16_le(to_u16(family.len()).must()), bytes.encode_u32_le(to_u32(words.len()).must()), family, words])
+            )
+        .picture p =>
+            if !image.is_valid(p.img)
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"the image of {p.img.width} by {p.img.height} holds {p.img.pixels.len()} bytes, which its format does not fill"
+                )
+
+            if p.img.width < 1 || p.img.height < 1 || p.img.width > PICTURE_MOST || p.img.height > PICTURE_MOST
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"a picture of {p.img.width} by {p.img.height} pixels: a side is 1 to {PICTURE_MOST}"
+                )
+
+            if !(p.width > 0.0) || !(p.height > 0.0)
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"a picture drawn {p.width} wide and {p.height} high: each is above 0"
+                )
+            rgba = image.convert(p.img, to: .rgba)
+            return ok(
+                bytes.concat([[0x31], reals([p.x, p.y, p.width, p.height], what: "a picture's number")?, bytes.encode_u32_le(to_u32(rgba.width).must()), bytes.encode_u32_le(to_u32(rgba.height).must()), rgba.pixels])
+            )
+        .save        => return ok([0x01])
+        .restore     => return ok([0x02])
+        .translate t => return ok(bytes.concat([[0x03], reals([t.dx, t.dy], what: "a translation")?]))
+        .scale s     => return ok(bytes.concat([[0x04], reals([s.sx, s.sy], what: "a scale")?]))
+        .rotate r    => return ok(bytes.concat([[0x05], real(r.radians, what: "an angle")?]))
+
+# A drawing written out as its display list. Fails `invalid` for a number
+# that is not finite, a size that is not above 0 where one is asked, a
+# picture that is no image or too large, and a `.restore` with no `.save`.
+function encode(ops: [ui.Op]) -> [u8]?
+    parts: [[u8]] @= []
+    kept @= 0
+
+    for op in ops
+        match op
+            .save =>
+                kept @ kept + 1
+
+                if kept > 256
+                    return fail(code: failure.INVALID, msg: "a drawing keeps at most 256 states at once")
+            .restore =>
+                if kept == 0
+                    return fail(code: failure.INVALID, msg: "a drawing restores a state where none is kept")
+                kept @ kept - 1
+            .fill _ | .stroke _ | .clip _ | .text _ | .picture _ | .translate _ | .scale _ | .rotate _ => _ = 0
+
+        parts @ parts.push(op_bytes(op)?)
+
+    return ok(bytes.concat(parts))
+
+## The pointer and the keys
+
+# The byte of a phase.
+function phase_code(phase: ui.Phase) -> i64
+    return match phase
+        .down  => hero_ui.HERO_UI_POINTER_DOWN
+        .up    => hero_ui.HERO_UI_POINTER_UP
+        .move  => hero_ui.HERO_UI_POINTER_MOVE
+        .drag  => hero_ui.HERO_UI_POINTER_DRAG
+        .enter => hero_ui.HERO_UI_POINTER_ENTER
+        .exit  => hero_ui.HERO_UI_POINTER_EXIT
+
+# The phase a byte names.
+function phase_of(code: i64) -> ui.Phase
+    if code == hero_ui.HERO_UI_POINTER_DOWN
+        return .down
+
+    if code == hero_ui.HERO_UI_POINTER_UP
+        return .up
+
+    if code == hero_ui.HERO_UI_POINTER_MOVE
+        return .move
+
+    if code == hero_ui.HERO_UI_POINTER_DRAG
+        return .drag
+
+    if code == hero_ui.HERO_UI_POINTER_ENTER
+        return .enter
+    return .exit
+
+# The byte of a button.
+function button_code(button: ui.PointerButton) -> i64
+    return match button
+        .none  => 0
+        .left  => hero_ui.HERO_UI_POINTER_LEFT
+        .right => hero_ui.HERO_UI_POINTER_RIGHT
+        .other => hero_ui.HERO_UI_POINTER_OTHER
+
+# The button a byte names.
+function button_of(code: i64) -> ui.PointerButton
+    if code == hero_ui.HERO_UI_POINTER_LEFT
+        return .left
+
+    if code == hero_ui.HERO_UI_POINTER_RIGHT
+        return .right
+
+    if code == hero_ui.HERO_UI_POINTER_OTHER
+        return .other
+    return .none
+
+# Fails `invalid` where the pointer act `input`, which `give.checked` found
+# to be a point, is not one a person gives: a widget that is no drawing area,
+# a point that is not finite or is past 65,536 points, a button that does not
+# go with the phase, or clicks that do not.
+function point_ok(app: ui.App, widget: ui.Widget, phase: ui.Phase, x: f64, y: f64, button: ui.PointerButton, clicks: i64) -> ()?
+    _ = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+
+    if !math.is_finite(x) || !math.is_finite(y) || x > POINT_MOST || x < -POINT_MOST || y > POINT_MOST || y < -POINT_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"the point {x}, {y} is not finite and within 65,536 points of the area's corner"
+        )
+    pressed = phase == .down || phase == .up
+    still = phase == .move || phase == .enter || phase == .exit
+
+    if still != (button == .none)
+        return fail(
+            code: failure.INVALID,
+            msg: "a pointer's button is `.none` for a move, an entry and an exit, and one of `.left`, `.right` and `.other` for a press, a release and a drag"
+        )
+
+    if pressed != (clicks > 0) || clicks > 255
+        return fail(
+            code: failure.INVALID,
+            msg: f"{clicks} clicks: a press and a release make 1 to 255, and every other phase 0"
+        )
+    return ok()
+
+# The pointer event of `widget` for a point `x`, `y`.
+function pointer_event(widget: ui.Widget, phase: ui.Phase, x: f64, y: f64, button: ui.PointerButton, clicks: i64, held: i64) -> ui.Event
+    return .pointer(
+        widget: widget,
+        phase: phase,
+        x: x,
+        y: y,
+        button: button,
+        clicks: clicks,
+        primary: held % 2 == 1,
+        shift: held / 2 % 2 == 1,
+        alt: held / 4 % 2 == 1
+    )
+
+# The keys held as the layer adds them up.
+function held_of_flags(primary: bool, shift: bool, alt: bool) -> i64
+    return check.number_of(primary) * hero_ui.HERO_UI_PRIMARY + check.number_of(shift) * hero_ui.HERO_UI_SHIFT + check.number_of(alt) * hero_ui.HERO_UI_ALT
+
+# What the person's pointer act gives on the headless side: its event, where
+# the area is one the person reaches.
+function pointer_applied(app: ui.App, widget: ui.Widget, phase: ui.Phase, x: f64, y: f64, button: ui.PointerButton, clicks: i64, primary: bool, shift: bool, alt: bool) -> [ui.Event]
+    if !give.reachable(app, id: widget.id)
+        return []
+    held = held_of_flags(primary: primary, shift: shift, alt: alt)
+    return [pointer_event(widget, phase: phase, x: x, y: y, button: button, clicks: clicks, held: held)]
+
+# The pointer act `.point` given through the system's own events.
+function point_given(app: ui.App, widget: ui.Widget, phase: ui.Phase, x: f64, y: f64, button: ui.PointerButton, clicks: i64, primary: bool, shift: bool, alt: bool) -> ()?
+    held = held_of_flags(primary: primary, shift: shift, alt: alt)
+    typed: [u8] @= [
+        to_u8(phase_code(phase)).must()
+        to_u8(button_code(button)).must()
+        to_u8(clicks).must()
+        to_u8(held).must()
+    ]
+    across = to_i64(math.round(x * 64.0)).must()
+    down = to_i64(math.round(y * 64.0)).must()
+
+    if hero_ui.inject(app.handle, kind: hero_ui.HERO_UI_EVENT_POINTER, id: widget.id, value: across, second: down, @typed, count: 4) < 0
+        return failure.last(f"moving the pointer in area {widget.id}")
+    return ok()
+
+# The characters pressing `shortcut` types on the headless side: the key
+# itself where it is one letter or digit, in capitals with Shift held and
+# none with the system's key for shortcuts or Alt.
+function typed_by(shortcut: ui.Shortcut) -> str
+    if shortcut.primary || shortcut.alt || shortcut.key.len() != 1
+        return ""
+
+    if shortcut.shift
+        return strings.to_upper_ascii(shortcut.key)
+    return shortcut.key
+
+# The events pressing `shortcut` in drawing area `widget` gives on the
+# headless side: the key down, then up.
+function key_applied(widget: ui.Widget, shortcut: ui.Shortcut) -> [ui.Event]
+    typed = typed_by(shortcut)
+    return [
+        .key(widget: widget, phase: .pressed, shortcut: shortcut, typed: typed)
+        .key(widget: widget, phase: .released, shortcut: shortcut, typed: typed)
+    ]
+
+# The bytes the system's last event carried.
+function event_bytes(app: ui.App) -> [u8]?
+    room: i64 @= 256
+
+    for _ in range(from: 0, to: 4)
+        buffer: [u8] @= []
+        got = hero_ui.event_text(app.handle, @buffer, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last("reading the text of an event")
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: "the text of an event kept growing while it was read")
+
+# The `.pointer` event the system told for area `id`, `taken` its four
+# numbers and the event's four bytes its phase, button, clicks and keys held.
+function pointer_told(app: ui.App, id: i64, taken: [i64]) -> ui.Event?
+    held = event_bytes(app)?
+
+    if held.len() != 4
+        return fail(code: failure.FAILED, msg: f"a pointer event of area {id} carried {held.len()} bytes, not 4")
+    return ok(
+        pointer_event(check.widget_of(app, id: id), phase: phase_of(to_i64(held[0]).must()), x: to_f64(taken[2]) / 64.0, y: to_f64(taken[3]) / 64.0, button: button_of(to_i64(held[1]).must()), clicks: to_i64(held[2]).must(), held: to_i64(held[3]).must())
+    )
+
+# The `.key` event the system told for area `id`, `taken` its four numbers,
+# the second the keys held and 256 times the phase, and the event's bytes the
+# key's name, a zero byte and what it types.
+function key_told(app: ui.App, id: i64, taken: [i64]) -> ui.Event?
+    held = event_bytes(app)?
+    at @= 0
+
+    while at < held.len() && held[at] != 0
+        at @ at + 1
+
+    if at == held.len()
+        return fail(
+            code: failure.FAILED,
+            msg: f"a key event of area {id} carried no zero byte between the key and what it types"
+        )
+    modifiers = taken[2] % 256
+
+    phase: ui.KeyPhase = if taken[2] / 256 == 0
+        .pressed
+    else if taken[2] / 256 == 1
+        .repeated
+    else
+        .released
+
+    shortcut = ui.Shortcut(
+        key: bytes.to_text(held.slice(from: 0, to: at))?,
+        primary: modifiers % 2 == 1,
+        shift: modifiers / 2 % 2 == 1,
+        alt: modifiers / 4 % 2 == 1
+    )
+    return ok(
+        .key(widget: check.widget_of(app, id: id), phase: phase, shortcut: shortcut, typed: bytes.to_text(held.slice(from: at + 1, to: held.len()))?)
+    )
+
+## Tests
+
+# The four samples of pixel `x`, `y` of `img`.
+function pixel(img: image.Image, x: i64, y: i64) -> [u8]
+    at = (y * img.width + x) * 4
+    return img.pixels.slice(from: at, to: at + 4)
+
+# How many pixels of the rectangle `x`, `y`, `width`, `height` of `img` are
+# not clear.
+function marked(img: image.Image, x: i64, y: i64, width: i64, height: i64) -> i64
+    count @= 0
+
+    for row in range(from: y, to: y + height)
+        for column in range(from: x, to: x + width)
+            if pixel(img, x: column, y: row)[3] != 0
+                count @ count + 1
+
+    return count
+
+test "encode: every operation written out as its display list, byte by byte (catalogue DR01)"
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    unit: ui.Shape = .rect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    assert encode([]).must() == []
+    assert encode([.save, .translate(dx: 1.0, dy: 2.0), .scale(sx: 0.5, sy: 4.0), .rotate(radians: -1.0), .restore]).must() == [0x01, 0x03, 0, 0, 0x80, 0x3f, 0, 0, 0, 0x40, 0x04, 0, 0, 0, 0x3f, 0, 0, 0x80, 0x40, 0x05, 0, 0, 0x80, 0xbf, 0x02]
+    assert encode([.fill(shape: unit, color: red, even_odd: false)]).must() == [0x10, 0x16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x3f, 0, 0, 0x80, 0x3f, 0x20, 0, 255, 0, 0, 255]
+    assert encode([.clip(shape: .ellipse(x: 1.0, y: 1.0, width: 1.0, height: 1.0), even_odd: true)]).must() == [0x10, 0x17, 0, 0, 0x80, 0x3f, 0, 0, 0x80, 0x3f, 0, 0, 0x80, 0x3f, 0, 0, 0x80, 0x3f, 0x22, 1]
+
+    line: ui.Shape = .path(
+        steps: [.move_to(x: 1.0, y: 1.0), .line_to(x: 1.0, y: 1.0), .quad_to(control_x: 1.0, control_y: 1.0, x: 1.0, y: 1.0), .curve_to(first_x: 1.0, first_y: 1.0, second_x: 1.0, second_y: 1.0, x: 1.0, y: 1.0), .close]
+    )
+    written = encode([.stroke(shape: line, color: red, width: 1.0, cap: .round, join: .bevel)]).must()
+    assert written.len() == 1 + 1 + 8 + 1 + 8 + 1 + 16 + 1 + 24 + 1 + 1 + 4 + 2 + 4
+    assert written[0] == 0x10 && written[1] == 0x11 && written[10] == 0x12 && written[19] == 0x13 && written[36] == 0x14 && written[61] == 0x15 && written[62] == 0x21
+    assert written[67] == 1 && written[68] == 2
+
+    # A text: its box's corner, its size, bold and italic, its colour, then the
+    # lengths and the family and the text.
+    text = encode(
+        [.text(x: 1.0, y: 1.0, size: 12.0, text: "Hé", family: "Menlo", bold: true, italic: true, color: red)]
+    ).must()
+    assert text.len() == 24 + 5 + 3
+    assert text[0] == 0x30 && text[13] == 3 && text[18] == 5 && text[19] == 0 && text[20] == 3 && text[24] == 0x4d && text[29] == 0x48
+
+    # A picture is written as RGBA whatever its format.
+    gray = image.Image(width: 1, height: 2, format: .gray, pixels: [9, 200])
+    picture = encode([.picture(x: 0.0, y: 0.0, width: 4.0, height: 8.0, img: gray)]).must()
+    assert picture.len() == 25 + 8 && picture[17] == 1 && picture[21] == 2 && picture[25] == 9 && picture[28] == 255 && picture[29] == 200
+
+test "draw: a drawing refused for a number that is not finite, a size that is not above 0, a picture that is none or too large and a restore with no save (catalogue DR01)"
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    app @= fixture.test_app()
+    area = ui.canvas(@app, into: fixture.window_of(app), width: 40, height: 30).must()
+    unit: ui.Shape = .rect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.translate(dx: math.NAN, dy: 0.0)])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.scale(sx: 2000000000.0, sy: 1.0)])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.fill(shape: .rect(x: 0.0, y: 0.0, width: -1.0, height: 1.0), color: red, even_odd: false)])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.stroke(shape: unit, color: red, width: 0.0, cap: .butt, join: .miter)])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.text(x: 0.0, y: 0.0, size: 0.0, text: "x", family: "", bold: false, italic: false, color: red)])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.picture(x: 0.0, y: 0.0, width: 1.0, height: 1.0, img: image.Image(width: 0, height: 0, format: .rgba, pixels: []))])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.picture(x: 0.0, y: 0.0, width: 1.0, height: 1.0, img: image.Image(width: 2, height: 1, format: .rgba, pixels: [1, 2, 3, 4]))])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.picture(x: 0.0, y: 0.0, width: 0.0, height: 1.0, img: image.Image(width: 1, height: 1, format: .rgba, pixels: [1, 2, 3, 4]))])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.restore])) == ui.INVALID
+    assert fixture.code_of(ui.draw(@app, widget: area, ops: [.save, .restore, .restore])) == ui.INVALID
+
+    # What a drawing area is made of: a size from 1, a widget that holds
+    # drawings, and a headless app that draws none to read back.
+    assert fixture.code_of(ui.canvas(@app, into: fixture.window_of(app), width: 0, height: 30)) == ui.INVALID
+    assert fixture.code_of(ui.canvas(@app, into: fixture.window_of(app), width: 30, height: ui.MOST_SIZE + 1)) == ui.INVALID
+    button = ui.button(@app, into: fixture.window_of(app), text: "OK").must()
+    assert fixture.code_of(ui.draw(@app, widget: button, ops: [])) == ui.INVALID
+    assert fixture.code_of(ui.canvas(@app, into: area, width: 5, height: 5)) == ui.INVALID
+    ui.draw(
+        @app,
+        widget: area,
+        ops: [.save, .translate(dx: 3.0, dy: 4.0), .fill(shape: unit, color: red, even_odd: false), .restore]
+    ).must()
+    assert fixture.code_of(ui.snapshot(@app, widget: area)) == ui.UNSUPPORTED
+    assert fixture.code_of(ui.snapshot(@app, widget: button)) == ui.INVALID
+    assert ui.kind_of(app, widget: area).must() == .canvas
+    assert ui.rect_of(@app, widget: area).must().width == 40 && ui.rect_of(@app, widget: area).must().height == 30
+    ui.close(@app).must()
+
+test "point: the pointer's acts in a drawing area told as `.pointer` with their point, phase, button, clicks and keys held, and refused where a person could not give them (catalogue DR02)"
+    app @= fixture.test_app()
+    area = ui.canvas(@app, into: fixture.window_of(app), width: 100, height: 60).must()
+    seen: [ui.Event] @= []
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .enter, x: 3.5, y: 4.25, button: .none, clicks: 0, primary: false, shift: false, alt: false)
+    ).must()
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .down, x: 10.0, y: 20.0, button: .left, clicks: 2, primary: true, shift: false, alt: true)
+    ).must()
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .drag, x: 90.5, y: -3.0, button: .left, clicks: 0, primary: false, shift: true, alt: false)
+    ).must()
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .up, x: 90.5, y: -3.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
+    ).must()
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .exit, x: 101.0, y: 5.0, button: .none, clicks: 0, primary: false, shift: false, alt: false)
+    ).must()
+
+    while seen.len() < 5
+        seen @ seen.push(ui.wait(@app, within: time.nanoseconds(0)).must())
+
+    assert seen[0] == .pointer(widget: area, phase: .enter, x: 3.5, y: 4.25, button: .none, clicks: 0, primary: false, shift: false, alt: false)
+    assert seen[1] == .pointer(widget: area, phase: .down, x: 10.0, y: 20.0, button: .left, clicks: 2, primary: true, shift: false, alt: true)
+    assert seen[2] == .pointer(widget: area, phase: .drag, x: 90.5, y: -3.0, button: .left, clicks: 0, primary: false, shift: true, alt: false)
+    assert seen[3] == .pointer(widget: area, phase: .up, x: 90.5, y: -3.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
+    assert seen[4] == .pointer(widget: area, phase: .exit, x: 101.0, y: 5.0, button: .none, clicks: 0, primary: false, shift: false, alt: false)
+
+    # A move with a button, a press with none, clicks on a move and no click
+    # on a press, a point that is not finite and one a screen could not have.
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .move, x: 1.0, y: 1.0, button: .left, clicks: 0, primary: false, shift: false, alt: false))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .down, x: 1.0, y: 1.0, button: .none, clicks: 1, primary: false, shift: false, alt: false))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .move, x: 1.0, y: 1.0, button: .none, clicks: 1, primary: false, shift: false, alt: false))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .down, x: 1.0, y: 1.0, button: .left, clicks: 0, primary: false, shift: false, alt: false))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .move, x: math.NAN, y: 1.0, button: .none, clicks: 0, primary: false, shift: false, alt: false))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: area, phase: .move, x: 1.0, y: 70000.0, button: .none, clicks: 0, primary: false, shift: false, alt: false))) == ui.INVALID
+    label = ui.label(@app, into: fixture.window_of(app), text: "x").must()
+    assert fixture.code_of(ui.inject(@app, input: .point(widget: label, phase: .move, x: 1.0, y: 1.0, button: .none, clicks: 0, primary: false, shift: false, alt: false))) == ui.INVALID
+
+    # A drawing area greyed out is one the person cannot reach.
+    ui.set_enabled(@app, widget: area, on: false).must()
+    ui.inject(
+        @app,
+        input: .point(widget: area, phase: .move, x: 1.0, y: 1.0, button: .none, clicks: 0, primary: false, shift: false, alt: false)
+    ).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "press_key: a key in a drawing area told as `.key` down and up with its shortcut and what it types, on the area or on the window that has the keys (catalogue DR03)"
+    app @= fixture.test_app()
+    area = ui.canvas(@app, into: fixture.window_of(app), width: 100, height: 60).must()
+    field = ui.text_field(@app, into: fixture.window_of(app), text: "").must()
+    ui.set_focus(@app, widget: area).must()
+    assert ui.focus_of(app, widget: fixture.window_of(app)).must() == area
+    ui.press_key(@app, widget: area, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false)).must()
+    ui.press_key(
+        @app,
+        widget: fixture.window_of(app),
+        shortcut: ui.Shortcut(key: "Up", primary: false, shift: false, alt: false)
+    ).must()
+    ui.press_key(@app, widget: area, shortcut: ui.Shortcut(key: "j", primary: true, shift: false, alt: false)).must()
+    ui.set_focus(@app, widget: field).must()
+    ui.press_key(
+        @app,
+        widget: fixture.window_of(app),
+        shortcut: ui.Shortcut(key: "b", primary: false, shift: false, alt: false)
+    ).must()
+    seen: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 6)
+        seen @ seen.push(ui.wait(@app, within: time.nanoseconds(0)).must())
+
+    assert seen[0] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
+    assert seen[1] == .key(widget: area, phase: .released, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
+    assert seen[2] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "Up", primary: false, shift: false, alt: false), typed: "")
+    assert seen[4] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "j", primary: true, shift: false, alt: false), typed: "")
+
+    # A key pressed with the keys in a text field goes to the field, and the
+    # area takes a turn in the order Tab walks.
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.press_key(
+        @app,
+        widget: fixture.window_of(app),
+        shortcut: ui.Shortcut(key: "Tab", primary: false, shift: true, alt: false)
+    ).must()
+    assert ui.focus_of(app, widget: fixture.window_of(app)).must() == area
+    ui.close(@app).must()
+
+test "canvas: on the native side a drawing replayed by the system, read back pixel by pixel: fills, an ellipse, a stroke, a picture upright, text, transforms, a clip, the even-odd rule, cleared by an empty drawing (catalogue DR01)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Draw", width: 200, height: 120).must()
+    offered = ui.canvas(@app, into: w, width: 80, height: 60)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    area = offered.must()
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    green = image.Color(r: 0, g: 255, b: 0, a: 255)
+    blue = image.Color(r: 0, g: 0, b: 255, a: 255)
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    top_red_bottom_blue = image.Image(width: 1, height: 2, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 255])
+
+    # Nothing is drawn until the program draws.
+    first = ui.snapshot(@app, widget: area).must()
+    assert first.width == 80 && first.height == 60 && first.pixels.len() == 80 * 60 * 4 && marked(first, x: 0, y: 0, width: 80, height: 60) == 0
+    ui.draw(
+        @app,
+        widget: area,
+        ops: [.fill(shape: .rect(x: 2.0, y: 2.0, width: 10.0, height: 10.0), color: red, even_odd: false), .fill(shape: .ellipse(x: 16.0, y: 2.0, width: 20.0, height: 10.0), color: blue, even_odd: false), .stroke(shape: .path(steps: [.move_to(x: 40.0, y: 7.0), .line_to(x: 58.0, y: 7.0)]), color: green, width: 4.0, cap: .butt, join: .miter), .picture(x: 2.0, y: 20.0, width: 8.0, height: 8.0, img: top_red_bottom_blue), .text(x: 16.0, y: 18.0, size: 12.0, text: "Hi", family: "", bold: true, italic: false, color: black), .save, .translate(dx: 60.0, dy: 25.0), .scale(sx: 2.0, sy: 2.0), .fill(shape: .rect(x: -2.0, y: -2.0, width: 4.0, height: 4.0), color: image.Color(r: 255, g: 0, b: 255, a: 255), even_odd: false), .restore, .save, .translate(dx: 70.0, dy: 10.0), .rotate(radians: 0.7853981633974483), .fill(shape: .rect(x: -5.0, y: -5.0, width: 10.0, height: 10.0), color: image.Color(r: 0, g: 255, b: 255, a: 255), even_odd: false), .restore, .save, .clip(shape: .rect(x: 2.0, y: 40.0, width: 20.0, height: 10.0), even_odd: false), .fill(shape: .rect(x: 0.0, y: 35.0, width: 80.0, height: 25.0), color: white, even_odd: false), .restore, .fill(shape: .path(steps: [.move_to(x: 60.0, y: 40.0), .line_to(x: 78.0, y: 40.0), .line_to(x: 78.0, y: 58.0), .line_to(x: 60.0, y: 58.0), .close, .move_to(x: 64.0, y: 44.0), .line_to(x: 74.0, y: 44.0), .line_to(x: 74.0, y: 54.0), .line_to(x: 64.0, y: 54.0), .close]), color: red, even_odd: true)]
+    ).must()
+    shot = ui.snapshot(@app, widget: area).must()
+    assert pixel(shot, x: 6, y: 6) == [255, 0, 0, 255] && pixel(shot, x: 14, y: 14) == [0, 0, 0, 0]
+    assert pixel(shot, x: 26, y: 7) == [0, 0, 255, 255] && pixel(shot, x: 16, y: 2) == [0, 0, 0, 0]
+    assert pixel(shot, x: 50, y: 7) == [0, 255, 0, 255] && pixel(shot, x: 50, y: 12) == [0, 0, 0, 0]
+
+    # The picture's first row is its top; it is drawn smoothly, so the rows
+    # nearest its two rows' middles keep their own colour.
+    assert pixel(shot, x: 5, y: 20) == [255, 0, 0, 255] && pixel(shot, x: 5, y: 27) == [0, 0, 255, 255]
+    assert marked(shot, x: 16, y: 18, width: 24, height: 16) > 5 && marked(shot, x: 40, y: 18, width: 12, height: 16) == 0
+
+    # A transform before a fill, kept and restored, and a turn.
+    assert pixel(shot, x: 60, y: 25) == [255, 0, 255, 255] && pixel(shot, x: 55, y: 25) == [0, 0, 0, 0] && pixel(shot, x: 65, y: 25) == [0, 0, 0, 0]
+    assert pixel(shot, x: 70, y: 10) == [0, 255, 255, 255] && pixel(shot, x: 75, y: 10) == [0, 255, 255, 255] && pixel(shot, x: 75, y: 5) == [0, 0, 0, 0]
+
+    # A clip holds a fill to it, and the restore lifts it.
+    assert pixel(shot, x: 10, y: 45) == [255, 255, 255, 255] && pixel(shot, x: 30, y: 45) == [0, 0, 0, 0] && pixel(shot, x: 10, y: 36) == [0, 0, 0, 0]
+
+    # The even-odd rule leaves a hole where two nested squares overlap.
+    assert pixel(shot, x: 62, y: 49) == [255, 0, 0, 255] && pixel(shot, x: 69, y: 49) == [0, 0, 0, 0]
+
+    # A drawing replaces the last, and an empty one clears the area.
+    ui.draw(
+        @app,
+        widget: area,
+        ops: [.fill(shape: .rect(x: 0.0, y: 0.0, width: 80.0, height: 60.0), color: image.Color(r: 10, g: 20, b: 30, a: 128), even_odd: false)]
+    ).must()
+    washed = pixel(ui.snapshot(@app, widget: area).must(), x: 40, y: 30)
+    assert washed[3] == 128 && washed[0] >= 9 && washed[0] <= 11 && washed[2] >= 29 && washed[2] <= 31
+    ui.draw(@app, widget: area, ops: []).must()
+    assert marked(ui.snapshot(@app, widget: area).must(), x: 0, y: 0, width: 80, height: 60) == 0
+    ui.close(@app).must()
+
+test "point and press_key: on the native side a press, a drag and a release sent through the window's own events, a move, an entry and an exit, and keys pressed with the area holding them, told with the point, the button, the clicks, the keys held and what each types (catalogue DR02, DR03)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Pointer", width: 200, height: 120).must()
+    offered = ui.canvas(@app, into: w, width: 100, height: 60)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    area = offered.must()
+    assert ui.rect_of(@app, widget: area).must().width == 100
+    left: ui.PointerButton = .left
+    still: ui.PointerButton = .none
+    steps: [ui.Input] = [
+        .point(widget: area, phase: .down, x: 12.5, y: 7.25, button: left, clicks: 1, primary: false, shift: true, alt: false)
+        .point(widget: area, phase: .drag, x: 40.0, y: 30.0, button: left, clicks: 0, primary: false, shift: false, alt: false)
+        .point(widget: area, phase: .up, x: 40.0, y: 30.0, button: left, clicks: 1, primary: false, shift: false, alt: false)
+        .point(widget: area, phase: .down, x: 20.0, y: 20.0, button: .right, clicks: 2, primary: false, shift: false, alt: false)
+        .point(widget: area, phase: .up, x: 20.0, y: 20.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
+        .point(widget: area, phase: .enter, x: 1.0, y: 2.0, button: still, clicks: 0, primary: false, shift: false, alt: false)
+        .point(widget: area, phase: .move, x: 5.5, y: 6.5, button: still, clicks: 0, primary: true, shift: false, alt: false)
+        .point(widget: area, phase: .exit, x: -4.0, y: 6.5, button: still, clicks: 0, primary: false, shift: false, alt: false)
+    ]
+    told: [ui.Event] @= []
+
+    for step in steps
+        match ui.inject(@app, input: step)
+            .ok _ => _ = 0
+            .err e =>
+                assert e.code == ui.FAILED
+                ui.close(@app).must()
+                skip_test(reason: e.msg)
+
+        told @ told.push(ui.wait(@app, within: time.seconds(2).must()).must())
+
+    assert told[0] == .pointer(widget: area, phase: .down, x: 12.5, y: 7.25, button: left, clicks: 1, primary: false, shift: true, alt: false)
+    assert told[1] == .pointer(widget: area, phase: .drag, x: 40.0, y: 30.0, button: left, clicks: 0, primary: false, shift: false, alt: false)
+    assert told[2] == .pointer(widget: area, phase: .up, x: 40.0, y: 30.0, button: left, clicks: 1, primary: false, shift: false, alt: false)
+    assert told[3] == .pointer(widget: area, phase: .down, x: 20.0, y: 20.0, button: .right, clicks: 2, primary: false, shift: false, alt: false)
+    assert told[4] == .pointer(widget: area, phase: .up, x: 20.0, y: 20.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
+    assert told[5] == .pointer(widget: area, phase: .enter, x: 1.0, y: 2.0, button: still, clicks: 0, primary: false, shift: false, alt: false)
+    assert told[6] == .pointer(widget: area, phase: .move, x: 5.5, y: 6.5, button: still, clicks: 0, primary: true, shift: false, alt: false)
+    assert told[7] == .pointer(widget: area, phase: .exit, x: -4.0, y: 6.5, button: still, clicks: 0, primary: false, shift: false, alt: false)
+
+    # A press in the area gave it the keys, which `press_key` then presses.
+    ui.set_focus(@app, widget: area).must()
+    assert ui.focus_of(app, widget: w).must() == area
+
+    match ui.press_key(@app, widget: area, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false))
+        .ok _ => _ = 0
+        .err e =>
+            assert e.code == ui.FAILED || e.code == ui.UNSUPPORTED
+            ui.close(@app).must()
+            skip_test(reason: e.msg)
+
+    ui.press_key(@app, widget: area, shortcut: ui.Shortcut(key: "Up", primary: false, shift: false, alt: false)).must()
+    ui.press_key(@app, widget: area, shortcut: ui.Shortcut(key: "j", primary: true, shift: false, alt: false)).must()
+    pressed: [ui.Event] @= []
+
+    # The release of a key pressed with Command held is a keyUp AppKit gives
+    # no view, so five events come and not six.
+    for _ in range(from: 0, to: 5)
+        pressed @ pressed.push(ui.wait(@app, within: time.seconds(2).must()).must())
+
+    assert pressed[0] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
+    assert pressed[1] == .key(widget: area, phase: .released, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
+    assert pressed[2] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "Up", primary: false, shift: false, alt: false), typed: "")
+    assert pressed[3] == .key(widget: area, phase: .released, shortcut: ui.Shortcut(key: "Up", primary: false, shift: false, alt: false), typed: "")
+    assert pressed[4] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "j", primary: true, shift: false, alt: false), typed: "")
+    ui.close(@app).must()

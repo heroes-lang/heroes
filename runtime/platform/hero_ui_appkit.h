@@ -150,6 +150,12 @@ int64_t hero_ui_appkit_set_tip(int64_t id, const uint8_t *text, int64_t count);
 
 int64_t hero_ui_appkit_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
 
+int64_t hero_ui_appkit_set_drawing(int64_t id, const uint8_t *list, int64_t count);
+
+int64_t hero_ui_appkit_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height);
+
+int64_t hero_ui_appkit_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);

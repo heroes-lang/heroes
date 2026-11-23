@@ -146,6 +146,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_FONT_BUTTON
         return .font_button
 
+    if code == hero_ui.HERO_UI_CANVAS
+        return .canvas
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview

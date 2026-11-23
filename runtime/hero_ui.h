@@ -783,7 +783,8 @@ int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key);
  * wxWidgets' `wxWindow::SetFocus` and `FindFocus`; Tab and Shift+Tab move
  * it through the widgets in the order they stand, left to right and top to
  * bottom, the order the layout reads them in. The widgets that take the
- * keys on every system are text fields, text areas and lists. */
+ * keys on every system are text fields, text areas and lists, and on macOS
+ * an editable combo box, a spin (its number's field) and a drawing area. */
 
 /* Gives widget `id`, a text field, a text area or a list, the keys in its
  * window; the person types into it once the window is in front. 0, or -1:
@@ -1504,5 +1505,142 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * gives the descriptor as the person picked it. The text is `13|-|` and the
  * system's own font until set. */
 #define HERO_UI_FONT_BUTTON 42
+
+/* -- A DRAWING AREA, WITH ITS MOUSE AND ITS KEYS ------------------------------
+ *
+ * wxWidgets' `wxPanel` painted through a `wxGraphicsContext`, and Go libui's
+ * `Area`: a widget the program draws itself, as a chart or a preview, which
+ * also tells the program where the pointer is and which keys are pressed in
+ * it. `HERO_UI_CANVAS` is placed as a picture is, its size the program's own
+ * (`hero_ui_set_size` is a window's alone: the layer places it, as it places
+ * a picture); the area draws nothing until given a drawing, and what it
+ * holds is clear, every pixel transparent, where the drawing marks none.
+ *
+ * THE DRAWING is a display list: bytes the program builds and the arm
+ * replays whenever the system draws the area, so a redraw (a window shown
+ * again, a resize, a screen of another scale) needs no call from the
+ * program. Points are in the area's own space, the origin at its top-left
+ * corner, x to the right and y downward, one unit a point; every number is
+ * little-endian, a real an IEEE 754 binary32 ("r" below), a count a u16 or a
+ * u32. Each operation is its code byte and its operands:
+ *
+ *   0x01 SAVE                 keeps the transform and the clip
+ *   0x02 RESTORE              brings back the last kept; one with none kept
+ *                             is `INVALID`; a list ending with some kept
+ *                             restores them
+ *   0x03 TRANSLATE r r        moves the origin by dx, dy
+ *   0x04 SCALE r r            scales by sx, sy
+ *   0x05 ROTATE r             turns by radians, clockwise on screen
+ *   0x10 BEGIN                empties the current path
+ *   0x11 MOVE r r             starts a subpath at x, y
+ *   0x12 LINE r r             a line to x, y
+ *   0x13 QUAD r r r r         a quadratic curve through its control point
+ *                             to x, y
+ *   0x14 CUBIC r r r r r r    a cubic curve through two control points to
+ *                             x, y
+ *   0x15 CLOSE                closes the subpath
+ *   0x16 RECT r r r r         a closed rectangle x, y, width, height
+ *   0x17 ELLIPSE r r r r      a closed ellipse inside the rectangle x, y,
+ *                             width, height
+ *   0x20 FILL u8 u8 u8 u8 u8  fills the current path: the rule (0 non-zero,
+ *                             1 even-odd), then red, green, blue, alpha,
+ *                             straight; the path stays
+ *   0x21 STROKE r u8 u8 u8 u8 u8 u8
+ *                             strokes it: the width, the end (0 butt,
+ *                             1 round, 2 square), the join (0 miter,
+ *                             1 round, 2 bevel), then the colour
+ *   0x22 CLIP u8              intersects the clip with the current path,
+ *                             the rule as FILL's
+ *   0x30 TEXT r r r u8 u8 u8 u8 u8 u16 u32 family text
+ *                             x, y, the size in points, the style (bit 0
+ *                             bold, bit 1 italic), the colour, the family's
+ *                             length and the text's, then the family and the
+ *                             text, UTF-8; the system's font for an empty
+ *                             family, a family the system lacks too; the
+ *                             line's box has its top-left corner at x, y
+ *   0x31 IMAGE r r r r u32 u32 pixels
+ *                             x, y, width, height (the box it fills), then
+ *                             the pixels' columns and rows and
+ *                             columns * rows * 4 bytes, 8-bit RGBA, alpha
+ *                             straight, row after row from the top
+ *
+ * A path's points are in the space the transform makes when the path is
+ * painted (filled, stroked or clipped), not the space they were given in; a
+ * line, a curve or a close with no subpath begun (a LINE starts one) is
+ * left out, and a fill, a stroke or a clip with no path marks nothing. A
+ * path outlives its fills and strokes, until the next BEGIN. Not offered:
+ * dashes, gradients, shadows, blend modes.
+ *
+ * Giving a drawing replaces the last one and has the area drawn again; the
+ * list is checked whole first, and a code that is none, an operand past the
+ * list's end, a number that is not finite, a size that is not positive, an
+ * enumeration past its range, a restore with nothing kept, an image whose
+ * bytes are not its columns * rows * 4 or a text that is not UTF-8 is
+ * `INVALID` with words naming the byte, leaving the last drawing. An empty
+ * list clears the area. Past `HERO_UI_DRAWING_MOST` bytes: `LIMIT`. */
+#define HERO_UI_CANVAS 43
+#define HERO_UI_DRAWING_MOST 16777216
+
+/* Replaces canvas `id`'s drawing by the `count` bytes of `list` (a null list
+ * of count 0 clears it). 0, or -1: `INVALID` (a widget of another kind, a
+ * list the words reject), `NOT_FOUND`, `LIMIT`, `UNSUPPORTED` where the
+ * system's arm draws no area. */
+int64_t hero_ui_set_drawing(hero_ui_app *app, int64_t id, const void *list, uint64_t count);
+
+/* Writes through `width` and `height` the area's size in points now, and
+ * into `rgba` the drawing replayed as the area draws it on a screen of one
+ * pixel to a point, 8-bit RGBA, alpha straight, row after row from the
+ * top, width * height * 4 bytes: what a test reads the drawing back by.
+ * Answers that length, or -1; where it is longer than `count` (or `rgba` is
+ * null) nothing is written and the length is answered all the same. -1:
+ * `INVALID` (a widget that is no canvas), `NOT_FOUND`, `UNSUPPORTED`. */
+int64_t hero_ui_snapshot(hero_ui_app *app, int64_t id, void *rgba, uint64_t count, int64_t *width, int64_t *height);
+
+/* THE POINTER IN THE AREA. The person's pointer over it is told as
+ * `HERO_UI_EVENT_POINTER` for the canvas: `value` is the pointer's x and
+ * `second` its y, each in 64ths of a point from the area's top-left corner
+ * (a fraction a screen of more than one pixel to a point has), and the text
+ * `hero_ui_event_text` then reads is four bytes: the phase (one of
+ * `HERO_UI_POINTER_*`), the button (`HERO_UI_POINTER_LEFT`, `_RIGHT` or
+ * `_OTHER` for a press, a release or a drag; 0 for a move, an entry or an
+ * exit), the clicks (1 for a single press, 2 for a double, 3 and over; 0
+ * where the phase is no press or release), and the keys held, the
+ * `HERO_UI_PRIMARY`, `HERO_UI_SHIFT` and `HERO_UI_ALT` added up. A pointer
+ * that leaves the area while a button is held goes on being told as a drag
+ * to the area it started in, until the release. */
+#define HERO_UI_EVENT_POINTER 23
+#define HERO_UI_POINTER_DOWN 0
+#define HERO_UI_POINTER_UP 1
+#define HERO_UI_POINTER_MOVE 2
+#define HERO_UI_POINTER_DRAG 3
+#define HERO_UI_POINTER_ENTER 4
+#define HERO_UI_POINTER_EXIT 5
+#define HERO_UI_POINTER_LEFT 1
+#define HERO_UI_POINTER_RIGHT 2
+#define HERO_UI_POINTER_OTHER 3
+
+/* `hero_ui_inject` of `HERO_UI_EVENT_POINTER` is the pointer acting as the
+ * person's does, through the system's own events where the system has them
+ * (a press, a release and a drag are sent to the window as the system would,
+ * so the area is found by its hit test): `id` the canvas, `value` and
+ * `second` the point as the event tells it, `text` the same four bytes. The
+ * event is queued as the person's would be. A move, an entry and an exit are
+ * handed to the area directly where the system routes them by a tracking
+ * area the window's real pointer feeds alone. `INVALID` for a canvas of a
+ * window not shown, a point that is not within the limits of the layer, a
+ * phase, a button or a count the bytes name wrongly. */
+
+/* THE KEYS IN THE AREA. A key pressed while the canvas has the keys
+ * (`hero_ui_set_focus`; the person's click in it gives it them) is told as
+ * `HERO_UI_EVENT_KEY` for the canvas: `value` is the keys held (as the
+ * pointer's) added to 256 times the phase (0 pressed, 1 pressed again by the
+ * keyboard's repeat, 2 released), and the text is the key as
+ * `hero_ui_set_shortcut` names it, or empty for a key it names none, then one
+ * zero byte, then the characters the key types (empty for a key typing none,
+ * as an arrow, and while the primary key is held). The release of a key
+ * pressed with the primary key held may be told by no system: AppKit gives a
+ * view no keyUp then, so macOS tells the press alone. `hero_ui_press_key`
+ * takes a canvas as it takes a text field, and `hero_ui_set_focus` too. */
+#define HERO_UI_EVENT_KEY 24
 
 #endif

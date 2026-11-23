@@ -8,6 +8,7 @@
 use bytes
 use ui
 use ui/hero_ui
+use ui/internal/canvas as canvas_of
 use ui/internal/desk
 use ui/internal/drops
 use ui/internal/failure
@@ -507,7 +508,20 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 text: ""
             )
         .drop_files d => return drops.injected(app, window: d.window, x: d.x, y: d.y, paths: d.paths)
-        .hand h => return session.injected(app, what: h.what, items: h.items)
+        .hand h       => return session.injected(app, what: h.what, items: h.items)
+        .point p =>
+            return canvas_of.point_given(
+                app,
+                widget: p.widget,
+                phase: p.phase,
+                x: p.x,
+                y: p.y,
+                button: p.button,
+                clicks: p.clicks,
+                primary: p.primary,
+                shift: p.shift,
+                alt: p.alt
+            )
         .answer _ | .pick_files _ | .cancel_files | .choose_print _ | .cancel_print => return ok()
 
 # The layer's number for `appearance`.

@@ -9,6 +9,7 @@
 use time
 use ui
 use ui/hero_ui
+use ui/internal/canvas as canvas_of
 use ui/internal/check
 use ui/internal/desk
 use ui/internal/drops
@@ -90,6 +91,7 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .ask_quit _          => _ = 0
         .drop_files d        => drops.drop_ok(app, window: d.window, x: d.x, y: d.y, paths: d.paths)?
         .hand h              => session.hand_ok(app, what: h.what, items: h.items)?
+        .point p => canvas_of.point_ok(app, widget: p.widget, phase: p.phase, x: p.x, y: p.y, button: p.button, clicks: p.clicks)?
         .send s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
             check.text_ok(text: s.text, one_line: false, what: "the text sent")?
@@ -149,6 +151,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .ask_quit _                                                                 => 0
         .drop_files d                                                               => d.window.id
         .hand _                                                                     => 0
+        .point p                                                                    => p.widget.id
 
     if id == 0
         return true
@@ -303,6 +306,19 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             return [.files_dropped(window: d.window, x: d.x, y: d.y, paths: d.paths)]
         .hand h =>
             return session.handed(what: h.what, items: h.items)
+        .point p =>
+            return canvas_of.pointer_applied(
+                app,
+                widget: p.widget,
+                phase: p.phase,
+                x: p.x,
+                y: p.y,
+                button: p.button,
+                clicks: p.clicks,
+                primary: p.primary,
+                shift: p.shift,
+                alt: p.alt
+            )
         .answer _ | .pick_files _ | .cancel_files | .choose_print _ | .cancel_print =>
             _ = 0
 

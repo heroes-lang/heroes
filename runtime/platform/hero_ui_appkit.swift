@@ -96,6 +96,8 @@ private let eventMessage: Int64 = 9
 private let eventActivate: Int64 = 13
 private let eventSubmit: Int64 = 14
 private let eventDrop: Int64 = 20
+private let eventPointer: Int64 = 23
+private let eventKey: Int64 = 24
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -665,6 +667,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             slider.isContinuous = true
             slider.tag = Int(widget.id)
             return slider
+        case kindCanvas:
+            return CanvasView(owner: self, id: widget.id)
         case kindImage:
             let picture = NSImageView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             picture.imageScaling = .scaleNone
@@ -2317,9 +2321,19 @@ extension Backend {
         guard let widget = widgets[id] else {
             return answerNotFound
         }
-        let typed: NSView? = widget.textView ?? widget.table ?? (widget.kind == kindTree ? outlineOf(widget) : nil) ?? widget.view
-        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable, kindTree].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
+        // A spin's keys are its field's.
+        let typed: NSView? = widget.textView ?? widget.table ?? (widget.kind == kindTree ? outlineOf(widget) : nil) ?? (widget.view as? SpinView)?.field ?? widget.view
+        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable, kindTree, kindCanvas, kindEditableCombo, kindSpin].contains(widget.kind), let view = typed else {
             return answerInvalid
+        }
+        guard let window = view.window else {
+            return answerInvalid
+        }
+        // A field already being edited has the keys: AppKit's combo box
+        // answers `acceptsFirstResponder` false then, and its window's first
+        // responder is the field's own editor.
+        if let field = view as? NSTextField, let editor = field.currentEditor(), window.firstResponder === editor {
+            return answerOk
         }
         return window.makeFirstResponder(view) ? answerOk : answerInvalid
     }
@@ -2336,7 +2350,7 @@ extension Backend {
         }
         let field = (responder as? NSTextView)?.delegate as? NSTextField
         for other in widgets.values where other.kind != kindWindow && windowOf(other)?.id == id {
-            if other.view === responder || other.textView === responder || other.table === responder || (other.kind == kindTree && outlineOf(other) === responder) || (field != nil && other.view === field) {
+            if other.view === responder || other.textView === responder || other.table === responder || (other.kind == kindTree && outlineOf(other) === responder) || (field != nil && (other.view === field || (other.view as? SpinView)?.field === field)) {
                 return other.id
             }
         }
@@ -2556,7 +2570,7 @@ public func hero_ui_appkit_object(_ id: Int64, _ which: Int64) -> UnsafeMutableR
         case objectView:
             return widget.view
         case objectTyped:
-            return widget.textView ?? widget.table ?? widget.view
+            return widget.textView ?? widget.table ?? (widget.view as? SpinView)?.field ?? widget.view
         case objectMenu:
             return widget.menu
         case objectItem:
@@ -3772,6 +3786,7 @@ private let kindTimePicker: Int64 = 39
 private let kindDateTimePicker: Int64 = 40
 private let kindColorWell: Int64 = 41
 private let kindFontButton: Int64 = 42
+private let kindCanvas: Int64 = 43
 
 // A font as the layer's text holds it, `<size>|<style>|<family>` (`hero_ui.h`).
 private func fontDescriptor(_ font: NSFont) -> String {
@@ -4483,4 +4498,561 @@ public func hero_ui_appkit_tip(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8
         }
     }
     return answerOk
+}
+
+// MARK: a drawing area
+
+// One operation of a drawing, `hero_ui.h`'s display list decoded: numbers in
+// points, colours as four bytes, 8-bit RGBA straight.
+private enum Mark {
+    case save
+    case restore
+    case translate(CGFloat, CGFloat)
+    case scale(CGFloat, CGFloat)
+    case rotate(CGFloat)
+    case begin
+    case move(CGFloat, CGFloat)
+    case line(CGFloat, CGFloat)
+    case quad(CGPoint, CGPoint)
+    case cubic(CGPoint, CGPoint, CGPoint)
+    case close
+    case rect(CGRect)
+    case ellipse(CGRect)
+    case fill(evenOdd: Bool, color: CGColor)
+    case stroke(width: CGFloat, cap: CGLineCap, join: CGLineJoin, color: CGColor)
+    case clip(evenOdd: Bool)
+    case text(at: CGPoint, size: CGFloat, bold: Bool, italic: Bool, color: CGColor, family: String, words: String)
+    case image(CGRect, CGImage)
+}
+
+private let srgb = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+
+private func colorOf(_ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) -> CGColor {
+    return CGColor(colorSpace: srgb, components: [CGFloat(r) / 255, CGFloat(g) / 255, CGFloat(b) / 255, CGFloat(a) / 255]) ?? CGColor(gray: 0, alpha: 1)
+}
+
+// The drawing the `list` bytes are, or nil where they are not one:
+// `hero_ui.c` checked the list whole, and this reads it the same way with
+// every length asked before a byte is taken, so a list it did not check
+// (none reaches it) would still be a nil and no trap.
+private func marksOf(_ list: [UInt8]) -> [Mark]? {
+    var at = 0
+    var marks: [Mark] = []
+
+    func left(_ n: Int) -> Bool {
+        return n >= 0 && list.count - at >= n
+    }
+    func real(_ i: Int) -> CGFloat {
+        let bits = UInt32(list[at + i]) | UInt32(list[at + i + 1]) << 8 | UInt32(list[at + i + 2]) << 16 | UInt32(list[at + i + 3]) << 24
+        return CGFloat(Float(bitPattern: bits))
+    }
+    func word(_ i: Int, _ bytes: Int) -> Int {
+        var value = 0
+        for k in 0..<bytes {
+            value |= Int(list[at + i + k]) << (8 * k)
+        }
+        return value
+    }
+
+    while at < list.count {
+        let code = list[at]
+        at += 1
+        switch code {
+        case 0x01:
+            marks.append(.save)
+        case 0x02:
+            marks.append(.restore)
+        case 0x10:
+            marks.append(.begin)
+        case 0x15:
+            marks.append(.close)
+        case 0x03, 0x04, 0x11, 0x12:
+            guard left(8) else { return nil }
+            let a = real(0), b = real(4)
+            marks.append(code == 0x03 ? .translate(a, b) : code == 0x04 ? .scale(a, b) : code == 0x11 ? .move(a, b) : .line(a, b))
+            at += 8
+        case 0x05:
+            guard left(4) else { return nil }
+            marks.append(.rotate(real(0)))
+            at += 4
+        case 0x13:
+            guard left(16) else { return nil }
+            marks.append(.quad(CGPoint(x: real(0), y: real(4)), CGPoint(x: real(8), y: real(12))))
+            at += 16
+        case 0x14:
+            guard left(24) else { return nil }
+            marks.append(.cubic(CGPoint(x: real(0), y: real(4)), CGPoint(x: real(8), y: real(12)), CGPoint(x: real(16), y: real(20))))
+            at += 24
+        case 0x16, 0x17:
+            guard left(16) else { return nil }
+            let box = CGRect(x: real(0), y: real(4), width: real(8), height: real(12))
+            marks.append(code == 0x16 ? .rect(box) : .ellipse(box))
+            at += 16
+        case 0x20:
+            guard left(5) else { return nil }
+            marks.append(.fill(evenOdd: list[at] == 1, color: colorOf(list[at + 1], list[at + 2], list[at + 3], list[at + 4])))
+            at += 5
+        case 0x21:
+            guard left(10) else { return nil }
+            let cap: CGLineCap = list[at + 4] == 1 ? .round : list[at + 4] == 2 ? .square : .butt
+            let join: CGLineJoin = list[at + 5] == 1 ? .round : list[at + 5] == 2 ? .bevel : .miter
+            marks.append(.stroke(width: real(0), cap: cap, join: join, color: colorOf(list[at + 6], list[at + 7], list[at + 8], list[at + 9])))
+            at += 10
+        case 0x22:
+            guard left(1) else { return nil }
+            marks.append(.clip(evenOdd: list[at] == 1))
+            at += 1
+        case 0x30:
+            guard left(23) else { return nil }
+            let family = word(17, 2)
+            let length = word(19, 4)
+            guard left(23 + family + length) else { return nil }
+            let start = at + 23
+            let name = String(decoding: list[start..<(start + family)], as: UTF8.self)
+            let words = String(decoding: list[(start + family)..<(start + family + length)], as: UTF8.self)
+            let style = list[at + 12]
+            marks.append(.text(at: CGPoint(x: real(0), y: real(4)), size: real(8), bold: style & 1 != 0, italic: style & 2 != 0, color: colorOf(list[at + 13], list[at + 14], list[at + 15], list[at + 16]), family: name, words: words))
+            at += 23 + family + length
+        case 0x31:
+            guard left(24) else { return nil }
+            let columns = word(16, 4)
+            let rows = word(20, 4)
+            guard columns >= 1, rows >= 1, columns <= 8192, rows <= 8192, left(24 + columns * rows * 4) else { return nil }
+            let pixels = Data(list[(at + 24)..<(at + 24 + columns * rows * 4)])
+            guard let provider = CGDataProvider(data: pixels as CFData),
+                  let picture = CGImage(width: columns, height: rows, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: columns * 4, space: srgb, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue), provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent) else {
+                return nil
+            }
+            marks.append(.image(CGRect(x: real(0), y: real(4), width: real(8), height: real(12)), picture))
+            at += 24 + columns * rows * 4
+        default:
+            return nil
+        }
+    }
+    return marks
+}
+
+// Replays `marks` into the current graphics context, whose space has its
+// origin at the top-left corner and y downward (the flipped view's, or the
+// snapshot's own). A path's points are in the space the transform makes when
+// the path is painted.
+private func replay(_ marks: [Mark], into context: CGContext) {
+    var path = CGMutablePath()
+    var kept = 0
+
+    for mark in marks {
+        switch mark {
+        case .save:
+            context.saveGState()
+            kept += 1
+        case .restore:
+            if kept > 0 {
+                context.restoreGState()
+                kept -= 1
+            }
+        case .translate(let x, let y):
+            context.translateBy(x: x, y: y)
+        case .scale(let x, let y):
+            context.scaleBy(x: x, y: y)
+        case .rotate(let radians):
+            context.rotate(by: radians)
+        case .begin:
+            path = CGMutablePath()
+        case .move(let x, let y):
+            path.move(to: CGPoint(x: x, y: y))
+        case .line(let x, let y):
+            if path.isEmpty {
+                path.move(to: CGPoint(x: x, y: y))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+        case .quad(let control, let end):
+            if !path.isEmpty {
+                path.addQuadCurve(to: end, control: control)
+            }
+        case .cubic(let first, let second, let end):
+            if !path.isEmpty {
+                path.addCurve(to: end, control1: first, control2: second)
+            }
+        case .close:
+            if !path.isEmpty {
+                path.closeSubpath()
+            }
+        case .rect(let box):
+            path.addRect(box)
+        case .ellipse(let box):
+            path.addEllipse(in: box)
+        case .fill(let evenOdd, let color):
+            context.addPath(path)
+            context.setFillColor(color)
+            context.fillPath(using: evenOdd ? .evenOdd : .winding)
+        case .stroke(let width, let cap, let join, let color):
+            context.addPath(path)
+            context.setStrokeColor(color)
+            context.setLineWidth(width)
+            context.setLineCap(cap)
+            context.setLineJoin(join)
+            context.strokePath()
+        case .clip(let evenOdd):
+            context.addPath(path)
+            context.clip(using: evenOdd ? .evenOdd : .winding)
+        case .text(let at, let size, let bold, let italic, let color, let family, let words):
+            drawText(words, at: at, size: size, bold: bold, italic: italic, color: color, family: family)
+        case .image(let box, let picture):
+            // The picture's rows are from the top, and the space is flipped,
+            // so it is drawn upside down in a box turned back over.
+            context.saveGState()
+            context.translateBy(x: box.minX, y: box.maxY)
+            context.scaleBy(x: 1, y: -1)
+            context.draw(picture, in: CGRect(x: 0, y: 0, width: box.width, height: box.height))
+            context.restoreGState()
+        }
+    }
+    while kept > 0 {
+        context.restoreGState()
+        kept -= 1
+    }
+}
+
+// One line of text, the top-left corner of its box at `at`, in the font of
+// `family` (the system's for an empty family or one the system lacks).
+private func drawText(_ words: String, at: CGPoint, size: CGFloat, bold: Bool, italic: Bool, color: CGColor, family: String) {
+    let manager = NSFontManager.shared
+    var traits: NSFontTraitMask = []
+    if bold {
+        traits.insert(.boldFontMask)
+    }
+    if italic {
+        traits.insert(.italicFontMask)
+    }
+    var font = family.isEmpty ? nil : manager.font(withFamily: family, traits: traits, weight: 5, size: size)
+    if font == nil {
+        font = NSFont.systemFont(ofSize: size, weight: bold ? .bold : .regular)
+        if italic, let slanted = font.map({ manager.convert($0, toHaveTrait: .italicFontMask) }) {
+            font = slanted
+        }
+    }
+    guard let used = font else {
+        return
+    }
+    let attributes: [NSAttributedString.Key: Any] = [.font: used, .foregroundColor: NSColor(cgColor: color) ?? NSColor.black]
+    NSAttributedString(string: words, attributes: attributes).draw(at: at)
+}
+
+// The drawing area's view: it draws what its drawing says and tells the
+// program the pointer's moves and the keys, the origin at its top-left
+// corner as the layer's points are.
+private final class CanvasView: NSView {
+    weak var owner: Backend?
+    let areaId: Int64
+    var marks: [Mark] = []
+    var tracking: NSTrackingArea?
+
+    init(owner: Backend, id: Int64) {
+        self.owner = owner
+        self.areaId = id
+        super.init(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+        setAccessibilityElement(true)
+        setAccessibilityRole(.image)
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override var isFlipped: Bool { return true }
+    override var isOpaque: Bool { return false }
+    override var acceptsFirstResponder: Bool { return true }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else {
+            return
+        }
+        replay(marks, into: context)
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let old = tracking {
+            removeTrackingArea(old)
+        }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        tracking = area
+    }
+
+    // The pointer told: where, in what phase, with which button and how many
+    // clicks, and the keys held (`hero_ui.h`).
+    func tell(_ event: NSEvent, _ phase: UInt8, _ button: UInt8) {
+        let point = convert(event.locationInWindow, from: nil)
+        var held: UInt8 = 0
+        if event.modifierFlags.contains(.command) {
+            held |= 1
+        }
+        if event.modifierFlags.contains(.shift) {
+            held |= 2
+        }
+        if event.modifierFlags.contains(.option) {
+            held |= 4
+        }
+        let pressed = phase == 0 || phase == 1
+        let clicks = pressed ? UInt8(clamping: max(event.clickCount, 1)) : 0
+        owner?.queuePointer(areaId, x: Int64((point.x * 64).rounded()), y: Int64((point.y * 64).rounded()), bytes: [phase, button, clicks, held])
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        tell(event, 0, 1)
+    }
+    override func mouseUp(with event: NSEvent) { tell(event, 1, 1) }
+    override func mouseDragged(with event: NSEvent) { tell(event, 3, 1) }
+    override func rightMouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        tell(event, 0, 2)
+    }
+    override func rightMouseUp(with event: NSEvent) { tell(event, 1, 2) }
+    override func rightMouseDragged(with event: NSEvent) { tell(event, 3, 2) }
+    override func otherMouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        tell(event, 0, 3)
+    }
+    override func otherMouseUp(with event: NSEvent) { tell(event, 1, 3) }
+    override func otherMouseDragged(with event: NSEvent) { tell(event, 3, 3) }
+    override func mouseMoved(with event: NSEvent) { tell(event, 2, 0) }
+    override func mouseEntered(with event: NSEvent) { tell(event, 4, 0) }
+    override func mouseExited(with event: NSEvent) { tell(event, 5, 0) }
+
+    override func keyDown(with event: NSEvent) {
+        owner?.queueKey(areaId, event, event.isARepeat ? 1 : 0)
+    }
+    override func keyUp(with event: NSEvent) {
+        owner?.queueKey(areaId, event, 2)
+    }
+}
+
+// The name `hero_ui_set_shortcut` gives each named key, by virtual key code.
+private let keyNames: [UInt16: String] = [
+    0x24: "Enter", 0x30: "Tab", 0x31: "Space", 0x33: "Backspace", 0x35: "Escape", 0x75: "Delete",
+    0x73: "Home", 0x77: "End", 0x74: "PageUp", 0x79: "PageDown",
+    0x7B: "Left", 0x7C: "Right", 0x7D: "Down", 0x7E: "Up",
+    0x7A: "F1", 0x78: "F2", 0x63: "F3", 0x76: "F4", 0x60: "F5", 0x61: "F6",
+    0x62: "F7", 0x64: "F8", 0x65: "F9", 0x6D: "F10", 0x67: "F11", 0x6F: "F12",
+]
+
+extension Backend {
+    // A pointer event of canvas `id` queued: the point in 64ths of a point
+    // as the event's two values, the four bytes as its text.
+    func queuePointer(_ id: Int64, x: Int64, y: Int64, bytes: [UInt8]) {
+        if muted {
+            return
+        }
+        pushed += 1
+        bytes.withUnsafeBufferPointer { buffer in
+            push(eventPointer, id, x, y, buffer.baseAddress, Int64(buffer.count))
+        }
+    }
+
+    // A key event of canvas `id` queued: the keys held and the phase as the
+    // value, the key's name, one zero byte and what it types as the text.
+    func queueKey(_ id: Int64, _ event: NSEvent, _ phase: Int64) {
+        if muted {
+            return
+        }
+        var held: Int64 = 0
+        if event.modifierFlags.contains(.command) {
+            held |= 1
+        }
+        if event.modifierFlags.contains(.shift) {
+            held |= 2
+        }
+        if event.modifierFlags.contains(.option) {
+            held |= 4
+        }
+        var name = keyNames[event.keyCode] ?? ""
+        if name.isEmpty, let one = event.charactersIgnoringModifiers?.lowercased(), one.utf8.count == 1, let c = one.utf8.first, (c >= 0x61 && c <= 0x7A) || (c >= 0x30 && c <= 0x39) {
+            name = one
+        }
+        var typed = event.characters ?? ""
+        let private_use = typed.unicodeScalars.contains { $0.value >= 0xF700 && $0.value <= 0xF8FF }
+        if private_use || held & 1 != 0 {
+            typed = ""
+        }
+        let bytes = Array(name.utf8) + [0] + Array(typed.utf8)
+        pushed += 1
+        bytes.withUnsafeBufferPointer { buffer in
+            push(eventKey, id, held + 256 * phase, 0, buffer.baseAddress, Int64(buffer.count))
+        }
+    }
+
+    // Gives canvas `id` the drawing `list` holds and has it drawn again.
+    func setDrawing(_ id: Int64, _ list: [UInt8]) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let view = widget.view as? CanvasView, widget.kind == kindCanvas else {
+            return answerInvalid
+        }
+        guard let marks = marksOf(list) else {
+            words = "the drawing's bytes are no display list this arm reads"
+            return answerOther
+        }
+        view.marks = marks
+        view.needsDisplay = true
+        return answerOk
+    }
+
+    // The drawing of canvas `id` replayed at a pixel to a point: its size,
+    // and where `rgba` holds room for it the pixels, straight alpha.
+    func snapshot(_ id: Int64) -> (Int64, [UInt8], Int, Int)? {
+        guard let widget = widgets[id], let view = widget.view as? CanvasView else {
+            return nil
+        }
+        let columns = max(Int(view.bounds.width.rounded()), 0)
+        let rows = max(Int(view.bounds.height.rounded()), 0)
+        if columns > 8192 || rows > 8192 {
+            words = "the drawing area is \(columns) by \(rows) points, and a snapshot is at most 8192 on a side"
+            return (answerOther, [], columns, rows)
+        }
+        if columns == 0 || rows == 0 {
+            return (answerOk, [], columns, rows)
+        }
+        guard let context = CGContext(data: nil, width: columns, height: rows, bitsPerComponent: 8, bytesPerRow: columns * 4, space: srgb, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let data = context.data else {
+            return (answerOther, [], columns, rows)
+        }
+        context.translateBy(x: 0, y: CGFloat(rows))
+        context.scaleBy(x: 1, y: -1)
+        let before = NSGraphicsContext.current
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        replay(view.marks, into: context)
+        NSGraphicsContext.current = before
+        let raw = data.bindMemory(to: UInt8.self, capacity: columns * rows * 4)
+        var pixels = [UInt8](repeating: 0, count: columns * rows * 4)
+        for at in 0..<(columns * rows) {
+            // Core Graphics keeps a bitmap's colour times its alpha, which
+            // is given back as a straight colour; a row of the bitmap is
+            // from the top, as the context's origin was turned to be.
+            let a = Int(raw[at * 4 + 3])
+            for c in 0..<3 {
+                let value = Int(raw[at * 4 + c])
+                pixels[at * 4 + c] = a == 0 ? 0 : a == 255 ? UInt8(value) : UInt8(min((value * 255 + a / 2) / a, 255))
+            }
+            pixels[at * 4 + 3] = UInt8(a)
+        }
+        return (answerOk, pixels, columns, rows)
+    }
+
+    // The pointer acting as the person's at `x`, `y` (64ths of a point) in
+    // canvas `id`: a press, a release and a drag are sent to the window as
+    // the system would send them, so the hit test finds the view; a move, an
+    // entry and an exit, which the system routes by a tracking area the real
+    // pointer feeds, are handed to the view.
+    func pointer(_ id: Int64, _ x: Int64, _ y: Int64, _ phase: Int64, _ button: Int64, _ clicks: Int64, _ modifiers: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let view = widget.view as? CanvasView, widget.kind == kindCanvas else {
+            return answerInvalid
+        }
+        guard let window = view.window else {
+            words = "the drawing area stands in no window the system has shown"
+            return answerOther
+        }
+        var flags: NSEvent.ModifierFlags = []
+        if modifiers & 1 != 0 {
+            flags.insert(.command)
+        }
+        if modifiers & 2 != 0 {
+            flags.insert(.shift)
+        }
+        if modifiers & 4 != 0 {
+            flags.insert(.option)
+        }
+        let spot = view.convert(NSPoint(x: Double(x) / 64, y: Double(y) / 64), to: nil)
+        let time = ProcessInfo.processInfo.systemUptime
+        let number = window.windowNumber
+        let before = pushed
+        if phase == 2 || phase == 4 || phase == 5 {
+            let made: NSEvent?
+            if phase == 2 {
+                made = NSEvent.mouseEvent(with: .mouseMoved, location: spot, modifierFlags: flags, timestamp: time, windowNumber: number, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)
+            } else {
+                made = NSEvent.enterExitEvent(with: phase == 4 ? .mouseEntered : .mouseExited, location: spot, modifierFlags: flags, timestamp: time, windowNumber: number, context: nil, eventNumber: 0, trackingNumber: 0, userData: nil)
+            }
+            guard let event = made else {
+                words = "the system made no pointer event"
+                return answerOther
+            }
+            if phase == 2 {
+                view.mouseMoved(with: event)
+            } else if phase == 4 {
+                view.mouseEntered(with: event)
+            } else {
+                view.mouseExited(with: event)
+            }
+            return answerOk
+        }
+        let types: [NSEvent.EventType] = phase == 0 ? [.leftMouseDown, .rightMouseDown, .otherMouseDown] : phase == 1 ? [.leftMouseUp, .rightMouseUp, .otherMouseUp] : [.leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
+        guard button >= 1, button <= 3, let event = NSEvent.mouseEvent(with: types[Int(button) - 1], location: spot, modifierFlags: flags, timestamp: time, windowNumber: number, context: nil, eventNumber: 0, clickCount: Int(clicks), pressure: phase == 1 ? 0 : 1) else {
+            words = "the system made no pointer event"
+            return answerOther
+        }
+        window.sendEvent(event)
+        if pushed == before {
+            words = "the system gave the pointer to another view than the drawing area: something stands over the point, or the window is not in front"
+            return answerOther
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_drawing(_ id: Int64, _ list: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    var bytes: [UInt8] = []
+    if let list = list, count > 0 {
+        bytes = Array(UnsafeBufferPointer(start: list, count: Int(count)))
+    }
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setDrawing(id, bytes) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_snapshot(_ id: Int64, _ rgba: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ width: UnsafeMutablePointer<Int64>?, _ height: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let width = width, let height = height else {
+        return answerInvalid
+    }
+    let taken = MainActor.assumeIsolated { () -> (Int64, [UInt8], Int, Int)? in
+        guard let shared = backend() else {
+            return nil
+        }
+        guard shared.widgets[id] != nil else {
+            return (answerNotFound, [], 0, 0)
+        }
+        return shared.snapshot(id) ?? (answerInvalid, [], 0, 0)
+    }
+    guard let (answer, pixels, columns, rows) = taken else {
+        return answerNotFound
+    }
+    if answer != answerOk {
+        return answer
+    }
+    width.pointee = Int64(columns)
+    height.pointee = Int64(rows)
+    if let rgba = rgba, pixels.count <= Int(count) {
+        for at in 0..<pixels.count {
+            rgba[at] = pixels[at]
+        }
+    }
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_pointer(_ id: Int64, _ x: Int64, _ y: Int64, _ phase: Int64, _ button: Int64, _ clicks: Int64, _ modifiers: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.pointer(id, x, y, phase, button, clicks, modifiers) ?? answerNotFound
+    }
 }

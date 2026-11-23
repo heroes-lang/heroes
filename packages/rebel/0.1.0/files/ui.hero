@@ -6,8 +6,8 @@
 # rows, columns and grids, asks `wait` for what the person did, and changes
 # its own state by it.
 #
-# What it does NOT do: draw a widget of its own, or anything into a window
-# (a drawing area is pending); a full-screen program in a terminal (`tui`);
+# What it does NOT do: draw a widget of its own (a drawing area is `canvas`'s,
+# and only the program's drawing in it); a full-screen program in a terminal (`tui`);
 # decode an image file (`image`'s subpackages, whose `image.Image` a
 # `picture` shows); show a web page, its assets and its bridge
 # (`ui/webview`, whose web view is a widget of this package's app).
@@ -84,6 +84,7 @@ use printing
 use time
 use ui/hero_ui
 use ui/internal/bars
+use ui/internal/canvas as canvas_of
 use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
@@ -345,6 +346,8 @@ variant Kind
     color_well
     # A font the person picks in the system's chooser.
     font_button
+    # An area the program draws, which tells it the pointer and the keys.
+    canvas
 
 # What `widget` is.
 #
@@ -2131,6 +2134,269 @@ function clipboard(app: App, kind: ClipKind) -> Clip?
 function timer(@app: App, every: time.Duration) -> Widget?
     return makers.timer(@app, every: every)
 
+## Drawing
+
+# One step of a path.
+variant Step
+    # Starts a new part of the path at a point.
+    move_to
+        # The point's distance from the area's left edge, in points.
+        x: f64
+        # The point's distance from the area's top edge, in points.
+        y: f64
+    # A straight line from where the path is to a point; where no part has
+    # started it starts one there.
+    line_to
+        # The point's distance from the left edge.
+        x: f64
+        # The point's distance from the top edge.
+        y: f64
+    # A quadratic curve from where the path is, bending toward a control
+    # point, to a point.
+    quad_to
+        # The control point's distance from the left edge.
+        control_x: f64
+        # The control point's distance from the top edge.
+        control_y: f64
+        # The end's distance from the left edge.
+        x: f64
+        # The end's distance from the top edge.
+        y: f64
+    # A cubic curve from where the path is, bending toward two control
+    # points, to a point.
+    curve_to
+        # The first control point's distance from the left edge.
+        first_x: f64
+        # The first control point's distance from the top edge.
+        first_y: f64
+        # The second control point's distance from the left edge.
+        second_x: f64
+        # The second control point's distance from the top edge.
+        second_y: f64
+        # The end's distance from the left edge.
+        x: f64
+        # The end's distance from the top edge.
+        y: f64
+    # Closes the part the path is in with a line back to its start.
+    close
+
+# A shape to fill, stroke or clip by.
+variant Shape
+    # A rectangle.
+    rect
+        # Its left edge's distance from the area's left edge, in points.
+        x: f64
+        # Its top edge's distance from the area's top edge.
+        y: f64
+        # Its width, 0 or more.
+        width: f64
+        # Its height, 0 or more.
+        height: f64
+    # An ellipse inside a rectangle.
+    ellipse
+        # The rectangle's left edge's distance from the area's left edge.
+        x: f64
+        # The rectangle's top edge's distance from the area's top edge.
+        y: f64
+        # The rectangle's width, 0 or more.
+        width: f64
+        # The rectangle's height, 0 or more.
+        height: f64
+    # A path of lines and curves.
+    path
+        # Its steps, in order.
+        steps: [Step]
+
+# How a stroked line ends.
+variant Cap
+    # Square at the end point.
+    butt
+    # Rounded past the end point by half the width.
+    round
+    # Square past the end point by half the width.
+    square
+
+# How a stroked line turns a corner.
+variant Join
+    # Pointed.
+    miter
+    # Rounded.
+    round
+    # Cut off flat.
+    bevel
+
+# One operation of a drawing.
+variant Op
+    # Fills a shape with a colour.
+    fill
+        # The shape.
+        shape: Shape
+        # The colour, its alpha straight.
+        color: image.Color
+        # True to fill by the even-odd rule, false by the non-zero one.
+        even_odd: bool
+    # Draws a shape's outline with a colour.
+    stroke
+        # The shape.
+        shape: Shape
+        # The colour, its alpha straight.
+        color: image.Color
+        # The line's width in points, above 0.
+        width: f64
+        # How the line ends.
+        cap: Cap
+        # How the line turns a corner.
+        join: Join
+    # Keeps the drawing to what a shape holds, from here to the matching
+    # `.restore` or the end of the drawing.
+    clip
+        # The shape.
+        shape: Shape
+        # True to hold what the even-odd rule says is inside, false the
+        # non-zero rule.
+        even_odd: bool
+    # One line of text, the top-left corner of its box at a point.
+    text
+        # The point's distance from the area's left edge, in points.
+        x: f64
+        # The point's distance from the area's top edge.
+        y: f64
+        # The size of the font in points, above 0.
+        size: f64
+        # What is written, one line.
+        text: str
+        # The font's family as the system lists it; empty, or one the system
+        # lacks, for the system's own font.
+        family: str
+        # Whether the weight is bold.
+        bold: bool
+        # Whether the slope is italic.
+        italic: bool
+        # The colour, its alpha straight.
+        color: image.Color
+    # A picture drawn to fill a rectangle.
+    picture
+        # The rectangle's left edge's distance from the area's left edge.
+        x: f64
+        # The rectangle's top edge's distance from the area's top edge.
+        y: f64
+        # The rectangle's width in points, above 0.
+        width: f64
+        # The rectangle's height in points, above 0.
+        height: f64
+        # The picture, 1 to 8192 pixels on a side.
+        img: image.Image
+    # Keeps the transform and the clip as they are, so the operations until
+    # the matching `.restore` leave them as they find them.
+    save
+    # Brings back the transform and the clip the last `.save` kept.
+    restore
+    # Moves the origin of what follows.
+    translate
+        # How far to the right, in points.
+        dx: f64
+        # How far down, in points.
+        dy: f64
+    # Scales what follows about the origin.
+    scale
+        # The factor along x.
+        sx: f64
+        # The factor along y.
+        sy: f64
+    # Turns what follows about the origin, clockwise on the screen.
+    rotate
+        # The angle in radians.
+        radians: f64
+
+# A new drawing area in `into`, as wxWidgets' `wxPanel` painted through a
+# `wxGraphicsContext` and Go libui's `Area`: a widget the program draws
+# itself, which tells the program where the pointer is (`.pointer`) and which
+# keys are pressed in it (`.key`, once it has the keys: `set_focus`, or the
+# person's click). It is `width` by `height` points, clear where its drawing
+# marks nothing, and holds no drawing until `draw` gives it one. A native
+# app's area also reads out as one image to a screen reader, named by
+# `set_accessible_name`; its parts are not offered.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `width`: its width in points, 1 to `MOST_SIZE`.
+# - `height`: its height in points, 1 to `MOST_SIZE`.
+#
+# Fails `closed`, `invalid`, `failed`, `unsupported` where the system's arm
+# draws none (Windows and Linux, pending). See also `draw`, `snapshot`.
+function canvas(@app: App, into: Widget, width: i64, height: i64) -> Widget?
+    return canvas_of.made(@app, into: into, width: width, height: height)
+
+# Gives drawing area `widget` the drawing `ops` make, replacing the last one,
+# and has it drawn again: the operations run in order over a clear area, and
+# a window drawn again (shown, resized, moved to another screen) replays them
+# without a call. An empty `ops` clears the area. A path's points are in the
+# space the transform makes when the path is filled, stroked or clipped.
+#
+# - `app`: the app holding it.
+# - `widget`: a drawing area.
+# - `ops`: the drawing: at most 16 MiB once written out.
+#
+# Fails `closed`, `invalid` for a widget that is no drawing area, a number
+# that is not finite, a size that is not above 0 where one is asked, a
+# picture that is not an image or is more than 8192 pixels on a side, or a
+# `.restore` with no `.save`; `limit`, `failed`. See also `canvas`,
+# `snapshot`.
+function draw(@app: App, widget: Widget, ops: [Op]) -> ()?
+    return canvas_of.drawn(@app, widget: widget, ops: ops)
+
+# The drawing area `widget` as it draws on a screen of one pixel to a point:
+# its width by its height in 8-bit RGBA, alpha straight, clear where nothing
+# is drawn. What a test of a program's drawing reads it back by.
+#
+# - `app`: the app holding it; a native one's windows are laid out and shown
+#   first, so the area has its size.
+# - `widget`: a drawing area.
+#
+# Fails `closed`, `invalid` for a widget that is no drawing area,
+# `unsupported` on a headless app, whose person is the program and which
+# draws nothing, and where the system's arm draws no area; `failed`. See also
+# `draw`.
+function snapshot(@app: App, widget: Widget) -> image.Image?
+    return canvas_of.snapshot(@app, widget: widget)
+
+# What the pointer does in a drawing area.
+variant Phase
+    # A button went down.
+    down
+    # A button came up.
+    up
+    # The pointer moved with no button held.
+    move
+    # The pointer moved with a button held, on to the area where the button
+    # went down, as far out of it as the pointer goes.
+    drag
+    # The pointer came into the area.
+    enter
+    # The pointer left the area.
+    exit
+
+# The button of a pointer.
+variant PointerButton
+    # None, for a move, an entry and an exit.
+    none
+    # The main one: the left, or the one a touchpad's tap presses.
+    left
+    # The secondary one: the right.
+    right
+    # Any other: the middle one, a side one.
+    other
+
+# What a key does in a drawing area.
+variant KeyPhase
+    # It went down.
+    pressed
+    # It was held and the keyboard sent it down again.
+    repeated
+    # It came up.
+    released
+
 ## Events
 
 # What the person did, as `wait` answers it, naming the widget by the
@@ -2322,6 +2588,44 @@ variant Event
         y: i64
         # The files' paths, in the order the person dragged them.
         paths: [str]
+    # The pointer did something in a drawing area: a move, a button, an entry
+    # or an exit. Moves and drags the program has not taken yet are one: the
+    # latest.
+    pointer
+        # The drawing area.
+        widget: Widget
+        # What it did.
+        phase: Phase
+        # Where it is, in points from the area's left edge.
+        x: f64
+        # Where it is, in points from the area's top edge, the y axis down.
+        y: f64
+        # The button, `.none` for a move, an entry and an exit.
+        button: PointerButton
+        # How many presses make this one: 1 a single, 2 a double, 3 and over
+        # for the rest; 0 for every phase but `.down` and `.up`.
+        clicks: i64
+        # Whether the system's own key for shortcuts is held: Command on
+        # macOS, Control elsewhere.
+        primary: bool
+        # Whether Shift is held.
+        shift: bool
+        # Whether Alt is held, Option on macOS.
+        alt: bool
+    # A key went down, was repeated or came up while a drawing area had the
+    # keys. Where the system's key for shortcuts is held a system may tell the
+    # press and not the release: macOS does not give a view its keyUp.
+    key
+        # The drawing area.
+        widget: Widget
+        # What the key did.
+        phase: KeyPhase
+        # The key, and the keys held with it, as a menu item's shortcut names
+        # them; an empty key where no shortcut names the key.
+        shortcut: Shortcut
+        # The characters the key types, empty for a key that types none, as
+        # an arrow, and while the system's key for shortcuts is held.
+        typed: str
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -2497,6 +2801,31 @@ variant Input
         y: i64
         # The paths, one or more, none empty.
         paths: [str]
+    # Moves, presses or releases the pointer in a drawing area, as the person's
+    # does: on macOS a press, a release and a drag are sent through the
+    # window's own events, so the area is found by its hit test, and the
+    # event `.pointer` comes as the person's would.
+    point
+        # The drawing area.
+        widget: Widget
+        # What the pointer does.
+        phase: Phase
+        # Where, in points from the area's left edge.
+        x: f64
+        # Where, in points from the area's top edge.
+        y: f64
+        # The button: `.none` for `.move`, `.enter` and `.exit`, any other
+        # for `.down`, `.up` and `.drag`.
+        button: PointerButton
+        # The press this is of a double click or more: 1 for a single, 2 or
+        # more for the rest; 0 for every phase but `.down` and `.up`.
+        clicks: i64
+        # Whether the system's own key for shortcuts is held.
+        primary: bool
+        # Whether Shift is held.
+        shift: bool
+        # Whether Alt is held.
+        alt: bool
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
     # app's own origin, which on the headless side is once `ui/webview`'s
@@ -2538,13 +2867,15 @@ function inject(@app: App, input: Input) -> ()?
 # whose widgets no system edits, Return and Escape press the window's button
 # for them (`set_button_key`), a key chooses the first item of the window's
 # menus whose shortcut it is, the item and its menu enabled, as
-# `.menu_chosen`, and Return in a text field is `.submitted`; nothing else.
-# A widget greyed out or hidden takes no key, as a person could not give it
-# one.
+# `.menu_chosen`, and Return in a text field is `.submitted`; a key in a
+# drawing area, or in a window whose drawing area has the keys, is `.key`
+# twice, down and up. A widget greyed out or hidden takes no key, as a person
+# could not give it one.
 #
 # - `app`: the app it is pressed in; a native one's windows are laid out and
 #   shown first.
-# - `widget`: a window, or a text field, a text area or a list of one.
+# - `widget`: a window, or a text field, a text area, a list, an editable
+#   combo box, a spin or a drawing area of one.
 # - `shortcut`: the key and the keys held with it, as a menu item's
 #   shortcut names them; not an empty key.
 #
@@ -2561,8 +2892,9 @@ function press_key(@app: App, widget: Widget, shortcut: Shortcut) -> ()?
 # to right and top to bottom, as the layout reads them.
 #
 # - `app`: the app holding it.
-# - `widget`: a text field, a text area or a list of a window, shown and not
-#   greyed out.
+# - `widget`: a text field, a text area, a list, an editable combo box, a
+#   spin or a drawing area of a window, shown and not greyed out; a spin's
+#   keys go to its number.
 #
 # Fails `closed`, `invalid` for a widget of another kind, hidden or greyed
 # out, `failed`. See also `focus_of`, `press_key`.
@@ -3084,7 +3416,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -4491,4 +4823,36 @@ test "set_picked_font: a font button moved to another font, which tells no event
     pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: false, italic: false)).must()
     set_picked_font(@app, widget: pick, font: Font(family: "Menlo", size: 18, bold: true, italic: false)).must()
     assert text_of(app, widget: pick).must() == "18|b|Menlo"
+    close(@app).must()
+
+# A drawing area made at the size asked, drawn into and drawn again.
+test "canvas: a drawing area of the size asked, in a window with other widgets"
+    app @= open(.headless).must()
+    w = window(@app, title: "Chart", width: 300, height: 200).must()
+    chart = canvas(@app, into: w, width: 120, height: 80).must()
+    assert kind_of(app, widget: chart).must() == .canvas
+    assert rect_of(@app, widget: chart).must().width == 120
+    assert rect_of(@app, widget: chart).must().height == 80
+    close(@app).must()
+
+# A bar and a dot drawn, then the drawing replaced by an empty one.
+test "draw: a bar filled, a line stroked and the area cleared again"
+    app @= open(.headless).must()
+    w = window(@app, title: "Chart", width: 300, height: 200).must()
+    chart = canvas(@app, into: w, width: 120, height: 80).must()
+    ink = image.Color(r: 30, g: 90, b: 200, a: 255)
+    draw(
+        @app,
+        widget: chart,
+        ops: [.fill(shape: .rect(x: 10.0, y: 40.0, width: 20.0, height: 30.0), color: ink, even_odd: false), .stroke(shape: .path(steps: [.move_to(x: 0.0, y: 70.0), .line_to(x: 120.0, y: 70.0)]), color: ink, width: 1.0, cap: .butt, join: .miter)]
+    ).must()
+    draw(@app, widget: chart, ops: []).must()
+    close(@app).must()
+
+# What a headless app answers: it draws nothing, so there are no pixels.
+test "snapshot: a headless app holds the drawing and answers no pixels"
+    app @= open(.headless).must()
+    w = window(@app, title: "Chart", width: 300, height: 200).must()
+    chart = canvas(@app, into: w, width: 120, height: 80).must()
+    assert fixture.code_of(snapshot(@app, widget: chart)) == UNSUPPORTED
     close(@app).must()
