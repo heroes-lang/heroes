@@ -143,8 +143,8 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
         left @ 0
         top @ 0
 
-    # A window's bars stand across it, the toolbars above its content and the
-    # rest of its widgets in what they leave.
+    # A window's bars stand across it, the toolbars above its content, the
+    # status bars below it, and the rest of its widgets in what they leave.
     if n.kind == hero_ui.HERO_UI_WINDOW
         docked = docking(nodes, ids: kids)
         above @= 0
@@ -154,8 +154,15 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
             arrange(@nodes, id: bar, x: left, y: top + above, width: room_w, height: high)
             above @ above + high
 
+        down @= 0
+
+        for bar in docked[2]
+            high = nodes[bar].must().need_height
+            down @ down + high
+            arrange(@nodes, id: bar, x: left, y: top + room_h - down, width: room_w, height: high)
+
         top @ top + above
-        room_h @ most(a: room_h - above, b: 0)
+        room_h @ most(a: room_h - above - down, b: 0)
         kids @ docked[1]
 
         if kids.len() == 0
@@ -198,11 +205,13 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
 function docking(nodes: {i64: model.Node}, ids: [i64]) -> [[i64]]
     above: [i64] @= []
     between: [i64] @= []
-    below: [i64] = []
+    below: [i64] @= []
 
     for id in ids
         if nodes[id].must().kind == hero_ui.HERO_UI_TOOLBAR
             above @ above.push(id)
+        else if nodes[id].must().kind == hero_ui.HERO_UI_STATUS_BAR
+            below @ below.push(id)
         else
             between @ between.push(id)
 

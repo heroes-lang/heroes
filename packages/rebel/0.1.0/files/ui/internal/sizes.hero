@@ -83,6 +83,10 @@ constant SPIN_ARROWS: i64
 constant TOOLBAR_HEIGHT: i64
     38
 
+# The height of the headless side's status bar, Finder's own.
+constant STATUS_HEIGHT: i64
+    22
+
 # The room its tabs and the border above a page take, high.
 constant TAB_TOP: i64
     32
@@ -132,6 +136,9 @@ function of(n: model.Node) -> [i64]
     # A toolbar fills its window's width, so none of it is asked for.
     if k == hero_ui.HERO_UI_TOOLBAR
         return [0, TOOLBAR_HEIGHT]
+
+    if k == hero_ui.HERO_UI_STATUS_BAR
+        return [0, STATUS_HEIGHT]
 
     if k == hero_ui.HERO_UI_LABEL
         lines = lines_of(n.text)

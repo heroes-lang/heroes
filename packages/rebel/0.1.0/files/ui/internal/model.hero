@@ -505,14 +505,19 @@ function holds_widgets(kind: i64) -> bool
 function is_drawn_box(kind: i64) -> bool
     return kind >= hero_ui.HERO_UI_TABS && kind <= hero_ui.HERO_UI_PANE
 
-# Whether a node of `kind` is a bar, a toolbar: a box a window holds, docked
-# across the window's content at its top, its widgets side by side in it.
+# Whether a node of `kind` is a bar, a toolbar or a status bar: a box a window
+# holds, docked across the window's content, a toolbar at its top and a status
+# bar at its foot, its widgets side by side in it.
 function is_bar(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_TOOLBAR
+    return kind == hero_ui.HERO_UI_TOOLBAR || kind == hero_ui.HERO_UI_STATUS_BAR
 
 # Whether a bar of kind `bar` holds a widget of `kind`: a toolbar holds
-# buttons, checkboxes, text fields, combos and separators.
+# buttons, checkboxes, text fields, combos and separators, a status bar
+# labels, progress bars, buttons, pictures and separators.
 function bar_holds(bar: i64, kind: i64) -> bool
+    if bar == hero_ui.HERO_UI_STATUS_BAR
+        return kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_PROGRESS || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_IMAGE || kind == hero_ui.HERO_UI_SEPARATOR
+
     if bar != hero_ui.HERO_UI_TOOLBAR
         return false
     return kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_SEPARATOR
@@ -607,6 +612,7 @@ function kind_name(kind: i64) -> str
         "editable_combo"
         "spin"
         "toolbar"
+        "status_bar"
     ]
 
     if kind < 0 || kind >= names.len()

@@ -1415,4 +1415,23 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * folds the rest into a menu). */
 #define HERO_UI_TOOLBAR 36
 
+/* -- A STATUS BAR -------------------------------------------------------------
+ *
+ * wxWidgets' `wxStatusBar`: a bar across the foot of a window for a count or
+ * a state. `HERO_UI_STATUS_BAR` is made with a window as its parent, one to a
+ * window (`INVALID` for a second, and for any other parent), and is a frame
+ * as a group box is: its widgets are made with it as their parent, of the
+ * kinds `HERO_UI_LABEL`, `HERO_UI_PROGRESS`, `HERO_UI_BUTTON`,
+ * `HERO_UI_IMAGE` and `HERO_UI_SEPARATOR` (`INVALID` for any other kind), and
+ * stand in its own content, placed (`hero_ui_place`) from its top-left corner
+ * side by side by the face.
+ *
+ * The face places the bar itself across the foot of the window's content,
+ * its width the content's and its height `hero_ui_preferred`'s, `0` wide: the
+ * system's height for a bar the arm draws (macOS has no status bar of its
+ * own and draws one of 22 points: a hairline over the window's colour). The
+ * toolbar of the same window stands above the content as above, the status
+ * bar below it. `hero_ui_set_visible` shows and hides it. */
+#define HERO_UI_STATUS_BAR 37
+
 #endif

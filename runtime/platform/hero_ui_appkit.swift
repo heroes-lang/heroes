@@ -232,6 +232,21 @@ private final class FlippedView: NSView {
     }
 }
 
+// A status bar: the window's foot, a hairline above the widgets it holds on
+// the window's own colour, flipped as the content it stands in is.
+private final class StatusBarView: NSView {
+    override var isFlipped: Bool {
+        return true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.windowBackgroundColor.setFill()
+        bounds.fill()
+        NSColor.separatorColor.setFill()
+        NSRect(x: 0, y: 0, width: bounds.width, height: 1).fill()
+    }
+}
+
 // A spin: the field of a whole number and the stepper beside it, laid out
 // again as the view is sized. The stepper holds the value the program and the
 // person have settled on; the field may hold a number being typed.
@@ -2716,6 +2731,8 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             return (owner.view as? NSScrollView)?.documentView
         case kindGroup:
             return (owner.view as? NSBox)?.contentView
+        case kindStatusBar:
+            return owner.view
         default:
             return nil
         }
@@ -2740,6 +2757,15 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             return createToolbarItem(id, kind, owner, made)
         }
         switch kind {
+        case kindStatusBar:
+            // One to a window, across its content's foot.
+            guard owner.kind == kindWindow, let content = contentOf(owner),
+                  !widgets.values.contains(where: { $0.kind == kindStatusBar && $0.parent == owner.id }) else {
+                return answerInvalid
+            }
+            let bar = StatusBarView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            content.addSubview(bar)
+            made.view = bar
         case kindToolbar:
             // The system draws the toolbar in the window's frame above its
             // content, one to a window, and takes no room from the content.
@@ -2920,6 +2946,8 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         case kindSplitRow, kindSplitColumn:
             let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
             return NSSize(width: thickness, height: thickness)
+        case kindStatusBar:
+            return NSSize(width: 0, height: statusBarHeight)
         case kindTabs, kindPage, kindScroll, kindPane, kindGroup, kindToolbar:
             return NSSize(width: 0, height: 0)
         default:
@@ -3581,6 +3609,10 @@ private let kindGroup: Int64 = 33
 private let kindEditableCombo: Int64 = 34
 private let kindSpin: Int64 = 35
 private let kindToolbar: Int64 = 36
+private let kindStatusBar: Int64 = 37
+
+// The height of a status bar, in points: Finder's own.
+private let statusBarHeight: CGFloat = 22
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

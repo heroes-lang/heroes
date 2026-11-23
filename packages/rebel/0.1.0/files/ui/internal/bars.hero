@@ -6,8 +6,9 @@
 # made, and on the native side each is a widget of the system's own.
 #
 # **Where a bar stands.** A window docks its bars across its width, a
-# toolbar above the rest of its widgets whatever order they were made in,
-# and lays the rest of its widgets out in the content that is left. The room
+# toolbar above the rest of its widgets and a status bar below them whatever
+# order they were made in, and lays the rest of its widgets out in the
+# content that is left. The room
 # a bar takes of the content is what the system says it draws it at
 # (`preferred`'s height): the system's toolbar height where it draws one
 # inside the content, `0` where it draws one in the window's frame outside
@@ -15,7 +16,8 @@
 # The headless side draws it at `sizes.TOOLBAR_HEIGHT`.
 #
 # **What it holds.** A toolbar holds buttons, checkboxes, text fields, combos
-# and separators (`model.bar_holds`) and no box and no other widget.
+# and separators, a status bar labels, progress bars, buttons, pictures and
+# separators (`model.bar_holds`), and a bar no box and no other widget.
 
 use time
 use ui
@@ -34,6 +36,10 @@ constant BAR_PADDING: i64
 # A new toolbar in window `into` (`ui.toolbar`).
 function toolbar(@app: ui.App, into: ui.Widget) -> ui.Widget?
     return docked_bar(@app, into: into, kind: hero_ui.HERO_UI_TOOLBAR)
+
+# A new status bar in window `into` (`ui.status_bar`).
+function status_bar(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    return docked_bar(@app, into: into, kind: hero_ui.HERO_UI_STATUS_BAR)
 
 # A new bar of `kind` in window `into`, the room its own drawing takes read
 # from the system. Fails `invalid` where `into` is no window or already
@@ -148,4 +154,75 @@ test "toolbar: on the native side the system's own made, its items the system's 
     # A toolbar made again after the first went with its widgets.
     again = ui.toolbar(@app, into: w).must()
     _ = ui.button(@app, into: again, text: "Back").must()
+    ui.close(@app).must()
+
+test "status_bar: docked across the foot of its window whatever order its widgets were made in, beside a toolbar above, its items side by side from its corner, one to a window and holding only what a status bar holds (catalogue CT48)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    bar = ui.status_bar(@app, into: w).must()
+    assert ui.kind_of(app, widget: bar).must() == .status_bar
+    count = ui.label(@app, into: bar, text: "3 items").must()
+    _ = ui.separator(@app, into: bar).must()
+    busy = ui.progress(@app, into: bar, most: 100).must()
+    body = ui.label(@app, into: w, text: "Body").must()
+    tools = ui.toolbar(@app, into: w).must()
+    window = ui.rect_of(@app, widget: w).must()
+    at = ui.rect_of(@app, widget: bar).must()
+    assert at.x == 0 && at.height == sizes.STATUS_HEIGHT && at.width == window.width
+    assert at.y + at.height == window.height
+
+    # The rest of the window stands between the two bars.
+    assert ui.rect_of(@app, widget: tools).must().y == 0
+    assert ui.rect_of(@app, widget: body).must().y == sizes.TOOLBAR_HEIGHT + model.WINDOW_PADDING
+    first = ui.rect_of(@app, widget: count).must()
+    assert first.x == BAR_PADDING && first.y >= BAR_PADDING && first.y + first.height <= at.height
+    assert ui.rect_of(@app, widget: busy).must().x > first.x + first.width
+    ui.set_text(@app, widget: count, text: "4 items").must()
+    assert ui.text_of(app, widget: count).must() == "4 items"
+    assert fixture.code_of(ui.status_bar(@app, into: w)) == ui.INVALID
+    assert fixture.code_of(ui.text_field(@app, into: bar, text: "")) == ui.INVALID
+    assert fixture.code_of(ui.group(@app, into: bar, title: "No")) == ui.INVALID
+    ui.destroy(@app, widget: bar).must()
+    assert fixture.code_of(ui.rect_of(@app, widget: count)) == ui.CLOSED
+    assert ui.rect_of(@app, widget: tools).must().height == sizes.TOOLBAR_HEIGHT
+    ui.close(@app).must()
+
+test "status_bar: on the native side the foot of the window made, its widgets in its own content, and the room it takes what the system says (catalogue CT48)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Foot", width: 300, height: 200).must()
+    offered = ui.status_bar(@app, into: w)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    bar = offered.must()
+    count = ui.label(@app, into: bar, text: "3 items").must()
+    busy = ui.progress(@app, into: bar, most: 100).must()
+    _ = ui.label(@app, into: w, text: "Body").must()
+    window = ui.rect_of(@app, widget: w).must()
+    at = ui.rect_of(@app, widget: bar).must()
+    assert at.height > 0 && at.y + at.height == window.height && at.width == window.width
+
+    # Its widgets stand in its own content: from its corner, inside its height.
+    inside = ui.rect_of(@app, widget: count).must()
+    assert inside.x == BAR_PADDING && inside.y + inside.height <= at.height
+    assert ui.rect_of(@app, widget: busy).must().x > inside.x + inside.width
+    assert ui.text_of(app, widget: count).must() == "3 items"
+    ui.set_text(@app, widget: count, text: "4 items").must()
+    assert ui.text_of(app, widget: count).must() == "4 items"
+    ui.set_value(@app, widget: busy, value: 60).must()
+    assert ui.value_of(app, widget: busy).must() == 60
+    assert fixture.code_of(ui.status_bar(@app, into: w)) == ui.INVALID
+    assert fixture.code_of(ui.text_field(@app, into: bar, text: "")) == ui.INVALID
+    ui.set_visible(@app, widget: bar, on: false).must()
+    ui.set_visible(@app, widget: bar, on: true).must()
+    ui.destroy(@app, widget: bar).must()
+    assert fixture.code_of(ui.rect_of(@app, widget: count)) == ui.CLOSED
+    again = ui.status_bar(@app, into: w).must()
+    _ = ui.label(@app, into: again, text: "Back").must()
     ui.close(@app).must()

@@ -243,6 +243,8 @@ extern "hero_ui.h"
     constant HERO_UI_SPIN: i64
     # A toolbar.
     constant HERO_UI_TOOLBAR: i64
+    # A status bar.
+    constant HERO_UI_STATUS_BAR: i64
     # Gives widget `id` the tip `text` shown over it: 0 once shown, or -1.
     #
     # - `app`: the app.

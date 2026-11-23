@@ -1897,7 +1897,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TOOLBAR) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_STATUS_BAR) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2807,6 +2807,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a spin";
     case HERO_UI_TOOLBAR:
         return "making a toolbar";
+    case HERO_UI_STATUS_BAR:
+        return "making a status bar";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:

@@ -308,8 +308,8 @@ function boxed(app: ui.App, into: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: into,
-        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE, hero_ui.HERO_UI_GROUP, hero_ui.HERO_UI_TOOLBAR],
-        what: "a window, a row, a column, a grid, a page, a scrolled box, a pane, a group box or a toolbar"
+        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID, hero_ui.HERO_UI_PAGE, hero_ui.HERO_UI_SCROLL, hero_ui.HERO_UI_PANE, hero_ui.HERO_UI_GROUP, hero_ui.HERO_UI_TOOLBAR, hero_ui.HERO_UI_STATUS_BAR],
+        what: "a window, a row, a column, a grid, a page, a scrolled box, a pane, a group box, a toolbar or a status bar"
     )
 
 # Adds `n`, a node of a new number, to `app`: on the native side its widget

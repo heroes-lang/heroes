@@ -332,6 +332,8 @@ variant Kind
     spin
     # The common commands of a window as a row of controls above its content.
     toolbar
+    # A bar across the foot of a window for a count or a state.
+    status_bar
 
 # What `widget` is.
 #
@@ -889,6 +891,24 @@ function group(@app: App, into: Widget, title: str) -> Widget?
 # (Windows and Linux, pending).
 function toolbar(@app: App, into: Widget) -> Widget?
     return bars.toolbar(@app, into: into)
+
+# A new status bar in window `into`, as wxWidgets' `wxStatusBar`: a bar
+# across the foot of the window for a count or a state. Its items are the
+# widgets made in it by passing it as `into`: labels, progress bars, buttons,
+# pictures and separators, side by side in the order they were made, each
+# told as it is anywhere. The window docks it across its width below the
+# rest of its widgets, whatever order they were made in, at the height the
+# system draws it at (macOS has no status bar of its own: a hairline over the
+# window's colour, 22 points high).
+#
+# - `app`: the app it is made in.
+# - `into`: a window, which holds one status bar.
+#
+# Fails `closed`, `invalid` where `into` is no window or holds a status bar
+# already, `failed`, `unsupported` where the system's arm draws none
+# (Windows and Linux, pending).
+function status_bar(@app: App, into: Widget) -> Widget?
+    return bars.status_bar(@app, into: into)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
