@@ -43,6 +43,7 @@
 #include "hero_ui_print_win32.h"
 #include "hero_ui_web_win32.h"
 #include "hero_ui_win32_watch.h"
+#include "hero_ui_win32_pickers.h"
 
 /* ==========================================================================
  * THE WIN32 ARM: the system's own controls, `BUTTON`, `EDIT`, `STATIC`,
@@ -256,7 +257,8 @@ struct hero_ui_native {
     /* The control beside the one `hwnd` names that a widget of two controls
      * keeps: a group box's frame, the `BUTTON` that draws it, and a spin's
      * arrows, the up-down control (A GROUP BOX, AN EDITABLE COMBO BOX, A
-     * SPIN). */
+     * SPIN), and the system's own toolbar or status bar that a bar's items
+     * stand over (A TOOLBAR, A STATUS BAR, THE PICKERS). */
     HWND part;
     /* A window's place among the screens (WINDOWS ON THE SCREEN): whether
      * it is watched, the state and the screen last told, in full screen with
@@ -340,6 +342,9 @@ struct hero_ui_native {
     int64_t step_room;
     int64_t step_done;
     bool typing;
+    /* A colour well's sixteen custom colours, kept for the chooser it opens
+     * (A TOOLBAR, A STATUS BAR, THE PICKERS); NULL until it opens one. */
+    COLORREF *customs;
 };
 
 /* A tree's item: the program's number for it, the item it stands under (0
@@ -1375,6 +1380,21 @@ static void hero_ui_win_combo_complete(hero_ui_native *combo);
 static void hero_ui_win_combo_chosen(hero_ui_native *combo);
 static int64_t hero_ui_win_combo_match(const hero_ui_native *combo);
 static void hero_ui_win_lay_group(hero_ui_native *group);
+static void hero_ui_win_lay_bar(hero_ui_native *bar);
+static int64_t hero_ui_win_bar_height(const hero_ui_native *bar);
+static bool hero_ui_win_bar_holds(const hero_ui_native *bar, int64_t kind);
+static void hero_ui_win_stamp_setup(hero_ui_native *picker);
+static void hero_ui_win_stamp_show(const hero_ui_native *picker);
+static void hero_ui_win_stamp_changed(hero_ui_native *picker);
+static bool hero_ui_win_stamp_kind(int64_t kind);
+static int64_t hero_ui_win_stamp_set(hero_ui_native *picker, int64_t value, bool person);
+static int64_t hero_ui_win_stamp_range(hero_ui_native *picker, int64_t least, int64_t most);
+static int64_t hero_ui_win_well_set(hero_ui_native *well, int64_t value, bool person);
+static void hero_ui_win_well_choose(hero_ui_native *well);
+static bool hero_ui_win_swatch_draw(const DRAWITEMSTRUCT *item);
+static bool hero_ui_win_font_start(hero_ui_native *button);
+static int64_t hero_ui_win_font_apply(hero_ui_native *button, const wchar_t *text, bool store, bool *changed);
+static void hero_ui_win_font_choose(hero_ui_native *button);
 
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
@@ -1465,6 +1485,16 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
     case HERO_UI_SPIN:
         if (code == EN_KILLFOCUS) {
             hero_ui_win_spin_commit(widget);
+        }
+        break;
+    case HERO_UI_COLOR_WELL:
+        if (code == BN_CLICKED) {
+            hero_ui_win_well_choose(widget);
+        }
+        break;
+    case HERO_UI_FONT_BUTTON:
+        if (code == BN_CLICKED) {
+            hero_ui_win_font_choose(widget);
         }
         break;
     default:
@@ -1617,6 +1647,13 @@ static LRESULT hero_ui_win_notified(NMHDR *head) {
         return hero_ui_win_tree_notified(widget, head);
     case HERO_UI_SPIN:
         return head->code == UDN_DELTAPOS ? hero_ui_win_spin_stepped(widget, (const NMUPDOWN *)head) : 0;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        if (head->code == DTN_DATETIMECHANGE) {
+            hero_ui_win_stamp_changed(widget);
+        }
+        return 0;
     default:
         return 0;
     }
@@ -1646,6 +1683,11 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         return 0;
     case WM_NOTIFY:
         return hero_ui_win_notified((NMHDR *)lparam);
+    case WM_DRAWITEM:
+        if (hero_ui_win_swatch_draw((const DRAWITEMSTRUCT *)lparam)) {
+            return TRUE;
+        }
+        break;
     case WM_HSCROLL:
         if (lparam != 0) {
             hero_ui_win_slid((HWND)lparam);
@@ -1907,7 +1949,7 @@ int64_t hero_ui_arm_open(void) {
     }
     memset(&controls, 0, sizeof controls);
     controls.dwSize = (DWORD)sizeof controls;
-    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES | ICC_UPDOWN_CLASS;
+    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES | ICC_UPDOWN_CLASS | ICC_DATE_CLASSES;
     (void)InitCommonControlsEx(&controls);
     if (!hero_ui_win_ready) {
         HBRUSH face = (HBRUSH)(INT_PTR)(COLOR_3DFACE + 1);
@@ -2028,6 +2070,11 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             (void)SetWindowLongPtrW(widget->radios[i], GWLP_USERDATA, 0);
         }
+        if ((widget->kind == HERO_UI_TOOLBAR || widget->kind == HERO_UI_STATUS_BAR) && widget->part != NULL) {
+            /* The bar's own control goes with its panel and tells it nothing
+             * on the way. */
+            (void)SetWindowLongPtrW(widget->part, GWLP_USERDATA, 0);
+        }
         if (widget->kind == HERO_UI_SPIN && widget->part != NULL) {
             /* The arrows stand beside the field, not in it. */
             (void)SetWindowLongPtrW(widget->part, GWLP_USERDATA, 0);
@@ -2053,6 +2100,7 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
+    hero_layer_free(widget->customs);
     hero_layer_free(widget->told);
     hero_layer_free(widget->nodes);
     hero_ui_ids_free(&widget->order);
@@ -2224,8 +2272,22 @@ static bool hero_ui_win_holds_kind(const hero_ui_native *owner, int64_t kind) {
             }
         }
         return true;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        /* In a window, one of each kind to a window. */
+        if (owner->kind != HERO_UI_WINDOW) {
+            return false;
+        }
+        for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+            const hero_ui_native *bar = hero_ui_at(at);
+
+            if (bar != NULL && bar->kind == kind && bar->parent == owner->id) {
+                return false;
+            }
+        }
+        return true;
     default:
-        return owner->inside != NULL;
+        return hero_ui_win_bar_holds(owner, kind) && owner->inside != NULL;
     }
 }
 
@@ -2351,6 +2413,45 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_SLIDER:
         made->hwnd = hero_ui_win_control(window, inside, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
         break;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        /* A panel the items are made in, and under them the system's own bar,
+         * which draws what a toolbar or a status bar looks like and holds no
+         * item of ours. */
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_panel_class, WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        if (made->hwnd != NULL) {
+            made->inside = made->hwnd;
+            made->part = hero_ui_win_control(window, made->hwnd, kind == HERO_UI_TOOLBAR ? TOOLBARCLASSNAMEW : STATUSCLASSNAMEW, WS_VISIBLE | CCS_NOPARENTALIGN | CCS_NORESIZE | (kind == HERO_UI_TOOLBAR ? TBSTYLE_FLAT : 0), 0, id);
+            if (made->part == NULL) {
+                (void)DestroyWindow(made->hwnd);
+                made->hwnd = NULL;
+                made->inside = NULL;
+            } else if (kind == HERO_UI_TOOLBAR) {
+                (void)SendMessageW(made->part, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
+            } else {
+                /* One pane across the bar and no border round it. */
+                (void)SendMessageW(made->part, SB_SIMPLE, TRUE, 0);
+                (void)SendMessageW(made->part, SB_SETTEXTW, SB_SIMPLEID | SBT_NOBORDERS, (LPARAM)L"");
+            }
+        }
+        break;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        made->hwnd = hero_ui_win_control(window, inside, DATETIMEPICK_CLASSW, WS_TABSTOP | (kind == HERO_UI_TIME_PICKER ? DTS_UPDOWN : 0), 0, id);
+        if (made->hwnd != NULL) {
+            hero_ui_win_stamp_setup(made);
+        }
+        break;
+    case HERO_UI_COLOR_WELL:
+        made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_OWNERDRAW | WS_TABSTOP, 0, id);
+        break;
+    case HERO_UI_FONT_BUTTON:
+        made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_PUSHBUTTON | WS_TABSTOP, 0, id);
+        if (made->hwnd != NULL && !hero_ui_win_font_start(made)) {
+            answer = HERO_UI_LIMIT;
+        }
+        break;
     case HERO_UI_IMAGE:
         made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_picture_class, 0, 0, id);
         break;
@@ -2435,6 +2536,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (made->font != NULL) {
             (void)DeleteObject(made->font);
         }
+        hero_layer_free(made->label);
         hero_layer_free(made);
         return answer;
     }
@@ -2555,6 +2657,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_GROUP:
         ways = HERO_UI_WIN_PREFIX;
         break;
+    case HERO_UI_FONT_BUTTON:
     case HERO_UI_EDITABLE_COMBO:
     case HERO_UI_WINDOW:
     case HERO_UI_TEXT_FIELD:
@@ -2598,6 +2701,14 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
         hero_layer_free(widget->label);
         widget->label = wide;
         return !widget->tray_shown || hero_ui_win_tray_show(widget, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its words", GetLastError());
+    }
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        /* Its text is the font as `<size>|<style>|<family>`, shown as the
+         * family and the size. */
+        int64_t answer = hero_ui_win_font_apply(widget, wide, true, NULL);
+
+        hero_layer_free(wide);
+        return answer;
     }
     hero_ui_mute(1);
     set = SetWindowTextW(widget->kind == HERO_UI_GROUP ? widget->part : widget->hwnd, wide);
@@ -2785,6 +2896,12 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
         widget->value = value;
         hero_ui_win_spin_show(widget);
         return HERO_UI_OK;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        return hero_ui_win_stamp_set(widget, value, false);
+    case HERO_UI_COLOR_WELL:
+        return hero_ui_win_well_set(widget, value, false);
     case HERO_UI_RADIO_GROUP:
         if (value < -1 || value >= widget->radio_count) {
             return HERO_UI_INVALID;
@@ -2843,6 +2960,12 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
         (void)SendMessageW(widget->part, UDM_SETRANGE32, (WPARAM)(int)hero_ui_between(least, INT32_MIN, INT32_MAX), (LPARAM)(int)hero_ui_between(most, INT32_MIN, INT32_MAX));
         hero_ui_win_spin_show(widget);
         return HERO_UI_OK;
+    }
+    if (hero_ui_win_stamp_kind(widget->kind)) {
+        return hero_ui_win_stamp_range(widget, least, most);
+    }
+    if (widget->kind == HERO_UI_COLOR_WELL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour well has no range: its value is the colour's four bytes");
     }
     if (widget->kind != HERO_UI_SLIDER && widget->kind != HERO_UI_PROGRESS) {
         return HERO_UI_INVALID;
@@ -2983,6 +3106,18 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
             (void)EnableWindow(widget->hwnd, on == 1);
             if (widget->part != NULL) {
                 (void)EnableWindow(widget->part, on == 1);
+            }
+            if (widget->kind == HERO_UI_TOOLBAR || widget->kind == HERO_UI_STATUS_BAR) {
+                /* A disabled window ignores the person but draws its children
+                 * as they were: the items are greyed with their bar, and take
+                 * back their own state with it. */
+                for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+                    const hero_ui_native *item = hero_ui_at(at);
+
+                    if (item != NULL && item->parent == widget->id && item->hwnd != NULL) {
+                        (void)EnableWindow(item->hwnd, on == 1 && item->enabled);
+                    }
+                }
             }
             return HERO_UI_OK;
         }
@@ -3346,6 +3481,26 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         *width = 1;
         *height = 1;
         return HERO_UI_OK;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        /* Docked across the window, so no width of its own. */
+        *height = hero_ui_win_bar_height(widget);
+        return HERO_UI_OK;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        /* The widest text it shows, its arrow and a text field's height. */
+        size = hero_ui_win_text_size(widget->hwnd, widget->kind == HERO_UI_DATE_PICKER ? L"00/00/0000" : (widget->kind == HERO_UI_TIME_PICKER ? L"00:00:00" : L"00/00/0000 00:00:00"), DT_SINGLELINE);
+        size.cx += hero_ui_win_metric(SM_CXVSCROLL, dpi) + 2 * hero_ui_win_metric(SM_CXEDGE, dpi) + MulDiv(12, (int)dpi, 96);
+        size.cy = hero_ui_win_line(widget->hwnd) + 2 * hero_ui_win_metric(SM_CYEDGE, dpi) + MulDiv(3, (int)dpi, 96);
+        break;
+    case HERO_UI_COLOR_WELL:
+        *width = 44;
+        *height = 23;
+        return HERO_UI_OK;
+    case HERO_UI_FONT_BUTTON:
+        size = hero_ui_win_button_size(widget->hwnd, false, dpi);
+        break;
     case HERO_UI_SLIDER: {
         LRESULT thumb = SendMessageW(widget->hwnd, TBM_GETTHUMBLENGTH, 0, 0);
 
@@ -3410,10 +3565,15 @@ int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *le
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (widget->kind != HERO_UI_TEXT_FIELD && widget->kind != HERO_UI_TEXT_AREA && widget->kind != HERO_UI_GROUP && widget->kind != HERO_UI_EDITABLE_COMBO) {
+    if (widget->kind != HERO_UI_TEXT_FIELD && widget->kind != HERO_UI_TEXT_AREA && widget->kind != HERO_UI_GROUP && widget->kind != HERO_UI_EDITABLE_COMBO && widget->kind != HERO_UI_FONT_BUTTON) {
         return HERO_UI_INVALID;
     }
-    text = widget->kind == HERO_UI_GROUP ? hero_ui_win_group_title(widget, length) : hero_ui_win_text_of(widget->hwnd, widget->kind == HERO_UI_TEXT_AREA, length);
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        /* The descriptor the arm keeps, which the button's own text is not. */
+        text = widget->label != NULL ? hero_ui_win_narrow(widget->label, (int)wcslen(widget->label), false, length) : NULL;
+    } else {
+        text = widget->kind == HERO_UI_GROUP ? hero_ui_win_group_title(widget, length) : hero_ui_win_text_of(widget->hwnd, widget->kind == HERO_UI_TEXT_AREA, length);
+    }
     if (text == NULL) {
         return HERO_UI_LIMIT;
     }
@@ -3438,6 +3598,10 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
     case HERO_UI_SPIN:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -3721,6 +3885,20 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                 (void)SendMessageW(GetParent(widget->hwnd), WM_COMMAND, MAKEWPARAM(0, CBN_EDITCHANGE), (LPARAM)widget->hwnd);
             }
             hero_layer_free(wide);
+        } else if (widget->kind == HERO_UI_FONT_BUTTON) {
+            /* The font as the person chose it, told once where it changes. */
+            wchar_t *wide = hero_ui_win_wide(text, count, 0);
+            bool changed = false;
+
+            if (wide == NULL) {
+                answer = HERO_UI_LIMIT;
+            } else {
+                answer = hero_ui_win_font_apply(widget, wide, IsWindowEnabled(widget->hwnd) != FALSE, &changed);
+                if (answer == HERO_UI_OK && changed) {
+                    hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+                }
+            }
+            hero_layer_free(wide);
         } else if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA) {
             wchar_t *wide = hero_ui_win_wide(text, count, widget->kind == HERO_UI_TEXT_AREA ? HERO_UI_WIN_LINES : 0);
 
@@ -3787,6 +3965,10 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                 hero_ui_win_spin_show(widget);
                 hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
             }
+        } else if (hero_ui_win_stamp_kind(widget->kind)) {
+            answer = hero_ui_win_stamp_set(widget, value, true);
+        } else if (widget->kind == HERO_UI_COLOR_WELL) {
+            answer = hero_ui_win_well_set(widget, value, true);
         } else if (widget->kind != HERO_UI_SLIDER) {
             answer = HERO_UI_INVALID;
         } else if (IsWindowEnabled(widget->hwnd)) {
@@ -3886,15 +4068,17 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 
 /* -- THE KINDS AND ACTS THIS ARM DRAWS -------------------------------------
  *
- * The kinds of `hero_ui.h` up to the context menu, and the tray,
- * so a kind the header gains later is told `hero_ui_elsewhere`'s words
+ * The kinds of `hero_ui.h` up to the context menu, and the tray, a
+ * separator, a group box, an editable combo box, a spin, a toolbar, a status
+ * bar, the three pickers of a date and a time, a colour well and a font
+ * button, so a kind the header gains later is told `hero_ui_elsewhere`'s words
  * until this arm draws it, never `INVALID` by a `create` that knows none of
  * it; and no context menu on a web view, whose menu is WebView2's own,
  * which this arm does not replace. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR && kind != HERO_UI_GROUP && kind != HERO_UI_EDITABLE_COMBO && kind != HERO_UI_SPIN) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR && kind != HERO_UI_GROUP && kind != HERO_UI_EDITABLE_COMBO && kind != HERO_UI_SPIN && kind != HERO_UI_TOOLBAR && kind != HERO_UI_STATUS_BAR && !hero_ui_win_stamp_kind(kind) && kind != HERO_UI_COLOR_WELL && kind != HERO_UI_FONT_BUTTON) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -4767,6 +4951,11 @@ static bool hero_ui_win_takes_keys(int64_t kind) {
     case HERO_UI_TABS:
     case HERO_UI_TABLE:
     case HERO_UI_TREE:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
+    case HERO_UI_FONT_BUTTON:
         return true;
     default:
         return false;
@@ -4821,6 +5010,10 @@ static void hero_ui_win_order_tabs(HWND parent) {
     }
     for (int64_t i = 0; i < count; i += 1) {
         (void)SetWindowPos(row[i]->hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    }
+    /* A bar's own control draws what its items stand over: lowest of all. */
+    if (hero_ui_win_of(parent) != NULL && hero_ui_win_of(parent)->part != NULL && (hero_ui_win_of(parent)->kind == HERO_UI_TOOLBAR || hero_ui_win_of(parent)->kind == HERO_UI_STATUS_BAR)) {
+        (void)SetWindowPos(hero_ui_win_of(parent)->part, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
     for (int64_t i = 0; i < count; i += 1) {
         if (row[i]->inside != NULL) {
@@ -7537,6 +7730,10 @@ static void hero_ui_win_lay_box(hero_ui_native *widget) {
     case HERO_UI_GROUP:
         hero_ui_win_lay_group(widget);
         break;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        hero_ui_win_lay_bar(widget);
+        break;
     default:
         break;
     }
@@ -7949,6 +8146,575 @@ static LRESULT hero_ui_win_spin_stepped(hero_ui_native *spin, const NMUPDOWN *st
     }
     /* True: the control does not step itself. */
     return TRUE;
+}
+
+/* -- A TOOLBAR, A STATUS BAR, THE PICKERS ----------------------------------
+ *
+ * A TOOLBAR AND A STATUS BAR are each a panel of this arm's class that the
+ * bar's items are made in, as a page's content is, and under the items, the
+ * system's own control (`part`: `TOOLBARCLASSNAME` flat, `STATUSCLASSNAME` in
+ * its simple form with no border), which draws what a bar looks like. One
+ * route for the whole bar: the system's toolbar holds only buttons and
+ * separators of its own, its text fields, checkboxes and combo boxes being
+ * child windows, and a status bar holds only texts, and a child window of
+ * either would send its notifications to a control that forwards none to the
+ * window, so every item is the ordinary control it is anywhere, a child of
+ * the panel, and the face places it (`hero_ui_place`) as it does a page's. The
+ * control is the lowest window of the panel (`hero_ui_win_order_tabs` keeps it
+ * so). `preferred` answers the bar's height, the tallest item and the padding
+ * round it, never less than a floor of the arm's own; the bar is placed by
+ * the window across its width, so it has no width to answer.
+ *
+ * THE THREE PICKERS are the system's date and time picker
+ * (`DATETIMEPICK_CLASS`) with the format each shows: a date's, the user's
+ * short date pattern with a four-digit year (`hero_ui_win_pattern_date`), a
+ * time's `HH:mm:ss` with its up-down arrows, and a date and time's the two
+ * together. The value held is the calendar's fields as `SYSTEMTIME` holds
+ * them, read as UTC in seconds (`hero_ui_win32_pickers.h`), and the control
+ * is its view: the arm keeps the value and the ends, `DTM_SETRANGE` bounds the
+ * calendar and every change the control tells (`DTN_DATETIMECHANGE`) is read
+ * back, held to the ends and told as `HERO_UI_EVENT_VALUE` where it changed
+ * the value, which also holds a time of day, that no range of the control
+ * does. A program's own `DTM_SETSYSTEMTIME` is muted. A `SYSTEMTIME` has no
+ * year before 1601, so a value before it is `invalid` and the ends of a new
+ * picker start there.
+ *
+ * A COLOUR WELL is a button the arm draws (`BS_OWNERDRAW`): a swatch of the
+ * colour over a push button's frame, the colour shown over a checkerboard
+ * where it is not opaque. Its click opens `ChooseColorW` over its window, which
+ * has no alpha, so the pick keeps the alpha byte the well held and the dialog's
+ * custom colours stay in the widget. The chooser is modal in the UI thread
+ * as a context menu is, since only a person's click opens it; the pick is told
+ * as `HERO_UI_EVENT_VALUE` once, for the dialog's OK.
+ *
+ * A FONT BUTTON is a push button showing the family and the size, whose text
+ * for the program is the descriptor `<size>|<style>|<family>` the arm keeps
+ * (`label`). A descriptor is read by `hero_ui_win_font_parse` and its family
+ * is looked for among the system's (`EnumFontFamiliesExW`), spelt as the
+ * system spells it. GDI makes a bold or an italic face that a family lacks, so
+ * the style reads back as it was set. A click opens `ChooseFontW` the same
+ * way, its size the dialog's `iPointSize` in tenths of a point rounded to a
+ * whole one. */
+
+/* The padding round a bar's items, in points, as the face's own, and the
+ * least height an empty bar takes. */
+#define HERO_UI_WIN_BAR_PADDING 4
+#define HERO_UI_WIN_TOOLBAR_FLOOR 28
+#define HERO_UI_WIN_STATUS_FLOOR 22
+
+static bool hero_ui_win_bar_holds(const hero_ui_native *bar, int64_t kind) {
+    if (bar->kind == HERO_UI_TOOLBAR) {
+        return kind == HERO_UI_BUTTON || kind == HERO_UI_CHECKBOX || kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_COMBO || kind == HERO_UI_SEPARATOR;
+    }
+    if (bar->kind == HERO_UI_STATUS_BAR) {
+        return kind == HERO_UI_LABEL || kind == HERO_UI_PROGRESS || kind == HERO_UI_BUTTON || kind == HERO_UI_IMAGE || kind == HERO_UI_SEPARATOR;
+    }
+    return true;
+}
+
+static void hero_ui_win_lay_bar(hero_ui_native *bar) {
+    RECT shown;
+
+    if (bar->part != NULL && GetClientRect(bar->hwnd, &shown)) {
+        (void)SetWindowPos(bar->part, NULL, 0, 0, shown.right, shown.bottom, SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+}
+
+static int64_t hero_ui_win_bar_height(const hero_ui_native *bar) {
+    int64_t tallest = 0;
+
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        const hero_ui_native *item = hero_ui_at(at);
+        int64_t wide = 0;
+        int64_t high = 0;
+
+        if (item != NULL && item->parent == bar->id && hero_ui_arm_preferred(item->id, &wide, &high) == HERO_UI_OK && high > tallest) {
+            tallest = high;
+        }
+    }
+    tallest += 2 * HERO_UI_WIN_BAR_PADDING;
+    return tallest > (bar->kind == HERO_UI_TOOLBAR ? HERO_UI_WIN_TOOLBAR_FLOOR : HERO_UI_WIN_STATUS_FLOOR) ? tallest : (bar->kind == HERO_UI_TOOLBAR ? HERO_UI_WIN_TOOLBAR_FLOOR : HERO_UI_WIN_STATUS_FLOOR);
+}
+
+static bool hero_ui_win_stamp_kind(int64_t kind) {
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER;
+}
+
+/* `fields` as the `SYSTEMTIME` a picker takes. */
+static void hero_ui_win_stamp_system(const hero_ui_win_fields *fields, SYSTEMTIME *out) {
+    int64_t days = hero_ui_win_stamp_days(fields->year, fields->month, fields->day);
+
+    memset(out, 0, sizeof *out);
+    out->wYear = (WORD)fields->year;
+    out->wMonth = (WORD)fields->month;
+    out->wDay = (WORD)fields->day;
+    out->wHour = (WORD)fields->hour;
+    out->wMinute = (WORD)fields->minute;
+    out->wSecond = (WORD)fields->second;
+    /* 1970-01-01 was a Thursday. */
+    out->wDayOfWeek = (WORD)((days % 7 + 11) % 7);
+}
+
+/* The moment picker `picker` shows, in seconds; false where it tells none. */
+static bool hero_ui_win_stamp_read(const hero_ui_native *picker, int64_t *seconds) {
+    SYSTEMTIME shown;
+    hero_ui_win_fields fields;
+
+    memset(&shown, 0, sizeof shown);
+    if (SendMessageW(picker->hwnd, DTM_GETSYSTEMTIME, 0, (LPARAM)&shown) != GDT_VALID) {
+        return false;
+    }
+    fields.year = shown.wYear;
+    fields.month = shown.wMonth;
+    fields.day = shown.wDay;
+    fields.hour = shown.wHour;
+    fields.minute = shown.wMinute;
+    fields.second = shown.wSecond;
+    if (picker->kind == HERO_UI_TIME_PICKER) {
+        /* Only the time of day is its value, whatever day the control holds. */
+        fields.year = 1970;
+        fields.month = 1;
+        fields.day = 1;
+    } else if (picker->kind == HERO_UI_DATE_PICKER) {
+        fields.hour = 0;
+        fields.minute = 0;
+        fields.second = 0;
+    }
+    *seconds = hero_ui_win_stamp_seconds(&fields);
+    return true;
+}
+
+/* Shows picker `picker`'s ends and value in its control, told to no one. */
+static void hero_ui_win_stamp_show(const hero_ui_native *picker) {
+    hero_ui_win_fields fields;
+    SYSTEMTIME shown;
+    SYSTEMTIME ends[2];
+
+    hero_ui_mute(1);
+    if (picker->kind != HERO_UI_TIME_PICKER) {
+        hero_ui_win_stamp_fields(picker->least, &fields);
+        hero_ui_win_stamp_system(&fields, &ends[0]);
+        hero_ui_win_stamp_fields(picker->most, &fields);
+        hero_ui_win_stamp_system(&fields, &ends[1]);
+        (void)SendMessageW(picker->hwnd, DTM_SETRANGE, GDTR_MIN | GDTR_MAX, (LPARAM)ends);
+    }
+    hero_ui_win_stamp_fields(picker->value, &fields);
+    hero_ui_win_stamp_system(&fields, &shown);
+    (void)SendMessageW(picker->hwnd, DTM_SETSYSTEMTIME, GDT_VALID, (LPARAM)&shown);
+    hero_ui_mute(-1);
+}
+
+/* Gives a new picker its format, its ends and the value 0. */
+static void hero_ui_win_stamp_setup(hero_ui_native *picker) {
+    wchar_t locale[85];
+    wchar_t date[96];
+    wchar_t format[128];
+    size_t used = 0;
+    const wchar_t clock[] = L"HH':'mm':'ss";
+    const wchar_t standard[] = L"yyyy-MM-dd";
+
+    hero_ui_win_stamp_span(picker->kind, &picker->least, &picker->most);
+    picker->value = 0;
+    format[0] = 0;
+    if (picker->kind != HERO_UI_TIME_PICKER) {
+        if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, locale, (int)(sizeof locale / sizeof locale[0])) <= 0 || !hero_ui_win_pattern_date(locale, date, (int)(sizeof date / sizeof date[0]))) {
+            memcpy(date, standard, sizeof standard);
+        }
+        used = wcslen(date);
+        memcpy(format, date, (used + 1) * sizeof(wchar_t));
+    }
+    if (picker->kind != HERO_UI_DATE_PICKER) {
+        if (used > 0) {
+            format[used++] = L' ';
+        }
+        memcpy(format + used, clock, sizeof clock);
+    }
+    hero_ui_mute(1);
+    (void)SendMessageW(picker->hwnd, DTM_SETFORMATW, 0, (LPARAM)format);
+    hero_ui_mute(-1);
+    hero_ui_win_stamp_show(picker);
+}
+
+/* The control of `picker` told a change: read back, held to the ends, and
+ * told where it changed the value. */
+static void hero_ui_win_stamp_changed(hero_ui_native *picker) {
+    int64_t seconds;
+    int64_t held;
+    bool changed;
+
+    if (hero_ui_is_muted() || !hero_ui_win_stamp_read(picker, &seconds)) {
+        return;
+    }
+    held = hero_ui_between(seconds, picker->least, picker->most);
+    changed = held != picker->value;
+    picker->value = held;
+    if (held != seconds) {
+        /* Past an end the control stays at it, as an arrow past one does. */
+        hero_ui_win_stamp_show(picker);
+    }
+    if (changed) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, picker->id, held, 0);
+    }
+}
+
+/* Sets picker `picker`'s value as the program does (`person` false, told to
+ * no one) or as the person does (told where it changes the value, nothing
+ * where the picker is greyed out); `invalid` for a moment its kind does not
+ * hold and for one outside its ends. */
+static int64_t hero_ui_win_stamp_set(hero_ui_native *picker, int64_t value, bool person) {
+    const char *refusal = hero_ui_win_stamp_refusal(picker->kind, value);
+
+    if (refusal != NULL) {
+        return hero_ui_refused(HERO_UI_INVALID, refusal);
+    }
+    if (value < picker->least || value > picker->most) {
+        return hero_ui_refused(HERO_UI_INVALID, "the moment is outside the ends the picker was given");
+    }
+    if (person && !IsWindowEnabled(picker->hwnd)) {
+        return HERO_UI_OK;
+    }
+    if (person && value == picker->value) {
+        return HERO_UI_OK;
+    }
+    picker->value = value;
+    hero_ui_win_stamp_show(picker);
+    if (person) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, picker->id, value, 0);
+    }
+    return HERO_UI_OK;
+}
+
+/* Gives picker `picker` the ends `least` and `most`, a lower end before the
+ * control's first day being that day; a value outside them moves to the
+ * nearest end, told to no one. */
+static int64_t hero_ui_win_stamp_range(hero_ui_native *picker, int64_t least, int64_t most) {
+    const char *refusal;
+
+    least = hero_ui_win_stamp_least(picker->kind, least);
+    refusal = hero_ui_win_stamp_refusal(picker->kind, least);
+    if (refusal == NULL) {
+        refusal = hero_ui_win_stamp_refusal(picker->kind, most);
+    }
+    if (refusal != NULL) {
+        return hero_ui_refused(HERO_UI_INVALID, refusal);
+    }
+    if (least >= most) {
+        return hero_ui_refused(HERO_UI_INVALID, "the range ends where the control's first day, 1601-01-01, begins it: no moment lies between its ends");
+    }
+    picker->least = least;
+    picker->most = most;
+    picker->value = hero_ui_between(picker->value, least, most);
+    hero_ui_win_stamp_show(picker);
+    return HERO_UI_OK;
+}
+
+/* Gives well `well` the colour `value`, four sRGB bytes `0xRRGGBBAA`, as the
+ * program does or as the person does (told where it changes the colour,
+ * nothing where the well is greyed out). */
+static int64_t hero_ui_win_well_set(hero_ui_native *well, int64_t value, bool person) {
+    if (value < 0 || value > INT64_C(4294967295)) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour is four bytes, 0xRRGGBBAA, from 0 to 4294967295");
+    }
+    if (person && (!IsWindowEnabled(well->hwnd) || value == well->value)) {
+        return HERO_UI_OK;
+    }
+    well->value = value;
+    (void)InvalidateRect(well->hwnd, NULL, TRUE);
+    if (person) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, well->id, value, 0);
+    }
+    return HERO_UI_OK;
+}
+
+/* Above 0 while a colour or font chooser is open, so a click that arrives
+ * through its own message loop opens no second. */
+static _Thread_local bool hero_ui_win_choosing;
+
+/* The colour `value` over `backdrop`, each channel by the alpha it holds. */
+static COLORREF hero_ui_win_over(uint32_t value, COLORREF backdrop) {
+    uint32_t alpha = value & 255u;
+    uint32_t red = (value >> 24) & 255u;
+    uint32_t green = (value >> 16) & 255u;
+    uint32_t blue = (value >> 8) & 255u;
+
+    return RGB((red * alpha + GetRValue(backdrop) * (255u - alpha) + 127u) / 255u, (green * alpha + GetGValue(backdrop) * (255u - alpha) + 127u) / 255u, (blue * alpha + GetBValue(backdrop) * (255u - alpha) + 127u) / 255u);
+}
+
+/* Paints the colour well `item` is the owner-drawn button of: the button's
+ * frame and, inside it, the colour, over a checkerboard where it is not
+ * opaque; false where `item` is no well's. */
+static bool hero_ui_win_swatch_draw(const DRAWITEMSTRUCT *item) {
+    hero_ui_native *well = item != NULL && item->CtlType == ODT_BUTTON ? hero_ui_win_of(item->hwndItem) : NULL;
+    hero_ui_native *window;
+    RECT frame;
+    RECT inner;
+    int cell;
+    uint32_t value;
+    UINT state = DFCS_BUTTONPUSH;
+
+    if (well == NULL || well->kind != HERO_UI_COLOR_WELL) {
+        return false;
+    }
+    window = hero_ui_win_window(well->window);
+    frame = item->rcItem;
+    if ((item->itemState & ODS_SELECTED) != 0) {
+        state |= DFCS_PUSHED;
+    }
+    if ((item->itemState & ODS_DISABLED) != 0) {
+        state |= DFCS_INACTIVE;
+    }
+    (void)DrawFrameControl(item->hDC, &frame, DFC_BUTTON, state);
+    inner = frame;
+    (void)InflateRect(&inner, -hero_ui_win_px(4, window != NULL ? window->dpi : 96u), -hero_ui_win_px(4, window != NULL ? window->dpi : 96u));
+    value = (uint32_t)well->value;
+    cell = hero_ui_win_px(4, window != NULL ? window->dpi : 96u);
+    if ((value & 255u) == 255u || cell < 1) {
+        HBRUSH solid = CreateSolidBrush(RGB((value >> 24) & 255u, (value >> 16) & 255u, (value >> 8) & 255u));
+
+        if (solid != NULL) {
+            (void)FillRect(item->hDC, &inner, solid);
+            (void)DeleteObject(solid);
+        }
+    } else {
+        for (int y = inner.top; y < inner.bottom; y += cell) {
+            for (int x = inner.left; x < inner.right; x += cell) {
+                RECT square = {x, y, x + cell < inner.right ? x + cell : inner.right, y + cell < inner.bottom ? y + cell : inner.bottom};
+                bool light = (((x - inner.left) / cell) + ((y - inner.top) / cell)) % 2 == 0;
+                HBRUSH brush = CreateSolidBrush(hero_ui_win_over(value, light ? RGB(255, 255, 255) : RGB(192, 192, 192)));
+
+                if (brush != NULL) {
+                    (void)FillRect(item->hDC, &square, brush);
+                    (void)DeleteObject(brush);
+                }
+            }
+        }
+    }
+    (void)FrameRect(item->hDC, &inner, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    if ((item->itemState & ODS_FOCUS) != 0 && (item->itemState & ODS_NOFOCUSRECT) == 0) {
+        RECT focus = frame;
+
+        (void)InflateRect(&focus, -2, -2);
+        (void)DrawFocusRect(item->hDC, &focus);
+    }
+    return true;
+}
+
+/* The person clicked well `well`: the system's colour chooser over its
+ * window, and the colour it gives, the alpha kept, told once for its OK. */
+static void hero_ui_win_well_choose(hero_ui_native *well) {
+    hero_ui_native *window = hero_ui_win_top(well->window);
+    CHOOSECOLORW choose;
+    uint32_t held = (uint32_t)well->value;
+    int64_t id = well->id;
+    BOOL picked;
+
+    if (hero_ui_win_choosing || window == NULL) {
+        return;
+    }
+    if (well->customs == NULL) {
+        well->customs = hero_layer_alloc(16 * sizeof *well->customs);
+        if (well->customs == NULL) {
+            return;
+        }
+        for (int i = 0; i < 16; i += 1) {
+            well->customs[i] = RGB(255, 255, 255);
+        }
+    }
+    memset(&choose, 0, sizeof choose);
+    choose.lStructSize = (DWORD)sizeof choose;
+    choose.hwndOwner = window->hwnd;
+    choose.rgbResult = RGB((held >> 24) & 255u, (held >> 16) & 255u, (held >> 8) & 255u);
+    choose.lpCustColors = well->customs;
+    choose.Flags = CC_FULLOPEN | CC_RGBINIT | CC_ANYCOLOR;
+    hero_ui_win_choosing = true;
+    picked = ChooseColorW(&choose);
+    hero_ui_win_choosing = false;
+    /* The well is looked for again: the chooser's own loop ran meanwhile. */
+    well = hero_ui_find(id);
+    if (!picked || well == NULL || well->kind != HERO_UI_COLOR_WELL) {
+        return;
+    }
+    well->value = ((int64_t)GetRValue(choose.rgbResult) << 24) | ((int64_t)GetGValue(choose.rgbResult) << 16) | ((int64_t)GetBValue(choose.rgbResult) << 8) | (int64_t)(held & 255u);
+    (void)InvalidateRect(well->hwnd, NULL, TRUE);
+    hero_ui_tell(HERO_UI_EVENT_VALUE, well->id, well->value, 0);
+}
+
+/* The name of the family the system draws its dialogs in, in `family` of
+ * `HERO_UI_WIN_FACE_UNITS` units. */
+static void hero_ui_win_system_family(wchar_t *family) {
+    NONCLIENTMETRICSW metrics;
+    const wchar_t *name = L"Segoe UI";
+    int units = 0;
+
+    memset(&metrics, 0, sizeof metrics);
+    metrics.cbSize = (UINT)sizeof metrics;
+    if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, metrics.cbSize, &metrics, 0) && metrics.lfMessageFont.lfFaceName[0] != 0) {
+        name = metrics.lfMessageFont.lfFaceName;
+    }
+    for (; name[units] != 0 && units < HERO_UI_WIN_FACE_UNITS - 1; units += 1) {
+        family[units] = name[units];
+    }
+    family[units] = 0;
+}
+
+/* Keeps and shows font `spec` in font button `button`: its descriptor in
+ * `label`, its family and size on the button. */
+static bool hero_ui_win_font_store(hero_ui_native *button, const hero_ui_win_font_spec *spec) {
+    wchar_t descriptor[48];
+    wchar_t shown[128];
+    wchar_t *kept;
+    size_t units;
+
+    hero_ui_win_font_format(spec, descriptor);
+    hero_ui_win_font_label(spec, shown, (int)(sizeof shown / sizeof shown[0]));
+    units = wcslen(descriptor) + 1;
+    kept = hero_layer_alloc(units * sizeof(wchar_t));
+    if (kept == NULL) {
+        return false;
+    }
+    memcpy(kept, descriptor, units * sizeof(wchar_t));
+    hero_layer_free(button->label);
+    button->label = kept;
+    hero_ui_mute(1);
+    (void)SetWindowTextW(button->hwnd, shown);
+    hero_ui_mute(-1);
+    return true;
+}
+
+/* A new font button holds the system's own font at 13 points. */
+static bool hero_ui_win_font_start(hero_ui_native *button) {
+    hero_ui_win_font_spec spec;
+
+    memset(&spec, 0, sizeof spec);
+    spec.size = 13;
+    hero_ui_win_system_family(spec.family);
+    return hero_ui_win_font_store(button, &spec);
+}
+
+/* One family `EnumFontFamiliesExW` found: its name, as the system spells it,
+ * into the `wchar_t` block `found` points at, and the enumeration stopped. */
+static int CALLBACK hero_ui_win_family_seen(const LOGFONTW *font, const TEXTMETRICW *metrics, DWORD type, LPARAM found) {
+    wchar_t *into = (wchar_t *)found;
+    int units = 0;
+
+    (void)metrics;
+    (void)type;
+    for (; font->lfFaceName[units] != 0 && units < HERO_UI_WIN_FACE_UNITS - 1; units += 1) {
+        into[units] = font->lfFaceName[units];
+    }
+    into[units] = 0;
+    return 0;
+}
+
+/* Whether the system has the family `family` names, case apart; where it
+ * has, the name is written back as the system spells it. */
+static bool hero_ui_win_family_known(wchar_t *family) {
+    LOGFONTW ask;
+    wchar_t seen[HERO_UI_WIN_FACE_UNITS];
+    HDC screen = GetDC(NULL);
+    bool known;
+
+    if (screen == NULL) {
+        return false;
+    }
+    memset(&ask, 0, sizeof ask);
+    ask.lfCharSet = DEFAULT_CHARSET;
+    for (int i = 0; family[i] != 0 && i < HERO_UI_WIN_FACE_UNITS - 1; i += 1) {
+        ask.lfFaceName[i] = family[i];
+    }
+    seen[0] = 0;
+    (void)EnumFontFamiliesExW(screen, &ask, hero_ui_win_family_seen, (LPARAM)seen, 0);
+    (void)ReleaseDC(NULL, screen);
+    known = seen[0] != 0 && CompareStringOrdinal(seen, -1, family, -1, TRUE) == CSTR_EQUAL;
+    if (known) {
+        memcpy(family, seen, sizeof seen);
+    }
+    return known;
+}
+
+/* Reads descriptor `text` for font button `button` and, where `store`, makes it
+ * the button's font; `changed` (where not NULL) says whether that was another
+ * font than it held. `invalid` for a descriptor of another shape or a family
+ * the system does not have, nothing kept. */
+static int64_t hero_ui_win_font_apply(hero_ui_native *button, const wchar_t *text, bool store, bool *changed) {
+    hero_ui_win_font_spec spec;
+    wchar_t descriptor[48];
+    const char *words = hero_ui_win_font_parse(text, &spec);
+
+    if (words != NULL) {
+        return hero_ui_refused(HERO_UI_INVALID, words);
+    }
+    if (!hero_ui_win_family_known(spec.family)) {
+        return hero_ui_refused(HERO_UI_INVALID, "Windows has no font family of that name (EnumFontFamiliesExW lists none)");
+    }
+    hero_ui_win_font_format(&spec, descriptor);
+    if (changed != NULL) {
+        *changed = button->label == NULL || wcscmp(descriptor, button->label) != 0;
+    }
+    if (store && !hero_ui_win_font_store(button, &spec)) {
+        return HERO_UI_LIMIT;
+    }
+    return HERO_UI_OK;
+}
+
+/* The person clicked font button `button`: the system's font chooser over its
+ * window, and the font it gives told once for its OK. */
+static void hero_ui_win_font_choose(hero_ui_native *button) {
+    hero_ui_native *window = hero_ui_win_top(button->window);
+    hero_ui_win_font_spec spec;
+    CHOOSEFONTW choose;
+    LOGFONTW face;
+    HDC screen;
+    int dpi = 96;
+    int64_t id = button->id;
+    int size;
+    BOOL picked;
+
+    if (hero_ui_win_choosing || window == NULL || button->label == NULL || hero_ui_win_font_parse(button->label, &spec) != NULL) {
+        return;
+    }
+    /* The dialog reads a size from the height it is given against the
+     * screen's own scale, so the height is made against the same. */
+    screen = GetDC(NULL);
+    if (screen != NULL) {
+        dpi = GetDeviceCaps(screen, LOGPIXELSY);
+        (void)ReleaseDC(NULL, screen);
+    }
+    memset(&face, 0, sizeof face);
+    face.lfHeight = -MulDiv(spec.size, dpi > 0 ? dpi : 96, 72);
+    face.lfWeight = spec.bold ? FW_BOLD : FW_NORMAL;
+    face.lfItalic = spec.italic ? TRUE : FALSE;
+    face.lfCharSet = DEFAULT_CHARSET;
+    for (int i = 0; spec.family[i] != 0 && i < HERO_UI_WIN_FACE_UNITS - 1; i += 1) {
+        face.lfFaceName[i] = spec.family[i];
+    }
+    memset(&choose, 0, sizeof choose);
+    choose.lStructSize = (DWORD)sizeof choose;
+    choose.hwndOwner = window->hwnd;
+    choose.lpLogFont = &face;
+    choose.Flags = CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT | CF_NOVERTFONTS | CF_FORCEFONTEXIST | CF_LIMITSIZE;
+    choose.nSizeMin = 1;
+    choose.nSizeMax = 1024;
+    hero_ui_win_choosing = true;
+    picked = ChooseFontW(&choose);
+    hero_ui_win_choosing = false;
+    button = hero_ui_find(id);
+    if (!picked || button == NULL || button->kind != HERO_UI_FONT_BUTTON || face.lfFaceName[0] == 0) {
+        return;
+    }
+    size = (choose.iPointSize + 5) / 10;
+    spec.size = size < 1 ? 1 : (size > 1024 ? 1024 : size);
+    spec.bold = face.lfWeight >= FW_BOLD;
+    spec.italic = face.lfItalic != 0;
+    for (int i = 0; i < HERO_UI_WIN_FACE_UNITS; i += 1) {
+        spec.family[i] = i < HERO_UI_WIN_FACE_UNITS - 1 ? face.lfFaceName[i] : 0;
+        if (spec.family[i] == 0) {
+            break;
+        }
+    }
+    if (hero_ui_win_font_store(button, &spec)) {
+        hero_ui_tell(HERO_UI_EVENT_TEXT, button->id, 0, 0);
+    }
 }
 
 int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
