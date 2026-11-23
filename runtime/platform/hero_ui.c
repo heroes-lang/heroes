@@ -3033,103 +3033,6 @@ int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
     return hero_ui_appkit_dialogs_words(words, count);
 }
 
-#elif defined(_WIN32)
-
-/* The Win32 arm shows a dialog by its waiting form, `hero_ui_arm_message`
- * and the rest (THE ARM), which returns once the person has answered.
- * Until it shows one that answers later, each of its dialogs is shown here
- * by that form and the answer queued at once, so the program reads it from
- * the queue as on macOS, though the call waited. No dialog then stays
- * shown, so none is answered as the person, nor ended. Once the arm
- * answers later it defines the calls below in its own member, as the GTK 4
- * arm does, and this block goes. */
-
-int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
-    int64_t answer = HERO_UI_ANSWER_CANCEL;
-    int64_t kind = hero_ui_arm_message(window, tone, buttons, title, title_count, text, text_count, &answer);
-
-    if (kind == HERO_UI_OK) {
-        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, answer, 0, NULL, 0);
-    }
-    return kind;
-}
-
-int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel) {
-    int64_t pressed = 0;
-    int64_t kind;
-
-    (void)window;
-    kind = hero_ui_arm_ask(tone, title, title_count, text, text_count, buttons, buttons_count, cancel, &pressed);
-    if (kind == HERO_UI_OK) {
-        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, pressed, 0, NULL, 0);
-    }
-    return kind;
-}
-
-/* Queues dialog `dialog`'s choice once its waiting form has answered
- * `bytes` bytes of paths, each followed by one zero byte, 0 where the
- * person cancelled. */
-static int64_t hero_ui_dialog_chose(int64_t dialog, int64_t bytes) {
-    uint8_t *paths;
-    int64_t count = 0;
-
-    if (bytes <= 0) {
-        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, 0, 0, NULL, 0);
-        return HERO_UI_OK;
-    }
-    if (bytes > HERO_UI_TEXT_MOST) {
-        return hero_ui_refused(HERO_UI_LIMIT, "the paths chosen are more than a text of hero_ui.h holds");
-    }
-    paths = hero_layer_alloc((size_t)bytes);
-    if (paths == NULL) {
-        return HERO_UI_LIMIT;
-    }
-    if (hero_ui_arm_dialog_paths(paths, bytes) != bytes || paths[bytes - 1] != 0) {
-        hero_layer_free(paths);
-        return hero_ui_refused(HERO_UI_OTHER, "the dialog's paths were not the bytes it said it chose");
-    }
-    for (int64_t at = 0; at < bytes; at += 1) {
-        if (paths[at] == 0) {
-            count += 1;
-        }
-    }
-    hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, count, 0, paths, bytes);
-    hero_layer_free(paths);
-    return HERO_UI_OK;
-}
-
-int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count) {
-    int64_t bytes = 0;
-    int64_t kind = hero_ui_arm_file_dialog(window, save, multiple, title, title_count, name, name_count, filters, filters_count, &bytes);
-
-    return kind == HERO_UI_OK ? hero_ui_dialog_chose(dialog, bytes) : kind;
-}
-
-int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count) {
-    int64_t bytes = 0;
-    int64_t kind;
-
-    (void)window;
-    kind = hero_ui_arm_folder_dialog(multiple, title, title_count, &bytes);
-    return kind == HERO_UI_OK ? hero_ui_dialog_chose(dialog, bytes) : kind;
-}
-
-int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count) {
-    (void)dialog;
-    (void)value;
-    (void)paths;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "this system's arm shows a dialog that waits for the person and answers before its call returns, so no dialog stays shown to be answered as the person");
-}
-
-void hero_ui_arm_dialogs_end(int64_t window) {
-    (void)window;
-}
-
-int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
-    return hero_ui_arm_words(words, count);
-}
-
 #endif
 
 /* Whether `dialog` and the `window` it stands over are numbers a dialog
@@ -3685,7 +3588,7 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
 
 #endif
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(_WIN32)
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
  * shared words are (`hero_ui_refused`), so no word another call left is told
@@ -3716,6 +3619,10 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     (void)count;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
 }
+
+#endif
+
+#if !defined(__APPLE__)
 
 int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
     (void)id;
