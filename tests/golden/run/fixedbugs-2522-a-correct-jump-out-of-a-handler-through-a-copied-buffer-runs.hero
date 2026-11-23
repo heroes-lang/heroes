@@ -1,0 +1,31 @@
+# Fixed 2026-11-20 (defect 2522's row 1, lane-signals), refused then as a
+# known cost by the author's ruling B of that day; runs since 2026-11-23
+# (panel 255's R1 and R2, lane-p255-impl, ratified the same day): a correct
+# program saves a buffer, copies it, and its handler jumps out of itself
+# through the copy; the signal over, it calls the function from far deeper.
+# Why it runs: a jump reads one word of the buffer it jumps to, the one the
+# C library installs next, and decodes the stack pointer it will land at, so
+# the copy is followed for what it is: the jump leaves the handler, the
+# handler's entry is dropped, and the later call is outside any signal.
+# Route A, where the key is not verified, still refuses it.
+# Why it was refused before: the runtime kept a record of each buffer a save
+# filled and a copy had none, so a jump through it could not be told from
+# one landing inside the handler.
+# Symptom before 2026-11-23: the refusal, in words true of a jump it could
+# not follow (40 runs of 40 on this Mac at `-O0` and `-O2`, 20 of 20 at
+# `-O0` in Linux arm64, 2026-11-20). The refill case beside it stays refused.
+extern "fixedbugs-2522-a-jump-out-of-a-handler-through-a-copied-buffer.h"
+    function copied_install(sig: i32) -> i32
+    function copied_escape(sig: i32) -> i32
+    function copied_call(cb: (function(i64) -> i64)) -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(n: i64) -> i64
+    return n + 1
+
+function main()
+    print("installed ", copied_install(sig: SIGUSR1))
+    print("escaped ", copied_escape(sig: SIGUSR1))
+    print("called ", copied_call(cb: answer))

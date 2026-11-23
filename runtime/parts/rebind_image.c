@@ -1,0 +1,217 @@
+/* SPDX-FileCopyrightText: 2026 Giuseppe Arici
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * With the Heroes runtime exception (LICENSE-RUNTIME-EXCEPTION): a program
+ * compiled with Heroes carries part of this runtime inside it and owes nothing
+ * for doing so. The exception is stated here in prose rather than after a
+ * `WITH` in the tag above, because that operator takes an exception from
+ * SPDX's own registry and this one is not in it. */
+
+/* parts/rebind_image.c — Darwin's route D-rebind, part of `parts/rebind.c`
+ * (read its module doc first): the rewrite of every loaded image's slots, and
+ * the constructor that starts the route before `main` (panel 255's R1,
+ * defects 2679 and 2702; design.md §1.12, §4.19). Needs the files `rebind.c`
+ * names before it. */
+
+#if defined(__APPLE__)
+
+static void *hero_rebind_dlsym(void *handle, const char *name);
+
+/* The functions a slot bound to a name (Mach-O's spelling, a leading `_`) is
+ * given instead; a save point only for a family whose decode did not verify
+ * (rule 3), decided before the first image is rewritten. */
+static const struct {
+    const char *name;
+    void *with;
+    int family;
+} hero_rebind_table[] = {
+    {"_sigaction", (void *)hero_rebind_sigaction, 0},
+    {"_signal", (void *)hero_rebind_signal, 0},
+    {"_sigset", (void *)hero_rebind_sigset, 0},
+    {"_bsd_signal", (void *)hero_rebind_bsd_signal, 0},
+    {"_sigvec", (void *)hero_rebind_sigvec, 0},
+    {"_siginterrupt", (void *)hero_rebind_siginterrupt, 0},
+    {"_dlsym", (void *)hero_rebind_dlsym, 0},
+    {"_siglongjmp", (void *)hero_rebind_siglongjmp, 0},
+    {"_longjmp", (void *)hero_rebind_longjmp, 0},
+    {"__longjmp", (void *)hero_rebind__longjmp, 0},
+    {"_setcontext", (void *)hero_rebind_setcontext, 0},
+    {"_swapcontext", (void *)hero_rebind_swapcontext, 0},
+    {"_makecontext", (void *)hero_rebind_makecontext, 0},
+    {"_setjmp", (void *)hero_rebind_setjmp, HERO_REBIND_JMP},
+    {"__setjmp", (void *)hero_rebind__setjmp, HERO_REBIND_JMP},
+    {"_sigsetjmp", (void *)hero_rebind_sigsetjmp, HERO_REBIND_JMP},
+    {"_getcontext", (void *)hero_rebind_getcontext, HERO_REBIND_CTX},
+};
+
+static bool hero_rebind_wanted(size_t i) {
+    int family = hero_rebind_table[i].family;
+    return family == 0 || !hero_rebind_decoding(family);
+}
+
+/* The function a slot bound to `name`, Mach-O's spelling, is given instead,
+ * or NULL for a name this file leaves alone. */
+static void *hero_rebind_replacement(const char *name) {
+    for (size_t i = 0; i < sizeof hero_rebind_table / sizeof hero_rebind_table[0]; i += 1) {
+        if (strcmp(name, hero_rebind_table[i].name) == 0) return hero_rebind_wanted(i) ? hero_rebind_table[i].with : NULL;
+    }
+    return NULL;
+}
+
+/* The same, for C's spelling, the one `dlsym` is asked with. */
+static void *hero_rebind_answer(const char *name) {
+    for (size_t i = 0; i < sizeof hero_rebind_table / sizeof hero_rebind_table[0]; i += 1) {
+        if (strcmp(name, hero_rebind_table[i].name + 1) == 0) {
+            return hero_rebind_wanted(i) ? hero_rebind_table[i].with : NULL;
+        }
+    }
+    return NULL;
+}
+
+/* Whether the image `caller` lies in exports `name` itself, asked of that
+ * image alone (`RTLD_FIRST`): an image asking for the definition after its
+ * own, or for its own. */
+static bool hero_rebind_caller_defines(const void *caller, const char *name, hero_rebind_dlsym_fn real) {
+    Dl_info info;
+    if (dladdr(caller, &info) == 0 || info.dli_fname == NULL) return false;
+    void *self = dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_FIRST);
+    if (self == NULL) return false;
+    void *own = real(self, name);
+    dlclose(self);
+    return own != NULL;
+}
+
+/* `dlsym` ANSWERED FOR THE NAMES ABOVE (defect 2522's row 3, the author's
+ * ruling C of 2026-11-20). An image's `dlsym` of `sigaction`, by the C
+ * library's handle, `RTLD_NEXT` or `RTLD_DEFAULT`, answered the C library's
+ * own, never the rewritten slot, and a handler it installed called the
+ * program's function through 24 frames, which ran inside the signal, 20 runs
+ * of 20 at `-O0`, `-O2` and `--sanitize` on this Mac (lane-signals-2,
+ * 2026-11-20). So every name the table rewrites is answered this file's
+ * function, which is what the image's slot for it reaches, wherever the C
+ * library would have answered one at all. Handed to the C library's `dlsym`
+ * by a tail call, so it sees its caller as `RTLD_NEXT` and `RTLD_SELF` need:
+ * every other name, and a lookup made by an image that exports the name
+ * itself. An image that interposes is never rewritten, so its lookups reach
+ * the C library's `dlsym` as they did. */
+static void *hero_rebind_dlsym(void *handle, const char *name) {
+    hero_rebind_dlsym_fn real = atomic_load_explicit(&hero_rebind_real_dlsym, memory_order_relaxed);
+    void *ours = name != NULL ? hero_rebind_answer(name) : NULL;
+    if (ours == NULL || hero_rebind_caller_defines(__builtin_return_address(0), name, real)) {
+        __attribute__((musttail)) return real(handle, name);
+    }
+    return real(handle, name) != NULL ? ours : NULL;
+}
+
+/* Whether an image interposes (an `__interpose` section in any segment): its
+ * calls of the C library's names are its own wrappers' way to the C library,
+ * and are left as they are (the `--sanitize` repair, above). */
+static bool hero_rebind_interposes(const struct mach_header_64 *mh) {
+    const uint8_t *p = (const uint8_t *)(mh + 1);
+    for (uint32_t i = 0; i < mh->ncmds; i += 1) {
+        const struct load_command *lc = (const struct load_command *)p;
+        if (lc->cmd == LC_SEGMENT_64) {
+            const struct segment_command_64 *seg = (const struct segment_command_64 *)lc;
+            const struct section_64 *sec = (const struct section_64 *)(seg + 1);
+            for (uint32_t j = 0; j < seg->nsects; j += 1) {
+                if (strncmp(sec[j].sectname, "__interpose", 16) == 0) return true;
+            }
+        }
+        p += lc->cmdsize;
+    }
+    return false;
+}
+
+/* Every lazy and non-lazy symbol pointer of the image whose symbol this file
+ * replaces, rewritten, its page made writable by a copy first. An image of
+ * the shared cache is left alone: its binds are not rewritable. */
+static void hero_rebind_image(const struct mach_header *header, intptr_t slide) {
+    const struct mach_header_64 *mh = (const struct mach_header_64 *)header;
+    if ((mh->flags & MH_DYLIB_IN_CACHE) != 0 || hero_rebind_interposes(mh)) return;
+    const struct segment_command_64 *linkedit = NULL;
+    const struct symtab_command *st = NULL;
+    const struct dysymtab_command *dy = NULL;
+    const uint8_t *p = (const uint8_t *)(mh + 1);
+    for (uint32_t i = 0; i < mh->ncmds; i += 1) {
+        const struct load_command *lc = (const struct load_command *)p;
+        if (lc->cmd == LC_SEGMENT_64 && strcmp(((const struct segment_command_64 *)lc)->segname, SEG_LINKEDIT) == 0) {
+            linkedit = (const struct segment_command_64 *)lc;
+        } else if (lc->cmd == LC_SYMTAB) {
+            st = (const struct symtab_command *)lc;
+        } else if (lc->cmd == LC_DYSYMTAB) {
+            dy = (const struct dysymtab_command *)lc;
+        }
+        p += lc->cmdsize;
+    }
+    if (linkedit == NULL || st == NULL || dy == NULL || dy->nindirectsyms == 0) return;
+    uintptr_t base = (uintptr_t)slide + (uintptr_t)linkedit->vmaddr - (uintptr_t)linkedit->fileoff;
+    const struct nlist_64 *syms = (const struct nlist_64 *)(base + st->symoff);
+    const char *strs = (const char *)(base + st->stroff);
+    const uint32_t *indirect = (const uint32_t *)(base + dy->indirectsymoff);
+    p = (const uint8_t *)(mh + 1);
+    for (uint32_t i = 0; i < mh->ncmds; i += 1) {
+        const struct load_command *lc = (const struct load_command *)p;
+        p += lc->cmdsize;
+        if (lc->cmd != LC_SEGMENT_64) continue;
+        const struct segment_command_64 *seg = (const struct segment_command_64 *)lc;
+        const struct section_64 *sec = (const struct section_64 *)(seg + 1);
+        for (uint32_t j = 0; j < seg->nsects; j += 1, sec += 1) {
+            uint32_t type = sec->flags & SECTION_TYPE;
+            if (type != S_LAZY_SYMBOL_POINTERS && type != S_NON_LAZY_SYMBOL_POINTERS) continue;
+            void **slots = (void **)((uintptr_t)slide + (uintptr_t)sec->addr);
+            uint32_t n = (uint32_t)(sec->size / sizeof(void *));
+            for (uint32_t k = 0; k < n; k += 1) {
+                uint32_t si = indirect[sec->reserved1 + k];
+                if ((si & (INDIRECT_SYMBOL_ABS | INDIRECT_SYMBOL_LOCAL)) != 0) continue;
+                void *with = hero_rebind_replacement(strs + syms[si].n_un.n_strx);
+                if (with == NULL) continue;
+                (void)vm_protect(mach_task_self(), (vm_address_t)&slots[k], sizeof(void *), 0,
+                                 VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
+                slots[k] = with;
+            }
+        }
+    }
+}
+
+/* -- before `main` ------------------------------------------------------- */
+
+/* Priority 0, before every constructor of the program's own: the key made,
+ * the C library's own taken (by `RTLD_DEFAULT`, so under an interposer its
+ * wrapper, which reaches the C library), the images loaded now measured for
+ * route A, the decode calibrated (which decides which save points the table
+ * rewrites), every image rewritten now and every one dyld loads later, and
+ * every handler already installed trampolined. */
+__attribute__((constructor(0))) static void hero_rebind_start(void) {
+    pthread_key_t key;
+    if (pthread_key_create(&key, NULL) == 0) {
+        atomic_store_explicit(&hero_rebind_pending, key, memory_order_relaxed);
+        atomic_store_explicit(&hero_rebind_pending_keyed, 1, memory_order_release);
+    }
+    atomic_store(&hero_rebind_real_sigaction, (hero_rebind_action_fn)dlsym(RTLD_DEFAULT, "sigaction"));
+    atomic_store(&hero_rebind_real_signal, (hero_rebind_signal_fn)dlsym(RTLD_DEFAULT, "signal"));
+    atomic_store(&hero_rebind_real_sigset, (hero_rebind_signal_fn)dlsym(RTLD_DEFAULT, "sigset"));
+    atomic_store(&hero_rebind_real_bsd_signal, (hero_rebind_signal_fn)dlsym(RTLD_DEFAULT, "bsd_signal"));
+    atomic_store(&hero_rebind_real_sigvec, (hero_rebind_vec_fn)dlsym(RTLD_DEFAULT, "sigvec"));
+    atomic_store(&hero_rebind_real_siginterrupt, (hero_rebind_interrupt_fn)dlsym(RTLD_DEFAULT, "siginterrupt"));
+    atomic_store(&hero_rebind_real_dlsym, (hero_rebind_dlsym_fn)dlsym(RTLD_DEFAULT, "dlsym"));
+    atomic_store(&hero_rebind_real_siglongjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "siglongjmp"));
+    atomic_store(&hero_rebind_real_longjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "longjmp"));
+    atomic_store(&hero_rebind_real__longjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "_longjmp"));
+    atomic_store(&hero_rebind_real_setjmp, (hero_rebind_save_fn)dlsym(RTLD_DEFAULT, "setjmp"));
+    atomic_store(&hero_rebind_real__setjmp, (hero_rebind_save_fn)dlsym(RTLD_DEFAULT, "_setjmp"));
+    atomic_store(&hero_rebind_real_sigsetjmp, (hero_rebind_sigsave_fn)dlsym(RTLD_DEFAULT, "sigsetjmp"));
+    atomic_store(&hero_rebind_real_getcontext, (hero_rebind_get_fn)dlsym(RTLD_DEFAULT, "getcontext"));
+    atomic_store(&hero_rebind_real_setcontext, (hero_rebind_set_fn)dlsym(RTLD_DEFAULT, "setcontext"));
+    atomic_store(&hero_rebind_real_swapcontext, (hero_rebind_swap_fn)dlsym(RTLD_DEFAULT, "swapcontext"));
+    atomic_store(&hero_rebind_real_makecontext, (hero_rebind_make_fn)dlsym(RTLD_DEFAULT, "makecontext"));
+    for (uint32_t i = 0; i < _dyld_image_count(); i += 1) {
+        hero_rebind_regions_of(_dyld_get_image_header(i), _dyld_get_image_vmaddr_slide(i));
+    }
+    hero_rebind_calibrate();
+    _dyld_register_func_for_add_image(hero_rebind_image);
+    for (int sig = 1; sig < NSIG; sig += 1) {
+        if (sig != SIGKILL && sig != SIGSTOP) hero_rebind_retramp(sig);
+    }
+}
+
+#endif

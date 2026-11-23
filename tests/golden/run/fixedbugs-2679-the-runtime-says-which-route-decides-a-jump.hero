@@ -1,0 +1,19 @@
+# Added 2026-11-23, defect 2679, lane-p255-impl (panel 255's R1 and R5): the
+# runtime says which route decides a jump out of a signal handler, by
+# `hero_signal_jump_route()`: bit 1 when a jump of the `setjmp` family reads
+# the stack pointer it will land at from the one word of its buffer (route C,
+# the key verified before `main`), bit 2 when a context jump reads it from
+# the context's own field, 3 when both do, and 0 where each falls to the
+# record that reads only memory which provably lives (route A).
+# Why 3 here: the calibration verifies the C library's layout on each
+# platform the CI runs a POSIX leg on (panel 255's R1, measured on glibc 2.41
+# and 2.43 and on macOS 27, arm64 and x86-64 for glibc). A platform whose
+# layout does not verify answers lower and says so by this number (glibc's
+# other architectures, Darwin x86-64). Windows has no route to ask. The
+# forcing define, `HERO_JMP_FORCE_UNCALIBRATED` (1 the key, 2 the contexts, 3
+# both), is run apart, in the lane that landed this: the commit says which.
+extern "fixedbugs-2679-the-runtime-says-which-route-decides-a-jump.h"
+    function route_now() -> i64
+
+function main()
+    print("route ", route_now())
