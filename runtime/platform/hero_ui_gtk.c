@@ -415,6 +415,7 @@ typedef struct hero_ui_gtk_functions {
     unsigned long (*signal_connect_data)(void *instance, const char *signal, hero_ui_gtk_callback handler, void *data, void *destroy, int flags);
     void (*signal_emit_by_name)(void *instance, const char *signal, ...);
     void (*object_unref)(void *object);
+    void *(*object_ref_sink)(void *object);
     void *(*menu_new)(void);
     void (*menu_remove_all)(void *menu);
     void (*menu_append_section)(void *menu, const char *label, void *section);
@@ -927,6 +928,7 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(signal_connect_data, "g_signal_connect_data");
     HERO_UI_GTK_NEED(signal_emit_by_name, "g_signal_emit_by_name");
     HERO_UI_GTK_NEED(object_unref, "g_object_unref");
+    HERO_UI_GTK_NEED(object_ref_sink, "g_object_ref_sink");
     HERO_UI_GTK_NEED(menu_new, "g_menu_new");
     HERO_UI_GTK_NEED(menu_remove_all, "g_menu_remove_all");
     HERO_UI_GTK_NEED(menu_append_section, "g_menu_append_section");
@@ -1439,6 +1441,10 @@ static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t val
 static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count);
 static void hero_ui_gtk_close_more(void);
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
+static hero_ui_gtk_size hero_ui_gtk_natural(void *widget);
+static bool hero_ui_gtk_make_bar(hero_ui_native *made);
+static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar);
+static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height);
 static void hero_ui_gtk_send_docked(hero_ui_native *window);
 static void hero_ui_gtk_watch_appearance(void);
 static void hero_ui_gtk_unwatch_appearance(void);
@@ -2302,9 +2308,10 @@ int64_t hero_ui_arm_open(void) {
 }
 
 /* Whether a frame, a window or one of the boxes the system draws whose
- * content holds widgets: a page, a scrolled box, a pane, a group box. */
+ * content holds widgets: a page, a scrolled box, a pane, a group box, a
+ * toolbar, a status bar. */
 static bool hero_ui_gtk_is_frame(int64_t kind) {
-    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE || kind == HERO_UI_GROUP;
+    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE || kind == HERO_UI_GROUP || kind == HERO_UI_TOOLBAR || kind == HERO_UI_STATUS_BAR;
 }
 
 /* The `GtkFixed` `widget` stands in: the content of the window, page,
@@ -2316,13 +2323,35 @@ static void *hero_ui_gtk_container(const hero_ui_native *widget) {
     return owner != NULL && hero_ui_gtk_is_frame(owner->kind) ? owner->fixed : NULL;
 }
 
+/* Whether window `window` holds a bar of `kind` already, the most it holds. */
+static bool hero_ui_gtk_holds_bar(const hero_ui_native *window, int64_t kind) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        const hero_ui_native *each = hero_ui_at(at);
+
+        if (each != NULL && each->parent == window->id && each->kind == kind) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* Whether `owner` may hold a widget of `kind`: a menu's items in a menu or a
  * context menu, a menu in a window's bar, a menu or a context menu, a page
  * in tabs, a pane in a split holding fewer than two, one context menu on a
- * widget that is none of the menus' and holds none, and every other kind in
- * a frame. */
+ * widget that is none of the menus' and holds none, a toolbar or a status
+ * bar in a window holding none of its kind, the kinds a toolbar and a status
+ * bar hold in each, and every other kind in a frame. */
 static bool hero_ui_gtk_takes(const hero_ui_native *owner, int64_t kind) {
+    if (owner->kind == HERO_UI_TOOLBAR) {
+        return kind == HERO_UI_BUTTON || kind == HERO_UI_CHECKBOX || kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_COMBO || kind == HERO_UI_SEPARATOR;
+    }
+    if (owner->kind == HERO_UI_STATUS_BAR) {
+        return kind == HERO_UI_LABEL || kind == HERO_UI_PROGRESS || kind == HERO_UI_BUTTON || kind == HERO_UI_IMAGE || kind == HERO_UI_SEPARATOR;
+    }
     switch (kind) {
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        return owner->kind == HERO_UI_WINDOW && !hero_ui_gtk_holds_bar(owner, kind);
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR:
         return owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
@@ -2695,6 +2724,10 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         break;
     case HERO_UI_SEPARATOR:
         made->widget = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
+        break;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        ok = hero_ui_gtk_make_bar(made);
         break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
@@ -3512,6 +3545,9 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
     }
     hero_ui_gtk.fixed_move(container, widget->widget, (double)hero_ui_gtk_int(x), (double)hero_ui_gtk_int(y));
     hero_ui_gtk.widget_set_size_request(widget->widget, hero_ui_gtk_int(width), hero_ui_gtk_int(height));
+    if (widget->kind == HERO_UI_TOOLBAR || widget->kind == HERO_UI_STATUS_BAR) {
+        hero_ui_gtk_bar_rule(widget, width, height);
+    }
     if (widget->kind == HERO_UI_RADIO_GROUP) {
         hero_ui_gtk_put_radios(widget);
     }
@@ -3620,6 +3656,12 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         /* One point thick across its box, whichever way it runs. */
         *width = 1;
         *height = 1;
+        return HERO_UI_OK;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        /* The room it takes of the content: no width of its own, the
+         * window's across, and the height its items and its padding make. */
+        *height = hero_ui_gtk_bar_height(widget);
         return HERO_UI_OK;
     case HERO_UI_WEBVIEW:
         /* The headless side's size of a web view, where nothing else decides
@@ -4319,6 +4361,61 @@ static bool hero_ui_gtk_make_group(hero_ui_native *made) {
     made->insets[3] = made->insets[0] < high ? made->insets[0] : 0;
     made->insets[1] = high - made->insets[3];
     return true;
+}
+
+/* The room a bar leaves inside it on every side, in points: the face's
+ * `BAR_PADDING`, which places each item from the bar's corner. */
+#define HERO_UI_GTK_BAR_PADDING 4
+
+/* A toolbar or a status bar: a `GtkFixed` the items stand in, a hairline
+ * across its inner edge (the foot of a toolbar, the head of a status bar)
+ * drawn by a separator the arm keeps in it. GTK 4 removed `GtkToolbar` and
+ * `GtkStatusbar` holds texts only, and a CSS class of the theme's would add a
+ * padding the face's places do not count, so the bar carries none. */
+static bool hero_ui_gtk_make_bar(hero_ui_native *made) {
+    made->widget = hero_ui_gtk.fixed_new();
+    made->fixed = made->widget;
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->inner = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
+    if (made->inner == NULL) {
+        return false;
+    }
+    hero_ui_gtk.widget_set_overflow(made->fixed, HERO_GTK_OVERFLOW_HIDDEN);
+    hero_ui_gtk.fixed_put(made->fixed, made->inner, 0, 0);
+    return true;
+}
+
+/* The height bar `bar` is drawn at: its tallest item, or what one of its
+ * own kind's first item would be (a button in a toolbar, a label in a status
+ * bar) where it is taller, and the padding above and below. */
+static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar) {
+    void *probe = bar->kind == HERO_UI_TOOLBAR ? hero_ui_gtk.button_new_with_label("Ag") : hero_ui_gtk.label_new("Ag");
+    int64_t tall = 0;
+
+    if (probe != NULL) {
+        /* Unparented, so floating: sunk, measured and let go. */
+        (void)hero_ui_gtk.object_ref_sink(probe);
+        tall = hero_ui_gtk_natural(probe).height;
+        hero_ui_gtk.object_unref(probe);
+    }
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        const hero_ui_native *each = hero_ui_at(at);
+        int64_t wide = 0;
+        int64_t high = 0;
+
+        if (each != NULL && each->parent == bar->id && hero_ui_arm_preferred(each->id, &wide, &high) == HERO_UI_OK && high > tall) {
+            tall = high;
+        }
+    }
+    return tall + 2 * HERO_UI_GTK_BAR_PADDING;
+}
+
+/* Lays the hairline of bar `bar` across the place it was given. */
+static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height) {
+    hero_ui_gtk.fixed_move(bar->fixed, bar->inner, 0, bar->kind == HERO_UI_TOOLBAR && height > 0 ? (double)(hero_ui_gtk_int(height) - 1) : 0);
+    hero_ui_gtk.widget_set_size_request(bar->inner, hero_ui_gtk_int(width), 1);
 }
 
 static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner) {
@@ -10903,15 +11000,14 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the separator, the group box, the editable combo box, the
- * spin and every act of `hero_ui.h` is drawn here, so neither switch refuses one before `create` and
- * `inject`, which check each. */
+/* Every kind up to the status bar and every act of `hero_ui.h` is drawn
+ * here, so neither switch refuses one before `create` and `inject`, which
+ * check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the separator but the group box, the spin and the
-     * editable combo box is drawn here: one the
-     * contract gains is refused by name until this arm makes it. */
-    return kind <= HERO_UI_SEPARATOR || kind == HERO_UI_GROUP || kind == HERO_UI_SPIN || kind == HERO_UI_EDITABLE_COMBO;
+    /* No kind past the status bar is drawn here: one the contract gains is
+     * refused by name until this arm makes it. */
+    return kind <= HERO_UI_STATUS_BAR;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
