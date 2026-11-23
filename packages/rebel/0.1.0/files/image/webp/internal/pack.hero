@@ -1,0 +1,163 @@
+# The writing side of lossless WebP's bits and prefix codes: bits put into the
+# least significant end of each byte, code lengths made from counts and never
+# longer than 15, and the canonical codes those lengths give.
+
+# A stream of bits being written.
+record Writer
+    # The finished bytes.
+    out: [u8]
+    # The bits waiting to fill a byte.
+    acc: i64
+    # How many bits wait.
+    have: i64
+
+# Puts the `n` bits of `v` into `w`, `n` 0 to 24, the lowest bit first.
+function put(@w: Writer, v: i64, n: i64)
+    w.acc @ w.acc | (v & (1 << n) - 1) << w.have
+    w.have @ w.have + n
+
+    while w.have >= 8
+        w.out @ w.out.push(to_u8(w.acc & 255).must())
+        w.acc @ w.acc >> 8
+        w.have @ w.have - 8
+
+# The bits of `w` finished: the last byte padded with zeros.
+function finished(@w: Writer) -> [u8]
+    if w.have > 0
+        w.out @ w.out.push(to_u8(w.acc & 255).must())
+        w.acc @ 0
+        w.have @ 0
+    return w.out
+
+# The code lengths for `counts`, a count a symbol: none for a symbol never
+# used, at most 15 for the rest, a Huffman code made by merging the two
+# lightest. A count is halved and tried again while a length passes `limit`.
+function lengths_of(counts: [i64] lent, limit: i64) -> [i64]
+    work @= counts.slice(from: 0, to: counts.len())
+
+    while true
+        lengths = huffman(work)
+
+        if max_of(lengths) <= limit
+            return lengths
+
+        for i in range(from: 0, to: work.len())
+            if work[i] > 0
+                work[i] @ (work[i] + 1) / 2
+
+    return []
+
+# The largest of `xs`.
+function max_of(xs: [i64] lent) -> i64
+    best @= 0
+
+    for x in xs
+        if x > best
+            best @ x
+
+    return best
+
+# Huffman code lengths for `counts`, where a code of one symbol has length 1.
+function huffman(counts: [i64] lent) -> [i64]
+    lengths: [i64] @= []
+    weights: [i64] @= []
+    parent: [i64] @= []
+    live: [i64] @= []
+
+    for i in range(from: 0, to: counts.len())
+        lengths @ lengths.push(0)
+        weights @ weights.push(counts[i])
+        parent @ parent.push(-1)
+
+        if counts[i] > 0
+            live @ live.push(i)
+
+    if live.len() == 1
+        lengths[live[0]] @ 1
+        return lengths
+
+    while live.len() > 1
+        first @= 0
+
+        for i in range(from: 1, to: live.len())
+            if weights[live[i]] < weights[live[first]]
+                first @ i
+
+        a = live[first]
+        live @ without(live, at: first)
+        second @= 0
+
+        for i in range(from: 1, to: live.len())
+            if weights[live[i]] < weights[live[second]]
+                second @ i
+
+        b = live[second]
+        live @ without(live, at: second)
+        weights @ weights.push(weights[a] + weights[b])
+        parent @ parent.push(-1)
+        node = weights.len() - 1
+        parent[a] @ node
+        parent[b] @ node
+        live @ live.push(node)
+
+    for i in range(from: 0, to: counts.len())
+        if counts[i] > 0
+            depth @= 0
+            at @= i
+
+            while parent[at] >= 0
+                depth @ depth + 1
+                at @ parent[at]
+
+            lengths[i] @ depth
+
+    return lengths
+
+# `xs` without the element at `at`.
+function without(xs: [i64] lent, at: i64) -> [i64]
+    out: [i64] @= []
+
+    for i in range(from: 0, to: xs.len())
+        if i != at
+            out @ out.push(xs[i])
+
+    return out
+
+# The canonical codes of `lengths`, each already reversed so that putting its
+# `lengths[s]` bits lowest first writes the code's first bit first.
+function codes_of(lengths: [i64] lent) -> [i64]
+    codes: [i64] @= []
+
+    for _ in range(from: 0, to: lengths.len())
+        codes @ codes.push(0)
+
+    next @= 0
+
+    for bits in range(from: 1, to: 16)
+        next @ next << 1
+
+        for s in range(from: 0, to: lengths.len())
+            if lengths[s] == bits
+                codes[s] @ reversed(v: next, bits: bits)
+                next @ next + 1
+
+    return codes
+
+# The `bits` low bits of `v` in the opposite order.
+function reversed(v: i64, bits: i64) -> i64
+    r @= 0
+
+    for k in range(from: 0, to: bits)
+        r @ r | (v >> k & 1) << bits - 1 - k
+
+    return r
+
+# Whether `lengths` gives a code to one symbol only.
+function has_one_symbol(lengths: [i64] lent) -> bool
+    used @= 0
+
+    for l in lengths
+        if l > 0
+            used @ used + 1
+
+    return used <= 1

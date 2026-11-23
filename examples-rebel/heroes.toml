@@ -65,6 +65,7 @@ packages = [
     "image/png",
     "image/tiff",
     "image/vector",
+    "image/webp",
     "ini",
     "io",
     "io/hero_stream",

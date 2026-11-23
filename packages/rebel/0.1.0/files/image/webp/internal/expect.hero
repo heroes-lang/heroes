@@ -1,0 +1,26 @@
+# Pictures for a test to write: a flat one, one of few colours, noise, and one
+# with alpha, from a generator seeded so that every run draws the same.
+
+use image
+
+# A picture of `width` by `height` pixels of `format`: `kind` 0 flat, 1 four
+# colours in blocks, 2 noise, 3 a gradient with alpha that changes.
+function picture(width: i64, height: i64, format: image.Format, kind: i64, seed: i64) -> image.Image
+    n = width * height * image.pixel_bytes_of(format)
+    out: [u8] @= []
+    v @= seed
+
+    for i in range(from: 0, to: n)
+        v @ (v * 1103515245 + 12345) % 2147483648
+
+        sample = if kind == 0
+            77
+        else if kind == 1
+            i / (image.pixel_bytes_of(format) * 3) % 4 * 60
+        else if kind == 2
+            v / 65536 % 256
+        else
+            (i * 7 + i / 13) % 256
+        out @ out.push(to_u8(sample).must())
+
+    return image.from_pixels(width: width, height: height, format: format, pixels: out).must()
