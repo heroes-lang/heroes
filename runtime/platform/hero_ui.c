@@ -65,6 +65,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -875,6 +876,19 @@ static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second
         slot->ring = hero_layer_alloc_zero(HERO_UI_QUEUE_MOST, sizeof *slot->ring);
         if (slot->ring == NULL) {
             slot->lost += 1;
+            return;
+        }
+    }
+    /* A pointer's moves and drags in a canvas are told as fast as the system
+     * gives them, so the ones the program has not taken yet are one: the
+     * latest position, with the keys held now. A press, a release, an entry
+     * and an exit are never merged. */
+    if (kind == HERO_UI_EVENT_POINTER && slot->held > 0 && text != NULL && count == 4 && (text[0] == HERO_UI_POINTER_MOVE || text[0] == HERO_UI_POINTER_DRAG)) {
+        last = &slot->ring[(slot->head + slot->held - 1) % (int64_t)HERO_UI_QUEUE_MOST];
+        if (last->kind == kind && last->id == id && last->text != NULL && last->text_count == 4 && last->text[0] == text[0] && last->text[1] == text[1]) {
+            last->value = value;
+            last->second = second;
+            last->text[3] = text[3];
             return;
         }
     }
@@ -1897,7 +1911,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_FONT_BUTTON) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_CANVAS) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2454,6 +2468,43 @@ int64_t hero_ui_lost(hero_ui_app *app) {
     return slot == NULL ? -1 : slot->lost;
 }
 
+/* The most a pointer's x or y is, in 64ths of a point from the area's
+ * corner: 65,536 points either way, the most a window is (`MOST_SIZE`). */
+#define HERO_UI_POINT_MOST 4194304
+
+/* A pointer acting as the person's (`HERO_UI_EVENT_POINTER` of `inject`):
+ * the point and the four bytes checked before the arm is reached. */
+static int64_t hero_ui_pointer_as_person(int64_t id, int64_t x, int64_t y, const void *text, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+    const uint8_t *bytes = text;
+    bool pressed;
+
+    if (!hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count != 4 || bytes == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "a pointer act's text is four bytes: the phase, the button, the clicks and the keys held");
+    }
+    pressed = bytes[0] == HERO_UI_POINTER_DOWN || bytes[0] == HERO_UI_POINTER_UP;
+    if (bytes[0] > HERO_UI_POINTER_EXIT) {
+        (void)snprintf(words, sizeof words, "the pointer's phase %u is none of HERO_UI_POINTER_DOWN to HERO_UI_POINTER_EXIT", (unsigned)bytes[0]);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (bytes[1] > HERO_UI_POINTER_OTHER || ((bytes[0] == HERO_UI_POINTER_MOVE || bytes[0] == HERO_UI_POINTER_ENTER || bytes[0] == HERO_UI_POINTER_EXIT) != (bytes[1] == 0))) {
+        return hero_ui_said(HERO_UI_INVALID, "the pointer's button is HERO_UI_POINTER_LEFT, _RIGHT or _OTHER for a press, a release and a drag, and 0 for a move, an entry and an exit");
+    }
+    if (pressed ? bytes[2] < 1 : bytes[2] != 0) {
+        return hero_ui_said(HERO_UI_INVALID, "the pointer's clicks are 1 or more for a press and a release, and 0 for every other phase");
+    }
+    if (bytes[3] > (HERO_UI_PRIMARY | HERO_UI_SHIFT | HERO_UI_ALT)) {
+        return hero_ui_said(HERO_UI_INVALID, "the keys held with the pointer are HERO_UI_PRIMARY, HERO_UI_SHIFT and HERO_UI_ALT added up");
+    }
+    if (x < -HERO_UI_POINT_MOST || x > HERO_UI_POINT_MOST || y < -HERO_UI_POINT_MOST || y > HERO_UI_POINT_MOST) {
+        return hero_ui_said(HERO_UI_INVALID, "the pointer's point is within 65,536 points of the area's corner, in 64ths of a point");
+    }
+    return hero_ui_answered(hero_ui_arm_pointer(id, x, y, bytes[0], bytes[1], bytes[2], bytes[3]), "acting as the person's pointer", id);
+}
+
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count) {
     char words[HERO_UI_WORDS_MOST];
 
@@ -2480,6 +2531,9 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
             return hero_ui_said(HERO_UI_INVALID, "an ask to end the app names no widget, 0, and is 1 for the session's end or 0 for another quit");
         }
         return hero_ui_session_answered(hero_ui_arm_ask_quit(value), "asking the app to end as the system would");
+    }
+    if (kind == HERO_UI_EVENT_POINTER) {
+        return hero_ui_pointer_as_person(id, value, second, text, count);
     }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
@@ -2830,6 +2884,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a colour well";
     case HERO_UI_FONT_BUTTON:
         return "making a font button";
+    case HERO_UI_CANVAS:
+        return "making a drawing area";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
@@ -4209,6 +4265,18 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
     return hero_ui_appkit_tip(id, buffer, count, length);
 }
 
+int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
+    return hero_ui_appkit_set_drawing(id, list, count);
+}
+
+int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height) {
+    return hero_ui_appkit_snapshot(id, rgba, count, width, height);
+}
+
+int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers) {
+    return hero_ui_appkit_pointer(id, x, y, phase, button, clicks, modifiers);
+}
+
 int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
     return hero_ui_appkit_open_items(what, items, count);
 }
@@ -4664,6 +4732,41 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 #endif
 
+/* THE DRAWING AREA'S CALLS, which neither C arm draws yet: each refuses in
+ * words of its own (`hero_ui_refused`). An arm that draws the area defines
+ * them in its own member, and its system leaves this block's condition. */
+
+#if !defined(__APPLE__)
+
+int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
+    (void)id;
+    (void)list;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer draws a drawing area on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height) {
+    (void)id;
+    (void)rgba;
+    (void)count;
+    (void)width;
+    (void)height;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a drawing area's pixels on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers) {
+    (void)id;
+    (void)x;
+    (void)y;
+    (void)phase;
+    (void)button;
+    (void)clicks;
+    (void)modifiers;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer acts as a drawing area's pointer on macOS alone, and this system's arm has no such call");
+}
+
+#endif
+
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
     if (hero_ui_enter_native(app) == NULL) {
         return -1;
@@ -5030,4 +5133,219 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) 
         return -1;
     }
     return length;
+}
+
+/* -- A DRAWING AREA --------------------------------------------------------- */
+
+/* The `float` the four little-endian bytes at `at` are, and whether it is
+ * finite. */
+static bool hero_ui_real_at(const uint8_t *list, uint64_t at, float *real) {
+    uint32_t bits = (uint32_t)list[at] | (uint32_t)list[at + 1] << 8 | (uint32_t)list[at + 2] << 16 | (uint32_t)list[at + 3] << 24;
+    float value;
+
+    memcpy(&value, &bits, sizeof value);
+    *real = value;
+    return isfinite(value) != 0;
+}
+
+/* The bytes of a drawing's operation `code` before whatever it carries
+ * after them, or -1 for a code that is none. */
+static int64_t hero_ui_drawing_fixed(uint8_t code) {
+    switch (code) {
+    case 0x01:
+    case 0x02:
+    case 0x10:
+    case 0x15:
+        return 0;
+    case 0x05:
+        return 4;
+    case 0x03:
+    case 0x04:
+    case 0x11:
+    case 0x12:
+        return 8;
+    case 0x13:
+    case 0x16:
+    case 0x17:
+        return 16;
+    case 0x14:
+        return 24;
+    case 0x20:
+    case 0x22:
+        return code == 0x20 ? 5 : 1;
+    case 0x21:
+        return 10;
+    case 0x30:
+        return 23;
+    case 0x31:
+        return 24;
+    default:
+        return -1;
+    }
+}
+
+/* Whether the `count` bytes of `list` are a drawing (the list of A DRAWING
+ * AREA in `hero_ui.h`), said in `words` byte by byte where not. */
+static bool hero_ui_drawing_checked(const uint8_t *list, uint64_t count, char *words, size_t size) {
+    uint64_t at = 0;
+    int64_t kept = 0;
+
+    while (at < count) {
+        uint8_t code = list[at];
+        int64_t fixed = hero_ui_drawing_fixed(code);
+        uint64_t reals = 0;
+        uint64_t more = 0;
+        float number;
+
+        if (fixed < 0) {
+            (void)snprintf(words, size, "the drawing's byte %llu is the code 0x%02x, which is no operation", (unsigned long long)at, (unsigned)code);
+            return false;
+        }
+        if (count - at < 1 + (uint64_t)fixed) {
+            (void)snprintf(words, size, "the drawing ends inside the operation at byte %llu: it takes %lld bytes after its code and %llu are left", (unsigned long long)at, (long long)fixed, (unsigned long long)(count - at - 1));
+            return false;
+        }
+        if (code == 0x03 || code == 0x04 || code == 0x11 || code == 0x12) {
+            reals = 2;
+        } else if (code == 0x05) {
+            reals = 1;
+        } else if (code == 0x13 || code == 0x16 || code == 0x17) {
+            reals = 4;
+        } else if (code == 0x14) {
+            reals = 6;
+        } else if (code == 0x21 || code == 0x30) {
+            reals = code == 0x21 ? 1 : 3;
+        } else if (code == 0x31) {
+            reals = 4;
+        }
+        for (uint64_t i = 0; i < reals; i += 1) {
+            if (!hero_ui_real_at(list, at + 1 + 4 * i, &number)) {
+                (void)snprintf(words, size, "the drawing's number at byte %llu is not finite", (unsigned long long)(at + 1 + 4 * i));
+                return false;
+            }
+        }
+        if (code == 0x01) {
+            kept += 1;
+            if (kept > 256) {
+                (void)snprintf(words, size, "the drawing's operation at byte %llu keeps a 257th state: at most 256 are kept at once", (unsigned long long)at);
+                return false;
+            }
+        } else if (code == 0x02) {
+            if (kept == 0) {
+                (void)snprintf(words, size, "the drawing's operation at byte %llu restores a state, and none is kept", (unsigned long long)at);
+                return false;
+            }
+            kept -= 1;
+        } else if (code == 0x16 || code == 0x17) {
+            (void)hero_ui_real_at(list, at + 9, &number);
+            if (number < 0.0f) {
+                (void)snprintf(words, size, "the drawing's rectangle or ellipse at byte %llu has a width below 0", (unsigned long long)at);
+                return false;
+            }
+            (void)hero_ui_real_at(list, at + 13, &number);
+            if (number < 0.0f) {
+                (void)snprintf(words, size, "the drawing's rectangle or ellipse at byte %llu has a height below 0", (unsigned long long)at);
+                return false;
+            }
+        } else if (code == 0x20 || code == 0x22) {
+            if (list[at + 1] > 1) {
+                (void)snprintf(words, size, "the drawing's rule at byte %llu is 0 (non-zero) or 1 (even-odd)", (unsigned long long)(at + 1));
+                return false;
+            }
+        } else if (code == 0x21) {
+            (void)hero_ui_real_at(list, at + 1, &number);
+            if (!(number > 0.0f)) {
+                (void)snprintf(words, size, "the drawing's stroke at byte %llu has a width that is not above 0", (unsigned long long)at);
+                return false;
+            }
+            if (list[at + 5] > 2 || list[at + 6] > 2) {
+                (void)snprintf(words, size, "the drawing's stroke at byte %llu has an end or a join past 2", (unsigned long long)at);
+                return false;
+            }
+        } else if (code == 0x30) {
+            uint64_t family = (uint64_t)list[at + 18] | (uint64_t)list[at + 19] << 8;
+            uint64_t text = (uint64_t)list[at + 20] | (uint64_t)list[at + 21] << 8 | (uint64_t)list[at + 22] << 16 | (uint64_t)list[at + 23] << 24;
+
+            (void)hero_ui_real_at(list, at + 9, &number);
+            if (!(number > 0.0f)) {
+                (void)snprintf(words, size, "the drawing's text at byte %llu has a size that is not above 0", (unsigned long long)at);
+                return false;
+            }
+            if (list[at + 13] > 3) {
+                (void)snprintf(words, size, "the drawing's text at byte %llu has a style past 3 (bit 0 bold, bit 1 italic)", (unsigned long long)at);
+                return false;
+            }
+            more = family + text;
+            if (count - at - 24 < more) {
+                (void)snprintf(words, size, "the drawing's text at byte %llu names %llu bytes of family and text, and the list ends first", (unsigned long long)at, (unsigned long long)more);
+                return false;
+            }
+            if (!hero_ui_is_utf8(list + at + 24, family) || !hero_ui_is_utf8(list + at + 24 + family, text)) {
+                (void)snprintf(words, size, "the drawing's text at byte %llu has a family or a text that is not UTF-8", (unsigned long long)at);
+                return false;
+            }
+        } else if (code == 0x31) {
+            uint64_t columns = (uint64_t)list[at + 17] | (uint64_t)list[at + 18] << 8 | (uint64_t)list[at + 19] << 16 | (uint64_t)list[at + 20] << 24;
+            uint64_t rows = (uint64_t)list[at + 21] | (uint64_t)list[at + 22] << 8 | (uint64_t)list[at + 23] << 16 | (uint64_t)list[at + 24] << 24;
+
+            (void)hero_ui_real_at(list, at + 9, &number);
+            if (!(number > 0.0f)) {
+                (void)snprintf(words, size, "the drawing's image at byte %llu has a width that is not above 0", (unsigned long long)at);
+                return false;
+            }
+            (void)hero_ui_real_at(list, at + 13, &number);
+            if (!(number > 0.0f)) {
+                (void)snprintf(words, size, "the drawing's image at byte %llu has a height that is not above 0", (unsigned long long)at);
+                return false;
+            }
+            if (columns < 1 || columns > 8192 || rows < 1 || rows > 8192) {
+                (void)snprintf(words, size, "the drawing's image at byte %llu is %llu by %llu pixels; a side is 1 to 8192", (unsigned long long)at, (unsigned long long)columns, (unsigned long long)rows);
+                return false;
+            }
+            more = columns * rows * 4;
+            if (count - at - 25 < more) {
+                (void)snprintf(words, size, "the drawing's image at byte %llu names %llu bytes of pixels, and the list ends first", (unsigned long long)at, (unsigned long long)more);
+                return false;
+            }
+        }
+        at += 1 + (uint64_t)fixed + more;
+    }
+    return true;
+}
+
+int64_t hero_ui_set_drawing(hero_ui_app *app, int64_t id, const void *list, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && list == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "a drawing's bytes were counted and none given");
+    }
+    if (count > (uint64_t)HERO_UI_DRAWING_MOST) {
+        (void)snprintf(words, sizeof words, "a drawing of %llu bytes; the most is %d", (unsigned long long)count, HERO_UI_DRAWING_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (!hero_ui_drawing_checked(list, count, words, sizeof words)) {
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_answered(hero_ui_arm_set_drawing(id, list, (int64_t)count), "giving a drawing area its drawing", id);
+}
+
+int64_t hero_ui_snapshot(hero_ui_app *app, int64_t id, void *rgba, uint64_t count, int64_t *width, int64_t *height) {
+    int64_t columns = 0;
+    int64_t rows = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (width == NULL || height == NULL || (count > 0 && rgba == NULL) || count > (uint64_t)HERO_UI_DRAWING_MOST) {
+        return hero_ui_said(HERO_UI_INVALID, "a snapshot's size is written through two places, and its room is given with the bytes");
+    }
+    if (hero_ui_answered(hero_ui_arm_snapshot(id, rgba, (int64_t)count, &columns, &rows), "reading a drawing area's pixels", id) != 0) {
+        return -1;
+    }
+    *width = columns;
+    *height = rows;
+    return columns * rows * 4;
 }

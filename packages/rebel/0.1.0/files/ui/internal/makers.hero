@@ -358,6 +358,11 @@ function added(@app: ui.App, n: model.Node) -> ui.Widget?
 function measure(app: ui.App, n: model.Node) -> [i64]?
     if !model.is_placed(n.kind)
         return ok([0, 0])
+
+    # A drawing area is the size the program asked for it, not one the
+    # system measures.
+    if n.kind == hero_ui.HERO_UI_CANVAS
+        return ok([n.width, n.height])
     return native.measure(app, n: n)
 
 test "set_span: a field across two columns of a form placed under its label and its neighbour, refused outside a grid, at 0 and past the grid's columns (catalogue LY03)"

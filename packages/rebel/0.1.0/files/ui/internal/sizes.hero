@@ -195,6 +195,10 @@ function of(n: model.Node) -> [i64]
 
     # A date, a time or both as the system writes them: ten and eight
     # characters, and the arrows.
+    # A drawing area is the size the program asked for it.
+    if k == hero_ui.HERO_UI_CANVAS
+        return [n.width, n.height]
+
     # The system's font button, a field's width.
     if k == hero_ui.HERO_UI_FONT_BUTTON
         return [FIELD, CONTROL]

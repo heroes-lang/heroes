@@ -25,6 +25,7 @@ use bytes
 use time
 use ui
 use ui/hero_ui
+use ui/internal/canvas as canvas_of
 use ui/internal/check
 use ui/internal/clock
 use ui/internal/desk
@@ -124,7 +125,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .cancel_files   => dialogs.chosen_by(@app, choice: .cancelled)?
         .choose_print c => dialogs.printed_by(@app, choice: .chosen(settings: c.settings))?
         .cancel_print   => dialogs.printed_by(@app, choice: .cancelled)?
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ | .hand _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ | .hand _ | .point _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -257,6 +258,10 @@ function read(@app: ui.App, taken: [i64]) -> ()?
             app.events @ app.events.push(event)
     else if kind == hero_ui.HERO_UI_EVENT_MESSAGE
         app.events @ app.events.push(.message(widget: w, text: native.event_text(app)?))
+    else if kind == hero_ui.HERO_UI_EVENT_POINTER
+        app.events @ app.events.push(canvas_of.pointer_told(app, id: id, taken: taken)?)
+    else if kind == hero_ui.HERO_UI_EVENT_KEY
+        app.events @ app.events.push(canvas_of.key_told(app, id: id, taken: taken)?)
     return ok()
 
 # Reads at once every event the native side has queued, as `wait` reads
@@ -359,6 +364,8 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .quit_asked _         => 0
         .files_dropped f      => f.window.id
         .handed _             => 0
+        .pointer p            => p.widget.id
+        .key k                => k.widget.id
 
     return id == 0 || !model.node_of(app.table, id: id).is_err()
 

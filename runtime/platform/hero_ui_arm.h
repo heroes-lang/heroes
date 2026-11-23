@@ -262,6 +262,20 @@ void hero_ui_arm_instance_end(void);
 int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count);
 int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
 
+/* A DRAWING AREA (`hero_ui.h`'s A DRAWING AREA, WITH ITS MOUSE AND ITS KEYS):
+ * `hero_ui.c` has checked a drawing whole (`hero_ui_drawing_checked`) before
+ * `set_drawing` hands its `count` bytes to the arm, which keeps them and has
+ * the area drawn again; `snapshot` writes through `width` and `height` the
+ * area's size and, where `count` holds width * height * 4, the drawing
+ * replayed at a pixel to a point into `rgba`; `pointer` acts as the person's
+ * pointer does at `x`, `y` in 64ths of a point (`hero_ui.h`'s phases,
+ * buttons and held keys). On macOS by `hero_ui_appkit.swift`; refusals for
+ * the Win32 and GTK 4 arms in the block of calls neither draws, which a
+ * system leaves where its member defines them. */
+int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count);
+int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height);
+int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, and by the Win32 and GTK 4 members.
  * `accessible_name` writes the name where it fits and its length through
