@@ -619,6 +619,14 @@ capability ui/accessibility  each widget's name and its label read by the system
   wx      wxAccessible, wxWindow (SetName, SetLabel)
   note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows by `IAccPropServices`' `SetHwndPropStr` with `PROPID_ACC_NAME`, a tied label's words kept as it changes, read back by the control's `IAccessible`, Linux by `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL` and `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`, the name read back from the arm's own record, GTK reading none
 
+capability ui/drawing-parts  a drawing area's parts named, given roles and focusable for a screen reader
+  heroes  ui.set_parts, ui.parts_of, ui.Part, ui.PartRole, ui.PartAct, ui.Event.part_acted, ui.Input.act_on_part
+  go      -
+  rust    -
+  python  -
+  wx      wxAccessible
+  note    catalogue AX04 (must since the drawing area DR01 landed); the program gives the parts as data beside its drawing, each a box of the area in points with a role (a group, a text, an image, a button, a check box or a radio button with its checked state, a slider or a progress bar with its value and ends, a link), a name, a description, the part holding it, and whether it is focusable and focused, written out as the records `hero_ui.h` lays out and checked whole before any arm sees them; they change only when given again, and a screen reader's press, focus and steps are told as `.part_acted`, never applied; with no parts the area is one image named by `set_accessible_name`; `parts_of` reads them back from the system's own objects; kept on the headless side, which tells an injected act as the native side would; macOS by one `NSAccessibilityElement` per part under the area's view, its frame asked anew through the window, its press, focus, increment and decrement allowed by its role and states and told as the event, the reader's focus moved to the focused part while the area has the keys; Windows (UI Automation fragments under `UiaReturnRawElementProvider`) and Linux (a `GtkAccessible` of the arm's, GTK 4.10) pending, each arm refusing the three calls `unsupported` by name until it offers them
+
 capability ui/single-instance  one copy of the program running, a second handing its documents to the first
   heroes  ui.set_identity, ui.claim_instance, ui.Event.handed, ui.Handed, ui.Input.hand
   go      -

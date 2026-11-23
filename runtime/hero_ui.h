@@ -1658,4 +1658,100 @@ int64_t hero_ui_snapshot(hero_ui_app *app, int64_t id, void *rgba, uint64_t coun
  * `hero_ui_set_value` too. */
 #define HERO_UI_CALENDAR 44
 
+/* -- A DRAWING AREA'S PARTS, READ BY A SCREEN READER ---------------------------
+ *
+ * wxWidgets' `wxAccessible` and Qt's `QAccessibleInterface` for a widget the
+ * program draws: a chart, a board or a custom control is one picture to a
+ * person who cannot see it until the program names its parts. The program
+ * gives them as data beside its drawing, each a box of the area with a role,
+ * a name and its state, and the system's screen reader then reads, walks and
+ * acts on them as it does on the system's own widgets (macOS's
+ * `NSAccessibilityElement`, Windows' UI Automation fragments, GTK 4's
+ * `GtkAccessible`). An area with no parts reads as one image named by
+ * `hero_ui_set_accessible_name`; with parts it reads as a group holding them.
+ *
+ * THE PARTS are a list of records, little-endian, "r" a binary32 and "d" a
+ * binary64 as IEEE 754 writes them, each:
+ *
+ *   u8 role        one of `HERO_UI_PART_*` below
+ *   u8 states      `HERO_UI_PART_FOCUSABLE`, `_FOCUSED` and `_CHECKED` added
+ *   u16 within     0 for a part of the area itself, else the number of an
+ *                  earlier part (the first is 1) holding this one
+ *   r r r r        x, y, width, height: the part's box in the area's points,
+ *                  the drawing's space before any transform
+ *   d d d          value, least, most: a slider's and a progress bar's
+ *                  value between its two ends; 0, 0, 0 for every other role
+ *   u16 u16        the name's length and the description's, then the name
+ *                  and the description, UTF-8 of one line each
+ *
+ * The name is what the reader says for the part, never empty; the
+ * description what it says after, the part's use or more of what it holds,
+ * "" for none. A focusable part is one the program gives the keys to as the
+ * person moves through the area (its keys are the area's, HERO_UI_EVENT_KEY,
+ * and the program draws its own focus ring); the one part marked focused is
+ * where the program's focus stands, and the reader follows it there while
+ * the area has the keys. A check box's and a radio button's checked state
+ * is `HERO_UI_PART_CHECKED`, on no other role.
+ *
+ * Giving the parts replaces the last ones; the list is checked whole first,
+ * and a record past the list's end, a role that is none, a state bit that is
+ * none or on a role that has none, a focused part that is not focusable or a
+ * second focused one, a `within` that is no earlier part, a number that is
+ * not finite, a width or height below 0, a slider's or progress bar's ends
+ * turned over or its value outside them, another role's value, least or
+ * most not 0, an empty name, a name or description that is not UTF-8 of one
+ * line (each is at most 65,535 bytes, its length a u16), or more than
+ * `HERO_UI_PARTS_MOST` parts is `INVALID` with words naming the record,
+ * leaving the last parts. An empty list takes them all back. Past
+ * `HERO_UI_DRAWING_MOST` bytes: `LIMIT`. */
+#define HERO_UI_PART_GROUP 1
+#define HERO_UI_PART_TEXT 2
+#define HERO_UI_PART_IMAGE 3
+#define HERO_UI_PART_BUTTON 4
+#define HERO_UI_PART_CHECK_BOX 5
+#define HERO_UI_PART_RADIO 6
+#define HERO_UI_PART_SLIDER 7
+#define HERO_UI_PART_PROGRESS 8
+#define HERO_UI_PART_LINK 9
+#define HERO_UI_PART_FOCUSABLE 1
+#define HERO_UI_PART_FOCUSED 2
+#define HERO_UI_PART_CHECKED 4
+#define HERO_UI_PARTS_MOST 4096
+
+/* Replaces canvas `id`'s parts by the records of `list`, `count` bytes (a
+ * null list of count 0 takes them back). 0, or -1: `INVALID` (a widget of
+ * another kind, a list the words above reject), `NOT_FOUND`, `LIMIT`,
+ * `UNSUPPORTED` where the system's arm offers no parts. */
+int64_t hero_ui_set_parts(hero_ui_app *app, int64_t id, const void *list, uint64_t count);
+
+/* Writes into `buffer` canvas `id`'s parts as the system offers them to a
+ * screen reader, read back from the system's own accessibility objects (the
+ * role each reports, its name, description, box, value and states) in the
+ * records above, each part in the place it was given, and answers their
+ * length; where it is longer than `count` (or `buffer` is null) nothing is
+ * written and the length is answered all the same. What a test reads the
+ * parts back by. -1: `INVALID` (no canvas), `NOT_FOUND`, `UNSUPPORTED`. */
+int64_t hero_ui_parts(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
+
+/* A SCREEN READER ACTING ON A PART is told as `HERO_UI_EVENT_PART` for the
+ * canvas: `value` is the part's number (the first is 1) and `second` the
+ * act: `HERO_UI_PART_PRESS` (a button, a link, a check box or a radio button
+ * pressed, which the program answers, as it would a click, by acting and
+ * giving the parts again), `HERO_UI_PART_FOCUS` (the reader asking that a
+ * focusable part take the keys; the program moves its focus there, or not),
+ * `HERO_UI_PART_INCREASE` and `HERO_UI_PART_DECREASE` (a slider moved a
+ * step, the step the program's). The parts do not change by themselves: a
+ * press leaves a check box as the program gave it until the program gives
+ * it again. `hero_ui_inject` of `HERO_UI_EVENT_PART` acts as the reader does,
+ * through the system's own accessibility actions on the part's object:
+ * `INVALID` for a part that is none of the canvas's, an act that is none,
+ * or one the part's role takes none of (a press on a group, a text, an image,
+ * a slider or a progress bar; a focus on a part not focusable; a step on any
+ * role but a slider). */
+#define HERO_UI_EVENT_PART 25
+#define HERO_UI_PART_PRESS 1
+#define HERO_UI_PART_FOCUS 2
+#define HERO_UI_PART_INCREASE 3
+#define HERO_UI_PART_DECREASE 4
+
 #endif

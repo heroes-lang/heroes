@@ -83,6 +83,9 @@ record Node
     margin: i64
     # An image's pixels, 8-bit RGBA, row after row.
     pixels: [u8]
+    # A drawing area's parts for a screen reader, the records `hero_ui.h`
+    # lays out.
+    parts: [u8]
     # A menu item's shortcut key, empty for none.
     key: str
     # The keys held with it, `HERO_UI_PRIMARY` and the rest added.
@@ -329,6 +332,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         min_height: 0,
         margin: 0,
         pixels: [],
+        parts: [],
         key: "",
         modifiers: 0,
         role: hero_ui.HERO_UI_ROLE_NONE,
