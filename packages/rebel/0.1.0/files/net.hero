@@ -349,6 +349,25 @@ function open_udp(host: str, port: i64) -> UdpSocket?
         UdpSocket(socket: b.socket, address: Address(host: Host(bytes: b.address.bytes, zone: b.address.zone), port: b.address.port))
     )
 
+# A UDP socket as `open_udp` makes it, standing on a port other sockets that
+# ask the same may stand on too: mDNS's port 5353, which the system's own
+# responder holds, is one.
+#
+# - `host`: as `open_udp`'s.
+# - `port`: 0 to 65535, 0 for one the system chooses.
+#
+# Every socket standing on the port hears a datagram sent to a multicast
+# group it joined (`join_group`); a datagram sent to one address is heard by
+# one of them, the system's choice. A socket `open_udp` makes on that port is
+# refused `exists`, before or after. On Windows the port is shared with
+# sockets that ask the same of the system, as the DNS client's does.
+# Fails as `open_udp` fails. See also `join_group`.
+function open_udp_shared(host: str, port: i64) -> UdpSocket?
+    b = udp.open_udp_shared(host, port: port)?
+    return ok(
+        UdpSocket(socket: b.socket, address: Address(host: Host(bytes: b.address.bytes, zone: b.address.zone), port: b.address.port))
+    )
+
 # Sends `data` as one datagram to `to`, an address with a port, of the socket's
 # own kind.
 #
@@ -2711,3 +2730,38 @@ test "connect: the very port the system gives the connect, nothing listening the
             answer @ fixture.steered()
 
         assert answer == "closed" || answer == "elsewhere"
+
+test "open_udp_shared: two sockets stand on one port, and a socket that asks for the port alone is refused, whichever came first"
+    a @= open_udp_shared("0.0.0.0", port: 0).must()
+    port = a.address.port
+    b @= open_udp_shared("0.0.0.0", port: port).must()
+    assert b.address.port == port
+
+    match open_udp("0.0.0.0", port: port)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    close_udp(@b).must()
+    close_udp(@a).must()
+    alone @= open_udp("0.0.0.0", port: 0).must()
+
+    match open_udp_shared("0.0.0.0", port: alone.address.port)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    close_udp(@alone).must()
+
+test "open_udp_shared: a socket of IPv6 stands beside one of IPv4 on the same port, and an address of no port is refused"
+    four @= open_udp_shared("0.0.0.0", port: 0).must()
+    six = open_udp_shared("::", port: four.address.port)
+
+    match six
+        .ok s =>
+            assert s.address.port == four.address.port
+            other @= s
+            close_udp(@other).must()
+        .err e => assert e.code == UNSUPPORTED || e.code == INVALID || e.code == FAILED
+
+    assert open_udp_shared("0.0.0.0", port: 65536).is_err()
+    assert open_udp_shared("not an address", port: 0).is_err()
+    close_udp(@four).must()

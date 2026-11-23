@@ -1,0 +1,159 @@
+# The ledger of `mdns`: what a program can do with multicast DNS (RFC 6762) and
+# DNS-based service discovery (RFC 6763), one block per capability, and what
+# Rebel answers. None of Go's standard library, Rust's and Python's has any of
+# it (the `go`, `rust` and `python` lines are `-`: their lists, read on
+# 2026-11-23, hold no mDNS; `net` and `socket` stop at joining a group), so the
+# census is the two system libraries that offer the area, read the same day
+# from their headers: Apple's `dns_sd.h`, `$(xcrun --show-sdk-path)/usr/include/
+# dns_sd.h` of this Mac's SDK (`DNSServiceBrowse`, `DNSServiceResolve`,
+# `DNSServiceRegister`, `DNSServiceQueryRecord`, `DNSServiceGetAddrInfo`,
+# `DNSServiceEnumerateDomains`, `DNSServiceAddRecord`, `DNSServiceUpdateRecord`,
+# `DNSServiceRemoveRecord`, `DNSServiceRegisterRecord`,
+# `DNSServiceReconfirmRecord`, `DNSServiceNATPortMappingCreate`, the `TXTRecord`
+# family and the connection and attribute plumbing), and Windows' `windns.h`
+# (zig 0.15.2's copy: `DnsServiceBrowse`, `DnsServiceResolve`,
+# `DnsServiceRegister`, `DnsServiceDeRegister` and their `Cancel`s, `DnsServiceCopyInstance`,
+# `DnsServiceConstructInstance`). Those two call the system's responder; Rebel's
+# `mdns` speaks the protocol itself over `net` and `dns`'s wire codec and shares
+# port 5353 with the responder (`net.open_udp_shared`), so it needs no library
+# and answers on every system the same way. Written from the two RFCs, and
+# checked against Apple's own `dns-sd` tool on this Mac (see the notes).
+#
+# Run on this Mac (macOS 27.2, mDNSResponder): Rebel browsed a service `dns-sd
+# -R` registered and read its host, port, addresses and attribute keys; `dns-sd
+# -B` and `-L` found and resolved a service Rebel published; a name `dns-sd`
+# held made Rebel's publication take `Name (2)`. Linux (Avahi) and Windows (the
+# DNS client): unrun; the Windows box did not answer SSH on 2026-11-23, and no
+# Linux machine was reachable.
+
+capability browse/instances  the instances of a service type found on the network
+  heroes  mdns.browse, mdns.Service, mdns.Attribute, mdns.attribute_of
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceBrowse with DNSServiceResolve and DNSServiceGetAddrInfo, Windows' DnsServiceBrowse; one call listens for the whole `wait` and answers each instance whose SRV record was heard, with the addresses and attributes heard by then, since nothing says when the last host has answered. The question is repeated at 1, 2, 4 seconds with the records held listed as known (RFC 6762 §§ 5.2 and 7.1, split over packets with the truncated bit where they pass 1,400 bytes), and the SRV, TXT and address records a pointer needs but did not bring are asked for once. A response is taken only from port 5353 (§ 11). Tested against the records `dns-sd -R` registered, on this Mac
+
+capability browse/subtypes  the instances of a subtype of a service type
+  heroes  mdns.browse
+  go      -
+  rust    -
+  python  -
+  note    a subtype is browsed as `_printer._sub._ipp._tcp` (RFC 6763 § 7.1), as Apple's DNSServiceBrowse takes it with the comma form `_ipp._tcp,_printer`
+
+capability browse/types  the service types offered on the network
+  heroes  mdns.browse_types
+  go      -
+  rust    -
+  python  -
+  note    the pointers under `_services._dns-sd._udp.local.` (RFC 6763 § 9), which Apple's DNSServiceBrowse answers when asked for that name; observed on this Mac listing the types of a home network (ssh, airplay, hue, googlecast and the test's own)
+
+capability browse/watch  a service type watched, told what appears, changes and goes
+  heroes  mdns.watch, mdns.next_change, mdns.close_watch, mdns.Watch, mdns.Change
+  go      -
+  rust    -
+  python  -
+  note    the continuous form of DNSServiceBrowse and DnsServiceBrowse: the question is repeated at growing gaps up to an hour, every record is asked for again at 80, 85, 90 and 95 percent of its time (RFC 6762 § 5.2) and dropped where nothing answers, a goodbye (a time of 0) and a record a cache-flush bit replaced retire the record at once and drop it a second on (§ 10), and what is told is the difference between what the cache holds and what was last told. The loop is the program's, one `next_change` at a time: no thread or timer runs here
+
+capability resolve/instance  an instance's host, port, addresses and attributes
+  heroes  mdns.resolve
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceResolve, Windows' DnsServiceResolve: the SRV and TXT records asked for, then the host's A and AAAA, until the addresses are known or `wait` ends, `not_found` where the SRV record did not come or the host gave no address
+
+capability resolve/host-addresses  the addresses of a `.local` name
+  heroes  mdns.lookup_addresses
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceGetAddrInfo (which the system's own resolver also reaches through `net.lookup` for a `.local` name where the system routes it so); A and AAAA asked together and every address heard answered
+
+capability resolve/reverse  the names of an address, asked of the network
+  heroes  mdns.lookup_reverse
+  go      -
+  rust    -
+  python  -
+  note    the reverse name `net.to_reverse_name` writes, asked as a PTR question over multicast (RFC 6762 § 4), Apple's DNSServiceQueryRecord of a PTR
+
+capability resolve/records  a record of any type asked of the network
+  heroes  refused: the records DNS-SD reads are PTR, SRV, TXT, A and AAAA, which the functions above ask for by what they mean; any other type asked over multicast is `dns.exchange` over a socket a program opens itself, and Rebel offers no second way
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceQueryRecord of any type, Windows' DnsQuery; the message codec is `dns`'s and public
+
+capability publish/service  a service announced and answered for
+  heroes  mdns.responder, mdns.publish, mdns.serve, mdns.withdraw, mdns.close_responder, mdns.Responder, mdns.service, mdns.name_of
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceRegister, Windows' DnsServiceRegister. The names are probed for three times 250 ms apart after a random pause of up to 250 ms, the first question and the others multicast: the unicast-response bit is left clear, since a unicast answer to port 5353 goes to one of the sockets that stand on it, the system's own responder's perhaps (measured on this Mac: with the bit set a name `dns-sd` held was taken without a word, with it clear Rebel took `Name (2)`), then announced twice a second apart (§§ 8.1 to 8.3). `serve` answers a question with the records under its name and type, with the pointer's SRV, TXT and addresses and an NSEC for the address kind a host lacks (§ 6.1), less what the query lists as known with half the time left (§ 7.1), a shared record (a pointer) after 20 to 120 ms, a record never again than once a second on an interface (§ 6), to the sender alone for a question with the unicast bit and for a legacy resolver (a source port other than 5353, its ID and question repeated, a time of at most 10 seconds, no cache-flush bit, § 6.7), and the others on every interface. The packet's interface is not known (`net` has no packet information), so a multicast answer leaves on every interface the responder is on, each with that interface's own addresses (§ 6.2). Two departures, both of SHOULDs: a query with the truncated bit is answered at once, not after waiting for its known answers (§ 7.2), and the same answer heard from another host is not used to hold ours back (§ 7.4)
+
+capability publish/conflict  a name another host holds given up for another
+  heroes  mdns.publish, mdns.serve
+  go      -
+  rust    -
+  python  -
+  note    a name held, or won by a simultaneous probe (the records sorted and compared class, type and data, the later winning, § 8.2.1), is tried again as `Name (2)`, `Name (3)` (RFC 6763 Appendix D) and the host as `host-2`, up to 16 names, then `limit`; a record that contradicts an announced one (§ 9; an address of this machine is none) makes `serve` publish the service again under another name and answer it. Measured against `dns-sd -R` on this Mac
+
+capability publish/update  what is published changed
+  heroes  mdns.update
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceUpdateRecord and DNSServiceAddRecord of a TXT: the port, priority, weight, addresses and attributes replaced, every record announced twice with its cache-flush bit (RFC 6762 § 8.4); the host and the subtypes are the ones published, `invalid` otherwise, since a new host name needs probing and a subtype dropped needs its pointer withdrawn
+
+capability publish/attributes  a service's attributes in its TXT record
+  heroes  mdns.Attribute, mdns.Service, mdns.attribute_of
+  go      -
+  rust    -
+  python  -
+  note    Apple's TXTRecordCreate, TXTRecordSetValue, TXTRecordGetValuePtr and the rest of the `TXTRecord` family (RFC 6763 § 6): a key of printable ASCII but `=`, a value of any bytes, a key alone, an empty value, each string at most 255 bytes, a key standing twice refused when written and its first kept when read, a string beginning with `=` passed over, the empty record the one empty string
+
+capability publish/subtypes  an instance that answers to a subtype
+  heroes  mdns.Service
+  go      -
+  rust    -
+  python  -
+  note    the `subtypes` field: a pointer from `Sub._sub._type.local.` to the instance (RFC 6763 § 7.1), with the pointer of the type itself
+
+capability publish/goodbye  a service withdrawn, every cache told
+  heroes  mdns.withdraw, mdns.close_responder
+  go      -
+  rust    -
+  python  -
+  note    every record multicast with a time of 0 (RFC 6762 § 10.1), on every interface, with its cache-flush bit; observed on this Mac: `dns-sd -B` dropped the instance. A program that ends without closing sends none, and caches hold the records until their time runs out
+
+capability publish/proxy  a service published for a host that does not speak mDNS
+  heroes  refused: the records of a service name its host, and the host's name is probed for and held by the machine that speaks for it; publishing an address that is not this machine's makes the machine claim a name another host answers to, which a conflict check (§ 9) cannot tell from the other host's own answer
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceRegisterRecord with a host name the program owns; the `addresses` of a service are for a machine with several addresses, the machine's own
+
+capability interfaces/choice  the interfaces mDNS runs on
+  heroes  mdns.browse, mdns.watch, mdns.responder
+  go      -
+  rust    -
+  python  -
+  note    the `interfaces` parameter names them, `en0`; with none named every interface that is up, running, able to carry multicast, neither loopback nor a tunnel, with an address. The group is joined on each (`net.join_group`, hops 255 as RFC 6762 § 11 asks), IPv4 on one socket and IPv6 on another, both sharing port 5353 with the system's responder. Windows' and Avahi's sharing of the port: unrun
+
+capability domains/other  a domain other than `local.`, browsed or registered
+  heroes  refused: `local.` is the only domain multicast DNS has (RFC 6762 § 3); DNS-SD over unicast in another domain is `dns.lookup_srv`, `dns.lookup_txt` and `dns.query` over a name server's PTR records
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceEnumerateDomains and the domain parameters of DNSServiceBrowse and DNSServiceRegister, Windows' DnsServiceBrowse of a domain
+
+capability nat/port-mapping  a port opened on the router
+  heroes  refused: NAT-PMP and PCP are other protocols, not multicast DNS; Apple's DNSServiceNATPortMappingCreate is a door of the system's daemon to them
+  go      -
+  rust    -
+  python  -
+  note    a package of those protocols, if one is written, is its own
+
+dropped
+  go      -
+  rust    -
+  python  -
+  note    Apple's DNSServiceCreateConnection, DNSServiceRefSockFD, DNSServiceProcessResult, DNSServiceSetDispatchQueue, DNSServiceSendQueuedRequests, DNSServiceRefDeallocate and DNSServiceSleepKeepalive (the plumbing of a connection to the daemon, which `Watch` and `Responder` replace with the sockets of the program itself), DNSServiceConstructFullName (`mdns.name_of`), DNSServiceGetProperty, DNSServiceReconfirmRecord (a cache told to doubt a record: the refresh queries do it), DNSServiceAttributeSetAAAAPolicy, DNSServiceAttributeSetHostKeyHash, DNSServiceAttributeSetTimestamp, DNSServiceAttributeDeallocate and the `WithAttribute` forms (attributes of the daemon's own), DNSServiceRegisterRecord (see `publish/proxy`), Windows' DnsServiceCopyInstance, DnsServiceConstructInstance, DnsServiceFreeInstance and the `Cancel` calls (the instance structure and the cancellation of a callback, which `Service` and the program's own loop replace)

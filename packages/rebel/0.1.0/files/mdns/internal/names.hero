@@ -1,0 +1,228 @@
+# The names DNS-SD builds (RFC 6763 §§ 4 and 7): `Instance._type._tcp.local.`
+# and `_type._tcp.local.`, an instance's label holding any UTF-8 text, dots
+# and spaces included, its dots escaped as a name writes them.
+
+use bytes
+use dns
+use mdns/internal/failure
+use strings
+
+# The domain every name of multicast DNS is under (RFC 6762 § 3).
+constant DOMAIN: str
+    "local."
+
+# The name every service type is listed under (RFC 6763 § 9).
+constant ENUMERATION: str
+    "_services._dns-sd._udp.local."
+
+# The most bytes the label of an instance holds (RFC 6763 § 4.1.1).
+constant MOST_INSTANCE: i64
+    63
+
+# A service instance name taken apart.
+record Parts
+    # The instance's label as people read it, UTF-8 and unescaped.
+    instance: str
+    # The type, `_ipp._tcp`, with `<subtype>._sub.` before it for a subtype.
+    type: str
+    # The domain, with its last dot.
+    domain: str
+
+# The byte a label's text writes at `at`, and the index after it.
+record Taken
+    # The byte.
+    byte: u8
+    # The index just past what wrote it.
+    next: i64
+
+# Whether `c` is a decimal digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# The byte `text` writes at `at`: a plain one, or `\X` for the byte X, or
+# `\DDD` for the byte of three decimal digits.
+function taken(text: str, at: i64) -> Taken?
+    if text[at] != '\\'
+        return ok(Taken(byte: text[at], next: at + 1))
+
+    if at + 1 >= text.len()
+        return failure.wrong(what: f"\"{text}\": an escape cut short")
+    c = text[at + 1]
+
+    if !is_digit(c)
+        return ok(Taken(byte: c, next: at + 2))
+
+    if at + 4 > text.len() || !is_digit(text[at + 2]) || !is_digit(text[at + 3])
+        return failure.wrong(what: f"\"{text}\": an escape of digits cut short")
+    total = to_i64(c - '0').must() * 100 + to_i64(text[at + 2] - '0').must() * 10 + to_i64(text[at + 3] - '0').must()
+
+    if total > 255
+        return failure.wrong(what: f"\"{text}\": the escape \\{total} is past 255")
+    return ok(Taken(byte: to_u8(total).must(), next: at + 4))
+
+# The bytes the label `text` writes, a name's escapes undone.
+#
+# Fails `invalid` where an escape is cut short or past 255.
+function label_bytes(text: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        got = taken(text, at: at)?
+        out @ out.push(got.byte)
+        at @ got.next
+
+    return ok(out)
+
+# `label`, bytes, as the text a name holds it as: `.` and `\` after a
+# backslash, a byte below a space or the delete as `\DDD`, every other byte as
+# it is.
+function label_text(label: [u8]) -> str
+    out: [u8] @= []
+
+    for b in label
+        if b < ' ' || b == 127
+            out @ out.push('\\')
+            out @ out.push(to_u8(to_i64(b).must() / 100).must() + '0')
+            out @ out.push(to_u8(to_i64(b).must() / 10 % 10).must() + '0')
+            out @ out.push(to_u8(to_i64(b).must() % 10).must() + '0')
+        else
+            if b == '.' || b == '\\'
+                out @ out.push('\\')
+            out @ out.push(b)
+
+    return bytes.to_text_lossy(out)
+
+# Whether `c` may stand in a service name's label: a letter, a digit or a
+# hyphen.
+function is_name_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-'
+
+# Whether `label` is a service's label, an underscore and then 1 to 62 letters,
+# digits or hyphens.
+function is_service_label(label: str) -> bool
+    if label.len() < 2 || label.len() > 63 || label[0] != '_'
+        return false
+
+    for i in range(from: 1, to: label.len())
+        if !is_name_byte(label[i])
+            return false
+
+    return true
+
+# The labels of `name`, unescaped: each as UTF-8 text. Fails `invalid` where
+# `name` is no name and `not_text` where a label is not UTF-8.
+function labels_unescaped(name: str) -> [str]?
+    texts = dns.labels_of(name)?
+    out: [str] @= []
+
+    for text in texts
+        out @ out.push(bytes.to_text(label_bytes(text)?)?)
+
+    return ok(out)
+
+# Whether `type` is a service type: `_name._tcp` or `_name._udp`, which a
+# subtype may precede as `Sub._sub.`: `_printer._sub._ipp._tcp`.
+function is_type(type: str) -> bool
+    match labels_unescaped(type)
+        .err _ => return false
+        .ok labels =>
+            n = labels.len()
+
+            if n != 2 && n != 4
+                return false
+
+            if n == 4 && (labels[1] != "_sub" || labels[0].len() == 0 || labels[0].len() > 63)
+                return false
+            proto = strings.to_lower_ascii(labels[n - 1])
+            return is_service_label(labels[n - 2]) && (proto == "_tcp" || proto == "_udp")
+
+# The name `type` is browsed under: `_ipp._tcp.local.`. Fails `invalid`
+# where `type` is no service type.
+function type_name(type: str) -> str?
+    if !is_type(type)
+        return failure.wrong(
+            what: f"\"{type}\" is no service type: `_name._tcp` or `_name._udp`, a subtype before it as `Sub._sub.`"
+        )
+    labels = labels_unescaped(type)?
+    texts: [str] @= []
+
+    for label in labels
+        texts @ texts.push(label_text(bytes.from_text(label)))
+
+    return ok(texts.join(".") + "." + DOMAIN)
+
+# The name of the instance `instance` of `type`: `Name._ipp._tcp.local.`.
+#
+# Fails `invalid` where `type` is no service type (a subtype is not one an
+# instance has), or `instance` is empty or holds more than 63 bytes.
+function instance_name(instance: str, type: str) -> str?
+    if instance.len() == 0 || instance.len() > MOST_INSTANCE
+        return failure.wrong(
+            what: f"an instance's name is 1 to {MOST_INSTANCE} bytes, \"{instance}\" is {instance.len()}"
+        )
+    labels = labels_unescaped(type)?
+
+    if !is_type(type) || labels.len() != 2
+        return failure.wrong(what: f"\"{type}\" is no service type an instance has: `_name._tcp` or `_name._udp`")
+    return ok(label_text(bytes.from_text(instance)) + "." + type_name(type)?)
+
+# `name`, an instance's name, taken apart.
+#
+# Fails `invalid` where it is not `Instance._name._tcp.local.` (or `_udp`),
+# the instance one label, and `not_text` where a label is not UTF-8.
+function split_instance(name: str) -> Parts?
+    labels = labels_unescaped(name)?
+
+    if labels.len() != 4 || strings.to_lower_ascii(labels[3]) != "local"
+        return failure.wrong(what: f"\"{name}\" is no instance name: it is `Instance._name._tcp.local.`, four labels")
+    proto = strings.to_lower_ascii(labels[2])
+
+    if !is_service_label(labels[1]) || proto != "_tcp" && proto != "_udp"
+        return failure.wrong(what: f"\"{name}\": its second and third labels are no service type")
+    return ok(Parts(instance: labels[0], type: labels[1] + "." + labels[2], domain: DOMAIN))
+
+test "label_bytes and label_text: plain, escaped dots and slashes, digits, and an escape cut short"
+    assert label_bytes("abc").must() == [97, 98, 99]
+    assert label_bytes("a\\.b").must() == [97, 46, 98]
+    assert label_bytes("a\\\\b").must() == [97, 92, 98]
+    assert label_bytes("a\\032b").must() == [97, 32, 98]
+    assert label_bytes("\\255").must() == [255]
+    assert label_bytes("\\256").is_err()
+    assert label_bytes("\\03").is_err()
+    assert label_bytes("\\0x1").is_err()
+    assert label_bytes("a\\").is_err()
+    assert label_text([97, 46, 92, 98]) == "a\\.\\\\b"
+    assert label_text([97, 1, 127]) == "a\\001\\127"
+    assert label_text(bytes.from_text("Café Bar")) == "Café Bar"
+
+test "instance_name and split_instance: a name with a space and a dot, and what is no instance name"
+    name = instance_name(instance: "Joe's Printer. 2", type: "_ipp._tcp").must()
+    assert name == "Joe's Printer\\. 2._ipp._tcp.local."
+    got = split_instance(name).must()
+    assert got.instance == "Joe's Printer. 2"
+    assert got.type == "_ipp._tcp"
+    assert got.domain == "local."
+    assert split_instance("PRINTER._IPP._TCP.LOCAL.").must().type == "_IPP._TCP"
+    assert split_instance("_ipp._tcp.local.").is_err()
+    assert split_instance("a._ipp._tcp.example.com.").is_err()
+    assert split_instance("a.b._ipp._tcp.local.").is_err()
+    assert split_instance("a._ipp._sctp.local.").is_err()
+    assert instance_name(instance: "", type: "_ipp._tcp").is_err()
+    assert instance_name(instance: "x", type: "ipp._tcp").is_err()
+    assert instance_name(instance: "x", type: "Sub._sub._ipp._tcp").is_err()
+    assert instance_name(instance: repeat("é", 32), type: "_ipp._tcp").is_err()
+
+test "type_name and is_type: a service type, a subtype, and what is neither"
+    assert type_name("_ipp._tcp").must() == "_ipp._tcp.local."
+    assert type_name("_printer._sub._ipp._tcp").must() == "_printer._sub._ipp._tcp.local."
+    assert type_name("My Sub._sub._ipp._tcp").must() == "My Sub._sub._ipp._tcp.local."
+    assert is_type("_http._udp")
+    assert !is_type("_http")
+    assert !is_type("http._tcp")
+    assert !is_type("_http._tcpx")
+    assert !is_type("_._tcp")
+    assert !is_type("_a b._tcp")
+    assert !is_type("x._notsub._ipp._tcp")
+    assert !is_type("_a._b._ipp._tcp")
+    assert type_name("nonsense").is_err()

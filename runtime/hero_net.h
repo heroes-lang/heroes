@@ -302,6 +302,18 @@ int64_t hero_net_last_os_error(void);
  * connection or a listener the same way. */
 hero_net_socket *hero_net_udp(const char *address, int64_t port);
 
+/* A datagram socket as `hero_net_udp` makes it, standing on a port other
+ * sockets may stand on too: it asks the system for that (`SO_REUSEADDR`, and
+ * `SO_REUSEPORT` where the system has it), and a socket that asks the same
+ * is let in whatever order the two bind. Every one of them hears a datagram
+ * sent to a multicast group it joined, which is what mDNS's port 5353
+ * needs beside the system's own responder; a datagram sent to one address
+ * goes to one of them, the system's choice. A socket made by `hero_net_udp`
+ * on that port, before or after, is refused `HERO_NET_IN_USE`, as an
+ * exclusive bind always is. One bound to IPv6 hears IPv6 alone, never the IPv4
+ * datagrams to its port. The same failures as `hero_net_udp`. */
+hero_net_socket *hero_net_udp_shared(const char *address, int64_t port);
+
 /* Sends the `count` bytes of `data` as one datagram to `address`, a number
  * of the socket's own family (IPv4 or IPv6), at `port`, and answers `count`:
  * a datagram goes whole or not at all, and one of no bytes is one. One

@@ -32,6 +32,17 @@ constant DATAGRAM_MOST: u64
 # a socket of one kind sends to that kind alone, so "" is named `0.0.0.0`
 # here, the same socket on every platform.
 function open_udp(host: str, port: i64) -> sockets.Bound?
+    return opened(host, port: port, shared: false)
+
+# A UDP socket bound to `host` at `port` that other sockets asking the same
+# may stand beside on that port; the arguments and the failures are
+# `open_udp`'s.
+function open_udp_shared(host: str, port: i64) -> sockets.Bound?
+    return opened(host, port: port, shared: true)
+
+# The socket `open_udp` and `open_udp_shared` make: the floor's own, or its
+# shared one.
+function opened(host: str, port: i64, shared: bool) -> sockets.Bound?
     asked = f"opening a UDP socket on {hosts.joined(host, port: sockets.clamped(port))}"
     hosts.checked_zero(text: host, asked: asked)?
     _ = hosts.checked(port, asked: asked)?
@@ -39,7 +50,12 @@ function open_udp(host: str, port: i64) -> sockets.Bound?
 
     if host == ""
         on @ "0.0.0.0"
-    s @= hero_net.udp(address: on, port: port)
+    s: hero_net.Socket @= nullptr
+
+    if shared
+        s @ hero_net.udp_shared(address: on, port: port)
+    else
+        s @ hero_net.udp(address: on, port: port)
 
     if s == nullptr
         return failure.last(asked: asked)

@@ -1,0 +1,129 @@
+# A service's attributes as the strings of its TXT record (RFC 6763 § 6):
+# `key=value`, `key=` for an empty value and `key` alone for a key with
+# none, each string at most 255 bytes, a key of printable ASCII but `=`
+# compared without regard to case.
+
+use bytes
+use mdns/internal/failure
+use strings
+
+# The most bytes one string of a TXT record holds.
+constant MOST_STRING: i64
+    255
+
+# One attribute of a service.
+record Attribute
+    # The key: one or more printable ASCII characters but `=`.
+    key: str
+    # The value, any bytes, where the attribute has one: empty for `key=`,
+    # absent for `key` alone.
+    value: [u8]?
+
+# Whether `key` may be an attribute's key.
+function is_key(key: str) -> bool
+    if key.len() == 0
+        return false
+
+    for c in bytes.from_text(key)
+        if c < ' ' || c > '~' || c == '='
+            return false
+
+    return true
+
+# The string of a TXT record that writes `a`. Fails `invalid` where its key
+# is no key or the string would pass 255 bytes.
+function string_of(a: Attribute) -> [u8]?
+    if !is_key(a.key)
+        return failure.wrong(
+            what: f"the attribute key \"{a.key}\" is empty or holds a byte that is not printable ASCII or is `=`"
+        )
+    out: [u8] @= bytes.from_text(a.key)
+
+    match a.value
+        .err _ => out @ out
+        .ok v =>
+            out @ out.push('=')
+            out @ bytes.concat([out, v])
+
+    if out.len() > MOST_STRING
+        return failure.wrong(what: f"the attribute \"{a.key}\" is {out.len()} bytes, 255 at most")
+    return ok(out)
+
+# The strings of the TXT record that holds `attributes`: the one empty string
+# where there are none, as RFC 6763 § 6.1 asks. Fails `invalid` where a key
+# is wrong, an attribute passes 255 bytes, or a key stands twice.
+function encode(attributes: [Attribute]) -> [[u8]]?
+    if attributes.len() == 0
+        return ok([[]])
+    out: [[u8]] @= []
+    seen: {str: bool} @= {}
+
+    for a in attributes
+        folded = strings.to_lower_ascii(a.key)
+
+        if !seen[folded].is_err()
+            return failure.wrong(what: f"the attribute key \"{a.key}\" stands twice")
+        seen[folded] @ true
+        out @ out.push(string_of(a)?)
+
+    return ok(out)
+
+# The attributes the strings of a TXT record hold. A string that is empty,
+# or begins with `=`, or whose key holds a byte no key does is passed over,
+# and where a key stands twice the first is kept (RFC 6763 § 6.4).
+function decode(texts: [[u8]]) -> [Attribute]
+    out: [Attribute] @= []
+    seen: {str: bool} @= {}
+
+    for text in texts
+        at = bytes.index_of(s: text, substr: [61])
+        key_bytes @= text
+
+        if !at.is_err()
+            key_bytes @ text.slice(from: 0, to: at.must())
+
+        if key_bytes.len() == 0
+            continue
+        key = bytes.to_text(key_bytes)
+
+        if key.is_err() || !is_key(key.must())
+            continue
+        folded = strings.to_lower_ascii(key.must())
+
+        if !seen[folded].is_err()
+            continue
+        seen[folded] @ true
+
+        if !at.is_err()
+            out @ out.push(Attribute(key: key.must(), value: ok(text.slice(from: at.must() + 1, to: text.len()))))
+        else
+            out @ out.push(
+                Attribute(key: key.must(), value: fail(code: failure.NOT_FOUND, msg: "the key has no value"))
+            )
+
+    return out
+
+test "encode: values, an empty value, a key alone, and the empty record"
+    got = encode(
+        [Attribute(key: "txtvers", value: ok(bytes.from_text("1"))), Attribute(key: "empty", value: ok([])), Attribute(key: "flag", value: fail(code: failure.NOT_FOUND, msg: "none"))]
+    ).must()
+    assert got == [bytes.from_text("txtvers=1"), bytes.from_text("empty="), bytes.from_text("flag")]
+    assert encode([]).must() == [[]]
+
+test "encode: a key that is wrong, one standing twice in another case, and a string past 255 bytes"
+    assert encode([Attribute(key: "", value: ok([]))]).is_err()
+    assert encode([Attribute(key: "a=b", value: ok([]))]).is_err()
+    assert encode([Attribute(key: "a\tb", value: ok([]))]).is_err()
+    assert encode([Attribute(key: "Key", value: ok([])), Attribute(key: "kEY", value: ok([]))]).is_err()
+    assert encode([Attribute(key: "k", value: ok(bytes.repeated([65], n: 253)))]).must()[0].len() == 255
+    assert encode([Attribute(key: "k", value: ok(bytes.repeated([65], n: 254)))]).is_err()
+
+test "decode: what RFC 6763 section 6.4 passes over, and the first of a key kept"
+    got = decode(
+        [[], bytes.from_text("=hidden"), bytes.from_text("A=1"), bytes.from_text("a=2"), bytes.from_text("b==x"), bytes.from_text("c"), [100, 255, 61, 1]]
+    )
+    assert got.len() == 3
+    assert got[0].key == "A" && got[0].value.must() == bytes.from_text("1")
+    assert got[1].key == "b" && got[1].value.must() == bytes.from_text("=x")
+    assert got[2].key == "c" && got[2].value.is_err()
+    assert decode([[]]) == []

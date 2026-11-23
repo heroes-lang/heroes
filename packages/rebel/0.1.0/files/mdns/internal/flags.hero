@@ -1,0 +1,209 @@
+# The two bits mDNS takes from the class field (RFC 6762 §§ 5.4 and 10.2): in
+# a question the top bit asks for a unicast answer, in a record it says the
+# record replaces what a cache holds under its name and type. `dns` reads a
+# record of the Internet class alone as a value, so a message is cut here
+# into what `dns` reads, the class bits cleared, and the bits as a list, and
+# put together again after `dns` wrote it.
+
+use mdns/internal/failure
+
+# The bit of a class field that carries the flag.
+constant FLAG: i64
+    32768
+
+# A message with its class bits cleared and the bits it held.
+record Cleared
+    # The message's bytes, each class field's top bit 0, and nothing else
+    # moved.
+    data: [u8]
+    # One entry for each question and then each record the message holds, in
+    # the order `dns.decode` lists them (the sections one after another, an
+    # OPT record left out, which has no class): the unicast-response bit of a
+    # question, the cache-flush bit of a record.
+    flags: [bool]
+
+# Where one class field stands in a message, and whether its record is the
+# EDNS pseudo-record, whose class is a size and not a class.
+record Slot
+    # The index of the field's first byte.
+    at: i64
+    # Whether the record is an OPT record, which no flag is read from.
+    opt: bool
+
+# The index just past the name that begins at `at`: a run of labels ended by
+# a zero byte or by a pointer of two bytes. Fails `invalid` where the message
+# ends inside it or a label's length byte is of a form no name takes. Every
+# pass moves at least one byte, so it ends.
+function name_end(data: [u8], at: i64) -> i64?
+    here: i64 @= at
+
+    while here < data.len()
+        kind = to_i64(data[here]).must()
+
+        if kind == 0
+            return ok(here + 1)
+
+        if kind >= 192
+            if here + 2 > data.len()
+                return failure.cut(what: "a name's pointer")
+            return ok(here + 2)
+
+        if kind >= 64
+            return failure.wrong(what: f"byte {here}: a label's length byte of the form {kind}")
+        here @ here + 1 + kind
+
+    return failure.cut(what: "a name")
+
+# The number of two bytes at `at`, or fails `invalid` where the message
+# ends first.
+function number_at(data: [u8], at: i64) -> i64?
+    if at + 2 > data.len()
+        return failure.cut(what: "a number")
+    return ok(to_i64(data[at]).must() << 8 | to_i64(data[at + 1]).must())
+
+# Where every class field of the message stands, questions and then records,
+# in order. Fails `invalid` where the message is cut short or a count it
+# states is more than its bytes hold.
+function slots_of(data: [u8]) -> [Slot]?
+    if data.len() < 12
+        return failure.cut(what: "the header")
+    asked = number_at(data, at: 4)?
+    held = number_at(data, at: 6)? + number_at(data, at: 8)? + number_at(data, at: 10)?
+    slots: [Slot] @= []
+    at: i64 @= 12
+    count: i64 @= 0
+
+    while count < asked
+        end = name_end(data, at: at)?
+
+        if end + 4 > data.len()
+            return failure.cut(what: "a question")
+        slots @ slots.push(Slot(at: end + 2, opt: false))
+        at @ end + 4
+        count @ count + 1
+
+    count @ 0
+
+    while count < held
+        end = name_end(data, at: at)?
+        kind = number_at(data, at: end)?
+        size = number_at(data, at: end + 8)?
+
+        if end + 10 + size > data.len()
+            return failure.cut(what: "a record's data")
+        slots @ slots.push(Slot(at: end + 2, opt: kind == 41))
+        at @ end + 10 + size
+        count @ count + 1
+
+    return ok(slots)
+
+# `data` with every class field's top bit cleared, and the bits it held.
+#
+# Fails `invalid` where the message is cut short anywhere `dns.decode` would
+# also refuse it for being so.
+function cleared(data: [u8]) -> Cleared?
+    slots = slots_of(data)?
+    out: [u8] @= data
+    flags: [bool] @= []
+
+    for slot in slots
+        if slot.opt
+            continue
+        high = to_i64(out[slot.at]).must()
+        flags @ flags.push(high >= 128)
+        out[slot.at] @ to_u8(high & 127).must()
+
+    return ok(Cleared(data: out, flags: flags))
+
+# `data`, a message `dns.encode` wrote, with the bit `flags` holds set in
+# each class field in the order `cleared` lists them. Fails `invalid` where
+# `flags` holds another count than the message has places for.
+function flagged(data: [u8], flags: [bool]) -> [u8]?
+    slots = slots_of(data)?
+    out: [u8] @= data
+    used: i64 @= 0
+
+    for slot in slots
+        if slot.opt
+            continue
+
+        if used >= flags.len()
+            return failure.wrong(what: f"{flags.len()} flags for a message with more places for them")
+
+        if flags[used]
+            out[slot.at] @ to_u8(to_i64(out[slot.at]).must() | 128).must()
+        used @ used + 1
+
+    if used != flags.len()
+        return failure.wrong(what: f"{flags.len()} flags for a message with {used} places for them")
+    return ok(out)
+
+test "name_end: a name, a pointer, the root, and the forms no name takes"
+    assert name_end([3, 99, 111, 109, 0, 9], at: 0).must() == 5
+    assert name_end([0], at: 0).must() == 1
+    assert name_end([192, 12], at: 0).must() == 2
+    assert name_end([192], at: 0).is_err()
+    assert name_end([3, 99, 111], at: 0).is_err()
+    assert name_end([64, 1], at: 0).is_err()
+    assert name_end([128, 1], at: 0).is_err()
+    assert name_end([], at: 0).is_err()
+
+test "cleared and flagged: a question's and a record's bits, and a message cut short"
+    # Header: 1 question, 1 answer; `a.` IN with the unicast bit, `a.` A IN
+    # with the cache-flush bit, ttl 120, 4 bytes of data.
+    message: [u8] = [
+        0
+        0
+        132
+        0
+        0
+        1
+        0
+        1
+        0
+        0
+        0
+        0
+        1
+        97
+        0
+        0
+        1
+        128
+        1
+        1
+        97
+        0
+        0
+        1
+        128
+        1
+        0
+        0
+        0
+        120
+        0
+        4
+        10
+        0
+        0
+        1
+    ]
+    got = cleared(message).must()
+    assert got.flags == [true, true]
+    assert got.data[17] == 0 && got.data[18] == 1
+    assert got.data[24] == 0 && got.data[25] == 1
+    assert flagged(got.data, flags: got.flags).must() == message
+    assert flagged(got.data, flags: [false, false]).must() == got.data
+    assert flagged(got.data, flags: [true]).is_err()
+    assert flagged(got.data, flags: [true, true, true]).is_err()
+    assert cleared(message.slice(from: 0, to: 30)).is_err()
+    assert cleared([0, 0, 0]).is_err()
+
+test "cleared: an OPT record has no flag, and a count past the bytes is refused"
+    # One OPT record named by the root: type 41, class 4096 (a size).
+    message: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 41, 16, 0, 0, 0, 0, 0, 0, 0]
+    got = cleared(message).must()
+    assert got.flags == []
+    assert got.data == message
+    assert cleared([0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0]).is_err()

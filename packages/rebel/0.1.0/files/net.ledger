@@ -547,6 +547,13 @@ capability udp/open  a UDP socket bound to an address
   python  socket.SOCK_DGRAM
   note    Bound to an address, not a name, as the floor binds it. "" is every IPv4 address, `0.0.0.0`, on every platform, as the doc said and as Python's `bind(("", port))` on an `AF_INET` socket answers; until repairs-3 (2026-11-18) it was handed to the floor as it stood, which binds the first address the system lists, IPv6's `::` on Darwin, so a send to an IPv4 address failed `invalid` (the metrics agent's program, and `dns`'s and `metrics`' workarounds of `0.0.0.0`). Dual-stack, where Go's `ListenUDP` with no address "listens on all available IP addresses" (its doc), was not taken: it rests on `IPV6_V6ONLY`, whose default differs between systems, gives IPv4 senders as mapped IPv6 addresses, and the floor's sockets are of one kind each
 
+capability udp/shared-port  a UDP socket on a port other sockets stand on too, as mDNS's port 5353 is shared with the system's responder
+  heroes  net.open_udp_shared
+  go      net.ListenConfig.Control with `SO_REUSEADDR` and `SO_REUSEPORT` set by the program, golang.org/x/net/ipv4.NewPacketConn over a socket it made
+  rust    -
+  python  socket.SO_REUSEADDR, socket.SO_REUSEPORT (where the system has it) set with `setsockopt` before `bind`
+  note    added with `mdns`, 2026-11-23. A socket asks the system for `SO_REUSEADDR` and, where the system has it, `SO_REUSEPORT` before it binds, which Darwin asks of both sockets to share a port and Linux takes from either; Windows takes `SO_REUSEADDR` where the exclusive socket `open_udp` makes sets `SO_EXCLUSIVEADDRUSE`. Every socket on the port hears a datagram sent to a group it joined; a datagram to one address is heard by one of them, the system's choice, which is why it is for multicast. A socket of IPv6 is IPv6's alone (`IPV6_V6ONLY`), so one of IPv4 and one of IPv6 stand on the same port without hearing each other's datagrams twice. Tests (this Mac): two shared sockets on a port, an exclusive one refused `exists` before and after them. Linux and Windows: unrun (Windows: the box did not answer SSH on 2026-11-23)
+
 capability udp/address  the address a UDP socket stands on
   heroes  net.UdpSocket
   go      net.UDPConn.LocalAddr, net.PacketConn.LocalAddr

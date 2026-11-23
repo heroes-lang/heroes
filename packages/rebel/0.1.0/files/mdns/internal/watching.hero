@@ -1,0 +1,205 @@
+# A browser that keeps watching (RFC 6762 § 5.2): the question for a service
+# type asked again at growing gaps, every record asked for again as its time
+# runs down, and the cache compared with what was last told, so that an
+# instance that appears, changes or goes is told once.
+
+use dns
+use mdns/internal/cache
+use mdns/internal/failure
+use mdns/internal/message
+use mdns/internal/model
+use mdns/internal/names
+use mdns/internal/session
+
+# What happened to one instance.
+record Moved
+    # 0 for one that appeared, 1 for one whose records changed, 2 for one that
+    # is gone.
+    kind: i64
+    # The instance: as it now stands, or as it last stood where it is gone.
+    found: model.Described
+
+# A browser on one service type.
+record Watch
+    # The sockets and the records heard.
+    session: session.Session
+    # The name the type is browsed under, `_ipp._tcp.local.`.
+    owner: str
+    # The instances last told of.
+    reported: [model.Described]
+    # What happened and was not yet handed out, the oldest first.
+    queue: [Moved]
+    # When the question is next sent, and the gap after that.
+    next_send_ms: i64
+    interval_ms: i64
+
+# A browser on `type`, over the interfaces `interfaces` names, the usual ones
+# where it names none. Fails `invalid` where `type` is no service type, and as
+# `session.open` fails.
+function begin(type: str, interfaces: [str]) -> Watch?
+    owner = names.type_name(type)?
+    s = session.open(interfaces)?
+    return ok(Watch(session: s, owner: owner, reported: [], queue: [], next_send_ms: 0, interval_ms: 1000))
+
+# Whether `a` and `b` name one instance.
+function is_named(a: model.Described, b: model.Described) -> bool
+    return a.instance == b.instance && a.type == b.type
+
+# Compares what is held with what was told, and queues what differs: an
+# instance told of that is gone, one new, one whose host, port, addresses or
+# attributes are not what was told.
+function compare(@w: Watch, now_ms: i64)
+    held = cache.instances(w.session.heard, type_name: w.owner, now_ms: now_ms)
+    moved: [Moved] @= w.queue
+    told: [model.Described] @= []
+
+    for old in w.reported
+        found: bool @= false
+
+        for d in held
+            if is_named(a: d, b: old)
+                found @ true
+
+        if !found
+            moved @ moved.push(Moved(kind: 2, found: old))
+
+    for d in held
+        known: bool @= false
+
+        for old in w.reported
+            if is_named(a: d, b: old)
+                known @ true
+
+                if !same_records(a: d, b: old)
+                    moved @ moved.push(Moved(kind: 1, found: d))
+
+        if !known
+            moved @ moved.push(Moved(kind: 0, found: d))
+        told @ told.push(d)
+
+    w.queue @ moved
+    w.reported @ told
+
+# Whether `a` and `b` say the same about an instance: host, port, priority,
+# weight, attributes, and the addresses, whatever their order.
+function same_records(a: model.Described, b: model.Described) -> bool
+    if a.host != b.host || a.port != b.port || a.priority != b.priority || a.weight != b.weight || a.texts != b.texts || a.addresses.len() != b.addresses.len()
+        return false
+
+    for h in a.addresses
+        listed: bool @= false
+
+        for g in b.addresses
+            if g.bytes == h.bytes
+                listed @ true
+
+        if !listed
+            return false
+
+    return true
+
+# One round of watching: the questions that are due sent, the follow-ups
+# asked, up to `wait_ms` waited for a packet, and the changes queued.
+function step(@w: Watch, wait_ms: i64) -> ()?
+    now = session.elapsed_ms(w.session)?
+    cache.purge(@w.session.heard, now_ms: now)
+    wanted: [message.Asked] @= []
+
+    if now >= w.next_send_ms
+        wanted @ wanted.push(session.plain(w.owner, type_code: dns.TYPE_PTR))
+        w.next_send_ms @ now + w.interval_ms
+        w.interval_ms @ w.interval_ms * 2
+
+        if w.interval_ms > session.MOST_INTERVAL_MS
+            w.interval_ms @ session.MOST_INTERVAL_MS
+
+    for q in cache.due(@w.session.heard, now_ms: now)
+        wanted @ wanted.push(message.Asked(question: q, unicast: false))
+
+    if wanted.len() > 0
+        session.ask(w.session, questions: wanted)?
+    session.follow_up(@w.session, instances: cache.pointers(w.session.heard, owner: w.owner, now_ms: now))?
+    until @= w.next_send_ms - now
+
+    if wait_ms < until
+        until @ wait_ms
+
+    if until < 1
+        until @ 1
+
+    match session.pump(@w.session, wait_ms: until)
+        .ok _ => until @ until
+        .err e =>
+            if e.code != failure.TIMEOUT
+                return fail(code: e.code, msg: e.msg)
+
+    compare(@w, now_ms: session.elapsed_ms(w.session)?)
+    return ok()
+
+# The next change, waiting `wait_ms` milliseconds at most. Fails `timeout`
+# where none came, and `stopped` where the stop was asked.
+function next(@w: Watch, wait_ms: i64) -> Moved?
+    began = session.elapsed_ms(w.session)?
+
+    while true
+        if w.queue.len() > 0
+            first = w.queue[0]
+            rest: [Moved] @= []
+
+            for i in range(from: 1, to: w.queue.len())
+                rest @ rest.push(w.queue[i])
+
+            w.queue @ rest
+            return ok(first)
+        left = wait_ms - (session.elapsed_ms(w.session)? - began)
+
+        if left <= 0
+            return fail(code: failure.TIMEOUT, msg: f"no service of {w.owner} changed in {wait_ms} ms")
+        step(@w, wait_ms: left)?
+
+    return fail(code: failure.TIMEOUT, msg: "unreachable")
+
+test "compare: an instance appears, changes and goes, and is told once each time"
+    s = session.detached().must()
+    w @= Watch(session: s, owner: "_x._tcp.local.", reported: [], queue: [], next_send_ms: 0, interval_ms: 1000)
+    pointer = dns.Record(
+        name: "_x._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 4500,
+        data: .ptr(target: "A._x._tcp.local.")
+    )
+    srv = dns.Record(
+        name: "A._x._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .srv(priority: 0, weight: 0, port: 1, target: "h.local.")
+    )
+    cache.add(@w.session.heard, r: pointer, flush: false, now_ms: 0)
+    compare(@w, now_ms: 0)
+    assert w.queue.len() == 0
+    cache.add(@w.session.heard, r: srv, flush: true, now_ms: 0)
+    compare(@w, now_ms: 0)
+    compare(@w, now_ms: 0)
+    assert w.queue.len() == 1
+    assert w.queue[0].kind == 0
+    assert w.queue[0].found.port == 1
+    cache.add(
+        @w.session.heard,
+        r: dns.Record(name: "A._x._tcp.local.", class_code: dns.CLASS_IN, ttl: 120, data: .srv(priority: 0, weight: 0, port: 2, target: "h.local.")),
+        flush: true,
+        now_ms: 5000
+    )
+    compare(@w, now_ms: 7000)
+    assert w.queue.len() == 2
+    assert w.queue[1].kind == 1
+    assert w.queue[1].found.port == 2
+    cache.add(
+        @w.session.heard,
+        r: dns.Record(name: "_x._tcp.local.", class_code: dns.CLASS_IN, ttl: 0, data: pointer.data),
+        flush: false,
+        now_ms: 8000
+    )
+    compare(@w, now_ms: 9500)
+    assert w.queue.len() == 3
+    assert w.queue[2].kind == 2
+    session.close(@w.session).must()

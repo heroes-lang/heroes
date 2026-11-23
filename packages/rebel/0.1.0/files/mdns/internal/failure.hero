@@ -1,0 +1,53 @@
+# The codes `mdns` fails with, and the failures its modules build: every
+# message says what was asked and what was found (README § A4).
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant FAILED: str
+    "failed"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant CLOSED: str
+    "closed"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+constant EXISTS: str
+    "exists"
+
+# A failure `invalid` of a message read: it ends inside `what`.
+function cut<T>(what: str) -> T?
+    return fail(code: INVALID, msg: f"the message ends inside {what}")
+
+# A failure `invalid`: `what` is wrong, in words that say where.
+function wrong<T>(what: str) -> T?
+    return fail(code: INVALID, msg: what)
+
+# The code `r` failed with, "" where it did not fail.
+function code_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code
+
+# `first`'s failure if it failed, else `second`'s, else ok: what a call that
+# must close what it opened answers after its work and its close.
+function settled(first: ()?, second: ()?) -> ()?
+    match first
+        .err e => return fail(code: e.code, msg: e.msg)
+        .ok _  => return second

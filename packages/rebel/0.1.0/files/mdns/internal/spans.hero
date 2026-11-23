@@ -1,0 +1,38 @@
+# The numbers a call hands `mdns` before anything is sent: a wait in whole
+# milliseconds, and the fields of a service held to their ranges.
+
+use dns
+use mdns/internal/failure
+use time
+
+# `d` in whole milliseconds. Fails `invalid` where it is negative.
+function millis_of(d: time.Duration) -> i64?
+    if d.nanoseconds < 0
+        return failure.wrong(what: f"a wait is zero or more, and {d.nanoseconds} ns was asked")
+    return ok(time.to_units(d, unit: .millisecond))
+
+# Whether the port, the priority and the weight of a service are each 0 to
+# 65535 and its host is "" or a name. Fails `invalid` where not.
+function checked(port: i64, priority: i64, weight: i64, host: str) -> ()?
+    if port < 0 || port > 65535 || priority < 0 || priority > 65535 || weight < 0 || weight > 65535
+        return failure.wrong(
+            what: f"the port, the priority and the weight are 0 to 65535: {port}, {priority} and {weight}"
+        )
+
+    if host != ""
+        _ = dns.canonical_name(host)?
+    return ok()
+
+test "millis_of: a wait in milliseconds, and a negative one refused"
+    assert millis_of(time.seconds(2).must()).must() == 2000
+    assert millis_of(time.milliseconds(0).must()).must() == 0
+    assert millis_of(time.milliseconds(-1).must()).is_err()
+
+test "checked: the ends of the ranges and a host that is no name"
+    checked(port: 0, priority: 65535, weight: 65535, host: "").must()
+    checked(port: 65535, priority: 0, weight: 0, host: "a.local.").must()
+    assert checked(port: 65536, priority: 0, weight: 0, host: "").is_err()
+    assert checked(port: -1, priority: 0, weight: 0, host: "").is_err()
+    assert checked(port: 1, priority: 65536, weight: 0, host: "").is_err()
+    assert checked(port: 1, priority: 0, weight: -1, host: "").is_err()
+    assert checked(port: 1, priority: 0, weight: 0, host: "bad..name").is_err()

@@ -1,0 +1,76 @@
+# What the data of a record holds, asked for by kind: `dns.Data` has a case
+# for each type it reads, and a `match` over it names every one, so the kinds
+# a responder and a browser use are read here, once, and the rest of the
+# package asks.
+
+use dns
+use mdns/internal/failure
+use net
+
+# The fields of an SRV record.
+record Target
+    # The priority and the weight, 0 to 65535.
+    priority: i64
+    weight: i64
+    # The port, 0 to 65535.
+    port: i64
+    # The host's name.
+    host: str
+
+# The address an A or an AAAA record holds. Fails `not_found` for a record of
+# another kind.
+function address_of(data: dns.Data) -> net.Host?
+    match data
+        .a x    => return ok(x.address)
+        .aaaa x => return ok(x.address)
+        .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => return fail(
+            code: failure.NOT_FOUND,
+            msg: "the record holds no address"
+        )
+
+# The name a PTR record points at. Fails `not_found` for another kind.
+function pointer_of(data: dns.Data) -> str?
+    match data
+        .ptr x => return ok(x.target)
+        .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => return fail(
+            code: failure.NOT_FOUND,
+            msg: "the record points at nothing"
+        )
+
+# The fields of an SRV record. Fails `not_found` for another kind.
+function target_of(data: dns.Data) -> Target?
+    match data
+        .srv x => return ok(Target(priority: x.priority, weight: x.weight, port: x.port, host: x.target))
+        .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => return fail(
+            code: failure.NOT_FOUND,
+            msg: "the record is no SRV record"
+        )
+
+# The strings of a TXT record. Fails `not_found` for another kind.
+function texts_of(data: dns.Data) -> [[u8]]?
+    match data
+        .txt x => return ok(x.texts)
+        .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => return fail(
+            code: failure.NOT_FOUND,
+            msg: "the record is no TXT record"
+        )
+
+# Whether `data` is an NSEC record's, which claims no data of its own.
+function is_nsec(data: dns.Data) -> bool
+    match data
+        .nsec _ => return true
+        .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .tlsa _ | .sshfp _ | .unknown _ => return false
+
+test "the kinds: each is read from its own case and from no other"
+    host = net.parse_host("10.0.0.1").must()
+    assert address_of(.a(address: host)).must() == host
+    assert address_of(.aaaa(address: net.parse_host("fe80::1").must())).must().bytes.len() == 16
+    assert address_of(.ptr(target: "x.")).is_err()
+    assert pointer_of(.ptr(target: "x.")).must() == "x."
+    assert pointer_of(.a(address: host)).is_err()
+    assert target_of(.srv(priority: 1, weight: 2, port: 3, target: "h.")).must().port == 3
+    assert target_of(.txt(texts: [])).is_err()
+    assert texts_of(.txt(texts: [[1, 65]])).must() == [[1, 65]]
+    assert texts_of(.srv(priority: 1, weight: 2, port: 3, target: "h.")).is_err()
+    assert is_nsec(.nsec(next: "x.", types: [1]))
+    assert !is_nsec(.a(address: host))

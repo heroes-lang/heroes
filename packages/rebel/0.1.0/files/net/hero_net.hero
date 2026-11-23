@@ -58,6 +58,7 @@ extern "hero_net.h"
     function hero_net_last_error() -> i64
     function hero_net_last_os_error() -> i64
     function hero_net_udp(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_udp_shared(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
     function hero_net_send_to(s: Socket, @data: [u8] counted_by n lent, n: u64, address: cstr lent, port: i64) -> i64
     function hero_net_recv_from(s: Socket, @buffer: [u8] counted_by n lent, n: u64, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
     function hero_net_lookup(name: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
@@ -229,6 +230,19 @@ function last_os_error() -> i64
 # - `port`: 0 to 65535, 0 asking the system for a free one.
 function udp(address: str, port: i64) -> Socket
     return hero_net_udp(address: address.cstr(), port: port)
+
+# A datagram socket as `udp` makes it, on a port other sockets that ask the
+# same may stand on too (`SO_REUSEADDR`, and `SO_REUSEPORT` where the system
+# has it), or `nullptr`. Every socket standing on the port hears a datagram
+# sent to a multicast group it joined; one sent to a single address goes to
+# one of them. A socket `udp` makes on that port is refused `HERO_NET_IN_USE`,
+# before or after.
+#
+# - `address`: a number, or "" for every address of the machine; it aborts
+#   where it holds a zero byte.
+# - `port`: 0 to 65535, 0 asking the system for a free one.
+function udp_shared(address: str, port: i64) -> Socket
+    return hero_net_udp_shared(address: address.cstr(), port: port)
 
 # `n` where the first `n` bytes of `data` went as one datagram to `address`
 # at `port`, or -1. The address is a number of the socket's own family, and a

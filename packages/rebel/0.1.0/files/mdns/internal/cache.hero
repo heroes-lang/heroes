@@ -1,0 +1,386 @@
+# The records heard, kept until their time to live runs out (RFC 6762 § 10):
+# a goodbye (a time of 0) leaves its record for one second, a record whose
+# cache-flush bit is set replaces what was heard earlier under its name and
+# type, and what a name holds is read back as the records or as an instance.
+# Time is the caller's, in milliseconds on a clock that only goes forward.
+
+use dns
+use mdns/internal/failure
+use mdns/internal/kinds
+use mdns/internal/model
+use mdns/internal/names
+use net
+
+# How long a goodbye's record, and a record a cache-flush replaced, stays.
+constant GRACE_MS: i64
+    1000
+
+# One record kept.
+record Entry
+    # The owner name, in the lower case that names are compared in.
+    key: str
+    # The record as heard.
+    item: dns.Record
+    # When it was heard.
+    heard_ms: i64
+    # When it stops being held.
+    expires_ms: i64
+    # How many of the queries that ask for it again, at 80, 85, 90 and 95
+    # percent of its time, were sent (RFC 6762 § 5.2).
+    refreshed: i64
+    # Whether it was said gone, by a goodbye or by a record that replaced it:
+    # it is kept a second more, as RFC 6762 § 10 asks, but no longer read.
+    retired: bool
+
+# The records heard.
+record Cache
+    # In the order they arrived.
+    entries: [Entry]
+
+# A cache holding nothing.
+function empty() -> Cache
+    return Cache(entries: [])
+
+# Whether `e` holds the very record `r`: its name, type, class and data.
+function is_same(e: Entry, key: str, r: dns.Record) -> bool
+    return e.key == key && e.item.class_code == r.class_code && dns.type_of(e.item) == dns.type_of(r) && e.item.data == r.data
+
+# Keeps `r`, heard at `now_ms`, `flush` being its cache-flush bit.
+#
+# A record with a time of 0 is a goodbye: the same record held is dropped
+# one second on. With `flush`, whatever else is held under its name, type and
+# class and was heard more than a second ago is dropped one second on too
+# (RFC 6762 § 10.2). Otherwise the record is added, or its time renewed where
+# the same record is held. A name that is no name is passed over.
+function add(@cache: Cache, r: dns.Record, flush: bool, now_ms: i64)
+    key = dns.canonical_name(r.name)
+
+    if key.is_err()
+        return
+    entries: [Entry] @= cache.entries
+    code = dns.type_of(r)
+
+    if r.ttl == 0
+        for i in range(from: 0, to: entries.len())
+            if is_same(entries[i], key: key.must(), r: r)
+                entries[i].retired @ true
+
+                if entries[i].expires_ms > now_ms + GRACE_MS
+                    entries[i].expires_ms @ now_ms + GRACE_MS
+
+        cache.entries @ entries
+        return
+    found: bool @= false
+
+    for i in range(from: 0, to: entries.len())
+        if is_same(entries[i], key: key.must(), r: r)
+            entries[i].item @ r
+            entries[i].heard_ms @ now_ms
+            entries[i].expires_ms @ now_ms + r.ttl * 1000
+            entries[i].refreshed @ 0
+            entries[i].retired @ false
+            found @ true
+        else if flush && entries[i].key == key.must() && dns.type_of(entries[i].item) == code && entries[i].item.class_code == r.class_code && entries[i].heard_ms < now_ms - GRACE_MS && entries[i].expires_ms > now_ms + GRACE_MS
+            entries[i].retired @ true
+            entries[i].expires_ms @ now_ms + GRACE_MS
+
+    if !found
+        entries @ entries.push(
+            Entry(key: key.must(), item: r, heard_ms: now_ms, expires_ms: now_ms + r.ttl * 1000, refreshed: 0, retired: false)
+        )
+    cache.entries @ entries
+
+# Drops what has expired by `now_ms`.
+function purge(@cache: Cache, now_ms: i64)
+    kept: [Entry] @= []
+
+    for e in cache.entries
+        if e.expires_ms > now_ms
+            kept @ kept.push(e)
+
+    cache.entries @ kept
+
+# The records held under `name` of type `type_code` (`dns.TYPE_ANY` for every
+# type) at `now_ms`, each with the seconds it has left, 1 at least.
+function matching(cache: Cache, name: str, type_code: i64, now_ms: i64) -> [dns.Record]
+    key = dns.canonical_name(name)
+
+    if key.is_err()
+        return []
+    out: [dns.Record] @= []
+
+    for e in cache.entries
+        if e.key == key.must() && !e.retired && e.expires_ms > now_ms && (type_code == dns.TYPE_ANY || dns.type_of(e.item) == type_code)
+            left = (e.expires_ms - now_ms + 999) / 1000
+            out @ out.push(dns.Record(name: e.item.name, class_code: e.item.class_code, ttl: left, data: e.item.data))
+
+    return out
+
+# The records held under `name` of type `type_code` with more than half of
+# their time to live left, which a query lists as known so that a responder
+# need not send them again (RFC 6762 § 7.1).
+function known_for(cache: Cache, name: str, type_code: i64, now_ms: i64) -> [dns.Record]
+    key = dns.canonical_name(name)
+
+    if key.is_err()
+        return []
+    out: [dns.Record] @= []
+
+    for e in cache.entries
+        left_ms = e.expires_ms - now_ms
+
+        if e.key == key.must() && !e.retired && left_ms > 0 && left_ms * 2 >= e.item.ttl * 1000 && (type_code == dns.TYPE_ANY || dns.type_of(e.item) == type_code)
+            out @ out.push(
+                dns.Record(name: e.item.name, class_code: e.item.class_code, ttl: (left_ms + 999) / 1000, data: e.item.data)
+            )
+
+    return out
+
+# The questions that ask for the records now at 80, 85, 90 or 95 percent of
+# their time (RFC 6762 § 5.2): each record's next step is counted, and one
+# question is answered for all the records of one name and type.
+function due(@cache: Cache, now_ms: i64) -> [dns.Question]
+    out: [dns.Question] @= []
+    entries: [Entry] @= cache.entries
+
+    for i in range(from: 0, to: entries.len())
+        e = entries[i]
+        span = e.item.ttl * 1000
+        step = e.refreshed
+
+        if step < 4 && !e.retired && e.expires_ms > now_ms && now_ms >= e.heard_ms + span * (80 + 5 * step) / 100
+            entries[i].refreshed @ step + 1
+            code = dns.type_of(e.item)
+            listed: bool @= false
+
+            for q in out
+                if q.type_code == code && dns.canonical_name(q.name).default("") == e.key
+                    listed @ true
+
+            if !listed
+                out @ out.push(dns.Question(name: e.item.name, type_code: code, class_code: dns.CLASS_IN))
+
+    cache.entries @ entries
+    return out
+
+# The names the PTR records under `owner` point at, each once, in the order
+# they were heard.
+function pointers(cache: Cache, owner: str, now_ms: i64) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for r in matching(cache, name: owner, type_code: dns.TYPE_PTR, now_ms: now_ms)
+        target = kinds.pointer_of(r.data)
+
+        if target.is_err()
+            continue
+        key = dns.canonical_name(target.must())
+
+        if !key.is_err() && seen[key.must()].is_err()
+            seen[key.must()] @ true
+            out @ out.push(target.must())
+
+    return out
+
+# The addresses the A and AAAA records under `host` give, as heard.
+function addresses_of(cache: Cache, host: str, now_ms: i64) -> [net.Host]
+    out: [net.Host] @= []
+
+    for r in matching(cache, name: host, type_code: dns.TYPE_ANY, now_ms: now_ms)
+        address = kinds.address_of(r.data)
+
+        if !address.is_err()
+            out @ out.push(address.must())
+
+    return out
+
+# The instance `name` names as the records say it: its SRV record's host and
+# port (the lowest priority and then the highest weight where there are
+# several), its TXT strings, and the addresses of the host. Fails `not_found`
+# where no SRV record is held, and `invalid` where `name` is no instance name.
+function described(cache: Cache, name: str, now_ms: i64) -> model.Described?
+    parts = names.split_instance(name)?
+    targets: [kinds.Target] @= []
+
+    for r in matching(cache, name: name, type_code: dns.TYPE_SRV, now_ms: now_ms)
+        found = kinds.target_of(r.data)
+
+        if !found.is_err()
+            targets @ targets.push(found.must())
+
+    if targets.len() == 0
+        return fail(code: failure.NOT_FOUND, msg: f"no SRV record is held for \"{name}\"")
+    best: i64 @= 0
+
+    for i in range(from: 1, to: targets.len())
+        if targets[i].priority < targets[best].priority || targets[i].priority == targets[best].priority && targets[i].weight > targets[best].weight
+            best @ i
+
+    texts: [[u8]] @= []
+
+    for r in matching(cache, name: name, type_code: dns.TYPE_TXT, now_ms: now_ms)
+        found = kinds.texts_of(r.data)
+
+        if texts.len() == 0 && !found.is_err()
+            texts @ found.must()
+
+    chosen = targets[best]
+    return ok(
+        model.Described(instance: parts.instance, type: parts.type, subtypes: [], host: chosen.host, port: chosen.port, priority: chosen.priority, weight: chosen.weight, addresses: addresses_of(cache, host: chosen.host, now_ms: now_ms), texts: texts)
+    )
+
+# The instances of `type_name` (a name as `names.type_name` writes it) held
+# at `now_ms`: each whose PTR record is held and whose SRV record is.
+function instances(cache: Cache, type_name: str, now_ms: i64) -> [model.Described]
+    out: [model.Described] @= []
+
+    for target in pointers(cache, owner: type_name, now_ms: now_ms)
+        match described(cache, name: target, now_ms: now_ms)
+            .ok d  => out @ out.push(d)
+            .err _ => out @ out
+
+    return out
+
+# Builds the A record for `host` at `address`, as `a_record` and `aaaa_record`.
+# (A record of the kind `address` has, by its length.)
+function address_record(host: str, address: net.Host, ttl: i64) -> dns.Record
+    if net.is_v4(address)
+        return dns.Record(name: host, class_code: dns.CLASS_IN, ttl: ttl, data: .a(address: address))
+    return dns.Record(name: host, class_code: dns.CLASS_IN, ttl: ttl, data: .aaaa(address: address))
+
+test "add and matching: a record heard, its time counted down, then gone"
+    cache @= empty()
+    r = address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 120)
+    add(@cache, r: r, flush: false, now_ms: 1000)
+    assert matching(cache, name: "A.LOCAL.", type_code: dns.TYPE_A, now_ms: 1000)[0].ttl == 120
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 61_000)[0].ttl == 60
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_AAAA, now_ms: 1000).len() == 0
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_ANY, now_ms: 1000).len() == 1
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 121_000).len() == 0
+    purge(@cache, now_ms: 121_000)
+    assert cache.entries.len() == 0
+
+test "add: the same record renewed, not held twice"
+    cache @= empty()
+    r = address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 120)
+    add(@cache, r: r, flush: false, now_ms: 0)
+    add(@cache, r: r, flush: false, now_ms: 100_000)
+    assert cache.entries.len() == 1
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 200_000).len() == 1
+
+test "add: a goodbye retires the record at once and drops it a second on, and one for a record never held leaves nothing"
+    cache @= empty()
+    r = address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 120)
+    add(@cache, r: r, flush: false, now_ms: 0)
+    add(
+        @cache,
+        r: address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 0),
+        flush: true,
+        now_ms: 5000
+    )
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 5001).len() == 0
+    assert cache.entries.len() == 1
+    purge(@cache, now_ms: 5999)
+    assert cache.entries.len() == 1
+    purge(@cache, now_ms: 6000)
+    assert cache.entries.len() == 0
+    add(
+        @cache,
+        r: address_record("b.local.", address: net.parse_host("10.0.0.2").must(), ttl: 0),
+        flush: false,
+        now_ms: 0
+    )
+    assert cache.entries.len() == 0
+
+test "add: a cache-flush record retires an older one at once and a newer one not yet"
+    cache @= empty()
+    old = address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 120)
+    fresh = address_record("a.local.", address: net.parse_host("10.0.0.2").must(), ttl: 120)
+    other = address_record("a.local.", address: net.parse_host("10.0.0.3").must(), ttl: 120)
+    add(@cache, r: old, flush: false, now_ms: 0)
+    add(@cache, r: fresh, flush: true, now_ms: 5000)
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 5500).len() == 1
+    assert cache.entries.len() == 2
+    purge(@cache, now_ms: 6001)
+    assert cache.entries.len() == 1
+    add(@cache, r: other, flush: true, now_ms: 5500)
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 5600).len() == 2
+    add(@cache, r: other, flush: true, now_ms: 6200)
+    assert matching(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 6300).len() == 1
+
+test "instances: a pointer, its SRV and TXT and the host's addresses; one with no SRV is left out"
+    cache @= empty()
+    pointer = dns.Record(
+        name: "_ipp._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 4500,
+        data: .ptr(target: "My\\032Printer._ipp._tcp.local.")
+    )
+    ptr2 = dns.Record(
+        name: "_ipp._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 4500,
+        data: .ptr(target: "Silent._ipp._tcp.local.")
+    )
+    srv = dns.Record(
+        name: "My\\032Printer._ipp._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 120,
+        data: .srv(priority: 0, weight: 0, port: 631, target: "printer.local.")
+    )
+    txt = dns.Record(
+        name: "My\\032Printer._ipp._tcp.local.",
+        class_code: dns.CLASS_IN,
+        ttl: 4500,
+        data: .txt(texts: [[114, 112, 61, 112]])
+    )
+
+    for r in [pointer, ptr2, srv, txt, address_record("printer.local.", address: net.parse_host("10.0.0.9").must(), ttl: 120)]
+        add(@cache, r: r, flush: false, now_ms: 0)
+
+    got = instances(cache, type_name: "_ipp._tcp.local.", now_ms: 10)
+    assert got.len() == 1
+    assert got[0].instance == "My Printer"
+    assert got[0].type == "_ipp._tcp"
+    assert got[0].host == "printer.local."
+    assert got[0].port == 631
+    assert got[0].texts == [[114, 112, 61, 112]]
+    assert got[0].addresses == [net.parse_host("10.0.0.9").must()]
+    assert described(cache, name: "Silent._ipp._tcp.local.", now_ms: 10).is_err()
+    assert instances(cache, type_name: "_ipp._tcp.local.", now_ms: 130_000).len() == 0
+
+test "due: a record is asked for again at 80 percent of its time, once for each step, and a name once"
+    cache @= empty()
+    add(
+        @cache,
+        r: address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 100),
+        flush: false,
+        now_ms: 0
+    )
+    add(
+        @cache,
+        r: address_record("a.local.", address: net.parse_host("10.0.0.2").must(), ttl: 100),
+        flush: false,
+        now_ms: 0
+    )
+    assert due(@cache, now_ms: 79_000).len() == 0
+    got = due(@cache, now_ms: 80_000)
+    assert got.len() == 1
+    assert got[0].name == "a.local."
+    assert got[0].type_code == dns.TYPE_A
+    assert due(@cache, now_ms: 80_500).len() == 0
+    assert due(@cache, now_ms: 85_000).len() == 1
+    assert due(@cache, now_ms: 90_000).len() == 1
+    assert due(@cache, now_ms: 95_000).len() == 1
+    assert due(@cache, now_ms: 99_000).len() == 0
+
+test "known_for: a record with more than half its time is listed, one with less is not"
+    cache @= empty()
+    add(
+        @cache,
+        r: address_record("a.local.", address: net.parse_host("10.0.0.1").must(), ttl: 100),
+        flush: false,
+        now_ms: 0
+    )
+    assert known_for(cache, name: "A.local.", type_code: dns.TYPE_A, now_ms: 50_000)[0].ttl == 50
+    assert known_for(cache, name: "a.local.", type_code: dns.TYPE_A, now_ms: 50_001).len() == 0

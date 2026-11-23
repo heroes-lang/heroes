@@ -1,0 +1,448 @@
+# A responder (RFC 6762 §§ 6 to 9): services published after their names are
+# probed for and announced, queries answered with what each asks and a querier
+# lacks, a name that someone else claims given up for another, and a goodbye
+# sent when a service is withdrawn.
+
+use bytes
+use dns
+use mdns/internal/answer
+use mdns/internal/claim
+use mdns/internal/failure
+use mdns/internal/message
+use mdns/internal/model
+use mdns/internal/names
+use mdns/internal/transport
+use net
+use os
+use random
+use strings
+use time
+
+# The probes sent for a name, and the time between them and after the last
+# (RFC 6762 § 8.1).
+constant PROBES: i64
+    3
+
+constant PROBE_GAP_MS: i64
+    250
+
+# The announcements sent for a service, a second apart (RFC 6762 § 8.3).
+constant ANNOUNCES: i64
+    2
+
+# The most names tried for one service before the publication gives up.
+constant MOST_TRIES: i64
+    16
+
+# The least time a record is multicast again after, on one interface
+# (RFC 6762 § 6).
+constant REPEAT_MS: i64
+    1000
+
+# The TTL a legacy unicast answer is capped at (RFC 6762 § 6.7).
+constant LEGACY_TTL: i64
+    10
+
+# One responder's state.
+record State
+    # The sockets.
+    line: transport.Transport
+    # The clock every time here is read from.
+    start: time.Mark
+    # The services published, their names claimed.
+    published: [model.Described]
+    # When each record was last multicast, by interface and text.
+    sent: {str: i64}
+    # The generator of the random delays.
+    generator: random.Generator
+
+# What probing a name found.
+record Verdict
+    # Whether another host holds the name, or won the tie.
+    taken: bool
+    # Whether the name taken is the host's, not the instance's.
+    host: bool
+
+# A responder on the interfaces `interfaces` names, the usual ones where it names
+# none. Fails as `transport.open` does.
+function open(interfaces: [str]) -> State?
+    line = transport.open(interfaces)?
+    return ok(State(line: line, start: time.mark()?, published: [], sent: {}, generator: random.from_system()?))
+
+# The milliseconds since the responder began.
+function now_ms(st: State) -> i64?
+    return ok(time.to_units(time.elapsed(st.start)?, unit: .millisecond))
+
+# The addresses of every interface the responder is on.
+function own_addresses(st: State) -> [net.Host]
+    out: [net.Host] @= []
+
+    for line in st.line.lines
+        for h in transport.hosts_of(line)
+            if !claim.contains(out, host: h)
+                out @ out.push(h)
+
+    return out
+
+# The addresses a conflict is judged against: those of every interface, and
+# those the published services give for themselves.
+function known_addresses(st: State) -> [net.Host]
+    out: [net.Host] @= own_addresses(st)
+
+    for d in st.published
+        for h in d.addresses
+            if !claim.contains(out, host: h)
+                out @ out.push(h)
+
+    return out
+
+# The machine's name as a host name under `local.`: its first label.
+function default_host() -> str?
+    full = os.host_name()?
+    first @= full
+    dot = strings.index_of(s: full, substr: ".")
+
+    if !dot.is_err()
+        first @ full.slice(from: 0, to: dot.must())
+
+    if first.len() == 0
+        first @ "heroes"
+    return ok(names.label_text(bytes.from_text(first)) + ".local.")
+
+# A pause of `ms` milliseconds in which the packets that arrive are read and
+# judged against the claim: `ours` is what is claimed, `hosts` the host names
+# among it. A conflict answers at once.
+function listen(st: State, ms: i64, ours: [dns.Record], hosts: [str], extra: [net.Host]) -> Verdict?
+    end = now_ms(st)? + ms
+    own: [net.Host] @= known_addresses(st)
+
+    for h in extra
+        own @ own.push(h)
+
+    while true
+        left = end - now_ms(st)?
+
+        if left <= 0
+            return ok(Verdict(taken: false, host: false))
+
+        match transport.receive(st.line, wait_ms: left)
+            .err e =>
+                if e.code == failure.TIMEOUT
+                    return ok(Verdict(taken: false, host: false))
+                return fail(code: e.code, msg: e.msg)
+            .ok p =>
+                verdict = judged(p, ours: ours, hosts: hosts, own: own)
+
+                if verdict.taken
+                    return ok(verdict)
+
+    return ok(Verdict(taken: false, host: false))
+
+# What the packet `p` says about the claim: a response holding a record that
+# conflicts, or a probe for the same name that wins.
+function judged(p: transport.Packet, ours: [dns.Record], hosts: [str], own: [net.Host]) -> Verdict
+    none = Verdict(taken: false, host: false)
+
+    match message.read(p.data)
+        .err _ => return none
+        .ok heard =>
+            records: [dns.Record] @= heard.message.answers
+
+            for r in heard.message.additionals
+                records @ records.push(r)
+
+            if heard.message.response
+                for r in records
+                    if claim.conflicts(ours, hosts: hosts, own: own, theirs: r)
+                        return Verdict(taken: true, host: is_host_named(r.name, hosts: hosts))
+
+                return none
+
+            for r in heard.message.authorities
+                mine = named(ours, name: r.name)
+
+                if mine.len() == 0
+                    continue
+                theirs = named(heard.message.authorities, name: r.name)
+                lost = claim.loses_to(ours: mine, theirs: theirs)
+
+                if !lost.is_err() && lost.must()
+                    return Verdict(taken: true, host: is_host_named(r.name, hosts: hosts))
+
+            return none
+
+# Whether `name` is one of `hosts`, which are lowered.
+function is_host_named(name: str, hosts: [str]) -> bool
+    key = dns.canonical_name(name)
+
+    for h in hosts
+        if !key.is_err() && key.must() == h
+            return true
+
+    return false
+
+# The records of `list` whose name is `name`, their letters compared without
+# case.
+function named(list: [dns.Record], name: str) -> [dns.Record]
+    key = dns.canonical_name(name)
+    out: [dns.Record] @= []
+
+    for r in list
+        owner = dns.canonical_name(r.name)
+
+        if !key.is_err() && !owner.is_err() && owner.must() == key.must()
+            out @ out.push(r)
+
+    return out
+
+# The records of `d` that only it holds: its SRV and TXT, and its host's
+# addresses where `with_host` says the host is still to be claimed.
+function unique_of(st: State, d: model.Described, with_host: bool) -> [dns.Record]?
+    zone = answer.zone_of([d], addresses: own_addresses(st))?
+    out: [dns.Record] @= []
+
+    for h in zone
+        if !h.flush
+            continue
+        is_address = dns.type_of(h.item) == dns.TYPE_A || dns.type_of(h.item) == dns.TYPE_AAAA
+
+        if with_host || !is_address
+            out @ out.push(h.item)
+
+    return ok(out)
+
+# Probes for the names of `d`, the instance's and where `with_host` the
+# host's: after a random pause of up to 250 ms, three questions for the names
+# 250 ms apart, the records wanted in the authority section (RFC 6762 § 8.1).
+# The questions leave the unicast-response bit clear, which RFC 6762 § 5.4 makes
+# a request and never a need: a unicast answer to port 5353 goes to one of the
+# sockets that stand on it, which may be the system's own responder's, and a
+# probe that did not hear the answer would take a name that is held.
+function probe(@st: State, d: model.Described, with_host: bool) -> Verdict?
+    full = names.instance_name(instance: d.instance, type: d.type)?
+    ours = unique_of(st, d, with_host: with_host)?
+    hosts: [str] @= []
+    asked: [message.Asked] @= [message.Asked(question: message.question(full, type_code: dns.TYPE_ANY), unicast: false)]
+
+    if with_host
+        hosts @ [dns.canonical_name(d.host)?]
+        asked @ asked.push(message.Asked(question: message.question(d.host, type_code: dns.TYPE_ANY), unicast: false))
+    proposed: [message.Held] @= []
+
+    for r in ours
+        proposed @ proposed.push(message.Held(item: r, flush: false))
+
+    packets = message.pack(message.Head(response: false, id: 0), split: false, asked: asked, answers: [], authorities: proposed, additionals: [])?
+    first = listen(st, ms: random.int_in(@st.generator, from: 0, to: PROBE_GAP_MS + 1), ours: ours, hosts: hosts, extra: d.addresses)?
+
+    if first.taken
+        return ok(first)
+
+    for _ in range(from: 0, to: PROBES)
+        for p in packets
+            transport.send_group(st.line, data: p)?
+
+        verdict = listen(st, ms: PROBE_GAP_MS, ours: ours, hosts: hosts, extra: d.addresses)?
+
+        if verdict.taken
+            return ok(verdict)
+
+    return ok(Verdict(taken: false, host: false))
+
+# Multicasts every record of `d` on each interface with its own addresses,
+# their time to live as it is or, for a goodbye, 0 (RFC 6762 §§ 8.3 and 10.1).
+function announce(st: State, d: model.Described, goodbye: bool) -> ()?
+    for line in st.line.lines
+        zone = answer.zone_of([d], addresses: transport.hosts_of(line))?
+        out: [message.Held] @= []
+
+        for h in zone
+            if goodbye
+                out @ out.push(
+                    message.Held(item: dns.Record(name: h.item.name, class_code: h.item.class_code, ttl: 0, data: h.item.data), flush: h.flush)
+                )
+            else
+                out @ out.push(h)
+
+        packets = message.pack(message.Head(response: true, id: 0), split: false, asked: [], answers: out, authorities: [], additionals: [])?
+
+        for p in packets
+            transport.send_line(st.line, line: line, data: p)?
+
+    return ok()
+
+# Announces `d` twice, a second apart, the pause spent hearing the network
+# (RFC 6762 §§ 8.3 and 8.4).
+function announce_twice(st: State, d: model.Described) -> ()?
+    for i in range(from: 0, to: ANNOUNCES)
+        announce(st, d: d, goodbye: false)?
+
+        if i + 1 < ANNOUNCES
+            _ = listen(st, ms: 1000, ours: [], hosts: [], extra: [])?
+
+    return ok()
+
+# Whether a service named `full` is published.
+function index_of(st: State, full: str) -> i64
+    key = dns.canonical_name(full)
+
+    for i in range(from: 0, to: st.published.len())
+        owner = names.instance_name(instance: st.published[i].instance, type: st.published[i].type)
+
+        if !key.is_err() && !owner.is_err() && dns.canonical_name(owner.must()).must() == key.must()
+            return i
+
+    return -1
+
+# Whether some published service holds the host `host`.
+function has_host(st: State, host: str) -> bool
+    key = dns.canonical_name(host)
+
+    for d in st.published
+        other = dns.canonical_name(d.host)
+
+        if !key.is_err() && !other.is_err() && key.must() == other.must()
+            return true
+
+    return false
+
+# Publishes `d`: its names probed for, another instance name or host name
+# tried where someone holds them, then announced twice. Answers the service as
+# it stands published. Fails `exists` where `d`'s instance is published
+# already, `limit` where 16 names were all taken, and as `answer.zone_of`
+# fails for a name that is wrong.
+function publish(@st: State, d: model.Described) -> model.Described?
+    current: model.Described @= d
+
+    if current.host == ""
+        current @ model.Described(
+            instance: d.instance,
+            type: d.type,
+            subtypes: d.subtypes,
+            host: default_host()?,
+            port: d.port,
+            priority: d.priority,
+            weight: d.weight,
+            addresses: d.addresses,
+            texts: d.texts
+        )
+
+    for _ in range(from: 0, to: MOST_TRIES)
+        full = names.instance_name(instance: current.instance, type: current.type)?
+
+        if index_of(st, full: full) >= 0
+            return fail(code: failure.EXISTS, msg: f"\"{full}\" is published already")
+        verdict = probe(@st, d: current, with_host: !has_host(st, host: current.host))?
+
+        if !verdict.taken
+            st.published @ st.published.push(current)
+
+            announce_twice(st, d: current)?
+            return ok(current)
+
+        if verdict.host
+            current @ model.Described(
+                instance: current.instance,
+                type: current.type,
+                subtypes: current.subtypes,
+                host: claim.renamed_host(current.host),
+                port: current.port,
+                priority: current.priority,
+                weight: current.weight,
+                addresses: current.addresses,
+                texts: current.texts
+            )
+        else
+            current @ model.Described(
+                instance: claim.renamed(current.instance),
+                type: current.type,
+                subtypes: current.subtypes,
+                host: current.host,
+                port: current.port,
+                priority: current.priority,
+                weight: current.weight,
+                addresses: current.addresses,
+                texts: current.texts
+            )
+
+    return fail(
+        code: failure.LIMIT,
+        msg: f"{MOST_TRIES} names for \"{d.instance}\" were tried and every one is held by another host"
+    )
+
+# Withdraws the service named `full`: a goodbye multicast, and it is no
+# longer answered for. Fails `not_found` where none is published so.
+function withdraw(@st: State, full: str) -> ()?
+    at = index_of(st, full: full)
+
+    if at < 0
+        return fail(code: failure.NOT_FOUND, msg: f"\"{full}\" is not published")
+    d = st.published[at]
+    kept: [model.Described] @= []
+
+    for i in range(from: 0, to: st.published.len())
+        if i != at
+            kept @ kept.push(st.published[i])
+
+    st.published @ kept
+    return announce(st, d: d, goodbye: true)
+
+# Replaces what is published about the service `d` (the same instance and
+# type) with `d`: the port, priority, weight, addresses and attributes, which
+# are announced twice, a second apart, with their cache-flush bit, so that every cache replaces
+# the old records (RFC 6762 § 8.4). The host and the subtypes are the ones
+# published: `d` leaves its host "" or names the same, and gives the same
+# subtypes. Answers the service as it now stands.
+#
+# Fails `not_found` where it is not published, `invalid` where `d` changes the
+# host or the subtypes or is wrong.
+function update(@st: State, d: model.Described) -> model.Described?
+    full = names.instance_name(instance: d.instance, type: d.type)?
+    at = index_of(st, full: full)
+
+    if at < 0
+        return fail(code: failure.NOT_FOUND, msg: f"\"{full}\" is not published")
+    old = st.published[at]
+    host: str @= d.host
+
+    if host == ""
+        host @ old.host
+
+    if dns.canonical_name(host)? != dns.canonical_name(old.host)? || d.subtypes != old.subtypes
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{full}\": the host and the subtypes are what were published, withdraw the service to change them"
+        )
+    updated = model.Described(
+        instance: d.instance,
+        type: d.type,
+        subtypes: old.subtypes,
+        host: old.host,
+        port: d.port,
+        priority: d.priority,
+        weight: d.weight,
+        addresses: d.addresses,
+        texts: d.texts
+    )
+    _ = answer.zone_of([updated], addresses: [])?
+    kept: [model.Described] @= []
+
+    for i in range(from: 0, to: st.published.len())
+        if i == at
+            kept @ kept.push(updated)
+        else
+            kept @ kept.push(st.published[i])
+
+    st.published @ kept
+    announce_twice(st, d: updated)?
+    return ok(updated)
+
+# Says goodbye for every service published and closes the sockets.
+function close(@st: State) -> ()?
+    for d in st.published
+        match announce(st, d: d, goodbye: true)
+            .ok _  => st @ st
+            .err _ => st @ st
+
+    st.published @ []
+    return transport.close(@st.line)
