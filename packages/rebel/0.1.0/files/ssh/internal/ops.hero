@@ -1,0 +1,260 @@
+# What a program does with a channel (RFC 4254 § 5 to 7): one opened and
+# waited for, a request made and its answer waited for, data written within
+# the server's window and read from this side's buffers, the end sent, the
+# channel closed and the exit waited for. Every wait loops on
+# `channels.dispatch` until its answer stands, so a message for another
+# channel is kept for that one.
+
+use ssh/internal/channels
+use ssh/internal/session
+use ssh/internal/wire
+
+## Opening
+
+# A channel of `kind` opened, `extra` the bytes its type adds to the open
+# (RFC 4254 § 5.1): this side's number, once the server confirmed it.
+# Fails `permission` with the server's words where it refused.
+function open(@s: session.Session, kind: str, extra: [u8]) -> i64?
+    local = s.next_local
+    s.next_local @ local + 1
+    none: [u8] = []
+    answers: [bool] = []
+    s.channels @ s.channels.push(
+        session.Channel(local: local, remote: 0, confirmed: false, refused: "", out_window: 0, out_packet: 0, in_window: session.WINDOW, output: none, errors: none, ended: false, closed: false, close_sent: false, status: fail(code: "not_found", msg: "the remote program has told no exit status"), signal: fail(code: "not_found", msg: "no signal ended the remote program"), answers: answers)
+    )
+    message: [u8] @= [90]
+    wire.put_text(@message, text: kind)
+    wire.put_u32(@message, n: local)
+    wire.put_u32(@message, n: session.WINDOW)
+    wire.put_u32(@message, n: session.MAX_DATA)
+
+    for b in extra
+        message @ message.push(b)
+
+    session.send(@s, payload: message)?
+
+    while true
+        at = channels.place_of(s, local: local)
+
+        if s.channels[at].confirmed
+            return ok(local)
+
+        if s.channels[at].refused != ""
+            words = s.channels[at].refused
+            forget(@s, local: local)
+            return fail(code: channels.PERMISSION, msg: f"the server refused a {kind} channel: {words}")
+        channels.dispatch(@s)?
+
+# A channel the server opened for a remote forward, accepted: this side's
+# number for it.
+function accept_offered(@s: session.Session, offer: session.Offered) -> i64?
+    local = s.next_local
+    s.next_local @ local + 1
+    none: [u8] = []
+    answers: [bool] = []
+    s.channels @ s.channels.push(
+        session.Channel(local: local, remote: offer.remote, confirmed: true, refused: "", out_window: offer.window, out_packet: offer.packet, in_window: session.WINDOW, output: none, errors: none, ended: false, closed: false, close_sent: false, status: fail(code: "not_found", msg: "a forwarded connection has no exit status"), signal: fail(code: "not_found", msg: "a forwarded connection has no signal"), answers: answers)
+    )
+    message: [u8] @= [91]
+    wire.put_u32(@message, n: offer.remote)
+    wire.put_u32(@message, n: local)
+    wire.put_u32(@message, n: session.WINDOW)
+    wire.put_u32(@message, n: session.MAX_DATA)
+    session.send(@s, payload: message)?
+    return ok(local)
+
+# Drops the channel `local` from `s`'s list.
+function forget(@s: session.Session, local: i64)
+    kept: [session.Channel] @= []
+
+    for c in s.channels
+        if c.local != local
+            kept @ kept.push(c)
+
+    s.channels @ kept
+
+## Requests
+
+# The request `name` made of the channel `local` with `data` after it,
+# waiting for the server's answer: fails `permission` where it refused.
+function request(@s: session.Session, local: i64, name: str, data: [u8]) -> ()?
+    at = channels.place_of(s, local: local)
+
+    if s.channels[at].closed
+        return fail(code: channels.CLOSED, msg: f"asking {name} of a closed channel")
+    asked = s.channels[at].answers.len()
+    message: [u8] @= [98]
+    wire.put_u32(@message, n: s.channels[at].remote)
+    wire.put_text(@message, text: name)
+    wire.put_bool(@message, v: true)
+
+    for b in data
+        message @ message.push(b)
+
+    session.send(@s, payload: message)?
+
+    while true
+        here = channels.place_of(s, local: local)
+
+        if s.channels[here].answers.len() > asked
+            if s.channels[here].answers[asked]
+                return ok()
+            return fail(code: channels.PERMISSION, msg: f"the server refused the request {name}")
+
+        if s.channels[here].closed
+            return fail(code: channels.CLOSED, msg: f"the channel closed before the server answered {name}")
+        channels.dispatch(@s)?
+
+# The request `name` made of the channel `local` with no answer asked
+# (`window-change`, `signal`).
+function tell(@s: session.Session, local: i64, name: str, data: [u8]) -> ()?
+    at = channels.place_of(s, local: local)
+
+    if s.channels[at].closed
+        return fail(code: channels.CLOSED, msg: f"telling {name} to a closed channel")
+    message: [u8] @= [98]
+    wire.put_u32(@message, n: s.channels[at].remote)
+    wire.put_text(@message, text: name)
+    wire.put_bool(@message, v: false)
+
+    for b in data
+        message @ message.push(b)
+
+    return session.send(@s, payload: message)
+
+## Data
+
+# `data` written to the channel `local`, in packets the server's window and
+# largest packet take, waiting for the window where it is spent.
+function write(@s: session.Session, local: i64, data: [u8]) -> ()?
+    sent: i64 @= 0
+
+    while sent < data.len()
+        at = channels.place_of(s, local: local)
+
+        if s.channels[at].closed || s.channels[at].close_sent
+            return fail(code: channels.CLOSED, msg: "writing to a closed channel")
+        room = s.channels[at].out_window
+
+        if room == 0
+            channels.dispatch(@s)?
+            continue
+        n: i64 @= data.len() - sent
+
+        if n > room
+            n @ room
+
+        if n > s.channels[at].out_packet
+            n @ s.channels[at].out_packet
+
+        if n > session.MAX_DATA
+            n @ session.MAX_DATA
+
+        if n < 1
+            return fail(code: channels.INVALID, msg: "the server's largest packet takes no data")
+        message: [u8] @= [94]
+        wire.put_u32(@message, n: s.channels[at].remote)
+        wire.put_string(out: @message, data: data.slice(from: sent, to: sent + n))
+        session.send(@s, payload: message)?
+        s.channels[at].out_window @ room - n
+        sent @ sent + n
+
+    return ok()
+
+# Up to `n` bytes of the channel's output, or of its errors where `errors`,
+# waiting for one: empty once the server sent EOF and nothing is left. The
+# window is opened again by what is read.
+function read(@s: session.Session, local: i64, n: i64, errors: bool) -> [u8]?
+    while true
+        at = channels.place_of(s, local: local)
+        held @= s.channels[at].output
+
+        if errors
+            held @ s.channels[at].errors
+
+        if held.len() > 0
+            count: i64 @= n
+
+            if count > held.len()
+                count @ held.len()
+            part = held.slice(from: 0, to: count)
+            rest = held.slice(from: count, to: held.len())
+
+            if errors
+                s.channels[at].errors @ rest
+            else
+                s.channels[at].output @ rest
+            reopen(@s, at: at)?
+            return ok(part)
+
+        if s.channels[at].ended || s.channels[at].closed
+            none: [u8] = []
+            return ok(none)
+        channels.dispatch(@s)?
+
+# The channel at `at`'s window opened again by what the program has read,
+# once half of it is spent, so the bytes kept unread never pass `WINDOW`.
+function reopen(@s: session.Session, at: i64) -> ()?
+    c = s.channels[at]
+    unread = c.output.len() + c.errors.len()
+    room = session.WINDOW - c.in_window - unread
+
+    if c.closed || room < session.WINDOW / 2
+        return ok()
+    message: [u8] @= [93]
+    wire.put_u32(@message, n: c.remote)
+    wire.put_u32(@message, n: room)
+    session.send(@s, payload: message)?
+    s.channels[at].in_window @ c.in_window + room
+    return ok()
+
+# Sends EOF on the channel `local`: this side writes no more.
+function end(@s: session.Session, local: i64) -> ()?
+    at = channels.place_of(s, local: local)
+
+    if s.channels[at].closed || s.channels[at].close_sent
+        return ok()
+    message: [u8] @= [96]
+    wire.put_u32(@message, n: s.channels[at].remote)
+    return session.send(@s, payload: message)
+
+## Closing
+
+# Closes the channel `local` and waits for the server's CLOSE, then forgets
+# it.
+function close(@s: session.Session, local: i64) -> ()?
+    at = channels.place_of(s, local: local)
+
+    if !s.channels[at].close_sent
+        s.channels[at].close_sent @ true
+        message: [u8] @= [97]
+        wire.put_u32(@message, n: s.channels[at].remote)
+        session.send(@s, payload: message)?
+
+    while !s.channels[channels.place_of(s, local: local)].closed
+        channels.dispatch(@s)?
+
+    forget(@s, local: local)
+    return ok()
+
+# The output and the errors a channel holds unread.
+record Taken
+    # The output.
+    output: [u8]
+    # The errors.
+    errors: [u8]
+
+# Everything the channel `local` holds unread, taken, its window opened
+# again; one message dispatched first where it holds nothing and is open.
+function take_all(@s: session.Session, local: i64) -> Taken?
+    at = channels.place_of(s, local: local)
+
+    if s.channels[at].output.len() == 0 && s.channels[at].errors.len() == 0 && !s.channels[at].closed
+        channels.dispatch(@s)?
+    here = channels.place_of(s, local: local)
+    taken = Taken(output: s.channels[here].output, errors: s.channels[here].errors)
+    none: [u8] = []
+    s.channels[here].output @ none
+    s.channels[here].errors @ none
+    reopen(@s, at: here)?
+    return ok(taken)
