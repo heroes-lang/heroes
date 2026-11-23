@@ -151,6 +151,18 @@ function of(n: model.Node) -> [i64]
             return [COMBO_LEAST, CONTROL]
         return [wide, CONTROL]
 
+    if k == hero_ui.HERO_UI_EDITABLE_COMBO
+        columns = if segment.width_of(n.text) > widest(n.items)
+            segment.width_of(n.text)
+        else
+            widest(n.items)
+
+        wide = columns * COLUMN + ARROW
+
+        if wide < FIELD
+            return [FIELD, CONTROL]
+        return [wide, CONTROL]
+
     if k == hero_ui.HERO_UI_PROGRESS
         return [FIELD, LINE]
 
@@ -219,6 +231,16 @@ test "of: a combo box keeps room for its arrow and is never narrower than its le
     assert of(n) == [80, 24]
     n.items @ ["Monday", "Wednesday"]
     assert of(n) == [112, 24]
+
+test "of: an editable combo box is as wide as its widest item or its text, with room for its arrow, and never narrower than a text field"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_EDITABLE_COMBO, parent: 0, window: 0)
+    assert of(n) == [FIELD, CONTROL]
+    n.items @ ["Monday", "Wednesday"]
+    assert of(n) == [FIELD, CONTROL]
+    n.items @ ["a much longer item than the field is wide", "b"]
+    assert of(n) == [41 * COLUMN + ARROW, CONTROL]
+    n.text @ "a text that is even longer than the longest item in its list, so it sets the width"
+    assert of(n) == [82 * COLUMN + ARROW, CONTROL]
 
 test "of: an image is its pixels, and the kinds no system draws are nothing"
     n @= model.blank(id: 1, kind: hero_ui.HERO_UI_IMAGE, parent: 0, window: 0)

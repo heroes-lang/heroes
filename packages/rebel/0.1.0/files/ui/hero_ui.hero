@@ -228,6 +228,8 @@ extern "hero_ui.h"
     constant HERO_UI_SEPARATOR: i64
     # A group box.
     constant HERO_UI_GROUP: i64
+    # An editable combo box.
+    constant HERO_UI_EDITABLE_COMBO: i64
     # A tip over a widget.
     function hero_ui_set_tip(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_tip(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64

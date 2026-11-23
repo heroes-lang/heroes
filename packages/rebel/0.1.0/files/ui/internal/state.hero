@@ -118,6 +118,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_GROUP
         return .group
 
+    if code == hero_ui.HERO_UI_EDITABLE_COMBO
+        return .editable_combo
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -206,6 +209,9 @@ function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
     check.text_ok(text: text, one_line: one_line, what: "the text")?
     n.text @ text
 
+    if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO
+        n.chosen @ model.chosen_by_text(n)
+
     # The program's text is where undo stops, its caret at its end.
     n.undone @ []
     n.redone @ []
@@ -221,7 +227,7 @@ function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
 function text_of(app: ui.App, widget: ui.Widget) -> str?
     n = texted(app, widget: widget)?
 
-    if app.native && (n.kind == hero_ui.HERO_UI_TEXT_FIELD || n.kind == hero_ui.HERO_UI_TEXT_AREA)
+    if app.native && (n.kind == hero_ui.HERO_UI_TEXT_FIELD || n.kind == hero_ui.HERO_UI_TEXT_AREA || n.kind == hero_ui.HERO_UI_EDITABLE_COMBO)
         return native.read_text(app, id: n.id)
     return ok(n.text)
 
@@ -340,7 +346,9 @@ function set_items(@app: ui.App, widget: ui.Widget, items: [str]) -> ()?
     n.items @ items
     n.chosen @ []
 
-    if n.kind != hero_ui.HERO_UI_LIST && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE && items.len() > 0
+    if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO
+        n.chosen @ model.chosen_by_text(n)
+    else if n.kind != hero_ui.HERO_UI_LIST && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE && items.len() > 0
         n.chosen @ [0]
 
     if app.native
@@ -358,6 +366,15 @@ function set_selection(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
         trees.chose(@n, indices: indices)
     else
         check.indices_ok(n, indices: indices)?
+
+    # An editable combo's choice is one item, which its text becomes.
+    if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO
+        if indices.len() != 1
+            return fail(
+                code: failure.INVALID,
+                msg: f"editable combo box {n.id} is given {indices.len()} items; it takes one, which its text becomes (`set_text` empties it)"
+            )
+        n.text @ n.items[indices[0]]
     n.chosen @ indices
 
     if app.native
@@ -377,8 +394,8 @@ function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE],
-        what: "a list, a combo box, a radio group, tabs, a table or a tree"
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_EDITABLE_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE],
+        what: "a list, a combo box, an editable combo box, a radio group, tabs, a table or a tree"
     )
 
 # Gives a widget the name a screen reader says for it
@@ -846,3 +863,71 @@ test "set_tip: on the native side the system holds the tip of a button and of a 
     emptied = ui.tip_of(app, widget: button).must()
     ui.close(@app).must()
     assert held == "Opens a file" && held_field == "Where to look" && emptied == ""
+
+test "editable_combo: the text typed told as it is typed, an item chosen making it the text and told as the choice and then the text, the choice the first item equal to the text, set_selection typing an item, set_items keeping the text, refused for none or two items (catalogue CT28)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    combo = ui.editable_combo(@app, into: shown, items: ["8", "10", "12"], text: "11").must()
+    assert ui.kind_of(app, widget: combo).must() == .editable_combo
+    assert ui.text_of(app, widget: combo).must() == "11"
+    assert ui.selection_of(app, widget: combo).must() == []
+    ui.inject(@app, input: .type_text(widget: combo, text: "12")).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .text_changed(widget: combo, text: "12")
+    assert ui.selection_of(app, widget: combo).must() == [2]
+    ui.inject(@app, input: .choose(widget: combo, indices: [0])).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: combo, indices: [0])
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .text_changed(widget: combo, text: "8")
+    assert ui.text_of(app, widget: combo).must() == "8"
+    ui.set_selection(@app, widget: combo, indices: [1]).must()
+    assert ui.text_of(app, widget: combo).must() == "10"
+    ui.set_items(@app, widget: combo, items: ["10", "14"]).must()
+    assert ui.text_of(app, widget: combo).must() == "10"
+    assert ui.selection_of(app, widget: combo).must() == [0]
+    ui.set_text(@app, widget: combo, text: "13").must()
+    assert ui.selection_of(app, widget: combo).must() == []
+    assert fixture.code_of(ui.set_selection(@app, widget: combo, indices: [])) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: combo, indices: [0, 1])) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: combo, indices: [2])) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .type_text(widget: combo, text: "a\nb"))) == ui.INVALID
+    assert fixture.code_of(ui.editable_combo(@app, into: shown, items: ["a\nb"], text: "")) == ui.INVALID
+    assert fixture.code_of(ui.editable_combo(@app, into: shown, items: [], text: "a\nb")) == ui.INVALID
+    ui.close(@app).must()
+
+test "editable_combo: on the native side the system's field typed into and its list chosen from, each told as the person's, the items replaced keeping the text, the text set by the program told to none (catalogue CT28)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.window(@app, title: "Sizes", width: 300, height: 100).must()
+    offered = ui.editable_combo(@app, into: shown, items: ["8", "10", "12"], text: "11")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    combo = offered.must()
+    first = ui.text_of(app, widget: combo).must()
+    first_chosen = ui.selection_of(app, widget: combo).must()
+    ui.inject(@app, input: .type_text(widget: combo, text: "12")).must()
+    typed = ui.wait(@app, within: time.seconds(2).must()).must()
+    chosen_by_typing = ui.selection_of(app, widget: combo).must()
+    ui.inject(@app, input: .choose(widget: combo, indices: [0])).must()
+    picked = ui.wait(@app, within: time.seconds(2).must()).must()
+    then_text = ui.wait(@app, within: time.seconds(2).must()).must()
+    after_pick = ui.text_of(app, widget: combo).must()
+    ui.set_items(@app, widget: combo, items: ["8", "9"]).must()
+    kept = ui.text_of(app, widget: combo).must()
+    kept_chosen = ui.selection_of(app, widget: combo).must()
+    ui.set_selection(@app, widget: combo, indices: [1]).must()
+    program_text = ui.text_of(app, widget: combo).must()
+    ui.set_text(@app, widget: combo, text: "30").must()
+    nothing = ui.wait(@app, within: time.milliseconds(100).must())
+    emptied = ui.selection_of(app, widget: combo).must()
+    at = ui.rect_of(@app, widget: combo).must()
+    ui.close(@app).must()
+    assert first == "11" && first_chosen == []
+    assert typed == .text_changed(widget: combo, text: "12") && chosen_by_typing == [2]
+    assert picked == .selection_changed(widget: combo, indices: [0])
+    assert then_text == .text_changed(widget: combo, text: "8") && after_pick == "8"
+    assert kept == "8" && kept_chosen == [0] && program_text == "9"
+    assert fixture.code_of(nothing) == ui.TIMEOUT && emptied == []
+    assert at.width > 0 && at.height > 0

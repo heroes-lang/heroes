@@ -100,6 +100,9 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
 
     if (kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP) && items.len() > 0
         n.chosen @ [0]
+
+    if kind == hero_ui.HERO_UI_EDITABLE_COMBO
+        n.chosen @ model.chosen_by_text(n)
     return added(@app, n: n)
 
 # A new separator (`ui.separator`), filling its box across.

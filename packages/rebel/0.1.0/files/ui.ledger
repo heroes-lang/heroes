@@ -261,11 +261,12 @@ capability ui/combo  items in a button that opens them, of which the person choo
   wx      wxChoice
 
 capability ui/editable-combo  a combo box the person may type into
-  heroes  pending
+  heroes  ui.editable_combo, ui.Kind.editable_combo
   go      ui.NewEditableCombobox, EditableCombobox.Append, EditableCombobox.SetText, EditableCombobox.Text, EditableCombobox.OnChanged
   rust    -
   python  ttk.Combobox
   wx      wxComboBox
+  note    catalogue CT28; a field with a list of items beside it, the items `set_items`'s (the text kept) and the text `set_text`'s and `text_of`'s; typing is `.text_changed`, choosing an item makes it the text and is `.selection_changed` with its index and then `.text_changed`; the choice read is the first item equal to the text, or none, and `set_selection` takes one index and types that item; macOS by an `NSComboBox` with no data source and completion on; Windows pending (`CBS_DROPDOWN`, `CBN_EDITCHANGE` and `CBN_SELCHANGE`), Linux has no widget for it (`GtkDropDown` only searches its items, `GtkComboBox` and `GtkEntryCompletion` are deprecated since 4.10), so the arm builds a `GtkEntry` with a popover of items, or answers unsupported with words
 
 capability ui/progress  a bar filled as far as a value goes
   heroes  ui.progress, ui.set_value, ui.value_of, ui.set_range

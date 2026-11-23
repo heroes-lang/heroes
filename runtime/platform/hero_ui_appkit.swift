@@ -278,7 +278,7 @@ private final class Native {
 
 // The one native app's widgets and the means to queue what the person does.
 @MainActor
-private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate {
+private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTextViewDelegate, NSTableViewDataSource, NSTableViewDelegate {
     static var shared: Backend?
     static var launched = false
 
@@ -508,6 +508,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindEditableCombo:
+            let combo = NSComboBox(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            combo.usesDataSource = false
+            combo.completes = true
+            combo.numberOfVisibleItems = 10
+            combo.delegate = self
+            combo.tag = Int(widget.id)
+            return combo
         case kindProgress:
             let bar = NSProgressIndicator(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: 20))
             bar.style = .bar
@@ -830,6 +838,16 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         return areaUndo(widget)
     }
 
+    // The person's choice of an item from an editable combo's list: told as
+    // the choice and then as the text it became.
+    func comboBoxSelectionDidChange(_ note: Notification) {
+        guard let combo = note.object as? NSComboBox else {
+            return
+        }
+        queue(eventSelect, Int64(combo.tag), Int64(combo.indexOfSelectedItem), 0)
+        queue(eventText, Int64(combo.tag), 0, 0)
+    }
+
     func controlTextDidChange(_ note: Notification) {
         if let field = note.object as? NSTextField {
             queue(eventText, Int64(field.tag), 0, 0)
@@ -909,7 +927,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                     item.label = text
                 }
             }
-        case kindLabel, kindTextField:
+        case kindLabel, kindTextField, kindEditableCombo:
             (widget.view as? NSTextField)?.stringValue = text
             if widget.kind == kindTextField {
                 widget.fieldRange = nil
@@ -965,6 +983,17 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 popup.menu?.addItem(NSMenuItem(title: text, action: nil, keyEquivalent: ""))
             }
             popup.selectItem(at: -1)
+        case kindEditableCombo:
+            guard let combo = widget.view as? NSComboBox else {
+                return answerInvalid
+            }
+            // The items go and come, the text stays as it is.
+            let typed = combo.stringValue
+            muted = true
+            combo.removeAllItems()
+            combo.addItems(withObjectValues: items)
+            combo.stringValue = typed
+            muted = false
         case kindRadioGroup:
             for radio in widget.radios {
                 radio.removeFromSuperview()
@@ -1021,6 +1050,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             (widget.view as? NSPopUpButton)?.selectItem(at: Int(value))
+        case kindEditableCombo:
+            guard value >= -1, value < Int64(widget.items.count) else {
+                return answerInvalid
+            }
+            if value >= 0, let combo = widget.view as? NSComboBox {
+                muted = true
+                combo.stringValue = widget.items[Int(value)]
+                muted = false
+            }
         case kindRadioGroup:
             guard value >= -1, value < Int64(widget.radios.count) else {
                 return answerInvalid
@@ -1279,7 +1317,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return NSSize(width: fieldWidth, height: areaHeight)
         }
         switch widget.kind {
-        case kindTextField:
+        case kindTextField, kindEditableCombo:
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
@@ -1341,6 +1379,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return Int64(((widget.view as? NSProgressIndicator)?.doubleValue ?? 0).rounded())
         case kindCombo:
             return Int64((widget.view as? NSPopUpButton)?.indexOfSelectedItem ?? -1)
+        case kindEditableCombo:
+            let typed = (widget.view as? NSComboBox)?.stringValue ?? ""
+            return Int64(widget.items.firstIndex(of: typed) ?? -1)
         case kindRadioGroup:
             return Int64(widget.radios.firstIndex { $0.state == .on } ?? -1)
         default:
@@ -1361,7 +1402,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let table = widget.table {
             return table.selectedRowIndexes.map { Int64($0) }
         }
-        if widget.kind == kindCombo || widget.kind == kindRadioGroup {
+        if widget.kind == kindCombo || widget.kind == kindRadioGroup || widget.kind == kindEditableCombo {
             let at = value(id) ?? -1
             return at >= 0 ? [at] : []
         }
@@ -1436,6 +1477,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                     table.selectRowIndexes(IndexSet(integer: Int(value)), byExtendingSelection: second == 1)
                 } else {
                     return answerInvalid
+                }
+            } else if let combo = widget.view as? NSComboBox, widget.kind == kindEditableCombo {
+                guard value >= 0, value < Int64(widget.items.count) else {
+                    return answerInvalid
+                }
+                // The person's choice from the list: the text becomes the
+                // item, told as the choice and then as the text.
+                if combo.isEnabled {
+                    muted = true
+                    combo.stringValue = widget.items[Int(value)]
+                    muted = false
+                    queue(eventSelect, id, value, 0)
+                    queue(eventText, id, 0, 0)
                 }
             } else if let popup = widget.view as? NSPopUpButton {
                 guard value >= 0, value < Int64(widget.items.count) else {
@@ -3317,6 +3371,7 @@ private let kindContextMenu: Int64 = 30
 private let kindTray: Int64 = 31
 private let kindSeparator: Int64 = 32
 private let kindGroup: Int64 = 33
+private let kindEditableCombo: Int64 = 34
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

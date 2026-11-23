@@ -323,6 +323,8 @@ variant Kind
     separator
     # A frame with a title around the widgets it holds.
     group
+    # A field the person types into, with a list of items beside it.
+    editable_combo
 
 # What `widget` is.
 #
@@ -993,6 +995,26 @@ function list(@app: App, into: Widget, items: [str], multiple: bool) -> Widget?
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function combo(@app: App, into: Widget, items: [str]) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_COMBO, text: "", items: items)
+
+# A new editable combo box in `into`, as wxWidgets' `wxComboBox`: a field the
+# person types a text into with `items` in a list that opens beside it and
+# completes what is typed, a font size or a recent address. What the person
+# types is `.text_changed`; choosing an item makes the text that item's and
+# is `.selection_changed` with its index and then `.text_changed`. The text
+# is `text_of`'s and `set_text`'s, and the combo has chosen the first item
+# equal to it (`selection_of`), or none. `set_selection` takes one index and
+# types that item; `set_items` keeps the text.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `items`: the items, each one line without a zero byte.
+# - `text`: the text it starts with, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`, `unsupported` where the
+# system's arm draws none (Windows and Linux, pending).
+function editable_combo(@app: App, into: Widget, items: [str], text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_EDITABLE_COMBO, text: text, items: items)
 
 # A new progress bar in `into`, empty, filled as its value goes from 0 to
 # `most`.

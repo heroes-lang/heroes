@@ -1278,4 +1278,18 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * `hero_ui_set_text`'s, and `hero_ui_text` reads it back. */
 #define HERO_UI_GROUP 33
 
+/* -- AN EDITABLE COMBO BOX ----------------------------------------------------
+ *
+ * wxWidgets' `wxComboBox`: a field the person types a text into, with a list
+ * of items that opens beside it and completes what is typed. Its items are
+ * `hero_ui_set_items`' and its text `hero_ui_set_text`'s, read back by
+ * `hero_ui_text` as the person left it. The person's typing is
+ * `HERO_UI_EVENT_TEXT`, as a text field's; the person's choice of an item
+ * from the list is `HERO_UI_EVENT_SELECT` with the item's index, then
+ * `HERO_UI_EVENT_TEXT`, the text having become the item's. What the combo
+ * has chosen (`hero_ui_selection`) is the first item equal to its text, or
+ * nothing; `hero_ui_set_value` with an index sets the text to that item,
+ * with -1 it does nothing, and `hero_ui_set_items` keeps the text. */
+#define HERO_UI_EDITABLE_COMBO 34
+
 #endif
