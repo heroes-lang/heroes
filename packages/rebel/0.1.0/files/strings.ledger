@@ -457,6 +457,20 @@ capability text/expand-tabs  a text with its tabs replaced by the spaces that re
   python  str.expandtabs
   note    Python's answers: a column counts characters and starts again after "\n" or "\r"
 
+capability text/indent  a text's lines each written after a prefix
+  heroes  strings.indent, strings.indent_where
+  go      -
+  rust    -
+  python  textwrap.indent
+  note    held to Python 3.15.2's answers on the face's cases (run 2026-11-23): its default predicate is `indent`'s, a line of white space alone left as it is; its `predicate` is `indent_where`'s `accepts`, asked here of the line without its end, where Python passes the end too. Python splits as `str.splitlines` does, at a "\r" alone and at U+000B, U+000C, U+001C to U+001E, U+0085, U+2028 and U+2029 as well; here a line ends at "\n" or "\r\n", as `lines` reads them. A text wrapped to a width with its indents is `unicode/segment.wrap`'s
+
+capability text/dedent  a text's lines freed of the margin of spaces and tabs they all share
+  heroes  strings.dedent
+  go      -
+  rust    -
+  python  textwrap.dedent
+  note    held to Python 3.15.2's answers on the face's cases (run 2026-11-23) but one: a blank line ended by "\r\n" keeps its end here, where Python, splitting at "\n" alone, empties the "\r" with the line. A blank line holds Unicode's White_Space alone, as `trim` reads it; Python's `isspace` also counts U+001C to U+001F
+
 capability text/lower  a text in lower case
   heroes  strings.to_lower
   go      strings.ToLower
