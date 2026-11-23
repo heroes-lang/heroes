@@ -1,15 +1,20 @@
-# The program as a Windows service: the Service Control Manager starts it, it
-# reports its state, and the stop, pause, resume and shutdown the system sends
-# it come to the program as values it waits on, in the loop the rest of Rebel
-# waits in. What Go's `svc` package, .NET's `ServiceBase` and Rust's
-# `windows-service` crate give a program, with no callback: the program's own
-# `while` takes a control from `wait`, acts, and reports.
+# The program as a service of the system that starts it. On Windows the Service
+# Control Manager starts it, it reports its state, and the stop, pause, resume
+# and shutdown the system sends it come to the program as values it waits on,
+# in the loop the rest of Rebel waits in. What Go's `svc` package, .NET's
+# `ServiceBase` and Rust's `windows-service` crate give a program, with no
+# callback: the program's own `while` takes a control from `wait`, acts, and
+# reports. On Linux and macOS the manager starts a plain process, and what the
+# program owes it is smaller: **systemd's readiness and watchdog notices**
+# (`notify`, `watchdog_timeout`, what go-systemd's `daemon`, Rust's `sd-notify`
+# and Python's `systemd.daemon` give), **the sockets a manager hands over**
+# (`inherit` for systemd's descriptors from 3 on, `inherit_launchd` for
+# launchd's `launch_activate_socket`), each a `net` value of the program's own.
 #
 # What it does NOT do: install or remove a service (the system's `sc create`
 # and `sc delete` register one by the program's path, and the account it runs
-# as is chosen there); log (`log`); run on Linux or macOS, whose systemd and
-# launchd start a plain process, so a program that runs as a service there
-# needs nothing from this package.
+# as is chosen there); log (`log`); pass a descriptor to systemd's file
+# descriptor store, which asks a descriptor a program does not hold.
 #
 # **How a program is a service**: `start` makes the program the service the
 # system called, and the service stands in `start_pending`; the program does
@@ -35,11 +40,17 @@
 # Not written yet, each a `pending` block of its ledger: a program that hosts
 # several services in one process.
 
+use fs
 use net
+use os
 use poll
+use service/hero_activation
 use service/hero_service
 use service/internal/failure
+use service/internal/handing
+use service/internal/notice
 use service/internal/reading
+use service/internal/sending
 use time
 
 ## Codes
@@ -63,6 +74,16 @@ constant CLOSED: str
 # The system did not call the program in the time `start` allowed.
 constant TIMEOUT: str
     "timeout"
+
+# Nothing is there: no supervisor's socket answers at the name `$NOTIFY_SOCKET`
+# gives, no launchd socket has the name asked for, no watchdog supervises this
+# program. `notify`, `watchdog_timeout` and `inherit_launchd` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The system refuses the program what the call does. `notify` fails with it.
+constant PERMISSION: str
+    "permission"
 
 # The program was asked to stop while `wait` waited, after the controls queued
 # before the stop were told.
@@ -462,6 +483,170 @@ function format_control(c: Control) -> str
         .session      => return f"session change {c.event} of session {c.session}"
         .user         => return f"user control {c.event}"
 
+## Notices
+
+# What a program tells the manager that supervises it, one case for each of
+# systemd's assignments (`sd_notify(3)`). `notify` sends a list of them as one
+# datagram, so the manager reads them together and in order.
+variant Notice
+    # `READY=1`: startup, or a reload, is finished.
+    ready
+    # `RELOADING=1`: a configuration reload begins, which a `ready` ends. The
+    # clock reading the manager asks with it is written by `notify`.
+    reloading
+    # `STOPPING=1`: shutdown begins.
+    stopping
+    # `STATUS=`: a line of free text `systemctl status` shows; no control
+    # character, a newline included.
+    status
+        text: str
+    # `ERRNO=`: an errno-style number, 1 to 4095, as the manager's tools show
+    # for a service that failed.
+    errno
+        number: i64
+    # `MAINPID=`: the main process is another from now on.
+    main_pid
+        pid: i64
+    # `WATCHDOG=1`: the keep-alive the watchdog asks of the program.
+    watchdog
+    # `WATCHDOG=trigger`: the program reports an internal error, which the
+    # manager treats as a missed keep-alive.
+    watchdog_trigger
+    # `WATCHDOG_USEC=`: the watchdog's timeout changes.
+    watchdog_timeout
+        span: time.Duration
+    # `EXTEND_TIMEOUT_USEC=`: the state the program is in is given longer, and
+    # the next notice must arrive within it.
+    extend_timeout
+        span: time.Duration
+
+# Whether this system has systemd's notice socket: POSIX does, and Windows does
+# not. `notify` and `watchdog_timeout` answer `unsupported` where it has not.
+function can_notify() -> bool
+    return hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_NOTIFY) == 1
+
+# The notices as the datagram one `notify` sends: their assignments, a line
+# for each, with no newline at the end. Pure: it sends nothing and reads no
+# environment.
+#
+# - `notices`: at least one; none is `invalid`.
+# - `monotonic`: the machine's monotonic clock now, which `reloading` is sent
+#   with; read by no other notice.
+#
+# Fails `invalid` for no notice, a status holding a control character, an
+# errno number outside 1 to 4095, a pid below 1 and a span below zero.
+function format_notices(notices: [Notice], monotonic: time.Duration) -> str?
+    return notice.format(notices, monotonic: monotonic)
+
+# The notices a datagram holds, in order: what a supervisor reads of `format_notices`.
+# A variable no case names is passed over, as systemd passes over what it does
+# not know, and `MONOTONIC_USEC` is read and left out.
+#
+# - `text`: the datagram's text, lines of `NAME=value`.
+#
+# Fails `invalid` for a line with no `=`, and a known variable whose value it
+# does not take.
+function parse_notices(text: str) -> [Notice]?
+    return notice.parse(text)
+
+# Tells the manager the notices, as one datagram to the socket `$NOTIFY_SOCKET`
+# names: true where it went, false where no manager named a socket, as when the
+# program is started by hand. The call never waits.
+#
+# - `notices`: at least one, each checked before anything is read or sent, so
+#   a wrong notice is refused on a machine with no manager as on one with.
+#
+# Fails `invalid` as `format_notices` does and for a socket name longer than an
+# address holds, `unsupported` off POSIX and for a name of the virtual-machine
+# family or, off Linux, an abstract one (`@`), `not_found` where nothing
+# answers at the name, `permission` where the system refuses the sender and
+# `limit` where the manager's queue is full or the datagram is longer than the
+# system carries.
+function notify(notices: [Notice]) -> bool?
+    return sending.send(notices)
+
+# The time the manager's watchdog allows between two `watchdog` notices, from
+# `$WATCHDOG_USEC`: the program sends one about every half of it.
+#
+# Fails `not_found` where no watchdog supervises this program, which includes a
+# `$WATCHDOG_PID` naming another process, and `invalid` for a value that is no
+# number above zero.
+function watchdog_timeout() -> time.Duration?
+    return sending.watchdog_timeout()
+
+## Sockets handed over
+
+# What a manager handed the program: a socket of `net` where it is one, the
+# words for what it is where it is not.
+variant Handed
+    # A listening TCP socket, ready to `net.accept` from.
+    listener
+        socket: net.Listener
+    # A connected TCP socket, which systemd hands a program per connection
+    # where its unit says `Accept=yes`.
+    connection
+        conn: net.Conn
+    # A UDP socket, bound.
+    datagram
+        socket: net.UdpSocket
+    # A descriptor this package has no value for: a FIFO, a file, a local
+    # socket. It is left open, and the words say what it is.
+    other
+        words: str
+
+# One descriptor handed over, with the name its unit gave it.
+record Inherited
+    # `$LISTEN_FDNAMES`'s name for it (`FileDescriptorName=` in the unit,
+    # `connection` for a per-connection socket), or `unknown` for none; for
+    # launchd the name asked for.
+    name: str
+    # What it is.
+    handed: Handed
+
+# Whether the system was booted with systemd as its init, which is what
+# `sd_booted(3)` asks: the directory `/run/systemd/system/` exists. A program
+# that sends notices asks it to know whether a manager can be listening at all;
+# a container started by systemd's own tools has it too.
+function is_booted_by_systemd() -> bool
+    match fs.exists("/run/systemd/system")
+        .ok found => return found
+        .err _    => return false
+
+# Whether this system has systemd's socket activation: POSIX does.
+function can_inherit() -> bool
+    return hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_INHERIT) == 1
+
+# Whether this system has launchd's socket activation: macOS does.
+function can_inherit_launchd() -> bool
+    return hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_LAUNCHD) == 1
+
+# The sockets systemd handed this program, from descriptor 3 on
+# (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set
+# close-on-exec and non-blocking and made a value of `net`. The list is empty
+# for a program started by hand and for a child of one that was handed sockets,
+# the pid saying they were meant for the parent. **Once in the life of the
+# process**: the descriptors belong to the values this returns, and the
+# environment, which Rebel never writes, is left as the manager set it.
+#
+# Fails `exists` the second time, `invalid` for a variable that is no number or
+# a descriptor the variables promise that is not open, `limit` for more than
+# 4,096 descriptors or no room in the socket table, and `unsupported` off POSIX.
+function inherit() -> [Inherited]?
+    return handing.inherit()
+
+# The sockets launchd hands the job under `name` (`launch_activate_socket`), as
+# `inherit` makes them, each named `name`. launchd hands a name's sockets over
+# once.
+#
+# - `name`: the key under `Sockets` in the job's property list.
+#
+# Fails `not_found` where the program is no launchd job or the job has no
+# socket of that name, `exists` where they were handed over already, `limit`
+# for more than 64 sockets under one name, `invalid` for an empty name, and
+# `unsupported` off macOS.
+function inherit_launchd(name: str) -> [Inherited]?
+    return handing.inherit_launchd(name)
+
 ## Tests
 
 test "is_supported and is_service: a system has services or not, and a test run is no service"
@@ -537,3 +722,76 @@ test "state_name and format_control: every state and kind has its words"
     assert format_control(Control(kind: .power, event: 18, session: 0)) == "power event 18"
     assert format_control(Control(kind: .session, event: 7, session: 3)) == "session change 7 of session 3"
     assert format_control(Control(kind: .user, event: 130, session: 0)) == "user control 130"
+
+test "can_notify, can_inherit, can_inherit_launchd: POSIX has systemd's protocols and Darwin launchd's, and Windows neither"
+    match os.system()
+        .windows =>
+            assert !can_notify()
+            assert !can_inherit()
+            assert !can_inherit_launchd()
+        .darwin =>
+            assert can_notify()
+            assert can_inherit()
+            assert can_inherit_launchd()
+        .linux =>
+            assert can_notify()
+            assert can_inherit()
+            assert !can_inherit_launchd()
+        .other =>
+            assert !can_inherit_launchd()
+
+test "is_booted_by_systemd: only Linux can have been booted with systemd"
+    match os.system()
+        .windows => assert !is_booted_by_systemd()
+        .darwin  => assert !is_booted_by_systemd()
+        .linux   => _ = is_booted_by_systemd()
+        .other   => assert !is_booted_by_systemd()
+
+test "format_notices, parse_notices: the face is the datagram's text and back, a wrong notice is invalid on every system"
+    notices: [Notice] = [.ready, .status(text: "Serving")]
+    text = format_notices(notices, monotonic: time.nanoseconds(0)).must()
+    assert text == "READY=1\nSTATUS=Serving"
+    assert parse_notices(text).must() == notices
+    nothing: [Notice] = []
+    assert reading.code_of(format_notices(nothing, monotonic: time.nanoseconds(0))) == INVALID
+    assert reading.code_of(parse_notices("READY")) == INVALID
+    assert reading.code_of(notify(nothing)) == INVALID
+    newline: [Notice] = [.status(text: "a\nb")]
+    assert reading.code_of(notify(newline)) == INVALID
+
+test "notify: a program started by hand has no supervisor, so nothing is sent and the answer is false"
+    if !can_notify()
+        skip_test(reason: "this system has no systemd notice socket: notify answers unsupported")
+
+    if os.env("NOTIFY_SOCKET").is_err()
+        ready: [Notice] = [.ready]
+        assert notify(ready).must() == false
+    else
+        skip_test(reason: "this test was started by a manager that listens at NOTIFY_SOCKET")
+
+test "notify: a system with no notice socket answers unsupported by words"
+    if can_notify()
+        skip_test(reason: "this system has a notice socket: notify sends")
+    ready: [Notice] = [.ready]
+    assert reading.code_of(notify(ready)) == UNSUPPORTED
+
+test "watchdog_timeout: no watchdog supervises a test run, and the answer is not_found by words"
+    if os.env("WATCHDOG_USEC").is_err()
+        assert reading.code_of(watchdog_timeout()) == NOT_FOUND
+    else
+        skip_test(reason: "this test was started by a manager whose watchdog supervises it")
+
+test "inherit: a test run is handed nothing on POSIX, and a system without it answers unsupported"
+    if !can_inherit()
+        assert reading.code_of(inherit()) == UNSUPPORTED
+    else if os.env("LISTEN_PID").is_err()
+        assert inherit().must().len() == 0
+    else
+        skip_test(reason: "this test was started by a manager that hands descriptors over")
+
+test "inherit_launchd: a name that is empty is invalid and a program no launchd job runs finds nothing, off macOS it is unsupported"
+    if !can_inherit_launchd()
+        assert reading.code_of(inherit_launchd("heroes")) == UNSUPPORTED
+    else
+        assert reading.code_of(inherit_launchd("")) == INVALID
+        assert reading.code_of(inherit_launchd("heroes-nothing-has-this-name")) == NOT_FOUND

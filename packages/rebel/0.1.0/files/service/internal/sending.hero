@@ -1,0 +1,87 @@
+# What the face's `notify` and `watchdog_timeout` do: read the environment a
+# service manager wrote, write the datagram the notices make and ask the floor
+# to send it. Private to the package (README § A2); the checks that need no
+# socket stand in `notice`, so a notice a program writes wrongly is refused on
+# a system with no supervisor as on one with.
+
+use bytes
+use os
+use service
+use service/hero_activation
+use service/internal/activation_failure
+use service/internal/failure
+use service/internal/notice
+use time
+
+# The notices sent to `$NOTIFY_SOCKET`: true where a datagram went, false
+# where no supervisor named a socket.
+#
+# - `notices`: at least one.
+function send(notices: [service.Notice]) -> bool?
+    reading = hero_activation.monotonic_usec()
+    clock = time.microseconds(if_negative_zero(reading))?
+    text = notice.format(notices, monotonic: clock)?
+
+    if hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_NOTIFY) == 0
+        return failure.of(
+            code: failure.UNSUPPORTED,
+            asked: "notifying the supervisor",
+            why: "only POSIX systems have systemd's notice socket, and this system is not one"
+        )
+
+    match os.env("NOTIFY_SOCKET")
+        .err e =>
+            if e.code == failure.NOT_FOUND
+                return ok(false)
+            return fail(code: e.code, msg: f"reading NOTIFY_SOCKET: {e.msg}")
+        .ok name =>
+            if name == ""
+                return ok(false)
+            data: [u8] @= bytes.from_text(text)
+
+            if hero_activation.notify(name, @data) != 0
+                return activation_failure.last(asked: f"notifying \"{name}\"")
+            return ok(true)
+
+# `n`, or 0 where the clock could not be read.
+function if_negative_zero(n: i64) -> i64
+    if n < 0
+        return 0
+    return n
+
+# How long the watchdog allows between two `watchdog` notices, as the manager
+# wrote it in `$WATCHDOG_USEC`; `not_found` where none supervises this program.
+function watchdog_timeout() -> time.Duration?
+    match os.env("WATCHDOG_USEC")
+        .err _ => return failure.of(
+            code: failure.NOT_FOUND,
+            asked: "reading the watchdog",
+            why: "WATCHDOG_USEC is not set: no watchdog supervises this program"
+        )
+        .ok usec_text =>
+            match os.env("WATCHDOG_PID")
+                .ok pid_text =>
+                    pid = notice.number_of(text: pid_text, name: "WATCHDOG_PID")?
+
+                    if pid != os.pid()
+                        return failure.of(
+                            code: failure.NOT_FOUND,
+                            asked: "reading the watchdog",
+                            why: f"WATCHDOG_PID is {pid}, which is another process: the watchdog is for it, not for this one"
+                        )
+                .err _ => _ = 0
+
+            usec = notice.number_of(text: usec_text, name: "WATCHDOG_USEC")?
+
+            if usec < 1
+                return failure.of(
+                    code: failure.INVALID,
+                    asked: "reading the watchdog",
+                    why: "WATCHDOG_USEC is 0: a watchdog allows some time"
+                )
+            return time.microseconds(usec)
+
+test "if_negative_zero: a reading that failed is zero and any other stands"
+    assert if_negative_zero(-1) == 0
+    assert if_negative_zero(0) == 0
+    assert if_negative_zero(5) == 5

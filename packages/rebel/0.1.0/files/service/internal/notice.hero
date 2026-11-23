@@ -1,0 +1,289 @@
+# systemd's notice as text: the notices of the face written as the
+# newline-separated `NAME=value` assignments one datagram carries, and read
+# back. Pure: it sends nothing and reads no environment, so what a datagram
+# holds is told without a socket. Private to the package (README § A2); the
+# face's `format_notices` and `parse_notices` are these two functions.
+#
+# The variables are the ones systemd's `sd_notify(3)` documents, read on
+# 2026-11-23: `READY=1`, `RELOADING=1` with `MONOTONIC_USEC=`, `STOPPING=1`,
+# `STATUS=`, `ERRNO=`, `MAINPID=`, `WATCHDOG=1`, `WATCHDOG=trigger`,
+# `WATCHDOG_USEC=` and `EXTEND_TIMEOUT_USEC=`. A line is one assignment, so a
+# value holding a newline would start another: a text is refused where it
+# holds a control character, never written.
+
+use numbers
+use service
+use service/internal/failure
+use strings
+use time
+
+# The most a number of microseconds, a pid or an errno may be written with:
+# eighteen digits fit an `i64`.
+constant DIGITS_MOST: i64
+    18
+
+# The most an errno number is: Linux's, the system a manager runs on.
+constant ERRNO_MOST: i64
+    4095
+
+# `text` where it is one line of printable characters, else a failure naming
+# `what` and the byte.
+function single_line(text: str, what: str) -> str?
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b < 32 || b == 127
+            return fail(
+                code: failure.INVALID,
+                msg: f"{what} holds a control character at byte {i}: a newline would start another assignment"
+            )
+
+    return ok(text)
+
+# `d` in whole microseconds, a part of one counting as a whole one.
+function microseconds_of(d: time.Duration, what: str) -> i64?
+    if d.nanoseconds < 0
+        return fail(code: failure.INVALID, msg: f"{what} is below zero")
+
+    whole = d.nanoseconds / 1000
+
+    if d.nanoseconds % 1000 > 0
+        return ok(whole + 1)
+    return ok(whole)
+
+# One notice as its assignment, or two where it goes with a clock reading.
+function assignment(n: service.Notice, monotonic: time.Duration) -> str?
+    match n
+        .ready => return ok("READY=1")
+        .reloading =>
+            usec = microseconds_of(monotonic, what: "the monotonic reading")?
+            return ok(f"RELOADING=1\nMONOTONIC_USEC={usec}")
+        .stopping => return ok("STOPPING=1")
+        .status s =>
+            line = single_line(text: s.text, what: "a status")?
+            return ok("STATUS=" + line)
+        .errno e =>
+            if e.number < 1 || e.number > ERRNO_MOST
+                return fail(code: failure.INVALID, msg: f"an errno number is 1 to {ERRNO_MOST}, not {e.number}")
+            return ok(f"ERRNO={e.number}")
+        .main_pid p =>
+            if p.pid < 1
+                return fail(code: failure.INVALID, msg: f"a process number is above zero, not {p.pid}")
+            return ok(f"MAINPID={p.pid}")
+        .watchdog         => return ok("WATCHDOG=1")
+        .watchdog_trigger => return ok("WATCHDOG=trigger")
+        .watchdog_timeout w =>
+            usec = microseconds_of(w.span, what: "a watchdog timeout")?
+            return ok(f"WATCHDOG_USEC={usec}")
+        .extend_timeout x =>
+            usec = microseconds_of(x.span, what: "a timeout extension")?
+            return ok(f"EXTEND_TIMEOUT_USEC={usec}")
+
+# The datagram the notices make: their assignments, one to a line, and the
+# clock reading `RELOADING=1` goes with.
+#
+# - `notices`: at least one.
+# - `monotonic`: the machine's monotonic clock now, from an arbitrary start.
+function format(notices: [service.Notice], monotonic: time.Duration) -> str?
+    if notices.len() == 0
+        return fail(code: failure.INVALID, msg: "no notice to send: a datagram holds at least one assignment")
+    lines: [str] @= []
+
+    for n in notices
+        lines @ lines.push(assignment(n, monotonic: monotonic)?)
+
+    return ok(lines.join("\n"))
+
+# `text` as a whole number of at most eighteen digits, else a failure naming
+# the variable.
+function number_of(text: str, name: str) -> i64?
+    if text.len() == 0 || text.len() > DIGITS_MOST
+        return fail(code: failure.INVALID, msg: f"{name} is {text.len()} bytes, not 1 to {DIGITS_MOST} digits")
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return fail(code: failure.INVALID, msg: f"{name} is \"{text}\", not digits alone")
+
+    return numbers.parse_int(text)
+
+# The notice one assignment is, none for a variable no case names.
+function notice_of(name: str, value: str) -> [service.Notice]?
+    if name == "READY" || name == "RELOADING" || name == "STOPPING"
+        if value != "1"
+            return fail(code: failure.INVALID, msg: f"{name} is \"{value}\": the only value it takes is 1")
+
+        if name == "READY"
+            return ok([.ready])
+
+        if name == "STOPPING"
+            return ok([.stopping])
+        return ok([.reloading])
+
+    if name == "STATUS"
+        return ok([.status(text: single_line(text: value, what: "a status")?)])
+
+    if name == "ERRNO"
+        n = number_of(text: value, name: name)?
+
+        if n < 1 || n > ERRNO_MOST
+            return fail(code: failure.INVALID, msg: f"ERRNO is {n}: an errno number is 1 to {ERRNO_MOST}")
+        return ok([.errno(number: n)])
+
+    if name == "MAINPID"
+        p = number_of(text: value, name: name)?
+
+        if p < 1
+            return fail(code: failure.INVALID, msg: "MAINPID is 0: a process number is above zero")
+        return ok([.main_pid(pid: p)])
+
+    if name == "WATCHDOG"
+        if value == "1"
+            return ok([.watchdog])
+
+        if value == "trigger"
+            return ok([.watchdog_trigger])
+        return fail(code: failure.INVALID, msg: f"WATCHDOG is \"{value}\": it is 1 or trigger")
+
+    if name == "WATCHDOG_USEC"
+        return ok([.watchdog_timeout(span: time.microseconds(number_of(text: value, name: name)?)?)])
+
+    if name == "EXTEND_TIMEOUT_USEC"
+        return ok([.extend_timeout(span: time.microseconds(number_of(text: value, name: name)?)?)])
+
+    if name == "MONOTONIC_USEC"
+        _ = number_of(text: value, name: name)?
+    return ok([])
+
+# The notices a datagram holds, in order. A variable no case names, among
+# them the ones for descriptors, is passed over, as systemd's own reader
+# passes over what it does not know; `MONOTONIC_USEC` is read and left out,
+# `RELOADING=1` being the notice it goes with.
+#
+# - `text`: the datagram's text.
+function parse(text: str) -> [service.Notice]?
+    found: [service.Notice] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        if line.len() > 0
+            at = strings.index_of(s: line, substr: "=")
+
+            match at
+                .err _ =>
+                    return fail(code: failure.INVALID, msg: f"\"{line}\" is no assignment: it has no =")
+                .ok i =>
+                    for one in notice_of(name: line.slice(from: 0, to: i), value: line.slice(from: i + 1, to: line.len()))?
+                        found @ found.push(one)
+
+    return ok(found)
+
+# The code a failed result carries, "" where it succeeded.
+function reading_code<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code
+
+# One duration of the tests: `ms` milliseconds.
+function span(ms: i64) -> time.Duration
+    return time.milliseconds(ms).must()
+
+test "format: every case is the assignment sd_notify(3) names, in the order given and one to a line"
+    every: [service.Notice] = [
+        .ready
+        .stopping
+        .status(text: "Serving")
+        .errno(number: 2)
+        .main_pid(pid: 4711)
+        .watchdog
+        .watchdog_trigger
+        .watchdog_timeout(span: span(30000))
+        .extend_timeout(span: span(1500))
+    ]
+    want = "READY=1\nSTOPPING=1\nSTATUS=Serving\nERRNO=2\nMAINPID=4711\nWATCHDOG=1\nWATCHDOG=trigger\nWATCHDOG_USEC=30000000\nEXTEND_TIMEOUT_USEC=1500000"
+    assert format(every, monotonic: span(0)).must() == want
+
+test "format: one notice is one line, and reloading goes with the clock reading"
+    one: [service.Notice] = [.ready]
+    assert format(one, monotonic: span(0)).must() == "READY=1"
+    reload: [service.Notice] = [.reloading, .status(text: "Reloading")]
+    assert format(reload, monotonic: span(2000)).must() == "RELOADING=1\nMONOTONIC_USEC=2000000\nSTATUS=Reloading"
+    reading = time.nanoseconds(1500)
+    assert format(reload, monotonic: reading).must() == "RELOADING=1\nMONOTONIC_USEC=2\nSTATUS=Reloading"
+
+test "format: no notice, a status with a control character, an errno and a pid out of range, and a span below zero are invalid"
+    nothing: [service.Notice] = []
+    assert reading_code(format(nothing, monotonic: span(0))) == failure.INVALID
+    newline: [service.Notice] = [.status(text: "a\nREADY=1")]
+    assert reading_code(format(newline, monotonic: span(0))) == failure.INVALID
+    tab: [service.Notice] = [.status(text: "a\tb")]
+    assert reading_code(format(tab, monotonic: span(0))) == failure.INVALID
+    del: [service.Notice] = [.status(text: "a\u{7f}")]
+    assert reading_code(format(del, monotonic: span(0))) == failure.INVALID
+    zero: [service.Notice] = [.errno(number: 0)]
+    assert reading_code(format(zero, monotonic: span(0))) == failure.INVALID
+    past: [service.Notice] = [.errno(number: 4096)]
+    assert reading_code(format(past, monotonic: span(0))) == failure.INVALID
+    no_pid: [service.Notice] = [.main_pid(pid: 0)]
+    assert reading_code(format(no_pid, monotonic: span(0))) == failure.INVALID
+    back: [service.Notice] = [.watchdog_timeout(span: time.nanoseconds(-1))]
+    assert reading_code(format(back, monotonic: span(0))) == failure.INVALID
+    slow: [service.Notice] = [.extend_timeout(span: time.nanoseconds(-1))]
+    assert reading_code(format(slow, monotonic: span(0))) == failure.INVALID
+
+test "format: the edges that fit are written, an empty status, the largest errno and a pid of one, a part of a microsecond a whole one"
+    edges: [service.Notice] = [
+        .status(text: "")
+        .errno(number: 4095)
+        .main_pid(pid: 1)
+        .watchdog_timeout(span: time.nanoseconds(0))
+        .extend_timeout(span: time.nanoseconds(1))
+    ]
+    assert format(edges, monotonic: span(0)).must() == "STATUS=\nERRNO=4095\nMAINPID=1\nWATCHDOG_USEC=0\nEXTEND_TIMEOUT_USEC=1"
+    wide: [service.Notice] = [.status(text: "Serving é")]
+    assert format(wide, monotonic: span(0)).must() == "STATUS=Serving é"
+    longest: [service.Notice] = [.extend_timeout(span: time.max_duration())]
+    assert format(longest, monotonic: span(0)).must() == "EXTEND_TIMEOUT_USEC=9223372036854776"
+
+test "parse: what format writes is read back, blank lines and a trailing newline pass, an unknown variable and MONOTONIC_USEC are left out"
+    every: [service.Notice] = [
+        .ready
+        .stopping
+        .status(text: "Serving")
+        .errno(number: 2)
+        .main_pid(pid: 4711)
+        .watchdog
+        .watchdog_trigger
+        .watchdog_timeout(span: span(30000))
+        .extend_timeout(span: span(1500))
+    ]
+    assert parse(format(every, monotonic: span(0)).must()).must() == every
+    reload: [service.Notice] = [.reloading]
+    assert parse("RELOADING=1\nMONOTONIC_USEC=123\n").must() == reload
+    both: [service.Notice] = [.ready, .watchdog]
+    assert parse("\nREADY=1\n\nFDSTORE=1\nFDNAME=x\nWATCHDOG=1\n").must() == both
+    assert parse("").must().len() == 0
+    assert parse("STATUS=a=b\n").must().len() == 1
+
+test "parse: a line with no equals sign, a value a variable does not take and a number that is none are invalid"
+    assert reading_code(parse("READY")) == failure.INVALID
+    assert reading_code(parse("READY=0")) == failure.INVALID
+    assert reading_code(parse("RELOADING=yes")) == failure.INVALID
+    assert reading_code(parse("STOPPING=")) == failure.INVALID
+    assert reading_code(parse("WATCHDOG=2")) == failure.INVALID
+    assert reading_code(parse("ERRNO=abc")) == failure.INVALID
+    assert reading_code(parse("ERRNO=0")) == failure.INVALID
+    assert reading_code(parse("ERRNO=4096")) == failure.INVALID
+    assert reading_code(parse("MAINPID=0")) == failure.INVALID
+    assert reading_code(parse("MAINPID=-5")) == failure.INVALID
+    assert reading_code(parse("WATCHDOG_USEC=1.5")) == failure.INVALID
+    assert reading_code(parse("WATCHDOG_USEC=")) == failure.INVALID
+    assert reading_code(parse("EXTEND_TIMEOUT_USEC=1234567890123456789")) == failure.INVALID
+    assert reading_code(parse("MONOTONIC_USEC=x")) == failure.INVALID
+
+test "number_of: digits alone, one to eighteen of them"
+    assert number_of(text: "0", name: "N").must() == 0
+    assert number_of(text: "007", name: "N").must() == 7
+    assert number_of(text: "999999999999999999", name: "N").must() == 999999999999999999
+    assert reading_code(number_of(text: "", name: "N")) == failure.INVALID
+    assert reading_code(number_of(text: "+1", name: "N")) == failure.INVALID
+    assert reading_code(number_of(text: " 1", name: "N")) == failure.INVALID
+    assert reading_code(number_of(text: "1000000000000000000", name: "N")) == failure.INVALID

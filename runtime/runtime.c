@@ -475,4 +475,6 @@
 #include "platform/hero_watch.c"
 #include "hero_service.h"
 #include "platform/hero_service.c"
+#include "hero_activation.h"
+#include "platform/hero_activation.c"
 #endif
