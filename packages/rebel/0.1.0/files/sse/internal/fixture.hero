@@ -1,11 +1,13 @@
 # The other end of an event stream's connections, run on a thread of its own
 # while the test's thread is the client: it answers the requests it reads, one
-# connection each, with the texts written ahead, and gives back what it saw.
-# Nothing outside the tests calls it.
+# connection each, with the texts written ahead, and gives back what it saw;
+# and the pieces the face's tests and examples share. Nothing outside the
+# tests calls it.
 
 use http
 use io
 use net
+use sse
 use strings
 use threads
 use time
@@ -89,3 +91,54 @@ function shut(@s: io.Stream)
     match io.close(@s)
         .ok _  => _ = 0
         .err _ => _ = 0
+
+# The head of an answer that opens an event stream and ends with the
+# connection.
+function stream_head() -> str
+    return "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"
+
+# The settings a test reads with: a short wait, one second to connect.
+function quick() -> sse.Reading
+    r @= sse.default_reading()
+    r.retry @ time.milliseconds(10).must()
+    r.longest @ time.milliseconds(40).must()
+    return r
+
+# What the stand-in `t` saw, a line for each request.
+#
+# - `t`: the stand-in; its thread is waited for.
+function seen_by(@t: Started) -> [str]
+    return strings.split(s: threads.wait_text(@t.thread), sep: SEPARATOR)
+
+# A client's side of the hub's connection: the connection read from, and the
+# server's side the hub is handed.
+record Pair
+    # What the hub is handed.
+    server: io.Stream
+    # What the client reads.
+    client: io.Reader
+
+# A connection on the loopback. A port of the loopback is any program's to
+# connect to, so a connection whose peer is not this client is closed and the
+# next one taken, until the client's own comes.
+function pair() -> Pair
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    c = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
+    a @= net.accept(l, deadline_ms: 5_000).must()
+
+    while a.remote != c.local
+        shut(@a.stream)
+        a @ net.accept(l, deadline_ms: 5_000).must()
+
+    net.close_listener(@l).must()
+    net.set_deadline(c.stream, deadline_ms: 5_000).must()
+    return Pair(server: a.stream, client: io.reader(c.stream))
+
+# The stream a client reads after the head of its answer, the head checked to
+# open an event stream.
+#
+# - `p`: the connection; its reader moves past the head.
+function watched(@p: Pair) -> http.EventReader
+    head = http.read_response_head(@p.client, method: "GET", limits: http.default_limits()).must()
+    assert head.status == 200 && http.value_of(head.headers, name: "Content-Type").must() == "text/event-stream"
+    return http.event_reader(head, limits: http.default_limits()).must()
