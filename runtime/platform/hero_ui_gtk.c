@@ -16,6 +16,10 @@
  * with another signature than the header's is `conflicting types` where it
  * is compiled. */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "hero_ui_gtk.h"
 
 #include <stdatomic.h>
@@ -29,8 +33,15 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <dlfcn.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
 #include "hero_ui_web_gtk.h"
@@ -614,6 +625,7 @@ typedef struct hero_ui_gtk_functions {
     const char *(*dbus_connection_get_unique_name)(void *connection);
     void *(*dbus_node_info_new_for_xml)(const char *xml, hero_ui_gerror **error);
     void *(*dbus_node_info_lookup_interface)(void *info, const char *name);
+    void (*dbus_node_info_unref)(void *info);
     unsigned (*dbus_connection_register_object)(void *connection, const char *path, void *interface, const hero_ui_gtk_dbus_vtable *vtable, void *data, void (*free_data)(void *data), hero_ui_gerror **error);
     int (*dbus_connection_unregister_object)(void *connection, unsigned id);
     int (*dbus_connection_emit_signal)(void *connection, const char *destination, const char *path, const char *interface, const char *signal, void *parameters, hero_ui_gerror **error);
@@ -663,6 +675,29 @@ typedef struct hero_ui_gtk_functions {
     void (*texture_downloader_free)(void *downloader);
     void *(*column_view_sorter_get_primary_sort_column)(void *sorter);
     int (*column_view_sorter_get_primary_sort_order)(void *sorter);
+    void *(*separator_new)(int orientation);
+    void (*widget_set_tooltip_text)(void *widget, const char *text);
+    const char *(*widget_get_tooltip_text)(void *widget);
+    void *(*notebook_get_tab_label)(void *notebook, void *child);
+    void (*set_prgname)(const char *name);
+    char *(*filename_from_uri)(const char *uri, char **hostname, hero_ui_gerror **error);
+    void (*set_application_name)(const char *name);
+    const char *(*get_application_name)(void);
+    void (*set_program_class)(const char *program_class);
+    unsigned (*unix_fd_add)(int fd, unsigned condition, int (*function)(int fd, unsigned condition, void *data), void *data);
+    void (*text_buffer_undo)(void *buffer);
+    void (*text_buffer_redo)(void *buffer);
+    int (*text_buffer_get_can_undo)(void *buffer);
+    int (*text_buffer_get_can_redo)(void *buffer);
+    void (*text_buffer_select_range)(void *buffer, const hero_ui_gtk_iter *insert, const hero_ui_gtk_iter *bound);
+    int (*text_buffer_get_selection_bounds)(void *buffer, hero_ui_gtk_iter *start, hero_ui_gtk_iter *end);
+    void (*text_buffer_get_iter_at_offset)(void *buffer, hero_ui_gtk_iter *iter, int offset);
+    int (*text_iter_get_offset)(const hero_ui_gtk_iter *iter);
+    int (*text_view_scroll_to_iter)(void *view, hero_ui_gtk_iter *iter, double margin, int use_align, double xalign, double yalign);
+    int (*widget_activate_action_variant)(void *widget, const char *name, void *args);
+    void (*editable_select_region)(void *editable, int start, int end);
+    int (*editable_get_selection_bounds)(void *editable, int *start, int *end);
+    void (*orientable_set_orientation)(void *orientable, int orientation);
     double (*monitor_get_scale)(void *monitor);
     size_t (*x11_display_get_type)(void);
     void *(*x11_display_get_xdisplay)(void *display);
@@ -1071,6 +1106,7 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(dbus_connection_get_unique_name, "g_dbus_connection_get_unique_name");
     HERO_UI_GTK_NEED(dbus_node_info_new_for_xml, "g_dbus_node_info_new_for_xml");
     HERO_UI_GTK_NEED(dbus_node_info_lookup_interface, "g_dbus_node_info_lookup_interface");
+    HERO_UI_GTK_NEED(dbus_node_info_unref, "g_dbus_node_info_unref");
     HERO_UI_GTK_NEED(dbus_connection_register_object, "g_dbus_connection_register_object");
     HERO_UI_GTK_NEED(dbus_connection_unregister_object, "g_dbus_connection_unregister_object");
     HERO_UI_GTK_NEED(dbus_connection_emit_signal, "g_dbus_connection_emit_signal");
@@ -1116,6 +1152,29 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_MAY(texture_downloader_free, "gdk_texture_downloader_free");
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_column, "gtk_column_view_sorter_get_primary_sort_column");
     HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_order, "gtk_column_view_sorter_get_primary_sort_order");
+    HERO_UI_GTK_NEED(separator_new, "gtk_separator_new");
+    HERO_UI_GTK_NEED(widget_set_tooltip_text, "gtk_widget_set_tooltip_text");
+    HERO_UI_GTK_NEED(widget_get_tooltip_text, "gtk_widget_get_tooltip_text");
+    HERO_UI_GTK_NEED(notebook_get_tab_label, "gtk_notebook_get_tab_label");
+    HERO_UI_GTK_NEED(set_prgname, "g_set_prgname");
+    HERO_UI_GTK_NEED(filename_from_uri, "g_filename_from_uri");
+    HERO_UI_GTK_NEED(set_application_name, "g_set_application_name");
+    HERO_UI_GTK_NEED(get_application_name, "g_get_application_name");
+    HERO_UI_GTK_MAY(set_program_class, "gdk_set_program_class");
+    HERO_UI_GTK_NEED(unix_fd_add, "g_unix_fd_add");
+    HERO_UI_GTK_NEED(text_buffer_undo, "gtk_text_buffer_undo");
+    HERO_UI_GTK_NEED(text_buffer_redo, "gtk_text_buffer_redo");
+    HERO_UI_GTK_NEED(text_buffer_get_can_undo, "gtk_text_buffer_get_can_undo");
+    HERO_UI_GTK_NEED(text_buffer_get_can_redo, "gtk_text_buffer_get_can_redo");
+    HERO_UI_GTK_NEED(text_buffer_select_range, "gtk_text_buffer_select_range");
+    HERO_UI_GTK_NEED(text_buffer_get_selection_bounds, "gtk_text_buffer_get_selection_bounds");
+    HERO_UI_GTK_NEED(text_buffer_get_iter_at_offset, "gtk_text_buffer_get_iter_at_offset");
+    HERO_UI_GTK_NEED(text_iter_get_offset, "gtk_text_iter_get_offset");
+    HERO_UI_GTK_NEED(text_view_scroll_to_iter, "gtk_text_view_scroll_to_iter");
+    HERO_UI_GTK_NEED(widget_activate_action_variant, "gtk_widget_activate_action_variant");
+    HERO_UI_GTK_NEED(editable_select_region, "gtk_editable_select_region");
+    HERO_UI_GTK_NEED(editable_get_selection_bounds, "gtk_editable_get_selection_bounds");
+    HERO_UI_GTK_NEED(orientable_set_orientation, "gtk_orientable_set_orientation");
     HERO_UI_GTK_MAY(monitor_get_scale, "gdk_monitor_get_scale");
     HERO_UI_GTK_MAY(x11_display_get_type, "gdk_x11_display_get_type");
     HERO_UI_GTK_MAY(x11_display_get_xdisplay, "gdk_x11_display_get_xdisplay");
@@ -1303,6 +1362,9 @@ struct hero_ui_native {
     uint8_t *argb;
     /* A window's drop target while it takes dropped files, else NULL. */
     void *drop_target;
+    /* A tray icon's tip, NULL for none: the host draws it, so it is kept
+     * here; every other widget's is GTK's own. */
+    char *tip;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -2037,6 +2099,7 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
     hero_layer_free(widget->accessible);
+    hero_layer_free(widget->tip);
     hero_ui_ids_free(&widget->order);
     hero_ui_forget(widget->id);
     hero_layer_free(widget);
@@ -2282,6 +2345,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         break;
     case HERO_UI_IMAGE:
         made->widget = hero_ui_gtk.picture_new();
+        break;
+    case HERO_UI_SEPARATOR:
+        made->widget = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
         break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
@@ -3049,6 +3115,10 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         width = widget->image_width;
         height = widget->image_height;
     }
+    if (widget->kind == HERO_UI_SEPARATOR) {
+        /* The line runs along its place's longer side. */
+        hero_ui_gtk.orientable_set_orientation(widget->widget, width > height ? HERO_GTK_ORIENTATION_HORIZONTAL : HERO_GTK_ORIENTATION_VERTICAL);
+    }
     hero_ui_gtk.fixed_move(container, widget->widget, (double)hero_ui_gtk_int(x), (double)hero_ui_gtk_int(y));
     hero_ui_gtk.widget_set_size_request(widget->widget, hero_ui_gtk_int(width), hero_ui_gtk_int(height));
     if (widget->kind == HERO_UI_RADIO_GROUP) {
@@ -3146,6 +3216,11 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_IMAGE:
         *width = widget->image_width;
         *height = widget->image_height;
+        return HERO_UI_OK;
+    case HERO_UI_SEPARATOR:
+        /* One point thick across its box, whichever way it runs. */
+        *width = 1;
+        *height = 1;
         return HERO_UI_OK;
     case HERO_UI_WEBVIEW:
         /* The headless side's size of a web view, where nothing else decides
@@ -8693,7 +8768,7 @@ static void *hero_ui_gtk_tray_item_property(void *connection, const char *sender
         return hero_ui_gtk_tray_pixmap(NULL);
     }
     if (strcmp(property, "ToolTip") == 0) {
-        return hero_ui_gtk.variant_new("(s@a(iiay)ss)", "", hero_ui_gtk_tray_pixmap(NULL), words, "");
+        return hero_ui_gtk.variant_new("(s@a(iiay)ss)", "", hero_ui_gtk_tray_pixmap(NULL), words, tray != NULL && tray->tip != NULL ? tray->tip : "");
     }
     if (strcmp(property, "ItemIsMenu") == 0) {
         return hero_ui_gtk.variant_new_boolean(1);
@@ -9256,14 +9331,981 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     return HERO_UI_OK;
 }
 
+/* -- THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM --------
+ *
+ * The identity is GLib's program name (`g_set_prgname`, which GTK writes as
+ * a window's X11 class name and a Wayland window's app id) and application
+ * name, given before the first window; the arm opens no `GtkApplication`,
+ * whose id would be fixed at its creation.
+ *
+ * The one instance is a lock file and a local socket in the user's own
+ * runtime folder (`XDG_RUNTIME_DIR`, else a folder of the user's alone in
+ * `/tmp`), both named by a hash of the identity, since a socket's path holds
+ * 108 bytes, with no session bus needed. The first process to lock the file
+ * holds the claim and listens, the listener a watch of GLib's main context
+ * the loop's `pump` runs; a later one connects and hands its arguments over,
+ * the first answering one byte once it has them. Each connection is read on
+ * a thread of its own with a deadline, so a peer that stalls never holds the
+ * user interface, from a process of the same user alone (`SO_PEERCRED`), and
+ * is queued from the main context as `HERO_UI_EVENT_OPEN`. A hand-over read
+ * after the claim ended is dropped. */
+
+/* The hand-over's first bytes, and the seconds a peer has for each read and
+ * write. */
+static const char hero_ui_gtk_hand_magic[8] = {'H', 'E', 'R', 'O', 'U', 'I', '1', '\0'};
+#define HERO_UI_GTK_HAND_SECONDS 5
+
+/* The claim, the UI thread's own: its lock file, its listener, GLib's watch
+ * of the listener, the identity it is for and its era, counted up at each
+ * claim's end so a hand-over read for an earlier claim is dropped. */
+static _Thread_local int hero_ui_gtk_instance_lock = -1;
+static _Thread_local int hero_ui_gtk_instance_listener = -1;
+static _Thread_local unsigned hero_ui_gtk_instance_watch;
+static _Thread_local uint64_t hero_ui_gtk_instance_era;
+static _Thread_local char hero_ui_gtk_instance_identity[HERO_UI_IDENTITY_MOST + 1];
+
+/* One hand-over being read by a thread: the connection, the identity it must
+ * name, the claim's era, and what was read. */
+typedef struct hero_ui_gtk_hand {
+    int socket;
+    uint64_t era;
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t *arguments;
+    uint32_t count;
+} hero_ui_gtk_hand;
+
+/* The folder the claim's files live in, into `dir` (`most` bytes): the
+ * runtime folder where it is the user's alone, else a folder of the user's
+ * alone made in `/tmp`; false where neither is. */
+static bool hero_ui_gtk_instance_dir(char *dir, size_t most) {
+    const char *run = getenv("XDG_RUNTIME_DIR");
+    struct stat info;
+    int written;
+
+    if (run != NULL && run[0] == '/' && stat(run, &info) == 0 && S_ISDIR(info.st_mode) && info.st_uid == geteuid() && (info.st_mode & 077) == 0) {
+        written = snprintf(dir, most, "%s", run);
+        return written > 0 && (size_t)written < most;
+    }
+    written = snprintf(dir, most, "/tmp/hero-ui-%lu", (unsigned long)geteuid());
+    if (written <= 0 || (size_t)written >= most) {
+        return false;
+    }
+    if (mkdir(dir, 0700) != 0 && errno != EEXIST) {
+        return false;
+    }
+    return lstat(dir, &info) == 0 && S_ISDIR(info.st_mode) && info.st_uid == geteuid() && (info.st_mode & 077) == 0;
+}
+
+/* The path of the claim's file ending `suffix` for `identity` into `path`
+ * (`most` bytes); false where the folder is unknown or the path too long. */
+static bool hero_ui_gtk_instance_path(const char *identity, const char *suffix, char *path, size_t most) {
+    char folder[256];
+    uint64_t hash = 14695981039346656037ULL;
+    int written;
+
+    if (!hero_ui_gtk_instance_dir(folder, sizeof folder)) {
+        return false;
+    }
+    for (const char *at = identity; *at != '\0'; at += 1) {
+        hash = (hash ^ (uint8_t)*at) * 1099511628211ULL;
+    }
+    written = snprintf(path, most, "%s/hero-ui-%016llx%s", folder, (unsigned long long)hash, suffix);
+    return written > 0 && (size_t)written < most;
+}
+
+/* Reads or writes all `count` bytes at `bytes` on `socket`, its deadline its
+ * own; false at its end, a failure or the deadline. */
+static bool hero_ui_gtk_whole(int socket_id, void *bytes, size_t count, bool writing) {
+    uint8_t *at = bytes;
+
+    while (count > 0) {
+        ssize_t done = writing ? send(socket_id, at, count, MSG_NOSIGNAL) : recv(socket_id, at, count, 0);
+
+        if (done < 0 && errno == EINTR) {
+            continue;
+        }
+        if (done <= 0) {
+            return false;
+        }
+        at += done;
+        count -= (size_t)done;
+    }
+    return true;
+}
+
+/* Gives `socket_id` a deadline of `HERO_UI_GTK_HAND_SECONDS` for each read
+ * and write, and no life in a child process. */
+static void hero_ui_gtk_hand_socket(int socket_id) {
+    struct timeval limit = {HERO_UI_GTK_HAND_SECONDS, 0};
+
+    (void)fcntl(socket_id, F_SETFD, FD_CLOEXEC);
+    (void)setsockopt(socket_id, SOL_SOCKET, SO_RCVTIMEO, &limit, sizeof limit);
+    (void)setsockopt(socket_id, SOL_SOCKET, SO_SNDTIMEO, &limit, sizeof limit);
+}
+
+/* Connects to the claim's socket at `path` and hands `arguments` over, named
+ * for `identity`: true once the first process answered it has them. Tries
+ * for two seconds, the first process perhaps not listening yet. */
+static bool hero_ui_gtk_hand_to(const char *path, const char *identity, const uint8_t *arguments, uint32_t count) {
+    struct sockaddr_un address;
+    uint8_t length[4] = {(uint8_t)count, (uint8_t)(count >> 8), (uint8_t)(count >> 16), (uint8_t)(count >> 24)};
+    uint8_t answer = 0;
+
+    memset(&address, 0, sizeof address);
+    address.sun_family = AF_UNIX;
+    (void)snprintf(address.sun_path, sizeof address.sun_path, "%s", path);
+    for (int tries = 0; tries < 20; tries += 1) {
+        int socket_id = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+        bool handed;
+
+        if (socket_id < 0) {
+            return false;
+        }
+        hero_ui_gtk_hand_socket(socket_id);
+        if (connect(socket_id, (struct sockaddr *)&address, sizeof address) != 0) {
+            (void)close(socket_id);
+            (void)usleep(100000);
+            continue;
+        }
+        handed = hero_ui_gtk_whole(socket_id, (void *)hero_ui_gtk_hand_magic, sizeof hero_ui_gtk_hand_magic, true) && hero_ui_gtk_whole(socket_id, (void *)identity, strlen(identity) + 1, true) && hero_ui_gtk_whole(socket_id, length, sizeof length, true) &&
+                 (count == 0 || hero_ui_gtk_whole(socket_id, (void *)arguments, count, true)) && hero_ui_gtk_whole(socket_id, &answer, 1, false) && answer == '1';
+        (void)close(socket_id);
+        return handed;
+    }
+    return false;
+}
+
+/* On the main context: queues a hand-over read, for the claim still held. */
+static int hero_ui_gtk_hand_told(void *data) {
+    hero_ui_gtk_hand *hand = data;
+
+    if (hand->era == hero_ui_gtk_instance_era && hero_ui_gtk_instance_listener >= 0) {
+        int64_t items = 0;
+
+        for (uint32_t at = 0; at < hand->count; at += 1) {
+            if (hand->arguments[at] == 0) {
+                items += 1;
+            }
+        }
+        hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, hand->arguments, (int64_t)hand->count);
+    }
+    free(hand->arguments);
+    free(hand);
+    return 0;
+}
+
+/* On a thread of its own: reads one hand-over, answers its peer, and hands it
+ * to the main context where it holds a list of UTF-8 arguments for this
+ * identity. */
+static void *hero_ui_gtk_hand_read(void *data) {
+    hero_ui_gtk_hand *hand = data;
+    char magic[sizeof hero_ui_gtk_hand_magic];
+    char named[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t length[4];
+    size_t at = 0;
+    bool good = hero_ui_gtk_whole(hand->socket, magic, sizeof magic, false) && memcmp(magic, hero_ui_gtk_hand_magic, sizeof magic) == 0;
+
+    while (good && at < sizeof named) {
+        good = hero_ui_gtk_whole(hand->socket, named + at, 1, false);
+        if (good && named[at] == '\0') {
+            break;
+        }
+        at += 1;
+    }
+    good = good && at < sizeof named && strcmp(named, hand->identity) == 0 && hero_ui_gtk_whole(hand->socket, length, sizeof length, false);
+    if (good) {
+        hand->count = (uint32_t)length[0] | ((uint32_t)length[1] << 8) | ((uint32_t)length[2] << 16) | ((uint32_t)length[3] << 24);
+        good = hand->count <= HERO_UI_TEXT_MOST;
+    }
+    if (good && hand->count > 0) {
+        hand->arguments = malloc(hand->count);
+        good = hand->arguments != NULL && hero_ui_gtk_whole(hand->socket, hand->arguments, hand->count, false);
+        if (good) {
+            uint32_t start = 0;
+
+            good = hand->arguments[hand->count - 1] == 0;
+            for (uint32_t i = 0; good && i < hand->count; i += 1) {
+                if (hand->arguments[i] == 0) {
+                    good = hero_ui_is_utf8(hand->arguments + start, i - start);
+                    start = i + 1;
+                }
+            }
+        }
+    }
+    if (good) {
+        uint8_t answer = '1';
+
+        good = hero_ui_gtk_whole(hand->socket, &answer, 1, true);
+    }
+    (void)close(hand->socket);
+    if (!good) {
+        free(hand->arguments);
+        free(hand);
+        return NULL;
+    }
+    (void)hero_ui_gtk.idle_add(hero_ui_gtk_hand_told, hand);
+    return NULL;
+}
+
+/* Runs `function` on a detached thread of its own; false where none was made. */
+static bool hero_ui_gtk_thread(void *(*function)(void *), void *data) {
+    pthread_t thread;
+
+    if (pthread_create(&thread, NULL, function, data) != 0) {
+        return false;
+    }
+    (void)pthread_detach(thread);
+    return true;
+}
+
+/* On the main context, the listener readable: takes each connection waiting
+ * from a process of this user, and reads it on a thread of its own. */
+static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
+    (void)condition;
+    (void)data;
+    for (;;) {
+        int socket_id = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
+        struct ucred peer;
+        socklen_t size = sizeof peer;
+        hero_ui_gtk_hand *hand;
+
+        if (socket_id < 0) {
+            return 1;
+        }
+        hero_ui_gtk_hand_socket(socket_id);
+        (void)fcntl(socket_id, F_SETFL, fcntl(socket_id, F_GETFL) & ~O_NONBLOCK);
+        hand = calloc(1, sizeof *hand);
+        if (hand == NULL || getsockopt(socket_id, SOL_SOCKET, SO_PEERCRED, &peer, &size) != 0 || peer.uid != geteuid()) {
+            free(hand);
+            (void)close(socket_id);
+            continue;
+        }
+        hand->socket = socket_id;
+        hand->era = hero_ui_gtk_instance_era;
+        (void)snprintf(hand->identity, sizeof hand->identity, "%s", hero_ui_gtk_instance_identity);
+        if (!hero_ui_gtk_thread(hero_ui_gtk_hand_read, hand)) {
+            (void)close(socket_id);
+            free(hand);
+        }
+    }
+}
+
+static void hero_ui_gtk_app_serve(const char *identity);
+static void hero_ui_gtk_app_unserve(void);
+
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
+    char *id = hero_ui_gtk_text(identifier, identifier_count, false);
+    char *shown = hero_ui_gtk_text(name, name_count, false);
+
+    if (id == NULL || shown == NULL) {
+        hero_layer_free(id);
+        hero_layer_free(shown);
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.set_prgname(id);
+    /* GLib warns of a second call, so a name it holds already is left. */
+    if (strcmp(hero_ui_gtk.get_application_name(), shown) != 0) {
+        hero_ui_gtk.set_application_name(shown);
+    }
+    if (hero_ui_gtk.set_program_class != NULL) {
+        hero_ui_gtk.set_program_class(id);
+    }
+    hero_layer_free(id);
+    hero_layer_free(shown);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first) {
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    char lock_path[256];
+    struct sockaddr_un address;
+    int lock;
+    int listener;
+
+    if (hero_ui_gtk_instance_listener >= 0) {
+        *first = 1;
+        return HERO_UI_OK;
+    }
+    memcpy(identity, identifier, (size_t)identifier_count);
+    identity[identifier_count] = '\0';
+    memset(&address, 0, sizeof address);
+    address.sun_family = AF_UNIX;
+    if (!hero_ui_gtk_instance_path(identity, ".lock", lock_path, sizeof lock_path) || !hero_ui_gtk_instance_path(identity, ".sock", address.sun_path, sizeof address.sun_path)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "no folder of the user's alone holds the claim: XDG_RUNTIME_DIR names none, /tmp holds none of this user's, or the socket's path leaves a local socket's 108 bytes no room");
+    }
+    lock = open(lock_path, O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, 0600);
+    if (lock < 0) {
+        return hero_ui_refused(HERO_UI_OTHER, "the claim's lock file could not be opened in the user's runtime folder");
+    }
+    if (flock(lock, LOCK_EX | LOCK_NB) != 0) {
+        (void)close(lock);
+        if (errno != EWOULDBLOCK) {
+            return hero_ui_refused(HERO_UI_OTHER, "the claim's lock file could not be locked");
+        }
+        if (!hero_ui_gtk_hand_to(address.sun_path, identity, arguments, (uint32_t)count)) {
+            return hero_ui_refused(HERO_UI_OTHER, "another process holds this identity's claim and took no hand-over within its deadline");
+        }
+        *first = 0;
+        return HERO_UI_OK;
+    }
+    (void)unlink(address.sun_path);
+    listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    if (listener < 0 || bind(listener, (struct sockaddr *)&address, sizeof address) != 0 || listen(listener, 16) != 0 || fcntl(listener, F_SETFL, O_NONBLOCK) != 0) {
+        if (listener >= 0) {
+            (void)close(listener);
+        }
+        (void)close(lock);
+        return hero_ui_refused(HERO_UI_OTHER, "the claim's local socket could not listen in the user's runtime folder");
+    }
+    hero_ui_gtk_instance_lock = lock;
+    hero_ui_gtk_instance_listener = listener;
+    (void)snprintf(hero_ui_gtk_instance_identity, sizeof hero_ui_gtk_instance_identity, "%s", identity);
+    hero_ui_gtk_instance_watch = hero_ui_gtk.unix_fd_add(listener, 1u, hero_ui_gtk_instance_accept, NULL);
+    hero_ui_gtk_app_serve(identity);
+    *first = 1;
+    return HERO_UI_OK;
+}
+
+/* On a thread of its own: hands this process's own claim the arguments a
+ * later launch would, for `hero_ui_inject`. */
+typedef struct hero_ui_gtk_own_hand {
+    char path[sizeof(((struct sockaddr_un *)0)->sun_path)];
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t *arguments;
+    uint32_t count;
+} hero_ui_gtk_own_hand;
+
+static void *hero_ui_gtk_hand_own(void *data) {
+    hero_ui_gtk_own_hand *own = data;
+
+    (void)hero_ui_gtk_hand_to(own->path, own->identity, own->arguments, own->count);
+    free(own->arguments);
+    free(own);
+    return NULL;
+}
+
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
+    hero_ui_gtk_own_hand *own;
+
+    if (hero_ui_gtk_instance_listener < 0) {
+        return HERO_UI_INVALID;
+    }
+    own = calloc(1, sizeof *own);
+    if (own == NULL || (count > 0 && (own->arguments = malloc((size_t)count)) == NULL)) {
+        free(own);
+        return HERO_UI_LIMIT;
+    }
+    if (!hero_ui_gtk_instance_path(hero_ui_gtk_instance_identity, ".sock", own->path, sizeof own->path)) {
+        free(own->arguments);
+        free(own);
+        return hero_ui_refused(HERO_UI_OTHER, "the claim's local socket has no path");
+    }
+    (void)snprintf(own->identity, sizeof own->identity, "%s", hero_ui_gtk_instance_identity);
+    if (count > 0) {
+        memcpy(own->arguments, arguments, (size_t)count);
+    }
+    own->count = (uint32_t)count;
+    if (!hero_ui_gtk_thread(hero_ui_gtk_hand_own, own)) {
+        free(own->arguments);
+        free(own);
+        return hero_ui_refused(HERO_UI_OTHER, "no thread could be made to hand the arguments over");
+    }
+    return HERO_UI_OK;
+}
+
+/* DOCUMENTS FROM THE SYSTEM: a desktop opens the files of an app whose
+ * desktop entry says `DBusActivatable=true` by `org.freedesktop.Application`
+ * on the app's own name on the session bus, its object path the identity with
+ * each dot a slash and each hyphen an underscore (the interface GApplication
+ * serves). The claim's first process serves it on a connection of its own,
+ * its methods run by the loop's `pump` on the UI thread: `Open` queues the
+ * files (`file:` addresses of this host, as paths) and then the other
+ * addresses as `HERO_UI_EVENT_OPEN`, `Activate` a launch with no arguments.
+ * A system with no session bus, or one where another process holds the name,
+ * offers the app no such request, and its refusal says so. */
+
+static const char hero_ui_gtk_app_xml[] =
+    "<node><interface name='org.freedesktop.Application'>"
+    "<method name='Activate'><arg type='a{sv}' direction='in'/></method>"
+    "<method name='Open'><arg type='as' direction='in'/><arg type='a{sv}' direction='in'/></method>"
+    "<method name='ActivateAction'><arg type='s' direction='in'/><arg type='av' direction='in'/><arg type='a{sv}' direction='in'/></method>"
+    "</interface></node>";
+
+/* The connection serving the interface, its registered object, and the words
+ * of why none does. */
+static _Thread_local void *hero_ui_gtk_app_bus;
+static _Thread_local unsigned hero_ui_gtk_app_object;
+static _Thread_local char hero_ui_gtk_app_why[HERO_UI_WORDS_MOST];
+
+/* Appends `text` and its zero byte to `*items` (`*length` bytes in `*room`);
+ * false where memory fails. */
+static bool hero_ui_gtk_items_add(uint8_t **items, size_t *length, size_t *room, const char *text) {
+    size_t more = strlen(text) + 1;
+
+    if (*length + more > *room) {
+        size_t wanted = (*length + more) * 2;
+        uint8_t *grown = realloc(*items, wanted);
+
+        if (grown == NULL) {
+            return false;
+        }
+        *items = grown;
+        *room = wanted;
+    }
+    memcpy(*items + *length, text, more);
+    *length += more;
+    return true;
+}
+
+/* Queues `count` items held in `length` bytes at `items` as an opening of
+ * kind `what`, none where `count` is 0. */
+static void hero_ui_gtk_opened(int64_t what, uint8_t *items, size_t length, int64_t count) {
+    if (count > 0 && length <= (size_t)HERO_UI_TEXT_MOST) {
+        hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, count, what, items, (int64_t)length);
+    }
+}
+
+/* `Open`'s addresses: the files of this host as paths, queued first, and the
+ * rest as addresses. */
+static void hero_ui_gtk_app_open(void *uris) {
+    uint8_t *files = NULL;
+    uint8_t *urls = NULL;
+    size_t files_length = 0;
+    size_t files_room = 0;
+    size_t urls_length = 0;
+    size_t urls_room = 0;
+    int64_t files_count = 0;
+    size_t total = hero_ui_gtk.variant_n_children(uris);
+
+    for (size_t at = 0; at < total; at += 1) {
+        void *child = hero_ui_gtk.variant_get_child_value(uris, at);
+        const char *uri = hero_ui_gtk.variant_get_string(child, NULL);
+        char *path = NULL;
+        hero_ui_gerror *error = NULL;
+
+        if (strncmp(uri, "file:", 5) == 0) {
+            path = hero_ui_gtk.filename_from_uri(uri, NULL, &error);
+            if (error != NULL) {
+                hero_ui_gtk.error_free(error);
+            }
+        }
+        if (path != NULL) {
+            if (path[0] != '\0' && hero_ui_is_utf8((const uint8_t *)path, strlen(path)) && hero_ui_gtk_items_add(&files, &files_length, &files_room, path)) {
+                files_count += 1;
+            }
+            hero_ui_gtk.g_free(path);
+        } else if (uri[0] != '\0' && hero_ui_is_utf8((const uint8_t *)uri, strlen(uri))) {
+            (void)hero_ui_gtk_items_add(&urls, &urls_length, &urls_room, uri);
+        }
+        hero_ui_gtk.variant_unref(child);
+    }
+    hero_ui_gtk_opened(HERO_UI_OPEN_FILES, files, files_length, files_count);
+    /* Each address is an opening of its own. */
+    for (size_t from = 0; from < urls_length; from += strlen((const char *)urls + from) + 1) {
+        hero_ui_gtk_opened(HERO_UI_OPEN_URLS, urls + from, strlen((const char *)urls + from) + 1, 1);
+    }
+    free(files);
+    free(urls);
+}
+
+/* The interface's methods, on the UI thread. */
+static void hero_ui_gtk_app_call(void *connection, const char *sender, const char *path, const char *interface, const char *method, void *parameters, void *invocation, void *data) {
+    (void)connection;
+    (void)sender;
+    (void)path;
+    (void)interface;
+    (void)data;
+    if (strcmp(method, "Open") == 0) {
+        void *uris = hero_ui_gtk.variant_get_child_value(parameters, 0);
+
+        hero_ui_gtk_app_open(uris);
+        hero_ui_gtk.variant_unref(uris);
+        hero_ui_gtk.dbus_method_invocation_return_value(invocation, NULL);
+    } else if (strcmp(method, "Activate") == 0) {
+        hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, 0, HERO_UI_OPEN_ARGUMENTS, NULL, 0);
+        hero_ui_gtk.dbus_method_invocation_return_value(invocation, NULL);
+    } else {
+        hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, "org.freedesktop.DBus.Error.NotSupported", "this app offers no actions to the desktop");
+    }
+}
+
+static const hero_ui_gtk_dbus_vtable hero_ui_gtk_app_vtable = {
+    .method_call = hero_ui_gtk_app_call,
+};
+
+/* The object path of `identity`: `/org/example/my_app` for `org.example.my-app`. */
+static void hero_ui_gtk_app_path(const char *identity, char *path, size_t most) {
+    size_t at = 0;
+
+    path[at++] = '/';
+    for (const char *c = identity; *c != '\0' && at + 1 < most; c += 1) {
+        path[at++] = *c == '.' ? '/' : (*c == '-' ? '_' : *c);
+    }
+    path[at] = '\0';
+}
+
+/* Serves `org.freedesktop.Application` for `identity` on the session bus, as
+ * the name's owner; where it cannot, keeps why in `hero_ui_gtk_app_why`. */
+static void hero_ui_gtk_app_serve(const char *identity) {
+    hero_ui_gerror *error = NULL;
+    void *info;
+    void *bus = NULL;
+    void *reply;
+    char *address;
+    char path[HERO_UI_IDENTITY_MOST + 2];
+    uint32_t got = 0;
+
+    hero_ui_gtk_app_why[0] = '\0';
+    if (!hero_ui_gtk_bus_named()) {
+        (void)hero_ui_copy_text(hero_ui_gtk_app_why, sizeof hero_ui_gtk_app_why, "no D-Bus session bus is named (neither DBUS_SESSION_BUS_ADDRESS nor XDG_RUNTIME_DIR's bus), and a desktop opens an app's documents through org.freedesktop.Application on the app's name on one");
+        return;
+    }
+    info = hero_ui_gtk.dbus_node_info_new_for_xml(hero_ui_gtk_app_xml, &error);
+    address = info != NULL ? hero_ui_gtk.dbus_address_get_for_bus_sync(HERO_G_BUS_TYPE_SESSION, NULL, &error) : NULL;
+    if (address != NULL) {
+        bus = hero_ui_gtk.dbus_connection_new_for_address_sync(address, HERO_G_DBUS_CONNECTION_FLAGS_BUS, NULL, NULL, &error);
+        hero_ui_gtk.g_free(address);
+    }
+    if (bus == NULL) {
+        (void)snprintf(hero_ui_gtk_app_why, sizeof hero_ui_gtk_app_why, "no D-Bus session bus answers (%s), and a desktop opens an app's documents through org.freedesktop.Application on the app's name on it", error != NULL && error->message != NULL ? error->message : "no words");
+        if (error != NULL) {
+            hero_ui_gtk.error_free(error);
+        }
+        if (info != NULL) {
+            hero_ui_gtk.dbus_node_info_unref(info);
+        }
+        return;
+    }
+    hero_ui_gtk_app_path(identity, path, sizeof path);
+    hero_ui_gtk_app_object = hero_ui_gtk.dbus_connection_register_object(bus, path, hero_ui_gtk.dbus_node_info_lookup_interface(info, "org.freedesktop.Application"), &hero_ui_gtk_app_vtable, NULL, NULL, &error);
+    reply = hero_ui_gtk_app_object != 0 ? hero_ui_gtk.dbus_connection_call_sync(bus, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "RequestName", hero_ui_gtk.variant_new("(su)", identity, 4u), "(u)", 0, 5000, NULL, &error) : NULL;
+    if (reply != NULL) {
+        void *code = hero_ui_gtk.variant_get_child_value(reply, 0);
+
+        got = hero_ui_gtk.variant_get_uint32(code);
+        hero_ui_gtk.variant_unref(code);
+        hero_ui_gtk.variant_unref(reply);
+    }
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+    }
+    if (info != NULL) {
+        hero_ui_gtk.dbus_node_info_unref(info);
+    }
+    /* 1 is the primary owner, 4 already the owner. */
+    if (got != 1u && got != 4u) {
+        if (hero_ui_gtk_app_object != 0) {
+            (void)hero_ui_gtk.dbus_connection_unregister_object(bus, hero_ui_gtk_app_object);
+            hero_ui_gtk_app_object = 0;
+        }
+        (void)hero_ui_gtk.dbus_connection_close_sync(bus, NULL, NULL);
+        hero_ui_gtk.object_unref(bus);
+        (void)hero_ui_copy_text(hero_ui_gtk_app_why, sizeof hero_ui_gtk_app_why, "another process holds the app's name on the D-Bus session bus, so the desktop's open requests reach it and not this one");
+        return;
+    }
+    hero_ui_gtk_app_bus = bus;
+}
+
+/* Gives up the name and the connection. */
+static void hero_ui_gtk_app_unserve(void) {
+    if (hero_ui_gtk_app_bus == NULL) {
+        return;
+    }
+    (void)hero_ui_gtk.dbus_connection_unregister_object(hero_ui_gtk_app_bus, hero_ui_gtk_app_object);
+    (void)hero_ui_gtk.dbus_connection_close_sync(hero_ui_gtk_app_bus, NULL, NULL);
+    hero_ui_gtk.object_unref(hero_ui_gtk_app_bus);
+    hero_ui_gtk_app_bus = NULL;
+    hero_ui_gtk_app_object = 0;
+}
+
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
+    char path[HERO_UI_IDENTITY_MOST + 2];
+    const char *list[256];
+    char *made[256];
+    int64_t listed = 0;
+    void *params;
+    void *uris;
+    void *builder;
+    void *none;
+
+    if (hero_ui_gtk_instance_listener < 0 || hero_ui_gtk_app_bus == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, hero_ui_gtk_app_why[0] != '\0' ? hero_ui_gtk_app_why : "a desktop opens an app's documents through org.freedesktop.Application on the app's name on the D-Bus session bus, which the app serves once it holds its one instance (the claim)");
+    }
+    for (int64_t at = 0; at < count && listed < 256; listed += 1) {
+        const char *item = (const char *)items + at;
+
+        made[listed] = NULL;
+        if (what == HERO_UI_OPEN_FILES) {
+            hero_ui_gerror *error = NULL;
+
+            made[listed] = hero_ui_gtk.filename_to_uri(item, NULL, &error);
+            if (error != NULL) {
+                hero_ui_gtk.error_free(error);
+            }
+            list[listed] = made[listed] != NULL ? made[listed] : item;
+        } else {
+            list[listed] = item;
+        }
+        at += (int64_t)strlen(item) + 1;
+    }
+    uris = hero_ui_gtk.variant_new_strv(list, (long)listed);
+    builder = hero_ui_gtk.variant_builder_new("a{sv}");
+    none = hero_ui_gtk.variant_builder_end(builder);
+    hero_ui_gtk.variant_builder_unref(builder);
+    params = hero_ui_gtk.variant_new("(@as@a{sv})", uris, none);
+    hero_ui_gtk_app_path(hero_ui_gtk_instance_identity, path, sizeof path);
+    hero_ui_gtk.dbus_connection_call(hero_ui_gtk_app_bus, hero_ui_gtk_instance_identity, path, "org.freedesktop.Application", "Open", params, NULL, 0, -1, NULL, NULL, NULL);
+    for (int64_t i = 0; i < listed; i += 1) {
+        hero_ui_gtk.g_free(made[i]);
+    }
+    return HERO_UI_OK;
+}
+
+void hero_ui_arm_instance_end(void) {
+    char path[sizeof(((struct sockaddr_un *)0)->sun_path)];
+
+    if (hero_ui_gtk_instance_listener < 0) {
+        return;
+    }
+    hero_ui_gtk_instance_era += 1;
+    hero_ui_gtk_app_unserve();
+    if (hero_ui_gtk_instance_path(hero_ui_gtk_instance_identity, ".sock", path, sizeof path)) {
+        (void)unlink(path);
+    }
+    (void)hero_ui_gtk.source_remove(hero_ui_gtk_instance_watch);
+    (void)close(hero_ui_gtk_instance_listener);
+    hero_ui_gtk_instance_listener = -1;
+    (void)close(hero_ui_gtk_instance_lock);
+    hero_ui_gtk_instance_lock = -1;
+}
+
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS ---------------------------------
+ *
+ * A text area is a `GtkTextBuffer`, which keeps the edits made since the
+ * program's last text (`set_text` is an irreversible action, each injected
+ * edit one user action) and says whether it can undo or redo. A text field
+ * is a `GtkEntry` over a `GtkText`, whose history is its own: the person's
+ * Ctrl+Z is its `text.undo` action, no call says whether that action would
+ * do anything, and the editable interface's edits (the program's text, an
+ * injected edit) are not in the history, so only what is typed is. A field's
+ * `can_undo` is therefore asked by doing the undo and the redo that puts the
+ * text and the selection back, muted, in one turn of the loop.
+ *
+ * Positions are bytes of the UTF-8 text; GTK's are characters. */
+
+/* The character index of byte `bytes` of `text`, or -1 where it is past the
+ * text or inside a character. */
+static int64_t hero_ui_gtk_chars_before(const char *text, int64_t bytes) {
+    int64_t length = (int64_t)strlen(text);
+    int64_t chars = 0;
+
+    if (bytes < 0 || bytes > length || (bytes < length && ((uint8_t)text[bytes] & 0xC0u) == 0x80u)) {
+        return -1;
+    }
+    for (int64_t at = 0; at < bytes; at += 1) {
+        if (((uint8_t)text[at] & 0xC0u) != 0x80u) {
+            chars += 1;
+        }
+    }
+    return chars;
+}
+
+/* The byte where character `chars` of `text` starts, or its length where
+ * `chars` is the text's end or past it. */
+static int64_t hero_ui_gtk_bytes_before(const char *text, int64_t chars) {
+    int64_t at = 0;
+
+    while (text[at] != '\0' && chars > 0) {
+        at += 1;
+        while (((uint8_t)text[at] & 0xC0u) == 0x80u) {
+            at += 1;
+        }
+        chars -= 1;
+    }
+    return at;
+}
+
+/* Text area `area`'s whole text in GLib's memory, NULL where it has none to
+ * give; `hero_ui_arm_text`'s own reading. */
+static char *hero_ui_gtk_area_read(const hero_ui_native *area) {
+    hero_ui_gtk_iter start;
+    hero_ui_gtk_iter end;
+
+    hero_ui_gtk.text_buffer_get_start_iter(area->buffer, &start);
+    hero_ui_gtk.text_buffer_get_end_iter(area->buffer, &end);
+    return hero_ui_gtk.text_buffer_get_text(area->buffer, &start, &end, 1);
+}
+
+/* Runs `action` ("text.undo" or "text.redo") on text field `field`'s text,
+ * muted, and says whether its text changed. */
+static bool hero_ui_gtk_field_acts(const hero_ui_native *field, const char *action) {
+    void *text = hero_ui_gtk.editable_get_delegate(field->widget);
+    const char *now = hero_ui_gtk.editable_get_text(field->widget);
+    char *before = hero_ui_gtk_text((const uint8_t *)(now != NULL ? now : ""), (int64_t)strlen(now != NULL ? now : ""), false);
+    bool changed;
+
+    if (before == NULL || text == NULL) {
+        hero_layer_free(before);
+        return false;
+    }
+    hero_ui_mute(1);
+    (void)hero_ui_gtk.widget_activate_action_variant(text, action, NULL);
+    hero_ui_mute(-1);
+    now = hero_ui_gtk.editable_get_text(field->widget);
+    changed = strcmp(before, now != NULL ? now : "") != 0;
+    hero_layer_free(before);
+    return changed;
+}
+
+/* Whether text field `field` can undo (`redo` false) or redo, by doing it and
+ * its reverse; its selection is put back as it was. */
+static bool hero_ui_gtk_field_can(const hero_ui_native *field, bool redo) {
+    int from = 0;
+    int to = 0;
+    bool can;
+
+    (void)hero_ui_gtk.editable_get_selection_bounds(field->widget, &from, &to);
+    can = hero_ui_gtk_field_acts(field, redo ? "text.redo" : "text.undo");
+    if (can) {
+        (void)hero_ui_gtk_field_acts(field, redo ? "text.undo" : "text.redo");
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.editable_select_region(field->widget, from, to);
+    hero_ui_mute(-1);
+    return can;
+}
+
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    *done = 0;
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        bool can = which == HERO_UI_UNDO ? hero_ui_gtk.text_buffer_get_can_undo(widget->buffer) != 0 : hero_ui_gtk.text_buffer_get_can_redo(widget->buffer) != 0;
+
+        if (can) {
+            hero_ui_mute(1);
+            if (which == HERO_UI_UNDO) {
+                hero_ui_gtk.text_buffer_undo(widget->buffer);
+            } else {
+                hero_ui_gtk.text_buffer_redo(widget->buffer);
+            }
+            hero_ui_mute(-1);
+        }
+        *done = can ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        *done = hero_ui_gtk_field_acts(widget, which == HERO_UI_UNDO ? "text.undo" : "text.redo") ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    *can = 0;
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        *can = (which == HERO_UI_UNDO ? hero_ui_gtk.text_buffer_get_can_undo(widget->buffer) : hero_ui_gtk.text_buffer_get_can_redo(widget->buffer)) != 0 ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        *can = hero_ui_gtk_field_can(widget, which == HERO_UI_REDO) ? 1 : 0;
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    char *held;
+    const char *text;
+    int64_t first;
+    int64_t last;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind != HERO_UI_TEXT_AREA && widget->kind != HERO_UI_TEXT_FIELD) {
+        return HERO_UI_INVALID;
+    }
+    if (widget->kind == HERO_UI_TEXT_FIELD && (!widget->visible || !hero_ui_gtk.widget_get_visible(widget->widget) || !hero_ui_gtk.widget_is_sensitive(widget->widget))) {
+        return HERO_UI_INVALID;
+    }
+    held = widget->kind == HERO_UI_TEXT_AREA ? hero_ui_gtk_area_read(widget) : NULL;
+    text = widget->kind == HERO_UI_TEXT_AREA ? held : hero_ui_gtk.editable_get_text(widget->widget);
+    if (text == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    first = hero_ui_gtk_chars_before(text, start);
+    last = hero_ui_gtk_chars_before(text, end);
+    if (held != NULL) {
+        hero_ui_gtk.g_free(held);
+    }
+    if (first < 0 || last < 0) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_mute(1);
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk_iter from;
+        hero_ui_gtk_iter to;
+
+        hero_ui_gtk.text_buffer_get_iter_at_offset(widget->buffer, &from, (int)first);
+        hero_ui_gtk.text_buffer_get_iter_at_offset(widget->buffer, &to, (int)last);
+        hero_ui_gtk.text_buffer_select_range(widget->buffer, &to, &from);
+        (void)hero_ui_gtk.text_view_scroll_to_iter(widget->inner, &to, 0.0, 0, 0.0, 0.0);
+    } else {
+        /* The field takes the keys, as the person's click gives them (its
+         * text not chosen whole), and shows its selection by them. */
+        (void)hero_ui_gtk.text_grab_focus_without_selecting(hero_ui_gtk.editable_get_delegate(widget->widget));
+        hero_ui_gtk.editable_select_region(widget->widget, (int)first, (int)last);
+    }
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    hero_ui_native *widget = hero_ui_find(id);
+    char *held = NULL;
+    const char *text;
+    int from = 0;
+    int to = 0;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk_iter first;
+        hero_ui_gtk_iter last;
+
+        (void)hero_ui_gtk.text_buffer_get_selection_bounds(widget->buffer, &first, &last);
+        from = hero_ui_gtk.text_iter_get_offset(&first);
+        to = hero_ui_gtk.text_iter_get_offset(&last);
+        held = hero_ui_gtk_area_read(widget);
+        text = held;
+    } else if (widget->kind == HERO_UI_TEXT_FIELD) {
+        /* A field holds its selection while it has not the keys, as the
+         * system keeps it. */
+        (void)hero_ui_gtk.editable_get_selection_bounds(widget->widget, &from, &to);
+        text = hero_ui_gtk.editable_get_text(widget->widget);
+    } else {
+        return HERO_UI_INVALID;
+    }
+    if (text == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    *start = hero_ui_gtk_bytes_before(text, from);
+    *end = hero_ui_gtk_bytes_before(text, to);
+    if (held != NULL) {
+        hero_ui_gtk.g_free(held);
+    }
+    return HERO_UI_OK;
+}
+
+/* -- A TIP OVER A WIDGET ---------------------------------------------------- */
+
+/* The GTK widget that shows widget `widget`'s tip, NULL for a kind that
+ * has none (a window, a menu and its separators, a context menu): a page's
+ * is its tab's label, every other widget's the widget itself; a menu item
+ * and a tray icon are told apart by the callers. */
+static void *hero_ui_gtk_tip_target(const hero_ui_native *widget) {
+    hero_ui_native *tabs;
+
+    switch (widget->kind) {
+    case HERO_UI_WINDOW:
+    case HERO_UI_MENU:
+    case HERO_UI_MENU_SEPARATOR:
+    case HERO_UI_CONTEXT_MENU:
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_TRAY:
+        return NULL;
+    case HERO_UI_PAGE:
+        tabs = hero_ui_find(widget->parent);
+        return tabs != NULL ? hero_ui_gtk.notebook_get_tab_label(tabs->widget, widget->widget) : NULL;
+    default:
+        return widget->widget;
+    }
+}
+
+/* What a menu item's tip is refused with: measured on GTK 4.18.6, a
+ * `GtkPopoverMenu` built from a `GMenu` gave the item's button no tooltip
+ * for a `tooltip` attribute on the item. */
+static const char hero_ui_gtk_menu_tip_words[] = "GTK 4's menus show no tip for an item: a GtkPopoverMenu draws a GMenu item as a label, an icon and an accelerator, and a tooltip attribute on the item left its button with none (measured on GTK 4.18.6)";
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    void *target;
+    char *made = NULL;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, hero_ui_gtk_menu_tip_words);
+    }
+    target = hero_ui_gtk_tip_target(widget);
+    if (target == NULL && widget->kind != HERO_UI_TRAY) {
+        return HERO_UI_INVALID;
+    }
+    if (count > 0) {
+        made = hero_ui_gtk_text(text, count, false);
+        if (made == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    if (widget->kind == HERO_UI_TRAY) {
+        hero_layer_free(widget->tip);
+        widget->tip = made;
+        hero_ui_gtk_tray_words(widget);
+        return HERO_UI_OK;
+    }
+    hero_ui_gtk.widget_set_tooltip_text(target, made);
+    hero_layer_free(made);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    void *target;
+    const char *text;
+    size_t bytes;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, hero_ui_gtk_menu_tip_words);
+    }
+    target = hero_ui_gtk_tip_target(widget);
+    if (target == NULL && widget->kind != HERO_UI_TRAY) {
+        return HERO_UI_INVALID;
+    }
+    /* GTK 4 owns the text it gives back: a tray icon's is the record's. */
+    text = widget->kind == HERO_UI_TRAY ? widget->tip : hero_ui_gtk.widget_get_tooltip_text(target);
+    bytes = text != NULL ? strlen(text) : 0;
+    *length = (int64_t)bytes;
+    if (bytes > 0 && *length <= count) {
+        memcpy(buffer, text, bytes);
+    }
+    return HERO_UI_OK;
+}
+
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind and act of `hero_ui.h` is drawn here, so neither switch
- * refuses one before `create` and `inject`, which check each. */
+/* Every kind up to the separator and every act of `hero_ui.h` is drawn
+ * here, so neither switch refuses one before `create` and `inject`, which
+ * check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
-    (void)kind;
     (void)parent;
-    return true;
+    /* No kind past the separator is drawn here: one the contract gains is
+     * refused by name until this arm makes it. */
+    return kind <= HERO_UI_SEPARATOR;
 }
 
 bool hero_ui_arm_acts(int64_t act) {

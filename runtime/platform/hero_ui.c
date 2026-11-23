@@ -1899,9 +1899,9 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
-#if !defined(__APPLE__)
-    /* The kinds after the tray no C arm makes yet: refused by name here,
-     * before an arm's `makes` that knows them not. */
+#if defined(_WIN32)
+    /* The kinds after the tray the Win32 arm makes not yet: refused by name
+     * here, before its `makes` that knows them not. */
     if (kind > HERO_UI_TRAY) {
         return hero_ui_elsewhere(hero_ui_making(kind));
     }
@@ -4002,7 +4002,11 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
  * with it. An arm that draws one defines it in its own member, and its system
  * leaves this block's condition. */
 
-#if !defined(__APPLE__)
+#if defined(_WIN32)
+
+/* Undo and the selection in text widgets, the app's identity, its one
+ * instance, documents from the system and a tip over a widget: the Win32
+ * arm's refusals; the GTK 4 arm draws them. */
 
 int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
     (void)id;
