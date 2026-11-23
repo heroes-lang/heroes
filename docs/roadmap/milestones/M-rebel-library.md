@@ -708,6 +708,22 @@ reader to type that command; `runtime/platform/`, the C floor under Rebel, is 59
 compiler's runtime, and the specification names no way for a package to carry C of its own (searched, nothing found:
 a question, not a premise), so a repository of Rebel's own would hold its Heroes half alone.
 
+**The author's answer to that reading, about 23:30, *1a 2a***, on two questions put with it:
+
+- **The folders move, the index's protocol does not** (*1a*). At the round's end, once, by a script: the package's
+  source to `rebel/library/0.1.0/files/`, the examples to `rebel/examples/` with their reach programs in
+  `rebel/examples/reach/`, the generators to `rebel/generators/`, and **`packages/` leaves the tree** until
+  M-package-index gives it an index a client can read. The reason outranks tidiness: the source every lane rewrites
+  stood at the address of a published version, which the index's own rule says is never rewritten. The version folder
+  stays in the source's path tonight, since taking it out changes how the net and the site find the newest version and
+  not only where. The author's pointer, an index that says where a package is fetched from as Homebrew's taps do, is
+  written on `M-package-index.md` as a variant its opening sitting measures. This supersedes, for where Rebel's source
+  stands, the local static index at the repository's root of panel 235's R15 and panel 238's R10; the register
+  (decision 2610) takes its line when the move lands.
+- **The site and the rules page say what works on the day of the push** (*2a*): a program takes Rebel today by a
+  `path` entry from a clone of this repository (`heroes add --path ... --as rebel`), and `heroes add rebel` by name
+  waits for the index's row; no page tells a reader to type a command that exits 2.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
