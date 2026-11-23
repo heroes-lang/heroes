@@ -17,7 +17,8 @@
 #
 # It fails with `invalid`.
 #
-# Not written yet, each a `pending` block of its ledger: Lab and XYZ.
+# Not written yet, each a `pending` block of its ledger: the Lab and XYZ
+# colour spaces.
 
 use image
 use image/colorspace/internal/channels

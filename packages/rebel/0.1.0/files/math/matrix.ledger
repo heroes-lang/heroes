@@ -16,7 +16,7 @@ capability matrix/make  a matrix made from rows, of zeros, the identity, read ba
   python  -
   note    gonum's `NewDense`, nalgebra's `DMatrix::from_row_slice`, numpy's `array`, `zeros`, `eye`; rows of different lengths refused `invalid`, where numpy makes an array of objects
 
-capability matrix/arithmetic  sums, differences, a scale, products by a matrix and by a vector, the transpose, the trace, the Frobenius norm
+capability matrix/dense-arithmetic  sums, differences, a scale, products by a matrix and by a vector, the transpose, the trace, the Frobenius norm
   heroes  math/matrix.add, math/matrix.subtract, math/matrix.scale, math/matrix.multiply, math/matrix.multiply_vector, math/matrix.transpose, math/matrix.trace, math/matrix.norm_frobenius
   go      -
   rust    -

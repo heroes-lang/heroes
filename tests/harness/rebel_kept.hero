@@ -276,6 +276,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "mail/internal/params.hex_value, mail/internal/transfer.hex_value, mail/internal/words.hex_value, sql/postgres/internal/target.hex_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "markdown/internal/html_reading.put_work, web/internal/tree.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mcp/internal/fixture.silent_port, net/internal/fixture.silent_port", why: TEST_FIXTURES)
+        Kept(check: "bodies", key: "mqtt/internal/dialing.closed_failure, nats/internal/session.closed_failure", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.none_ms_of, nats/internal/link.none_ms_of", why: SPANS_TO_DOORS)
         Kept(check: "bodies", key: "mqtt/internal/link.read, nats/internal/link.read", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mqtt/internal/link.write, nats/internal/link.write", why: NO_PUBLIC_HOME)

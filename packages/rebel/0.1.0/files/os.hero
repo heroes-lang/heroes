@@ -14,11 +14,10 @@
 # answer the system can refuse is a `T?`, and a code says why.
 #
 # Not written yet, each a `pending` block of its ledger: the rest of a user's
-# record: its real name and its login shell; a limit or a setting of the system
-# asked by its name; the time of each processor apart; the prefix and suffix of
-# a shared library's file; the process's scheduling priority, read or changed;
-# the mask of permissions a new file is made without; a wait that ends when a
-# counted signal comes.
+# record: its real name and its login shell; a limit or a setting of the
+# system asked by its name; the time of each processor apart; the prefix and
+# suffix of a shared library's file; the process's scheduling priority, read
+# or changed; the mask of permissions a new file is made without.
 
 use os/hero_disk
 use os/hero_os

@@ -1,0 +1,39 @@
+# Whether two lists of floats agree within a tolerance: the comparison the
+# tests of `math`'s subpackages ask of a numerical result, which no exact `==`
+# can.
+#
+# It stands in the folder the subpackages share (README § A2), because
+# `math/matrix` and `math/sparse` each need it and neither may use the other's
+# private modules. A nan in either list, or two infinities of one sign, makes
+# a nan difference, and ordering a nan aborts (spec § 7), so a test of a result
+# that holds one fails loudly and never agrees.
+
+use math/internal/floats
+
+# Whether `a` and `b` are within `within` of each other, value by value.
+#
+# - `a`: one list.
+# - `b`: another, as long; a list of another length is never within.
+# - `within`: the largest difference allowed, 0 or more; a difference equal to
+#   it is within.
+function close_to(a: [f64], b: [f64], within: f64) -> bool
+    if a.len() != b.len()
+        return false
+
+    for k in range(from: 0, to: a.len())
+        if floats.abs(a[k] - b[k]) > within
+            return false
+
+    return true
+
+## Tests
+
+test "close_to: empty lists, one value, the edge of the tolerance, either side, and lists of two lengths"
+    assert close_to(a: [], b: [], within: 0.0)
+    assert close_to(a: [1.5], b: [1.5], within: 0.0)
+    assert close_to(a: [1.0, 2.0], b: [1.25, 1.75], within: 0.25)
+    assert close_to(a: [1.0, 2.0], b: [0.75, 2.25], within: 0.25)
+    assert !close_to(a: [1.0, 2.0], b: [1.25, 1.5], within: 0.25)
+    assert !close_to(a: [-1.0], b: [1.0], within: 1.5)
+    assert !close_to(a: [1.0], b: [1.0, 1.0], within: 10.0)
+    assert !close_to(a: [], b: [0.0], within: 10.0)

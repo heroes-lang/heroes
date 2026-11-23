@@ -223,7 +223,13 @@ extern "hero_ui.h"
     constant HERO_UI_OPEN_ARGUMENTS: i64
     function hero_ui_set_identity(app: App, @identifier: [u8] counted_by identifier_count lent, identifier_count: u64, @name: [u8] counted_by name_count lent, name_count: u64) -> i64
     function hero_ui_claim_instance(app: App, @arguments: [u8] counted_by count lent, count: u64) -> i64
-    # Accessible names, and a label tied to its field.
+    # Gives widget `id` the accessible name `name`: 0 once taken, or -1.
+    #
+    # - `app`: the app.
+    # - `id`: the widget.
+    # - `name`: one line of UTF-8, read and never kept.
+    # - `count`: how many of the first bytes of `name` the function reads; 0
+    #   for none, which takes the name back.
     function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_set_label_for(app: App, id: i64, label: i64) -> i64
@@ -235,10 +241,23 @@ extern "hero_ui.h"
     constant HERO_UI_EDITABLE_COMBO: i64
     # A spin.
     constant HERO_UI_SPIN: i64
-    # A tip over a widget.
+    # Gives widget `id` the tip `text` shown over it: 0 once shown, or -1.
+    #
+    # - `app`: the app.
+    # - `id`: the widget.
+    # - `text`: the tip's UTF-8, read and never kept.
+    # - `count`: how many of the first bytes of `text` the function reads; 0
+    #   for none, which takes the tip back.
     function hero_ui_set_tip(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_tip(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
-    # A notification of the system's.
+    # Shows a notification of the system's: 0 once shown, or -1.
+    #
+    # - `app`: the app.
+    # - `title`: one line of UTF-8, not empty, read and never kept.
+    # - `title_count`: how many of the first bytes of `title` the function
+    #   reads.
+    # - `text`: UTF-8 with no zero byte, read and never kept.
+    # - `text_count`: how many of the first bytes of `text` the function reads.
     function hero_ui_notify(app: App, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64

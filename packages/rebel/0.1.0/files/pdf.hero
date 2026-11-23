@@ -38,21 +38,21 @@
 # the codes of `compress` and `image/png` where a stream or an image does not
 # decode.
 #
-# Not written yet, each a `pending` block of its ledger: Type 1 fonts and
-# fonts with CFF outlines embedded; spot colours and ICC colour spaces;
-# blend modes, overprint and soft masks of the graphics state; XMP metadata
-# streams; reusable form objects (templates); optional content: layers shown or
-# hidden; linear and radial gradients, shadings; files attached to a document;
-# text notes, highlights, free text, ink, and other annotations; interactive
-# forms: fields read, filled, flattened; how a viewer opens the document: page
-# mode, layout, preferences, labels, open action; documents written encrypted,
-# with passwords and permissions; the text of a composite font that gives no
+# Not written yet, each a `pending` block of its ledger: OpenType fonts with
+# CFF outlines embedded; spot colours and ICC colour spaces; blend modes,
+# overprint and soft masks of the graphics state; XMP metadata streams;
+# reusable form objects (templates); optional content: layers shown or hidden;
+# linear and radial gradients, shadings; files attached to a document; text
+# notes, highlights, free text, ink, and other annotations; interactive forms:
+# fields read, filled, flattened; how a viewer opens the document: page mode,
+# layout, preferences, labels, open action; documents written encrypted, with
+# passwords and permissions; the text of a composite font that gives no
 # ToUnicode map, read from the embedded font's own cmap table, and of the
-# predefined CJK CMaps; files encrypted with AES; the images a page draws, their
-# bytes; the fonts a file uses, listed and extracted; a file read changed and
-# written again: pages merged, split, inserted, removed, rotated, cropped;
-# objects changed, renumbered, pruned; incremental updates written; digital
-# signatures and certificates.
+# predefined CJK CMaps; files encrypted with AES; the images a page draws,
+# their bytes; the fonts a file uses, listed and extracted; a file read
+# changed and written again: pages merged, split, inserted, removed, rotated,
+# cropped; objects changed, renumbered, pruned; incremental updates written;
+# digital signatures and certificates.
 
 use bytes
 use image
@@ -2986,6 +2986,28 @@ test "raw_stream_of: compressed bytes"
 # The sample font as a face made by `load_font`.
 function noto() -> Font
     return load_font(font_samples.noto_sans(), index: 0).must()
+
+# The sample font is a face with a name of its own.
+test "noto: the sample font read as an embedded face"
+    assert base_font_of(noto()) == "NotoSans-Regular"
+
+# A standard font is measured by its number alone; an embedded one is number 14
+# with the slot its face is read against.
+test "measured: a standard font and an embedded one"
+    standard = measured(.helvetica)
+    assert standard.number >= 0 && standard.number < 14
+    assert standard.slots.len() == 0
+    drawn = measured(noto())
+    assert drawn.number == 14
+    assert drawn.slots.len() == 1
+
+# A standard font keeps its own number in every document, and an embedded font
+# is added to a document once and answers the same number again.
+test "font_number: a standard font, and an embedded font asked twice"
+    doc @= document()
+    assert font_number(@doc, font: .courier) == measured(.courier).number
+    first = font_number(@doc, font: noto())
+    assert font_number(@doc, font: noto()) == first
 
 # The measures of the sample's font as fontTools reads them, and the width of a
 # text from its `hmtx`: A is 639 and H 741 in the 1000 units of the em.

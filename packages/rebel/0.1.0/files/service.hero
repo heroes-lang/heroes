@@ -37,8 +37,13 @@
 # It fails with `invalid`, `exists`, `closed`, `timeout`, `stopped`, `limit`,
 # `unsupported` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: a program that hosts
-# several services in one process.
+# Not written yet, each a `pending` block of its ledger: a Windows error
+# number reported as the service's exit code; device arrivals and hardware
+# profile changes told to the program; a power setting's change told with its
+# value; why the system started the service; services installed, started,
+# stopped, queried and removed; Unix-domain sockets, FIFOs and special files
+# handed over; the pidfd check of `$LISTEN_PIDFDID`; the notice variables of
+# bus services and tuning.
 
 use fs
 use net
@@ -499,13 +504,16 @@ variant Notice
     # `STATUS=`: a line of free text `systemctl status` shows; no control
     # character, a newline included.
     status
+        # The line `systemctl status` shows: one line, no control character.
         text: str
     # `ERRNO=`: an errno-style number, 1 to 4095, as the manager's tools show
     # for a service that failed.
     errno
+        # The errno-style number, 1 to 4095.
         number: i64
     # `MAINPID=`: the main process is another from now on.
     main_pid
+        # The process id of the new main process.
         pid: i64
     # `WATCHDOG=1`: the keep-alive the watchdog asks of the program.
     watchdog
@@ -514,10 +522,14 @@ variant Notice
     watchdog_trigger
     # `WATCHDOG_USEC=`: the watchdog's timeout changes.
     watchdog_timeout
+        # The new timeout, 0 or more, sent in whole microseconds with a part of
+        # one counting as a whole one.
         span: time.Duration
     # `EXTEND_TIMEOUT_USEC=`: the state the program is in is given longer, and
     # the next notice must arrive within it.
     extend_timeout
+        # How much longer the state may last, 0 or more, sent in whole
+        # microseconds with a part of one counting as a whole one.
         span: time.Duration
 
 # Whether this system has systemd's notice socket: POSIX does, and Windows does
@@ -581,17 +593,21 @@ function watchdog_timeout() -> time.Duration?
 variant Handed
     # A listening TCP socket, ready to `net.accept` from.
     listener
+        # The socket, owned by this value: close it when the program is done.
         socket: net.Listener
     # A connected TCP socket, which systemd hands a program per connection
     # where its unit says `Accept=yes`.
     connection
+        # The connection, owned by this value: close it when the program is done.
         conn: net.Conn
     # A UDP socket, bound.
     datagram
+        # The socket, owned by this value: close it when the program is done.
         socket: net.UdpSocket
     # A descriptor this package has no value for: a FIFO, a file, a local
     # socket. It is left open, and the words say what it is.
     other
+        # What the descriptor is, in words a log can carry.
         words: str
 
 # One descriptor handed over, with the name its unit gave it.
@@ -653,6 +669,8 @@ test "is_supported and is_service: a system has services or not, and a test run 
     assert is_supported() == (hero_service.supported() == 1)
     assert !is_service()
 
+# A limit below zero is refused whatever the system, and a name out of range
+# where services exist.
 test "start: a limit below zero is invalid on every system, and what the floor refuses is told by its code"
     assert reading.code_of(start("demo", limit: time.nanoseconds(-1))) == INVALID
 
@@ -664,6 +682,8 @@ test "start: a limit below zero is invalid on every system, and what the floor r
     assert reading.code_of(start("demo", limit: time.nanoseconds(0))) == UNSUPPORTED
     assert reading.code_of(start("", limit: time.nanoseconds(0))) == UNSUPPORTED
 
+# A program run from a console is no service: where services exist the start
+# fails `failed` with the system's words, and again when asked again.
 test "start: a program run from a console is not a service, told failed with the system's words, twice"
     if !is_supported()
         return
@@ -740,6 +760,7 @@ test "can_notify, can_inherit, can_inherit_launchd: POSIX has systemd's protocol
         .other =>
             assert !can_inherit_launchd()
 
+# Only a Linux system can have been booted with systemd.
 test "is_booted_by_systemd: only Linux can have been booted with systemd"
     match os.system()
         .windows => assert !is_booted_by_systemd()
@@ -759,6 +780,8 @@ test "format_notices, parse_notices: the face is the datagram's text and back, a
     newline: [Notice] = [.status(text: "a\nb")]
     assert reading.code_of(notify(newline)) == INVALID
 
+# A program started by hand has no manager listening: nothing is sent and the
+# answer is `false`.
 test "notify: a program started by hand has no supervisor, so nothing is sent and the answer is false"
     if !can_notify()
         skip_test(reason: "this system has no systemd notice socket: notify answers unsupported")
@@ -769,18 +792,22 @@ test "notify: a program started by hand has no supervisor, so nothing is sent an
     else
         skip_test(reason: "this test was started by a manager that listens at NOTIFY_SOCKET")
 
+# A system with no notice socket answers `unsupported`.
 test "notify: a system with no notice socket answers unsupported by words"
     if can_notify()
         skip_test(reason: "this system has a notice socket: notify sends")
     ready: [Notice] = [.ready]
     assert reading.code_of(notify(ready)) == UNSUPPORTED
 
+# No watchdog supervises a program started by hand: the answer is `not_found`.
 test "watchdog_timeout: no watchdog supervises a test run, and the answer is not_found by words"
     if os.env("WATCHDOG_USEC").is_err()
         assert reading.code_of(watchdog_timeout()) == NOT_FOUND
     else
         skip_test(reason: "this test was started by a manager whose watchdog supervises it")
 
+# A program no manager started is handed no socket on POSIX, and a system
+# without them answers `unsupported`.
 test "inherit: a test run is handed nothing on POSIX, and a system without it answers unsupported"
     if !can_inherit()
         assert reading.code_of(inherit()) == UNSUPPORTED
@@ -789,9 +816,124 @@ test "inherit: a test run is handed nothing on POSIX, and a system without it an
     else
         skip_test(reason: "this test was started by a manager that hands descriptors over")
 
+# A name that is empty is refused, and a program no launchd job runs finds
+# nothing; off macOS the answer is `unsupported`.
 test "inherit_launchd: a name that is empty is invalid and a program no launchd job runs finds nothing, off macOS it is unsupported"
     if !can_inherit_launchd()
         assert reading.code_of(inherit_launchd("heroes")) == UNSUPPORTED
     else
         assert reading.code_of(inherit_launchd("")) == INVALID
         assert reading.code_of(inherit_launchd("heroes-nothing-has-this-name")) == NOT_FOUND
+
+## Examples
+
+# Whether the system has services: Windows does and no other system.
+test "is_supported: only Windows has services"
+    match os.system()
+        .windows => assert is_supported()
+        .darwin  => assert !is_supported()
+        .linux   => assert !is_supported()
+        .other   => assert !is_supported()
+
+# A program run from a console, as this one is, was not started as a service.
+test "is_service: a program run from a console"
+    assert !is_service()
+
+# A service value made by hand reaches no service, and every call on it says so
+# with the same code: `closed` where services exist, `unsupported` where not.
+test "arguments: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(arguments(s)) == reading.code_without_service()
+
+# Reporting running before the system has started the service.
+test "report_running: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(report_running(s, accepts: [.stop])) == reading.code_without_service()
+
+# Reporting paused before the system has started the service.
+test "report_paused: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(report_paused(s, accepts: [.pause_resume])) == reading.code_without_service()
+
+# Reporting a state that is pending, with the time the system should wait for
+# the next report.
+test "report_pending: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1).must())) == reading.code_without_service()
+
+# Ending a service that was never started.
+test "end: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(end(s, exit_code: 0)) == reading.code_without_service()
+
+# Waiting for the controls of a service that was never started answers at once.
+test "wait: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(wait(s, limit: time.nanoseconds(0))) == reading.code_without_service()
+
+# Waiting with no limit on a service that was never started answers at once,
+# where services exist as where they do not.
+test "wait_forever: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(wait_forever(s)) == reading.code_without_service()
+
+# The count of controls ready, asked of a service that was never started.
+test "count: a service that was never started"
+    s = Service(name: "none")
+    assert reading.code_of(count(s)) == reading.code_without_service()
+
+# A service that was never started joins no poll set, and the set is left as it
+# was.
+test "add_to: a service that was never started"
+    s = Service(name: "none")
+    set @= poll.make(4).must()
+    assert reading.code_of(add_to(set, s)) == reading.code_without_service()
+    assert poll.count(set).must() == 0
+    poll.close(@set).must()
+
+# A state's words, as a log carries them.
+test "state_name: a running service"
+    assert state_name(.running) == "running"
+    assert state_name(.stop_pending) == "stop_pending"
+
+# A control's words, as a log carries them.
+test "format_control: a stop and a power event"
+    assert format_control(Control(kind: .stop, event: 0, session: 0)) == "stop"
+    assert format_control(Control(kind: .power, event: 18, session: 0)) == "power event 18"
+
+# Whether the system has systemd's notice socket: POSIX has it and Windows has
+# not.
+test "can_notify: POSIX has the notice socket, Windows has not"
+    match os.system()
+        .windows => assert !can_notify()
+        .darwin  => assert can_notify()
+        .linux   => assert can_notify()
+        .other   => _ = can_notify()
+
+# Notices written as the datagram's text, one assignment to a line.
+test "format_notices: a ready notice and a status"
+    notices: [Notice] = [.ready, .status(text: "Serving")]
+    assert format_notices(notices, monotonic: time.nanoseconds(0)).must() == "READY=1\nSTATUS=Serving"
+
+# The text of a datagram read back as the notices it holds.
+test "parse_notices: a ready notice and a status"
+    want: [Notice] = [.ready, .status(text: "Serving")]
+    assert parse_notices("READY=1\nSTATUS=Serving").must() == want
+
+# Whether the system has systemd's socket activation: POSIX has it and Windows
+# has not.
+test "can_inherit: POSIX has socket activation, Windows has not"
+    match os.system()
+        .windows => assert !can_inherit()
+        .darwin  => assert can_inherit()
+        .linux   => assert can_inherit()
+        .other   => _ = can_inherit()
+
+# Whether the system has launchd's socket activation: macOS has it and no other
+# system.
+test "can_inherit_launchd: only macOS has launchd"
+    match os.system()
+        .darwin  => assert can_inherit_launchd()
+        .windows => assert !can_inherit_launchd()
+        .linux   => assert !can_inherit_launchd()
+        .other   => assert !can_inherit_launchd()

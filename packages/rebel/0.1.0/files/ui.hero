@@ -73,14 +73,9 @@
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: a thread's message to
-# the user interface, through feature 2647's mailbox; a box drawn with a title
-# and a frame around it; a combo box the person may type into; a number
-# typed, or stepped up and down; a line between the widgets of a box; an area
-# the program draws into, with its keys and its mouse; a tip shown over a
-# widget; a date, a colour or a font chosen in the system's own picker; an
-# icon in the system's tray or menu bar, and its notifications; a file
-# dragged onto a window.
+# Not written yet, each a `pending` block of its ledger: an area the program
+# draws into, with its keys and its mouse; a date, a colour or a font chosen
+# in the system's own picker.
 
 use bytes
 use image
@@ -1742,7 +1737,7 @@ function rows_of(app: App, widget: Widget) -> [[str]]?
 # - `widget`: a table.
 # - `order`: `.unsorted`, or `.by` one of its columns.
 #
-# Fails `closed`, `invalid`, `failed`. See also `.sort_asked`.
+# Fails `closed`, `invalid`, `failed`. See also `Event.sort_asked`.
 function set_sort(@app: App, widget: Widget, order: Sort) -> ()?
     return tables.set_sort(@app, widget: widget, order: order)
 
@@ -2592,8 +2587,12 @@ function add_mailbox<T>(@app: App, m: (mailbox T)) -> i64?
 # out of the app's wait; the set stays the program's and the mailbox keeps
 # its values.
 #
+# - `app`: the app.
+# - `key`: what `add_set` or `add_mailbox` answered, and that no `remove_source`
+#   has taken out since.
+#
 # Fails `closed`; `invalid` for a key the app does not watch; `unsupported`
-# on a headless app; `failed`.
+# on a headless app; `failed`. See also `add_set` and `add_mailbox`.
 function remove_source(@app: App, key: i64) -> ()?
     return sources.remove(@app, key: key)
 
@@ -3879,4 +3878,267 @@ test "render: a window with a label and a button"
     _ = button(@app, into: w, text: "OK").must()
     lines = render(@app).must()
     assert lines == ["window #1 \"Hi\" 200x80", "  label #2 \"Hello\" at 12,12 40x16", "  button #3 \"OK\" at 12,34 40x24"]
+    close(@app).must()
+
+# A field made as wide as the form: its row starts under the label and the
+# field above it.
+test "set_span: a text area across both columns of a form"
+    app @= open(.headless).must()
+    w = window(@app, title: "Form", width: 300, height: 200).must()
+    form = grid(@app, into: w, columns: 2).must()
+    _ = label(@app, into: form, text: "Name").must()
+    first = text_field(@app, into: form, text: "").must()
+    notes = text_area(@app, into: form, text: "").must()
+    set_span(@app, widget: notes, columns: 2).must()
+    assert rect_of(@app, widget: notes).must().y > rect_of(@app, widget: first).must().y
+    close(@app).must()
+
+# A thin line between two buttons of a window.
+test "separator: a line between two buttons"
+    app @= open(.headless).must()
+    w = window(@app, title: "Lines", width: 200, height: 120).must()
+    _ = button(@app, into: w, text: "Above").must()
+    line = separator(@app, into: w).must()
+    _ = button(@app, into: w, text: "Below").must()
+    assert kind_of(app, widget: line).must() == .separator
+    close(@app).must()
+
+# A frame with a title around a label.
+test "group: a titled frame around a label"
+    app @= open(.headless).must()
+    w = window(@app, title: "Person", width: 200, height: 120).must()
+    box = group(@app, into: w, title: "Name").must()
+    _ = label(@app, into: box, text: "Ada").must()
+    assert kind_of(app, widget: box).must() == .group
+    assert text_of(app, widget: box).must() == "Name"
+    close(@app).must()
+
+# A font size typed or chosen from a list: the text it starts with chose no item.
+test "editable_combo: a text that is none of the items"
+    app @= open(.headless).must()
+    w = window(@app, title: "Sizes", width: 200, height: 80).must()
+    sizes = editable_combo(@app, into: w, items: ["8", "10", "12"], text: "11").must()
+    assert text_of(app, widget: sizes).must() == "11"
+    assert selection_of(app, widget: sizes).must() == []
+    set_text(@app, widget: sizes, text: "12").must()
+    assert selection_of(app, widget: sizes).must() == [2]
+    close(@app).must()
+
+# A whole number between two ends, set by the program.
+test "spin: a number from 1 to 20"
+    app @= open(.headless).must()
+    w = window(@app, title: "Copies", width: 200, height: 80).must()
+    count = spin(@app, into: w, least: 1, most: 20, value: 5).must()
+    assert value_of(app, widget: count).must() == 5
+    set_value(@app, widget: count, value: 20).must()
+    assert value_of(app, widget: count).must() == 20
+    close(@app).must()
+
+# An edit typed in a text area, undone.
+test "undo: an edit typed in a text area"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "one").must()
+    assert !undo(@app, widget: area).must()
+    inject(@app, input: .type_text(widget: area, text: "one two")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert undo(@app, widget: area).must()
+    assert text_of(app, widget: area).must() == "one"
+    close(@app).must()
+
+# An edit undone and done again.
+test "redo: an edit undone"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "one").must()
+    inject(@app, input: .type_text(widget: area, text: "one two")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert !redo(@app, widget: area).must()
+    assert undo(@app, widget: area).must()
+    assert redo(@app, widget: area).must()
+    assert text_of(app, widget: area).must() == "one two"
+    close(@app).must()
+
+# Whether an editor's Undo item is enabled: not before an edit, enabled after.
+test "can_undo: before and after an edit"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "one").must()
+    assert !can_undo(app, widget: area).must()
+    inject(@app, input: .type_text(widget: area, text: "one two")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert can_undo(app, widget: area).must()
+    close(@app).must()
+
+# Whether an editor's Redo item is enabled: only after an edit was undone.
+test "can_redo: before and after an undo"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "one").must()
+    inject(@app, input: .type_text(widget: area, text: "one two")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert !can_redo(app, widget: area).must()
+    assert undo(@app, widget: area).must()
+    assert can_redo(app, widget: area).must()
+    close(@app).must()
+
+# The first word of a text selected, in bytes: a two-byte character counts two.
+test "select_text: the first word of a text"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "café au lait").must()
+    select_text(@app, widget: area, start: 0, end: 5).must()
+    assert text_selection_of(app, widget: area).must() == TextRange(start: 0, end: 5)
+    close(@app).must()
+
+# The caret where nothing is selected: at the end of the text the program set.
+test "text_selection_of: the caret at the end of a text"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 300, height: 200).must()
+    area = text_area(@app, into: w, text: "ab").must()
+    assert text_selection_of(app, widget: area).must() == TextRange(start: 2, end: 2)
+    close(@app).must()
+
+# An icon in the tray with the words it shows.
+test "tray: an icon with its words"
+    app @= open(.headless).must()
+    icon = tray(@app, text: "Sync").must()
+    assert kind_of(app, widget: icon).must() == .tray
+    close(@app).must()
+
+# An app kept out of the Dock and brought back.
+test "set_docked: out of the Dock and back"
+    app @= open(.headless).must()
+    set_docked(@app, on: false).must()
+    set_docked(@app, on: true).must()
+    close(@app).must()
+
+# The appearance the windows are drawn in: light on the headless side until an
+# input turns it dark.
+test "appearance_of: light until turned dark"
+    app @= open(.headless).must()
+    assert appearance_of(app).must() == .light
+    inject(@app, input: .change_appearance(appearance: .dark)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .appearance_changed(appearance: .dark)
+    assert appearance_of(app).must() == .dark
+    close(@app).must()
+
+# An ask to end the app, told and then answered with the app staying.
+test "answer_quit: an ask answered with no"
+    app @= open(.headless).must()
+    inject(@app, input: .ask_quit(session_end: false)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .quit_asked(session_end: false)
+    answer_quit(@app, go: false).must()
+    close(@app).must()
+
+# A name for the app's menus and a reverse domain name for its one instance.
+test "set_identity: a reverse domain name and a name"
+    app @= open(.headless).must()
+    set_identity(@app, identifier: "org.example.Editor", name: "Editor").must()
+    close(@app).must()
+
+# The one instance of an app: the headless side is always it.
+test "claim_instance: the first launch is the one instance"
+    app @= open(.headless).must()
+    set_identity(@app, identifier: "org.example.Editor", name: "Editor").must()
+    assert claim_instance(@app, arguments: ["--new"]).must()
+    close(@app).must()
+
+# A window taking the files the person drops on it.
+test "set_drop: a window taking dropped files"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    set_drop(@app, widget: w, on: true).must()
+    inject(@app, input: .drop_files(window: w, x: 10, y: 20, paths: ["/a/b.txt"])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .files_dropped(window: w, x: 10, y: 20, paths: ["/a/b.txt"])
+    close(@app).must()
+
+# A tip given to a button and taken back.
+test "set_tip: a tip given and taken back"
+    app @= open(.headless).must()
+    w = window(@app, title: "Tips", width: 200, height: 80).must()
+    b = button(@app, into: w, text: "Open").must()
+    set_tip(@app, widget: b, text: "Opens a file").must()
+    set_tip(@app, widget: b, text: "").must()
+    assert tip_of(app, widget: b).must() == ""
+    close(@app).must()
+
+# The tip a button holds.
+test "tip_of: the tip of a button"
+    app @= open(.headless).must()
+    w = window(@app, title: "Tips", width: 200, height: 80).must()
+    b = button(@app, into: w, text: "Open").must()
+    assert tip_of(app, widget: b).must() == ""
+    set_tip(@app, widget: b, text: "Opens a file").must()
+    assert tip_of(app, widget: b).must() == "Opens a file"
+    close(@app).must()
+
+# A slider named for a screen reader, and a box that cannot be.
+test "set_accessible_name: a slider named, a box refused"
+    app @= open(.headless).must()
+    w = window(@app, title: "Player", width: 200, height: 120).must()
+    dial = slider(@app, into: w, least: 0, most: 10, value: 5).must()
+    set_accessible_name(@app, widget: dial, name: "Volume").must()
+    box = row(@app, into: w).must()
+    assert fixture.code_of(set_accessible_name(@app, widget: box, name: "Tools")) == INVALID
+    close(@app).must()
+
+# A label tied to its field, and a label that cannot be tied to itself.
+test "set_label_for: a label tied to its field"
+    app @= open(.headless).must()
+    w = window(@app, title: "Form", width: 200, height: 120).must()
+    words = label(@app, into: w, text: "Name:").must()
+    field = text_field(@app, into: w, text: "").must()
+    set_label_for(@app, caption: words, widget: field).must()
+    assert fixture.code_of(set_label_for(@app, caption: words, widget: words)) == INVALID
+    close(@app).must()
+
+# A notification with a title and its words.
+test "notify: a notification of the system's"
+    app @= open(.headless).must()
+    notify(@app, title: "Synced", text: "3 files").must()
+    assert fixture.code_of(notify(@app, title: "", text: "x")) == INVALID
+    close(@app).must()
+
+# The print dialog over a window, answered by a choice the program queued.
+test "print_dialog: a choice queued answers the dialog"
+    app @= open(.headless).must()
+    w = window(@app, title: "Report", width: 300, height: 200).must()
+    office = printing.default_settings("Office")
+    inject(@app, input: .choose_print(settings: office)).must()
+    dialog = print_dialog(@app, over: w, settings: office).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: dialog, choice: .chosen(settings: office))
+    close(@app).must()
+
+# The page-setup dialog over a window, cancelled.
+test "page_dialog: a cancel queued answers the dialog"
+    app @= open(.headless).must()
+    w = window(@app, title: "Report", width: 300, height: 200).must()
+    dialog = page_dialog(@app, over: w, settings: printing.default_settings("Office")).must()
+    inject(@app, input: .cancel_print).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: dialog, choice: .cancelled)
+    close(@app).must()
+
+# A poll set the app's wait could watch, which a headless app has no system to
+# watch it with.
+test "add_set: a headless app answers unsupported"
+    app @= open(.headless).must()
+    set @= poll.make(4).must()
+    assert fixture.code_of(add_set(@app, set: set)) == UNSUPPORTED
+    poll.close(@set).must()
+    close(@app).must()
+
+# A mailbox the app's wait could watch, which a headless app has no system to
+# watch it with.
+test "add_mailbox: a headless app answers unsupported"
+    app @= open(.headless).must()
+    m: (mailbox i64) = mailbox()
+    assert fixture.code_of(add_mailbox(@app, m: m)) == UNSUPPORTED
+    close(@app).must()
+
+# A key no `add_set` or `add_mailbox` answered is watched by nothing, and a
+# headless app answers unsupported for it.
+test "remove_source: a headless app answers unsupported"
+    app @= open(.headless).must()
+    assert fixture.code_of(remove_source(@app, key: 1)) == UNSUPPORTED
     close(@app).must()
