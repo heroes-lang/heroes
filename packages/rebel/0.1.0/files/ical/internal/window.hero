@@ -1,0 +1,198 @@
+# A recurrence rule expanded over a window of instants: the rule is worked out
+# on the wall clock of its start (`expansion`), the window is carried over to
+# that clock with a day's margin either side, and every occurrence is judged
+# by the instant it is in its zone, so a change of offset never loses or
+# adds one.
+
+use ical
+use ical/internal/civil
+use ical/internal/expansion
+use ical/internal/moments
+use ical/internal/samples
+use time
+
+# The zone whose wall clock a moment's local seconds are read on.
+#
+# - `start`: the moment.
+# - `floating`: the zone a floating reading and a date are taken in.
+function frame_of(start: ical.When, floating: time.Zone) -> time.Zone
+    return match start
+        .zoned z    => z.zone
+        .utc _      => time.utc_zone()
+        .floating _ => floating
+        .date _     => floating
+
+# The seconds of the wall clock of `frame` at an instant.
+#
+# - `at`: the instant.
+# - `frame`: the zone.
+function local_of(at: time.Instant, frame: time.Zone) -> i64
+    return civil.local_seconds(time.to_date_time_in(t: at, zone: frame))
+
+# The last wall-clock second an `UNTIL` allows.
+#
+# - `end`: the rule's end.
+# - `frame`: the zone the start's wall clock is read in.
+#
+# A date allows its whole day.
+function until_local(end: ical.End, frame: time.Zone) -> i64
+    match end
+        .until u =>
+            return match u.when
+                .date d => civil.days_from_civil(year: d.year, month: d.month, day: d.day) * civil.DAY_SECONDS + civil.DAY_SECONDS - 1
+                .floating f => civil.local_seconds(f.local)
+                .utc t      => local_of(at: t.at, frame: frame)
+                .zoned z    => civil.local_seconds(z.local)
+        .forever => return 9000000000000
+        .count _ => return 9000000000000
+
+# The occurrences of `rule` from `start` that fall at or after `after` and
+# before `before`, each a moment of the start's kind.
+#
+# - `rule`: the rule.
+# - `start`: the first moment of the recurrence set.
+# - `after`: the window's first instant.
+# - `before`: the window's end, which no occurrence reaches.
+# - `floating`: the zone a floating start and a date are taken in.
+# - `max`: the most occurrences to answer.
+#
+# Fails `limit` as `expansion.occurrences` does and `does_not_fit` where a
+# moment is outside an `Instant`.
+function between(rule: ical.Recur, start: ical.When, after: time.Instant, before: time.Instant, floating: time.Zone, max: i64) -> [ical.When]?
+    if max < 1
+        return ok([])
+    frame = frame_of(start: start, floating: floating)
+    from = moments.wall_seconds(start)
+    first = local_of(at: after, frame: frame) - civil.DAY_SECONDS
+    last = local_of(at: before, frame: frame) + civil.DAY_SECONDS
+    bound = until_local(end: rule.end, frame: frame)
+
+    stop = if bound < last
+        bound
+    else
+        last
+
+    # A window's margin may hold occurrences that the instants then refuse, so
+    # the engine is asked for more than the caller's `max`, and the answer is
+    # checked against it afterwards.
+    found = expansion.occurrences(rule: rule, start: from, first: first, last: stop, max: max + 2 * 366 * 24 + 8)?
+    out: [ical.When] @= []
+
+    for t in found
+        w = moments.like_at(like: start, local: t)?
+        at = moments.instant_of(when: w, floating: floating)?
+
+        if !time.is_before(a: at, b: after) && time.is_before(a: at, b: before)
+            out @ out.push(w)
+
+            if out.len() > max
+                return fail(code: ical.LIMIT, msg: f"the window holds more than {max} occurrences")
+
+    return ok(out)
+
+# A wall-clock reading as a moment of the kind `zone` names.
+#
+# - `text`: `YYYYMMDDTHHMMSS`.
+# - `zone`: `Z`, `date`, an IANA name, or the empty text for a floating reading.
+function sample_when(text: str, zone: str) -> ical.When
+    fields = moments.parse_clock(text).must().fields
+
+    if zone == ""
+        return .floating(local: fields)
+
+    if zone == "Z"
+        return .utc(at: time.from_date_time(fields).must())
+
+    if zone == "date"
+        return .date(year: fields.year, month: fields.month, day: fields.day)
+    return .zoned(local: fields, zone: time.load_zone(zone).must())
+
+# The wall-clock reading of a moment as `YYYYMMDDTHHMMSS`.
+#
+# - `w`: the moment, a date being read at its midnight.
+function reading(w: ical.When) -> str
+    return match w
+        .date d     => moments.date_text(year: d.year, month: d.month, day: d.day) + "T000000"
+        .floating f => moments.clock_text(f.local)
+        .utc u      => moments.clock_text(time.to_date_time(u.at))
+        .zoned z    => moments.clock_text(z.local)
+
+# What `between` answers for a sample, as the readings separated by spaces.
+#
+# - `s`: the sample.
+function answer_for(s: samples.Sample) -> str
+    rule = ical.parse_recur(s.rule).must()
+    utc = time.utc_zone()
+    after = moments.instant_of(when: sample_when(text: s.after, zone: s.zone), floating: utc).must()
+    before = moments.instant_of(when: sample_when(text: s.before, zone: s.zone), floating: utc).must()
+    found = between(
+        rule: rule,
+        start: sample_when(text: s.start, zone: s.zone),
+        after: after,
+        before: before,
+        floating: utc,
+        max: 1000
+    ).must()
+    texts: [str] @= []
+
+    for w in found
+        texts @ texts.push(reading(w))
+
+    return texts.join(" ")
+
+test "between: the rules of RFC 5545 section 3.8.5.3 and others, as dateutil expands them"
+    for s in samples.rrule_cases()
+        got = answer_for(s)
+
+        if got != s.expected
+            print("rule ", s.rule, " from ", s.start, " ", s.zone)
+            print("  got      ", got)
+            print("  expected ", s.expected)
+        assert got == s.expected
+
+# The answer for a rule asked in a window, as the readings joined by spaces.
+#
+# - `rule`: the text of the rule.
+# - `start`: the start as `YYYYMMDDTHHMMSS`, floating.
+# - `after`: the window's first reading.
+# - `before`: the window's end.
+# - `max`: the most occurrences.
+function floating_answer(rule: str, start: str, after: str, before: str, max: i64) -> str?
+    utc = time.utc_zone()
+    a = moments.instant_of(when: sample_when(text: after, zone: ""), floating: utc).must()
+    b = moments.instant_of(when: sample_when(text: before, zone: ""), floating: utc).must()
+    found = between(rule: ical.parse_recur(rule).must(), start: sample_when(text: start, zone: ""), after: a, before: b, floating: utc, max: max)?
+    texts: [str] @= []
+
+    for w in found
+        texts @ texts.push(reading(w))
+
+    return ok(texts.join(" "))
+
+test "between: a rule that selects nothing ends, a window of a century with a small limit fails, and a limit is exact"
+    assert floating_answer(rule: "FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=30", start: "20240101T000000", after: "20240101T000000", before: "22000101T000000", max: 10).must() == ""
+    assert floating_answer(rule: "FREQ=DAILY;COUNT=3", start: "20260101T000000", after: "20260101T000000", before: "20270101T000000", max: 3).must() == "20260101T000000 20260102T000000 20260103T000000"
+
+    match floating_answer(rule: "FREQ=DAILY", start: "20260101T000000", after: "20260101T000000", before: "20270101T000000", max: 3)
+        .ok _  => assert false
+        .err e => assert e.code == ical.LIMIT
+
+    assert floating_answer(rule: "FREQ=DAILY", start: "20260101T000000", after: "20260101T000000", before: "20270101T000000", max: 0).must() == ""
+
+test "between: an until that an occurrence equals is kept, a date until keeps its whole day (dateutil ends it at midnight), a window far from the start skips periods without losing one, as dateutil answers"
+    assert floating_answer(rule: "FREQ=DAILY;UNTIL=20260103T090000", start: "20260101T090000", after: "20260101T000000", before: "20270101T000000", max: 10).must() == "20260101T090000 20260102T090000 20260103T090000"
+    assert floating_answer(rule: "FREQ=DAILY;UNTIL=20260103", start: "20260101T090000", after: "20260101T000000", before: "20270101T000000", max: 10).must() == "20260101T090000 20260102T090000 20260103T090000"
+    far = floating_answer(
+        rule: "FREQ=HOURLY;INTERVAL=5;BYMINUTE=0,30",
+        start: "20000101T000000",
+        after: "20261101T000000",
+        before: "20261102T000000",
+        max: 100
+    ).must()
+    assert far == "20261101T010000 20261101T013000 20261101T060000 20261101T063000 20261101T110000 20261101T113000 20261101T160000 20261101T163000 20261101T210000 20261101T213000"
+    assert floating_answer(rule: "FREQ=SECONDLY;INTERVAL=3600", start: "20000101T000000", after: "20261101T000000", before: "20261101T040000", max: 100).must() == "20261101T000000 20261101T010000 20261101T020000 20261101T030000"
+
+test "between: a second of 60 is never read (dateutil refuses it), a start the rule does not match is not an occurrence, leap days before 1970, as dateutil answers"
+    assert floating_answer(rule: "FREQ=MINUTELY;BYSECOND=0,60;COUNT=2", start: "20260101T000000", after: "20260101T000000", before: "20260102T000000", max: 10).must() == "20260101T000000 20260101T000100"
+    assert floating_answer(rule: "FREQ=WEEKLY;BYDAY=FR;COUNT=2", start: "20260101T090000", after: "20260101T000000", before: "20270101T000000", max: 10).must() == "20260102T090000 20260109T090000"
+    assert floating_answer(rule: "FREQ=YEARLY", start: "19480229T000000", after: "19400101T000000", before: "19800101T000000", max: 100).must() == "19480229T000000 19520229T000000 19560229T000000 19600229T000000 19640229T000000 19680229T000000 19720229T000000 19760229T000000"

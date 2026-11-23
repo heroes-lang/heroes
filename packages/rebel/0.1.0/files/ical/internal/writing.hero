@@ -1,0 +1,319 @@
+# The typed components written as components: each field that holds a value
+# becomes its line, in the order RFC 5545 shows its examples in, then the lines
+# the record kept as they were read. A value that cannot be written is refused,
+# naming the component and the property.
+
+use ical
+use ical/internal/moments
+use ical/internal/props
+use strings
+use time
+
+# Adds a text property where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `name`: the property's name.
+# - `v`: the text.
+#
+# Fails `invalid` where the text holds a control character.
+function add_text(@out: [ical.Line], name: str, v: str?) -> ()?
+    match v
+        .ok t  => out @ out.push(props.text_line(name: name, text: t)?)
+        .err _ => _ = 0
+
+    return ok()
+
+# Adds a token property, as it is, where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `name`: the property's name.
+# - `v`: the token.
+function add_token(@out: [ical.Line], name: str, v: str?)
+    match v
+        .ok t  => out @ out.push(props.line_of(name: name, params: [], value: t))
+        .err _ => _ = 0
+
+# Adds a moment property where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `name`: the property's name.
+# - `v`: the moment.
+#
+# Fails `invalid` where a year cannot be written.
+function add_when(@out: [ical.Line], name: str, v: ical.When?) -> ()?
+    match v
+        .ok w  => out @ out.push(ical.when_line(name: name, when: w)?)
+        .err _ => _ = 0
+
+    return ok()
+
+# Adds an instant property, written in UTC, where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `name`: the property's name.
+# - `v`: the instant.
+function add_stamp(@out: [ical.Line], name: str, v: time.Instant?)
+    match v
+        .ok t  => out @ out.push(props.stamp_line(name: name, at: t))
+        .err _ => _ = 0
+
+# Adds a number property where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `name`: the property's name.
+# - `v`: the number.
+function add_number(@out: [ical.Line], name: str, v: i64?)
+    match v
+        .ok n  => out @ out.push(props.line_of(name: name, params: [], value: to_str(n)))
+        .err _ => _ = 0
+
+# Adds a duration property where `v` holds one.
+#
+# - `out`: the lines written so far.
+# - `v`: the span.
+function add_duration(@out: [ical.Line], v: ical.Span?)
+    match v
+        .ok s  => out @ out.push(props.line_of(name: "DURATION", params: [], value: moments.span_text(s)))
+        .err _ => _ = 0
+
+# Adds a `STATUS` where `v` holds one the component allows.
+#
+# - `out`: the lines written so far.
+# - `kind`: the component's name.
+# - `v`: the status.
+#
+# Fails `invalid` where the component does not allow it.
+function add_status(@out: [ical.Line], kind: str, v: ical.Status?) -> ()?
+    match v
+        .ok s =>
+            if !props.allows(kind: kind, status: s)
+                return fail(code: ical.INVALID, msg: f"{kind} cannot have the status {props.status_name(s)}")
+            out @ out.push(props.line_of(name: "STATUS", params: [], value: props.status_name(s)))
+        .err _ => _ = 0
+
+    return ok()
+
+# Adds the properties the three dated components share that follow their
+# own start, end and summary lines: the recurrence set, the people and the
+# categories.
+#
+# - `out`: the lines written so far.
+# - `categories`: the categories.
+# - `organizer`: the organizer.
+# - `attendees`: the attendees.
+# - `rules`: the rules.
+# - `rdates`: the added moments.
+# - `exdates`: the removed moments.
+# - `recurrence_id`: the occurrence replaced.
+#
+# Fails `invalid` as the writers of values do.
+function add_set(@out: [ical.Line], categories: [str], organizer: ical.Person?, attendees: [ical.Person], rules: [ical.Recur], rdates: [ical.When], exdates: [ical.When], recurrence_id: ical.When?) -> ()?
+    if categories.len() > 0
+        out @ out.push(props.categories_line(categories)?)
+
+    match organizer
+        .ok p  => out @ out.push(props.person_line(name: "ORGANIZER", person: p))
+        .err _ => _ = 0
+
+    for a in attendees
+        out @ out.push(props.person_line(name: "ATTENDEE", person: a))
+
+    for r in rules
+        out @ out.push(props.line_of(name: "RRULE", params: [], value: ical.format_recur(r)?))
+
+    for w in rdates
+        out @ out.push(ical.when_line(name: "RDATE", when: w)?)
+
+    for w in exdates
+        out @ out.push(ical.when_line(name: "EXDATE", when: w)?)
+
+    add_when(@out, name: "RECURRENCE-ID", v: recurrence_id)?
+    return ok()
+
+# The component of an alarm.
+#
+# - `a`: the alarm.
+#
+# Fails `invalid` where a text holds a control character.
+function alarm_to(a: ical.Alarm) -> ical.Component?
+    lines: [ical.Line] @= []
+    lines @ lines.push(props.line_of(name: "ACTION", params: [], value: a.action))
+    lines @ lines.push(props.trigger_line(a.trigger))
+    add_text(@lines, name: "DESCRIPTION", v: a.description)?
+    add_text(@lines, name: "SUMMARY", v: a.summary)?
+    add_number(@lines, name: "REPEAT", v: a.repeat)
+    add_duration(@lines, v: a.duration)
+
+    for p in a.attendees
+        lines @ lines.push(props.person_line(name: "ATTENDEE", person: p))
+
+    for line in a.extra
+        lines @ lines.push(line)
+
+    return ok(ical.Component(name: "VALARM", lines: lines, children: []))
+
+# The component of an event.
+#
+# - `e`: the event.
+#
+# Fails `invalid` where it holds both an end and a duration, a status it cannot have, or a value that cannot be written.
+function event_to(e: ical.Event) -> ical.Component?
+    if !e.end.is_err() && !e.duration.is_err()
+        return fail(code: ical.INVALID, msg: "VEVENT holds both DTEND and DURATION")
+    lines: [ical.Line] @= []
+    add_text(@lines, name: "UID", v: e.uid)?
+    add_stamp(@lines, name: "DTSTAMP", v: e.stamp)
+    add_when(@lines, name: "DTSTART", v: e.start)?
+    add_when(@lines, name: "DTEND", v: e.end)?
+    add_duration(@lines, v: e.duration)
+    add_text(@lines, name: "SUMMARY", v: e.summary)?
+    add_text(@lines, name: "DESCRIPTION", v: e.description)?
+    add_text(@lines, name: "LOCATION", v: e.location)?
+    add_token(@lines, name: "URL", v: e.url)
+    add_status(@lines, kind: "VEVENT", v: e.status)?
+    add_token(@lines, name: "CLASS", v: e.access)
+    add_token(@lines, name: "TRANSP", v: e.transparency)
+    add_number(@lines, name: "PRIORITY", v: e.priority)
+    add_number(@lines, name: "SEQUENCE", v: e.sequence)
+    add_stamp(@lines, name: "CREATED", v: e.created)
+    add_stamp(@lines, name: "LAST-MODIFIED", v: e.modified)
+    add_set(@lines, categories: e.categories, organizer: e.organizer, attendees: e.attendees, rules: e.rules, rdates: e.rdates, exdates: e.exdates, recurrence_id: e.recurrence_id)?
+
+    for line in e.extra
+        lines @ lines.push(line)
+
+    children: [ical.Component] @= []
+
+    for a in e.alarms
+        children @ children.push(alarm_to(a)?)
+
+    for c in e.children
+        children @ children.push(c)
+
+    return ok(ical.Component(name: "VEVENT", lines: lines, children: children))
+
+# The component of a to-do.
+#
+# - `t`: the to-do.
+#
+# Fails `invalid` where it holds both a due moment and a duration, a status it cannot have, or a value that cannot be written.
+function todo_to(t: ical.Todo) -> ical.Component?
+    if !t.due.is_err() && !t.duration.is_err()
+        return fail(code: ical.INVALID, msg: "VTODO holds both DUE and DURATION")
+    lines: [ical.Line] @= []
+    add_text(@lines, name: "UID", v: t.uid)?
+    add_stamp(@lines, name: "DTSTAMP", v: t.stamp)
+    add_when(@lines, name: "DTSTART", v: t.start)?
+    add_when(@lines, name: "DUE", v: t.due)?
+    add_duration(@lines, v: t.duration)
+    add_stamp(@lines, name: "COMPLETED", v: t.completed)
+    add_number(@lines, name: "PERCENT-COMPLETE", v: t.percent)
+    add_text(@lines, name: "SUMMARY", v: t.summary)?
+    add_text(@lines, name: "DESCRIPTION", v: t.description)?
+    add_text(@lines, name: "LOCATION", v: t.location)?
+    add_token(@lines, name: "URL", v: t.url)
+    add_status(@lines, kind: "VTODO", v: t.status)?
+    add_token(@lines, name: "CLASS", v: t.access)
+    add_number(@lines, name: "PRIORITY", v: t.priority)
+    add_number(@lines, name: "SEQUENCE", v: t.sequence)
+    add_stamp(@lines, name: "CREATED", v: t.created)
+    add_stamp(@lines, name: "LAST-MODIFIED", v: t.modified)
+    add_set(@lines, categories: t.categories, organizer: t.organizer, attendees: t.attendees, rules: t.rules, rdates: t.rdates, exdates: t.exdates, recurrence_id: t.recurrence_id)?
+
+    for line in t.extra
+        lines @ lines.push(line)
+
+    children: [ical.Component] @= []
+
+    for a in t.alarms
+        children @ children.push(alarm_to(a)?)
+
+    for c in t.children
+        children @ children.push(c)
+
+    return ok(ical.Component(name: "VTODO", lines: lines, children: children))
+
+# The component of a journal entry.
+#
+# - `j`: the entry.
+#
+# Fails `invalid` where it holds a status it cannot have, or a value that cannot be written.
+function journal_to(j: ical.Journal) -> ical.Component?
+    lines: [ical.Line] @= []
+    add_text(@lines, name: "UID", v: j.uid)?
+    add_stamp(@lines, name: "DTSTAMP", v: j.stamp)
+    add_when(@lines, name: "DTSTART", v: j.start)?
+    add_text(@lines, name: "SUMMARY", v: j.summary)?
+    add_text(@lines, name: "DESCRIPTION", v: j.description)?
+    add_status(@lines, kind: "VJOURNAL", v: j.status)?
+    add_token(@lines, name: "CLASS", v: j.access)
+    add_number(@lines, name: "SEQUENCE", v: j.sequence)
+    add_stamp(@lines, name: "CREATED", v: j.created)
+    add_stamp(@lines, name: "LAST-MODIFIED", v: j.modified)
+    add_set(@lines, categories: j.categories, organizer: j.organizer, attendees: j.attendees, rules: j.rules, rdates: j.rdates, exdates: j.exdates, recurrence_id: j.recurrence_id)?
+
+    for line in j.extra
+        lines @ lines.push(line)
+
+    return ok(ical.Component(name: "VJOURNAL", lines: lines, children: j.children))
+
+# The component of a calendar.
+#
+# - `c`: the calendar.
+#
+# Fails `invalid` as the components' writers do.
+function calendar_to(c: ical.Calendar) -> ical.Component?
+    lines: [ical.Line] @= []
+    lines @ lines.push(props.text_line(name: "PRODID", text: c.product_id)?)
+    lines @ lines.push(props.line_of(name: "VERSION", params: [], value: c.version))
+    add_token(@lines, name: "CALSCALE", v: c.scale)
+    add_token(@lines, name: "METHOD", v: c.method)
+
+    for line in c.extra
+        lines @ lines.push(line)
+
+    children: [ical.Component] @= []
+
+    for o in c.others
+        children @ children.push(o)
+
+    for e in c.events
+        children @ children.push(event_to(e)?)
+
+    for t in c.todos
+        children @ children.push(todo_to(t)?)
+
+    for j in c.journals
+        children @ children.push(journal_to(j)?)
+
+    return ok(ical.Component(name: "VCALENDAR", lines: lines, children: children))
+
+test "event_to and todo_to: the lines in the order of RFC 5545's examples, the extra lines and the children after, and both ends refused"
+    e = ical.event(
+        uid: "a@b",
+        stamp: time.from_unix(whole_seconds: 858605400, extra_nanoseconds: 0).must(),
+        start: .date(year: 2026, month: 11, day: 25)
+    )
+    assert event_to(e).must().lines[0].name == "UID" && event_to(e).must().lines[1].value == "19970317T133000Z" && event_to(e).must().lines[2].params[0].values == ["DATE"]
+    both @= e
+    both.end @ ok(.date(year: 2026, month: 11, day: 26))
+    both.duration @ ok(ical.Span(negative: false, weeks: 0, days: 1, hours: 0, minutes: 0, seconds: 0))
+
+    match event_to(both)
+        .ok _   => assert false
+        .err e2 => assert e2.code == ical.INVALID
+
+    wrong @= e
+    wrong.status @ ok(.needs_action)
+
+    match event_to(wrong)
+        .ok _   => assert false
+        .err e3 => assert e3.code == ical.INVALID && strings.contains(s: e3.msg, substr: "VEVENT")
+
+    t @= ical.todo(uid: "t@b", stamp: time.epoch())
+    t.due @ ok(.date(year: 2026, month: 11, day: 30))
+    t.duration @ ok(ical.Span(negative: false, weeks: 0, days: 1, hours: 0, minutes: 0, seconds: 0))
+
+    match todo_to(t)
+        .ok _   => assert false
+        .err e4 => assert e4.code == ical.INVALID

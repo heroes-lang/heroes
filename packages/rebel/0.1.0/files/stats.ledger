@@ -131,12 +131,18 @@ capability stats/regression  the line of least squares through pairs, or through
   python  statistics.linear_regression, statistics.LinearRegression
   note    Python's `proportional` is a function of its own; the slope and intercept are a record, `stats.Line`. Equal to Python's on 600 sets
 
-capability stats/normal-distribution  a normal distribution: its density, cumulative probability, inverse, overlap, z-score, samples, and arithmetic on two
-  heroes  pending
+capability stats/normal-distribution  a normal distribution: its density, cumulative probability, inverse, overlap, z-score, quantiles, fit to data, and arithmetic on two
+  heroes  stats.normal, stats.normal_of, stats.normal_density, stats.normal_cumulative, stats.normal_quantile, stats.normal_quantiles, stats.normal_z_score, stats.normal_overlap, stats.normal_variance, stats.normal_sum, stats.normal_difference, stats.normal_shift, stats.normal_scale, stats.Normal
   go      -
   rust    -
-  python  statistics.NormalDist, NormalDist.from_samples, NormalDist.samples, NormalDist.pdf, NormalDist.cdf, NormalDist.inv_cdf, NormalDist.overlap, NormalDist.quantiles, NormalDist.zscore, NormalDist.mean, NormalDist.median, NormalDist.mode, NormalDist.stdev, NormalDist.variance, and its +, -, *, /, == and hash
-  note    a record of a mean and a deviation and functions over it; the inverse of the cumulative probability needs an algorithm whose answers are to be held to Python's, not yet done. Its samples are `random`'s
+  python  statistics.NormalDist, NormalDist.from_samples, NormalDist.pdf, NormalDist.cdf, NormalDist.inv_cdf, NormalDist.overlap, NormalDist.quantiles, NormalDist.zscore, NormalDist.mean, NormalDist.median, NormalDist.mode, NormalDist.stdev, NormalDist.variance, and its +, -, *, /, == and hash
+  note    a record of a mean and a deviation and functions over it, so `mean`, `stdev` and `variance` are fields and `normal_variance`, and the median and the mode are the mean; Python's `+`, `-`, `*` and `/` are `normal_sum`, `normal_difference`, `normal_shift` and `normal_scale` (a division is a multiplication by the inverse). Held to Python 3.15.2's `statistics.NormalDist` (run 2026-11-23) to a ten-trillionth: the density and the cumulative probability of three curves at five points, the inverse at eleven probabilities from 1e-300 to a trillionth below 1, the quartiles and deciles, the overlap of five pairs, the fit to five readings. The inverse is found by bisection on the cumulative probability, which is monotone, and the cumulative probability is `0.5 * erfc(-z / sqrt 2)`, which keeps its digits in the tail; both agree with Python's `inv_cdf` and `cdf` to a ten-trillionth, `cdf(-10)` included. A deviation of 0 is a point: its density, cumulative probability, z-score and overlap fail `invalid`, as Python's `StatisticsError` says, and a deviation below 0 or a nan fails `invalid` where the curve is built; the overlap is found where the two densities cross (the narrower first)
+
+capability stats/normal-samples  numbers drawn at random from a normal distribution
+  heroes  pending: a draw needs a generator, which is `random`'s, and `random` and `stats` are of one layer so neither uses the other; `random/distributions` (pending) draws by a mean and a deviation
+  go      -
+  rust    -
+  python  NormalDist.samples
 
 capability stats/kernel-density  an estimate of a density by kernels, and samples drawn from it
   heroes  refused: it answers a function that remembers the data, which needs a closure

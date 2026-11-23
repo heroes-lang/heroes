@@ -1,0 +1,467 @@
+# The occurrences of a recurrence rule, worked out on the wall clock: seconds
+# since 1970-01-01T00:00:00 with no zone, so that a rule keeps its local time
+# across a change of offset and the zone is applied by the caller afterwards.
+# The rule is read as RFC 5545 section 3.3.10 sets out: for each period of its
+# frequency the days and times its BY parts select, then the period's
+# `BYSETPOS`, then the count; where the RFC is silent it follows the answers of
+# Python's `dateutil.rrule`, which the tests are held to.
+
+use ical
+use ical/internal/civil
+
+# The most periods one expansion visits before it gives up, so that a rule that
+# selects nothing in a window of centuries ends.
+constant MAX_PERIODS: i64
+    4000000
+
+# What a rule asks for, with the parts the start fills in where the rule names none.
+record Plan
+    # The months a day must be in, empty for any.
+    months: [i64]
+    # The days of the month a day must be, empty for any.
+    month_days: [i64]
+    # The days of the year a day must be, empty for any.
+    year_days: [i64]
+    # The weeks of the year a yearly rule's days are taken from, empty for all.
+    week_nos: [i64]
+    # The weekdays a day must be, empty for any.
+    day_rules: [ical.DayRule]
+    # The hours the rule limits to, as written.
+    by_hour: [i64]
+    # The minutes the rule limits to, as written.
+    by_minute: [i64]
+    # The seconds the rule limits to, as written.
+    by_second: [i64]
+    # The hours a day's occurrences are made at.
+    hours: [i64]
+    # The minutes an hour's occurrences are made at.
+    minutes: [i64]
+    # The seconds a minute's occurrences are made at.
+    seconds: [i64]
+
+# `xs` in order and each once.
+#
+# - `xs`: any numbers.
+function sorted_unique(xs: [i64]) -> [i64]
+    ordered = sort(xs)
+    out: [i64] @= []
+
+    for x in ordered
+        if out.len() == 0 || out[out.len() - 1] != x
+            out @ out.push(x)
+
+    return out
+
+# The seconds of the list `xs` that a clock can read, 0 to 59, in order and each once.
+#
+# - `xs`: the numbers of a `BYSECOND`, where 60 is allowed and never read.
+function clock_seconds(xs: [i64]) -> [i64]
+    kept: [i64] @= []
+
+    for x in xs
+        if x <= 59
+            kept @ kept.push(x)
+
+    return sorted_unique(kept)
+
+# What `rule` asks for, given the start's date and clock.
+#
+# - `rule`: the rule.
+# - `c0`: the start's day.
+# - `weekday0`: the start's weekday, 0 for Monday.
+# - `sod0`: the start's second of the day.
+function plan_of(rule: ical.Recur, c0: civil.Day, weekday0: i64, sod0: i64) -> Plan
+    months @= sorted_unique(rule.by_month)
+    month_days @= sorted_unique(rule.by_month_day)
+    day_rules @= rule.by_day
+    nothing_named = rule.by_week_no.len() == 0 && rule.by_year_day.len() == 0 && rule.by_month_day.len() == 0 && rule.by_day.len() == 0
+
+    if nothing_named
+        if rule.freq == .yearly
+            if months.len() == 0
+                months @ [c0.month]
+            month_days @ [c0.day]
+        else if rule.freq == .monthly
+            month_days @ [c0.day]
+        else if rule.freq == .weekly
+            day_rules @ [.every(day: civil.weekday_of(weekday0))]
+
+    hours = if rule.by_hour.len() > 0
+        sorted_unique(rule.by_hour)
+    else
+        [sod0 / 3600]
+
+    minutes = if rule.by_minute.len() > 0
+        sorted_unique(rule.by_minute)
+    else
+        [sod0 % 3600 / 60]
+
+    seconds = if rule.by_second.len() > 0
+        clock_seconds(rule.by_second)
+    else
+        [sod0 % 60]
+    return Plan(
+        months: months,
+        month_days: month_days,
+        year_days: sorted_unique(rule.by_year_day),
+        week_nos: sorted_unique(rule.by_week_no),
+        day_rules: day_rules,
+        by_hour: sorted_unique(rule.by_hour),
+        by_minute: sorted_unique(rule.by_minute),
+        by_second: clock_seconds(rule.by_second),
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds
+    )
+
+# Whether `x` is in `xs`.
+#
+# - `xs`: the numbers.
+# - `x`: the number.
+function has(xs: [i64], x: i64) -> bool
+    for y in xs
+        if y == x
+            return true
+
+    return false
+
+# Whether the `n`th such weekday of a scope is the day `d`.
+#
+# - `d`: the day, of weekday `weekday`.
+# - `weekday`: 0 for Monday to 6 for Sunday.
+# - `n`: 1 for the first, -1 for the last.
+# - `scope_first`: the first day of the month or year `d` is counted in.
+# - `scope_last`: the last day of it.
+function nth_matches(d: i64, weekday: i64, n: i64, scope_first: i64, scope_last: i64) -> bool
+    first = scope_first + (weekday - civil.weekday_index(scope_first) + 7) % 7
+    last = scope_last - (civil.weekday_index(scope_last) - weekday + 7) % 7
+    position = (d - first) / 7 + 1
+    from_end = -((last - d) / 7 + 1)
+    return n == position || n == from_end
+
+# Whether the day `d` passes every limit the plan names.
+#
+# - `plan`: what the rule asks for.
+# - `freq`: the rule's frequency, which says what a place in `BYDAY` counts in.
+# - `d`: days since 1970-01-01.
+function day_passes(plan: Plan, freq: ical.Freq, d: i64) -> bool
+    c = civil.civil_from_days(d)
+
+    if plan.months.len() > 0 && !has(xs: plan.months, x: c.month)
+        return false
+
+    month_length = civil.month_length(year: c.year, month: c.month)
+
+    if plan.month_days.len() > 0 && !has(xs: plan.month_days, x: c.day) && !has(xs: plan.month_days, x: c.day - month_length - 1)
+        return false
+
+    year_first = civil.days_from_civil(year: c.year, month: 1, day: 1)
+
+    if plan.year_days.len() > 0
+        year_length = civil.days_from_civil(year: c.year + 1, month: 1, day: 1) - year_first
+        day_of_year = d - year_first + 1
+
+        if !has(xs: plan.year_days, x: day_of_year) && !has(xs: plan.year_days, x: day_of_year - year_length - 1)
+            return false
+
+    if plan.day_rules.len() == 0
+        return true
+
+    weekday = civil.weekday_index(d)
+
+    for rule in plan.day_rules
+        match rule
+            .every e =>
+                if civil.number_of(e.day) == weekday
+                    return true
+            .nth e =>
+                if civil.number_of(e.day) == weekday
+                    month_first = civil.days_from_civil(year: c.year, month: c.month, day: 1)
+                    in_month = freq == .monthly || plan.months.len() > 0
+
+                    first = if in_month
+                        month_first
+                    else
+                        year_first
+
+                    last = if in_month
+                        month_first + month_length - 1
+                    else
+                        civil.days_from_civil(year: c.year + 1, month: 1, day: 1) - 1
+
+                    if nth_matches(d: d, weekday: weekday, n: e.n, scope_first: first, scope_last: last)
+                        return true
+
+    return false
+
+# The first day of week 1 of `year`: the week, beginning on `week_start`, that
+# holds at least four days of the year.
+#
+# - `year`: the year.
+# - `week_start`: 0 for Monday to 6 for Sunday.
+function week_one(year: i64, week_start: i64) -> i64
+    jan4 = civil.days_from_civil(year: year, month: 1, day: 4)
+    return jan4 - (civil.weekday_index(jan4) - week_start + 7) % 7
+
+# The days of the weeks a yearly rule names, in order, each once.
+#
+# - `plan`: what the rule asks for, its `week_nos`.
+# - `year`: the year.
+# - `week_start`: 0 for Monday to 6 for Sunday.
+function week_days(plan: Plan, year: i64, week_start: i64) -> [i64]
+    first = week_one(year: year, week_start: week_start)
+    weeks = (week_one(year: year + 1, week_start: week_start) - first) / 7
+    out: [i64] @= []
+
+    for n in plan.week_nos
+        number = if n > 0
+            n
+        else
+            weeks + n + 1
+
+        if number >= 1 && number <= weeks
+            for k in range(from: 0, to: 7)
+                out @ out.push(first + (number - 1) * 7 + k)
+
+    return sorted_unique(out)
+
+# The days of the period `index` that a day-based rule looks at, before the
+# limits.
+#
+# - `rule`: the rule.
+# - `plan`: what the rule asks for.
+# - `c0`: the start's day.
+# - `d0`: the start's day number.
+# - `index`: which period, 0 for the one that holds the start.
+function period_days(rule: ical.Recur, plan: Plan, c0: civil.Day, d0: i64, index: i64) -> [i64]
+    out: [i64] @= []
+
+    if rule.freq == .yearly
+        year = c0.year + index * rule.interval
+
+        if year > 9999
+            return out
+
+        if plan.week_nos.len() > 0
+            return week_days(plan: plan, year: year, week_start: civil.number_of(rule.week_start))
+        first = civil.days_from_civil(year: year, month: 1, day: 1)
+        end = civil.days_from_civil(year: year + 1, month: 1, day: 1)
+
+        for d in range(from: first, to: end)
+            out @ out.push(d)
+    else if rule.freq == .monthly
+        months = c0.year * 12 + c0.month - 1 + index * rule.interval
+        year = months / 12
+
+        if year > 9999
+            return out
+        month = months % 12 + 1
+        first = civil.days_from_civil(year: year, month: month, day: 1)
+
+        for k in range(from: 0, to: civil.month_length(year: year, month: month))
+            out @ out.push(first + k)
+    else if rule.freq == .weekly
+        first = d0 - (civil.weekday_index(d0) - civil.number_of(rule.week_start) + 7) % 7 + 7 * index * rule.interval
+
+        for k in range(from: 0, to: 7)
+            out @ out.push(first + k)
+    else
+        out @ out.push(d0 + index * rule.interval)
+    return out
+
+# The first second of the period `index`, which says when to stop.
+#
+# - `rule`: the rule.
+# - `c0`: the start's day.
+# - `d0`: the start's day number.
+# - `start`: the start, in seconds.
+# - `index`: which period.
+function period_begin(rule: ical.Recur, c0: civil.Day, d0: i64, start: i64, index: i64) -> i64
+    return match rule.freq
+        .yearly => civil.days_from_civil(year: c0.year + index * rule.interval, month: 1, day: 1) * civil.DAY_SECONDS
+        .monthly =>
+            months = c0.year * 12 + c0.month - 1 + index * rule.interval
+            civil.days_from_civil(year: months / 12, month: months % 12 + 1, day: 1) * civil.DAY_SECONDS
+        .weekly => (d0 - (civil.weekday_index(d0) - civil.number_of(rule.week_start) + 7) % 7 + 7 * index * rule.interval) * civil.DAY_SECONDS
+        .daily    => (d0 + index * rule.interval) * civil.DAY_SECONDS
+        .hourly   => start - civil.floor_mod(a: start, b: 3600) + index * rule.interval * 3600
+        .minutely => start - civil.floor_mod(a: start, b: 60) + index * rule.interval * 60
+        .secondly => start + index * rule.interval
+
+# The seconds the plan makes of one day: each hour, minute and second.
+#
+# - `plan`: what the rule asks for.
+# - `day`: the day number.
+function day_times(plan: Plan, day: i64) -> [i64]
+    out: [i64] @= []
+    base = day * civil.DAY_SECONDS
+
+    for h in plan.hours
+        for m in plan.minutes
+            for s in plan.seconds
+                out @ out.push(base + h * 3600 + m * 60 + s)
+
+    return out
+
+# The occurrences of the period `index`, in order, before `BYSETPOS`.
+#
+# - `rule`: the rule.
+# - `plan`: what the rule asks for.
+# - `c0`: the start's day.
+# - `d0`: the start's day number.
+# - `start`: the start, in seconds.
+# - `index`: which period.
+function period_candidates(rule: ical.Recur, plan: Plan, c0: civil.Day, d0: i64, start: i64, index: i64) -> [i64]
+    out: [i64] @= []
+
+    if rule.freq == .hourly || rule.freq == .minutely || rule.freq == .secondly
+        t = period_begin(rule: rule, c0: c0, d0: d0, start: start, index: index)
+        day = civil.floor_div(a: t, b: civil.DAY_SECONDS)
+
+        if !day_passes(plan: plan, freq: rule.freq, d: day)
+            return out
+        hour = (t - day * civil.DAY_SECONDS) / 3600
+        minute = civil.floor_mod(a: t, b: 3600) / 60
+
+        if plan.by_hour.len() > 0 && !has(xs: plan.by_hour, x: hour)
+            return out
+
+        if rule.freq == .hourly
+            for m in plan.minutes
+                for s in plan.seconds
+                    out @ out.push(t - civil.floor_mod(a: t, b: 3600) + m * 60 + s)
+        else if rule.freq == .minutely
+            if plan.by_minute.len() > 0 && !has(xs: plan.by_minute, x: minute)
+                return out
+
+            for s in plan.seconds
+                out @ out.push(t - civil.floor_mod(a: t, b: 60) + s)
+        else
+            if plan.by_minute.len() > 0 && !has(xs: plan.by_minute, x: minute)
+                return out
+
+            if plan.by_second.len() > 0 && !has(xs: plan.by_second, x: civil.floor_mod(a: t, b: 60))
+                return out
+            out @ out.push(t)
+        return out
+
+    for d in period_days(rule: rule, plan: plan, c0: c0, d0: d0, index: index)
+        if day_passes(plan: plan, freq: rule.freq, d: d)
+            for t in day_times(plan: plan, day: d)
+                out @ out.push(t)
+
+    return out
+
+# The members of the period's `candidates` that `BYSETPOS` keeps.
+#
+# - `candidates`: the period's occurrences, in order.
+# - `positions`: the places, 1 for the first, -1 for the last.
+function by_position(candidates: [i64], positions: [i64]) -> [i64]
+    picked: [i64] @= []
+
+    for p in positions
+        at = if p > 0
+            p - 1
+        else
+            candidates.len() + p
+
+        if at >= 0 && at < candidates.len()
+            picked @ picked.push(candidates[at])
+
+    return sorted_unique(picked)
+
+# The period to begin at so that nothing at or after `first` is missed, when
+# the rule has no count to be kept from the start.
+#
+# - `rule`: the rule.
+# - `start`: the start, in seconds.
+# - `first`: the earliest second that matters.
+function first_index(rule: ical.Recur, start: i64, first: i64) -> i64
+    match rule.end
+        .count _ => return 0
+        .forever => _ = 0
+        .until _ => _ = 0
+
+    if first <= start
+        return 0
+    distance = first - start
+
+    unit = rule.interval * match rule.freq
+        .secondly => 1
+        .minutely => 60
+        .hourly   => 3600
+        .daily    => 86400
+        .weekly   => 7 * 86400
+        .monthly  => 31 * 86400
+        .yearly   => 366 * 86400
+
+    skipped = distance / unit - 2
+
+    if skipped < 0
+        return 0
+    return skipped
+
+# The occurrences of `rule` from `start`, in seconds of the wall clock, not
+# before `first` and not after `last`.
+#
+# - `rule`: the rule, which has passed `ical.parse_recur`'s checks.
+# - `start`: the first moment of the recurrence set, in seconds of the wall clock.
+# - `first`: the earliest moment wanted; earlier ones are counted but not returned.
+# - `last`: the latest moment wanted, which an occurrence may equal.
+# - `max`: the most occurrences to answer.
+#
+# Fails `limit` where more than `max` occurrences fall in the window or the
+# window needs more than `MAX_PERIODS` periods.
+function occurrences(rule: ical.Recur, start: i64, first: i64, last: i64, max: i64) -> [i64]?
+    d0 = civil.floor_div(a: start, b: civil.DAY_SECONDS)
+    sod0 = start - d0 * civil.DAY_SECONDS
+    c0 = civil.civil_from_days(d0)
+    plan = plan_of(rule: rule, c0: c0, weekday0: civil.weekday_index(d0), sod0: sod0)
+
+    wanted = match rule.end
+        .count c => c.n
+        .forever => max + 1
+        .until _ => max + 1
+
+    out: [i64] @= []
+    seen: i64 @= 0
+    index: i64 @= first_index(rule: rule, start: start, first: first)
+    visited: i64 @= 0
+
+    while true
+        if period_begin(rule: rule, c0: c0, d0: d0, start: start, index: index) > last
+            break
+        visited @ visited + 1
+
+        if visited > MAX_PERIODS
+            return fail(
+                code: ical.LIMIT,
+                msg: f"the rule needs more than {MAX_PERIODS} periods to reach the end of the window"
+            )
+        made = period_candidates(rule: rule, plan: plan, c0: c0, d0: d0, start: start, index: index)
+
+        kept = if rule.by_set_pos.len() > 0
+            by_position(candidates: made, positions: rule.by_set_pos)
+        else
+            made
+
+        for t in kept
+            if t < start
+                continue
+
+            if t > last
+                return ok(out)
+            seen @ seen + 1
+
+            if t >= first
+                out @ out.push(t)
+
+                if out.len() > max
+                    return fail(code: ical.LIMIT, msg: f"the window holds more than {max} occurrences")
+
+            if seen >= wanted
+                return ok(out)
+
+        index @ index + 1
+
+    return ok(out)

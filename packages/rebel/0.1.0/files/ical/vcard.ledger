@@ -1,0 +1,77 @@
+# The ledger of `ical/vcard`: what RFC 6350 and RFC 2426 let a program do with a
+# contact, one block per capability, and what Rebel answers. None of the three
+# libraries holds vCard: Go 1.27.4's `go list std` names no package for it,
+# Rust 1.100's `std` documentation no page that mentions it, and Python
+# 3.15.2's `sys.stdlib_module_names` no module for it (all run 2026-11-23), so
+# every `go`, `rust` and `python` line is `-`. The libraries a program uses
+# instead, fetched and read on 2026-11-23, are the references: Python's `vobject`
+# 0.9.9 (`vobject.readOne`, `vobject.readComponents`, `vobject.vCard`,
+# `vobject.vcard.Name`, `vobject.vcard.Address`) and Go's `emersion/go-vcard`
+# (`vcard.Card`, `vcard.Field`, `vcard.Address`, `vcard.Name`, `vcard.Decoder`,
+# `vcard.Encoder`, `vcard.ToV4`, `vcard.Kind`, `vcard.Sex`).
+#
+# The tests read the examples of RFC 6350 section 6 and an Apple-style card with
+# a property in a group, and hold the fields to what `vobject` reads from them;
+# `vobject` read the file this package wrote and found the same
+# properties, but for two of form: `NICKNAME:Jim,Jimmie` is a list in RFC 6350
+# section 6.2.3 and `vobject` reads only `Jim`, where this package reads two
+# nicknames and writes two lines; and `TYPE="voice,home"` is written as
+# `TYPE=voice,home`, which `vobject` reads as two values and RFC 6350 means by
+# either. A `TEL` whose value is a URI is not text, so its semicolon
+# (`tel:+1-555;ext=5`) is kept as `vobject` keeps it, and is not escaped.
+
+capability vcard/read  the cards of a document read into fields, and the lines they hold whole kept
+  heroes  vcard.parse_cards, vcard.decode_cards, vcard.card_from, vcard.Card, vcard.Field, vcard.Name, vcard.Address, vcard.Organization
+  go      -
+  rust    -
+  python  -
+  note    `FN`, `N`, `NICKNAME`, `BDAY`, `TEL`, `EMAIL`, `ADR`, `ORG`, `TITLE`, `ROLE`, `URL`, `NOTE`, `CATEGORIES`, `UID` and `REV` are fields; every other line, `PHOTO`, `GEO`, `X-` properties, a second `N`, a `CATEGORIES` with a group or a parameter, stays in `extra` as a line. Escapes are read, a `VALUE=uri` value is kept as written and a `URL` with a backslash before its colon, as Apple's contacts write it, is read as the address. A byte order mark is skipped and a card nested in nothing else is the only form
+
+capability vcard/write  cards written as a document, and a contact built by a program
+  heroes  vcard.format_cards, vcard.encode_cards, vcard.card_to, vcard.card, vcard.field
+  go      -
+  rust    -
+  python  -
+  note    `VERSION` first, as RFC 6350 asks, then the fields in the order of the record, then `extra`; a card read and written again reads as the same card. A text is escaped, a `URL` and a `VALUE=uri` value are not. A `NICKNAME` line with several values is read as several fields and written as several lines
+
+capability vcard/structured-values  the structured values `N`, `ADR` and `ORG`, cut at their semicolons and commas
+  heroes  vcard.Name, vcard.Address, vcard.Organization
+  go      -
+  rust    -
+  python  -
+  note    each component of `N` and `ADR` is a list, empty where the component is empty (`vobject` answers a string for one value and a list for several); the first part of an `ORG` is the name and the rest the units
+
+capability vcard/groups-and-types  a property's group and its `TYPE` values
+  heroes  vcard.Field, vcard.Address
+  go      -
+  rust    -
+  python  -
+  note    `item1.TEL` and its `item1.X-ABLabel` keep their group; `TYPE=work,voice`, `TYPE="work,voice"` and `TYPE=work;TYPE=voice` all read as two types, as RFC 6350 section 5.6 has them (`vobject` keeps the quoted form as one)
+
+capability vcard/versions  versions 3.0 and 4.0 read and written, and 2.1 refused by words
+  heroes  vcard.parse_cards, vcard.card_from, vcard.format_cards
+  go      -
+  rust    -
+  python  -
+  note    version 2.1 fails `unsupported`: its parameters have no name and its text is quoted-printable, forms neither RFC defines and a program that must read old phones' exports converts first. Any other version is `invalid`
+
+capability vcard/binary-properties  photos, keys and sounds read into bytes
+  heroes  pending: `PHOTO`, `KEY` and `SOUND` stay as lines with their base 64 text or their URI; no field holds the bytes
+  go      -
+  rust    -
+  python  -
+  note    `vobject` keeps them as text, `go-vcard` as a field's value
+
+capability vcard/groups-of-cards  a vCard 4.0 `KIND` of group with its `MEMBER`s as a list of cards
+  heroes  pending: `KIND` and `MEMBER` stay as lines
+  go      -
+  rust    -
+  python  -
+  note    `vcard.Kind` of `go-vcard` names the kinds
+
+capability vcard/versions-converted  a card converted from version 3.0 to 4.0 and back
+  heroes  pending: a card is written in the version it was read in; the changes between the versions are not applied
+  go      -
+  rust    -
+  python  -
+  note    `vcard.ToV4` of `go-vcard` converts one way

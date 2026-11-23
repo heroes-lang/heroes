@@ -1,0 +1,268 @@
+# The arithmetic of a normal distribution: its density, its cumulative
+# probability through the complementary error function so that a tail keeps its
+# digits, its inverse found by bisection on that probability (monotone, so it
+# cannot miss, and exact to the last float), and the overlap of two found
+# where their densities cross.
+
+use math
+use stats
+
+# The density of the distribution at `x`.
+#
+# - `dist`: the distribution.
+# - `x`: the point.
+#
+# Fails `invalid` where its deviation is zero.
+function density(dist: stats.Normal, x: f64) -> f64?
+    if dist.sigma == 0.0
+        return fail(code: stats.INVALID, msg: "the density is not defined where the deviation is zero")
+    return ok(
+        math.exp((x - dist.mean) * (x - dist.mean) / (-2.0 * dist.sigma * dist.sigma)) / (math.sqrt(math.TAU) * dist.sigma)
+    )
+
+# The probability of a value up to `x`, accurate in either tail.
+#
+# - `dist`: the distribution.
+# - `x`: the point.
+#
+# Fails `invalid` where its deviation is zero.
+function cumulative(dist: stats.Normal, x: f64) -> f64?
+    if dist.sigma == 0.0
+        return fail(code: stats.INVALID, msg: "the cumulative probability is not defined where the deviation is zero")
+    return ok(0.5 * math.erfc(-(x - dist.mean) / (dist.sigma * math.SQRT_2)))
+
+# The point of the standard normal distribution that a probability stands at.
+#
+# - `p`: from 0 to below 0.5, which the symmetry of the curve extends to the rest.
+function standard_below_half(p: f64) -> f64
+    lo: f64 @= -40.0
+    hi: f64 @= 0.0
+
+    for _ in range(from: 0, to: 300)
+        mid = lo + (hi - lo) / 2.0
+
+        if mid == lo || mid == hi
+            break
+
+        if 0.5 * math.erfc(-mid / math.SQRT_2) < p
+            lo @ mid
+        else
+            hi @ mid
+
+    return hi
+
+# The point at which a value falls with probability `p` or less.
+#
+# - `dist`: the distribution.
+# - `p`: the probability, above 0 and below 1.
+#
+# Fails `invalid` where `p` is not above 0 and below 1, a nan included.
+function quantile(dist: stats.Normal, p: f64) -> f64?
+    if math.is_nan(p) || p <= 0.0 || p >= 1.0
+        return fail(code: stats.INVALID, msg: f"the probability {p} is not above 0 and below 1")
+
+    if p == 0.5
+        return ok(dist.mean)
+
+    if p < 0.5
+        return ok(dist.mean + dist.sigma * standard_below_half(p))
+    return ok(dist.mean - dist.sigma * standard_below_half(1.0 - p))
+
+# The overlap of two distributions: the area under both densities, 1 for two
+# the same and nearly 0 for two far apart.
+#
+# - `a`: one distribution.
+# - `b`: the other.
+#
+# Fails `invalid` where either deviation is zero.
+function overlap(a: stats.Normal, b: stats.Normal) -> f64?
+    if a.sigma == 0.0 || b.sigma == 0.0
+        return fail(code: stats.INVALID, msg: "the overlap is not defined where a deviation is zero")
+
+    # The narrower first: the densities cross at the two points below, and
+    # the area under both is what is left of the two cumulative curves' gaps.
+    near = if a.sigma < b.sigma || a.sigma == b.sigma && a.mean <= b.mean
+        a
+    else
+        b
+
+    wide = if a.sigma < b.sigma || a.sigma == b.sigma && a.mean <= b.mean
+        b
+    else
+        a
+    gap = math.abs(wide.mean - near.mean)
+    near_variance = near.sigma * near.sigma
+    wide_variance = wide.sigma * wide.sigma
+    spread = wide_variance - near_variance
+
+    if spread == 0.0
+        return ok(math.erfc(gap / (2.0 * near.sigma * math.SQRT_2)))
+    centre = near.mean * wide_variance - wide.mean * near_variance
+    reach = near.sigma * wide.sigma * math.sqrt(gap * gap + spread * math.ln(wide_variance / near_variance))
+    x1 = (centre + reach) / spread
+    x2 = (centre - reach) / spread
+    inside = math.abs(cumulative(wide, x1)? - cumulative(near, x1)?) + math.abs(cumulative(wide, x2)? - cumulative(near, x2)?)
+    return ok(1.0 - inside)
+
+# Whether two numbers agree to within a ten-trillionth of their size.
+#
+# - `a`: one number.
+# - `b`: the other.
+function agrees(a: f64, b: f64) -> bool
+    if a == b
+        return true
+    return math.abs(a - b) <= 0.0000000000001 * math.abs(a) || math.abs(a - b) <= 0.0000000000001 * math.abs(b)
+
+test "density, cumulative and z-score: a standard curve, a wide one and a narrow one, as Python's NormalDist answers them"
+    standard = stats.normal(center: 0.0, sigma: 1.0).must()
+    wide = stats.normal(center: 10.0, sigma: 2.5).must()
+    narrow = stats.normal(center: -3.0, sigma: 0.1).must()
+    pdf_standard = [
+        0.0044318484119380075
+        0.12951759566589174
+        0.3989422804014327
+        0.3866681168028493
+        0.05399096651318806
+    ]
+    cdf_standard = [0.0013498980316300957, 0.06680720126885809, 0.5, 0.5987063256829237, 0.9772498680518208]
+    pdf_wide = [0.001772739364775203, 0.0518070382663567, 0.1595769121605731, 0.1546672467211397, 0.021596386605275224]
+    pdf_narrow = [0.04431848411938031, 1.2951759566589192, 3.989422804014327, 3.8666811680284936, 0.5399096651318785]
+    cdf_narrow = [0.001349898031630104, 0.06680720126885821, 0.5, 0.5987063256829234, 0.9772498680518209]
+    z_narrow = [-2.9999999999999982, -1.4999999999999991, 0.0, 0.2499999999999991, 2.0000000000000018]
+    steps = [-3.0, -1.5, 0.0, 0.25, 2.0]
+
+    for k in range(from: 0, to: 5)
+        assert agrees(
+            a: density(dist: standard, x: standard.mean + steps[k] * standard.sigma).must(),
+            b: pdf_standard[k]
+        )
+        assert agrees(
+            a: cumulative(dist: standard, x: standard.mean + steps[k] * standard.sigma).must(),
+            b: cdf_standard[k]
+        )
+        assert agrees(a: density(dist: wide, x: wide.mean + steps[k] * wide.sigma).must(), b: pdf_wide[k])
+        assert agrees(a: cumulative(dist: wide, x: wide.mean + steps[k] * wide.sigma).must(), b: cdf_standard[k])
+        assert agrees(a: density(dist: narrow, x: narrow.mean + steps[k] * narrow.sigma).must(), b: pdf_narrow[k])
+        assert agrees(a: cumulative(dist: narrow, x: narrow.mean + steps[k] * narrow.sigma).must(), b: cdf_narrow[k])
+        assert stats.normal_z_score(dist: narrow, x: narrow.mean + steps[k] * narrow.sigma).must() == z_narrow[k]
+
+test "cumulative: the tails keep their digits, a far point is 0 or 1, and the density a long way out is 0, as Python answers"
+    standard = stats.normal(center: 0.0, sigma: 1.0).must()
+    assert agrees(a: cumulative(dist: standard, x: -10.0).must(), b: 0.000000000000000000000007619853024160593)
+    assert agrees(a: cumulative(dist: standard, x: -8.0).must(), b: 0.000000000000000622096057427182)
+    assert agrees(a: cumulative(dist: standard, x: -5.0).must(), b: 0.0000002866515718791945)
+    assert cumulative(dist: standard, x: 10.0).must() == 1.0 && cumulative(dist: standard, x: -40.0).must() == 0.0
+    assert density(dist: standard, x: 40.0).must() == 0.0
+
+test "quantile: the points of the standard curve from 1e-300 to a trillionth below 1, as Python's inv_cdf answers, and the curve moved and widened"
+    standard = stats.normal(center: 0.0, sigma: 1.0).must()
+    ps = [
+        math.pow(base: 10.0, exponent: -300.0)
+        0.0000000001
+        0.001
+        0.025
+        0.1
+        0.25
+        0.5
+        0.75
+        0.975
+        0.999
+        0.999999999999
+    ]
+    want = [
+        -37.0470962993612
+        -6.361340902404057
+        -3.090232306167813
+        -1.9599639845400538
+        -1.2815515655446006
+        -0.6744897501960817
+        0.0
+        0.6744897501960817
+        1.9599639845400534
+        3.090232306167813
+        7.0344869100478356
+    ]
+
+    for k in range(from: 0, to: 11)
+        assert agrees(a: quantile(dist: standard, p: ps[k]).must(), b: want[k])
+
+    assert quantile(dist: standard, p: 0.5).must() == 0.0
+    assert agrees(
+        a: quantile(dist: stats.normal(center: 10.0, sigma: 2.5).must(), p: 0.975).must(),
+        b: 14.899909961350133
+    )
+    assert agrees(
+        a: quantile(dist: stats.normal(center: -3.0, sigma: 0.1).must(), p: 0.001).must(),
+        b: -3.3090232306167815
+    )
+
+    for p in [0.0, 1.0, -0.5, 1.5, math.NAN]
+        match quantile(dist: standard, p: p)
+            .ok _  => assert false
+            .err e => assert e.code == stats.INVALID
+
+test "the quantiles round trip: cumulative of quantile gives the probability back at every tenth, from the tails in"
+    standard = stats.normal(center: 0.0, sigma: 1.0).must()
+
+    for k in range(from: 1, to: 1000)
+        p = to_f64(k) / 1000.0
+        assert agrees(a: cumulative(dist: standard, x: quantile(dist: standard, p: p).must()).must(), b: p)
+
+    small = math.pow(base: 10.0, exponent: -200.0)
+    tail = quantile(dist: standard, p: small).must()
+    assert agrees(a: cumulative(dist: standard, x: tail).must(), b: small)
+
+test "overlap: two curves a deviation apart, the same mean and two widths, far apart, the same, and in either order, as Python's overlap answers"
+    a = stats.normal(center: 0.0, sigma: 1.0).must()
+    assert agrees(a: overlap(a: a, b: stats.normal(center: 1.0, sigma: 1.0).must()).must(), b: 0.6170750774519739)
+    assert agrees(a: overlap(a: a, b: stats.normal(center: 0.0, sigma: 2.0).must()).must(), b: 0.6773254311652315)
+    assert agrees(
+        a: overlap(a: stats.normal(center: 11.0, sigma: 1.0).must(), b: stats.normal(center: 10.0, sigma: 2.5).must()).must(),
+        b: 0.5485543164405425
+    )
+    assert agrees(
+        a: overlap(a: stats.normal(center: 10.0, sigma: 2.5).must(), b: stats.normal(center: 11.0, sigma: 1.0).must()).must(),
+        b: 0.5485543164405425
+    )
+    assert overlap(a: a, b: a).must() == 1.0
+    assert agrees(a: overlap(a: a, b: stats.normal(center: 5.0, sigma: 0.5).must()).must(), b: 0.0008075488168490796)
+
+test "zero deviation: a curve with no width has no density, cumulative probability, z-score or overlap, as Python's StatisticsError says"
+    point = stats.normal(center: 1.0, sigma: 0.0).must()
+    one = stats.normal(center: 0.0, sigma: 1.0).must()
+
+    for answer in [density(dist: point, x: 1.0), cumulative(dist: point, x: 1.0), stats.normal_z_score(dist: point, x: 1.0), overlap(a: point, b: one), overlap(a: one, b: point)]
+        match answer
+            .ok _  => assert false
+            .err e => assert e.code == stats.INVALID
+
+    for bad in [stats.normal(center: 1.0, sigma: -1.0), stats.normal(center: 1.0, sigma: math.NAN)]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == stats.INVALID
+
+test "quantiles, fitting and arithmetic: the quartiles and the deciles of Python, a fit to samples, sums, differences, shifts and scales"
+    wide = stats.normal(center: 10.0, sigma: 2.5).must()
+    cuts = stats.normal_quantiles(dist: wide, parts: 4).must()
+    assert cuts.len() == 3 && agrees(a: cuts[0], b: 8.313775624509796) && cuts[1] == 10.0 && agrees(a: cuts[2], b: 11.686224375490204)
+    deciles = stats.normal_quantiles(dist: stats.normal(center: 0.0, sigma: 1.0).must(), parts: 10).must()
+    assert deciles.len() == 9 && agrees(a: deciles[0], b: -1.2815515655446006) && agrees(a: deciles[1], b: -0.8416212335729142) && agrees(a: deciles[2], b: -0.5244005127080408)
+    assert stats.normal_quantiles(dist: wide, parts: 1).must().len() == 0
+
+    match stats.normal_quantiles(dist: wide, parts: 0)
+        .ok _  => assert false
+        .err e => assert e.code == stats.INVALID
+
+    fitted = stats.normal_of([2.5, 3.25, 5.0, 7.75, 9.5]).must()
+    assert fitted == stats.Normal(mean: 5.6, sigma: 2.9717419134238425)
+
+    match stats.normal_of([1.0])
+        .ok _  => assert false
+        .err e => assert e.code == stats.INVALID
+
+    a = stats.normal(center: 10.0, sigma: 3.0).must()
+    b = stats.normal(center: 5.0, sigma: 4.0).must()
+    assert stats.normal_sum(a: a, b: b) == stats.Normal(mean: 15.0, sigma: 5.0) && stats.normal_difference(a: a, b: b) == stats.Normal(mean: 5.0, sigma: 5.0)
+    assert stats.normal_shift(dist: a, by: 2.0) == stats.Normal(mean: 12.0, sigma: 3.0) && stats.normal_shift(dist: a, by: -2.0) == stats.Normal(mean: 8.0, sigma: 3.0)
+    assert stats.normal_scale(dist: a, by: 3.0) == stats.Normal(mean: 30.0, sigma: 9.0) && stats.normal_scale(dist: a, by: 0.25) == stats.Normal(mean: 2.5, sigma: 0.75)
+    assert stats.normal_scale(dist: a, by: -2.0) == stats.Normal(mean: -20.0, sigma: 6.0) && stats.normal_variance(a) == 9.0

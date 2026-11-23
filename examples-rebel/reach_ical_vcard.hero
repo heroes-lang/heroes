@@ -1,0 +1,23 @@
+# Reaches Rebel's `ical/vcard`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). Given the path of a vCard file, it prints the
+# cards as the package writes them.
+
+use <rebel>/fs
+use <rebel>/ical/vcard
+
+function main()
+    paths = args()
+
+    if paths.len() != 1
+        print("usage: reach_ical_vcard <vCard file>")
+        return
+
+    match fs.read_bytes(paths[0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match vcard.decode_cards(data)
+                .err e => print(e.code, ": ", e.msg)
+                .ok found =>
+                    match vcard.format_cards(found)
+                        .ok text => print(text)
+                        .err e   => print(e.code, ": ", e.msg)
