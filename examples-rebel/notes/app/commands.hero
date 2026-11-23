@@ -52,7 +52,9 @@ function failed(msg: str) -> i64
 
 ## serve
 
-# Serves until SIGTERM or Ctrl-C, or the API's stop, then stops gracefully.
+# Serves until SIGTERM or Ctrl-C, or the API's stop, then stops gracefully:
+# the two signals are counted, not caught as the process's stop, so the
+# server's shutdown may still wait on what it closes (panel 256's R10).
 #
 # - `path`: the settings file.
 # - `found`: what the command line gave.
@@ -67,7 +69,8 @@ function serve(path: str, found: flags.Found) -> i64
 # - `found`: what the command line gave.
 function serving(path: str, found: flags.Found) -> ()?
     s = settings_from(path, found: found)?
-    os.catch_stop()?
+    stopped_gracefully()?
+    control: (mailbox str) = mailbox()
     assets.write_static(s.static_dir)?
     app @= state.open(s, business: .wall)?
     l @= net.listen(host: s.host, port: s.port)?
@@ -78,12 +81,20 @@ function serving(path: str, found: flags.Found) -> ()?
         fields: [log.text(key: "address", value: address), log.text(key: "migrated", value: app.migrated.join(","))]
     ).is_err()
     print(f"notes: serving on http://{address}; Ctrl-C stops it")
-    served = server.run(@app, l: l)
+    served = server.run(@app, l: l, control: control)
     net.close_listener(@l)?
     state.close(@app)?
     sv = served?
     print(f"notes: stopped by the {sv.by}, {sv.requests} requests answered, {sv.sockets_told} WebSockets told 1001")
     return ok()
+
+# SIGTERM and Ctrl-C counted, for the server's set to tell (`poll.add_signals`);
+# where the system counts no SIGTERM (Windows, whose set waits on sockets
+# alone), the two made the process's stop, which fails the server's wait.
+function stopped_gracefully() -> ()?
+    match os.count_signal(.terminate)
+        .err _ => return os.catch_stop()
+        .ok _  => return os.count_signal(.interrupt)
 
 ## init
 
