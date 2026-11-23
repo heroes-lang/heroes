@@ -378,6 +378,15 @@
  * them. */
 #if 0
 #include "platform/hero_handle_tag.h"
+#include "hero_audio.h"
+#include "platform/hero_audio.c"
+#include "platform/hero_audio_arm.h"
+#include "hero_audio_coreaudio.h"
+#include "platform/hero_audio_coreaudio.c"
+#include "hero_audio_pulse.h"
+#include "platform/hero_audio_pulse.c"
+#include "hero_audio_wasapi.h"
+#include "platform/hero_audio_wasapi.c"
 #include "hero_crypto.h"
 #include "platform/hero_crypto.c"
 #include "platform/hero_crypto_cryptokit.h"

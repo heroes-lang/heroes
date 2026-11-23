@@ -6,6 +6,7 @@ packages = [
     "archive",
     "asn1",
     "audio",
+    "audio/hero_audio",
     "bench",
     "big",
     "bson",

@@ -1,0 +1,10 @@
+# Reaches Rebel's floor over the platform layer's sound, `hero_audio.h`, so
+# that `heroes test` on this file runs the floor's own tests (spec § 12, § 13).
+# It asks how long the name of this machine's sound system is and prints that
+# length, or -1 where the machine has none.
+
+use <rebel>/audio/hero_audio
+
+function main()
+    room: [u8] @= []
+    print(hero_audio.system(@room, n: 0))

@@ -1,0 +1,209 @@
+# A stream's calls that carry something from one call to the next: opening
+# one on a device, the frames converted and not yet taken by the device, and
+# the rate conversion, for `audio.open_with`, `play`, `write`, `finish` and
+# `read`. Every check of what the program gives is made here before the floor
+# is called, so the floor's refusals are of what the system answered.
+
+use audio
+use audio/hero_audio
+use audio/internal/check
+use audio/internal/failure
+use audio/internal/flow
+use audio/internal/resample
+use time
+
+# The most device frames a `read` takes at once.
+constant READ_FRAMES: i64
+    9600
+
+# The default of `direction` among the system's devices.
+#
+# - `direction`: which way.
+function default_of(direction: audio.Direction) -> audio.Device?
+    for d in audio.devices()?
+        if d.direction == direction && d.is_default
+            return ok(d)
+
+    word = if direction == .output
+        "output"
+    else
+        "input"
+    return fail(code: audio.NOT_FOUND, msg: f"asking for the default {word}: the system names none")
+
+# A stream on `device` of `format`, with room for `room` device frames.
+#
+# - `device`: the device.
+# - `format`: the program's format, checked.
+# - `room`: the device frames held.
+# - `asked`: what the program asked, for the messages.
+function opened(device: audio.Device, format: audio.Format, room: i64, asked: str) -> audio.Stream?
+    rate = device.format.rate
+    channels = device.format.channels
+
+    if rate < 1 || rate > hero_audio.HERO_AUDIO_RATE_MOST || channels < 1 || channels > hero_audio.HERO_AUDIO_CHANNELS_MOST
+        return fail(
+            code: audio.INVALID,
+            msg: f"{asked}: the device runs at {rate} frames a second and {channels} channels, where 1 to {hero_audio.HERO_AUDIO_RATE_MOST} and 1 to {hero_audio.HERO_AUDIO_CHANNELS_MOST} are taken"
+        )
+
+    if room < 1
+        return fail(code: audio.INVALID, msg: f"{asked}: a buffer holds one frame or more, and this one holds {room}")
+
+    if room > hero_audio.HERO_AUDIO_ROOM_MOST || room > hero_audio.HERO_AUDIO_SAMPLES_MOST / channels
+        return fail(
+            code: audio.LIMIT,
+            msg: f"{asked}: {room} frames of {channels} channels are more than a stream holds ({hero_audio.HERO_AUDIO_ROOM_MOST} frames, {hero_audio.HERO_AUDIO_SAMPLES_MOST} samples)"
+        )
+
+    for i in range(from: 0, to: device.id.len())
+        if device.id[i] == 0
+            return fail(code: audio.INVALID, msg: f"{asked}: a device's identifier holds no zero byte")
+
+    direction = if device.direction == .output
+        hero_audio.HERO_AUDIO_OUTPUT
+    else
+        hero_audio.HERO_AUDIO_INPUT
+    handle = hero_audio.open(device.id, direction: direction, rate: rate, channels: channels, room: room)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+
+    rates = if device.direction == .output
+        resample.new(from: format.rate, to: rate, channels: channels)
+    else
+        resample.new(from: rate, to: format.rate, channels: format.channels)
+    return ok(audio.Stream(handle: handle, device: device, format: format, pending: [], rates: rates))
+
+# Hands the frames `stream` holds to its device, waiting up to `limit_ns`.
+#
+# - `stream`: an output; what it holds shrinks by what the device took.
+# - `limit_ns`: the nanoseconds to wait for room.
+# - `asked`: what the program asked.
+function handed(@stream: audio.Stream, limit_ns: i64, asked: str) -> ()?
+    if stream.pending.len() == 0
+        return ok()
+    chunk @= stream.pending
+    n = to_u64(chunk.len()).must()
+    queued = hero_audio.write(stream.handle, @chunk, n: n, limit_ns: limit_ns)
+
+    if queued < 0
+        return failure.last(asked: asked)
+    taken = queued * stream.device.format.channels
+    stream.pending @ stream.pending.slice(from: taken, to: stream.pending.len())
+
+    if stream.pending.len() > 0
+        left = stream.pending.len() / stream.device.format.channels
+        return fail(
+            code: audio.TIMEOUT,
+            msg: f"{asked}: {left} frames found no room before the limit passed, and go first at the next write or finish"
+        )
+    return ok()
+
+# What an output's call checks first: the direction and the limit.
+#
+# - `stream`: the stream.
+# - `limit`: the limit given.
+# - `asked`: what the program asked.
+function checked_output(stream: audio.Stream lent, limit: time.Duration, asked: str) -> ()?
+    if stream.device.direction != .output
+        return fail(code: audio.INVALID, msg: f"{asked}: the stream records, and only an output is written")
+
+    if limit.nanoseconds < 0
+        return fail(code: audio.INVALID, msg: f"{asked}: a limit is zero or more")
+    return ok()
+
+# `audio.write`.
+#
+# - `stream`: an output.
+# - `s`: the frames.
+# - `limit`: the longest to wait.
+function written(@stream: audio.Stream, s: audio.Sound, limit: time.Duration) -> ()?
+    asked = f"writing to the stream on \"{stream.device.name}\""
+    checked_output(stream, limit: limit, asked: asked)?
+    check.valid_sound(s, asked: asked)?
+
+    if s.format != stream.format
+        return fail(code: audio.INVALID, msg: f"{asked}: a stream takes sounds of the format it was opened with")
+    rates @= stream.rates
+    converted = flow.outgoing(@rates, s: s, from: stream.format, device: stream.device.format)
+    stream.rates @ rates
+
+    for x in converted
+        stream.pending @ stream.pending.push(x)
+
+    return handed(@stream, limit_ns: limit.nanoseconds, asked: asked)
+
+# `audio.finish`.
+#
+# - `stream`: an output.
+# - `limit`: the longest to wait.
+function finished(@stream: audio.Stream, limit: time.Duration) -> ()?
+    asked = f"finishing the stream on \"{stream.device.name}\""
+    checked_output(stream, limit: limit, asked: asked)?
+    rates @= stream.rates
+    tail = flow.outgoing_tail(@rates, from: stream.format, device: stream.device.format)
+    stream.rates @ rates
+
+    for x in tail
+        stream.pending @ stream.pending.push(x)
+
+    handed(@stream, limit_ns: limit.nanoseconds, asked: asked)?
+
+    if hero_audio.finish(stream.handle) < 0
+        return failure.last(asked: asked)
+    return ok()
+
+# The whole of `s` queued on the output `stream`, which holds room for it,
+# and the stream finished.
+#
+# - `stream`: an output just opened.
+# - `s`: the sound.
+# - `asked`: what the program asked.
+function played(@stream: audio.Stream, s: audio.Sound, asked: str) -> ()?
+    now = time.nanoseconds(0)
+
+    match written(@stream, s: s, limit: now)
+        .ok _ => _ = 0
+        .err e =>
+            if e.code == audio.TIMEOUT
+                return fail(code: audio.LIMIT, msg: f"{asked}: the sound holds more frames than a stream's room")
+            return fail(code: e.code, msg: e.msg)
+
+    return finished(@stream, limit: now)
+
+# `audio.read`.
+#
+# - `stream`: an input.
+# - `limit`: the longest to wait.
+function recorded(@stream: audio.Stream, limit: time.Duration) -> audio.Sound?
+    asked = f"reading from the stream on \"{stream.device.name}\""
+
+    if stream.device.direction != .input
+        return fail(code: audio.INVALID, msg: f"{asked}: the stream plays, and only an input is read")
+
+    if limit.nanoseconds < 0
+        return fail(code: audio.INVALID, msg: f"{asked}: a limit is zero or more")
+    channels = stream.device.format.channels
+    buffer: [f32] @= []
+
+    for _ in range(from: 0, to: READ_FRAMES * channels)
+        buffer @ buffer.push(0.0)
+
+    n = hero_audio.read(stream.handle, @buffer, n: to_u64(READ_FRAMES * channels).must(), limit_ns: limit.nanoseconds)
+    rates @= stream.rates
+
+    if n < 0
+        if hero_audio.last_error() == hero_audio.HERO_AUDIO_ENDED
+            tail = flow.incoming_tail(@rates, device: stream.device.format, to: stream.format)
+            stream.rates @ rates
+
+            if audio.frames_of(tail) > 0
+                return ok(tail)
+        return failure.last(asked: asked)
+
+    if n == 0
+        return fail(code: audio.TIMEOUT, msg: f"{asked}: nothing was recorded before the limit passed")
+    frames = buffer.slice(from: 0, to: n * channels)
+    sound = flow.incoming(@rates, frames: frames, device: stream.device.format, to: stream.format)
+    stream.rates @ rates
+    return ok(sound)

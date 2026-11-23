@@ -1101,17 +1101,17 @@ test "interfaces: no room measures the list, the room asked takes it, and the lo
     assert interfaces(@short, n: 4) == used
 
 # The handle tag (2026-11-16): a number is a socket's handle with bit 62
-# set, and a value of the streams' tag (1, in bits 58 to 61) at slot 3 and
+# set, and a value of the streams' tag (1, in bits 57 to 61) at slot 3 and
 # life 1 is a stream's handle with that bit, never a socket's: one this
 # table never gave, not open, and no slot is looked at. The same slot and
 # life with the sockets' own tag (2) and no number given out is not open as
 # well.
 test "of: a number carrying another table's tag is one never given, not open, as one of this table never given out"
-    stream_tagged = 4_899_916_394_579_230_724
+    stream_tagged = 4_755_801_206_503_374_852
     none = of(stream_tagged)
     assert none == nullptr
     assert last_error() == HERO_NET_NOT_OPEN
-    socket_tagged = 5_188_146_770_730_942_468
+    socket_tagged = 4_899_916_394_579_230_724
     also = of(socket_tagged)
     assert also == nullptr
     assert last_error() == HERO_NET_NOT_OPEN

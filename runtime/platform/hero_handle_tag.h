@@ -25,14 +25,15 @@
  * hero_stream_read at an address ... ended`, exit 134; the reproducer is
  * `hero_stream_net.hero`'s test of two cycles).
  *
- * THE BITS. 62 is `HERO_NET_NUMBERED`'s, a socket's number taken back. 58 to 61
+ * THE BITS. 62 is `HERO_NET_NUMBERED`'s, a socket's number taken back. 57 to 61
  * hold the tag, so no handle of one table is ever a handle of another, at any
- * slot and any life. A member's life therefore stays below bit 58:
+ * slot and any life. A member's life therefore stays below bit 57:
  * `HERO_HANDLE_LIFE_MOST(index_bits)` is the last life a slot of a member with
- * that many index bits is given. With 17 index bits it is 2^41 - 1: a slot
+ * that many index bits is given. With 17 index bits it is 2^40 - 1: a slot
  * given a new life a hundred thousand times a second, every second, reaches
- * it after 254 days, and a slot at it is never issued again, so the bound
- * costs a slot and never a wrong handle.
+ * it after 127 days, and a slot at it is never issued again, so the bound
+ * costs a slot and never a wrong handle. Four bits held the tag until
+ * 2026-11-23, when the sixteenth table, `hero_audio.c`'s, took a fifth.
  *
  * NO TAG IS 0, so a handle of no tag is no member's. A new member that issues
  * handles takes the next free number here, and nowhere else.
@@ -44,8 +45,8 @@
 
 #include <stdint.h>
 
-#define HERO_HANDLE_TAG_SHIFT 58
-#define HERO_HANDLE_TAG_BITS 4
+#define HERO_HANDLE_TAG_SHIFT 57
+#define HERO_HANDLE_TAG_BITS 5
 #define HERO_HANDLE_TAG_MASK (((UINT64_C(1) << HERO_HANDLE_TAG_BITS) - 1) << HERO_HANDLE_TAG_SHIFT)
 
 /* The last life a slot is given by a member whose index takes `index_bits`
@@ -78,8 +79,10 @@
 #define HERO_HANDLE_TAG_ODBC 13
 /* `hero_watch.c`'s watches (2026-11-18). */
 #define HERO_HANDLE_TAG_WATCH 14
-/* `hero_ui.c`'s apps (2026-11-22), the last of four bits: a member that
- * issues handles after it widens `HERO_HANDLE_TAG_BITS` first. */
+/* `hero_ui.c`'s apps (2026-11-22), the last of four bits. */
 #define HERO_HANDLE_TAG_UI 15
+/* `hero_audio.c`'s streams (2026-11-23), the first of five bits: 31 is the
+ * last a member may take before `HERO_HANDLE_TAG_BITS` widens again. */
+#define HERO_HANDLE_TAG_AUDIO 16
 
 #endif
