@@ -1,0 +1,1 @@
+. Where C leaves a handler other than by returning, `longjmp`, `siglongjmp` or `_longjmp`, the next callback aborts, saying the handler was not seen to end

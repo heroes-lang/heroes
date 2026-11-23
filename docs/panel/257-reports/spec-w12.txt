@@ -1,0 +1,1 @@
+A handler of C's ends by its return or by a `longjmp`, `siglongjmp`, `_longjmp` or `setcontext` out of it; left by an inline jump it is still taken to be running, and a callback called later on its thread from deeper in the stack than the handler was may abort, saying the handler was not seen to end.

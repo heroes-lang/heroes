@@ -1,0 +1,9 @@
+extern "p9.h"
+    function run_case(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("result ", run_case(cb: answer))

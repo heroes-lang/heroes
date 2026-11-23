@@ -1,0 +1,2 @@
+A callback is a **parameter**, never a result or a signal handler, nor called by one, and may abort, saying the handler was not seen to end, if it is called later on a thread whose handler of C's was left other than by its return or by a `longjmp`, `siglongjmp`, `_longjmp` or `setcontext` out of it (by an inline jump, a `swapcontext` away from it or a jump onto another stack given to `makecontext`), from deeper in the stack than the handler was; its parameters follow the same rule
+and `()` is `void`: `atexit(f: (function() -> ())) -> i32`.

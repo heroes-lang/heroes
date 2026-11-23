@@ -1,0 +1,1 @@
+. Callbacks run after a handler only where it returned or C left it by `longjmp`, `siglongjmp` or `_longjmp` to a buffer a save of that family filled; any other exit aborts the next callback, saying the handler was not seen to end

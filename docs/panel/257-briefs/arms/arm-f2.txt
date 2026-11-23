@@ -1,0 +1,1 @@
+A callback called after C left a handler by `longjmp`, `siglongjmp` or `_longjmp` runs, wherever the buffer lives; one called while a handler is held running aborts, saying the handler was not seen to end, and a handler is held running if C left it any other way (a jump no function of the C library makes, a switch of context never switched back) or jumped within it.
