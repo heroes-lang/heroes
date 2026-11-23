@@ -27,6 +27,8 @@ int64_t hero_ui_appkit_print_words(char *words, int64_t count);
 
 int64_t hero_ui_appkit_print_show(void *window, int64_t dialog, int64_t page, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
 
+int64_t hero_ui_appkit_print_web(void *view, void *window, int64_t dialog, int64_t ask, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
 int64_t hero_ui_appkit_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count);
 
 void hero_ui_appkit_print_end(void *window);

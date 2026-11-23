@@ -46,11 +46,22 @@
  * why. */
 int64_t hero_ui_print_win32_show(void *window, int64_t dialog, int64_t page, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
 
+/* Prints the page the WebView2 `view` shows (its `ICoreWebView2`), over the
+ * window `window`: through the print dialog first where `ask` is 1, whose
+ * Cancel is queued at once, then with WebView2's own `Print` to the printer
+ * of the settings, the answer queued by `push` as dialog `dialog`'s once
+ * WebView2 has handed the page to the system, value 1 with the settings
+ * printed with, 0 where it could not. `HERO_UI_UNSUPPORTED` off Windows or
+ * where the WebView2 runtime predates `ICoreWebView2_16`. */
+int64_t hero_ui_print_win32_web(void *view, void *window, int64_t dialog, int64_t ask, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
 /* `HERO_UI_NOT_FOUND`: no dialog of this arm stands to be answered (THE
  * WAITING FORM). */
 int64_t hero_ui_print_win32_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count);
 
-/* Nothing: no dialog of this arm stands to be ended. */
+/* Marks ended every web view's print over the `HWND` `window`, or every
+ * one where it is NULL: its completion queues nothing. No dialog of this
+ * arm stands to be ended. */
 void hero_ui_print_win32_end(void *window);
 
 /* The words of the last refusal on this thread, written into `words` where

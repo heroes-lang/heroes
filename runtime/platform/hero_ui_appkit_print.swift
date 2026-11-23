@@ -29,6 +29,14 @@
  * whatever range it is given and answers the range the person sets there,
  * where the page layout keeps the range it was given.
  *
+ * A WEB VIEW'S PAGE PRINTED (`hero_ui_appkit_print_web`): WebKit's own print
+ * operation of the `WKWebView`, `printOperation(with:)`, run as a sheet of
+ * its window with the print panel (the person chooses) or without it (the
+ * settings given print as they are), its view given the web view's frame,
+ * since WebKit's print view has none of its own. The answer is the same
+ * event: value 1 with the settings printed with once the page is handed to
+ * the system, 0 where the person cancelled or WebKit could not print.
+ *
  * TWO SHEETS OVER ONE WINDOW come one after the other: a panel is begun once
  * the sheet standing over its window has gone (`NSWindow.didEndSheetNotification`),
  * whoever's sheet it was.
@@ -41,6 +49,7 @@
  */
 
 import AppKit
+import WebKit
 
 private let answerOk: Int64 = 0
 private let answerInvalid: Int64 = 1
@@ -266,6 +275,40 @@ private struct PwgTable {
 
 @MainActor private var shown: [Int64: Shown] = [:]
 
+/* A web view's page being printed, kept by its number until the operation
+ * has run. */
+@MainActor private final class WebPrint: NSObject {
+    let dialog: Int64
+    let owner: NSWindow
+    let given: Settings
+    let push: HeroUiPrintPush
+    var ended = false
+
+    init(dialog: Int64, owner: NSWindow, given: Settings, push: @escaping HeroUiPrintPush) {
+        self.dialog = dialog
+        self.owner = owner
+        self.given = given
+        self.push = push
+    }
+
+    @objc func printOperationDidRun(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        webPrints[dialog] = nil
+        if ended {
+            return
+        }
+        if success {
+            var text = Array(settings(of: operation.printInfo, given: given).text.utf8)
+            text.withUnsafeMutableBufferPointer { buffer in
+                push(eventDialog, dialog, 1, 0, UnsafePointer(buffer.baseAddress), Int64(buffer.count))
+            }
+        } else {
+            push(eventDialog, dialog, 0, 0, nil, 0)
+        }
+    }
+}
+
+@MainActor private var webPrints: [Int64: WebPrint] = [:]
+
 /* The printer queue named `name`, from Core Printing's list. */
 private func printer(named name: String) -> PMPrinter? {
     var list: Unmanaged<CFArray>?
@@ -447,11 +490,62 @@ public func hero_ui_appkit_print_show(_ window: UnsafeMutableRawPointer?, _ dial
     }
 }
 
+// Prints the page the `WKWebView` `view` shows, over the `NSWindow`
+// `window`: through the print panel where `ask` is 1, straight to the printer
+// of the `count` bytes of `settings` where it is 0; the answer queued as
+// dialog `dialog`'s.
+@c
+public func hero_ui_appkit_print_web(_ view: UnsafeMutableRawPointer?, _ window: UnsafeMutableRawPointer?, _ dialog: Int64, _ ask: Int64, _ settings: UnsafePointer<UInt8>?, _ count: Int64, _ push: HeroUiPrintPush?) -> Int64 {
+    guard let view = view, let window = window, let push = push, ask == 0 || ask == 1 else {
+        return answerInvalid
+    }
+    return MainActor.assumeIsolated {
+        guard shown[dialog] == nil, webPrints[dialog] == nil else {
+            lastWords = "dialog \(dialog) is shown already"
+            return answerInvalid
+        }
+        guard let web = Unmanaged<NSView>.fromOpaque(view).takeUnretainedValue() as? WKWebView else {
+            lastWords = "the widget is no web view"
+            return answerInvalid
+        }
+        guard let given = text(settings, count).flatMap({ Settings(text: $0) }) else {
+            lastWords = "the print's settings are not the text hero_ui_print_win32.h names"
+            return answerInvalid
+        }
+        let owner = Unmanaged<NSWindow>.fromOpaque(window).takeUnretainedValue()
+        guard owner.attachedSheet == nil else {
+            lastWords = "a sheet stands over the web view's window"
+            return answerOther
+        }
+        let info = NSPrintInfo()
+        let kind = apply(given, to: info)
+        if kind != answerOk {
+            return kind
+        }
+        let operation = web.printOperation(with: info)
+        operation.showsPrintPanel = ask == 1
+        operation.showsProgressPanel = false
+        operation.view?.frame = web.bounds
+        let entry = WebPrint(dialog: dialog, owner: owner, given: given, push: push)
+        webPrints[dialog] = entry
+        operation.runModal(for: owner, delegate: entry, didRun: #selector(WebPrint.printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+        return answerOk
+    }
+}
+
 // Answers dialog `dialog` as its person would: OK with the `count` bytes of
 // `settings` set first where `value` is 1, Cancel where it is 0.
 @c
 public func hero_ui_appkit_print_answer(_ dialog: Int64, _ value: Int64, _ settings: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
     return MainActor.assumeIsolated {
+        if let printing = webPrints[dialog] {
+            guard value == 0 || value == 1, let sheet = printing.owner.attachedSheet else {
+                lastWords = "web view print \(dialog) shows no panel to answer"
+                return answerNotFound
+            }
+            printing.owner.endSheet(sheet, returnCode: value == 1 ? .OK : .cancel)
+            return answerOk
+        }
         guard let entry = shown[dialog] else {
             lastWords = "no print dialog \(dialog) is shown"
             return answerNotFound
@@ -492,6 +586,12 @@ public func hero_ui_appkit_print_end(_ window: UnsafeMutableRawPointer?) {
         let owner = window.map { Unmanaged<NSWindow>.fromOpaque($0).takeUnretainedValue() }
         for entry in shown.values where owner == nil || entry.owner === owner {
             entry.end()
+        }
+        for printing in webPrints.values where owner == nil || printing.owner === owner {
+            printing.ended = true
+            if let sheet = printing.owner.attachedSheet {
+                printing.owner.endSheet(sheet, returnCode: .abort)
+            }
         }
     }
 }

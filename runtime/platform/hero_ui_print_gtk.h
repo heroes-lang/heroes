@@ -33,6 +33,15 @@
  * `HERO_UI_OTHER`, `words` saying why. */
 int64_t hero_ui_print_gtk_show(void *window, int64_t dialog, int64_t page, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
 
+/* Prints the page the `WebKitWebView` `view` shows, over the `GtkWindow`
+ * `window`: through GTK's print dialog where `ask` is 1 (the call returns
+ * once the person has answered it), straight to the printer of the `count`
+ * bytes of `settings` where it is 0; the answer queued by `push` as dialog
+ * `dialog`'s, value 1 with the settings printed with once WebKit has handed
+ * the page to the system, 0 where the person cancelled or WebKit failed.
+ * `HERO_UI_UNSUPPORTED` where WebKitGTK 6.0 is not installed. */
+int64_t hero_ui_print_gtk_web(void *view, void *window, int64_t dialog, int64_t ask, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
 /* Answers dialog `dialog` as its person would: chosen with the `count` bytes
  * of `settings` where `value` is 1, cancelled where it is 0, and answers
  * `HERO_UI_OK`; `HERO_UI_NOT_FOUND` where no such dialog stands,
