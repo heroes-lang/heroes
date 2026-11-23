@@ -284,6 +284,11 @@ struct hero_ui_native {
      * the label tied to it, 0 for none (ACCESSIBLE NAMES). */
     wchar_t *access_name;
     int64_t label_for;
+    /* Its tip, UTF-16 as a tooltip shows it (NULL for none), and, of a
+     * window, the tooltip control its widgets' tips are tools of (A TIP OVER
+     * A WIDGET). */
+    wchar_t *tip;
+    HWND tooltips;
     /* A tray's icon of its own (NULL for the app's) and whether Windows
      * shows it (AN ICON IN THE TRAY). */
     HICON tray_icon;
@@ -1338,6 +1343,9 @@ static _Thread_local int64_t hero_ui_win_replaying;
 static void hero_ui_win_edit_changed(hero_ui_native *widget, bool person);
 static void hero_ui_win_edit_reset(hero_ui_native *widget);
 static void hero_ui_win_edit_end(hero_ui_native *widget);
+static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how);
+static void hero_ui_win_tip_end(hero_ui_native *widget);
+static bool hero_ui_win_tip_apply(hero_ui_native *widget);
 static void hero_ui_win_handed_take(void);
 
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
@@ -1889,6 +1897,7 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     /* The box a page or a pane leaves, laid out again once it is gone. */
     hero_ui_native *box = widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE ? owner : NULL;
 
+    hero_ui_win_tip_end(widget);
     switch (widget->kind) {
     case HERO_UI_WINDOW:
         if (hero_ui_win_modal == widget->id) {
@@ -2565,6 +2574,9 @@ static int64_t hero_ui_win_make_radios(hero_ui_native *group, const uint8_t *ite
         group->radio_count = i + 1;
     }
     hero_ui_win_put(group);
+    if (group->tip != NULL) {
+        (void)hero_ui_win_tip_apply(group);
+    }
     return HERO_UI_OK;
 }
 
@@ -8346,7 +8358,7 @@ static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how) {
     icon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
     icon.uCallbackMessage = HERO_UI_WIN_TRAY_MESSAGE;
     icon.hIcon = tray->tray_icon != NULL ? tray->tray_icon : hero_ui_win_icon != NULL ? hero_ui_win_icon : LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION);
-    hero_ui_win_copy_units(icon.szTip, sizeof icon.szTip / sizeof icon.szTip[0], tray->label);
+    hero_ui_win_copy_units(icon.szTip, sizeof icon.szTip / sizeof icon.szTip[0], tray->tip != NULL ? tray->tip : tray->label);
     if (!Shell_NotifyIconW(how, &icon)) {
         return false;
     }
@@ -9175,6 +9187,180 @@ static void hero_ui_win_handed_take(void) {
         hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, text->bytes, text->count);
         hero_layer_free(text);
     }
+}
+
+/* -- A TIP OVER A WIDGET ------------------------------------------------------
+ *
+ * A top-level window keeps one tooltip control (`TOOLTIPS_CLASS`, made at its
+ * first tip) and a widget's control is one of its tools, by its handle
+ * (`TTF_IDISHWND`) and with the tooltip subclassing it (`TTF_SUBCLASS`), so
+ * the system shows the tip when the pointer rests on the control, after its
+ * own delay. A tooltip breaks a line wider than its limit unless it is given
+ * one, so the limit stands at a width that keeps a line of words; the
+ * program's own line feeds break lines too. The tip is also kept in the
+ * widget, UTF-16 with CR LF, and read back from there.
+ *
+ * A radio group's tip is shown over its panel and each of its items; a tray
+ * icon's is the text Windows shows over it, which the icon's own text gives
+ * where it was given no tip (at most its first 127 units are held); a menu
+ * item has none, Windows showing no tip over a menu item, and a web view
+ * leaves its tips to its page. */
+
+/* The width a tip may take before it breaks a line, in points. */
+#define HERO_UI_WIN_TIP_WIDTH 320
+
+/* The kinds whose control the pointer rests on: not a window, a menu, a menu
+ * item or separator, a context menu, a page, a timer, a tray icon, which
+ * `hero_ui_arm_set_tip` tells apart. */
+static bool hero_ui_win_tips_over(const hero_ui_native *widget) {
+    switch (widget->kind) {
+    case HERO_UI_WINDOW:
+    case HERO_UI_MENU:
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_MENU_SEPARATOR:
+    case HERO_UI_CONTEXT_MENU:
+    case HERO_UI_PAGE:
+    case HERO_UI_TRAY:
+        return false;
+    default:
+        return widget->hwnd != NULL;
+    }
+}
+
+/* The tooltip control of `window`, made where it has none; NULL where
+ * Windows would not. */
+static HWND hero_ui_win_tooltips_of(hero_ui_native *window) {
+    if (window->tooltips == NULL) {
+        window->tooltips = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, window->hwnd, NULL, GetModuleHandleW(NULL), NULL);
+        if (window->tooltips != NULL) {
+            (void)SendMessageW(window->tooltips, TTM_SETMAXTIPWIDTH, 0, (LPARAM)hero_ui_win_px(HERO_UI_WIN_TIP_WIDTH, window->dpi));
+        }
+    }
+    return window->tooltips;
+}
+
+/* Makes `control` a tool of `tooltips` showing `text`, or takes it out
+ * where `text` is NULL; whether Windows did. */
+static bool hero_ui_win_tool(HWND tooltips, HWND owner, HWND control, wchar_t *text) {
+    TOOLINFOW tool;
+
+    memset(&tool, 0, sizeof tool);
+    tool.cbSize = (UINT)CCSIZEOF_STRUCT(TTTOOLINFOW, lpszText);
+    tool.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    tool.hwnd = owner;
+    tool.uId = (UINT_PTR)control;
+    (void)SendMessageW(tooltips, TTM_DELTOOLW, 0, (LPARAM)&tool);
+    if (text == NULL) {
+        return true;
+    }
+    tool.lpszText = text;
+    return SendMessageW(tooltips, TTM_ADDTOOLW, 0, (LPARAM)&tool) != FALSE;
+}
+
+/* Gives every control of `widget` its tip, or takes the tool of each away
+ * where it has none; whether Windows did. */
+static bool hero_ui_win_tip_apply(hero_ui_native *widget) {
+    hero_ui_native *window = hero_ui_win_top(widget->window);
+    HWND tooltips = window != NULL ? (widget->tip != NULL ? hero_ui_win_tooltips_of(window) : window->tooltips) : NULL;
+    bool done = true;
+
+    if (tooltips == NULL) {
+        return widget->tip == NULL;
+    }
+    /* A static control lets the mouse through to its window unless it is
+     * asked to be notified, and a tip is shown where the mouse rests on
+     * the control. */
+    if (widget->tip != NULL && widget->kind == HERO_UI_LABEL) {
+        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, GetWindowLongPtrW(widget->hwnd, GWL_STYLE) | SS_NOTIFY);
+    }
+    done = hero_ui_win_tool(tooltips, window->hwnd, widget->hwnd, widget->tip);
+    for (int64_t i = 0; i < widget->radio_count; i += 1) {
+        done = hero_ui_win_tool(tooltips, window->hwnd, widget->radios[i], widget->tip) && done;
+    }
+    return done;
+}
+
+/* Takes `widget`'s tip and its tools away, as it is destroyed. */
+static void hero_ui_win_tip_end(hero_ui_native *widget) {
+    if (widget->tip == NULL) {
+        return;
+    }
+    if (widget->kind != HERO_UI_TRAY) {
+        hero_layer_free(widget->tip);
+        widget->tip = NULL;
+        (void)hero_ui_win_tip_apply(widget);
+        return;
+    }
+    hero_layer_free(widget->tip);
+    widget->tip = NULL;
+}
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t *wide;
+    bool done;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows shows no tip over a menu item: a menu draws its items as it has them and gives them none");
+    }
+    if (widget->kind == HERO_UI_WEBVIEW) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a web view leaves its tips to its page, which shows an element's own (its title), and the layer gives the view none");
+    }
+    if (widget->kind != HERO_UI_TRAY && !hero_ui_win_tips_over(widget)) {
+        return HERO_UI_INVALID;
+    }
+    wide = count > 0 ? hero_ui_win_wide(text, count, widget->kind == HERO_UI_TRAY ? 0u : HERO_UI_WIN_LINES) : NULL;
+    if (count > 0 && wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_layer_free(widget->tip);
+    widget->tip = wide;
+    if (widget->kind == HERO_UI_TRAY) {
+        return !widget->tray_shown || hero_ui_win_tray_show(widget, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its tip", GetLastError());
+    }
+    done = hero_ui_win_tip_apply(widget);
+    return done ? HERO_UI_OK : hero_ui_win_failed("giving a widget its tip (TTM_ADDTOOLW)", GetLastError());
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t held[128];
+    uint8_t *narrow;
+    int64_t bytes = 0;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_MENU_ITEM) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows shows no tip over a menu item: a menu draws its items as it has them and gives them none");
+    }
+    if (widget->kind == HERO_UI_WEBVIEW) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a web view leaves its tips to its page, which shows an element's own (its title), and the layer gives the view none");
+    }
+    if (widget->kind != HERO_UI_TRAY && !hero_ui_win_tips_over(widget)) {
+        return HERO_UI_INVALID;
+    }
+    *length = 0;
+    if (widget->tip == NULL) {
+        return HERO_UI_OK;
+    }
+    /* The tray holds the first 127 units of its tip. */
+    if (widget->kind == HERO_UI_TRAY) {
+        hero_ui_win_copy_units(held, sizeof held / sizeof held[0], widget->tip);
+    }
+    narrow = hero_ui_win_narrow(widget->kind == HERO_UI_TRAY ? held : widget->tip, (int)wcslen(widget->kind == HERO_UI_TRAY ? held : widget->tip), widget->kind != HERO_UI_TRAY, &bytes);
+    if (narrow == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    if (bytes <= count && bytes > 0) {
+        memcpy(buffer, narrow, (size_t)bytes);
+    }
+    hero_layer_free(narrow);
+    *length = bytes;
+    return HERO_UI_OK;
 }
 
 #endif

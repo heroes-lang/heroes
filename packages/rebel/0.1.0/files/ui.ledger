@@ -467,7 +467,7 @@ capability ui/tooltip  a tip shown over a widget
   rust    -
   python  -
   wx      wxToolTip, wxWindow (SetToolTip), wxRichToolTip
-  note    catalogue CT49; a widget in a window, a menu item or a tray icon, its lines kept, "" taking it back; the system shows it when the pointer rests, after its own delay; macOS by `NSView.toolTip`, `NSMenuItem.toolTip` and the status item's button's; a tip of a title and an icon (`wxRichToolTip`) and the delay are not offered; Windows pending (a `TOOLTIPS_CLASS` window with `TTM_ADDTOOLW` per control, `TTF_SUBCLASS`), Linux pending (`gtk_widget_set_tooltip_text`)
+  note    catalogue CT49; a widget in a window, a menu item or a tray icon, its lines kept, "" taking it back; the system shows it when the pointer rests, after its own delay; macOS by `NSView.toolTip`, `NSMenuItem.toolTip` and the status item's button's; a tip of a title and an icon (`wxRichToolTip`) and the delay are not offered; Windows by one `TOOLTIPS_CLASS` window per top-level window (`TTS_ALWAYSTIP | TTS_NOPREFIX`) and a tool per control by `TTM_ADDTOOLW` with `TTF_IDISHWND | TTF_SUBCLASS` (a radio group's panel and each of its items; a label's and a separator's control taking `SS_NOTIFY` so the mouse reaches it), lines broken at 320 points, the tip read back from the arm's own record, a tray icon's tip the icon's `szTip` (its first 127 units, given before the icon's text) and a menu item's refused `unsupported`, Windows drawing no tip over one, Linux pending (`gtk_widget_set_tooltip_text`)
 
 capability ui/clipboard  the system's clipboard: text, files and an image copied and pasted by the program
   heroes  ui.set_clipboard, ui.clipboard, ui.Clip, ui.ClipKind, ui.CLIPBOARD_MOST
