@@ -1905,13 +1905,6 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
-#if defined(_WIN32)
-    /* The kinds after the separator the Win32 arm makes not yet: refused by
-     * name here, before its `makes` that knows them not. */
-    if (kind > HERO_UI_SEPARATOR) {
-        return hero_ui_elsewhere(hero_ui_making(kind));
-    }
-#endif
     if (!hero_ui_arm_makes(kind, parent)) {
         return hero_ui_elsewhere(hero_ui_making(kind));
     }

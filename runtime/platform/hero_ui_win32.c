@@ -250,6 +250,11 @@ struct hero_ui_native {
      * window's client area, a page's, a pane's or a scrolled box's content
      * window; NULL for a widget that holds none. */
     HWND inside;
+    /* The control beside the one `hwnd` names that a widget of two controls
+     * keeps: a group box's frame, the `BUTTON` that draws it, and a spin's
+     * arrows, the up-down control (A GROUP BOX, AN EDITABLE COMBO BOX, A
+     * SPIN). */
+    HWND part;
     /* A window's place among the screens (WINDOWS ON THE SCREEN): whether
      * it is watched, the state and the screen last told, in full screen with
      * the style and the place to give back, framed, made modal, disabled by
@@ -795,7 +800,7 @@ static void hero_ui_win_put(hero_ui_native *widget) {
     if (widget->hwnd == NULL) {
         return;
     }
-    if (widget->kind == HERO_UI_COMBO) {
+    if (widget->kind == HERO_UI_COMBO || widget->kind == HERO_UI_EDITABLE_COMBO) {
         /* A combo box's height is its field's and its list's together; the
          * field keeps the height of its font, and its list room for 12 items. */
         int item = (int)SendMessageW(widget->hwnd, CB_GETITEMHEIGHT, 0, 0);
@@ -808,6 +813,12 @@ static void hero_ui_win_put(hero_ui_native *widget) {
     }
     (void)SetWindowPos(widget->hwnd, NULL, hero_ui_win_px(widget->x, dpi), hero_ui_win_px(widget->y, dpi), hero_ui_win_px(widget->width, dpi), height, SWP_NOZORDER | SWP_NOACTIVATE | shown);
     hero_ui_win_lay_box(widget);
+    if (widget->kind == HERO_UI_SPIN && widget->part != NULL) {
+        /* The arrows take their width out of the field's again, as `UDM_SETBUDDY`
+         * does, so field and arrows together are the place given. */
+        (void)SendMessageW(widget->part, UDM_SETBUDDY, (WPARAM)widget->hwnd, 0);
+        (void)ShowWindow(widget->part, shown == SWP_SHOWWINDOW ? SW_SHOWNA : SW_HIDE);
+    }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
         const int64_t *place = &widget->radio_places[i * 4];
 
@@ -829,6 +840,12 @@ static void hero_ui_win_give_font(hero_ui_native *window) {
             continue;
         }
         (void)SendMessageW(widget->hwnd, WM_SETFONT, (WPARAM)window->font, TRUE);
+        if (widget->part != NULL) {
+            (void)SendMessageW(widget->part, WM_SETFONT, (WPARAM)window->font, TRUE);
+        }
+        if (widget->kind == HERO_UI_GROUP && widget->inside != NULL) {
+            (void)SendMessageW(widget->inside, WM_SETFONT, (WPARAM)window->font, TRUE);
+        }
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             (void)SendMessageW(widget->radios[i], WM_SETFONT, (WPARAM)window->font, TRUE);
         }
@@ -1348,6 +1365,13 @@ static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how);
 static void hero_ui_win_tip_end(hero_ui_native *widget);
 static bool hero_ui_win_tip_apply(hero_ui_native *widget);
 static void hero_ui_win_handed_take(void);
+static void hero_ui_win_spin_commit(hero_ui_native *spin);
+static void hero_ui_win_spin_show(const hero_ui_native *spin);
+static LRESULT hero_ui_win_spin_stepped(hero_ui_native *spin, const NMUPDOWN *step);
+static void hero_ui_win_combo_complete(hero_ui_native *combo);
+static void hero_ui_win_combo_chosen(hero_ui_native *combo);
+static int64_t hero_ui_win_combo_match(const hero_ui_native *combo);
+static void hero_ui_win_lay_group(hero_ui_native *group);
 
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
@@ -1424,6 +1448,20 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
             LRESULT chosen = SendMessageW(control, CB_GETCURSEL, 0, 0);
 
             hero_ui_tell(HERO_UI_EVENT_SELECT, widget->id, chosen == CB_ERR ? -1 : (int64_t)chosen, 0);
+        }
+        break;
+    case HERO_UI_EDITABLE_COMBO:
+        if (code == CBN_EDITUPDATE) {
+            hero_ui_win_combo_complete(widget);
+        } else if (code == CBN_EDITCHANGE) {
+            hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+        } else if (code == CBN_SELCHANGE) {
+            hero_ui_win_combo_chosen(widget);
+        }
+        break;
+    case HERO_UI_SPIN:
+        if (code == EN_KILLFOCUS) {
+            hero_ui_win_spin_commit(widget);
         }
         break;
     default:
@@ -1574,6 +1612,8 @@ static LRESULT hero_ui_win_notified(NMHDR *head) {
         return hero_ui_win_table_notified(widget, head);
     case HERO_UI_TREE:
         return hero_ui_win_tree_notified(widget, head);
+    case HERO_UI_SPIN:
+        return head->code == UDN_DELTAPOS ? hero_ui_win_spin_stepped(widget, (const NMUPDOWN *)head) : 0;
     default:
         return 0;
     }
@@ -1864,7 +1904,7 @@ int64_t hero_ui_arm_open(void) {
     }
     memset(&controls, 0, sizeof controls);
     controls.dwSize = (DWORD)sizeof controls;
-    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES;
+    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES | ICC_UPDOWN_CLASS;
     (void)InitCommonControlsEx(&controls);
     if (!hero_ui_win_ready) {
         HBRUSH face = (HBRUSH)(INT_PTR)(COLOR_3DFACE + 1);
@@ -1984,6 +2024,11 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     default:
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             (void)SetWindowLongPtrW(widget->radios[i], GWLP_USERDATA, 0);
+        }
+        if (widget->kind == HERO_UI_SPIN && widget->part != NULL) {
+            /* The arrows stand beside the field, not in it. */
+            (void)SetWindowLongPtrW(widget->part, GWLP_USERDATA, 0);
+            (void)DestroyWindow(widget->part);
         }
         if (widget->hwnd != NULL) {
             (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
@@ -2264,6 +2309,42 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_SEPARATOR:
         made->hwnd = hero_ui_win_control(window, inside, L"STATIC", SS_ETCHEDHORZ, 0, id);
         break;
+    case HERO_UI_GROUP:
+        /* A panel holding the frame and, over it, the content the widgets
+         * are made in. */
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_panel_class, WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        if (made->hwnd != NULL) {
+            made->part = hero_ui_win_control(window, made->hwnd, L"BUTTON", BS_GROUPBOX | WS_VISIBLE, 0, id);
+            made->inside = hero_ui_win_control(window, made->hwnd, hero_ui_win_panel_class, WS_VISIBLE | WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+            if (made->part == NULL || made->inside == NULL) {
+                (void)DestroyWindow(made->hwnd);
+                made->hwnd = NULL;
+                made->part = NULL;
+                made->inside = NULL;
+            }
+        }
+        break;
+    case HERO_UI_EDITABLE_COMBO:
+        made->hwnd = hero_ui_win_control(window, inside, L"COMBOBOX", CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP, 0, id);
+        break;
+    case HERO_UI_SPIN:
+        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_RIGHT | ES_AUTOHSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        if (made->hwnd != NULL) {
+            UDACCEL one = {0, 1};
+
+            made->part = hero_ui_win_control(window, inside, UPDOWN_CLASSW, UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, id);
+            if (made->part == NULL) {
+                (void)DestroyWindow(made->hwnd);
+                made->hwnd = NULL;
+            } else {
+                /* Each arrow changes the value by 1, however long it is held. */
+                (void)SendMessageW(made->part, UDM_SETBUDDY, (WPARAM)made->hwnd, 0);
+                (void)SendMessageW(made->part, UDM_SETRANGE32, (WPARAM)made->least, (LPARAM)made->most);
+                (void)SendMessageW(made->part, UDM_SETACCEL, 1, (LPARAM)&one);
+                hero_ui_win_spin_show(made);
+            }
+        }
+        break;
     case HERO_UI_SLIDER:
         made->hwnd = hero_ui_win_control(window, inside, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
         break;
@@ -2468,6 +2549,10 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_PAGE:
         ways = HERO_UI_WIN_PREFIX | HERO_UI_WIN_TABS;
         break;
+    case HERO_UI_GROUP:
+        ways = HERO_UI_WIN_PREFIX;
+        break;
+    case HERO_UI_EDITABLE_COMBO:
     case HERO_UI_WINDOW:
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_MENU:
@@ -2512,7 +2597,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
         return !widget->tray_shown || hero_ui_win_tray_show(widget, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its words", GetLastError());
     }
     hero_ui_mute(1);
-    set = SetWindowTextW(widget->hwnd, wide);
+    set = SetWindowTextW(widget->kind == HERO_UI_GROUP ? widget->part : widget->hwnd, wide);
     code = GetLastError();
     if (set && widget->kind == HERO_UI_LABEL) {
         hero_ui_win_label_changed(id, false);
@@ -2589,6 +2674,7 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
     int64_t texts = hero_ui_texts_in(items, count);
     UINT reset;
     UINT add;
+    wchar_t *kept = NULL;
     int64_t answer = HERO_UI_OK;
 
     if (widget == NULL) {
@@ -2603,13 +2689,17 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
     if (widget->kind == HERO_UI_LIST || widget->kind == HERO_UI_LIST_MULTIPLE) {
         reset = LB_RESETCONTENT;
         add = LB_ADDSTRING;
-    } else if (widget->kind == HERO_UI_COMBO) {
+    } else if (widget->kind == HERO_UI_COMBO || widget->kind == HERO_UI_EDITABLE_COMBO) {
         reset = CB_RESETCONTENT;
         add = CB_ADDSTRING;
     } else {
         return HERO_UI_INVALID;
     }
     hero_ui_mute(1);
+    if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+        /* Emptying the items empties the field: its text is kept. */
+        kept = hero_ui_win_wide_of(widget->hwnd);
+    }
     (void)SendMessageW(widget->hwnd, reset, 0, 0);
     widget->items = 0;
     for (int64_t i = 0; i < texts && answer == HERO_UI_OK; i += 1) {
@@ -2636,6 +2726,12 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
     }
     if (widget->kind == HERO_UI_COMBO) {
         (void)SendMessageW(widget->hwnd, CB_SETCURSEL, (WPARAM)-1, 0);
+    }
+    if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+        if (kept != NULL) {
+            (void)SetWindowTextW(widget->hwnd, kept);
+        }
+        hero_layer_free(kept);
     }
     hero_ui_mute(-1);
     return answer;
@@ -2667,6 +2763,24 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
             return HERO_UI_INVALID;
         }
         (void)SendMessageW(widget->hwnd, CB_SETCURSEL, (WPARAM)value, 0);
+        return HERO_UI_OK;
+    case HERO_UI_EDITABLE_COMBO:
+        /* An item's index sets the text to it; -1 leaves the text. */
+        if (value < -1 || value >= widget->items) {
+            return HERO_UI_INVALID;
+        }
+        if (value >= 0) {
+            hero_ui_mute(1);
+            (void)SendMessageW(widget->hwnd, CB_SETCURSEL, (WPARAM)value, 0);
+            hero_ui_mute(-1);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_SPIN:
+        if (value < widget->least || value > widget->most) {
+            return HERO_UI_INVALID;
+        }
+        widget->value = value;
+        hero_ui_win_spin_show(widget);
         return HERO_UI_OK;
     case HERO_UI_RADIO_GROUP:
         if (value < -1 || value >= widget->radio_count) {
@@ -2713,6 +2827,18 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
         }
         widget->least = least;
         widget->most = most;
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_SPIN) {
+        /* The value is not moved by the range: the face clamps it and gives
+         * it again. */
+        if (least > most) {
+            return HERO_UI_INVALID;
+        }
+        widget->least = least;
+        widget->most = most;
+        (void)SendMessageW(widget->part, UDM_SETRANGE32, (WPARAM)(int)hero_ui_between(least, INT32_MIN, INT32_MAX), (LPARAM)(int)hero_ui_between(most, INT32_MIN, INT32_MAX));
+        hero_ui_win_spin_show(widget);
         return HERO_UI_OK;
     }
     if (widget->kind != HERO_UI_SLIDER && widget->kind != HERO_UI_PROGRESS) {
@@ -2828,6 +2954,9 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
             return HERO_UI_OK;
         default:
             (void)ShowWindow(widget->hwnd, widget->visible && widget->placed ? SW_SHOWNA : SW_HIDE);
+            if (widget->kind == HERO_UI_SPIN) {
+                (void)ShowWindow(widget->part, widget->visible && widget->placed ? SW_SHOWNA : SW_HIDE);
+            }
             return HERO_UI_OK;
         }
     }
@@ -2849,6 +2978,9 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
                 (void)EnableWindow(widget->radios[i], on == 1);
             }
             (void)EnableWindow(widget->hwnd, on == 1);
+            if (widget->part != NULL) {
+                (void)EnableWindow(widget->part, on == 1);
+            }
             return HERO_UI_OK;
         }
     }
@@ -3159,6 +3291,26 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         *width = 160;
         *height = 96;
         return HERO_UI_OK;
+    case HERO_UI_SPIN: {
+        wchar_t widest[44];
+        int digits = 1;
+        int64_t longer = widget->most > -widget->least ? widget->most : -widget->least;
+
+        for (int64_t shown = longer; shown >= 10; shown /= 10) {
+            digits += 1;
+        }
+        digits += widget->least < 0 ? 1 : 0;
+        digits = digits > 20 ? 20 : digits;
+        for (int i = 0; i < digits; i += 1) {
+            widest[i] = L'0';
+        }
+        widest[digits] = 0;
+        size = hero_ui_win_text_size(widget->hwnd, widest, DT_SINGLELINE);
+        size.cx += hero_ui_win_metric(SM_CXVSCROLL, dpi) + 2 * hero_ui_win_metric(SM_CXEDGE, dpi) + MulDiv(8, (int)dpi, 96);
+        size.cy = hero_ui_win_line(widget->hwnd) + 2 * hero_ui_win_metric(SM_CYEDGE, dpi) + MulDiv(3, (int)dpi, 96);
+        break;
+    }
+    case HERO_UI_EDITABLE_COMBO:
     case HERO_UI_COMBO: {
         RECT field;
         int widest = 0;
@@ -3246,6 +3398,8 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     return HERO_UI_OK;
 }
 
+static uint8_t *hero_ui_win_group_title(const hero_ui_native *group, int64_t *bytes);
+
 int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
     hero_ui_native *widget = hero_ui_find(id);
     uint8_t *text;
@@ -3253,10 +3407,10 @@ int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *le
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (widget->kind != HERO_UI_TEXT_FIELD && widget->kind != HERO_UI_TEXT_AREA) {
+    if (widget->kind != HERO_UI_TEXT_FIELD && widget->kind != HERO_UI_TEXT_AREA && widget->kind != HERO_UI_GROUP && widget->kind != HERO_UI_EDITABLE_COMBO) {
         return HERO_UI_INVALID;
     }
-    text = hero_ui_win_text_of(widget->hwnd, widget->kind == HERO_UI_TEXT_AREA, length);
+    text = widget->kind == HERO_UI_GROUP ? hero_ui_win_group_title(widget, length) : hero_ui_win_text_of(widget->hwnd, widget->kind == HERO_UI_TEXT_AREA, length);
     if (text == NULL) {
         return HERO_UI_LIMIT;
     }
@@ -3280,6 +3434,7 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
         return HERO_UI_OK;
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
+    case HERO_UI_SPIN:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -3352,6 +3507,9 @@ int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64
         break;
     case HERO_UI_COMBO:
         one = (int64_t)SendMessageW(widget->hwnd, CB_GETCURSEL, 0, 0);
+        break;
+    case HERO_UI_EDITABLE_COMBO:
+        one = hero_ui_win_combo_match(widget);
         break;
     case HERO_UI_RADIO_GROUP:
         one = hero_ui_win_checked_radio(widget);
@@ -3538,7 +3696,21 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
         }
         break;
     case HERO_UI_EVENT_TEXT:
-        if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA) {
+        if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+            wchar_t *wide = hero_ui_win_wide(text, count, 0);
+
+            if (wide == NULL) {
+                answer = HERO_UI_LIMIT;
+            } else if (IsWindowEnabled(widget->hwnd)) {
+                /* The text typed, told once as the person's typing is. */
+                hero_ui_mute(1);
+                (void)SetWindowTextW(widget->hwnd, wide);
+                widget->value = (int64_t)wcslen(wide);
+                hero_ui_mute(-1);
+                (void)SendMessageW(GetParent(widget->hwnd), WM_COMMAND, MAKEWPARAM(0, CBN_EDITCHANGE), (LPARAM)widget->hwnd);
+            }
+            hero_layer_free(wide);
+        } else if (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA) {
             wchar_t *wide = hero_ui_win_wide(text, count, widget->kind == HERO_UI_TEXT_AREA ? HERO_UI_WIN_LINES : 0);
 
             if (wide == NULL) {
@@ -3572,11 +3744,13 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                 }
                 (void)SendMessageW(GetParent(widget->hwnd), WM_COMMAND, MAKEWPARAM(0, LBN_SELCHANGE), (LPARAM)widget->hwnd);
             }
-        } else if (widget->kind == HERO_UI_COMBO) {
+        } else if (widget->kind == HERO_UI_COMBO || widget->kind == HERO_UI_EDITABLE_COMBO) {
             if (value < 0 || value >= widget->items) {
                 answer = HERO_UI_INVALID;
             } else if (IsWindowEnabled(widget->hwnd)) {
+                hero_ui_mute(1);
                 (void)SendMessageW(widget->hwnd, CB_SETCURSEL, (WPARAM)value, 0);
+                hero_ui_mute(-1);
                 (void)SendMessageW(GetParent(widget->hwnd), WM_COMMAND, MAKEWPARAM(0, CBN_SELCHANGE), (LPARAM)widget->hwnd);
             }
         } else if (widget->kind == HERO_UI_RADIO_GROUP) {
@@ -3594,6 +3768,14 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_VALUE:
         if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
             answer = hero_ui_win_drag_to(widget, value);
+        } else if (widget->kind == HERO_UI_SPIN) {
+            if (value < widget->least || value > widget->most) {
+                answer = HERO_UI_INVALID;
+            } else if (IsWindowEnabled(widget->hwnd) && value != widget->value) {
+                widget->value = value;
+                hero_ui_win_spin_show(widget);
+                hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+            }
         } else if (widget->kind != HERO_UI_SLIDER) {
             answer = HERO_UI_INVALID;
         } else if (IsWindowEnabled(widget->hwnd)) {
@@ -3701,7 +3883,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR && kind != HERO_UI_GROUP && kind != HERO_UI_EDITABLE_COMBO && kind != HERO_UI_SPIN) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -4893,6 +5075,13 @@ static void hero_ui_win_dialog_key(HWND hwnd, UINT which) {
 
     if (window == NULL || window->kind != HERO_UI_WINDOW) {
         return;
+    }
+    /* A number typed in a spin is committed by Return, whatever then takes
+     * the key. */
+    focus = which == IDOK ? GetFocus() : NULL;
+    focused = focus != NULL && IsChild(hwnd, focus) ? hero_ui_win_widget_at(focus) : NULL;
+    if (focused != NULL && focused->kind == HERO_UI_SPIN) {
+        hero_ui_win_spin_commit(focused);
     }
     button = hero_ui_win_key_button(which == IDCANCEL ? window->escape_button : window->enter_button);
     if (button != NULL) {
@@ -7334,6 +7523,9 @@ static void hero_ui_win_lay_box(hero_ui_native *widget) {
     case HERO_UI_SCROLL:
         hero_ui_win_lay_scroll(widget);
         break;
+    case HERO_UI_GROUP:
+        hero_ui_win_lay_group(widget);
+        break;
     default:
         break;
     }
@@ -7462,6 +7654,292 @@ static void hero_ui_win_page_chosen(hero_ui_native *tabs) {
     hero_ui_tell(HERO_UI_EVENT_SELECT, tabs->id, (int64_t)SendMessageW(tabs->hwnd, TCM_GETCURSEL, 0, 0), 0);
 }
 
+/* -- A GROUP BOX, AN EDITABLE COMBO BOX, A SPIN -----------------------------
+ *
+ * A GROUP BOX is a panel of this arm's class holding two windows: the system's
+ * own group box, a `BUTTON` of `BS_GROUPBOX` (`part`), which draws the frame
+ * and the title but is no container, and over it the content, a panel that
+ * the widgets are made in, so what a window does with a box's content it does
+ * with this one's, and the panel clips both. The room the frame and the title
+ * leave around the content (`hero_ui_insets`) is one value, in points, that
+ * the layout and the drawing both read: the title's height from the text
+ * metrics of the control's own font, and 8 points on the other three sides,
+ * which is the arm's own and unmeasured against what the theme draws.
+ *
+ * AN EDITABLE COMBO BOX is a `COMBOBOX` of `CBS_DROPDOWN`. What it has chosen
+ * is never a state of its own: the first item equal to its text. The person's
+ * typing is `CBN_EDITCHANGE`; a choice in its list is `CBN_SELCHANGE`, told as
+ * the item's index and then as the text it has become. The items complete
+ * what is typed in place (`CBN_EDITUPDATE`): the first item that begins with
+ * the text, case apart, is written over it with the part the person did not
+ * type selected, so the next key replaces it, and only text that grew is
+ * completed, or a Backspace could never take the completion back. `value`
+ * holds the length of the text last typed.
+ *
+ * A SPIN is an `EDIT` and an up-down control (`part`) bought to it by
+ * `UDM_SETBUDDY`, which takes the arrows' width out of the field's, so the
+ * place the program gave is the two together and `put` gives it again with
+ * each placing. The control's own stepping is stopped (`UDN_DELTAPOS`
+ * answered true) and the arm does it: the number typed first committed, then
+ * a step of 1 within the range, told as `HERO_UI_EVENT_VALUE` where it
+ * changes the value. A typed number is committed where the field gives the
+ * keys up and at Return; a number past the range is clamped, a text that is
+ * no whole number put back as the value held, and nothing told where the
+ * value did not change. The field takes any text and the commit judges it:
+ * `ES_NUMBER` would refuse the minus sign of a range that holds negatives. */
+
+static void hero_ui_win_group_insets(const hero_ui_native *group, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    hero_ui_native *window = hero_ui_win_window(group->window);
+    UINT dpi = window != NULL ? window->dpi : 96u;
+    TEXTMETRICW metrics;
+    HDC dc = group->part != NULL ? GetDC(group->part) : NULL;
+    int title = 0;
+
+    memset(&metrics, 0, sizeof metrics);
+    if (dc != NULL) {
+        HGDIOBJ before = window != NULL && window->font != NULL ? SelectObject(dc, window->font) : NULL;
+
+        title = GetTextMetricsW(dc, &metrics) ? metrics.tmHeight : 0;
+        if (before != NULL) {
+            (void)SelectObject(dc, before);
+        }
+        (void)ReleaseDC(group->part, dc);
+    }
+    *left = 8;
+    *right = 8;
+    *bottom = 8;
+    *top = hero_ui_win_pt_up(title > 0 ? title : MulDiv(16, (int)dpi, 96), dpi) + 4;
+}
+
+static void hero_ui_win_lay_group(hero_ui_native *group) {
+    hero_ui_native *window = hero_ui_win_window(group->window);
+    UINT dpi = window != NULL ? window->dpi : 96u;
+    RECT shown;
+    int64_t left, top, right, bottom;
+    int width, height;
+
+    if (group->part == NULL || group->inside == NULL || !GetClientRect(group->hwnd, &shown)) {
+        return;
+    }
+    hero_ui_win_group_insets(group, &left, &top, &right, &bottom);
+    width = shown.right - hero_ui_win_px(left, dpi) - hero_ui_win_px(right, dpi);
+    height = shown.bottom - hero_ui_win_px(top, dpi) - hero_ui_win_px(bottom, dpi);
+    (void)SetWindowPos(group->part, NULL, 0, 0, shown.right, shown.bottom, SWP_NOZORDER | SWP_NOACTIVATE);
+    (void)SetWindowPos(group->inside, NULL, hero_ui_win_px(left, dpi), hero_ui_win_px(top, dpi), width > 0 ? width : 0, height > 0 ? height : 0, SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+/* The title of group box `group` as the program gave it: the system's text
+ * with each `&&` the arm wrote for a literal `&` turned back. */
+static uint8_t *hero_ui_win_group_title(const hero_ui_native *group, int64_t *bytes) {
+    wchar_t *wide = hero_ui_win_wide_of(group->part);
+    uint8_t *narrow;
+    int at = 0;
+
+    *bytes = 0;
+    if (wide == NULL) {
+        return NULL;
+    }
+    for (int i = 0; wide[i] != 0; i += 1) {
+        wide[at++] = wide[i];
+        if (wide[i] == L'&' && wide[i + 1] == L'&') {
+            i += 1;
+        }
+    }
+    wide[at] = 0;
+    narrow = hero_ui_win_narrow(wide, at, false, bytes);
+    hero_layer_free(wide);
+    return narrow;
+}
+
+/* The first item of editable combo `combo` equal to its text, -1 for none. */
+static int64_t hero_ui_win_combo_match(const hero_ui_native *combo) {
+    wchar_t *text = hero_ui_win_wide_of(combo->hwnd);
+    int64_t found = -1;
+
+    if (text == NULL) {
+        return -1;
+    }
+    for (int64_t i = 0; i < combo->items && found < 0; i += 1) {
+        LRESULT units = SendMessageW(combo->hwnd, CB_GETLBTEXTLEN, (WPARAM)i, 0);
+        wchar_t *item = units >= 0 ? hero_layer_alloc(((size_t)units + 1) * sizeof(wchar_t)) : NULL;
+
+        if (item == NULL) {
+            continue;
+        }
+        item[0] = 0;
+        if (SendMessageW(combo->hwnd, CB_GETLBTEXT, (WPARAM)i, (LPARAM)item) >= 0 && wcscmp(item, text) == 0) {
+            found = i;
+        }
+        hero_layer_free(item);
+    }
+    hero_layer_free(text);
+    return found;
+}
+
+/* The person chose an item in editable combo `combo`'s list: its index, then
+ * the text it has become. The field is given the item's text here, since
+ * the control writes it only after its notification. */
+static void hero_ui_win_combo_chosen(hero_ui_native *combo) {
+    LRESULT chosen = SendMessageW(combo->hwnd, CB_GETCURSEL, 0, 0);
+    LRESULT units;
+    wchar_t *item;
+
+    if (chosen == CB_ERR) {
+        return;
+    }
+    units = SendMessageW(combo->hwnd, CB_GETLBTEXTLEN, (WPARAM)chosen, 0);
+    item = units >= 0 ? hero_layer_alloc(((size_t)units + 1) * sizeof(wchar_t)) : NULL;
+    if (item != NULL) {
+        item[0] = 0;
+        if (SendMessageW(combo->hwnd, CB_GETLBTEXT, (WPARAM)chosen, (LPARAM)item) >= 0) {
+            hero_ui_mute(1);
+            (void)SetWindowTextW(combo->hwnd, item);
+            hero_ui_mute(-1);
+            combo->value = (int64_t)wcslen(item);
+        }
+        hero_layer_free(item);
+    }
+    hero_ui_tell(HERO_UI_EVENT_SELECT, combo->id, (int64_t)chosen, 0);
+    hero_ui_tell(HERO_UI_EVENT_TEXT, combo->id, 0, 0);
+}
+
+/* Completes the text the person has just typed in editable combo `combo`
+ * from its items (A GROUP BOX, AN EDITABLE COMBO BOX, A SPIN). */
+static void hero_ui_win_combo_complete(hero_ui_native *combo) {
+    int units = GetWindowTextLengthW(combo->hwnd);
+    DWORD from = 0;
+    DWORD to = 0;
+    wchar_t *typed;
+    LRESULT found;
+
+    if (hero_ui_win_injecting > 0 || hero_ui_is_muted() || units <= 0) {
+        combo->value = units > 0 ? units : 0;
+        return;
+    }
+    if (units <= combo->value) {
+        combo->value = units;
+        return;
+    }
+    combo->value = units;
+    (void)SendMessageW(combo->hwnd, CB_GETEDITSEL, (WPARAM)&from, (LPARAM)&to);
+    typed = hero_ui_win_wide_of(combo->hwnd);
+    if (typed == NULL || to != (DWORD)units) {
+        hero_layer_free(typed);
+        return;
+    }
+    found = SendMessageW(combo->hwnd, CB_FINDSTRING, (WPARAM)-1, (LPARAM)typed);
+    if (found != CB_ERR) {
+        LRESULT length = SendMessageW(combo->hwnd, CB_GETLBTEXTLEN, (WPARAM)found, 0);
+        wchar_t *item = length > units ? hero_layer_alloc(((size_t)length + 1) * sizeof(wchar_t)) : NULL;
+
+        if (item != NULL) {
+            item[0] = 0;
+            if (SendMessageW(combo->hwnd, CB_GETLBTEXT, (WPARAM)found, (LPARAM)item) >= 0) {
+                /* What the person typed keeps its own case. */
+                memcpy(item, typed, (size_t)units * sizeof(wchar_t));
+                hero_ui_mute(1);
+                (void)SetWindowTextW(combo->hwnd, item);
+                (void)SendMessageW(combo->hwnd, CB_SETEDITSEL, 0, MAKELPARAM(units, length));
+                hero_ui_mute(-1);
+            }
+            hero_layer_free(item);
+        }
+    }
+    hero_layer_free(typed);
+}
+
+/* Writes the digits of `number` into `out`, room for 22 units. */
+static void hero_ui_win_digits(int64_t number, wchar_t *out) {
+    wchar_t reversed[24];
+    uint64_t magnitude = number < 0 ? (uint64_t)0 - (uint64_t)number : (uint64_t)number;
+    int count = 0;
+    int at = 0;
+
+    do {
+        reversed[count++] = (wchar_t)(L'0' + (int)(magnitude % 10u));
+        magnitude /= 10u;
+    } while (magnitude != 0);
+    if (number < 0) {
+        out[at++] = L'-';
+    }
+    while (count > 0) {
+        out[at++] = reversed[--count];
+    }
+    out[at] = 0;
+}
+
+/* Shows spin `spin`'s held value in its field. */
+static void hero_ui_win_spin_show(const hero_ui_native *spin) {
+    wchar_t digits[24];
+
+    hero_ui_win_digits(spin->value, digits);
+    (void)SetWindowTextW(spin->hwnd, digits);
+}
+
+/* The whole number `text` is, spaces and tabs around it passed over and one
+ * sign allowed, clamped where it has more digits than 64 bits hold; false
+ * where it is anything else. */
+static bool hero_ui_win_number_of(const wchar_t *text, int64_t *number) {
+    bool negative = false;
+    uint64_t magnitude = 0;
+    int digits = 0;
+
+    while (*text == L' ' || *text == L'\t') {
+        text += 1;
+    }
+    if (*text == L'-' || *text == L'+') {
+        negative = *text == L'-';
+        text += 1;
+    }
+    for (; *text >= L'0' && *text <= L'9'; text += 1) {
+        uint64_t digit = (uint64_t)(*text - L'0');
+
+        magnitude = magnitude > (UINT64_MAX - digit) / 10u ? UINT64_MAX : magnitude * 10u + digit;
+        digits += 1;
+    }
+    while (*text == L' ' || *text == L'\t') {
+        text += 1;
+    }
+    if (digits == 0 || *text != 0) {
+        return false;
+    }
+    if (negative) {
+        *number = magnitude >= (uint64_t)INT64_MAX + 1u ? INT64_MIN : -(int64_t)magnitude;
+    } else {
+        *number = magnitude > (uint64_t)INT64_MAX ? INT64_MAX : (int64_t)magnitude;
+    }
+    return true;
+}
+
+static void hero_ui_win_spin_commit(hero_ui_native *spin) {
+    wchar_t text[64];
+    int units = GetWindowTextLengthW(spin->hwnd);
+    int64_t typed = spin->value;
+    int64_t before = spin->value;
+
+    if (units > 0 && units < 63 && GetWindowTextW(spin->hwnd, text, 64) > 0 && hero_ui_win_number_of(text, &typed)) {
+        spin->value = hero_ui_between(typed, spin->least, spin->most);
+    }
+    hero_ui_win_spin_show(spin);
+    if (spin->value != before) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, spin->id, spin->value, 0);
+    }
+}
+
+static LRESULT hero_ui_win_spin_stepped(hero_ui_native *spin, const NMUPDOWN *step) {
+    int64_t next;
+
+    hero_ui_win_spin_commit(spin);
+    next = hero_ui_between(spin->value + (step->iDelta < 0 ? -1 : 1), spin->least, spin->most);
+    if (next != spin->value) {
+        spin->value = next;
+        hero_ui_win_spin_show(spin);
+        hero_ui_tell(HERO_UI_EVENT_VALUE, spin->id, next, 0);
+    }
+    /* True: the control does not step itself. */
+    return TRUE;
+}
+
 int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
     hero_ui_native *widget = hero_ui_find(id);
     hero_ui_native *window;
@@ -7488,6 +7966,10 @@ int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *rig
     }
     if (widget->kind == HERO_UI_SCROLL) {
         *right = hero_ui_win_pt_up(hero_ui_win_metric(SM_CXVSCROLL, dpi), dpi);
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_GROUP) {
+        hero_ui_win_group_insets(widget, left, top, right, bottom);
         return HERO_UI_OK;
     }
     return HERO_UI_INVALID;
@@ -9555,6 +10037,9 @@ static bool hero_ui_win_tip_apply(hero_ui_native *widget) {
         (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, GetWindowLongPtrW(widget->hwnd, GWL_STYLE) | SS_NOTIFY);
     }
     done = hero_ui_win_tool(tooltips, window->hwnd, widget->hwnd, widget->tip);
+    if (widget->part != NULL) {
+        done = hero_ui_win_tool(tooltips, window->hwnd, widget->part, widget->tip) && done;
+    }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
         done = hero_ui_win_tool(tooltips, window->hwnd, widget->radios[i], widget->tip) && done;
     }
