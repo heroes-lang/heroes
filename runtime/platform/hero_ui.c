@@ -1857,6 +1857,7 @@ int64_t hero_ui_close(hero_ui_app *app) {
     }
     if (slot->backend == HERO_UI_NATIVE) {
         hero_ui_arm_dialogs_end(0);
+        hero_ui_arm_print_end(0);
         hero_ui_arm_instance_end();
         hero_ui_identity_count = 0;
         hero_ui_identity[0] = '\0';
@@ -1928,6 +1929,7 @@ int64_t hero_ui_destroy(hero_ui_app *app, int64_t id) {
     /* A dialog over a window goes with it, unanswered (DIALOGS ANSWERED
      * THROUGH THE QUEUE). */
     hero_ui_arm_dialogs_end(id);
+    hero_ui_arm_print_end(id);
     return hero_ui_answered(hero_ui_arm_destroy(id), "destroying a widget", id);
 }
 
@@ -3081,6 +3083,161 @@ int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
 
 #endif
 
+/* -- THE PRINT AND PAGE-SETUP DIALOGS' ARMS --------------------------------- */
+
+#if defined(__APPLE__)
+
+#include "hero_ui_appkit_print.h"
+
+/* The words of a refusal this file gave itself, ahead of the member's: a
+ * window the native side does not hold is not a refusal the member made, and
+ * its last words are an earlier call's. Empty where the call just made gave
+ * none. */
+static _Thread_local char hero_ui_print_own[HERO_UI_WORDS_MOST];
+
+static int64_t hero_ui_print_missing(const char *words) {
+    (void)snprintf(hero_ui_print_own, sizeof hero_ui_print_own, "%s", words);
+    return HERO_UI_NOT_FOUND;
+}
+
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
+    void *owner = hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    hero_ui_print_own[0] = '\0';
+    if (owner == NULL) {
+        return hero_ui_print_missing("the native side holds no such window to show the dialog over");
+    }
+    return hero_ui_appkit_print_show(owner, dialog, page, settings, count, hero_ui_dialog_told);
+}
+
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
+    void *page = hero_ui_appkit_object(view, HERO_UI_APPKIT_OBJECT_VIEW);
+    void *owner = hero_ui_appkit_object(view, HERO_UI_APPKIT_OBJECT_WINDOW);
+
+    hero_ui_print_own[0] = '\0';
+    if (page == NULL || owner == NULL) {
+        return hero_ui_print_missing("the native side holds no such web view, or it stands in no window");
+    }
+    return hero_ui_appkit_print_web(page, owner, dialog, ask, settings, count, hero_ui_dialog_told);
+}
+
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
+    hero_ui_print_own[0] = '\0';
+    return hero_ui_appkit_print_answer(dialog, value, settings, count);
+}
+
+void hero_ui_arm_print_end(int64_t window) {
+    void *owner = window == 0 ? NULL : hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    /* A widget that is no window has no print over it, and the member
+     * reads NULL as every one. */
+    if (window == 0 || owner != NULL) {
+        hero_ui_appkit_print_end(owner);
+    }
+}
+
+int64_t hero_ui_arm_print_words(char *words, int64_t count) {
+    size_t length;
+
+    if (words == NULL || count <= 0) {
+        return 0;
+    }
+    if (hero_ui_print_own[0] == '\0') {
+        return hero_ui_appkit_print_words(words, count);
+    }
+    (void)snprintf(words, (size_t)count, "%s", hero_ui_print_own);
+    length = strlen(words);
+    return (int64_t)length;
+}
+
+#elif defined(_WIN32)
+
+/* No C arm draws the print dialogs yet: each refuses in words of its own,
+ * kept where the shared words are, and a print answered finds none shown.
+ * An arm that draws them defines all five in its own member, over
+ * `hero_ui_print_win32.c` or `hero_ui_print_gtk.c`, and its system leaves
+ * this block. */
+
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)window;
+    (void)page;
+    (void)settings;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows the system's print and page-setup dialogs on macOS alone so far, and the Win32 arm has no such call");
+}
+
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)view;
+    (void)ask;
+    (void)settings;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer prints a web view's page on macOS alone so far, and the Win32 arm has no such call");
+}
+
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)value;
+    (void)settings;
+    (void)count;
+    return HERO_UI_NOT_FOUND;
+}
+
+void hero_ui_arm_print_end(int64_t window) {
+    (void)window;
+}
+
+int64_t hero_ui_arm_print_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
+
+#else
+
+/* No C arm draws the print dialogs yet: each refuses in words of its own,
+ * kept where the shared words are, and a print answered finds none shown.
+ * An arm that draws them defines all five in its own member, over
+ * `hero_ui_print_win32.c` or `hero_ui_print_gtk.c`, and its system leaves
+ * this block's condition. */
+
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)window;
+    (void)page;
+    (void)settings;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows the system's print and page-setup dialogs on macOS alone so far, and the GTK 4 arm has no such call");
+}
+
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)view;
+    (void)ask;
+    (void)settings;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer prints a web view's page on macOS alone so far, and the GTK 4 arm has no such call");
+}
+
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
+    (void)dialog;
+    (void)value;
+    (void)settings;
+    (void)count;
+    return HERO_UI_NOT_FOUND;
+}
+
+void hero_ui_arm_print_end(int64_t window) {
+    (void)window;
+}
+
+int64_t hero_ui_arm_print_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
+
+#endif
+
 /* Whether `dialog` and the `window` it stands over are numbers a dialog
  * takes, else the failure said. */
 static bool hero_ui_dialog_given(int64_t dialog, int64_t window) {
@@ -3186,16 +3343,65 @@ int64_t hero_ui_ask(hero_ui_app *app, int64_t dialog, int64_t window, int64_t to
     return hero_ui_dialog_answered(hero_ui_arm_show_ask(dialog, window, tone, title, (int64_t)title_count, text, (int64_t)text_count, labels, (int64_t)buttons_count, cancel), "showing a message box", dialog, window);
 }
 
+/* 0 where the print arm answered `kind` `HERO_UI_OK`, else -1 with the
+ * failure said as `what`, in the words of the arm that refused it where it
+ * gave some, which name the printer, the settings or the library missing,
+ * else as a dialog's. */
+static int64_t hero_ui_print_answered(int64_t kind, const char *what, int64_t dialog, int64_t window) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+
+    if (kind == HERO_UI_OK) {
+        hero_ui_fine();
+        return 0;
+    }
+    theirs[0] = '\0';
+    if ((kind == HERO_UI_INVALID || kind == HERO_UI_NOT_FOUND || kind == HERO_UI_UNSUPPORTED || kind == HERO_UI_OTHER) && hero_ui_arm_print_words(theirs, (int64_t)sizeof theirs) > 0) {
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(kind, words);
+    }
+    return hero_ui_dialog_answered(kind, what, dialog, window);
+}
+
+int64_t hero_ui_print_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t page, const void *settings, uint64_t count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_dialog_given(dialog, window) || !hero_ui_text_given(settings, count, "the settings", false)) {
+        return -1;
+    }
+    if (page != 0 && page != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "a print dialog's `page` is 0 for the print dialog or 1 for the page setup");
+    }
+    return hero_ui_print_answered(hero_ui_arm_print_show(dialog, window, page, settings, (int64_t)count), page == 0 ? "showing a print dialog" : "showing a page-setup dialog", dialog, window);
+}
+
+int64_t hero_ui_web_print(hero_ui_app *app, int64_t dialog, int64_t id, int64_t ask, const void *settings, uint64_t count) {
+    if (hero_ui_web_enter(app, id) == NULL || !hero_ui_dialog_given(dialog, id) || !hero_ui_text_given(settings, count, "the settings", false)) {
+        return -1;
+    }
+    if (ask != 0 && ask != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether a web view's print asks the person first is 0 or 1");
+    }
+    return hero_ui_print_answered(hero_ui_arm_print_web(dialog, id, ask, settings, (int64_t)count), "printing a web view's page", dialog, id);
+}
+
 /* `hero_ui_inject`'s `HERO_UI_EVENT_DIALOG`: answers dialog `dialog` as its
  * person would, `value` the answer and `paths` the paths chosen. */
 static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count) {
     const uint8_t *bytes = paths;
     int64_t texts = 0;
+    int64_t kind;
     char words[HERO_UI_WORDS_MOST];
 
     if (dialog < 1 || value < 0) {
         (void)snprintf(words, sizeof words, "answering dialog %lld with %lld; a dialog's number is 1 or more and its answer 0 or more", (long long)dialog, (long long)value);
         return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    /* A print dialog, or a web view's print, takes the settings as its text; the
+     * arm answers `HERO_UI_NOT_FOUND`, reading none, for any other dialog. */
+    if (value <= 1 && (count == 0 || (paths != NULL && count <= (uint64_t)HERO_UI_TEXT_MOST))) {
+        kind = hero_ui_arm_print_answer(dialog, value, bytes, (int64_t)count);
+        if (kind != HERO_UI_NOT_FOUND) {
+            return hero_ui_print_answered(kind, "answering a print dialog as the person", dialog, 0);
+        }
     }
     if (!hero_ui_text_given(paths, count, "the paths chosen", true)) {
         return -1;

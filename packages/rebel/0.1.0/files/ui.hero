@@ -82,6 +82,7 @@
 
 use bytes
 use image
+use printing
 use time
 use ui/hero_ui
 use ui/internal/clips
@@ -191,6 +192,8 @@ record App
     answers: [Answer]
     # The choices `inject` queued for the next file dialogs, in order.
     choices: [Choice]
+    # The choices `inject` queued for the next print dialogs, in order.
+    prints: [PrintChoice]
     # The dialogs shown and not yet answered, oldest first. Only this
     # package reads it.
     shown: [dialogs.Shown]
@@ -2058,6 +2061,13 @@ variant Event
         dialog: Dialog
         # What they chose.
         choice: Choice
+    # The person chose in a print or a page-setup dialog, or cancelled it;
+    # or a web view's page was printed (`webview.print_page`), or was not.
+    print_chosen
+        # The dialog.
+        dialog: Dialog
+        # What they chose.
+        choice: PrintChoice
     # The appearance the app is drawn in turned, dark or light, as the
     # person set it in the system's settings: a drawing, a page or a tray
     # icon that follows it draws again.
@@ -2218,6 +2228,14 @@ variant Input
         paths: [str]
     # Cancels the oldest file or folder dialog shown, or the next one.
     cancel_files
+    # Chooses these settings in the oldest print or page-setup dialog shown,
+    # or in the next one shown, as the person's OK would; on a web view's
+    # print, the settings it prints with.
+    choose_print
+        # The settings, as `printing.format_settings` takes them.
+        settings: printing.Settings
+    # Cancels the oldest print or page-setup dialog shown, or the next one.
+    cancel_print
     # Turns the appearance the app is drawn in, as the person's turn in the
     # system's settings would: on macOS the app's own appearance is set,
     # standing over the system's.
@@ -2273,7 +2291,8 @@ variant Input
 # event comes as the person's would. An answer or a choice answers the
 # oldest dialog shown that takes it at once, through the system where the
 # system shows it, or waits for the next such dialog, which it then answers
-# with nothing shown. An input on a widget greyed out,
+# with nothing shown; a print choice answers a print or a page-setup dialog
+# so. An input on a widget greyed out,
 # hidden, or destroyed before it is given, gives no event, as a person's
 # could not.
 #
@@ -2394,10 +2413,20 @@ variant Choice
         # The paths, one or more; one for a save.
         paths: [str]
 
+# What the person did in a print or a page-setup dialog.
+variant PrintChoice
+    # They cancelled it.
+    cancelled
+    # They chose these settings.
+    chosen
+        # The settings, `printing.submit`'s own.
+        settings: printing.Settings
+
 # A dialog an app showed: a message box, a box of the program's words, a
-# file or a folder dialog, which `wait` names in its answer. Made only by
-# `message`, `ask`, `open_files`, `save_file` and `open_folders`; compare
-# two with `==`.
+# file, a folder, a print or a page-setup dialog, which `wait` names in its
+# answer. Made only by `message`, `ask`, `open_files`, `save_file`,
+# `open_folders`, `print_dialog` and `page_dialog` (and `webview.print_page`);
+# compare two with `==`.
 record Dialog
     # The number of the app that showed it.
     app: i64
@@ -2474,6 +2503,42 @@ function save_file(@app: App, over: Widget, title: str, name: str, filters: [Fil
 # `multiple` is false; `failed`. See also `open_files`.
 function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Dialog?
     return dialogs.folders(@app, over: over, title: title, multiple: multiple)
+
+# Shows the system's print dialog over window `over`, its fields first set
+# from `settings`, as Qt's `QPrintDialog::open` does, and answers at once with
+# it: the settings the person chooses come later from `wait`,
+# `.print_chosen` naming the dialog, which holds `.cancelled` where they
+# cancelled. A choice `inject` queued answers it at once, and no dialog is
+# shown. On macOS the dialog is a sheet of the window; on Windows the
+# system's print dialog, modal; on GTK 4 GTK's print dialog, which needs 4.14.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over; destroying it ends the dialog
+#   unanswered.
+# - `settings`: what it starts from, as `printing.default_settings` or a
+#   person's earlier choice gives it; its printer a name `printing.printers`
+#   lists, or empty for the default.
+#
+# Fails `closed`; `invalid` where `settings` hold a line feed or a zero byte
+# in a name, or lie outside their values, or an injected choice does;
+# `not_found` for a printer no system names; `unsupported` where the system
+# offers no print dialog; `failed`. See also `page_dialog`.
+function print_dialog(@app: App, over: Widget, settings: printing.Settings) -> Dialog?
+    return dialogs.printed(@app, over: over, settings: settings, page: false)
+
+# Shows the system's page-setup dialog (the paper and the orientation) over
+# window `over` the way `print_dialog` shows the print dialog: its fields
+# first set from `settings`, the answer at once with the dialog, the choice
+# later from `wait`, `.print_chosen` naming it.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over; destroying it ends the dialog
+#   unanswered.
+# - `settings`: what it starts from.
+#
+# Fails as `print_dialog` does. See also `print_dialog`.
+function page_dialog(@app: App, over: Widget, settings: printing.Settings) -> Dialog?
+    return dialogs.printed(@app, over: over, settings: settings, page: true)
 
 # Shows a message box over window `over` whose buttons say the program's
 # own words, as "Save", "Don't Save" and "Cancel" before a document closes,
@@ -2750,7 +2815,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

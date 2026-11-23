@@ -15,6 +15,7 @@
 # the window a dialog stands over ends it unanswered.
 
 use bytes
+use printing
 use time
 use ui
 use ui/hero_ui
@@ -45,6 +46,12 @@ record Shown
     several: bool
     # Whether the system shows it, so an injected answer goes through it.
     native: bool
+    # Whether it is a print or a page-setup dialog, or a web view's print,
+    # which takes a print choice.
+    is_print: bool
+    # The printer its settings started with, which the settings the system
+    # answers name where the person chose none.
+    printer: str
 
 # The message box `ui.message` shows.
 function message(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: ui.Buttons) -> ui.Dialog?
@@ -59,7 +66,9 @@ function message(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.
         asking: false,
         cancel: -1,
         several: false,
-        native: app.native
+        native: app.native,
+        is_print: false,
+        printer: ""
     )
 
     if app.answers.len() > 0
@@ -128,7 +137,9 @@ function ask(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone
         asking: true,
         cancel: cancel,
         several: false,
-        native: app.native
+        native: app.native,
+        is_print: false,
+        printer: ""
     )
 
     if app.answers.len() > 0
@@ -176,7 +187,9 @@ function files(@app: ui.App, over: ui.Widget, title: str, name: str, filters: [u
         asking: false,
         cancel: -1,
         several: multiple && !save,
-        native: app.native
+        native: app.native,
+        is_print: false,
+        printer: ""
     )
 
     if app.choices.len() > 0
@@ -217,7 +230,9 @@ function folders(@app: ui.App, over: ui.Widget, title: str, multiple: bool) -> u
         asking: false,
         cancel: -1,
         several: multiple,
-        native: app.native
+        native: app.native,
+        is_print: false,
+        printer: ""
     )
 
     if app.choices.len() > 0
@@ -238,6 +253,95 @@ function folders(@app: ui.App, over: ui.Widget, title: str, multiple: bool) -> u
         if shown_now < 0
             return failure.last(f"showing the folder dialog \"{title}\"")
     return ok(kept(@app, s: s))
+
+# The print dialog `ui.print_dialog` shows, or the page-setup dialog
+# `ui.page_dialog` shows where `page`.
+function printed(@app: ui.App, over: ui.Widget, settings: printing.Settings, page: bool) -> ui.Dialog?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    spelled = check.settings_text(settings)?
+
+    asked = if page
+        "showing the page-setup dialog"
+    else
+        "showing the print dialog"
+
+    s = Shown(
+        dialog: next_dialog(app),
+        over: w.id,
+        title: asked,
+        offered: [],
+        asking: false,
+        cancel: -1,
+        several: false,
+        native: app.native,
+        is_print: true,
+        printer: settings.printer
+    )
+
+    if app.prints.len() > 0
+        return printed_at_once(@app, s: s)
+
+    if app.native
+        loop.settle(@app)?
+        settings_bytes @= bytes.from_text(spelled)
+        shown_now = hero_ui.print_dialog(
+            app.handle,
+            dialog: s.dialog.id,
+            window: w.id,
+            page: check.number_of(page),
+            @settings_bytes,
+            count: to_u64(settings_bytes.len()).must()
+        )
+
+        if shown_now < 0
+            return print_failure(asked)
+    return ok(kept(@app, s: s))
+
+# The print of web view `view`'s page `ui/webview.print_page` starts, through
+# the system's print dialog first where `first`.
+function web_printed(@app: ui.App, view: ui.Widget, settings: printing.Settings, first: bool) -> ui.Dialog?
+    n = check.node_kind(app, widget: view, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
+    spelled = check.settings_text(settings)?
+    asked = "printing the web view's page"
+    s = Shown(
+        dialog: next_dialog(app),
+        over: n.id,
+        title: asked,
+        offered: [],
+        asking: false,
+        cancel: -1,
+        several: false,
+        native: app.native,
+        is_print: true,
+        printer: settings.printer
+    )
+
+    if app.prints.len() > 0
+        return printed_at_once(@app, s: s)
+
+    if app.native
+        loop.settle(@app)?
+        settings_bytes @= bytes.from_text(spelled)
+        shown_now = hero_ui.web_print(
+            app.handle,
+            dialog: s.dialog.id,
+            id: n.id,
+            first: check.number_of(first),
+            @settings_bytes,
+            count: to_u64(settings_bytes.len()).must()
+        )
+
+        if shown_now < 0
+            return print_failure(asked)
+    return ok(kept(@app, s: s))
+
+# The failure of the floor's last print call, as a `T?`: a printer or a
+# dialog number the native side does not hold is the call's `invalid`, the
+# window having been found already.
+function print_failure<T>(asked: str) -> T?
+    if hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+        return fail(code: failure.INVALID, msg: failure.told(asked: asked, said: failure.words()))
+    return failure.last(asked)
 
 # Gives `answer`, injected (`ui.inject`), to the oldest dialog shown that
 # takes an answer, through the system where the system shows it, or keeps
@@ -315,6 +419,46 @@ function chosen_by(@app: ui.App, choice: ui.Choice) -> ()?
     app.events @ app.events.push(.files_chosen(dialog: s.dialog, choice: choice))
     return ok()
 
+# Gives `choice`, injected (`ui.inject`), to the oldest print or page-setup
+# dialog shown, through the system where the system shows it, or keeps it
+# for the next such dialog. Fails `unsupported` or `failed` where the
+# system refused it.
+function printed_by(@app: ui.App, choice: ui.PrintChoice) -> ()?
+    at = oldest_print(app)
+
+    if at < 0
+        app.prints @ app.prints.push(choice)
+        return ok()
+    s = app.shown[at]
+
+    if s.native
+        spelled @= ""
+        count @= 0
+
+        match choice
+            .cancelled => _ = 0
+            .chosen c =>
+                spelled @ check.settings_text(c.settings)?
+                count @ 1
+
+        settings_bytes @= bytes.from_text(spelled)
+        given = hero_ui.inject(
+            app.handle,
+            kind: hero_ui.HERO_UI_EVENT_DIALOG,
+            id: s.dialog.id,
+            value: count,
+            second: 0,
+            @settings_bytes,
+            count: to_u64(settings_bytes.len()).must()
+        )
+
+        if given < 0
+            return failure.last(f"choosing in the dialog \"{s.title}\"")
+        return ok()
+    app.shown @ without(app.shown, at: at)
+    app.events @ app.events.push(.print_chosen(dialog: s.dialog, choice: choice))
+    return ok()
+
 # The event the system queued for dialog `id`, `value` its button or how
 # many paths the person chose, the paths read from the event's text; none
 # where no dialog of that number is shown, its window destroyed since.
@@ -324,6 +468,9 @@ function read(@app: ui.App, id: i64, value: i64) -> [ui.Event]?
 
         if s.dialog.id == id
             app.shown @ without(app.shown, at: at)
+
+            if s.is_print
+                return ok([.print_chosen(dialog: s.dialog, choice: printed_choice(app, s: s, value: value)?)])
 
             if s.offered.len() > 0
                 pressed: ui.Answer = if s.asking
@@ -340,6 +487,19 @@ function read(@app: ui.App, id: i64, value: i64) -> [ui.Event]?
 
     none: [ui.Event] = []
     return ok(none)
+
+# What the system answered for print dialog `s`: `.cancelled` where
+# `value` is 0, else the settings its text holds, which name the printer
+# `s` started with where they name none. A text that is no settings is a
+# cancel, never a dropped answer.
+function printed_choice(app: ui.App, s: Shown, value: i64) -> ui.PrintChoice?
+    if value == 0
+        return ok(.cancelled)
+    spelled = native.event_text(app)?
+
+    return match printing.parse_settings(s: spelled, printer: s.printer)
+        .ok settings => ok(.chosen(settings: settings))
+        .err _       => ok(.cancelled)
 
 # Ends unanswered every dialog shown over a window of `ids`, which are going:
 # the native side ends its sheet itself as the window goes.
@@ -386,11 +546,28 @@ function chosen_at_once(@app: ui.App, s: Shown) -> ui.Dialog?
     app.events @ app.events.push(.files_chosen(dialog: s.dialog, choice: choice))
     return ok(s.dialog)
 
+# `s` answered at once by the oldest print choice injected, which it takes.
+function printed_at_once(@app: ui.App, s: Shown) -> ui.Dialog?
+    choice = app.prints[0]
+    app.prints @ app.prints.slice(from: 1, to: app.prints.len())
+    app.dialogs_made @ s.dialog.id
+    app.events @ app.events.push(.print_chosen(dialog: s.dialog, choice: choice))
+    return ok(s.dialog)
+
 # The index in `app.shown` of the oldest dialog that takes an answer, where
-# `answers`, or a choice, else; -1 for none.
+# `answers`, or a choice of files, else; -1 for none.
 function oldest(app: ui.App, answers: bool) -> i64
     for at in range(from: 0, to: app.shown.len())
-        if app.shown[at].offered.len() > 0 == answers
+        if !app.shown[at].is_print && app.shown[at].offered.len() > 0 == answers
+            return at
+
+    return -1
+
+# The index in `app.shown` of the oldest print or page-setup dialog, or a
+# web view's print; -1 for none.
+function oldest_print(app: ui.App) -> i64
+    for at in range(from: 0, to: app.shown.len())
+        if app.shown[at].is_print
             return at
 
     return -1
@@ -634,6 +811,45 @@ test "open_folders and open_files: a choice injected first or while shown, sever
     assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: opened, choice: .cancelled)
     ui.close(@app).must()
 
+test "print_dialog and page_dialog: a choice injected first or while shown, a cancel, a file choice and a print choice each taken by its own kind of dialog, settings no dialog takes refused, and a dialog ended with its window (catalogue DG12)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    office = printing.default_settings("Office")
+    twice = printing.Settings(
+        printer: "Office",
+        copies: 2,
+        paper: "iso_a4_210x297mm",
+        orientation: .landscape,
+        sides: .two_sided_long_edge,
+        color: .monochrome,
+        pages: [printing.PageRange(first: 1, last: 3)],
+        collate: false
+    )
+    ui.inject(@app, input: .choose_print(settings: twice)).must()
+    ui.inject(@app, input: .cancel_print).must()
+    first = ui.print_dialog(@app, over: w, settings: office).must()
+    second = ui.page_dialog(@app, over: w, settings: office).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: first, choice: .chosen(settings: twice))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: second, choice: .cancelled)
+    third = ui.print_dialog(@app, over: w, settings: office).must()
+    ui.inject(@app, input: .choose_print(settings: office)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: third, choice: .chosen(settings: office))
+    fourth = ui.page_dialog(@app, over: w, settings: office).must()
+    picked = ui.open_files(@app, over: w, title: "Open", filters: [], multiple: false).must()
+    ui.inject(@app, input: .cancel_files).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: picked, choice: .cancelled)
+    ui.inject(@app, input: .cancel_print).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: fourth, choice: .cancelled)
+    broken = printing.default_settings("Of\nfice")
+    assert fixture.code_of(ui.print_dialog(@app, over: w, settings: broken)) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .choose_print(settings: broken))) == ui.INVALID
+    assert app.shown.len() == 0
+    _ = ui.print_dialog(@app, over: w, settings: office).must()
+    assert app.shown.len() == 1
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
+    ui.close(@app).must()
+
 # The words a native app's arm refuses a dialog's answer with where its
 # dialogs wait for the person within the call that shows them, so that a
 # case cannot show one with no person there; "" where they answer through
@@ -652,7 +868,7 @@ function next_answer(@app: ui.App) -> ui.Event?
         match ui.wait(@app, within: time.milliseconds(100).must())
             .ok event =>
                 match event
-                    .dialog_answered _ | .files_chosen _ => return ok(event)
+                    .dialog_answered _ | .files_chosen _ | .print_chosen _ => return ok(event)
                     .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ =>
                         _ = 0
             .err e =>
@@ -708,6 +924,51 @@ test "message, ask, save_file, open_files, open_folders: on the native side each
     ui.inject(@app, input: .cancel_files).must()
     assert next_answer(@app).must() == .files_chosen(dialog: folder, choice: .cancelled)
     _ = ui.message(@app, over: w, title: "Gone?", text: "", tone: .info, buttons: .ok).must()
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
+    assert fixture.code_of(next_answer(@app)) == ui.TIMEOUT
+    ui.close(@app).must()
+
+test "print_dialog and page_dialog: on the native side each a sheet of its window answered through the queue, a choice injected answering as the person's OK would with the settings it was given, a cancel taken, two dialogs over one window answered in turn, and a dialog ended unanswered with its window (catalogue DG12)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    found = printing.default_printer()
+
+    match found
+        .ok _ => _ = 0
+        .err e => skip_test(
+            reason: f"the system's print dialog starts from a printer, and this machine has none: {e.msg}"
+        )
+
+    printer = found.must().name
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Printing", width: 400, height: 300).must()
+    wanted = printing.Settings(
+        printer: printer,
+        copies: 3,
+        paper: "",
+        orientation: .landscape,
+        sides: .two_sided_long_edge,
+        color: .printer_default,
+        pages: [printing.PageRange(first: 2, last: 4)],
+        collate: false
+    )
+    first = ui.print_dialog(@app, over: w, settings: printing.default_settings(printer))
+    refusal = fixture.unsupported_words(first)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    shown_print = first.must()
+    second = ui.page_dialog(@app, over: w, settings: printing.default_settings(printer)).must()
+    ui.inject(@app, input: .choose_print(settings: wanted)).must()
+    answered = next_answer(@app).must()
+    assert answered == .print_chosen(dialog: shown_print, choice: .chosen(settings: wanted))
+    ui.inject(@app, input: .cancel_print).must()
+    assert next_answer(@app).must() == .print_chosen(dialog: second, choice: .cancelled)
+    _ = ui.print_dialog(@app, over: w, settings: printing.default_settings(printer)).must()
     ui.destroy(@app, widget: w).must()
     assert app.shown.len() == 0
     assert fixture.code_of(next_answer(@app)) == ui.TIMEOUT

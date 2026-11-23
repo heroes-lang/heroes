@@ -90,6 +90,13 @@ capability webview/permissions  what the page may ask of the machine
   rust    WebviewBuilder::on_permission_request, WebviewBuilder::on_new_window, WebviewBuilder::on_download, WebviewBuilder::enable_clipboard_access, WebviewBuilder::disable_drag_drop_handler
   python  -
 
+capability webview/print  the page printed, through the system's print dialog or straight to a printer
+  heroes  ui/webview.print_page, ui.Event.print_chosen
+  go      -
+  rust    Webview::print
+  python  -
+  note    catalogue WV09, its printing part (the context menu and the zoom are not offered); the outcome comes through the queue as a print dialog's does (ui/print-dialogs) and holds the settings the page was printed with; macOS by WebKit's own print operation of the web view run as a sheet of its window, GTK 4 by WebKitGTK 6.0's `WebKitPrintOperation`, Windows by `ICoreWebView2_16::Print` after the print dialog where it is asked for (`unsupported` where the WebView2 runtime predates that interface); the headless side has no printer, so a program under test injects the choice
+
 capability webview/devtools  the engine's developer tools
   heroes  pending
   go      -
@@ -104,4 +111,4 @@ capability webview/zoom  the page's zoom
   python  -
 
 dropped
-  rust    WebviewBuilder::from_config, WebviewBuilder::with_environment, WebviewBuilder::with_webview_configuration, WebviewBuilder::with_related_view, WebviewBuilder::with_input_accessory_view_builder, WebviewBuilder::additional_browser_args, WebviewBuilder::browser_extensions_enabled, WebviewBuilder::extensions_path, WebviewBuilder::proxy_url, WebviewBuilder::user_agent, WebviewBuilder::scroll_bar_style, WebviewBuilder::general_autofill_enabled, WebviewBuilder::allow_link_preview, WebviewBuilder::accept_first_mouse, WebviewBuilder::focused, WebviewBuilder::disable_javascript, WebviewBuilder::transparent, WebviewBuilder::background_color, WebviewBuilder::background_throttling, WebviewBuilder::on_document_title_changed, Webview::set_background_color, Webview::set_focus, Webview::cursor_position, Webview::print, Webview::convert_file_src, Webview::run_on_main_thread, Webview::on_webview_event (the engine's own handles and settings, which a widget of a `ui` app never exposes; a page whose scripts are off, a browser extension, a proxy and a file URL each undo what the app's own origin keeps; the background, the focus, the cursor and printing are the window's, `ui`'s; a closure run on the main thread is what `ui.wait` makes unneeded)
+  rust    WebviewBuilder::from_config, WebviewBuilder::with_environment, WebviewBuilder::with_webview_configuration, WebviewBuilder::with_related_view, WebviewBuilder::with_input_accessory_view_builder, WebviewBuilder::additional_browser_args, WebviewBuilder::browser_extensions_enabled, WebviewBuilder::extensions_path, WebviewBuilder::proxy_url, WebviewBuilder::user_agent, WebviewBuilder::scroll_bar_style, WebviewBuilder::general_autofill_enabled, WebviewBuilder::allow_link_preview, WebviewBuilder::accept_first_mouse, WebviewBuilder::focused, WebviewBuilder::disable_javascript, WebviewBuilder::transparent, WebviewBuilder::background_color, WebviewBuilder::background_throttling, WebviewBuilder::on_document_title_changed, Webview::set_background_color, Webview::set_focus, Webview::cursor_position, Webview::convert_file_src, Webview::run_on_main_thread, Webview::on_webview_event (the engine's own handles and settings, which a widget of a `ui` app never exposes; a page whose scripts are off, a browser extension, a proxy and a file URL each undo what the app's own origin keeps; the background, the focus, the cursor and printing are the window's, `ui`'s; a closure run on the main thread is what `ui.wait` makes unneeded)

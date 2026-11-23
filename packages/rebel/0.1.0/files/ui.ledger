@@ -386,6 +386,14 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
   note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, owned by the window it stands over and shown by a thread of its own, its answer told through the queue, Linux by `GtkFileDialog`'s `select_folder` and `select_multiple_folders` (GTK 4.10), `GtkFileChooserNative` before
 
+capability ui/print-dialogs  the system's print dialog and its page setup, whose settings come back as a value
+  heroes  ui.print_dialog, ui.page_dialog, ui.PrintChoice, ui.Event.print_chosen, ui.Input.choose_print, ui.Input.cancel_print
+  go      -
+  rust    -
+  python  -
+  wx      wxPrintDialog (ShowModal, GetPrintDialogData), wxPageSetupDialog (ShowModal, GetPageSetupData), wxPrintDialogData, wxPageSetupDialogData
+  note    catalogue DG12; a dialog answers through the queue (ui/dialogs-answered-later) with `printing.Settings`, the text `printing.format_settings` writes crossing to the system and back, the paper, the orientation, the copies, the collation, the sides, the first range of pages and the printer; Qt's `QPrintDialog` and `QPageSetupDialog`, .NET's `PrintDialog` and `PageSetupDialog` and Java's `PrinterJob.printDialog` and `PrinterJob.pageDialog` are the same dialogs with other names; macOS by `NSPrintPanel` and `NSPageLayout`, each a sheet of the window, Windows by `PrintDlgExW` and `PageSetupDlgW` (modal, so the call returns once the person has answered), Linux by `GtkPrintDialog` (GTK 4.14, `unsupported` before); the print dialogs are drawn on macOS so far and the Win32 and GTK 4 arms answer `unsupported` for them; the colour mode crosses as the program gave it where the system's panel keeps it among a printer's own options, and the panel's one range of pages is the first range
+
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
   go      -
@@ -395,7 +403,7 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time (`unsupported` where this process cannot load them), owned by the window it stands over and shown by a thread of its own, Linux by `GtkAlertDialog`'s buttons, with its cancel and default buttons (GTK 4.10), `GtkMessageDialog` before
 
 capability ui/dialogs-answered-later  a dialog that answers its call at once and the person later, through the queue, the program's timers and windows going on meanwhile
-  heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files
+  heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files, ui.Event.print_chosen, ui.Input.choose_print, ui.Input.cancel_print
   go      -
   rust    -
   python  -
