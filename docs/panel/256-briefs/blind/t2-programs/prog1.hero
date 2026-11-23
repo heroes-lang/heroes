@@ -1,0 +1,7 @@
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function main()
+    m: (mailbox i64) = mailbox()
+    print(relay(m, 7))
+    print(m.receive(within_ms: 0).must())

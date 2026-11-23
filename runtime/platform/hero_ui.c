@@ -3656,6 +3656,22 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     return hero_ui_appkit_drop(id, x, y, paths, count);
 }
 
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    return hero_ui_appkit_undo(id, which, done);
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    return hero_ui_appkit_can_undo(id, which, can);
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    return hero_ui_appkit_set_text_selection(id, start, end);
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    return hero_ui_appkit_text_selection(id, start, end);
+}
+
 #elif defined(_WIN32)
 
 /* The words of the last refusal of a call on the system around the
@@ -3699,6 +3715,34 @@ int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths,
     (void)paths;
     (void)count;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done) {
+    (void)id;
+    (void)which;
+    (void)done;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer undoes a text widget's edit on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can) {
+    (void)id;
+    (void)which;
+    (void)can;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks whether a text widget's edit can be undone on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end) {
+    (void)id;
+    (void)start;
+    (void)end;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer selects a text widget's text on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
+    (void)id;
+    (void)start;
+    (void)end;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a text widget's selection on macOS alone, and this system's arm has no such call");
 }
 
 #endif
@@ -3851,4 +3895,67 @@ static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const vo
         return hero_ui_said(HERO_UI_INVALID, "a drop's point is 0 or more in the window's content");
     }
     return hero_ui_answered(hero_ui_arm_drop(id, x, y, bytes, (int64_t)count), "dropping files on a window as the person", id);
+}
+
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS --------------------------------- */
+
+int64_t hero_ui_undo(hero_ui_app *app, int64_t id, int64_t which) {
+    int64_t done = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (which != HERO_UI_UNDO && which != HERO_UI_REDO) {
+        return hero_ui_said(HERO_UI_INVALID, "an undo is HERO_UI_UNDO or HERO_UI_REDO");
+    }
+    if (hero_ui_answered(hero_ui_arm_undo(id, which, &done), which == HERO_UI_UNDO ? "undoing a text widget's edit" : "redoing a text widget's edit", id) != 0) {
+        return -1;
+    }
+    return done == 1 ? 1 : 0;
+}
+
+int64_t hero_ui_can_undo(hero_ui_app *app, int64_t id, int64_t which) {
+    int64_t can = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (which != HERO_UI_UNDO && which != HERO_UI_REDO) {
+        return hero_ui_said(HERO_UI_INVALID, "an undo is HERO_UI_UNDO or HERO_UI_REDO");
+    }
+    if (hero_ui_answered(hero_ui_arm_can_undo(id, which, &can), "asking whether a text widget's edit can be undone", id) != 0) {
+        return -1;
+    }
+    return can == 1 ? 1 : 0;
+}
+
+int64_t hero_ui_set_text_selection(hero_ui_app *app, int64_t id, int64_t start, int64_t end) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (start < 0 || end < start || end > HERO_UI_TEXT_MOST) {
+        (void)snprintf(words, sizeof words, "a selection from byte %lld to byte %lld; it is 0 or more, its start at most its end", (long long)start, (long long)end);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_answered(hero_ui_arm_set_text_selection(id, start, end), "selecting a text widget's text", id);
+}
+
+int64_t hero_ui_text_selection(hero_ui_app *app, int64_t id, int64_t *start, int64_t *end) {
+    int64_t from = 0;
+    int64_t to = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (start == NULL || end == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the selection");
+    }
+    if (hero_ui_answered(hero_ui_arm_text_selection(id, &from, &to), "reading a text widget's selection", id) != 0) {
+        return -1;
+    }
+    *start = from;
+    *end = to;
+    return 0;
 }

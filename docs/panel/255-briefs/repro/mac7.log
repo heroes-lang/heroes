@@ -1,0 +1,6 @@
+plain_heap plain exit=0 plain_heap: 1 | 
+plain_heap sanitize exit=134 ============================================================ | ==14351==ERROR: AddressSanitizer: heap-use-after-free on address 0x610000000040 at pc 0x000102c03cec bp 0x00016d285f00 sp 0x00016d285ef8
+plain_mmap plain exit=139  | 
+plain_mmap sanitize exit=134 AddressSanitizer:DEADLYSIGNAL | ==14624==ERROR: AddressSanitizer: SEGV on unknown address 0x0001009dc000 (pc 0x00010080bcf4 bp 0x00016f67df80 sp 0x00016f67df10 T0)
+mac-out3/plain_heap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371; #2 hero_rebind_jump rebind.c:425; #3 hero_rebind_longjmp rebind.c:478;
+mac-out3/plain_mmap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371; #2 hero_rebind_jump rebind.c:425; #3 hero_rebind_longjmp rebind.c:478;

@@ -1,0 +1,38 @@
+# A stub of the package page's `poll`, both arms' faces: the language half of t1 only.
+use net
+use time
+
+record Set
+    most: i64
+
+record Event
+    key: i64
+
+record Waker
+    key: i64
+    number: i64
+
+function make(most: i64) -> Set?
+    return ok(Set(most: most))
+
+function close(@set: Set) -> ()?
+    set.most @ 0
+    return ok()
+
+function add_listener(set: Set, l: net.Listener) -> i64?
+    return ok(set.most + l.port + 1)
+
+function add_waker(set: Set) -> Waker?
+    return ok(Waker(key: 2, number: set.most))
+
+function wake(w: Waker)
+    print(f"ring {w.number}")
+
+function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?
+    _ = m
+    return ok(set.most + 2)
+
+function wait(set: Set, limit: time.Duration) -> [Event]?
+    if limit.nanoseconds < 0
+        return fail(code: "invalid", msg: "below 0")
+    return ok([Event(key: set.most)])

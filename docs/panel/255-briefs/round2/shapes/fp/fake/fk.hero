@@ -1,0 +1,9 @@
+extern "fake.h"
+    function fk_run(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("held by a non-saving frame ", fk_run(cb: answer))

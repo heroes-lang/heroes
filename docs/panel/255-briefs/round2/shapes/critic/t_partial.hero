@@ -1,0 +1,13 @@
+extern "residue.h"
+    function rs_install(how: i32, cb: (function(i64) -> i64)) -> i32
+    function rs_raise() -> i32
+    function rs_seen() -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("installed ", rs_install(how: 1, cb: answer))
+    print("raised ", rs_raise())
+    print("seen ", rs_seen())

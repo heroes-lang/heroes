@@ -136,6 +136,14 @@ int64_t hero_ui_appkit_set_drop(int64_t id, int64_t on);
 
 int64_t hero_ui_appkit_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count);
 
+int64_t hero_ui_appkit_undo(int64_t id, int64_t which, int64_t *done);
+
+int64_t hero_ui_appkit_can_undo(int64_t id, int64_t which, int64_t *can);
+
+int64_t hero_ui_appkit_set_text_selection(int64_t id, int64_t start, int64_t end);
+
+int64_t hero_ui_appkit_text_selection(int64_t id, int64_t *start, int64_t *end);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);

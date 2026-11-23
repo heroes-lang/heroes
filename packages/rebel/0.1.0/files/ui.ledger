@@ -47,7 +47,7 @@ capability ui/keys-pressed  a key pressed by the program as the person's keyboar
   rust    -
   python  -
   wx      wxUIActionSimulator (KeyDown, KeyUp, Char)
-  note    native on macOS (the key goes down and up through `NSApp.sendEvent`, the window made the key window of the active application first), Windows by `SendInput` (the window brought to the foreground first, the foreground lock's refusal told as `failed`, and the loop run until the key's release comes back), Linux pending; on the headless side a key chooses the menu item whose shortcut it is
+  note    native on macOS (the key goes down and up through `NSApp.sendEvent`, the window made the key window of the active application first), Windows by `SendInput` (the window brought to the foreground first, the foreground lock's refusal told as `failed`, and the loop run until the key's release comes back), Linux by X11's XTest extension (`libXtst.so.6`, opened where installed; the window given the X server's focus first), refused on Wayland, which lets no program press a key; on the headless side a key chooses the menu item whose shortcut it is
 
 capability ui/edit-menu  the system's Edit menu in every text widget: undo, redo, cut, copy, paste, delete and select all, by the mouse and by their keys
   heroes  ui.text_field, ui.text_area
@@ -55,7 +55,7 @@ capability ui/edit-menu  the system's Edit menu in every text widget: undo, redo
   rust    -
   python  -
   wx      the stock identifiers wxID_UNDO, wxID_REDO, wxID_CUT, wxID_COPY, wxID_PASTE, wxID_DELETE, wxID_SELECTALL
-  note    on macOS the arm's menu bar holds the standard Edit menu after the window's first menu, each item sending AppKit's own action to the widget with the keys (without it Command+C and the rest reached no text widget); Windows' and GTK's edit controls take Ctrl+C and the rest themselves (their arms pending)
+  note    on macOS the arm's menu bar holds the standard Edit menu after the window's first menu, each item sending AppKit's own action to the widget with the keys (without it Command+C and the rest reached no text widget); Windows' edit controls take Ctrl+C and the rest themselves (its arm pending), and GTK's `GtkText` and `GtkTextView` likewise, measured: Ctrl+Z, Shift+Ctrl+Z and Ctrl+A in a field and a text area under Xvfb
 
 capability ui/headless  the widgets kept and laid out with no screen, and drawn as text
   heroes  ui.render, ui.Backend
@@ -111,7 +111,7 @@ capability ui/screens  the screens of the system: each one's whole area, its wor
   rust    tauri::Monitor, tauri::Window::available_monitors, tauri::Window::primary_monitor, tauri::Window::current_monitor
   python  tkinter.Misc.winfo_screenwidth, tkinter.Misc.winfo_screenheight, tkinter.Misc.winfo_vrootwidth, tkinter.Misc.winfo_vrootheight
   wx      wxDisplay (GetCount, GetGeometry, GetClientArea, GetScaleFactor, IsPrimary)
-  note    in points from the main screen's top-left corner, the y axis down, the scale in hundredths (200 on a Retina screen); macOS by `NSScreen`, Windows by `EnumDisplayMonitors`, `GetMonitorInfoW` and `GetDpiForMonitor`, each monitor in points at its own scale and its origin at the primary's, Linux pending (`GdkDisplay`'s monitors); the headless side has one screen of 1920 by 1080 points
+  note    in points from the main screen's top-left corner, the y axis down, the scale in hundredths (200 on a Retina screen); macOS by `NSScreen`, Windows by `EnumDisplayMonitors`, `GetMonitorInfoW` and `GetDpiForMonitor`, each monitor in points at its own scale and its origin at the primary's, Linux by `GdkDisplay`'s monitors, X11's primary one first, the work area the X11 backend's (`_NET_WORKAREA`, a window manager's) and the whole area where none is set; the headless side has one screen of 1920 by 1080 points
 
 capability ui/window-position  where a window stands on a screen, set and read, centred on its screen or over another window, and its moves told
   heroes  ui.set_position, ui.frame_of, ui.center, ui.center_over, ui.Frame, ui.Event.moved, ui.Event.screen_changed, ui.Input.drag_window
@@ -119,7 +119,7 @@ capability ui/window-position  where a window stands on a screen, set and read, 
   rust    tauri::Window::set_position, tauri::Window::outer_position, tauri::Window::center, tauri::WindowEvent::Moved
   python  tkinter.Wm.wm_geometry, tkinter.Misc.winfo_x, tkinter.Misc.winfo_y, tkinter.Misc.winfo_rootx, tkinter.Misc.winfo_rooty
   wx      wxTopLevelWindow (SetPosition, GetPosition, GetScreenPosition, Centre, CentreOnParent, CentreOnScreen), wxMoveEvent
-  note    a position is the frame's top-left corner, its title bar included, from the top-left corner of the screen it is on; macOS (the arm keeps a window's top-left corner where its layout resizes it), Windows by `SetWindowPos` and `MonitorFromWindow` on `GetWindowRect`'s frame, the border Windows keeps for resizing included, a minimized or maximized window's restored frame through its placement, Linux pending and refused on Wayland, which lets no program place or read a toplevel (`xdg_toplevel` has no such request), the face answering `unsupported` there
+  note    a position is the frame's top-left corner, its title bar included, from the top-left corner of the screen it is on; macOS (the arm keeps a window's top-left corner where its layout resizes it), Windows by `SetWindowPos` and `MonitorFromWindow` on `GetWindowRect`'s frame, the border Windows keeps for resizing included, a minimized or maximized window's restored frame through its placement, Linux by the X server on X11 (`XMoveWindow` and `XTranslateCoordinates` on the window's X window, a window manager's frame read from `_NET_FRAME_EXTENTS` and its gravity learned from its first move), refused on Wayland, which lets no program place or read a toplevel (`xdg_toplevel` has no such request), the face answering `unsupported` there
 
 capability ui/window-state  a window minimized, maximized, in full screen or restored, asked which, and the person's change told
   heroes  ui.set_state, ui.state_of, ui.WindowState, ui.Event.state_changed, ui.Input.change_state
@@ -127,7 +127,7 @@ capability ui/window-state  a window minimized, maximized, in full screen or res
   rust    tauri::Window::minimize, tauri::Window::maximize, tauri::Window::unmaximize, tauri::Window::unminimize, tauri::Window::set_fullscreen, tauri::Window::is_minimized, tauri::Window::is_maximized, tauri::Window::is_fullscreen
   python  tkinter.Wm.wm_state, tkinter.Wm.wm_iconify, tkinter.Wm.wm_deiconify, tkinter.Wm.wm_attributes
   wx      wxTopLevelWindow (Iconize, Maximize, Restore, ShowFullScreen, IsIconized, IsMaximized, IsFullScreen), wxIconizeEvent, wxMaximizeEvent, wxFullScreenEvent
-  note    the call returns once the system has made the state, its animation included; the new size comes as `.resized`; macOS (`miniaturize`, `zoom`, `toggleFullScreen`), Windows by `ShowWindow`, `IsIconic` and `IsZoomed`, full screen a frameless window over its monitor with its style and placement kept, the person's states through the title bar's `WM_SYSCOMMAND`, Linux pending (`gtk_window_minimize` and the rest), where Wayland lets no program read or undo a minimized state and the face answers `unsupported`
+  note    the call returns once the system has made the state, its animation included; the new size comes as `.resized`; macOS (`miniaturize`, `zoom`, `toggleFullScreen`), Windows by `ShowWindow`, `IsIconic` and `IsZoomed`, full screen a frameless window over its monitor with its style and placement kept, the person's states through the title bar's `WM_SYSCOMMAND`, Linux by `gtk_window_minimize` and the rest, read from `GdkToplevelState`, where X11 leaves a state to a window manager, so with none running (`_NET_SUPPORTING_WM_CHECK`) the face answers `unsupported`, and Wayland lets no program read or undo a minimized state and the face answers `unsupported`
 
 capability ui/window-look  a window kept above every other, without its frame, see-through, or on the system's translucent material
   heroes  ui.set_on_top, ui.set_framed, ui.set_opacity, ui.set_backdrop, ui.Backdrop
@@ -135,7 +135,7 @@ capability ui/window-look  a window kept above every other, without its frame, s
   rust    tauri::Window::set_always_on_top, tauri::Window::set_decorations, tauri::window::Effect, tauri::Window::set_effects
   python  tkinter.Wm.wm_attributes, tkinter.Wm.wm_overrideredirect
   wx      wxFrame (the wxSTAY_ON_TOP style), wxWindow (the wxBORDER_NONE style), wxTopLevelWindow (SetTransparent, CanSetTransparent)
-  note    a window with no frame is moved by a drag on its background (on Windows its content alone, no sizing border, resized by its content's edges where it may be); the material is `NSVisualEffectView` behind the window on macOS, Mica on Windows 11 (`DwmSetWindowAttribute`'s system backdrop, `unsupported` before Windows 11 22H2), and none in GTK 4, which answers `unsupported`; always on top is refused on Wayland, which has no such level; libui's borderless window, dropped here until this block, is `set_framed`
+  note    a window with no frame is moved by a drag on its background (on Windows its content alone, no sizing border, resized by its content's edges where it may be); the material is `NSVisualEffectView` behind the window on macOS, Mica on Windows 11 (`DwmSetWindowAttribute`'s system backdrop, `unsupported` before Windows 11 22H2), and none in GTK 4, which answers `unsupported`; on Linux the frame by `gtk_window_set_decorated`, the opacity by `gtk_widget_set_opacity`, and always on top by EWMH's `_NET_WM_STATE_ABOVE` on X11 where a window manager offers it, refused on Wayland, which has no such level; libui's borderless window, dropped here until this block, is `set_framed`
 
 capability ui/app-icon  the application's icon, set at run time
   heroes  ui.set_icon
@@ -143,7 +143,7 @@ capability ui/app-icon  the application's icon, set at run time
   rust    tauri::Window::set_icon
   python  tkinter.Wm.wm_iconphoto, tkinter.Wm.wm_iconbitmap
   wx      wxTopLevelWindow (SetIcon, SetIcons)
-  note    the Dock's on macOS, every window's and the task bar's on Windows (pending, `WM_SETICON`); GTK 4 takes an icon by its theme name only, never from pixels, so the face answers `unsupported` there
+  note    the Dock's on macOS, every window's and the task bar's on Windows (pending, `WM_SETICON`); every window's on Linux by `gdk_toplevel_set_icon_list`, X11's `_NET_WM_ICON` (GTK 4's window takes an icon by its theme name, its surface from pixels)
 
 capability ui/modal  a window of the program's own that the person answers before any other
   heroes  ui.set_modal
@@ -151,7 +151,7 @@ capability ui/modal  a window of the program's own that the person answers befor
   rust    -
   python  tkinter.Misc.grab_set, tkinter.Misc.grab_release
   wx      wxDialog (ShowModal, EndModal, IsModal)
-  note    the program goes on asking `wait`, no loop of the system's runs in its place; macOS by an `NSApp` modal session run in place of the system's loop, Windows by `EnableWindow` on every other window of the app, and on each one made while it stands, Linux pending (`gtk_window_set_modal`)
+  note    the program goes on asking `wait`, no loop of the system's runs in its place; macOS by an `NSApp` modal session run in place of the system's loop, Windows by `EnableWindow` on every other window of the app, and on each one made while it stands, Linux by `gtk_window_set_modal`, transient for another window of the app's, GTK's grab keeping the others from the person's acts
 
 capability ui/boxes  widgets side by side and one under another, with spacing, padding, and the room left shared by weights
   heroes  ui.row, ui.column, ui.set_spacing, ui.set_fit, ui.default_fit, ui.Fit, ui.Align
@@ -204,7 +204,7 @@ capability ui/button-keys  the buttons Return and Escape press wherever their wi
   rust    -
   python  tkinter.Button
   wx      wxButton (SetDefault), wxDialog (SetAffirmativeId, SetEscapeId)
-  note    tkinter's `default` option of a button draws it and binds no key; a window's button for Return takes Return before its text fields, as each system's dialogs do; macOS by `defaultButtonCell` and the Escape key equivalent, Windows by the dialog manager's `IDOK` and `IDCANCEL` (`IsDialogMessageW`), the button for Return drawn `BS_DEFPUSHBUTTON`, Linux pending (`gtk_window_set_default_widget`, a shortcut for Escape)
+  note    tkinter's `default` option of a button draws it and binds no key; a window's button for Return takes Return before its text fields, as each system's dialogs do; macOS by `defaultButtonCell` and the Escape key equivalent, Windows by the dialog manager's `IDOK` and `IDCANCEL` (`IsDialogMessageW`), the button for Return drawn `BS_DEFPUSHBUTTON`, Linux by `gtk_window_set_default_widget` and a field's Return handed to that button, Escape a shortcut of the window's activating its button
 
 capability ui/text-field  one line of text the person types, set and read back
   heroes  ui.text_field, ui.set_text, ui.text_of, ui.Event.text_changed, ui.Event.submitted, ui.Input.submit
@@ -212,7 +212,7 @@ capability ui/text-field  one line of text the person types, set and read back
   rust    -
   python  tkinter.Entry, ttk.Entry
   wx      wxTextCtrl (wxTE_PROCESS_ENTER, wxEVT_TEXT_ENTER)
-  note    a field the person may not change is one greyed out, `set_enabled`; Return pressed in it is `.submitted`, unless its window's button for Return takes it (macOS by the field's action, Windows and Linux pending: `EN_` has none, so a subclass's `WM_KEYDOWN` `VK_RETURN`; `GtkText`'s `activate`)
+  note    a field the person may not change is one greyed out, `set_enabled`; Return pressed in it is `.submitted`, unless its window's button for Return takes it (macOS by the field's action, Linux by `GtkText`'s `activate`, Windows pending: `EN_` has none, so a subclass's `WM_KEYDOWN` `VK_RETURN`)
 
 capability ui/text-area  lines of text the person types
   heroes  ui.text_area, ui.set_text, ui.text_of
@@ -228,7 +228,7 @@ capability ui/password  a text field whose text is masked
   rust    -
   python  -
   wx      wxTextCtrl (wxTE_PASSWORD)
-  note    a text field in every other way; `render` draws one mark a character and never the text; macOS by `NSSecureTextField` put in the field's place, Windows by `EM_SETPASSWORDCHAR`, Linux pending (`gtk_text_set_visibility` false, or a `GtkPasswordEntry`)
+  note    a text field in every other way; `render` draws one mark a character and never the text; macOS by `NSSecureTextField` put in the field's place, Windows by `EM_SETPASSWORDCHAR`, Linux by a `GtkPasswordEntry` put in the field's place
 
 capability ui/checkbox  a box the person checks and unchecks
   heroes  ui.checkbox, ui.set_checked, ui.is_checked, ui.Event.toggled
@@ -250,7 +250,7 @@ capability ui/list  items in a box, of which the person chooses one or several
   rust    -
   python  tkinter.Listbox
   wx      wxListBox (wxEVT_LISTBOX_DCLICK), wxListCtrl (wxEVT_LIST_ITEM_ACTIVATED)
-  note    a row opened by a double click or the Return key is `.activated`, after the `.selection_changed` its first click gave (feature 2685); tkinter binds `<Double-Button-1>` itself and libui has no list; macOS by the table's double action and its Return key, Windows by `LBN_DBLCLK`, and Return through the dialog manager's `IDOK` opening the first row chosen, Linux pending (`GtkListView`'s `activate`)
+  note    a row opened by a double click or the Return key is `.activated`, after the `.selection_changed` its first click gave (feature 2685); tkinter binds `<Double-Button-1>` itself and libui has no list; macOS by the table's double action and its Return key, Windows by `LBN_DBLCLK`, and Return through the dialog manager's `IDOK` opening the first row chosen, Linux by `GtkListBox`'s `row-activated`, single-click activation off
 
 capability ui/combo  items in a button that opens them, of which the person chooses one
   heroes  ui.combo, ui.set_items, ui.set_selection, ui.selection_of
@@ -279,7 +279,7 @@ capability ui/progress-moving  a progress bar that moves with no value
   rust    -
   python  -
   wx      wxGauge (Pulse)
-  note    `ProgressBar.SetValue(-1)` and `ttk.Progressbar`'s indeterminate mode, which their blocks above name; macOS by `NSProgressIndicator`'s indeterminate state, Windows by `PBS_MARQUEE` and `PBM_SETMARQUEE`, Linux pending (`gtk_progress_bar_pulse`)
+  note    `ProgressBar.SetValue(-1)` and `ttk.Progressbar`'s indeterminate mode, which their blocks above name; macOS by `NSProgressIndicator`'s indeterminate state, Windows by `PBS_MARQUEE` and `PBM_SETMARQUEE`, Linux by `gtk_progress_bar_pulse` every 100 ms
 
 capability ui/slider  a knob the person drags between two values
   heroes  ui.slider, ui.set_value, ui.value_of, ui.set_range, ui.Event.value_changed
@@ -324,7 +324,7 @@ capability ui/app-menu  the application's menu of macOS: About, Settings, Servic
   rust    tauri::menu::PredefinedMenuItem::about, tauri::menu::PredefinedMenuItem::services, tauri::menu::PredefinedMenuItem::hide, tauri::menu::PredefinedMenuItem::hide_others, tauri::menu::PredefinedMenuItem::show_all, tauri::menu::PredefinedMenuItem::quit
   python  -
   wx      wxMenuBar (OSXGetAppleMenu), the stock identifiers wxID_ABOUT, wxID_PREFERENCES, wxID_EXIT
-  note    on macOS the arm's application menu holds the system's Services, Hide, Hide Others and Show All, and an item of the program's with a role stands in About's, Settings' (Command+,) or Quit's place, hidden where it was made, its choosing told as itself; without one, About shows the system's panel and Quit asks every window to close; Windows and Linux have no such menu and keep the item where it was made (their arms pending)
+  note    on macOS the arm's application menu holds the system's Services, Hide, Hide Others and Show All, and an item of the program's with a role stands in About's, Settings' (Command+,) or Quit's place, hidden where it was made, its choosing told as itself; without one, About shows the system's panel and Quit asks every window to close; Windows and Linux have no such menu and keep the item where it was made (Linux's arm so, Windows' pending)
 
 capability ui/submenu  a menu inside a menu
   heroes  ui.menu
@@ -332,7 +332,7 @@ capability ui/submenu  a menu inside a menu
   rust    tauri::menu::Submenu
   python  tkinter.Menu
   wx      wxMenu (AppendSubMenu)
-  note    `menu` takes a menu as well as a window; a shortcut of an item deep inside one is taken as any; macOS by an item holding the inner `NSMenu`, Windows by `InsertMenuItemW` with the inner menu as `hSubMenu`, its items' shortcuts in the window's accelerator table, Linux pending (a `GMenu` submenu)
+  note    `menu` takes a menu as well as a window; a shortcut of an item deep inside one is taken as any; macOS by an item holding the inner `NSMenu`, Windows by `InsertMenuItemW` with the inner menu as `hSubMenu`, its items' shortcuts in the window's accelerator table, Linux by a `GMenu` submenu
 
 capability ui/menu-checks  menu items checked and unchecked, and groups of which one is checked
   heroes  ui.check_item, ui.radio_item, ui.set_checked, ui.is_checked
@@ -340,7 +340,7 @@ capability ui/menu-checks  menu items checked and unchecked, and groups of which
   rust    tauri::menu::CheckMenuItem
   python  tkinter.Menu
   wx      wxMenu (AppendCheckItem, AppendRadioItem, the kinds wxITEM_CHECK and wxITEM_RADIO)
-  note    the person's choice turns a check item over and checks a radio item alone in its group, the radio items no other item or separator stands between, before `.menu_chosen`; macOS by `NSMenuItem.state`, Windows by `MFS_CHECKED`, a radio item drawn `MFT_RADIOCHECK`, the arm turning the state before the event, Linux pending (a `GSimpleAction` with a state)
+  note    the person's choice turns a check item over and checks a radio item alone in its group, the radio items no other item or separator stands between, before `.menu_chosen`; macOS by `NSMenuItem.state`, Windows by `MFS_CHECKED`, a radio item drawn `MFT_RADIOCHECK`, the arm turning the state before the event, Linux by a `GSimpleAction` with a state, boolean for a check item and a string with the item's target for a radio item
 
 capability ui/timer  a clock that fires at a period, among the person's events
   heroes  ui.timer, ui.Event.timer_fired
@@ -380,7 +380,7 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
-  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, which waits for the person, its answer told through the queue as it returns, Linux pending (`GtkFileDialog`'s `select_folder`)
+  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, which waits for the person, its answer told through the queue as it returns, Linux by `GtkFileDialog`'s `select_folder` and `select_multiple_folders` (GTK 4.10), `GtkFileChooserNative` before
 
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
@@ -388,7 +388,7 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   rust    -
   python  -
   wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
-  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time, which waits for the person, Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time, which waits for the person, Linux by `GtkAlertDialog`'s buttons, with its cancel and default buttons (GTK 4.10), `GtkMessageDialog` before
 
 capability ui/dialogs-answered-later  a dialog that answers its call at once and the person later, through the queue, the program's timers and windows going on meanwhile
   heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files
@@ -396,7 +396,7 @@ capability ui/dialogs-answered-later  a dialog that answers its call at once and
   rust    -
   python  -
   wx      wxDialog (ShowWindowModal, unread)
-  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Windows and Linux pending: the layer wraps their waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner; `GtkAlertDialog.choose`, `GtkFileDialog`)
+  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Linux by `GtkAlertDialog`'s `choose` and `GtkFileDialog` (GTK 4.10; `GtkMessageDialog` and `GtkFileChooserNative` before), each answering by its callback, an injected answer pressing the button of its label in the alert's own window and a choice in a file dialog refused, only a cancel taken; Windows pending: the layer wraps its waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system
@@ -411,7 +411,7 @@ capability ui/tabs  pages chosen by tabs
   rust    -
   python  ttk.Notebook
   wx      wxNotebook (AddPage, SetSelection, GetSelection, wxEVT_NOTEBOOK_PAGE_CHANGED)
-  note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows by the tab control, `WC_TABCONTROL`, each page a child window laid over its display area (`TCM_ADJUSTRECT`), Linux pending (`GtkNotebook`); a page taken out and put back in another place, and a tab's icon, are not offered
+  note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows by the tab control, `WC_TABCONTROL`, each page a child window laid over its display area (`TCM_ADJUSTRECT`), Linux by `GtkNotebook`, a page a `GtkFixed`; a page taken out and put back in another place, and a tab's icon, are not offered
 
 capability ui/table  rows of cells in columns, several chosen, one opened, sorted by the header the person clicks
   heroes  ui.table, ui.set_rows, ui.rows_of, ui.set_sort, ui.sort_of, ui.Sort, ui.set_selection, ui.selection_of, ui.Event.sort_asked, ui.Event.activated, ui.Input.sort, ui.Kind.table
@@ -419,7 +419,7 @@ capability ui/table  rows of cells in columns, several chosen, one opened, sorte
   rust    -
   python  ttk.Treeview
   wx      wxDataViewListCtrl, wxListCtrl (wxLC_REPORT), wxDataViewCtrl
-  note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows by the list view in report mode with `LVS_OWNERDATA`, `LVN_COLUMNCLICK` and `HDF_SORTUP`, a click's choice told once its notifications have all come, Linux pending (`GtkColumnView`); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
+  note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows by the list view in report mode with `LVS_OWNERDATA`, `LVN_COLUMNCLICK` and `HDF_SORTUP`, a click's choice told once its notifications have all come, Linux by `GtkColumnView`, each column's sorter finding every two rows equal so the header is clicked and the rows never reordered (GTK 4.10 reads the sort); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
 
 capability ui/tree  a tree of items folded and unfolded, one chosen and opened, what is under an item loaded when the person unfolds it
   heroes  ui.tree, ui.add_item, ui.remove_item, ui.items_under, ui.item_text, ui.set_unfolded, ui.is_unfolded, ui.set_selection, ui.selection_of, ui.Event.unfolded, ui.Event.activated, ui.Input.unfold, ui.Kind.tree
@@ -427,7 +427,7 @@ capability ui/tree  a tree of items folded and unfolded, one chosen and opened, 
   rust    -
   python  ttk.Treeview
   wx      wxTreeCtrl, wxDataViewTreeCtrl
-  note    catalogue CT35 and CT37 (must); items numbered by the tree, one chosen; macOS by `NSOutlineView`, folding an item measured to tell the fold and then let go of the choice under it; Windows by the tree view, `TVN_ITEMEXPANDINGW` with `cChildren` for a foldable item, the choice under a folded item let go before the fold, Linux pending (`GtkListView` over a `GtkTreeListModel` with `GtkTreeExpander`); an item's text changed in place, icons and several items chosen are not offered
+  note    catalogue CT35 and CT37 (must); items numbered by the tree, one chosen; macOS by `NSOutlineView`, folding an item measured to tell the fold and then let go of the choice under it; Windows by the tree view, `TVN_ITEMEXPANDINGW` with `cChildren` for a foldable item, the choice under a folded item let go before the fold, Linux by `GtkListView` over a `GtkTreeListModel` with `GtkTreeExpander`, a fold that lets the choice go told before the choice; an item's text changed in place, icons and several items chosen are not offered
 
 capability ui/scrolled  a box whose content scrolls
   heroes  ui.scrolled, ui.Kind.scrolled
@@ -435,7 +435,7 @@ capability ui/scrolled  a box whose content scrolls
   rust    -
   python  tkinter.Scrollbar, ttk.Scrollbar, tkinter.XView, tkinter.YView
   wx      wxScrolled (SetScrollRate, SetVirtualSize), whose wxScrolledWindow is wxScrolled<wxPanel>
-  note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows by `WS_VSCROLL`, always drawn (`SIF_DISABLENOSCROLL`), and the arm moving the content's child window, Linux pending (`GtkScrolledWindow`); the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
+  note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows by `WS_VSCROLL`, always drawn (`SIF_DISABLENOSCROLL`), and the arm moving the content's child window, Linux by `GtkScrolledWindow` over a `GtkFixed`; the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
 
 capability ui/split  two panes whose border the person drags
   heroes  ui.split, ui.pane, ui.set_value, ui.value_of, ui.Event.value_changed, ui.Input.slide, ui.Kind.split, ui.Kind.pane
@@ -443,7 +443,7 @@ capability ui/split  two panes whose border the person drags
   rust    -
   python  tkinter.PanedWindow, ttk.Panedwindow
   wx      wxSplitterWindow (SplitVertically, SplitHorizontally, SetSashPosition, GetSashPosition, SetMinimumPaneSize, wxEVT_SPLITTER_SASH_POS_CHANGED)
-  note    catalogue LY09; two panes, the divider kept where neither gets less than it needs; macOS by `NSSplitView`, the person's drag told by its notification's divider index; Windows by the arm's own divider between two child windows, dragged with `SetCapture`, Linux pending (`GtkPaned`); three panes or more, and a pane folded away, are not offered
+  note    catalogue LY09; two panes, the divider kept where neither gets less than it needs; macOS by `NSSplitView`, the person's drag told by its notification's divider index; Windows by the arm's own divider between two child windows, dragged with `SetCapture`, Linux by `GtkPaned`, the person's drag told apart from a resize by the paned's own size; three panes or more, and a pane folded away, are not offered
 
 capability ui/drawing  an area the program draws into, with its keys and its mouse
   heroes  pending
@@ -458,7 +458,7 @@ capability ui/focus  the widget that has the keys, set and asked, and Tab and Sh
   rust    -
   python  tkinter.Misc.focus_set, tkinter.Misc.focus_get, tkinter.Misc.tk_focusNext, tkinter.Misc.tk_focusPrev
   wx      wxWindow (SetFocus, FindFocus, MoveAfterInTabOrder, Navigate)
-  note    text fields, text areas and lists, the widgets every system gives the keys; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows by `SetFocus`, each window keeping its control with the keys across `WM_ACTIVATE`, the Tab order the controls' z-order put in reading order, Linux pending (`gtk_widget_grab_focus`, the focus chain GTK reads from the widgets' order)
+  note    text fields, text areas and lists, the widgets every system gives the keys; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows by `SetFocus`, each window keeping its control with the keys across `WM_ACTIVATE`, the Tab order the controls' z-order put in reading order, Linux by `gtk_widget_grab_focus` and `gtk_root_get_focus`, GTK's focus chain by the widgets' places
 
 capability ui/tooltip  a tip shown over a widget
   heroes  pending
@@ -473,7 +473,7 @@ capability ui/clipboard  the system's clipboard: text, files and an image copied
   rust    -
   python  tkinter.Misc.clipboard_get, tkinter.Misc.clipboard_append, tkinter.Misc.clipboard_clear
   wx      wxClipboard (SetData, GetData, IsSupported, Clear), wxTextDataObject, wxFileDataObject, wxBitmapDataObject
-  note    catalogue CB01, CB02, CB03; macOS by `NSPasteboard.general`, measured on this Mac to find what the program put as its own kind alone; Windows by `OpenClipboard` and `SetClipboardData` with `CF_UNICODETEXT`, `CF_HDROP` and `CF_DIBV5`, an image read also from `CF_DIB` and `CF_BITMAP`, Linux pending (`GdkClipboard`, whose read answers later and which the arm waits for); rich text and a web page's HTML (CB04), a format of the program's own (CB05) and an event when another program copies (CB06) are not offered
+  note    catalogue CB01, CB02, CB03; macOS by `NSPasteboard.general`, measured on this Mac to find what the program put as its own kind alone; Windows by `OpenClipboard` and `SetClipboardData` with `CF_UNICODETEXT`, `CF_HDROP` and `CF_DIBV5`, an image read also from `CF_DIB` and `CF_BITMAP`, Linux by `GdkClipboard`, whose read answers later and which the arm waits for, paths offered as `text/uri-list` and GNOME's copied files and never as text; rich text and a web page's HTML (CB04), a format of the program's own (CB05) and an event when another program copies (CB06) are not offered
 
 capability ui/pickers  a date, a colour or a font chosen in the system's own picker
   heroes  pending
@@ -488,7 +488,7 @@ capability ui/tray  an icon in the system's tray or menu bar, with the menu its 
   rust    tauri::tray::TrayIcon
   python  -
   wx      wxTaskBarIcon (SetIcon, PopupMenu)
-  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows by `Shell_NotifyIconW` (version 4) with a hidden window of its own, its menu on a click after `SetForegroundWindow`, added again when Explorer restarts ("TaskbarCreated"), Linux pending (GTK 4 has no tray: a StatusNotifierItem over D-Bus)
+  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows by `Shell_NotifyIconW` (version 4) with a hidden window of its own, its menu on a click after `SetForegroundWindow`, added again when Explorer restarts ("TaskbarCreated"), Linux refused by name (GTK 4 has no tray, and the arm draws no StatusNotifierItem over D-Bus in its place)
 
 capability ui/docked  an app out of the Dock and the menu bar, living in the tray alone
   heroes  ui.set_docked
@@ -496,7 +496,7 @@ capability ui/docked  an app out of the Dock and the menu bar, living in the tra
   rust    -
   python  -
   wx      -
-  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows by `ITaskbarList`'s `DeleteTab` on each window, again whenever one is shown, Linux pending (GTK 4 removed skip-taskbar, so `unsupported` there)
+  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows by `ITaskbarList`'s `DeleteTab` on each window, again whenever one is shown, Linux by X11's `_NET_WM_STATE_SKIP_TASKBAR` where the window manager offers it (GTK 4 removed skip-taskbar), refused by name on Wayland and with no window manager
 
 capability ui/notification  a notification of the system's: a title and its words
   heroes  ui.notify
@@ -504,7 +504,7 @@ capability ui/notification  a notification of the system's: a title and its word
   rust    -
   python  -
   wx      wxNotificationMessage
-  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows by a tray icon's balloon (`NIF_INFO`), which Windows 10 and later show as a toast, the app's first tray or one of the arm's own; a toast of the program's own needs an AppUserModelID it does not carry, Linux pending (`GNotification` through the portal)
+  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows by a tray icon's balloon (`NIF_INFO`), which Windows 10 and later show as a toast, the app's first tray or one of the arm's own; a toast of the program's own needs an AppUserModelID it does not carry, Linux by `org.freedesktop.Notifications` on the session bus, as libnotify hands it, so no application id is needed (measured with dunst), refused by GLib's words with no bus or no server; through the portal in a sandbox, not offered
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  ui.set_drop, ui.Event.files_dropped, ui.Input.drop_files
@@ -538,15 +538,15 @@ capability ui/context-menu  a menu shown where the person right-clicks a widget
   rust    -
   python  tkinter.Menu.tk_popup, tkinter.Menu.post
   wx      wxContextMenuEvent, wxWindow (PopupMenu)
-  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows by `TrackPopupMenuEx` on `WM_CONTEXTMENU`, an edit control's own menu giving way to the program's, a web view's refused `unsupported`, WebView2 showing a menu of its own, Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
+  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows by `TrackPopupMenuEx` on `WM_CONTEXTMENU`, an edit control's own menu giving way to the program's, a web view's refused `unsupported`, WebView2 showing a menu of its own, Linux by `GtkPopoverMenu` on a `GtkGestureClick` of the secondary button and Shift+F10, a text field's and a text area's the extra items of GTK's own; the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
 
 capability ui/text-selection  a text widget's selection and caret set and read, and its undo
-  heroes  pending
+  heroes  ui.undo, ui.redo, ui.can_undo, ui.can_redo, ui.select_text, ui.text_selection_of, ui.TextRange
   go      -
   rust    -
   python  tkinter.Text.tag_add, tkinter.Text.mark_set, tkinter.Text.edit_undo, tkinter.Text.edit_redo, tkinter.Entry.selection_range, tkinter.Entry.icursor
   wx      wxTextEntry (SetSelection, GetSelection, SetInsertionPoint, GetInsertionPoint, Undo, Redo, CanUndo, CanRedo)
-  note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the system's own undo already (ui/edit-menu); macOS `NSTextView.selectedRange` and its `undoManager`, Windows `EM_SETSEL` and the Rich Edit's undo levels, Linux `GtkEditable` and `GtkTextBuffer`'s undo
+  note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the same undo (ui/edit-menu); a text area keeps the person's edits from the program's last text, each injected edit one of its own, a text field those typed while it has the keys (the headless side's fields keep none); the selection in bytes of the UTF-8 text, each end at a character's first byte, the program's text and an edit leaving the caret at the end; a field takes the keys to show its selection and keeps it once it gives them up; the program's undo tells nothing; macOS by each text area's own `UndoManager` (its text view's delegate's `undoManager(for:)`), a field's by its field editor, the selection by `NSTextView.selectedRange` across UTF-16; the insertion point apart from the selection, an undo limit and the program's own edits as undo steps are not offered; Windows pending (`EM_UNDO`, `EM_CANUNDO`, `EM_SETSEL`, `EM_GETSEL` in UTF-16 units; one level only without a Rich Edit), Linux pending (`GtkTextBuffer`'s `undo`, `redo`, `can-undo`, `select_range`; `GtkEditable`'s `select_region` in characters)
 
 capability ui/session-end  the person logging out or shutting down, asked of the program first
   heroes  ui.Event.quit_asked, ui.answer_quit, ui.Input.ask_quit
@@ -562,7 +562,7 @@ capability ui/appearance  the system's dark or light appearance, and its change
   rust    -
   python  -
   wx      wxSystemSettings (GetAppearance), wxSystemAppearance (IsDark), wxSysColourChangedEvent
-  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows by the registry's `AppsUseLightTheme`, read again at `WM_SETTINGCHANGE` of "ImmersiveColorSet", the title bars by DWM's dark mode, Win32's own controls keeping their light look (no documented dark one), Linux pending (`GtkSettings`'s `gtk-interface-color-scheme`, 4.20, or the portal's `color-scheme`)
+  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows by the registry's `AppsUseLightTheme`, read again at `WM_SETTINGCHANGE` of "ImmersiveColorSet", the title bars by DWM's dark mode, Win32's own controls keeping their light look (no documented dark one), Linux by `GtkSettings`: its `gtk-interface-color-scheme` (4.20) where GTK has it, else the dark variant it draws, turned by `gtk-application-prefer-dark-theme` and watched by its notifications; the portal's `color-scheme`, not read
 
 capability ui/accessibility  each widget's name and its label read by the system's screen reader
   heroes  ui.set_accessible_name, ui.set_label_for
@@ -570,7 +570,7 @@ capability ui/accessibility  each widget's name and its label read by the system
   rust    -
   python  -
   wx      wxAccessible, wxWindow (SetName, SetLabel)
-  note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows by `IAccPropServices`' `SetHwndPropStr` with `PROPID_ACC_NAME`, a tied label's words kept as it changes, read back by the control's `IAccessible`, Linux pending (`gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL`, `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`)
+  note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows by `IAccPropServices`' `SetHwndPropStr` with `PROPID_ACC_NAME`, a tied label's words kept as it changes, read back by the control's `IAccessible`, Linux by `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL` and `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`, the name read back from the arm's own record, GTK reading none
 
 capability ui/single-instance  one copy of the program running, a second handing its documents to the first
   heroes  pending

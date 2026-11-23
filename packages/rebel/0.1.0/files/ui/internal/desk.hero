@@ -930,10 +930,19 @@ test "appearance_of: on the native side the system's, the app turned dark and li
         .light
 
     ui.inject(@app, input: .change_appearance(appearance: other)).must()
-    came = events_of(@app)
+    turned_to = events_of(@app)
+
+    # A system that answers the appearance but turns none as the person
+    # tells it when the wait gives the input (defect 2698's shape).
+    given_refusal = fixture.unsupported_words(turned_to)
+
+    if given_refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: given_refusal)
+    came = turned_to.must()
     turned = ui.appearance_of(app).must()
     ui.inject(@app, input: .change_appearance(appearance: first)).must()
-    back = events_of(@app)
+    back = events_of(@app).must()
     nothing: [u8] @= []
     _ = hero_ui.inject(
         app.handle,
@@ -949,8 +958,9 @@ test "appearance_of: on the native side the system's, the app turned dark and li
     assert back == [.appearance_changed(appearance: first)]
 
 # The appearance's turns a native app's wait gives within half a second, its
-# other events passed over.
-function events_of(@app: ui.App) -> [ui.Event]
+# other events passed over; fails as the wait does but for its timeout, so
+# an injected turn the system refuses is told by its words.
+function events_of(@app: ui.App) -> [ui.Event]?
     out: [ui.Event] @= []
 
     for _ in range(from: 0, to: 5)
@@ -960,6 +970,8 @@ function events_of(@app: ui.App) -> [ui.Event]
                     .appearance_changed _ => out @ out.push(event)
                     .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .quit_asked _ | .files_dropped _ =>
                         _ = 0
-            .err _ => _ = 0
+            .err e =>
+                if e.code != failure.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
 
-    return out
+    return ok(out)

@@ -1,0 +1,55 @@
+use net
+use poll
+use time
+
+record Result
+    worker: i64
+    value: i64
+
+record Start
+    worker: i64
+    out: (mailbox Result)
+    bell: poll.Waker
+
+function work(s: Start) -> i64
+    i @= 0
+
+    while i < 25
+        s.out.send(Result(worker: s.worker, value: s.worker * 1000 + i)).must()
+        poll.wake(s.bell)
+        i @ i + 1
+
+    return i
+
+function main()
+    l @= net.listen("127.0.0.1", port: 0).must()
+    set @= poll.make(4).must()
+    _ = poll.add_listener(set, l).must()
+    out: (mailbox Result) = mailbox()
+    bell = poll.add_waker(set).must()
+    threads: [(thread i64)] @= []
+    w @= 0
+
+    while w < 4
+        threads @ threads.push(spawn(work, Start(worker: w, out: out, bell: bell)).must())
+        w @ w + 1
+
+    got @= 0
+
+    while got < 100
+        _ = poll.wait(set, limit: time.seconds(30).must()).must()
+
+        while true
+            match out.receive(within_ms: 0)
+                .err _ => break
+                .ok r =>
+                    print(f"got {r.worker} {r.value}")
+                    got @ got + 1
+
+    print(f"done {got}")
+
+    for t in threads
+        _ = t.wait()
+
+    poll.close(@set).must()
+    net.close_listener(@l).must()

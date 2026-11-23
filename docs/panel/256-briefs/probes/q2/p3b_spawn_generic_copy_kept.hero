@@ -1,0 +1,14 @@
+use kinds
+
+function start<S>(body: (function(S) -> i64), setup: S) -> i64
+    t = spawn(body, setup).must()
+    return t.wait()
+
+function use_it(b: kinds.Boxed) -> i64
+    c @= b
+    return kinds.release(@c).to_str().len()
+
+function main()
+    b @= kinds.boxed()
+    print(start(use_it, setup: b))
+    print(kinds.release(@b))

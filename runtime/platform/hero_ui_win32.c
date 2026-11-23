@@ -317,6 +317,9 @@ typedef struct hero_ui_win_node {
     HTREEITEM handle;
     bool foldable;
     bool waiting;
+    /* Folded by the person with the choice under it let go, told after the
+     * fold. */
+    bool let_go;
 } hero_ui_win_node;
 
 /* The scaling functions of `user32` (POINTS ARE MAPPED), NULL where this
@@ -6597,9 +6600,9 @@ static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int
  * none is told at `TVN_ITEMEXPANDINGW`, since the tree view has nothing to
  * show and may tell no more, and the items the program then adds under it
  * are shown unfolded. Folding an item whose descendant is chosen lets the
- * choice go before the fold, as the layer's other systems do, where the
- * tree view would move it to the folded item; Rebel tells that choice gone
- * after the fold it was told; a choice the tree view would make of its own
+ * choice go before the fold, where the tree view would move it to the
+ * folded item, and tells it gone after the fold, `UNFOLD` then `SELECT`, as
+ * AppKit's outline view was measured to; a choice the tree view would make of its own
  * accord (its first item when it takes the keys with none chosen) is
  * refused, and an item taken out takes the choice under it with it. A
  * double click or Return opens the item chosen. */
@@ -6686,15 +6689,17 @@ static int64_t hero_ui_win_item_chosen(const hero_ui_native *tree) {
 }
 
 /* Lets the choice of tree `tree` go where it stands under item `item`,
- * telling nothing. */
-static void hero_ui_win_let_go_under(hero_ui_native *tree, int64_t item) {
+ * telling nothing; answers whether it let one go. */
+static bool hero_ui_win_let_go_under(hero_ui_native *tree, int64_t item) {
     int64_t chosen = hero_ui_win_item_chosen(tree);
 
-    if (chosen != 0 && hero_ui_win_under(tree, chosen, item)) {
-        hero_ui_mute(1);
-        (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, 0);
-        hero_ui_mute(-1);
+    if (chosen == 0 || !hero_ui_win_under(tree, chosen, item)) {
+        return false;
     }
+    hero_ui_mute(1);
+    (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, 0);
+    hero_ui_mute(-1);
+    return true;
 }
 
 int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
@@ -6805,16 +6810,19 @@ int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
 }
 
 /* Unfolds item `node`, `on`, or folds it, telling nothing; a fold lets go
- * of a choice under it first. */
-static void hero_ui_win_fold(hero_ui_native *tree, hero_ui_win_node *node, bool on) {
+ * of a choice under it first, and answers whether it did. */
+static bool hero_ui_win_fold(hero_ui_native *tree, hero_ui_win_node *node, bool on) {
+    bool gone = false;
+
     hero_ui_mute(1);
     if (!on) {
-        hero_ui_win_let_go_under(tree, node->item);
+        gone = hero_ui_win_let_go_under(tree, node->item);
     }
     node->waiting = on && !hero_ui_win_holds(tree, node->item);
     (void)SendMessageW(tree->hwnd, TVM_EXPAND, on ? TVE_EXPAND : TVE_COLLAPSE, (LPARAM)node->handle);
     hero_ui_win_show_button(tree, node);
     hero_ui_mute(-1);
+    return gone;
 }
 
 int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
@@ -6834,7 +6842,7 @@ int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
     if (!node->foldable && !hero_ui_win_holds(tree, item)) {
         return HERO_UI_INVALID;
     }
-    hero_ui_win_fold(tree, node, on == 1);
+    (void)hero_ui_win_fold(tree, node, on == 1);
     return HERO_UI_OK;
 }
 
@@ -6879,7 +6887,7 @@ static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head) {
             return FALSE;
         }
         if ((change->action & TVE_COLLAPSE) != 0) {
-            hero_ui_win_let_go_under(tree, node->item);
+            node->let_go = hero_ui_win_let_go_under(tree, node->item);
         } else if ((change->action & TVE_EXPAND) != 0 && !hero_ui_win_holds(tree, node->item)) {
             /* Nothing to show yet: told now, its items shown as they come. */
             node->waiting = true;
@@ -6895,6 +6903,12 @@ static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head) {
             return 0;
         }
         hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, node->item, (change->action & TVE_EXPAND) != 0 ? 1 : 0);
+        if (node->let_go) {
+            /* The choice the fold let go of, told after the fold, as the
+             * layer's other systems tell it. */
+            node->let_go = false;
+            hero_ui_tell(HERO_UI_EVENT_SELECT, tree->id, 0, 0);
+        }
         return 0;
     }
     case NM_DBLCLK: {
@@ -6955,7 +6969,11 @@ static int64_t hero_ui_win_tree_inject(hero_ui_native *tree, int64_t kind, int64
         if (now == (second == 1)) {
             return HERO_UI_OK;
         }
-        hero_ui_win_fold(tree, node, second == 1);
+        if (hero_ui_win_fold(tree, node, second == 1)) {
+            hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, value, 0);
+            hero_ui_tell(HERO_UI_EVENT_SELECT, tree->id, 0, 0);
+            return HERO_UI_OK;
+        }
         hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, value, second == 1 ? 1 : 0);
         return HERO_UI_OK;
     }

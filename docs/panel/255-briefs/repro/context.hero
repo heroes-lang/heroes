@@ -1,0 +1,5 @@
+extern "shapes.h"
+    function shape_context() -> i32
+
+function main()
+    print("context: " + shape_context().to_str())

@@ -1,0 +1,5 @@
+extern "shapes.h"
+    function shape_handler_mmap() -> i32
+
+function main()
+    print("handler_mmap: " + shape_handler_mmap().to_str())

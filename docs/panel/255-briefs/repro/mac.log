@@ -1,0 +1,18 @@
+heap plain exit=0 heap: 0 | 
+heap sanitize exit=134 ============================================================ | ==35876==ERROR: AddressSanitizer: heap-use-after-free on address 0x610000000040 at pc 0x00010408fcec bp 0x00016bdf9dd0 sp 0x00016bdf9dc8
+mmap plain exit=139  | 
+mmap sanitize exit=134 AddressSanitizer:DEADLYSIGNAL | ==36638==ERROR: AddressSanitizer: SEGV on unknown address 0x000104de8000 (pc 0x0001047d7cf4 bp 0x00016b6b1e50 sp 0x00016b6b1de0 T0)
+context plain exit=0 context: -2 | 
+context sanitize exit=0 context: -2 | 
+stack plain exit=0 stack: 0 | 
+stack sanitize exit=0 stack: 0 | 
+handler_heap plain exit=0 handler_heap: 1 | 
+handler_heap sanitize exit=134 ============================================================ | ==38141==ERROR: AddressSanitizer: heap-use-after-free on address 0x610000000040 at pc 0x000104a1bcec bp 0x00016b46da00 sp 0x00016b46d9f8
+handler_mmap plain exit=139  | 
+handler_mmap sanitize exit=134 AddressSanitizer:DEADLYSIGNAL | ==38527==ERROR: AddressSanitizer: SEGV on unknown address 0x000100df8000 (pc 0x000100c27cf4 bp 0x00016f261a80 sp 0x00016f261a10 T0)
+mac-out2/context-sanitize.log: 
+mac-out2/handler_heap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371;
+mac-out2/handler_mmap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371;
+mac-out2/heap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371;
+mac-out2/mmap-sanitize.log:  #0 hero_rebind_fingerprint rebind.c:334; #1 hero_rebind_settle rebind.c:371;
+mac-out2/stack-sanitize.log: 
