@@ -3,6 +3,8 @@
 # error diffusion. Everything here reads pixels as 8-bit RGBA, four bytes
 # a pixel, and a colour as one number, red in its highest byte.
 
+use math
+
 # The colour `r`, `g`, `b`, `a`, each 0 to 255, as one number.
 function pack(r: i64, g: i64, b: i64, a: i64) -> i64
     return r << 24 | g << 16 | b << 8 | a
@@ -211,7 +213,9 @@ function indexed(rgba: [u8] lent, width: i64, palette: [i64] lent, dither: bool)
         want: [i64] @= []
 
         for c in range(from: 0, to: 4)
-            want @ want.push(clamp_byte(channel(p: p, c: c) + (here[(x + 1) * 4 + c] + 8 >> 4)))
+            want @ want.push(
+                math.clamp_i64(x: channel(p: p, c: c) + (here[(x + 1) * 4 + c] + 8 >> 4), low: 0, high: 255)
+            )
 
         k = nearest(palette, r: want[0], g: want[1], b: want[2], a: want[3])
         out @ out.push(to_u8(k).must())
@@ -237,15 +241,6 @@ function zero_list(n: i64) -> [i64]
         out @ out.push(0)
 
     return out
-
-# `v` held to 0 to 255.
-function clamp_byte(v: i64) -> i64
-    if v < 0
-        return 0
-
-    if v > 255
-        return 255
-    return v
 
 test "pack and channel: each byte in its place"
     p = pack(r: 1, g: 2, b: 3, a: 4)
