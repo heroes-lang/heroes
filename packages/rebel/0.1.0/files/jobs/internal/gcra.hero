@@ -1,0 +1,405 @@
+# The arithmetic of a token bucket kept as one instant: the moment the bucket
+# is, or was, empty. At `t` it holds `(t - empty_at) / every` tokens, no more
+# than its burst, so taking `n` tokens moves that instant `n * every` later
+# than the later of itself and the moment a full bucket would have emptied,
+# and the wait for the tokens is how far it then stands past `t`. Time is
+# always the caller's, every sum is checked, and a call that cannot be told
+# in an `Instant` fails `does_not_fit` and changes nothing.
+
+use jobs
+use time
+
+constant INVALID: str
+    "invalid"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+constant TIMEOUT: str
+    "timeout"
+
+# The longest span a bucket's burst of tokens may take to earn, so that the
+# sums of its instants stay inside what an `i64` holds: 2^61 nanoseconds,
+# about 73 years.
+constant MAX_SPAN_NANOSECONDS: i64
+    2_305_843_009_213_693_952
+
+# `at` or the latest time a call named, whichever is later.
+#
+# - `limit`: the bucket.
+# - `at`: the time the caller names.
+function moment(limit: jobs.Bucket, at: time.Instant) -> time.Instant
+    if time.is_before(a: at, b: limit.seen)
+        return limit.seen
+    return at
+
+# The time it takes to earn the whole burst.
+#
+# - `limit`: the bucket.
+function full_span(limit: jobs.Bucket) -> time.Duration?
+    return time.scale(limit.every, by: limit.burst)
+
+# `t` less the span, or the instant itself where that is not an `Instant`.
+#
+# - `t`: the instant.
+# - `span`: the span.
+function before(t: time.Instant, span: time.Duration) -> time.Instant?
+    return time.add(t, time.negate(span)?)
+
+# The instant the bucket would be empty at if nothing were taken: the later of
+# its own and the moment a full bucket stands at `t`.
+#
+# - `limit`: the bucket.
+# - `t`: the moment, already `moment`'s.
+function base_of(limit: jobs.Bucket, t: time.Instant) -> time.Instant?
+    floor = before(t: t, span: full_span(limit)?)?
+
+    if time.is_before(a: limit.empty_at, b: floor)
+        return ok(floor)
+    return ok(limit.empty_at)
+
+# A bucket, full at `at`.
+#
+# - `every`: the time to earn one token.
+# - `burst`: the most tokens it holds.
+# - `at`: the instant it is made.
+function make(every: time.Duration, burst: i64, at: time.Instant) -> jobs.Bucket?
+    if every.nanoseconds < 1
+        return fail(
+            code: INVALID,
+            msg: f"every is {time.format_duration(every)}: a token takes more than nothing to earn"
+        )
+
+    if burst < 1
+        return fail(code: INVALID, msg: f"the burst is {burst}: a bucket holds at least one token")
+
+    if every.nanoseconds > MAX_SPAN_NANOSECONDS / burst
+        return fail(
+            code: INVALID,
+            msg: f"{burst} tokens at one every {time.format_duration(every)} is a longer span than a bucket may take to fill"
+        )
+    made = jobs.Bucket(every: every, burst: burst, empty_at: at, seen: at)
+    return ok(jobs.Bucket(every: every, burst: burst, empty_at: before(t: at, span: full_span(made)?)?, seen: at))
+
+# What taking `n` tokens at `at` would do.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+# - `n`: how many tokens, from 1 to the burst.
+#
+# Fails `invalid` where `n` is below 1 or past the burst, and `does_not_fit`
+# where the sums leave an `Instant`.
+function reserve(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Reservation?
+    if n < 1 || n > limit.burst
+        return fail(
+            code: INVALID,
+            msg: f"{n} tokens asked of a bucket whose burst is {limit.burst}: from 1 to the burst can be"
+        )
+    t = moment(limit: limit, at: at)
+    finish = time.add(t: base_of(limit: limit, t: t)?, d: time.scale(limit.every, by: n)?)?
+
+    delay = if time.is_after(a: finish, b: t)
+        time.between(from: t, to: finish)?
+    else
+        time.Duration(nanoseconds: 0)
+    return ok(
+        jobs.Reservation(bucket: jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: finish, seen: t), tokens: n, delay: delay, ready: time.add(t: t, d: delay)?, finish: finish)
+    )
+
+# Whether the tokens are there at once; the bucket answers in either case.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+# - `n`: how many tokens.
+#
+# Fails `invalid` where `n` is below 1, and `does_not_fit` as `reserve` does.
+function allow(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Allowed?
+    if n < 1
+        return fail(code: INVALID, msg: f"{n} tokens asked: at least one")
+
+    if n > limit.burst
+        return ok(jobs.Allowed(granted: false, bucket: limit))
+    taken = reserve(limit: limit, at: at, n: n)?
+
+    if taken.delay.nanoseconds > 0
+        return ok(jobs.Allowed(granted: false, bucket: limit))
+    return ok(jobs.Allowed(granted: true, bucket: taken.bucket))
+
+# The tokens a bucket holds at `at`, counting the debt of reservations as a
+# negative number and a fraction of a token as one.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+function tokens(limit: jobs.Bucket, at: time.Instant) -> f64
+    t = moment(limit: limit, at: at)
+    behind = time.between(from: limit.empty_at, to: t).default(time.max_duration())
+    held = time.to_float(behind, .nanosecond) / to_f64(limit.every.nanoseconds)
+
+    if held > to_f64(limit.burst)
+        return to_f64(limit.burst)
+    return held
+
+# A reservation given back, as far as no later reservation has used it.
+#
+# - `limit`: the bucket the reservation was made of, or its latest state.
+# - `taken`: the reservation.
+# - `at`: the time it is given back.
+function cancel(limit: jobs.Bucket, taken: jobs.Reservation, at: time.Instant) -> jobs.Bucket?
+    t = moment(limit: limit, at: at)
+
+    if time.is_before(a: taken.ready, b: t)
+        return ok(limit)
+
+    later = if time.is_after(a: limit.empty_at, b: taken.finish)
+        time.between(from: taken.finish, to: limit.empty_at)?
+    else
+        time.Duration(nanoseconds: 0)
+    back = time.difference(a: time.scale(limit.every, by: taken.tokens)?, b: later)?
+
+    if back.nanoseconds <= 0
+        return ok(limit)
+    floor = before(t: t, span: full_span(limit)?)?
+    moved = time.add(t: limit.empty_at, d: time.negate(back)?)?
+
+    if time.is_before(a: moved, b: floor)
+        return ok(jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: floor, seen: t))
+    return ok(jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: moved, seen: t))
+
+# The bucket with another time to earn a token and another burst, holding at
+# `at` the tokens it held, as many as the new burst allows.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the change.
+# - `every`: the new time to earn one token.
+# - `burst`: the new burst.
+#
+# Fails `invalid` as `make` does and `does_not_fit` where the sums leave an `Instant`.
+function reshape(limit: jobs.Bucket, at: time.Instant, every: time.Duration, burst: i64) -> jobs.Bucket?
+    fresh = make(every: every, burst: burst, at: at)?
+    t = moment(limit: limit, at: at)
+    held = tokens(limit: limit, at: t)
+
+    kept = if held > to_f64(burst)
+        to_f64(burst)
+    else
+        held
+    owed = time.from_seconds_float(-kept * to_f64(every.nanoseconds) / 1000000000.0)?
+    return ok(jobs.Bucket(every: fresh.every, burst: fresh.burst, empty_at: time.add(t: t, d: owed)?, seen: t))
+
+# Whether the next call of a `Sometimes` is due.
+#
+# - `state`: the `Sometimes`.
+# - `at`: the time of the call.
+function sample(state: jobs.Sometimes, at: time.Instant) -> jobs.Sampled?
+    due: bool @= state.first > 0 && state.count < state.first
+
+    if state.every > 0 && state.count % state.every == 0
+        due @ true
+
+    if state.interval.nanoseconds > 0 && !due
+        match state.last
+            .ok last =>
+                if !time.is_shorter(a: time.between(from: last, to: at)?, b: state.interval)
+                    due @ true
+            .err _ => due @ true
+
+    if state.count == 9223372036854775807
+        return fail(code: DOES_NOT_FIT, msg: "the calls counted fill an i64")
+
+    kept: time.Instant? @= state.last
+
+    if due
+        kept @ ok(at)
+    return ok(
+        jobs.Sampled(due: due, state: jobs.Sometimes(first: state.first, every: state.every, interval: state.interval, count: state.count + 1, last: kept))
+    )
+
+# The instant the tests count from, 2026-11-23T12:00:00Z, the one of the Go program that gave their answers.
+function origin() -> time.Instant
+    return time.from_date_time(
+        time.DateTime(year: 2026, month: 11, day: 23, hour: 12, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+
+# The instant `n` milliseconds after the origin.
+#
+# - `n`: milliseconds, negative before it.
+function at_ms(n: i64) -> time.Instant
+    return time.add(t: origin(), d: time.milliseconds(n).must()).must()
+
+# Whether two numbers agree to a billionth.
+#
+# - `a`: one number.
+# - `b`: the other.
+function close(a: f64, b: f64) -> bool
+    return a - b < 0.000000001 && b - a < 0.000000001
+
+# A bucket of one token every `every_ms` milliseconds, full at the origin.
+#
+# - `every_ms`: milliseconds a token takes.
+# - `burst`: the burst.
+function bucket_of(every_ms: i64, burst: i64) -> jobs.Bucket
+    return make(every: time.milliseconds(every_ms).must(), burst: burst, at: origin()).must()
+
+test "allow: a burst of three at one a second, as golang.org/x/time/rate answers AllowN at the same times"
+    limit @= bucket_of(every_ms: 1000, burst: 3)
+    answers: [bool] @= []
+
+    for ms in [0, 0, 0, 0, 1000, 1500, 2000]
+        got = allow(limit: limit, at: at_ms(ms), n: 1).must()
+        limit @ got.bucket
+        answers @ answers.push(got.granted)
+
+    assert answers == [true, true, true, false, true, false, true]
+    assert close(a: tokens(limit: limit, at: at_ms(2000)), b: 0.0) && close(a: tokens(limit: limit, at: at_ms(2500)), b: 0.5)
+    assert close(a: tokens(limit: limit, at: at_ms(3000)), b: 1.0) && close(a: tokens(limit: limit, at: at_ms(9000)), b: 3.0)
+    assert jobs.available(limit: limit, at: at_ms(2500)) == 0 && jobs.available(limit: limit, at: at_ms(3000)) == 1 && jobs.available(limit: limit, at: at_ms(9000)) == 3
+
+test "allow: more than the burst is never granted, nothing asked is invalid, and a refusal leaves the bucket as it was"
+    limit = bucket_of(every_ms: 1000, burst: 2)
+    assert !allow(limit: limit, at: at_ms(0), n: 3).must().granted
+    assert allow(limit: limit, at: at_ms(0), n: 3).must().bucket == limit
+
+    for n in [0, -1]
+        match allow(limit: limit, at: at_ms(0), n: n)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    taken = allow(limit: limit, at: at_ms(0), n: 2).must()
+    assert taken.granted && !allow(limit: taken.bucket, at: at_ms(0), n: 1).must().granted
+    assert allow(limit: taken.bucket, at: at_ms(0), n: 1).must().bucket == taken.bucket
+
+test "reserve: reservations queue behind one another, and more than the burst is invalid, as x/time/rate's ReserveN delays them"
+    limit @= bucket_of(every_ms: 500, burst: 2)
+    delays: [i64] @= []
+
+    for n in [2, 1, 1]
+        got = reserve(limit: limit, at: at_ms(0), n: n).must()
+        limit @ got.bucket
+        delays @ delays.push(time.to_units(got.delay, .millisecond))
+
+    assert delays == [0, 500, 1000]
+
+    match reserve(limit: limit, at: at_ms(0), n: 3)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    later = reserve(limit: limit, at: at_ms(1000), n: 1).must()
+    assert time.to_units(later.delay, .millisecond) == 500 && later.ready == at_ms(1500)
+    assert close(a: tokens(limit: limit, at: at_ms(1000)), b: -1.0) || close(a: tokens(limit: limit, at: at_ms(1000)), b: 0.0)
+
+test "cancel: a reservation given back, as far as no later one used it, and not once its time has come, as x/time/rate's CancelAt does"
+    limit @= bucket_of(every_ms: 500, burst: 2)
+    limit @ reserve(limit: limit, at: at_ms(0), n: 2).must().bucket
+    limit @ reserve(limit: limit, at: at_ms(0), n: 1).must().bucket
+    limit @ reserve(limit: limit, at: at_ms(0), n: 1).must().bucket
+    r5 = reserve(limit: limit, at: at_ms(1000), n: 1).must()
+    assert close(a: tokens(limit: r5.bucket, at: at_ms(1000)), b: -1.0)
+    assert close(a: tokens(limit: cancel(limit: r5.bucket, taken: r5, at: at_ms(1000)).must(), at: at_ms(1000)), b: 0.0)
+    fast @= bucket_of(every_ms: 250, burst: 4)
+    whole = reserve(limit: fast, at: at_ms(0), n: 4).must()
+    assert time.to_units(whole.delay, .millisecond) == 0 && close(a: tokens(limit: whole.bucket, at: at_ms(0)), b: 0.0)
+    assert close(a: tokens(limit: cancel(limit: whole.bucket, taken: whole, at: at_ms(0)).must(), at: at_ms(0)), b: 4.0)
+    fast @ cancel(limit: whole.bucket, taken: whole, at: at_ms(0)).must()
+    fast @ reserve(limit: fast, at: at_ms(0), n: 4).must().bucket
+    two = reserve(limit: fast, at: at_ms(0), n: 2).must()
+    assert time.to_units(two.delay, .millisecond) == 500 && close(a: tokens(limit: two.bucket, at: at_ms(0)), b: -2.0)
+    back = cancel(limit: two.bucket, taken: two, at: at_ms(400)).must()
+    assert close(a: tokens(limit: back, at: at_ms(400)), b: 1.6)
+    one = reserve(limit: back, at: at_ms(400), n: 1).must()
+    assert time.to_units(one.delay, .millisecond) == 0
+    assert close(a: tokens(limit: cancel(limit: one.bucket, taken: one, at: at_ms(700)).must(), at: at_ms(700)), b: 1.8)
+
+test "with_rate: the tokens held kept across a new rate and burst, a debt kept, and a bucket that cannot be, as x/time/rate's SetLimitAt and SetBurstAt do"
+    limit = bucket_of(every_ms: 1000, burst: 4)
+    emptied = allow(limit: limit, at: at_ms(0), n: 4).must().bucket
+    assert close(a: tokens(limit: emptied, at: at_ms(2000)), b: 2.0)
+    faster = reshape(limit: emptied, at: at_ms(2000), every: time.milliseconds(500).must(), burst: 4).must()
+    assert close(a: tokens(limit: faster, at: at_ms(2000)), b: 2.0) && close(a: tokens(limit: faster, at: at_ms(3000)), b: 4.0)
+    smaller = reshape(limit: faster, at: at_ms(3000), every: time.milliseconds(500).must(), burst: 2).must()
+    assert close(a: tokens(limit: smaller, at: at_ms(3000)), b: 2.0) && close(a: tokens(limit: smaller, at: at_ms(3500)), b: 2.0)
+    debt @= bucket_of(every_ms: 1000, burst: 2)
+    debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
+    debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
+    assert close(a: tokens(limit: debt, at: at_ms(0)), b: -2.0) && close(a: tokens(limit: debt, at: at_ms(3000)), b: 1.0) && close(a: tokens(limit: debt, at: at_ms(4000)), b: 2.0)
+    slower = reshape(limit: debt, at: at_ms(1000), every: time.seconds(2).must(), burst: 2).must()
+    assert close(a: tokens(limit: slower, at: at_ms(1000)), b: -1.0)
+    assert time.to_units(reserve(limit: slower, at: at_ms(1000), n: 1).must().delay, .millisecond) == 4000
+
+    match reshape(limit: debt, at: at_ms(0), every: time.milliseconds(0).must(), burst: 2)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "bucket: a rate of nothing, a burst of nothing, a burst that takes too long to earn, and an instant at the end of the range"
+    now = origin()
+    zero = time.Duration(nanoseconds: 0)
+    assert make(every: time.seconds(1).must(), burst: 1, at: now).must().burst == 1
+
+    for bad in [make(every: zero, burst: 1, at: now), make(every: time.seconds(-1).must(), burst: 1, at: now), make(every: time.seconds(1).must(), burst: 0, at: now), make(every: time.days(365).must(), burst: 100, at: now)]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match make(every: time.seconds(1).must(), burst: 2, at: time.min_instant())
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "reserve: time named earlier than an earlier call is read at that call's time, as x/time/rate answers AllowN after a later time"
+    limit @= bucket_of(every_ms: 1000, burst: 2)
+    first = allow(limit: limit, at: at_ms(5000), n: 2).must()
+    limit @ first.bucket
+    assert first.granted && !allow(limit: limit, at: at_ms(0), n: 1).must().granted
+    assert close(a: tokens(limit: limit, at: at_ms(0)), b: 0.0)
+
+test "sample: the first calls, every third, and an interval, as x/time/rate's Sometimes does them"
+    state @= sometimes_for(first: 2, every: 3, interval_ms: 10000)
+    done: [i64] @= []
+
+    for call in range(from: 1, to: 13)
+        got = sample(state: state, at: at_ms(call)).must()
+        state @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1, 2, 4, 7, 10]
+    every_four @= sometimes_for(first: 0, every: 4, interval_ms: 0)
+    done @ []
+
+    for call in range(from: 1, to: 13)
+        got = sample(state: every_four, at: at_ms(call)).must()
+        every_four @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1, 5, 9]
+    spaced @= sometimes_for(first: 0, every: 0, interval_ms: 40)
+    done @ []
+
+    for call in range(from: 0, to: 6)
+        got = sample(state: spaced, at: at_ms(call * 25)).must()
+        spaced @ got.state
+
+        if got.due
+            done @ done.push(call + 1)
+
+    assert done == [1, 3, 5]
+    once @= sometimes_for(first: 1, every: 0, interval_ms: 0)
+    done @ []
+
+    for call in range(from: 1, to: 6)
+        got = sample(state: once, at: at_ms(call)).must()
+        once @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1]
+
+# A `Sometimes` of the numbers given, the interval in milliseconds.
+#
+# - `first`: the first calls due.
+# - `every`: every so manyth call due.
+# - `interval_ms`: the span in milliseconds.
+function sometimes_for(first: i64, every: i64, interval_ms: i64) -> jobs.Sometimes
+    return jobs.sometimes(first: first, every: every, interval: time.milliseconds(interval_ms).must()).must()
