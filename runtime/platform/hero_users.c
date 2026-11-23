@@ -1011,8 +1011,37 @@ int64_t hero_users_groups_of(const char *name, void *buffer, uint64_t count) {
     return hero_users_filled(&f);
 }
 
+/* A Windows process keeps the user it started as: a thread takes another
+ * user's rights only with that user's password, which no call here is given.
+ * The name is judged first, as every other call of this file judges it, so
+ * that only a request that could have been honoured elsewhere is `unsupported`:
+ * an empty name is `invalid` and a name that is no user's is `not_found`, the
+ * kinds the other platforms answer. */
 int64_t hero_users_change(const char *name) {
-    (void)name;
+    hero_users_account user;
+    WCHAR *wide = NULL;
+    int found = 0;
+
+    if (!hero_users_room(name, NULL, 0)) {
+        return hero_users_fail(HERO_USERS_INVALID, 0);
+    }
+    wide = hero_users_utf16(name);
+    if (wide == NULL) {
+        return -1;
+    }
+    found = hero_users_find_by_name(wide, &user);
+    hero_layer_free(wide);
+    if (found < 0) {
+        return -1;
+    }
+    if (found == 0) {
+        return hero_users_fail(HERO_USERS_NOT_FOUND, 0);
+    }
+    if (!hero_users_is_user(&user)) {
+        hero_users_account_free(&user);
+        return hero_users_fail(HERO_USERS_NOT_FOUND, 0);
+    }
+    hero_users_account_free(&user);
     return hero_users_fail(HERO_USERS_UNSUPPORTED, 0);
 }
 

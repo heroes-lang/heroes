@@ -1,0 +1,219 @@
+# The words a refusal prints, held to what spec § 13's sentence says they say
+# (panel 257's R1 and R3, ratified 2026-11-23, design.md §1.12 and §4.17).
+#
+# Spec § 13 tells a reader that a callback called after C left a handler of
+# C's by one of five exits may abort, *saying the handler was not seen to end,
+# or that C called it from inside one*. The runtime's words are in
+# `runtime/parts/sigguard.c`, `hero_signal_refuse`, one arm for each way the
+# runtime came to refuse, and nothing held the two together: `grep -F 'seen to
+# end'` found the C and the goldens and no test of the spec's side, and the
+# lane that re-worded the C had no instrument telling it that the sentence
+# quoted it (the sitting's spec-warden, in the section of its report on instruments). So this reads both: the
+# sentence must still make both claims, and every arm that tells a program
+# its callback ran after a jump must keep one of them.
+#
+# BOTH SIDES ARE READ AND NEITHER IS PINNED, as the editor's grammar and the
+# compiler's tables are (`suite_spec.hero`, in the part headed *The fourth
+# copy*): the claims are
+# two noun phrases as the runtime spells them, and a refusal re-worded past
+# both is a sentence naming its kind and its words.
+#
+# One arm is out of the rule. `DELIVERED` is a callback that ran AS a signal
+# handler, the system having called it, which line 427 says in its own words
+# (*never a signal handler, nor called by one*); the sentence is about a
+# callback called after a jump, and that arm says *ran as a signal handler*.
+
+use strings
+
+# The sentence's two claims as the runtime spells them: *the handler was not
+# seen to end*, *C called it from inside one*. The runtime says *from inside
+# that handler* and *from inside a signal handler*, so the noun phrase is the
+# claim and the object after it is the arm's own.
+constant CLAIMS: [str]
+    [
+        "seen to end"
+        "from inside"
+    ]
+
+# Where the sentence opens in spec § 13; it ends at the first full stop.
+constant SENTENCE_OPENS: str
+    "A callback called after C left a handler of C's"
+
+# The one arm the sentence does not cover, above.
+constant EXEMPT: str
+    "DELIVERED"
+
+# `hero_signal_refuse` has seven arms (a callback delivered as a handler, and
+# six of a callback called after a jump or inside a handler); fewer read means
+# the extractor stopped reading the shape, and the check would pass without
+# looking.
+constant LEAST_ARMS: i64
+    6
+
+# One arm of `hero_signal_refuse`'s message: the `HERO_SIGNAL_` name it
+# answers (`default` for the last, which answers none) and its string
+# literals joined as the C compiler joins them.
+record Refusal
+    kind: str
+    words: str
+
+# What is wrong, one line each, or empty where the sentence still makes both
+# claims and every arm but the exempt one keeps one of them.
+function verdict(spec: str, c: str) -> str
+    opens = strings.index_of(text: spec, needle: SENTENCE_OPENS)
+
+    if opens.is_err()
+        return "  spec § 13 holds no sentence opening `" + SENTENCE_OPENS + "`, where panel 257's R1 says what a refusal says"
+    rest = spec.slice(from: opens.must(), to: spec.len())
+    ends = strings.index_of(text: rest, needle: ". ")
+
+    if ends.is_err()
+        return "  spec § 13's sentence on a callback called after C left a handler has no full stop"
+    sentence = rest.slice(from: 0, to: ends.must())
+    wrong: [str] @= []
+
+    for claim in CLAIMS
+        if !strings.contains(s: sentence, substr: claim)
+            wrong @ wrong.push(
+                "  spec § 13's sentence no longer says `" + claim + "`, which every refusal after a jump is held to (panel 257's R3)"
+            )
+
+    arms = refusals(c)
+
+    if arms.len() < LEAST_ARMS
+        wrong @ wrong.push(
+            "  read " + arms.len().to_str() + " arms of `hero_signal_refuse`, fewer than " + LEAST_ARMS.to_str() + ": the extractor reads nothing and this check would pass vacuously"
+        )
+
+    for arm in arms
+        if arm.kind != EXEMPT && !keeps_a_claim(arm.words)
+            wrong @ wrong.push(
+                "  `hero_signal_refuse`'s arm for HERO_SIGNAL_" + arm.kind + " says neither `" + CLAIMS.join("` nor `") + "`, so it tells a program less than spec § 13 promises: " + arm.words
+            )
+
+    return wrong.join("\n")
+
+function keeps_a_claim(words: str) -> bool
+    for claim in CLAIMS
+        if strings.contains(s: words, substr: claim)
+            return true
+
+    return false
+
+# The arms of `hero_signal_refuse`'s message, in the order written. An arm
+# opens on the line whose text starts `how == HERO_SIGNAL_NAME` or `: how ==
+# HERO_SIGNAL_NAME`, or, for the last, `: "` (the ternary's final branch); the
+# literals of its lines, each between a line's first and last quote, are its
+# words, and the list ends at the `HERO_SIGNAL_REMEDY` that closes the message.
+function refusals(c: str) -> [Refusal]
+    out: [Refusal] @= []
+    start = strings.index_of(text: c, needle: "static _Noreturn void hero_signal_refuse(")
+
+    if start.is_err()
+        return out
+    kind: str @= ""
+    words: str @= ""
+
+    for row in strings.lines(c.slice(from: start.must(), to: c.len()))
+        head = strings.trimmed(row)
+
+        if strings.contains(s: head, substr: "HERO_SIGNAL_REMEDY,")
+            break
+        opened = arm_name(head)
+
+        if opened.len() > 0
+            if kind.len() > 0
+                out @ out.push(Refusal(kind: kind, words: words))
+            kind @ opened
+            words @ ""
+
+        if kind.len() > 0
+            words @ words + literals_of(row)
+
+    if kind.len() > 0
+        out @ out.push(Refusal(kind: kind, words: words))
+    return out
+
+# The name an arm's opening line answers, `STANDING` for a line that opens
+# `: how == HERO_SIGNAL_STANDING`, `default` for the branch that opens `: "`,
+# and empty for every other line.
+function arm_name(head: str) -> str
+    for opener in ["how == HERO_SIGNAL_", ": how == HERO_SIGNAL_"]
+        if strings.has_prefix(s: head, prefix: opener)
+            return upper_word(head.slice(from: opener.len(), to: head.len()))
+
+    if strings.has_prefix(s: head, prefix: ": \"")
+        return "default"
+    return ""
+
+# The leading run of capitals and underscores of `text`.
+function upper_word(text: str) -> str
+    end: i64 @= 0
+
+    while end < text.len() && (text[end] == 95 || text[end] >= 65 && text[end] <= 90)
+        end @ end + 1
+
+    return text.slice(from: 0, to: end)
+
+# The text between a line's first and last double quote, none where it has
+# fewer than two: the one literal a continued C string puts on a line.
+function literals_of(row: str) -> str
+    first = strings.index_of(text: row, needle: "\"")
+
+    if first.is_err()
+        return ""
+    last: i64 @= row.len() - 1
+
+    while last > first.must() && row[last] != 34
+        last @ last - 1
+
+    if last <= first.must()
+        return ""
+    return row.slice(from: first.must() + 1, to: last)
+
+test "the arms of a refusal are read with their literals joined, and the exempt one is read too"
+    c = "static _Noreturn void hero_signal_refuse(const char *what, int how) {\n    const char *const said[] = {\n        \"panic: \",\n        what,\n        how == HERO_SIGNAL_DELIVERED\n            ? \" ran as a handler. \"\n        : how == HERO_SIGNAL_STANDING\n            ? \" had not been seen \"\n              \"to end: either. \"\n            : \" was called from inside \"\n              \"a handler. \",\n        HERO_SIGNAL_REMEDY,\n    };\n}\n"
+    got = refusals(c)
+    assert got.len() == 3
+    assert got[0].kind == "DELIVERED"
+    assert got[0].words == " ran as a handler. "
+    assert got[1].kind == "STANDING"
+    assert got[1].words == " had not been seen to end: either. "
+    assert got[2].kind == "default"
+    assert got[2].words == " was called from inside a handler. "
+
+    # A file with no such function reads no arm.
+    assert refusals("int main(void) { return 0; }\n").len() == 0
+
+test "a refusal that keeps neither claim, a sentence that loses one and an extractor that reads nothing are each told"
+    spec = "text A callback called after C left a handler of C's by a jump, may abort, saying the handler was not seen to end, or that C called it from inside one. No function. more\n"
+    arm = "static _Noreturn void hero_signal_refuse(const char *what, int how) {\n    const char *const said[] = {\n        how == HERO_SIGNAL_DELIVERED\n            ? \" ran as a handler. \"\n        : how == HERO_SIGNAL_STANDING\n            ? \" had not been seen to end. \"\n        : how == HERO_SIGNAL_REENTERED\n            ? \" was called after a jump back. \"\n            : \" was called from inside a handler. \",\n        HERO_SIGNAL_REMEDY,\n    };\n}\n"
+    told = verdict(spec: spec, c: arm)
+
+    # Four arms read, below the floor of six, and REENTERED keeps neither claim.
+    assert strings.contains(s: told, substr: "read 4 arms")
+    assert strings.contains(s: told, substr: "HERO_SIGNAL_REENTERED says neither `seen to end` nor `from inside`")
+    assert strings.contains(s: told, substr: "was called after a jump back")
+    assert !strings.contains(s: told, substr: "HERO_SIGNAL_DELIVERED")
+    assert !strings.contains(s: told, substr: "HERO_SIGNAL_STANDING")
+
+    # The sentence without its second claim, or not there at all.
+    assert strings.contains(
+        s: verdict(spec: strings.split_text(text: spec, separator: "from inside one").join("from within"), c: arm),
+        substr: "no longer says `from inside`"
+    )
+    assert strings.contains(s: verdict(spec: "nothing here", c: arm), substr: "holds no sentence opening")
+
+    # No arms at all: the vacuity guard, not a pass.
+    assert strings.contains(s: verdict(spec: spec, c: "int main(void) {}\n"), substr: "read 0 arms")
+
+test "the runtime's refusals as the tree holds them keep a claim each, and the arms are the ones the sitting named"
+    c = read_file("runtime/parts/sigguard.c").must()
+    got = refusals(c)
+    kinds: [str] @= []
+
+    for arm in got
+        kinds @ kinds.push(arm.kind)
+
+    assert kinds.join(" ") == "DELIVERED STANDING SWITCHED REENTERED ONSTACK UNFOLLOWED default"
+    assert verdict(spec: read_file("spec/heroes-spec.md").must(), c: c) == ""

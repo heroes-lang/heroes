@@ -253,6 +253,13 @@ test "open: every argument out of its range refused, and a device no system has 
     assert missing == nullptr
     assert last_error() == HERO_AUDIO_NOT_FOUND || last_error() == HERO_AUDIO_UNSUPPORTED
 
+test "open: an identifier that names no device is not found, whatever its form and whichever way it is opened"
+    for direction in [HERO_AUDIO_OUTPUT, HERO_AUDIO_INPUT]
+        for id in ["x", "heroes:nowhere", "{0.0.0.00000000}.{00000000-0000-0000-0000-000000000000}", "{0.0.1.00000000}.{00000000-0000-0000-0000-000000000000}", "{00000000-0000-0000-0000-000000000000}"]
+            missing = open(id, direction: direction, rate: 48000, channels: 2, room: 4800)
+            assert missing == nullptr
+            assert last_error() == HERO_AUDIO_NOT_FOUND || last_error() == HERO_AUDIO_UNSUPPORTED
+
 test "write, finish, wait: the null output takes a tenth of a second in about a tenth of a second, then ends"
     s @= open(NULL_DEVICE, direction: HERO_AUDIO_OUTPUT, rate: 8000, channels: 2, room: 8000)
     assert s != nullptr
