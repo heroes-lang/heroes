@@ -4,6 +4,7 @@
 # changed nothing, on either side.
 
 use bytes
+use printing
 use ui
 use ui/hero_ui
 use ui/internal/failure
@@ -60,6 +61,14 @@ function text_ok(text: str, one_line: bool, what: str) -> ()?
             return fail(code: failure.INVALID, msg: f"{what} holds a line feed at byte {at}, and shows one line")
 
     return ok()
+
+# The text of print `settings`, as the system's print dialogs take it. Fails
+# `invalid` where a name holds a line feed or a zero byte, or the settings
+# lie outside their values.
+function settings_text(settings: printing.Settings) -> str?
+    match printing.format_settings(settings)
+        .ok spelled => return ok(spelled)
+        .err e      => return fail(code: failure.INVALID, msg: f"print settings the system cannot take: {e.msg}")
 
 # Fails `invalid` where an item of `items` is no text one line holds, or
 # the items together are longer than the layer takes.

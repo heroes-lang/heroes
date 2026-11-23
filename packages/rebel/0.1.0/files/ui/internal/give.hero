@@ -75,6 +75,8 @@ function checked(app: ui.App, input: ui.Input) -> ()?
             for i in range(from: 0, to: p.paths.len())
                 check.text_ok(text: p.paths[i], one_line: false, what: f"path {i}")?
         .cancel_files        => _ = 0
+        .choose_print c      => _ = check.settings_text(c.settings)?
+        .cancel_print        => _ = 0
         .change_appearance _ => _ = 0
         .ask_quit _          => _ = 0
         .drop_files d        => drops.drop_ok(app, window: d.window, x: d.x, y: d.y, paths: d.paths)?
@@ -118,26 +120,26 @@ function checked(app: ui.App, input: ui.Input) -> ()?
 # always does.
 function alive(app: ui.App, input: ui.Input) -> bool
     id = match input
-        .click c                                  => c.widget.id
-        .type_text t                              => t.widget.id
-        .choose c                                 => c.widget.id
-        .toggle t                                 => t.widget.id
-        .slide s                                  => s.widget.id
-        .choose_menu m                            => m.item.id
-        .ask_close a                              => a.window.id
-        .resize r                                 => r.window.id
-        .send s                                   => s.widget.id
-        .drag_window d                            => d.window.id
-        .change_state c                           => c.window.id
-        .activate a                               => a.widget.id
-        .submit s                                 => s.widget.id
-        .sort s                                   => s.widget.id
-        .unfold u                                 => u.widget.id
-        .answer _ | .pick_files _ | .cancel_files => 0
-        .change_appearance _                      => 0
-        .ask_quit _                               => 0
-        .drop_files d                             => d.window.id
-        .hand _                                   => 0
+        .click c                                                                    => c.widget.id
+        .type_text t                                                                => t.widget.id
+        .choose c                                                                   => c.widget.id
+        .toggle t                                                                   => t.widget.id
+        .slide s                                                                    => s.widget.id
+        .choose_menu m                                                              => m.item.id
+        .ask_close a                                                                => a.window.id
+        .resize r                                                                   => r.window.id
+        .send s                                                                     => s.widget.id
+        .drag_window d                                                              => d.window.id
+        .change_state c                                                             => c.window.id
+        .activate a                                                                 => a.widget.id
+        .submit s                                                                   => s.widget.id
+        .sort s                                                                     => s.widget.id
+        .unfold u                                                                   => u.widget.id
+        .answer _ | .pick_files _ | .cancel_files | .choose_print _ | .cancel_print => 0
+        .change_appearance _                                                        => 0
+        .ask_quit _                                                                 => 0
+        .drop_files d                                                               => d.window.id
+        .hand _                                                                     => 0
 
     if id == 0
         return true
@@ -292,7 +294,7 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             return [.files_dropped(window: d.window, x: d.x, y: d.y, paths: d.paths)]
         .hand h =>
             return session.handed(what: h.what, items: h.items)
-        .answer _ | .pick_files _ | .cancel_files =>
+        .answer _ | .pick_files _ | .cancel_files | .choose_print _ | .cancel_print =>
             _ = 0
 
     return none

@@ -147,6 +147,49 @@ int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *
 void hero_ui_arm_dialogs_end(int64_t window);
 int64_t hero_ui_arm_dialogs_words(char *words, int64_t count);
 
+/* THE PRINT AND PAGE-SETUP DIALOGS (`hero_ui.h`'s `hero_ui_print_dialog` and
+ * `hero_ui_web_print`), answered through the queue as the dialogs above are.
+ * `settings` is THE SETTINGS' TEXT (`platform/hero_ui_print_win32.h`).
+ * `print_show` shows the print dialog (`page` 0) or the page-setup dialog
+ * (`page` 1) as dialog `dialog` over window `window`; `print_web` prints the
+ * page of web view `view`, through the print dialog first where `ask` is 1.
+ * Each answers at once, a kind of `hero_ui.h`, and the person's answer is
+ * queued later by `hero_ui_push`: `HERO_UI_EVENT_DIALOG` naming `dialog`,
+ * value 1 with the settings chosen (or printed with) as its text, 0 where
+ * they cancelled. `print_answer` does what the person does to a print dialog
+ * or a web view's print shown, `value` 1 with the settings in `settings` or 0
+ * for Cancel, and answers `HERO_UI_NOT_FOUND`, before reading anything else,
+ * where no print of that number stands (the common part then tries the other
+ * dialogs); `print_end` ends unanswered every print over window `window`, or
+ * every one where it is 0, before the window or the app goes; `print_words`
+ * gives the words of the last refusal each of them answered. `hero_ui.c`
+ * defines them on macOS by `hero_ui_appkit_print.swift`'s sheets; the Win32
+ * and GTK 4 arms define their own over `hero_ui_print_win32.c` and
+ * `hero_ui_print_gtk.c`, which `hero_ui.c` answers for until they do. */
+int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count);
+int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count);
+int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count);
+void hero_ui_arm_print_end(int64_t window);
+int64_t hero_ui_arm_print_words(char *words, int64_t count);
+
+/* THE DESCRIPTORS A WAIT WATCHES (`hero_ui.h`'s `hero_ui_add_set`).
+ * `watch_fd` has the arm's loop wake, and `hero_ui_watch_told(id)` be called
+ * on the main thread, once descriptor `fd` is readable, `id` being the
+ * watch's number (a descriptor the program never closes through the arm, only
+ * waits on for readability); once told it is not watched again until
+ * `watch_fd` is called for it again, which `hero_ui.c` does at each wait, so a
+ * descriptor that stays readable is told once per wait and never in a spin;
+ * called for a number watched already it arms that watch again. `unwatch_fd`
+ * takes watch `id` away, or every watch where it is 0. `hero_ui.c` defines
+ * them on macOS (a `CFFileDescriptor` source of the main run loop); the Win32
+ * and GTK 4 arms define their own (`g_unix_fd_add` on GTK 4, whose callback
+ * calls `hero_ui_watch_told` and returns `G_SOURCE_REMOVE`), `hero_ui.c`
+ * answering `HERO_UI_UNSUPPORTED` for them until they do. `hero_ui_watch_told`
+ * answers whether it queued an event. */
+int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id);
+void hero_ui_arm_unwatch_fd(int64_t id);
+bool hero_ui_watch_told(int64_t id);
+
 /* THE TRAY (`hero_ui.h`): a tray icon is a kind `hero_ui_arm_makes` and
  * `create` answer, its words and its image `set_text`'s and `set_image`'s;
  * `set_docked` keeps the app in the Dock or out of it. `hero_ui.c` defines

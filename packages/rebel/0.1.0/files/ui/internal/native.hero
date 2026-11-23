@@ -508,7 +508,7 @@ function give(app: ui.App, input: ui.Input) -> ()?
             )
         .drop_files d => return drops.injected(app, window: d.window, x: d.x, y: d.y, paths: d.paths)
         .hand h => return session.injected(app, what: h.what, items: h.items)
-        .answer _ | .pick_files _ | .cancel_files => return ok()
+        .answer _ | .pick_files _ | .cancel_files | .choose_print _ | .cancel_print => return ok()
 
 # The layer's number for `appearance`.
 function appearance_code(appearance: ui.Appearance) -> i64

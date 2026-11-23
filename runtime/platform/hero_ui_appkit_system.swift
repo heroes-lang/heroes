@@ -425,3 +425,95 @@ public func hero_ui_appkit_open_items(_ what: Int64, _ items: UnsafePointer<UInt
         return answerOk
     }
 }
+
+// -- THE DESCRIPTORS A WAIT WATCHES (`hero_ui.h`'s `hero_ui_add_set`) ---------
+//
+// A poll set's descriptor (its `kqueue`) watched by the main run loop as a
+// `CFFileDescriptor` source in the common modes: the loop `pump` runs wakes
+// when the descriptor is readable, and `push` is told the watch's number, the
+// event kind `eventReady`. A `CFFileDescriptor` callback is disabled once it
+// has fired, so a set that stays ready is told once and again only where
+// `hero_ui_appkit_watch_fd` is called for it again, which `hero_ui.c` does
+// at each wait. The descriptor is the set's own: never closed here.
+
+private let eventReady: Int64 = 22
+
+private final class Watched {
+    let fd: Int32
+    let file: CFFileDescriptor
+    let source: CFRunLoopSource
+
+    init(fd: Int32, file: CFFileDescriptor, source: CFRunLoopSource) {
+        self.fd = fd
+        self.file = file
+        self.source = source
+    }
+}
+
+@MainActor
+private var watched: [Int64: Watched] = [:]
+@MainActor
+private var readyPush: HeroUiSystemPush?
+
+// The callback of every watch, on the main thread inside the run loop; its
+// `info` is the watch's number.
+private let fdReadable: CFFileDescriptorCallBack = { _, _, info in
+    guard let info = info else {
+        return
+    }
+    let id = Int64(Int(bitPattern: info))
+    MainActor.assumeIsolated {
+        readyPush?(eventReady, id, 0, 0, nil, 0)
+    }
+}
+
+// Watches descriptor `fd` for readability as watch `id` (1 or more), or
+// enables its callback again where `id` is watched already: told once
+// through `push` while it is readable, then not until this is called again.
+// `HERO_UI_OK`; `HERO_UI_INVALID` for a number that is none, or one watched
+// on another descriptor; `HERO_UI_OTHER` where Core Foundation made none.
+@c
+public func hero_ui_appkit_watch_fd(_ fd: Int64, _ id: Int64, _ push: HeroUiSystemPush?) -> Int64 {
+    guard fd >= 0, fd <= Int64(Int32.max), id >= 1, let push = push else {
+        MainActor.assumeIsolated {
+            said = "a descriptor watched is 0 or more and a watch's number 1 or more"
+        }
+        return answerInvalid
+    }
+    return MainActor.assumeIsolated { () -> Int64 in
+        readyPush = push
+        if let held = watched[id] {
+            guard held.fd == Int32(fd) else {
+                said = "watch \(id) stands on descriptor \(held.fd), not \(fd)"
+                return answerInvalid
+            }
+            CFFileDescriptorEnableCallBacks(held.file, kCFFileDescriptorReadCallBack)
+            return answerOk
+        }
+        var context = CFFileDescriptorContext(version: 0, info: UnsafeMutableRawPointer(bitPattern: Int(id)), retain: nil, release: nil, copyDescription: nil)
+        guard let file = CFFileDescriptorCreate(kCFAllocatorDefault, Int32(fd), false, fdReadable, &context), let source = CFFileDescriptorCreateRunLoopSource(kCFAllocatorDefault, file, 0) else {
+            said = "Core Foundation made no watch on descriptor \(fd)"
+            return answerOther
+        }
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CFFileDescriptorEnableCallBacks(file, kCFFileDescriptorReadCallBack)
+        watched[id] = Watched(fd: Int32(fd), file: file, source: source)
+        return answerOk
+    }
+}
+
+// Takes watch `id` away, or every watch where `id` is 0, the descriptors
+// themselves left open.
+@c
+public func hero_ui_appkit_unwatch_fd(_ id: Int64) {
+    MainActor.assumeIsolated {
+        for (key, held) in watched where id == 0 || key == id {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), held.source, .commonModes)
+            CFFileDescriptorInvalidate(held.file)
+            watched[key] = nil
+        }
+        if watched.isEmpty {
+            readyPush = nil
+        }
+    }
+}

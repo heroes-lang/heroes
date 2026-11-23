@@ -531,6 +531,21 @@ int64_t hero_ui_web_navigate(hero_ui_app *app, int64_t id, const void *path, uin
  * `NOT_FOUND`, `LIMIT` (`HERO_UI_QUEUE_MOST` texts wait already). */
 int64_t hero_ui_web_post(hero_ui_app *app, int64_t id, const void *text, uint64_t count);
 
+/* Prints the page web view `id` shows, as the system's own print operation
+ * of a web view does: through the system's print dialog first where `ask`
+ * is 1, whose settings are first those of the `count` bytes of `settings`
+ * (THE SETTINGS' TEXT, `hero_ui_print_dialog`'s), straight to the printer
+ * they name where it is 0. Answers 0 at once (on Windows, with `ask` 1, once
+ * the person has answered the print dialog), or -1; the outcome comes later
+ * as `HERO_UI_EVENT_DIALOG` naming `dialog`, its `value` 1 with the settings
+ * the page was printed with in the event's text once the page is the
+ * system's, or 0 where the person cancelled or the system could not print.
+ * Destroying the view's window ends it unanswered. -1: `INVALID` for a
+ * dialog number shown already, `NOT_FOUND` for a view that is none of the
+ * app's, `UNSUPPORTED` where the system's web view offers no print, `OTHER`,
+ * the words the system's. */
+int64_t hero_ui_web_print(hero_ui_app *app, int64_t dialog, int64_t id, int64_t ask, const void *settings, uint64_t count);
+
 /* The kind of the last call's failure on this thread, `HERO_UI_OK` after a
  * call that did not fail. */
 int64_t hero_ui_last_error(void);
@@ -808,6 +823,24 @@ int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t dialog, int64_t window, 
  * index. */
 int64_t hero_ui_ask(hero_ui_app *app, int64_t dialog, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
 
+/* Shows the print dialog (`page` 0) or the page-setup dialog (`page` 1) over
+ * window `window`, its fields first set from the `count` bytes of
+ * `settings`, THE SETTINGS' TEXT (`platform/hero_ui_print_win32.h`: UTF-8
+ * lines `<key>=<value>`, IPP's job-template words, each line ended by a line
+ * feed, as `printing.format_settings` writes them; no byte is zero), and
+ * answers 0 at once, or -1. The person's choice comes later as
+ * `HERO_UI_EVENT_DIALOG` naming `dialog`, its `value` 1 with the settings
+ * they chose in the event's text, in the same form, or 0 where they
+ * cancelled; closing the window, or the app, ends the dialog unanswered.
+ * On macOS the dialog is a sheet of the window; on GTK 4 GTK's print dialog
+ * (4.14 or later); on Windows the system's, modal, so the call returns
+ * once the person has answered it, the answer queued (THE WAITING FORM).
+ * -1: `INVALID` for a dialog number shown already, a window that is no
+ * window of the app or settings that are not the text, `NOT_FOUND` for a
+ * printer no system names, `UNSUPPORTED` where GTK is older than 4.14 or
+ * the arm draws none, `OTHER`, the words the system's. */
+int64_t hero_ui_print_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t page, const void *settings, uint64_t count);
+
 /* -- CHECK AND RADIO MENU ITEMS ----------------------------------------------
  *
  * A menu item checked and unchecked (View > Show Sidebar), or one of a
@@ -1034,7 +1067,12 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
  * `HERO_UI_ANSWER_*` for `hero_ui_message`, the index for `hero_ui_ask`, or,
  * for a file or folder dialog, how many paths the person chose, 0 where
  * they cancelled, the text holding them each followed by one zero byte,
- * read by `hero_ui_event_text`. */
+ * read by `hero_ui_event_text`; for a print or a page-setup dialog 1 with
+ * the settings chosen as THE SETTINGS' TEXT in the text, or 0 where the
+ * person cancelled. `hero_ui_inject` with this kind answers the dialog as
+ * its person would, a print dialog with `value` 1 and the settings it is
+ * given as the text (a line ending the text, as `hero_ui_print_dialog`
+ * takes them), or `value` 0 and no text, which cancels it. */
 #define HERO_UI_EVENT_DIALOG 17
 
 /* -- AN ICON IN THE TRAY, AND AN APP OUT OF THE DOCK -------------------------
@@ -1234,6 +1272,14 @@ int64_t hero_ui_claim_instance(hero_ui_app *app, const void *arguments, uint64_t
  * request (on macOS its Apple events), arguments as a later launch of the
  * claimed instance would, through its hand-over. */
 #define HERO_UI_EVENT_OPEN 21
+
+/* A set or a mailbox the app's wait watches (`hero_ui_add_set`,
+ * `hero_ui_add_mailbox`) is ready: `id` is the number those calls answered,
+ * `value` and `second` 0. Told at most once to each wait: where the entry
+ * stays ready it is told again at the next wait, never in a spin within one,
+ * and never while its earlier event waits in the queue. `hero_ui_inject`
+ * does not give it. */
+#define HERO_UI_EVENT_READY 22
 /* Paths of files the system asks the app to open: a double click, Open
  * With, a drop on its Dock icon (on macOS for an app in a bundle that
  * names their types). */
@@ -1291,6 +1337,44 @@ int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
  * nothing; `hero_ui_set_value` with an index sets the text to that item,
  * with -1 it does nothing, and `hero_ui_set_items` keeps the text. */
 #define HERO_UI_EDITABLE_COMBO 34
+
+/* -- A SET AND A MAILBOX IN THE APP'S WAIT -----------------------------------
+ *
+ * Panel 256's R9: another thread's work reaches the user interface as a
+ * value sent to a mailbox the app waits on, and a program that waits on
+ * sockets, streams and timers beside its windows holds them in a poll set
+ * the app waits on. Both are watched through `hero_poll.h`'s
+ * `hero_poll_descriptor`, the descriptor that stays readable while an entry
+ * of the set is ready, which the arm's loop waits on beside the system's
+ * own events; the event is `HERO_UI_EVENT_READY`, and the program then asks
+ * the set (`hero_poll_wait` with a limit of 0) or the mailbox (a receive
+ * within 0) what is ready, which is why the watch tells and never takes.
+ * Native apps only, on the main thread, as every call here. */
+
+typedef struct hero_poll_set hero_poll_set;
+
+/* Has the app's wait watch the poll set `set`, and answers the number its
+ * `HERO_UI_EVENT_READY` names, 1 or more; or -1: `INVALID` for a set closed
+ * already, one watched already or one another thread waits on, `UNSUPPORTED`
+ * where the set holds no descriptor to wait on (a Windows set, and the
+ * POSIX systems that wait with `poll`: the words say so), `LIMIT`, `OTHER`.
+ * The set stays the program's: closing the app lets it go, never closes it,
+ * and a set the program closes first is dropped without a word at the next
+ * wait. Where a timer of the set falls due the same event is told, the wait
+ * having been cut short to the first timer due. */
+int64_t hero_ui_add_set(hero_ui_app *app, hero_poll_set *set);
+
+/* Has the app's wait watch the mailbox `number` names (`m.number()`),
+ * through a set of the app's own, and answers the number its event names,
+ * as `hero_ui_add_set` does; the event is told while a receive on the
+ * mailbox would not wait, because it holds a value, is closed or answers
+ * `stopped`. -1: `INVALID` for a number that names no mailbox, `UNSUPPORTED`
+ * and `LIMIT` as above. A mailbox watched twice is two entries. */
+int64_t hero_ui_add_mailbox(hero_ui_app *app, int64_t number);
+
+/* Takes the set or the mailbox watched as `id` away: 0, or -1: `NOT_FOUND`
+ * for a number the app does not watch, `INVALID`. */
+int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
 
 /* -- A SPIN -------------------------------------------------------------------
  *

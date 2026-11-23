@@ -16,6 +16,8 @@
 # Every text crosses as bytes and a count, so a text holding a zero byte is
 # the layer's `HERO_UI_INVALID` and never an abort at `.cstr()`.
 
+use poll/hero_poll
+
 extern "hero_ui.h"
     # An app open on the layer. It is a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
@@ -215,6 +217,7 @@ extern "hero_ui.h"
     # The app's identity, one instance, and documents from the system.
     constant HERO_UI_IDENTITY_MOST: i64
     constant HERO_UI_EVENT_OPEN: i64
+    constant HERO_UI_EVENT_READY: i64
     constant HERO_UI_OPEN_FILES: i64
     constant HERO_UI_OPEN_URLS: i64
     constant HERO_UI_OPEN_ARGUMENTS: i64
@@ -241,6 +244,7 @@ extern "hero_ui.h"
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
     function hero_ui_ask(app: App, dialog: i64, window: i64, tone: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64, @buttons: [u8] counted_by buttons_count lent, buttons_count: u64, cancel: i64) -> i64
+    function hero_ui_print_dialog(app: App, dialog: i64, window: i64, page: i64, @settings: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_screens(app: App, @values: [i64] counted_by count lent, count: u64) -> i64
     function hero_ui_frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
     function hero_ui_set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
@@ -273,6 +277,10 @@ extern "hero_ui.h"
     function hero_ui_web_allow(app: App, id: i64, @origin: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_web_navigate(app: App, id: i64, @path: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_web_post(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_add_set(app: App, set: hero_poll.Set) -> i64
+    function hero_ui_add_mailbox(app: App, box: i64) -> i64
+    function hero_ui_remove_source(app: App, id: i64) -> i64
+    function hero_ui_web_print(app: App, dialog: i64, id: i64, first: i64, @settings: [u8] counted_by count lent, count: u64) -> i64
 
 # 1 where the calling thread is the one an app may open on, the process's
 # main thread, 0 where it is not.
@@ -693,6 +701,45 @@ function web_navigate(app: App, id: i64, @path: [u8], count: u64) -> i64
 function web_post(app: App, id: i64, @text: [u8], count: u64) -> i64
     return hero_ui_web_post(app, id: id, @text, count: count)
 
+# 0 once web view `id`'s page is being printed, the outcome queued later as
+# `HERO_UI_EVENT_DIALOG` naming `dialog`, its value 1 with the settings the
+# page was printed with as its text, or 0 where the person cancelled or the
+# system could not print it; or -1.
+#
+# - `app`: the app holding it.
+# - `dialog`: the program's number for the print, 1 or more, not one shown.
+# - `id`: the web view.
+# - `first`: 1 to show the system's print dialog first, 0 to print with the
+#   settings as they are.
+# - `settings`: the settings' text (`printing.format_settings`); left as it
+#   was handed.
+# - `count`: how many of its first bytes.
+function web_print(app: App, dialog: i64, id: i64, first: i64, @settings: [u8], count: u64) -> i64
+    return hero_ui_web_print(app, dialog: dialog, id: id, first: first, @settings, count: count)
+
+# The number `HERO_UI_EVENT_READY` names once the wait watches poll set `set`,
+# or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `set`: the set; it stays the program's.
+function add_set(app: App, set: hero_poll.Set) -> i64
+    return hero_ui_add_set(app, set: set)
+
+# The number `HERO_UI_EVENT_READY` names once the wait watches the mailbox
+# `number` names, or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `box`: the number `m.number()` gives.
+function add_mailbox(app: App, box: i64) -> i64
+    return hero_ui_add_mailbox(app, box: box)
+
+# 0 once the set or the mailbox watched as `id` is taken away; or -1.
+#
+# - `app`: the app whose wait watches it.
+# - `id`: the number `add_set` or `add_mailbox` answered.
+function remove_source(app: App, id: i64) -> i64
+    return hero_ui_remove_source(app, id: id)
+
 # The kind of the last call's failure on this thread, `HERO_UI_OK` after a
 # call that did not fail.
 function last_error() -> i64
@@ -1012,6 +1059,21 @@ function folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title
         @title,
         title_count: title_count
     )
+
+# 0 once the print dialog (`page` 0) or the page-setup dialog (`page` 1)
+# `dialog` is shown, the person's choice queued later as
+# `HERO_UI_EVENT_DIALOG`, its value 1 with the settings chosen as its text,
+# or 0 where they cancelled; or -1.
+#
+# - `app`: the app showing it.
+# - `dialog`: the program's number for it, 1 or more, not one shown.
+# - `window`: the window it stands over.
+# - `page`: 0 for the print dialog, 1 for the page setup.
+# - `settings`: the settings' text it starts from (`printing.format_settings`);
+#   left as it was handed.
+# - `count`: how many of its first bytes.
+function print_dialog(app: App, dialog: i64, window: i64, page: i64, @settings: [u8], count: u64) -> i64
+    return hero_ui_print_dialog(app, dialog: dialog, window: window, page: page, @settings, count: count)
 
 # 0 once box `dialog` of the program's words is shown, the index of the
 # button the person presses queued later as `HERO_UI_EVENT_DIALOG`; or -1.

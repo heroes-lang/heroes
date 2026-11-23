@@ -64,9 +64,11 @@
 
 use bytes
 use json
+use printing
 use time
 use ui
 use ui/hero_ui
+use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/makers
@@ -386,6 +388,35 @@ function response_of(app: ui.App, view: ui.Widget, method: str, url: str) -> Res
 function post(@app: ui.App, view: ui.Widget, text: str) -> ()?
     return table.post(@app, view: view, text: text)
 
+## Printing
+
+# Prints the page `view` shows, as Qt's `QWebEnginePage::print` does, and
+# answers at once with the dialog the print is: its outcome comes later
+# from `ui.wait`, `.print_chosen` naming it, which holds the settings the
+# page was printed with once the page is the system's, or `.cancelled`
+# where the person cancelled or the system could not print it. On macOS it
+# is WebKit's print operation of the web view, a sheet of its window; on
+# GTK 4 WebKitGTK's print operation; on Windows WebView2's own `Print`. A
+# choice `ui.inject` queued (`.choose_print`, `.cancel_print`) answers it at
+# once and nothing is printed, as on the headless side, which has no
+# printer.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `settings`: what the page prints with, or what the print dialog starts
+#   from; its printer a name `printing.printers` lists, or empty for the
+#   default.
+# - `ask`: whether the system's print dialog shows first, whose choice
+#   the page prints with, or the page prints with `settings` as they are.
+#
+# Fails `invalid` where `view` is no web view of `app`, `settings` hold a
+# line feed or a zero byte in a name or lie outside their values, or the
+# printer is none; `closed`; `unsupported` where the system's web view
+# offers no print (`WebView2` before its sixteenth interface, WebKitGTK
+# absent); `failed`. See also `ui.print_dialog`.
+function print_page(@app: ui.App, view: ui.Widget, settings: printing.Settings, ask: bool) -> ui.Dialog?
+    return dialogs.web_printed(@app, view: view, settings: settings, first: ask)
+
 # A call the page made by `heroes.invoke`.
 record Call
     # The page's number for it, which the answer names.
@@ -591,6 +622,61 @@ test "send: none from a web view showing no page when wait gives it, then a mess
     assert ui.wait(@app, within: time.nanoseconds(0)).must() == .message(widget: v, text: "after")
     assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == CLOSED
     assert fixture.code_of(ui.inject(@app, input: .send(widget: v, text: bytes.to_text([0]).must()))) == INVALID
+    ui.close(@app).must()
+
+test "print_page: a choice injected first or while shown answers it, a cancel taken, a widget that is no web view and settings no dialog takes refused, and a print ended with its window (catalogue WV09)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "T", width: 100, height: 100).must()
+    v = webview(@app, into: w).must()
+    office = printing.default_settings("Office")
+    ui.inject(@app, input: .choose_print(settings: office)).must()
+    first = print_page(@app, view: v, settings: office, ask: false).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: first, choice: .chosen(settings: office))
+    second = print_page(@app, view: v, settings: office, ask: true).must()
+    ui.inject(@app, input: .cancel_print).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .print_chosen(dialog: second, choice: .cancelled)
+    assert fixture.code_of(print_page(@app, view: w, settings: office, ask: false)) == INVALID
+    assert fixture.code_of(print_page(@app, view: v, settings: printing.default_settings("Of\nfice"), ask: true)) == INVALID
+    _ = print_page(@app, view: v, settings: office, ask: true).must()
+    assert app.shown.len() == 1
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
+    ui.close(@app).must()
+
+test "print_page: on the native side the page's print is a sheet of its window answered through the queue, a cancel injected taken, and a print ended unanswered with its window (catalogue WV09)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    found = printing.default_printer()
+
+    match found
+        .ok _  => _ = 0
+        .err e => skip_test(reason: f"a print starts from a printer, and this machine has none: {e.msg}")
+
+    settings = printing.default_settings(found.must().name)
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Page", width: 400, height: 300).must()
+    made = webview(@app, into: w)
+    refusal = fixture.unsupported_words(made)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    v = made.must()
+    load_html(@app, view: v, html: "<p>A page to print</p>").must()
+    first = print_page(@app, view: v, settings: settings, ask: true)
+    print_refusal = fixture.unsupported_words(first)
+
+    if print_refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: print_refusal)
+    sheet = first.must()
+    ui.inject(@app, input: .cancel_print).must()
+    assert dialogs.next_answer(@app).must() == .print_chosen(dialog: sheet, choice: .cancelled)
+    _ = print_page(@app, view: v, settings: settings, ask: true).must()
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
     ui.close(@app).must()
 
 ## Examples

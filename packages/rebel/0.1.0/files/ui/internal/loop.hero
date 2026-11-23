@@ -53,6 +53,7 @@ function wait(@app: ui.App, within: time.Duration) -> ui.Event?
         return fail(code: failure.INVALID, msg: f"a wait of {within.nanoseconds} nanoseconds; it takes 0 or more")
     deadline = clock.later(at: clock.now(app)?, more: within.nanoseconds)
     settle(@app)?
+    asked @= false
 
     while true
         if app.events.len() > 0
@@ -91,6 +92,14 @@ function wait(@app: ui.App, within: time.Duration) -> ui.Event?
             )
 
         if now >= deadline
+            # A native app's system is asked once more at the deadline, without
+            # waiting, so that a wait of 0 answers what the system holds ready
+            # now (a set or a mailbox still ready) and not only what an earlier
+            # turn of its loop queued.
+            if app.native && !asked
+                asked @ true
+                native.pump(app, ms: 0)?
+                continue
             return fail(code: failure.TIMEOUT, msg: f"nothing happened in {within.nanoseconds} nanoseconds")
         target @= deadline
 
@@ -110,9 +119,11 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
     give.checked(app, input: input)?
 
     match input
-        .answer a     => dialogs.answered_by(@app, answer: a.answer)?
-        .pick_files p => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
-        .cancel_files => dialogs.chosen_by(@app, choice: .cancelled)?
+        .answer a       => dialogs.answered_by(@app, answer: a.answer)?
+        .pick_files p   => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
+        .cancel_files   => dialogs.chosen_by(@app, choice: .cancelled)?
+        .choose_print c => dialogs.printed_by(@app, choice: .chosen(settings: c.settings))?
+        .cancel_print   => dialogs.printed_by(@app, choice: .cancelled)?
         .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ | .hand _ =>
             app.inputs @ app.inputs.push(input)
 
@@ -146,6 +157,11 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         for event in dialogs.read(@app, id: id, value: taken[2])?
             app.events @ app.events.push(event)
 
+        return ok()
+
+    # A set or a mailbox the wait watches is ready: its number is no widget's.
+    if kind == hero_ui.HERO_UI_EVENT_READY
+        app.events @ app.events.push(.ready(key: id))
         return ok()
 
     # The appearance is the app's, of no widget.
@@ -337,6 +353,8 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .message m            => m.widget.id
         .dialog_answered _    => 0
         .files_chosen _       => 0
+        .print_chosen _       => 0
+        .ready _              => 0
         .appearance_changed _ => 0
         .quit_asked _         => 0
         .files_dropped f      => f.window.id

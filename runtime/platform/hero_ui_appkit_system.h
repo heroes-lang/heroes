@@ -42,4 +42,8 @@ void hero_ui_appkit_quit_watch(void);
 
 int64_t hero_ui_appkit_open_items(int64_t what, const uint8_t *items, int64_t count);
 
+int64_t hero_ui_appkit_watch_fd(int64_t fd, int64_t id, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
+void hero_ui_appkit_unwatch_fd(int64_t id);
+
 #endif
