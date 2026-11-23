@@ -149,6 +149,14 @@ typedef struct hero_ui_gtk_size {
     int height;
 } hero_ui_gtk_size;
 
+/* GDK's `GdkRGBA`: red, green, blue and alpha, each from 0 to 1. */
+typedef struct hero_ui_gtk_rgba {
+    float red;
+    float green;
+    float blue;
+    float alpha;
+} hero_ui_gtk_rgba;
+
 /* GTK's `GtkTextIter`, 80 bytes on every 64-bit target GTK 4.18.6 builds for;
  * held in more room, aligned as its pointers are. */
 typedef union hero_ui_gtk_iter {
@@ -415,6 +423,45 @@ typedef struct hero_ui_gtk_functions {
     unsigned long (*signal_connect_data)(void *instance, const char *signal, hero_ui_gtk_callback handler, void *data, void *destroy, int flags);
     void (*signal_emit_by_name)(void *instance, const char *signal, ...);
     void (*object_unref)(void *object);
+    void *(*object_ref_sink)(void *object);
+    /* A picker's calendar and the date it is shown at, and the label of the
+     * button that opens it. */
+    void *(*calendar_new)(void);
+    void (*calendar_select_day)(void *calendar, void *date);
+    void *(*date_time_new_utc)(int year, int month, int day, int hour, int minute, double seconds);
+    void (*date_time_unref)(void *date);
+    void (*menu_button_set_label)(void *button, const char *label);
+    /* GTK 4.10's colour dialog and the button that opens it, found where the
+     * library has them (A COLOUR PICKED). */
+    void *(*color_dialog_new)(void);
+    void (*color_dialog_set_with_alpha)(void *dialog, int with);
+    void *(*color_dialog_button_new)(void *dialog);
+    void (*color_dialog_button_set_rgba)(void *button, const hero_ui_gtk_rgba *color);
+    const hero_ui_gtk_rgba *(*color_dialog_button_get_rgba)(void *button);
+    /* GTK 4.10's font dialog and the button that opens it, found where the
+     * library has them, and Pango's font descriptions and the families and
+     * faces of the font map a widget draws with (A FONT PICKED). */
+    void *(*font_dialog_new)(void);
+    void *(*font_dialog_button_new)(void *dialog);
+    void (*font_dialog_button_set_font_desc)(void *button, const void *description);
+    const void *(*font_dialog_button_get_font_desc)(void *button);
+    void *(*font_description_new)(void);
+    void *(*font_description_from_string)(const char *text);
+    void (*font_description_free)(void *description);
+    void (*font_description_set_family)(void *description, const char *family);
+    void (*font_description_set_size)(void *description, int size);
+    void (*font_description_set_weight)(void *description, int weight);
+    void (*font_description_set_style)(void *description, int style);
+    const char *(*font_description_get_family)(const void *description);
+    int (*font_description_get_size)(const void *description);
+    int (*font_description_get_weight)(const void *description);
+    int (*font_description_get_style)(const void *description);
+    void *(*widget_get_pango_context)(void *widget);
+    void *(*pango_context_get_font_map)(void *context);
+    void (*font_map_list_families)(void *map, void ***families, int *count);
+    const char *(*font_family_get_name)(void *family);
+    void (*font_family_list_faces)(void *family, void ***faces, int *count);
+    void *(*font_face_describe)(void *face);
     void *(*menu_new)(void);
     void (*menu_remove_all)(void *menu);
     void (*menu_append_section)(void *menu, const char *label, void *section);
@@ -927,6 +974,38 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(signal_connect_data, "g_signal_connect_data");
     HERO_UI_GTK_NEED(signal_emit_by_name, "g_signal_emit_by_name");
     HERO_UI_GTK_NEED(object_unref, "g_object_unref");
+    HERO_UI_GTK_NEED(object_ref_sink, "g_object_ref_sink");
+    HERO_UI_GTK_NEED(calendar_new, "gtk_calendar_new");
+    HERO_UI_GTK_NEED(calendar_select_day, "gtk_calendar_select_day");
+    HERO_UI_GTK_NEED(date_time_new_utc, "g_date_time_new_utc");
+    HERO_UI_GTK_NEED(date_time_unref, "g_date_time_unref");
+    HERO_UI_GTK_NEED(menu_button_set_label, "gtk_menu_button_set_label");
+    HERO_UI_GTK_MAY(color_dialog_new, "gtk_color_dialog_new");
+    HERO_UI_GTK_MAY(color_dialog_set_with_alpha, "gtk_color_dialog_set_with_alpha");
+    HERO_UI_GTK_MAY(color_dialog_button_new, "gtk_color_dialog_button_new");
+    HERO_UI_GTK_MAY(color_dialog_button_set_rgba, "gtk_color_dialog_button_set_rgba");
+    HERO_UI_GTK_MAY(color_dialog_button_get_rgba, "gtk_color_dialog_button_get_rgba");
+    HERO_UI_GTK_MAY(font_dialog_new, "gtk_font_dialog_new");
+    HERO_UI_GTK_MAY(font_dialog_button_new, "gtk_font_dialog_button_new");
+    HERO_UI_GTK_MAY(font_dialog_button_set_font_desc, "gtk_font_dialog_button_set_font_desc");
+    HERO_UI_GTK_MAY(font_dialog_button_get_font_desc, "gtk_font_dialog_button_get_font_desc");
+    HERO_UI_GTK_NEED(font_description_new, "pango_font_description_new");
+    HERO_UI_GTK_NEED(font_description_from_string, "pango_font_description_from_string");
+    HERO_UI_GTK_NEED(font_description_free, "pango_font_description_free");
+    HERO_UI_GTK_NEED(font_description_set_family, "pango_font_description_set_family");
+    HERO_UI_GTK_NEED(font_description_set_size, "pango_font_description_set_size");
+    HERO_UI_GTK_NEED(font_description_set_weight, "pango_font_description_set_weight");
+    HERO_UI_GTK_NEED(font_description_set_style, "pango_font_description_set_style");
+    HERO_UI_GTK_NEED(font_description_get_family, "pango_font_description_get_family");
+    HERO_UI_GTK_NEED(font_description_get_size, "pango_font_description_get_size");
+    HERO_UI_GTK_NEED(font_description_get_weight, "pango_font_description_get_weight");
+    HERO_UI_GTK_NEED(font_description_get_style, "pango_font_description_get_style");
+    HERO_UI_GTK_NEED(widget_get_pango_context, "gtk_widget_get_pango_context");
+    HERO_UI_GTK_NEED(pango_context_get_font_map, "pango_context_get_font_map");
+    HERO_UI_GTK_NEED(font_map_list_families, "pango_font_map_list_families");
+    HERO_UI_GTK_NEED(font_family_get_name, "pango_font_family_get_name");
+    HERO_UI_GTK_NEED(font_family_list_faces, "pango_font_family_list_faces");
+    HERO_UI_GTK_NEED(font_face_describe, "pango_font_face_describe");
     HERO_UI_GTK_NEED(menu_new, "g_menu_new");
     HERO_UI_GTK_NEED(menu_remove_all, "g_menu_remove_all");
     HERO_UI_GTK_NEED(menu_append_section, "g_menu_append_section");
@@ -1414,6 +1493,10 @@ struct hero_ui_native {
     char *seen;
     char *completing;
     bool setting;
+    /* A picker's calendar and its hours, minutes and seconds (A DATE AND A
+     * TIME PICKED), NULL for a part its kind has not; its drop is the button
+     * that opens the calendar. */
+    void *parts[4];
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1439,6 +1522,20 @@ static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t val
 static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count);
 static void hero_ui_gtk_close_more(void);
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
+static hero_ui_gtk_size hero_ui_gtk_natural(void *widget);
+static bool hero_ui_gtk_make_picker(hero_ui_native *made);
+static void hero_ui_gtk_picker_show(hero_ui_native *widget);
+static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t value);
+static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, bool told);
+static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most);
+static bool hero_ui_gtk_is_picker(int64_t kind);
+static bool hero_ui_gtk_make_color(hero_ui_native *made);
+static bool hero_ui_gtk_make_font(hero_ui_native *made);
+static int64_t hero_ui_gtk_font_text(hero_ui_native *widget, const char *text, bool told);
+static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool told);
+static bool hero_ui_gtk_make_bar(hero_ui_native *made);
+static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar);
+static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height);
 static void hero_ui_gtk_send_docked(hero_ui_native *window);
 static void hero_ui_gtk_watch_appearance(void);
 static void hero_ui_gtk_unwatch_appearance(void);
@@ -1538,6 +1635,11 @@ static hero_ui_native *hero_ui_gtk_of(void *data, void *instance) {
     if (widget->widget == instance || widget->inner == instance || widget->buffer == instance || widget->action == instance || widget->area == instance || widget->selection == instance || widget->sorter == instance ||
         widget->gesture == instance || widget->choices == instance) {
         return widget;
+    }
+    for (int i = 0; i < 4; i += 1) {
+        if (widget->parts[i] != NULL && widget->parts[i] == instance) {
+            return widget;
+        }
     }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
         if (widget->radios[i] == instance) {
@@ -2261,6 +2363,651 @@ static void hero_ui_gtk_spun(void *spin, void *data) {
     }
 }
 
+/* -- A DATE AND A TIME PICKED ------------------------------------------------
+ *
+ * GTK 4 has no date or time picker widget, so a picker is a `GtkBox` of the
+ * parts its kind shows: a date's is a menu button, labelled with the day as
+ * year-month-day, whose popover holds a `GtkCalendar`; a time's is three spin
+ * buttons (hours 0 to 23, minutes and seconds 0 to 59, two digits each)
+ * between colons; a date and time picker has both. THE VALUE is the
+ * calendar's fields read as UTC, in seconds (`hero_ui.h`): the day's days
+ * since 1970 counted in the proleptic Gregorian calendar by plain arithmetic,
+ * so no `GDateTime` is read and no zone is involved; GLib's `GDateTime` is
+ * made in UTC only to give the calendar a day to show. `least` and `most`
+ * are the bounds, which the arm enforces for the person, since neither the
+ * calendar nor a spin takes bounds across a whole moment: a pick outside
+ * them is put back, muted, the value held and shown again. */
+
+#define HERO_UI_GTK_DAY 86400
+#define HERO_UI_GTK_PICKER_DATE_LEAST (-62135596800LL)
+#define HERO_UI_GTK_PICKER_DATE_MOST 253402214400LL
+#define HERO_UI_GTK_PICKER_MOMENT_MOST 253402300799LL
+
+static bool hero_ui_gtk_is_picker(int64_t kind) {
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER;
+}
+
+/* The whole days from `seconds`' day back to 1970-01-01, rounded down: the
+ * day a moment of seconds before 1970 is in. */
+static int64_t hero_ui_gtk_days_of(int64_t seconds) {
+    return seconds >= 0 ? seconds / HERO_UI_GTK_DAY : -((-seconds + HERO_UI_GTK_DAY - 1) / HERO_UI_GTK_DAY);
+}
+
+/* Days from 1970-01-01 to the day `year`-`month`-`day` (month 1 to 12), in
+ * the proleptic Gregorian calendar. */
+static int64_t hero_ui_gtk_days_from(int64_t year, int64_t month, int64_t day) {
+    int64_t y = month <= 2 ? year - 1 : year;
+    int64_t era = (y >= 0 ? y : y - 399) / 400;
+    int64_t of_era = y - era * 400;
+    int64_t of_year = (153 * (month > 2 ? month - 3 : month + 9) + 2) / 5 + day - 1;
+    int64_t of_days = of_era * 365 + of_era / 4 - of_era / 100 + of_year;
+
+    return era * 146097 + of_days - 719468;
+}
+
+/* The year, month (1 to 12) and day of the day `days` from 1970-01-01. */
+static void hero_ui_gtk_civil_of(int64_t days, int64_t *year, int64_t *month, int64_t *day) {
+    int64_t z = days + 719468;
+    int64_t era = (z >= 0 ? z : z - 146096) / 146097;
+    int64_t of_era = z - era * 146097;
+    int64_t of_year_era = (of_era - of_era / 1460 + of_era / 36524 - of_era / 146096) / 365;
+    int64_t of_year = of_era - (365 * of_year_era + of_year_era / 4 - of_year_era / 100);
+    int64_t shifted = (5 * of_year + 2) / 153;
+
+    *day = of_year - (153 * shifted + 2) / 5 + 1;
+    *month = shifted < 10 ? shifted + 3 : shifted - 9;
+    *year = of_year_era + era * 400 + (*month <= 2 ? 1 : 0);
+}
+
+/* The hours, minutes or seconds spin `which` (1 to 3) of picker `widget`. */
+static int64_t hero_ui_gtk_clock_part(const hero_ui_native *widget, int which) {
+    double held = hero_ui_gtk.spin_button_get_value(widget->parts[which]);
+
+    return (int64_t)(held + 0.5);
+}
+
+/* The moment picker `widget` shows, false for one GTK's calendar shows that
+ * no moment of the layer is (a year past 9999). */
+static bool hero_ui_gtk_picker_read(const hero_ui_native *widget, int64_t *moment) {
+    int64_t days = 0;
+    int64_t seconds = 0;
+
+    if (widget->kind != HERO_UI_TIME_PICKER) {
+        int year = 0;
+        int month = 0;
+        int day = 0;
+
+        hero_ui_gtk.object_get(widget->parts[0], "year", &year, "month", &month, "day", &day, NULL);
+        if (year < 1 || year > 9999 || month < 0 || month > 11) {
+            return false;
+        }
+        days = hero_ui_gtk_days_from(year, month + 1, day < 1 ? 1 : day);
+    }
+    if (widget->kind != HERO_UI_DATE_PICKER) {
+        seconds = hero_ui_gtk_clock_part(widget, 1) * 3600 + hero_ui_gtk_clock_part(widget, 2) * 60 + hero_ui_gtk_clock_part(widget, 3);
+    }
+    *moment = days * HERO_UI_GTK_DAY + seconds;
+    return true;
+}
+
+/* Shows the day of picker `widget`'s value on its button, as year-month-day. */
+static void hero_ui_gtk_picker_label(const hero_ui_native *widget) {
+    int64_t year;
+    int64_t month;
+    int64_t day;
+    char label[32];
+
+    if (widget->kind == HERO_UI_TIME_PICKER) {
+        return;
+    }
+    hero_ui_gtk_civil_of(hero_ui_gtk_days_of(widget->value), &year, &month, &day);
+    (void)snprintf(label, sizeof label, "%04lld-%02lld-%02lld", (long long)year, (long long)month, (long long)day);
+    hero_ui_gtk.menu_button_set_label(widget->drop, label);
+}
+
+/* Shows picker `widget`'s value in its calendar, its spins and its button,
+ * muted, as the program's own set and a pick put back are. */
+static void hero_ui_gtk_picker_show(hero_ui_native *widget) {
+    int64_t day = hero_ui_gtk_days_of(widget->value);
+    int64_t seconds = widget->value - day * HERO_UI_GTK_DAY;
+
+    widget->setting = true;
+    hero_ui_mute(1);
+    if (widget->kind != HERO_UI_TIME_PICKER) {
+        int64_t year;
+        int64_t month;
+        int64_t of_month;
+        void *when;
+
+        hero_ui_gtk_civil_of(day, &year, &month, &of_month);
+        when = hero_ui_gtk.date_time_new_utc((int)year, (int)month, (int)of_month, 0, 0, 0);
+        if (when != NULL) {
+            hero_ui_gtk.calendar_select_day(widget->parts[0], when);
+            hero_ui_gtk.date_time_unref(when);
+        }
+        hero_ui_gtk_picker_label(widget);
+    }
+    if (widget->kind != HERO_UI_DATE_PICKER) {
+        hero_ui_gtk.spin_button_set_value(widget->parts[1], (double)(seconds / 3600));
+        hero_ui_gtk.spin_button_set_value(widget->parts[2], (double)(seconds / 60 % 60));
+        hero_ui_gtk.spin_button_set_value(widget->parts[3], (double)(seconds % 60));
+    }
+    hero_ui_mute(-1);
+    widget->setting = false;
+}
+
+/* The person picked: a day in the calendar, or a number in a spin. Told once
+ * where the moment is not the one held; a moment outside the bounds is put
+ * back, and one the layer has no number for. */
+static void hero_ui_gtk_picked(void *instance, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, instance);
+    int64_t moment = 0;
+
+    if (widget == NULL || !hero_ui_gtk_is_picker(widget->kind) || widget->setting) {
+        return;
+    }
+    if (!hero_ui_gtk_picker_read(widget, &moment) || moment < widget->least || moment > widget->most) {
+        hero_ui_gtk_picker_show(widget);
+        return;
+    }
+    if (moment != widget->value) {
+        widget->value = moment;
+        hero_ui_gtk_picker_label(widget);
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, moment, 0);
+    }
+}
+
+/* A spin of a time shows its number in two digits. */
+static int hero_ui_gtk_clock_output(void *spin, void *data) {
+    char text[16];
+
+    (void)data;
+    (void)snprintf(text, sizeof text, "%02d", (int)(hero_ui_gtk.spin_button_get_value(spin) + 0.5));
+    hero_ui_gtk.editable_set_text(spin, text);
+    return 1;
+}
+
+static bool hero_ui_gtk_make_picker(hero_ui_native *made) {
+    made->widget = hero_ui_gtk.box_new(HERO_GTK_ORIENTATION_HORIZONTAL, 6);
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->least = made->kind == HERO_UI_TIME_PICKER ? 0 : HERO_UI_GTK_PICKER_DATE_LEAST;
+    made->most = made->kind == HERO_UI_DATE_PICKER ? HERO_UI_GTK_PICKER_DATE_MOST : made->kind == HERO_UI_TIME_PICKER ? HERO_UI_GTK_DAY - 1 : HERO_UI_GTK_PICKER_MOMENT_MOST;
+    made->value = 0;
+    if (made->kind != HERO_UI_TIME_PICKER) {
+        void *popover = hero_ui_gtk.popover_new();
+
+        made->drop = hero_ui_gtk.menu_button_new();
+        made->parts[0] = hero_ui_gtk.calendar_new();
+        if (popover == NULL || made->drop == NULL || made->parts[0] == NULL) {
+            return false;
+        }
+        hero_ui_gtk.popover_set_child(popover, made->parts[0]);
+        hero_ui_gtk.menu_button_set_popover(made->drop, popover);
+        hero_ui_gtk.box_append(made->widget, made->drop);
+        for (const char *signal = "day-selected"; signal != NULL;) {
+            hero_ui_gtk_connect(made->parts[0], signal, (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
+            signal = strcmp(signal, "day-selected") == 0 ? "next-month" : strcmp(signal, "next-month") == 0 ? "prev-month" : strcmp(signal, "prev-month") == 0 ? "next-year" : strcmp(signal, "next-year") == 0 ? "prev-year" : NULL;
+        }
+    }
+    if (made->kind != HERO_UI_DATE_PICKER) {
+        for (int which = 1; which <= 3; which += 1) {
+            made->parts[which] = hero_ui_gtk.spin_button_new_with_range(0, which == 1 ? 23 : 59, 1);
+            if (made->parts[which] == NULL) {
+                return false;
+            }
+            hero_ui_gtk.spin_button_set_digits(made->parts[which], 0);
+            hero_ui_gtk.spin_button_set_numeric(made->parts[which], 1);
+            hero_ui_gtk_connect(made->parts[which], "output", (hero_ui_gtk_callback)hero_ui_gtk_clock_output, made->id);
+            hero_ui_gtk_connect(made->parts[which], "value-changed", (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
+            hero_ui_gtk.box_append(made->widget, made->parts[which]);
+            if (which < 3) {
+                hero_ui_gtk.box_append(made->widget, hero_ui_gtk.label_new(":"));
+            }
+        }
+    }
+    hero_ui_gtk_picker_show(made);
+    return true;
+}
+
+/* Whether a picker of `kind` holds `value` at all, apart from its bounds. */
+static bool hero_ui_gtk_picker_holds(int64_t kind, int64_t value) {
+    switch (kind) {
+    case HERO_UI_DATE_PICKER:
+        return value % HERO_UI_GTK_DAY == 0 && value >= HERO_UI_GTK_PICKER_DATE_LEAST && value <= HERO_UI_GTK_PICKER_DATE_MOST;
+    case HERO_UI_TIME_PICKER:
+        return value >= 0 && value < HERO_UI_GTK_DAY;
+    default:
+        return value >= HERO_UI_GTK_PICKER_DATE_LEAST && value <= HERO_UI_GTK_PICKER_MOMENT_MOST;
+    }
+}
+
+/* `invalid` with words where picker `widget` does not hold `value`: its kind
+ * does not, or its bounds do not. */
+static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t value) {
+    if (!hero_ui_gtk_picker_holds(widget->kind, value)) {
+        return hero_ui_refused(HERO_UI_INVALID, widget->kind == HERO_UI_DATE_PICKER ? "a date picker holds a whole day: a multiple of 86400 seconds, from year 1 to year 9999" : widget->kind == HERO_UI_TIME_PICKER ? "a time picker holds the seconds since midnight: 0 to 86399" : "a date and time picker holds a moment from year 1 to year 9999");
+    }
+    if (value < widget->least || value > widget->most) {
+        return hero_ui_refused(HERO_UI_INVALID, "the value is outside the bounds the picker was given");
+    }
+    return HERO_UI_OK;
+}
+
+/* Gives picker `widget` the moment `value`, told where `told` and it is not
+ * the one held, as the person's pick is; `invalid` with words for one the
+ * picker does not hold. */
+static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, bool told) {
+    int64_t answer = hero_ui_gtk_picker_check(widget, value);
+
+    if (answer != HERO_UI_OK) {
+        return answer;
+    }
+    if (told && value == widget->value) {
+        return HERO_UI_OK;
+    }
+    widget->value = value;
+    hero_ui_gtk_picker_show(widget);
+    if (told) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+    }
+    return HERO_UI_OK;
+}
+
+/* Bounds picker `widget` to `least` and `most`: each a value of its kind,
+ * the first below the second; the value held moved to the nearest end where
+ * it lies outside, silently. */
+static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most) {
+    int64_t kept;
+
+    if (!hero_ui_gtk_picker_holds(widget->kind, least) || !hero_ui_gtk_picker_holds(widget->kind, most) || least >= most) {
+        return hero_ui_refused(HERO_UI_INVALID, "a picker's bounds are two values of its kind, the first below the second");
+    }
+    widget->least = least;
+    widget->most = most;
+    kept = widget->value < least ? least : widget->value > most ? most : widget->value;
+    if (kept != widget->value) {
+        widget->value = kept;
+        hero_ui_gtk_picker_show(widget);
+    }
+    return HERO_UI_OK;
+}
+
+/* -- A COLOUR PICKED ------------------------------------------------------------
+ *
+ * `GtkColorDialogButton` (GTK 4.10), over a `GtkColorDialog` that lets the
+ * person pick the alpha too. Its `rgba` is a `GdkRGBA` of floats from 0 to 1;
+ * the layer's value is the four sRGB bytes `0xRRGGBBAA`, a byte `b` given as
+ * `b / 255` and read as `(int)(c * 255 + 0.5)`, which is exact for every byte
+ * (a float keeps the quotient to 6e-8 of itself, and the rounding is 0.5
+ * away). The value is held as the program or the person gave it, so reading
+ * it asks GTK nothing. A GTK older than 4.10 is refused by name where the
+ * kind is made. */
+
+/* The value of `color`: four bytes, red the highest. */
+static int64_t hero_ui_gtk_color_value(const hero_ui_gtk_rgba *color) {
+    const float parts[4] = {color->red, color->green, color->blue, color->alpha};
+    int64_t value = 0;
+
+    for (int i = 0; i < 4; i += 1) {
+        float scaled = parts[i] * 255.0f + 0.5f;
+        int64_t byte = scaled < 0.0f ? 0 : scaled > 255.0f ? 255 : (int64_t)scaled;
+
+        value = value * 256 + byte;
+    }
+    return value;
+}
+
+/* Puts colour `value` in `button`, which tells its own change. */
+static void hero_ui_gtk_color_put(void *button, int64_t value) {
+    hero_ui_gtk_rgba color;
+
+    color.red = (float)((value >> 24) & 255) / 255.0f;
+    color.green = (float)((value >> 16) & 255) / 255.0f;
+    color.blue = (float)((value >> 8) & 255) / 255.0f;
+    color.alpha = (float)(value & 255) / 255.0f;
+    hero_ui_gtk.color_dialog_button_set_rgba(button, &color);
+}
+
+/* The colour well `widget` holds, in its button, muted. */
+static void hero_ui_gtk_color_show(hero_ui_native *widget) {
+    widget->setting = true;
+    hero_ui_mute(1);
+    hero_ui_gtk_color_put(widget->widget, widget->value);
+    hero_ui_mute(-1);
+    widget->setting = false;
+}
+
+/* The person picked a colour in the chooser: told once, where it is not the
+ * colour held. */
+static void hero_ui_gtk_colored(void *button, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, button);
+    const hero_ui_gtk_rgba *color;
+    int64_t value;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_COLOR_WELL || widget->setting) {
+        return;
+    }
+    color = hero_ui_gtk.color_dialog_button_get_rgba(button);
+    value = color != NULL ? hero_ui_gtk_color_value(color) : widget->value;
+    if (value != widget->value) {
+        widget->value = value;
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+    }
+}
+
+static bool hero_ui_gtk_make_color(hero_ui_native *made) {
+    void *dialog = hero_ui_gtk.color_dialog_new();
+
+    if (dialog == NULL) {
+        return false;
+    }
+    hero_ui_gtk.color_dialog_set_with_alpha(dialog, 1);
+    /* The button takes the dialog's reference. */
+    made->widget = hero_ui_gtk.color_dialog_button_new(dialog);
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->value = 0;
+    hero_ui_gtk_color_show(made);
+    hero_ui_gtk_connect(made->widget, "notify::rgba", (hero_ui_gtk_callback)hero_ui_gtk_colored, made->id);
+    return true;
+}
+
+/* Gives colour well `widget` the colour `value`, told where `told` and it is
+ * not the one held, as the person's pick is: the button's own change tells
+ * it, and `hero_ui_gtk_colored` keeps it. */
+static int64_t hero_ui_gtk_color_set(hero_ui_native *widget, int64_t value, bool told) {
+    if (value < 0 || value > 0xFFFFFFFFLL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour is four sRGB bytes 0xRRGGBBAA, a number from 0 to 4294967295");
+    }
+    if (told) {
+        hero_ui_gtk_color_put(widget->widget, value);
+        return HERO_UI_OK;
+    }
+    widget->value = value;
+    hero_ui_gtk_color_show(widget);
+    return HERO_UI_OK;
+}
+
+/* -- A FONT PICKED ---------------------------------------------------------------
+ *
+ * `GtkFontDialogButton` (GTK 4.10), whose `font-desc` is a Pango font
+ * description. The layer's text is the font as `<size>|<style>|<family>`
+ * (`hero_ui.h`): the size in whole points from 1 to 1024 (Pango's size is
+ * points times 1024, rounded back), the style `-`, `b`, `i` or `bi` (bold is
+ * a weight of 700 or more, italic a style that is not normal), and the
+ * family as the font map the button draws with lists it, a name matching
+ * whatever its case and read back as the map spells it. A family the map
+ * lacks is refused, and a style the family has no face for is dropped, so
+ * that the text read back is the font as the system holds it. The text held
+ * is `widget->label`, the program's or the person's last. A GTK older than
+ * 4.10 is refused by name where the kind is made. */
+
+#define HERO_UI_GTK_PANGO_SCALE 1024
+#define HERO_UI_GTK_WEIGHT_NORMAL 400
+#define HERO_UI_GTK_WEIGHT_BOLD 700
+#define HERO_UI_GTK_STYLE_ITALIC 2
+#define HERO_UI_GTK_FONT_LEAST 1
+#define HERO_UI_GTK_FONT_MOST 1024
+
+/* A font taken apart: its size, its two styles and its family, in a block of
+ * `hero_layer_alloc`. */
+typedef struct hero_ui_gtk_font {
+    int64_t size;
+    bool bold;
+    bool italic;
+    char *family;
+} hero_ui_gtk_font;
+
+/* The family of `widget`'s font map that is called `name` (letters of the
+ * ASCII's alphabet compared whatever their case), as a copy of the map's
+ * spelling, with whether it has a bold face and an italic one; NULL where it
+ * has none. `*failed` is set where the copy could not be made. */
+static char *hero_ui_gtk_font_family(void *widget, const char *name, bool *bold, bool *italic, bool *failed) {
+    void *map = hero_ui_gtk.pango_context_get_font_map(hero_ui_gtk.widget_get_pango_context(widget));
+    void **families = NULL;
+    int count = 0;
+    char *found = NULL;
+
+    *failed = false;
+    if (map == NULL) {
+        return NULL;
+    }
+    hero_ui_gtk.font_map_list_families(map, &families, &count);
+    for (int i = 0; i < count && found == NULL; i += 1) {
+        const char *spelling = hero_ui_gtk.font_family_get_name(families[i]);
+        void **faces = NULL;
+        int kinds = 0;
+
+        if (spelling == NULL || strcasecmp(spelling, name) != 0) {
+            continue;
+        }
+        found = hero_layer_alloc(strlen(spelling) + 1);
+        if (found == NULL) {
+            *failed = true;
+            break;
+        }
+        memcpy(found, spelling, strlen(spelling) + 1);
+        hero_ui_gtk.font_family_list_faces(families[i], &faces, &kinds);
+        *bold = false;
+        *italic = false;
+        for (int face = 0; face < kinds; face += 1) {
+            void *description = hero_ui_gtk.font_face_describe(faces[face]);
+
+            if (description != NULL) {
+                *bold = *bold || hero_ui_gtk.font_description_get_weight(description) >= HERO_UI_GTK_WEIGHT_BOLD;
+                *italic = *italic || hero_ui_gtk.font_description_get_style(description) != 0;
+                hero_ui_gtk.font_description_free(description);
+            }
+        }
+        hero_ui_gtk.g_free(faces);
+    }
+    hero_ui_gtk.g_free(families);
+    return found;
+}
+
+/* `text` taken apart as a descriptor and checked against the system:
+ * `invalid` with words for another shape, a size outside 1 to 1024 and a
+ * family the system lacks, `limit` where memory ran out. */
+static int64_t hero_ui_gtk_font_check(void *widget, const char *text, hero_ui_gtk_font *font) {
+    const char *at = text;
+    const char *name;
+    bool has_bold = false;
+    bool has_italic = false;
+    bool failed = false;
+    bool bold;
+    bool italic;
+    int64_t size = 0;
+    size_t digits = 0;
+
+    for (; *at >= '0' && *at <= '9' && digits < 6; at += 1) {
+        size = size * 10 + (*at - '0');
+        digits += 1;
+    }
+    if (digits == 0 || *at != '|' || size < HERO_UI_GTK_FONT_LEAST || size > HERO_UI_GTK_FONT_MOST) {
+        return hero_ui_refused(HERO_UI_INVALID, "a font is `<size>|<style>|<family>`: the size in points, a whole number from 1 to 1024");
+    }
+    at += 1;
+    if (strncmp(at, "bi|", 3) == 0) {
+        bold = true;
+        italic = true;
+        at += 3;
+    } else if ((at[0] == 'b' || at[0] == 'i' || at[0] == '-') && at[1] == '|') {
+        bold = at[0] == 'b';
+        italic = at[0] == 'i';
+        at += 2;
+    } else {
+        return hero_ui_refused(HERO_UI_INVALID, "a font's style is `-`, `b` (bold), `i` (italic) or `bi`, between two `|`");
+    }
+    name = at;
+    if (name[0] == '\0' || strpbrk(name, "\r\n") != NULL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a font's family is a name, any bytes but a zero or a line break, after the second `|`");
+    }
+    font->family = hero_ui_gtk_font_family(widget, name, &has_bold, &has_italic, &failed);
+    if (font->family == NULL) {
+        return failed ? HERO_UI_LIMIT : hero_ui_refused(HERO_UI_INVALID, "the system has no font family of that name");
+    }
+    font->size = size;
+    font->bold = bold && has_bold;
+    font->italic = italic && has_italic;
+    return HERO_UI_OK;
+}
+
+/* The descriptor of `font`, in a block of `hero_layer_alloc`. */
+static char *hero_ui_gtk_font_describe(const hero_ui_gtk_font *font) {
+    size_t room = strlen(font->family) + 16;
+    char *text = hero_layer_alloc(room);
+
+    if (text != NULL) {
+        (void)snprintf(text, room, "%lld|%s|%s", (long long)font->size, font->bold && font->italic ? "bi" : font->bold ? "b" : font->italic ? "i" : "-", font->family);
+    }
+    return text;
+}
+
+/* Puts `font` in `widget`'s button, muted, and keeps its descriptor as the
+ * text held; `limit` where memory ran out. */
+static int64_t hero_ui_gtk_font_apply(hero_ui_native *widget, const hero_ui_gtk_font *font) {
+    char *text = hero_ui_gtk_font_describe(font);
+    void *description = text != NULL ? hero_ui_gtk.font_description_new() : NULL;
+
+    if (description == NULL) {
+        hero_layer_free(text);
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.font_description_set_family(description, font->family);
+    hero_ui_gtk.font_description_set_size(description, (int)(font->size * HERO_UI_GTK_PANGO_SCALE));
+    hero_ui_gtk.font_description_set_weight(description, font->bold ? HERO_UI_GTK_WEIGHT_BOLD : HERO_UI_GTK_WEIGHT_NORMAL);
+    hero_ui_gtk.font_description_set_style(description, font->italic ? HERO_UI_GTK_STYLE_ITALIC : 0);
+    widget->setting = true;
+    hero_ui_mute(1);
+    hero_ui_gtk.font_dialog_button_set_font_desc(widget->widget, description);
+    hero_ui_mute(-1);
+    widget->setting = false;
+    hero_ui_gtk.font_description_free(description);
+    hero_layer_free(widget->label);
+    widget->label = text;
+    return HERO_UI_OK;
+}
+
+/* Gives font button `widget` the font `text` names. Told where `told` and
+ * the font is not the one held, as the person's pick is. */
+static int64_t hero_ui_gtk_font_text(hero_ui_native *widget, const char *text, bool told) {
+    hero_ui_gtk_font font = {0, false, false, NULL};
+    int64_t answer = hero_ui_gtk_font_check(widget->widget, text, &font);
+    char *described;
+    bool changed;
+
+    if (answer != HERO_UI_OK) {
+        return answer;
+    }
+    described = hero_ui_gtk_font_describe(&font);
+    changed = described != NULL && (widget->label == NULL || strcmp(described, widget->label) != 0);
+    hero_layer_free(described);
+    answer = hero_ui_gtk_font_apply(widget, &font);
+    hero_layer_free(font.family);
+    if (answer == HERO_UI_OK && told && changed) {
+        hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+    }
+    return answer;
+}
+
+/* The person picked a font in the chooser: told once, where it is not the
+ * font held. */
+static void hero_ui_gtk_fonted(void *button, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, button);
+    const void *description;
+    hero_ui_gtk_font font;
+    const char *family;
+    int64_t size;
+    char *text;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_FONT_BUTTON || widget->setting) {
+        return;
+    }
+    description = hero_ui_gtk.font_dialog_button_get_font_desc(button);
+    family = description != NULL ? hero_ui_gtk.font_description_get_family(description) : NULL;
+    if (family == NULL) {
+        return;
+    }
+    size = (hero_ui_gtk.font_description_get_size(description) + HERO_UI_GTK_PANGO_SCALE / 2) / HERO_UI_GTK_PANGO_SCALE;
+    font.size = size < HERO_UI_GTK_FONT_LEAST ? HERO_UI_GTK_FONT_LEAST : size > HERO_UI_GTK_FONT_MOST ? HERO_UI_GTK_FONT_MOST : size;
+    font.bold = hero_ui_gtk.font_description_get_weight(description) >= HERO_UI_GTK_WEIGHT_BOLD;
+    font.italic = hero_ui_gtk.font_description_get_style(description) != 0;
+    font.family = (char *)(uintptr_t)family;
+    text = hero_ui_gtk_font_describe(&font);
+    if (text != NULL && (widget->label == NULL || strcmp(text, widget->label) != 0)) {
+        hero_layer_free(widget->label);
+        widget->label = text;
+        hero_ui_tell(HERO_UI_EVENT_TEXT, widget->id, 0, 0);
+        return;
+    }
+    hero_layer_free(text);
+}
+
+/* The family of the system's own font (`gtk-font-name`'s first), as the font
+ * map lists it, else the map's own "Sans"; in a block of `hero_layer_alloc`. */
+static char *hero_ui_gtk_font_system(void *widget) {
+    void *settings = hero_ui_gtk.settings_get_default();
+    char *name = NULL;
+    char *found = NULL;
+    bool bold;
+    bool italic;
+    bool failed;
+
+    if (settings != NULL) {
+        hero_ui_gtk.object_get(settings, "gtk-font-name", &name, NULL);
+    }
+    if (name != NULL) {
+        void *description = hero_ui_gtk.font_description_from_string(name);
+        const char *family = description != NULL ? hero_ui_gtk.font_description_get_family(description) : NULL;
+        char first[256];
+        size_t length = 0;
+
+        while (family != NULL && family[length] != '\0' && family[length] != ',' && length + 1 < sizeof first) {
+            first[length] = family[length];
+            length += 1;
+        }
+        first[length] = '\0';
+        if (length > 0) {
+            found = hero_ui_gtk_font_family(widget, first, &bold, &italic, &failed);
+        }
+        if (description != NULL) {
+            hero_ui_gtk.font_description_free(description);
+        }
+        hero_ui_gtk.g_free(name);
+    }
+    return found != NULL ? found : hero_ui_gtk_font_family(widget, "Sans", &bold, &italic, &failed);
+}
+
+static bool hero_ui_gtk_make_font(hero_ui_native *made) {
+    void *dialog = hero_ui_gtk.font_dialog_new();
+    hero_ui_gtk_font font = {13, false, false, NULL};
+
+    if (dialog == NULL) {
+        return false;
+    }
+    /* The button takes the dialog's reference. */
+    made->widget = hero_ui_gtk.font_dialog_button_new(dialog);
+    if (made->widget == NULL) {
+        return false;
+    }
+    font.family = hero_ui_gtk_font_system(made->widget);
+    if (font.family == NULL) {
+        return false;
+    }
+    if (hero_ui_gtk_font_apply(made, &font) != HERO_UI_OK) {
+        hero_layer_free(font.family);
+        return false;
+    }
+    hero_layer_free(font.family);
+    hero_ui_gtk_connect(made->widget, "notify::font-desc", (hero_ui_gtk_callback)hero_ui_gtk_fonted, made->id);
+    return true;
+}
+
 /* -- The arm ------------------------------------------------------------------ */
 
 /* Whether `name` names something in the environment. */
@@ -2302,9 +3049,10 @@ int64_t hero_ui_arm_open(void) {
 }
 
 /* Whether a frame, a window or one of the boxes the system draws whose
- * content holds widgets: a page, a scrolled box, a pane, a group box. */
+ * content holds widgets: a page, a scrolled box, a pane, a group box, a
+ * toolbar, a status bar. */
 static bool hero_ui_gtk_is_frame(int64_t kind) {
-    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE || kind == HERO_UI_GROUP;
+    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE || kind == HERO_UI_GROUP || kind == HERO_UI_TOOLBAR || kind == HERO_UI_STATUS_BAR;
 }
 
 /* The `GtkFixed` `widget` stands in: the content of the window, page,
@@ -2316,13 +3064,35 @@ static void *hero_ui_gtk_container(const hero_ui_native *widget) {
     return owner != NULL && hero_ui_gtk_is_frame(owner->kind) ? owner->fixed : NULL;
 }
 
+/* Whether window `window` holds a bar of `kind` already, the most it holds. */
+static bool hero_ui_gtk_holds_bar(const hero_ui_native *window, int64_t kind) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        const hero_ui_native *each = hero_ui_at(at);
+
+        if (each != NULL && each->parent == window->id && each->kind == kind) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* Whether `owner` may hold a widget of `kind`: a menu's items in a menu or a
  * context menu, a menu in a window's bar, a menu or a context menu, a page
  * in tabs, a pane in a split holding fewer than two, one context menu on a
- * widget that is none of the menus' and holds none, and every other kind in
- * a frame. */
+ * widget that is none of the menus' and holds none, a toolbar or a status
+ * bar in a window holding none of its kind, the kinds a toolbar and a status
+ * bar hold in each, and every other kind in a frame. */
 static bool hero_ui_gtk_takes(const hero_ui_native *owner, int64_t kind) {
+    if (owner->kind == HERO_UI_TOOLBAR) {
+        return kind == HERO_UI_BUTTON || kind == HERO_UI_CHECKBOX || kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_COMBO || kind == HERO_UI_SEPARATOR;
+    }
+    if (owner->kind == HERO_UI_STATUS_BAR) {
+        return kind == HERO_UI_LABEL || kind == HERO_UI_PROGRESS || kind == HERO_UI_BUTTON || kind == HERO_UI_IMAGE || kind == HERO_UI_SEPARATOR;
+    }
     switch (kind) {
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        return owner->kind == HERO_UI_WINDOW && !hero_ui_gtk_holds_bar(owner, kind);
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR:
         return owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
@@ -2580,6 +3350,13 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     if (kind == HERO_UI_TABLE && (hero_ui_gtk.column_view_sorter_get_primary_sort_column == NULL || hero_ui_gtk.column_view_sorter_get_primary_sort_order == NULL)) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "a table's sort is read from GTK 4.10's gtk_column_view_sorter_get_primary_sort_column, which this GTK lacks");
     }
+    if (kind == HERO_UI_COLOR_WELL && (hero_ui_gtk.color_dialog_new == NULL || hero_ui_gtk.color_dialog_set_with_alpha == NULL || hero_ui_gtk.color_dialog_button_new == NULL || hero_ui_gtk.color_dialog_button_set_rgba == NULL ||
+                                       hero_ui_gtk.color_dialog_button_get_rgba == NULL)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a colour well is GTK 4.10's GtkColorDialogButton, which this GTK lacks");
+    }
+    if (kind == HERO_UI_FONT_BUTTON && (hero_ui_gtk.font_dialog_new == NULL || hero_ui_gtk.font_dialog_button_new == NULL || hero_ui_gtk.font_dialog_button_set_font_desc == NULL || hero_ui_gtk.font_dialog_button_get_font_desc == NULL)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a font button is GTK 4.10's GtkFontDialogButton, which this GTK lacks");
+    }
     if (kind != HERO_UI_WINDOW && kind != HERO_UI_TRAY) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
@@ -2695,6 +3472,21 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         break;
     case HERO_UI_SEPARATOR:
         made->widget = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
+        break;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        ok = hero_ui_gtk_make_bar(made);
+        break;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        ok = hero_ui_gtk_make_picker(made);
+        break;
+    case HERO_UI_COLOR_WELL:
+        ok = hero_ui_gtk_make_color(made);
+        break;
+    case HERO_UI_FONT_BUTTON:
+        ok = hero_ui_gtk_make_font(made);
         break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
@@ -2840,6 +3632,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_PAGE:
     case HERO_UI_GROUP:
     case HERO_UI_TRAY:
+    case HERO_UI_FONT_BUTTON:
         break;
     default:
         return HERO_UI_INVALID;
@@ -2847,6 +3640,12 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     made = hero_ui_gtk_text(text, count, false);
     if (made == NULL) {
         return HERO_UI_LIMIT;
+    }
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        int64_t answer = hero_ui_gtk_font_text(widget, made, false);
+
+        hero_layer_free(made);
+        return answer;
     }
     hero_ui_mute(1);
     switch (widget->kind) {
@@ -3100,6 +3899,14 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
         widget->value = value;
         hero_ui_gtk.spin_button_set_value(widget->widget, (double)value);
         break;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        answer = hero_ui_gtk_picker_set(widget, value, false);
+        break;
+    case HERO_UI_COLOR_WELL:
+        answer = hero_ui_gtk_color_set(widget, value, false);
+        break;
     case HERO_UI_EDITABLE_COMBO:
         if (value < -1 || value >= widget->items) {
             answer = HERO_UI_INVALID;
@@ -3164,6 +3971,12 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
         widget->least = least;
         widget->most = most;
         return HERO_UI_OK;
+    }
+    if (hero_ui_gtk_is_picker(widget->kind)) {
+        return hero_ui_gtk_picker_range(widget, least, most);
+    }
+    if (widget->kind == HERO_UI_COLOR_WELL) {
+        return hero_ui_refused(HERO_UI_INVALID, "a colour well has no range: its value is a colour, four sRGB bytes");
     }
     if (widget->kind == HERO_UI_SPIN) {
         if (least < -HERO_UI_GTK_EXACT || most > HERO_UI_GTK_EXACT) {
@@ -3512,6 +4325,9 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
     }
     hero_ui_gtk.fixed_move(container, widget->widget, (double)hero_ui_gtk_int(x), (double)hero_ui_gtk_int(y));
     hero_ui_gtk.widget_set_size_request(widget->widget, hero_ui_gtk_int(width), hero_ui_gtk_int(height));
+    if (widget->kind == HERO_UI_TOOLBAR || widget->kind == HERO_UI_STATUS_BAR) {
+        hero_ui_gtk_bar_rule(widget, width, height);
+    }
     if (widget->kind == HERO_UI_RADIO_GROUP) {
         hero_ui_gtk_put_radios(widget);
     }
@@ -3566,6 +4382,11 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_SPIN:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
+    case HERO_UI_FONT_BUTTON:
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_EDITABLE_COMBO:
@@ -3621,6 +4442,12 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         *width = 1;
         *height = 1;
         return HERO_UI_OK;
+    case HERO_UI_TOOLBAR:
+    case HERO_UI_STATUS_BAR:
+        /* The room it takes of the content: no width of its own, the
+         * window's across, and the height its items and its padding make. */
+        *height = hero_ui_gtk_bar_height(widget);
+        return HERO_UI_OK;
     case HERO_UI_WEBVIEW:
         /* The headless side's size of a web view, where nothing else decides
          * it (`ui/internal/sizes.hero`). */
@@ -3648,6 +4475,15 @@ int64_t hero_ui_arm_text(int64_t id, uint8_t *buffer, int64_t count, int64_t *le
         *length = (int64_t)bytes;
         if (bytes > 0 && *length <= count) {
             memcpy(buffer, text, bytes);
+        }
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_FONT_BUTTON) {
+        size_t bytes = widget->label != NULL ? strlen(widget->label) : 0;
+
+        *length = (int64_t)bytes;
+        if (bytes > 0 && *length <= count) {
+            memcpy(buffer, widget->label, bytes);
         }
         return HERO_UI_OK;
     }
@@ -3707,6 +4543,10 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
     case HERO_UI_SPIN:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_COLOR_WELL:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -3875,6 +4715,22 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                 hero_ui_gtk.editable_insert_text(hero_ui_gtk_entry_of(widget), typed, (int)count, &position);
             }
             hero_layer_free(typed);
+        } else if (widget->kind == HERO_UI_FONT_BUTTON) {
+            char *typed = hero_ui_gtk_text(text, count, false);
+
+            /* Picked as the person does: the button's font changed, told
+             * where it is not the one held. */
+            if (typed == NULL) {
+                answer = HERO_UI_LIMIT;
+            } else if (usable) {
+                answer = hero_ui_gtk_font_text(widget, typed, true);
+            } else {
+                hero_ui_gtk_font probe = {0, false, false, NULL};
+
+                answer = hero_ui_gtk_font_check(widget->widget, typed, &probe);
+                hero_layer_free(probe.family);
+            }
+            hero_layer_free(typed);
         } else if (widget->kind == HERO_UI_TEXT_AREA) {
             char *typed = hero_ui_gtk_text(text, count, false);
 
@@ -3950,6 +4806,20 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_VALUE:
         if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
             answer = hero_ui_gtk_act(kind, widget, value, second, usable);
+        } else if (widget->kind == HERO_UI_COLOR_WELL) {
+            /* Picked as the person does: the button's colour changed, and
+             * told where it is not the one held. */
+            answer = value < 0 || value > 0xFFFFFFFFLL ? hero_ui_gtk_color_set(widget, value, false) : HERO_UI_OK;
+            if (answer == HERO_UI_OK && usable) {
+                answer = hero_ui_gtk_color_set(widget, value, true);
+            }
+        } else if (hero_ui_gtk_is_picker(widget->kind)) {
+            /* Picked as the person does: the moment shown and told, where it
+             * is not the one held. */
+            answer = hero_ui_gtk_picker_check(widget, value);
+            if (answer == HERO_UI_OK && usable) {
+                answer = hero_ui_gtk_picker_set(widget, value, true);
+            }
         } else if (widget->kind == HERO_UI_SPIN) {
             if (value < widget->least || value > widget->most) {
                 answer = HERO_UI_INVALID;
@@ -4319,6 +5189,61 @@ static bool hero_ui_gtk_make_group(hero_ui_native *made) {
     made->insets[3] = made->insets[0] < high ? made->insets[0] : 0;
     made->insets[1] = high - made->insets[3];
     return true;
+}
+
+/* The room a bar leaves inside it on every side, in points: the face's
+ * `BAR_PADDING`, which places each item from the bar's corner. */
+#define HERO_UI_GTK_BAR_PADDING 4
+
+/* A toolbar or a status bar: a `GtkFixed` the items stand in, a hairline
+ * across its inner edge (the foot of a toolbar, the head of a status bar)
+ * drawn by a separator the arm keeps in it. GTK 4 removed `GtkToolbar` and
+ * `GtkStatusbar` holds texts only, and a CSS class of the theme's would add a
+ * padding the face's places do not count, so the bar carries none. */
+static bool hero_ui_gtk_make_bar(hero_ui_native *made) {
+    made->widget = hero_ui_gtk.fixed_new();
+    made->fixed = made->widget;
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->inner = hero_ui_gtk.separator_new(HERO_GTK_ORIENTATION_HORIZONTAL);
+    if (made->inner == NULL) {
+        return false;
+    }
+    hero_ui_gtk.widget_set_overflow(made->fixed, HERO_GTK_OVERFLOW_HIDDEN);
+    hero_ui_gtk.fixed_put(made->fixed, made->inner, 0, 0);
+    return true;
+}
+
+/* The height bar `bar` is drawn at: its tallest item, or what one of its
+ * own kind's first item would be (a button in a toolbar, a label in a status
+ * bar) where it is taller, and the padding above and below. */
+static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar) {
+    void *probe = bar->kind == HERO_UI_TOOLBAR ? hero_ui_gtk.button_new_with_label("Ag") : hero_ui_gtk.label_new("Ag");
+    int64_t tall = 0;
+
+    if (probe != NULL) {
+        /* Unparented, so floating: sunk, measured and let go. */
+        (void)hero_ui_gtk.object_ref_sink(probe);
+        tall = hero_ui_gtk_natural(probe).height;
+        hero_ui_gtk.object_unref(probe);
+    }
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        const hero_ui_native *each = hero_ui_at(at);
+        int64_t wide = 0;
+        int64_t high = 0;
+
+        if (each != NULL && each->parent == bar->id && hero_ui_arm_preferred(each->id, &wide, &high) == HERO_UI_OK && high > tall) {
+            tall = high;
+        }
+    }
+    return tall + 2 * HERO_UI_GTK_BAR_PADDING;
+}
+
+/* Lays the hairline of bar `bar` across the place it was given. */
+static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height) {
+    hero_ui_gtk.fixed_move(bar->fixed, bar->inner, 0, bar->kind == HERO_UI_TOOLBAR && height > 0 ? (double)(hero_ui_gtk_int(height) - 1) : 0);
+    hero_ui_gtk.widget_set_size_request(bar->inner, hero_ui_gtk_int(width), 1);
 }
 
 static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner) {
@@ -10903,15 +11828,14 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the separator, the group box, the editable combo box, the
- * spin and every act of `hero_ui.h` is drawn here, so neither switch refuses one before `create` and
- * `inject`, which check each. */
+/* Every kind of `hero_ui.h` and every act of it is
+ * drawn here, so neither switch refuses one before `create` and `inject`,
+ * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the separator but the group box, the spin and the
-     * editable combo box is drawn here: one the
-     * contract gains is refused by name until this arm makes it. */
-    return kind <= HERO_UI_SEPARATOR || kind == HERO_UI_GROUP || kind == HERO_UI_SPIN || kind == HERO_UI_EDITABLE_COMBO;
+    /* No kind past the font button is drawn here: one the contract gains is
+     * refused by name until this arm makes it. */
+    return kind <= HERO_UI_FONT_BUTTON;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
