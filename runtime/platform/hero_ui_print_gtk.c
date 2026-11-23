@@ -606,7 +606,7 @@ int64_t hero_ui_print_gtk_web(void *view, void *window, int64_t dialog, int64_t 
 
 int64_t hero_ui_print_gtk_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
     hero_ui_print_gtk_shown *shown = hero_ui_print_gtk_named(dialog);
-    hero_ui_print_settings chosen;
+    hero_ui_print_settings chosen = {0};
 
     if (shown == NULL || shown->ended || shown->injected || shown->cancelled) {
         return hero_ui_print_gtk_refuse(HERO_UI_PRINT_NOT_FOUND, "no such print dialog stands");
