@@ -250,6 +250,23 @@ typedef struct {
     _Atomic bool paused;
 } hero_wasapi_stream;
 
+/* The kind of a refusal to find a device. The default endpoint of a direction
+ * that has none is `not_found`. For a named one the system answers
+ * `E_NOTFOUND` to an identifier of its own form that no endpoint has, and
+ * `E_INVALIDARG` to a string that is not an endpoint's identifier at all, which
+ * is every identifier a program writes that the system did not give it: both
+ * are a device the system does not know. `E_OUTOFMEMORY` is the layer's
+ * `limit`. */
+static int64_t hero_wasapi_found_kind(HRESULT status, bool named) {
+    if (status == E_OUTOFMEMORY) {
+        return HERO_AUDIO_LIMIT;
+    }
+    if (!named || status == HERO_WASAPI_NOT_FOUND || status == E_INVALIDARG) {
+        return HERO_AUDIO_NOT_FOUND;
+    }
+    return HERO_AUDIO_OTHER;
+}
+
 static void hero_wasapi_tell(hero_wasapi_stream *ws, int64_t kind, const char *asked, HRESULT status) {
     ws->kind = kind;
     ws->os = (int64_t)(uint32_t)status;
@@ -364,7 +381,7 @@ static DWORD WINAPI hero_wasapi_run(LPVOID given) {
         ws->kind = HERO_AUDIO_UNSUPPORTED;
         (void)snprintf(ws->words, sizeof ws->words, "this Windows has no audio endpoints this layer reaches");
     } else if (FAILED(status)) {
-        hero_wasapi_tell(ws, status == HERO_WASAPI_NOT_FOUND || ws->device == NULL ? HERO_AUDIO_NOT_FOUND : HERO_AUDIO_OTHER, "finding the device", status);
+        hero_wasapi_tell(ws, hero_wasapi_found_kind(status, ws->device != NULL), "finding the device", status);
     } else {
         IMMEndpoint *endpoint = NULL;
         EDataFlow its = flow;
