@@ -3288,18 +3288,6 @@ void hero_ui_arm_unwatch_fd(int64_t id) {
  * itself (`hero_ui_win32.c`): the event handle a set gives is waited on by its
  * own `MsgWaitForMultipleObjectsEx`, beside the window messages. */
 
-#else
-
-int64_t hero_ui_arm_watch_fd(int64_t fd, int64_t id) {
-    (void)fd;
-    (void)id;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer has the wait watch a set's descriptor on macOS and GTK 4 so far, and the GTK 4 arm has no such call yet");
-}
-
-void hero_ui_arm_unwatch_fd(int64_t id) {
-    (void)id;
-}
-
 #endif
 
 /* -1 with the failure of the poll layer's last call, `what` the call, told
@@ -3603,49 +3591,6 @@ int64_t hero_ui_arm_print_words(char *words, int64_t count) {
     length = strlen(words);
     return (int64_t)length;
 }
-
-#elif !defined(_WIN32)
-
-/* No C arm draws the print dialogs yet: each refuses in words of its own,
- * kept where the shared words are, and a print answered finds none shown.
- * An arm that draws them defines all five in its own member, over
- * `hero_ui_print_win32.c` or `hero_ui_print_gtk.c`, and its system leaves
- * this block's condition. */
-
-int64_t hero_ui_arm_print_show(int64_t dialog, int64_t window, int64_t page, const uint8_t *settings, int64_t count) {
-    (void)dialog;
-    (void)window;
-    (void)page;
-    (void)settings;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows the system's print and page-setup dialogs on macOS alone so far, and the GTK 4 arm has no such call");
-}
-
-int64_t hero_ui_arm_print_web(int64_t dialog, int64_t view, int64_t ask, const uint8_t *settings, int64_t count) {
-    (void)dialog;
-    (void)view;
-    (void)ask;
-    (void)settings;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer prints a web view's page on macOS alone so far, and the GTK 4 arm has no such call");
-}
-
-int64_t hero_ui_arm_print_answer(int64_t dialog, int64_t value, const uint8_t *settings, int64_t count) {
-    (void)dialog;
-    (void)value;
-    (void)settings;
-    (void)count;
-    return HERO_UI_NOT_FOUND;
-}
-
-void hero_ui_arm_print_end(int64_t window) {
-    (void)window;
-}
-
-int64_t hero_ui_arm_print_words(char *words, int64_t count) {
-    return hero_ui_arm_words(words, count);
-}
-
 
 #endif
 

@@ -155,7 +155,6 @@ typedef struct {
     void (*set_page_setup)(hero_gtk_object *operation, hero_gtk_object *setup);
     hero_gtk_object *(*get_print_settings)(hero_gtk_object *operation);
     hero_gtk_object *(*get_page_setup)(hero_gtk_object *operation);
-    int (*run_dialog)(hero_gtk_object *operation, hero_gtk_object *parent);
     void (*print)(hero_gtk_object *operation);
 } hero_ui_print_gtk_webkit_functions;
 
@@ -251,7 +250,6 @@ static void hero_ui_print_gtk_webkit_load(void) {
     HERO_UI_PRINT_WEBKIT_FIND(set_page_setup, "webkit_print_operation_set_page_setup");
     HERO_UI_PRINT_WEBKIT_FIND(get_print_settings, "webkit_print_operation_get_print_settings");
     HERO_UI_PRINT_WEBKIT_FIND(get_page_setup, "webkit_print_operation_get_page_setup");
-    HERO_UI_PRINT_WEBKIT_FIND(run_dialog, "webkit_print_operation_run_dialog");
     HERO_UI_PRINT_WEBKIT_FIND(print, "webkit_print_operation_print");
     hero_ui_print_gtk_webkit_found = ok;
 }
@@ -262,8 +260,9 @@ typedef struct hero_ui_print_gtk_shown {
     int64_t dialog;
     void *window;
     hero_gtk_object *box;
-    /* A web view's print: its WebKit operation, where `box` is NULL, and
-     * whether it asked the person through GTK's print dialog. */
+    /* A web view's print: its WebKit operation, and whether it asked the
+     * person through GTK's print dialog, which `box` is until the person
+     * has answered it. */
     hero_gtk_object *operation;
     bool asked;
     void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t);
@@ -539,15 +538,43 @@ static void hero_ui_print_gtk_web_failed(hero_gtk_object *operation, hero_gtk_er
     hero_ui_print_gtk_web_done(data, false);
 }
 
-/* Whether `shown` is still on this thread's list: a print may have ended
- * inside a call that ran GTK's loop. */
-static bool hero_ui_print_gtk_listed(const hero_ui_print_gtk_shown *shown) {
-    for (const hero_ui_print_gtk_shown *s = hero_ui_print_gtk_list; s != NULL; s = s->next) {
-        if (s == shown) {
-            return true;
-        }
+/* The person answered the print dialog a web view's print opened, or the
+ * print was ended while it stood: the dialog is let go, and where the person
+ * chose (or an injected answer did) the operation takes the settings and the
+ * page setup chosen and prints, ending by WebKit's `finished` or `failed`;
+ * else it ends here, queued as a cancel unless it was ended first. */
+static void hero_ui_print_gtk_web_setup(hero_gtk_object *source, hero_gtk_object *result, void *data) {
+    const hero_ui_print_gtk_functions *f = &hero_ui_print_gtk_found_functions;
+    hero_ui_print_gtk_shown *shown = data;
+    hero_gtk_error *error = NULL;
+    hero_gtk_object *setup = f->dialog_setup_finish(source, result, &error);
+
+    if (error != NULL) {
+        f->error_free(error);
     }
-    return false;
+    f->object_unref(shown->box);
+    shown->box = NULL;
+    if (shown->ended || shown->cancelled || setup == NULL) {
+        if (setup != NULL) {
+            f->setup_unref(setup);
+        }
+        hero_ui_print_gtk_web_done(shown, false);
+        return;
+    }
+    if (shown->injected) {
+        hero_gtk_object *print_settings, *page_setup;
+
+        hero_ui_print_gtk_objects(&shown->given, &print_settings, &page_setup);
+        hero_ui_print_gtk_webkit.set_print_settings(shown->operation, print_settings);
+        hero_ui_print_gtk_webkit.set_page_setup(shown->operation, page_setup);
+        f->object_unref(print_settings);
+        f->object_unref(page_setup);
+    } else {
+        hero_ui_print_gtk_webkit.set_print_settings(shown->operation, f->setup_get_print_settings(setup));
+        hero_ui_print_gtk_webkit.set_page_setup(shown->operation, f->setup_get_page_setup(setup));
+    }
+    f->setup_unref(setup);
+    hero_ui_print_gtk_webkit.print(shown->operation);
 }
 
 int64_t hero_ui_print_gtk_web(void *view, void *window, int64_t dialog, int64_t ask, const uint8_t *settings, int64_t count, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t)) {
@@ -590,14 +617,18 @@ int64_t hero_ui_print_gtk_web(void *view, void *window, int64_t dialog, int64_t 
     shown->next = hero_ui_print_gtk_list;
     hero_ui_print_gtk_list = shown;
     if (ask == 1) {
-        /* GTK's print dialog, run until the person answers (GTK's loop runs
-         * meanwhile): 0 prints, which ends by `finished` or `failed`, and
-         * 1 is the person's Cancel. */
-        int response = hero_ui_print_gtk_webkit.run_dialog(shown->operation, window);
-
-        if (response != 0 && hero_ui_print_gtk_listed(shown)) {
-            hero_ui_print_gtk_web_done(shown, false);
-        }
+        /* GTK's own print dialog, shown as `show` shows it, so the call
+         * answers at once and the person answers later (WebKitGTK's
+         * `webkit_print_operation_run_dialog` would run its own loop inside
+         * this call until the person had): the page is printed from the
+         * callback, with what the person chose. */
+        shown->box = f->dialog_new();
+        hero_ui_print_gtk_objects(&shown->given, &print_settings, &page_setup);
+        f->dialog_set_print_settings(shown->box, print_settings);
+        f->dialog_set_page_setup(shown->box, page_setup);
+        f->object_unref(print_settings);
+        f->object_unref(page_setup);
+        f->dialog_setup(shown->box, window, NULL, hero_ui_print_gtk_web_setup, shown);
     } else {
         hero_ui_print_gtk_webkit.print(shown->operation);
     }
