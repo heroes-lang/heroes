@@ -28,7 +28,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 
 #include "hero_layer_alloc.h"
 
@@ -38,6 +37,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
