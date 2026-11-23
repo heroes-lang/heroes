@@ -416,6 +416,13 @@ typedef struct hero_ui_gtk_functions {
     void (*signal_emit_by_name)(void *instance, const char *signal, ...);
     void (*object_unref)(void *object);
     void *(*object_ref_sink)(void *object);
+    /* A picker's calendar and the date it is shown at, and the label of the
+     * button that opens it. */
+    void *(*calendar_new)(void);
+    void (*calendar_select_day)(void *calendar, void *date);
+    void *(*date_time_new_utc)(int year, int month, int day, int hour, int minute, double seconds);
+    void (*date_time_unref)(void *date);
+    void (*menu_button_set_label)(void *button, const char *label);
     void *(*menu_new)(void);
     void (*menu_remove_all)(void *menu);
     void (*menu_append_section)(void *menu, const char *label, void *section);
@@ -929,6 +936,11 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(signal_emit_by_name, "g_signal_emit_by_name");
     HERO_UI_GTK_NEED(object_unref, "g_object_unref");
     HERO_UI_GTK_NEED(object_ref_sink, "g_object_ref_sink");
+    HERO_UI_GTK_NEED(calendar_new, "gtk_calendar_new");
+    HERO_UI_GTK_NEED(calendar_select_day, "gtk_calendar_select_day");
+    HERO_UI_GTK_NEED(date_time_new_utc, "g_date_time_new_utc");
+    HERO_UI_GTK_NEED(date_time_unref, "g_date_time_unref");
+    HERO_UI_GTK_NEED(menu_button_set_label, "gtk_menu_button_set_label");
     HERO_UI_GTK_NEED(menu_new, "g_menu_new");
     HERO_UI_GTK_NEED(menu_remove_all, "g_menu_remove_all");
     HERO_UI_GTK_NEED(menu_append_section, "g_menu_append_section");
@@ -1416,6 +1428,10 @@ struct hero_ui_native {
     char *seen;
     char *completing;
     bool setting;
+    /* A picker's calendar and its hours, minutes and seconds (A DATE AND A
+     * TIME PICKED), NULL for a part its kind has not; its drop is the button
+     * that opens the calendar. */
+    void *parts[4];
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1442,6 +1458,12 @@ static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *item
 static void hero_ui_gtk_close_more(void);
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
 static hero_ui_gtk_size hero_ui_gtk_natural(void *widget);
+static bool hero_ui_gtk_make_picker(hero_ui_native *made);
+static void hero_ui_gtk_picker_show(hero_ui_native *widget);
+static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t value);
+static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, bool told);
+static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most);
+static bool hero_ui_gtk_is_picker(int64_t kind);
 static bool hero_ui_gtk_make_bar(hero_ui_native *made);
 static int64_t hero_ui_gtk_bar_height(const hero_ui_native *bar);
 static void hero_ui_gtk_bar_rule(const hero_ui_native *bar, int64_t width, int64_t height);
@@ -1544,6 +1566,11 @@ static hero_ui_native *hero_ui_gtk_of(void *data, void *instance) {
     if (widget->widget == instance || widget->inner == instance || widget->buffer == instance || widget->action == instance || widget->area == instance || widget->selection == instance || widget->sorter == instance ||
         widget->gesture == instance || widget->choices == instance) {
         return widget;
+    }
+    for (int i = 0; i < 4; i += 1) {
+        if (widget->parts[i] != NULL && widget->parts[i] == instance) {
+            return widget;
+        }
     }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
         if (widget->radios[i] == instance) {
@@ -2267,6 +2294,277 @@ static void hero_ui_gtk_spun(void *spin, void *data) {
     }
 }
 
+/* -- A DATE AND A TIME PICKED ------------------------------------------------
+ *
+ * GTK 4 has no date or time picker widget, so a picker is a `GtkBox` of the
+ * parts its kind shows: a date's is a menu button, labelled with the day as
+ * year-month-day, whose popover holds a `GtkCalendar`; a time's is three spin
+ * buttons (hours 0 to 23, minutes and seconds 0 to 59, two digits each)
+ * between colons; a date and time picker has both. THE VALUE is the
+ * calendar's fields read as UTC, in seconds (`hero_ui.h`): the day's days
+ * since 1970 counted in the proleptic Gregorian calendar by plain arithmetic,
+ * so no `GDateTime` is read and no zone is involved; GLib's `GDateTime` is
+ * made in UTC only to give the calendar a day to show. `least` and `most`
+ * are the bounds, which the arm enforces for the person, since neither the
+ * calendar nor a spin takes bounds across a whole moment: a pick outside
+ * them is put back, muted, the value held and shown again. */
+
+#define HERO_UI_GTK_DAY 86400
+#define HERO_UI_GTK_PICKER_DATE_LEAST (-62135596800LL)
+#define HERO_UI_GTK_PICKER_DATE_MOST 253402214400LL
+#define HERO_UI_GTK_PICKER_MOMENT_MOST 253402300799LL
+
+static bool hero_ui_gtk_is_picker(int64_t kind) {
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER;
+}
+
+/* The whole days from `seconds`' day back to 1970-01-01, rounded down: the
+ * day a moment of seconds before 1970 is in. */
+static int64_t hero_ui_gtk_days_of(int64_t seconds) {
+    return seconds >= 0 ? seconds / HERO_UI_GTK_DAY : -((-seconds + HERO_UI_GTK_DAY - 1) / HERO_UI_GTK_DAY);
+}
+
+/* Days from 1970-01-01 to the day `year`-`month`-`day` (month 1 to 12), in
+ * the proleptic Gregorian calendar. */
+static int64_t hero_ui_gtk_days_from(int64_t year, int64_t month, int64_t day) {
+    int64_t y = month <= 2 ? year - 1 : year;
+    int64_t era = (y >= 0 ? y : y - 399) / 400;
+    int64_t of_era = y - era * 400;
+    int64_t of_year = (153 * (month > 2 ? month - 3 : month + 9) + 2) / 5 + day - 1;
+    int64_t of_days = of_era * 365 + of_era / 4 - of_era / 100 + of_year;
+
+    return era * 146097 + of_days - 719468;
+}
+
+/* The year, month (1 to 12) and day of the day `days` from 1970-01-01. */
+static void hero_ui_gtk_civil_of(int64_t days, int64_t *year, int64_t *month, int64_t *day) {
+    int64_t z = days + 719468;
+    int64_t era = (z >= 0 ? z : z - 146096) / 146097;
+    int64_t of_era = z - era * 146097;
+    int64_t of_year_era = (of_era - of_era / 1460 + of_era / 36524 - of_era / 146096) / 365;
+    int64_t of_year = of_era - (365 * of_year_era + of_year_era / 4 - of_year_era / 100);
+    int64_t shifted = (5 * of_year + 2) / 153;
+
+    *day = of_year - (153 * shifted + 2) / 5 + 1;
+    *month = shifted < 10 ? shifted + 3 : shifted - 9;
+    *year = of_year_era + era * 400 + (*month <= 2 ? 1 : 0);
+}
+
+/* The hours, minutes or seconds spin `which` (1 to 3) of picker `widget`. */
+static int64_t hero_ui_gtk_clock_part(const hero_ui_native *widget, int which) {
+    double held = hero_ui_gtk.spin_button_get_value(widget->parts[which]);
+
+    return (int64_t)(held + 0.5);
+}
+
+/* The moment picker `widget` shows, false for one GTK's calendar shows that
+ * no moment of the layer is (a year past 9999). */
+static bool hero_ui_gtk_picker_read(const hero_ui_native *widget, int64_t *moment) {
+    int64_t days = 0;
+    int64_t seconds = 0;
+
+    if (widget->kind != HERO_UI_TIME_PICKER) {
+        int year = 0;
+        int month = 0;
+        int day = 0;
+
+        hero_ui_gtk.object_get(widget->parts[0], "year", &year, "month", &month, "day", &day, NULL);
+        if (year < 1 || year > 9999 || month < 0 || month > 11) {
+            return false;
+        }
+        days = hero_ui_gtk_days_from(year, month + 1, day < 1 ? 1 : day);
+    }
+    if (widget->kind != HERO_UI_DATE_PICKER) {
+        seconds = hero_ui_gtk_clock_part(widget, 1) * 3600 + hero_ui_gtk_clock_part(widget, 2) * 60 + hero_ui_gtk_clock_part(widget, 3);
+    }
+    *moment = days * HERO_UI_GTK_DAY + seconds;
+    return true;
+}
+
+/* Shows the day of picker `widget`'s value on its button, as year-month-day. */
+static void hero_ui_gtk_picker_label(const hero_ui_native *widget) {
+    int64_t year;
+    int64_t month;
+    int64_t day;
+    char label[32];
+
+    if (widget->kind == HERO_UI_TIME_PICKER) {
+        return;
+    }
+    hero_ui_gtk_civil_of(hero_ui_gtk_days_of(widget->value), &year, &month, &day);
+    (void)snprintf(label, sizeof label, "%04lld-%02lld-%02lld", (long long)year, (long long)month, (long long)day);
+    hero_ui_gtk.menu_button_set_label(widget->drop, label);
+}
+
+/* Shows picker `widget`'s value in its calendar, its spins and its button,
+ * muted, as the program's own set and a pick put back are. */
+static void hero_ui_gtk_picker_show(hero_ui_native *widget) {
+    int64_t day = hero_ui_gtk_days_of(widget->value);
+    int64_t seconds = widget->value - day * HERO_UI_GTK_DAY;
+
+    widget->setting = true;
+    hero_ui_mute(1);
+    if (widget->kind != HERO_UI_TIME_PICKER) {
+        int64_t year;
+        int64_t month;
+        int64_t of_month;
+        void *when;
+
+        hero_ui_gtk_civil_of(day, &year, &month, &of_month);
+        when = hero_ui_gtk.date_time_new_utc((int)year, (int)month, (int)of_month, 0, 0, 0);
+        if (when != NULL) {
+            hero_ui_gtk.calendar_select_day(widget->parts[0], when);
+            hero_ui_gtk.date_time_unref(when);
+        }
+        hero_ui_gtk_picker_label(widget);
+    }
+    if (widget->kind != HERO_UI_DATE_PICKER) {
+        hero_ui_gtk.spin_button_set_value(widget->parts[1], (double)(seconds / 3600));
+        hero_ui_gtk.spin_button_set_value(widget->parts[2], (double)(seconds / 60 % 60));
+        hero_ui_gtk.spin_button_set_value(widget->parts[3], (double)(seconds % 60));
+    }
+    hero_ui_mute(-1);
+    widget->setting = false;
+}
+
+/* The person picked: a day in the calendar, or a number in a spin. Told once
+ * where the moment is not the one held; a moment outside the bounds is put
+ * back, and one the layer has no number for. */
+static void hero_ui_gtk_picked(void *instance, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, instance);
+    int64_t moment = 0;
+
+    if (widget == NULL || !hero_ui_gtk_is_picker(widget->kind) || widget->setting) {
+        return;
+    }
+    if (!hero_ui_gtk_picker_read(widget, &moment) || moment < widget->least || moment > widget->most) {
+        hero_ui_gtk_picker_show(widget);
+        return;
+    }
+    if (moment != widget->value) {
+        widget->value = moment;
+        hero_ui_gtk_picker_label(widget);
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, moment, 0);
+    }
+}
+
+/* A spin of a time shows its number in two digits. */
+static int hero_ui_gtk_clock_output(void *spin, void *data) {
+    char text[16];
+
+    (void)data;
+    (void)snprintf(text, sizeof text, "%02d", (int)(hero_ui_gtk.spin_button_get_value(spin) + 0.5));
+    hero_ui_gtk.editable_set_text(spin, text);
+    return 1;
+}
+
+static bool hero_ui_gtk_make_picker(hero_ui_native *made) {
+    made->widget = hero_ui_gtk.box_new(HERO_GTK_ORIENTATION_HORIZONTAL, 6);
+    if (made->widget == NULL) {
+        return false;
+    }
+    made->least = made->kind == HERO_UI_TIME_PICKER ? 0 : HERO_UI_GTK_PICKER_DATE_LEAST;
+    made->most = made->kind == HERO_UI_DATE_PICKER ? HERO_UI_GTK_PICKER_DATE_MOST : made->kind == HERO_UI_TIME_PICKER ? HERO_UI_GTK_DAY - 1 : HERO_UI_GTK_PICKER_MOMENT_MOST;
+    made->value = 0;
+    if (made->kind != HERO_UI_TIME_PICKER) {
+        void *popover = hero_ui_gtk.popover_new();
+
+        made->drop = hero_ui_gtk.menu_button_new();
+        made->parts[0] = hero_ui_gtk.calendar_new();
+        if (popover == NULL || made->drop == NULL || made->parts[0] == NULL) {
+            return false;
+        }
+        hero_ui_gtk.popover_set_child(popover, made->parts[0]);
+        hero_ui_gtk.menu_button_set_popover(made->drop, popover);
+        hero_ui_gtk.box_append(made->widget, made->drop);
+        for (const char *signal = "day-selected"; signal != NULL;) {
+            hero_ui_gtk_connect(made->parts[0], signal, (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
+            signal = strcmp(signal, "day-selected") == 0 ? "next-month" : strcmp(signal, "next-month") == 0 ? "prev-month" : strcmp(signal, "prev-month") == 0 ? "next-year" : strcmp(signal, "next-year") == 0 ? "prev-year" : NULL;
+        }
+    }
+    if (made->kind != HERO_UI_DATE_PICKER) {
+        for (int which = 1; which <= 3; which += 1) {
+            made->parts[which] = hero_ui_gtk.spin_button_new_with_range(0, which == 1 ? 23 : 59, 1);
+            if (made->parts[which] == NULL) {
+                return false;
+            }
+            hero_ui_gtk.spin_button_set_digits(made->parts[which], 0);
+            hero_ui_gtk.spin_button_set_numeric(made->parts[which], 1);
+            hero_ui_gtk_connect(made->parts[which], "output", (hero_ui_gtk_callback)hero_ui_gtk_clock_output, made->id);
+            hero_ui_gtk_connect(made->parts[which], "value-changed", (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
+            hero_ui_gtk.box_append(made->widget, made->parts[which]);
+            if (which < 3) {
+                hero_ui_gtk.box_append(made->widget, hero_ui_gtk.label_new(":"));
+            }
+        }
+    }
+    hero_ui_gtk_picker_show(made);
+    return true;
+}
+
+/* Whether a picker of `kind` holds `value` at all, apart from its bounds. */
+static bool hero_ui_gtk_picker_holds(int64_t kind, int64_t value) {
+    switch (kind) {
+    case HERO_UI_DATE_PICKER:
+        return value % HERO_UI_GTK_DAY == 0 && value >= HERO_UI_GTK_PICKER_DATE_LEAST && value <= HERO_UI_GTK_PICKER_DATE_MOST;
+    case HERO_UI_TIME_PICKER:
+        return value >= 0 && value < HERO_UI_GTK_DAY;
+    default:
+        return value >= HERO_UI_GTK_PICKER_DATE_LEAST && value <= HERO_UI_GTK_PICKER_MOMENT_MOST;
+    }
+}
+
+/* `invalid` with words where picker `widget` does not hold `value`: its kind
+ * does not, or its bounds do not. */
+static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t value) {
+    if (!hero_ui_gtk_picker_holds(widget->kind, value)) {
+        return hero_ui_refused(HERO_UI_INVALID, widget->kind == HERO_UI_DATE_PICKER ? "a date picker holds a whole day: a multiple of 86400 seconds, from year 1 to year 9999" : widget->kind == HERO_UI_TIME_PICKER ? "a time picker holds the seconds since midnight: 0 to 86399" : "a date and time picker holds a moment from year 1 to year 9999");
+    }
+    if (value < widget->least || value > widget->most) {
+        return hero_ui_refused(HERO_UI_INVALID, "the value is outside the bounds the picker was given");
+    }
+    return HERO_UI_OK;
+}
+
+/* Gives picker `widget` the moment `value`, told where `told` and it is not
+ * the one held, as the person's pick is; `invalid` with words for one the
+ * picker does not hold. */
+static int64_t hero_ui_gtk_picker_set(hero_ui_native *widget, int64_t value, bool told) {
+    int64_t answer = hero_ui_gtk_picker_check(widget, value);
+
+    if (answer != HERO_UI_OK) {
+        return answer;
+    }
+    if (told && value == widget->value) {
+        return HERO_UI_OK;
+    }
+    widget->value = value;
+    hero_ui_gtk_picker_show(widget);
+    if (told) {
+        hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, value, 0);
+    }
+    return HERO_UI_OK;
+}
+
+/* Bounds picker `widget` to `least` and `most`: each a value of its kind,
+ * the first below the second; the value held moved to the nearest end where
+ * it lies outside, silently. */
+static int64_t hero_ui_gtk_picker_range(hero_ui_native *widget, int64_t least, int64_t most) {
+    int64_t kept;
+
+    if (!hero_ui_gtk_picker_holds(widget->kind, least) || !hero_ui_gtk_picker_holds(widget->kind, most) || least >= most) {
+        return hero_ui_refused(HERO_UI_INVALID, "a picker's bounds are two values of its kind, the first below the second");
+    }
+    widget->least = least;
+    widget->most = most;
+    kept = widget->value < least ? least : widget->value > most ? most : widget->value;
+    if (kept != widget->value) {
+        widget->value = kept;
+        hero_ui_gtk_picker_show(widget);
+    }
+    return HERO_UI_OK;
+}
+
 /* -- The arm ------------------------------------------------------------------ */
 
 /* Whether `name` names something in the environment. */
@@ -2729,6 +3027,11 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_STATUS_BAR:
         ok = hero_ui_gtk_make_bar(made);
         break;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        ok = hero_ui_gtk_make_picker(made);
+        break;
     case HERO_UI_MENU:
         made->menu_model = hero_ui_gtk.menu_new();
         ok = made->menu_model != NULL;
@@ -3133,6 +3436,11 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
         widget->value = value;
         hero_ui_gtk.spin_button_set_value(widget->widget, (double)value);
         break;
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
+        answer = hero_ui_gtk_picker_set(widget, value, false);
+        break;
     case HERO_UI_EDITABLE_COMBO:
         if (value < -1 || value >= widget->items) {
             answer = HERO_UI_INVALID;
@@ -3197,6 +3505,9 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
         widget->least = least;
         widget->most = most;
         return HERO_UI_OK;
+    }
+    if (hero_ui_gtk_is_picker(widget->kind)) {
+        return hero_ui_gtk_picker_range(widget, least, most);
     }
     if (widget->kind == HERO_UI_SPIN) {
         if (least < -HERO_UI_GTK_EXACT || most > HERO_UI_GTK_EXACT) {
@@ -3602,6 +3913,9 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_SPIN:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
         size = hero_ui_gtk_natural(widget->widget);
         break;
     case HERO_UI_EDITABLE_COMBO:
@@ -3749,6 +4063,9 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
     case HERO_UI_SPIN:
+    case HERO_UI_DATE_PICKER:
+    case HERO_UI_TIME_PICKER:
+    case HERO_UI_DATE_TIME_PICKER:
         *value = widget->value;
         return HERO_UI_OK;
     case HERO_UI_COMBO:
@@ -3992,6 +4309,13 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_VALUE:
         if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
             answer = hero_ui_gtk_act(kind, widget, value, second, usable);
+        } else if (hero_ui_gtk_is_picker(widget->kind)) {
+            /* Picked as the person does: the moment shown and told, where it
+             * is not the one held. */
+            answer = hero_ui_gtk_picker_check(widget, value);
+            if (answer == HERO_UI_OK && usable) {
+                answer = hero_ui_gtk_picker_set(widget, value, true);
+            }
         } else if (widget->kind == HERO_UI_SPIN) {
             if (value < widget->least || value > widget->most) {
                 answer = HERO_UI_INVALID;
@@ -11000,14 +11324,14 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-/* Every kind up to the status bar and every act of `hero_ui.h` is drawn
- * here, so neither switch refuses one before `create` and `inject`, which
- * check each. */
+/* Every kind up to the date and time picker and every act of `hero_ui.h` is
+ * drawn here, so neither switch refuses one before `create` and `inject`,
+ * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the status bar is drawn here: one the contract gains is
-     * refused by name until this arm makes it. */
-    return kind <= HERO_UI_STATUS_BAR;
+    /* No kind past the date and time picker is drawn here: one the contract
+     * gains is refused by name until this arm makes it. */
+    return kind <= HERO_UI_DATE_TIME_PICKER;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
