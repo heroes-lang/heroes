@@ -34,7 +34,15 @@
 # 235's R7, `placed_trees.hero`): its files are the package author's, held
 # to their fingerprint and never edited here, so a character in one is read
 # where the package's source is written, the index its programs read, which
-# this walk reads.
+# this walk reads. **And an upstream's resources a generator keeps byte for
+# byte**, `generators/unicode_encodings/whatwg/`: the WHATWG Encoding
+# Standard's indexes, whose third column is the character a byte maps to
+# written as itself, C1 controls, soft hyphens, marks and fillers among them,
+# kept unchanged because the standard serves only its latest version. The
+# generator holds every file of the folder to the SHA-256 of its bytes as
+# fetched before it reads one (`layout.FETCHED_SHA256`), as a placed tree is
+# held to its fingerprint; its tables, which this walk reads, write each
+# character as a number.
 #
 # A record is never rewritten (`.claude/rules/records.md`), so a character
 # already in one stays, its correction underneath: `known` lists each by its
@@ -53,6 +61,11 @@ constant EXEMPT: [str]
         "tests/golden/"
         "tests/emission/"
         "seed/"
+        # An upstream's resources kept byte for byte, the Encoding Standard's
+        # indexes, which write each character as itself: held to a SHA-256 per
+        # file by `generators/unicode_encodings/`, which refuses to run on a
+        # file that moved, as a placed package tree is held to its fingerprint.
+        "generators/unicode_encodings/whatwg/"
     ]
 
 # How many documents the walk read, the count on the day it was written, so
@@ -491,6 +504,15 @@ test "a case's tree is exempt and a document is not"
     assert exempt("seed/heroes.c")
     assert !exempt("docs/panel/192-reports/historian.md")
     assert !exempt("tests/harness/suite_unseen.hero")
+
+test "an upstream's resources a generator holds to their bytes are exempt, and the generator beside them is not"
+    assert exempt("generators/unicode_encodings/whatwg/index-windows-1252.txt")
+    assert exempt("generators/unicode_encodings/whatwg/encodings.json")
+    assert !exempt("generators/unicode_encodings/main.hero")
+    assert !exempt("generators/unicode_encodings/layout.hero")
+    assert !exempt("generators/unicode_encodings/whatwgx/index-windows-1252.txt")
+    assert !exempt("generators/html_entities/whatwg/entities.json")
+    assert !exempt("packages/rebel/0.1.0/files/unicode/encodings/internal/single_byte_table.hero")
 
 # Panel 235's R7: the folder is left out by its name, at any depth, and
 # nothing beside it is, the package's own source least of all.

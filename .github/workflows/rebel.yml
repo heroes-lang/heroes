@@ -207,7 +207,8 @@ jobs:
             https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
           ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`.
+      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`;
+      # the generator holds each to the SHA-256 `layout.hero` pins.
       - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
         run: ./heroes run generators/unicode_encodings/main.hero -- check
 
