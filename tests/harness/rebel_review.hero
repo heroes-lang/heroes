@@ -4,11 +4,13 @@
 #     heroes run tests/harness/rebel_review.hero
 #
 # from the repository's root. It reads Rebel as the `rebel` suite does
-# (`suite_rebel.hero`) and prints every finding of every instrument, the ones
-# the review keeps with their reason and the ones it does not marked `OPEN`,
-# each instrument under its name with its count: the list the review's record
-# is written from, and the one its readers start from. The suite judges; this
-# prints, and exits 0 whatever it found, 2 where the tree could not be read.
+# (`suite_rebel.hero`), the compiler that prints each face's reference being
+# `shell.some_compiler`'s, as the net's own tests find theirs, and prints
+# every finding of every instrument, the ones the review keeps with their
+# reason and the ones it does not marked `OPEN`, each instrument under its
+# name with its count: the list the review's record is written from, and the
+# one its readers start from. The suite judges; this prints, and exits 0
+# whatever it found, 2 where the tree could not be read.
 # A program and not a verb of `heroes`, for the reason `main.hero` is one:
 # § 10's stopping rule.
 
@@ -23,7 +25,12 @@ function main()
     if shell.mkdir_all(scratch).is_err()
         print("rebel_review: cannot make " + scratch)
         exit(code: 2)
-    tree = suite_rebel.read_tree(scratch)
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        print("rebel_review: " + said(compiler))
+        exit(code: 2)
+    tree = suite_rebel.read_tree(scratch: scratch, compiler: compiler.must())
 
     if tree.is_err()
         print("rebel_review: " + said(tree))

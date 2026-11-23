@@ -218,6 +218,12 @@ constant FOREIGN_DATA: [str]
         # A certificate and a key in base64.
         "packages/rebel/0.1.0/files/tls/internal/fixture.hero numbered"
         "packages/rebel/0.1.0/files/x509/internal/samples.hero numbered"
+        # A key `openssl` wrote, in base64, `M1uTCEcv...`. **A row added after
+        # the list's day, 2026-11-23**: the file was born at M-rebel-library's
+        # step 110.1, so the base the paragraph above names could not have
+        # reported it; it is read apart as `samples.hero` beside it is, by its
+        # exact path, and `records/numbered` reported this file at that gate (`M1uT`).
+        "packages/rebel/0.1.0/files/x509/internal/openssl.hero numbered"
         # tiktoken's `o200k_base` ranks, their tokens in base64.
         "packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero numbered"
         # Unicode 17.0.0's names, `MENDE KIKAKUI SYLLABLE M172 MBO` among them.
@@ -4271,9 +4277,12 @@ constant NOT_LINKS: [str]
         "examples/markdown/sample.md spec/heroes-spec.md"
     ]
 
-# Measured 2026-10-24: 101 relative links in 19 living documents.
+# Measured 2026-10-24: 101 relative links in 19 living documents. **188 on
+# 2026-11-23**, raised on purpose as `floors.check` told it at the gate of
+# M-rebel-library's landing: this suite's `records/links` read "188 against a
+# floor of 101" on the merge of rebel-round at b9129d41b.
 constant LEAST_LINKS: i64
-    101
+    188
 
 # The dead links of one document: each relative link that climbs out of the
 # tree or lands on a path the tree does not hold, told with its line.

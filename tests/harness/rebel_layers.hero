@@ -41,9 +41,19 @@ record Placed
     key: str
     said: str
 
+# A finding as a reader finds its place: `<file>:<line>: <said>`, the file a
+# module's path with `.hero` where the finding stands in a module, and the
+# rules page's own path where it stands on a row of its table (`rebel_tree.RULES`,
+# a `.md`, which no module's path ends in): `.hero` written after a page's name
+# named a file that does not exist.
 function told(p: Placed) -> str
+    file: str @= p.path
+
+    if !strings.has_suffix(s: p.path, suffix: ".md")
+        file @ p.path + ".hero"
+
     if p.line > 0
-        return p.path + ".hero:" + p.line.to_str() + ": " + p.said
+        return file + ":" + p.line.to_str() + ": " + p.said
     return p.path + ": " + p.said
 
 # The packages whose `use` lines break the layers, each pair of a package and
@@ -244,7 +254,7 @@ test "a row whose column may use is not what its modules use is found"
     named: {str: [str]} = {"bytes": [], "compress": ["bytes", "hash"], "compress/zstd": [], "io": ["bytes"]}
     found = undeclared(rows: rows_fixture(), named: named, modules: modules)
     assert found.len() == 1 && found[0].key == "may use compress"
-    assert told(found[0]) == "examples-rebel/README.md: the row `compress` names in its column \"may use\" `hash` that no module of it uses, and not `io` that its modules use"
+    assert told(found[0]) == "examples-rebel/README.md:2: the row `compress` names in its column \"may use\" `hash` that no module of it uses, and not `io` that its modules use"
 
 # A folder's shared module (README § A2) has the lowest layer of the rows
 # under the folder: using a package below it passes, one at its layer is told.

@@ -80,8 +80,13 @@ constant EXEMPT: [str]
 # the folder's last readers. **6,600 at M-panic-location's batch gate,
 # 2026-10-26**, raised on purpose as `floors.check` asked, the tree having
 # outgrown 5,246 by more than a quarter in the fourteen days since.
+# **11,501 on 2026-11-23**, raised on purpose as `floors.check` told it at the
+# gate of M-rebel-library's landing, the tree having outgrown 6,600 by more
+# than a quarter (Rebel's packages, their ledgers and the applications'
+# documents among the files read); measured by this suite on the merge of
+# rebel-round at b9129d41b.
 constant LEAST_DOCUMENTS: i64
-    6600
+    11501
 
 # One character found, by its file, its line and its code.
 record Found

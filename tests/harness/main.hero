@@ -1010,6 +1010,24 @@ function strays(out: str, modules: [str]) -> [str]
 
     return said
 
+# What a root's `heroes test` run says of itself when it ended at an exit other
+# than 0 and named no failing test: the compiler's own words, as it wrote them,
+# "" otherwise. **A root that does not build prints its refusal on stderr and no
+# `FAIL` line**, so the `FAIL` lines alone read as a clean run and `ran.code`
+# alone as a bare 1: the coherence review's readout was red for a call that
+# lacked an argument and its test said only `ran.code == 0` (read 2026-11-23).
+function unexplained(ran: shell.Run) -> str
+    if ran.code == 0
+        return ""
+
+    for line in strings.lines(ran.out)
+        if strings.has_prefix(s: line, prefix: "FAIL \"")
+            return ""
+
+    if ran.err.len() > 0
+        return "`heroes test` ended at exit " + ran.code.to_str() + " and named no failing test; it said:\n" + ran.err
+    return "`heroes test` ended at exit " + ran.code.to_str() + " and named no failing test, and wrote nothing on stderr; its output:\n" + ran.out
+
 # Whether a line's words are the runner's count, `<n> tests, ...`, or `1 test,
 # ...` (`selfhost/cli/verbs.hero`'s `run_test`).
 function counts(words: [str]) -> bool
@@ -1021,6 +1039,22 @@ function named(modules: [str], name: str) -> bool
             return true
 
     return false
+
+test "a root that did not build is told by the compiler's own words, a run that named its failures or ended clean is not"
+    refused = shell.Run(
+        code: 1,
+        out: "",
+        err: "error[wrong_arity]: `read_tree` takes 2 argument(s), found 1\n",
+        started: true,
+        why: 0
+    )
+    assert unexplained(refused) == "`heroes test` ended at exit 1 and named no failing test; it said:\nerror[wrong_arity]: `read_tree` takes 2 argument(s), found 1\n"
+    silent = shell.Run(code: 2, out: "ok   \"a\"\n", err: "", started: true, why: 0)
+    assert unexplained(silent) == "`heroes test` ended at exit 2 and named no failing test, and wrote nothing on stderr; its output:\nok   \"a\"\n"
+    named_it = shell.Run(code: 1, out: "FAIL \"b\"\n1 test, 1 failed\n", err: "assert failed\n", started: true, why: 0)
+    assert unexplained(named_it) == ""
+    clean = shell.Run(code: 0, out: "1 test, all passed\n", err: "", started: true, why: 0)
+    assert unexplained(clean) == ""
 
 test "a run's own lines are its verdicts, its count and its tests' skips, and a fixture's are strays (defect 2069)"
     modules = ["issue_git", "report"]
@@ -1099,6 +1133,7 @@ test "the issue program's own tests run with the net's own, every block its modu
     # The failing tests by name, then the whole verdict, then any line a test
     # printed that is not the run's own (defect 2069).
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "issues").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "issues").must()
@@ -1129,6 +1164,7 @@ test "the thesis instrument's own tests run with the net's own, every block its 
 
     # The failing tests by name, then the whole verdict, then any stray line.
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "thesis").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "thesis").must()
@@ -1156,6 +1192,7 @@ test "the generator's own tests run with the net's own, every block its modules 
         print(GENERATOR_PROGRAM + ": " + line)
 
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "generate").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "generate").must()
@@ -1182,6 +1219,7 @@ test "the latency instrument's own tests run with the net's own, every block its
         print(LATENCY_PROGRAM + ": " + line)
 
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "latency").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "latency").must()
@@ -1208,6 +1246,7 @@ test "the package cards' program's own tests run with the net's own, every block
         print(CARDS_PROGRAM + ": " + line)
 
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "package_cards").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "package_cards").must()
@@ -1234,6 +1273,7 @@ test "the coherence review's readout's own tests run with the net's own, every b
         print(REVIEW_PROGRAM + ": " + line)
 
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "rebel_review").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "rebel_review").must()
@@ -1260,6 +1300,7 @@ test "the check of Rebel's programs' own tests run with the net's own, every blo
         print(APPS_PROGRAM + ": " + line)
 
     assert failed.join("\n") == ""
+    assert unexplained(ran) == ""
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "rebel_apps").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "rebel_apps").must()

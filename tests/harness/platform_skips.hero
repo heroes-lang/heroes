@@ -388,8 +388,10 @@ test "every program Windows cannot build is a file that exists, skipped there al
 
     # Defect 2503's child deaf to SIGTERM, whose header the Windows target's
     # clang refuses at `struct sigaction`, and defect 2511's case over POSIX's
-    # signal sets, which its `signal.h` does not declare.
-    assert unbuildable_on_windows().len() == 2
+    # signal sets, which its `signal.h` does not declare, and the nine cases
+    # of defect 2679 over POSIX's jump shapes (`POSIX_JUMP_SHAPES_ON_WINDOWS`),
+    # added with the list's reason at step 116a.
+    assert unbuildable_on_windows().len() == 11
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

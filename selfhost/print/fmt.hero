@@ -254,7 +254,7 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
             # parser read: a remark keeps its blank line under it, and gains
             # one where without it it would be read as the doc (defects 096
             # and 100). A group's first member documented inside its block
-            # takes no comment above its head (`parse/group.hero`'s
+            # takes no comment above its head (`doc_comments.hero`'s
             # `member_doc`, defect 2634), so those are printed as written and
             # its doc under the head (`extern_head_once`).
             above_doc: [token.Span] @= doc
@@ -450,7 +450,7 @@ function head_line(s: source.Source, decl: ast.Decl) -> i64
 # the head's line, so a comment between the head and the first member
 # would otherwise belong to neither (panel 038's compiler-engineer). The
 # run directly above that member at its column is its doc where the parser
-# took it (`parse/group.hero`'s `member_doc`, defect 2634), printed
+# took it (`doc_comments.hero`'s `member_doc`, defect 2634), printed
 # directly above it; a remark there keeps the blank line under it where the
 # source has one (defect 096), and gains one where the member's doc is the
 # one above the head, which the re-parse would otherwise take it in place of.

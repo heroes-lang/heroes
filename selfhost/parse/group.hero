@@ -138,15 +138,15 @@ function members(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: str, 
             done @ true
         else if k == .kw_record
             # **A `record` is a member like the other two** (panel 060). It
-            # takes its doc as they do (`member_doc`).
+            # takes its doc as they do (`doc_comments.member_doc`).
             keyword = cursor.current_span(c)
-            doc = member_doc(@c, text, keyword: keyword, group_doc: group_doc, first: first)
+            doc = doc_comments.member_doc(@c, text, keyword: keyword, group_doc: group_doc, first: first)
             first @ false
             records.record_with_doc(@c, @a, @decls, text, doc: doc, linkage: linkage)
         else if k == .kw_function || k == .kw_constant
             is_constant = k == .kw_constant
             keyword = cursor.current_span(c)
-            doc = member_doc(@c, text, keyword: keyword, group_doc: group_doc, first: first)
+            doc = doc_comments.member_doc(@c, text, keyword: keyword, group_doc: group_doc, first: first)
             first @ false
             _ = cursor.bump(@c)
 
@@ -240,21 +240,6 @@ function member_of_the_line(c: cursor.Cursor) -> str
     if t.kind == .error && !swap.is_err() && (swap.must() == "function" || swap.must() == "constant")
         return swap.must()
     return ""
-
-# What documents the member opening at `keyword`: the comment directly above
-# it inside the block, as a record's field takes its own (spec § 1, *a comment
-# directly above a declaration documents it*); and the group's, written above
-# the `extern` line, for the first member where that one has none of its own
-# (defect 2634: the group's taken alone lost the first member's own comment,
-# and `heroes doc` printed none for it). Above a first member that has its
-# own, the group's comment documents no declaration, since the group is
-# flattened here.
-function member_doc(@c: cursor.Cursor, text: str, keyword: token.Span, group_doc: [token.Span], first: bool) -> [token.Span]
-    own = doc_comments.take_docs(@c, text, keyword)
-
-    if first && own.len() == 0
-        return group_doc
-    return own
 
 # Is the `,` under the cursor the last token of its line?
 function trailing(c: cursor.Cursor) -> bool

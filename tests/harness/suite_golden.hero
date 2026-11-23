@@ -304,7 +304,10 @@ function shape_permissive() -> Shape
 # artifact on stdout at exit 0, each case a module and its `.expected`
 # reference, a `.case` folder for a module a `use` can bind, `main`. That two
 # runs print the same bytes is the `determinism` suite's question. **6 cases on
-# 2026-11-19**, the count, and so the floor.
+# 2026-11-19**, the count, and so the floor; **9 on 2026-11-23**, raised on
+# purpose as `floors.check` told it at the gate of M-rebel-library's landing
+# (measured by this form on the merge of rebel-round at b9129d41b), and the
+# floor with it.
 function shape_doc() -> Shape
     return Shape(
         name: "doc",
@@ -313,7 +316,7 @@ function shape_doc() -> Shape
         flags: NO_FLAGS,
         on_stderr: false,
         want_code: 0,
-        least: 6,
+        least: 9,
         watched: true,
         silent_stdout: false,
         library_skip: false

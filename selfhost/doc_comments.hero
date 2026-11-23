@@ -50,6 +50,21 @@ function take_docs(@c: cursor.Cursor, text: str, decl: token.Span) -> [token.Spa
     c.comments @ empty
     return reversed(docs)
 
+# What documents the member opening at `keyword`: the comment directly above
+# it inside the block, as a record's field takes its own (spec § 1, *a comment
+# directly above a declaration documents it*); and the group's, written above
+# the `extern` line, for the first member where that one has none of its own
+# (defect 2634: the group's taken alone lost the first member's own comment,
+# and `heroes doc` printed none for it). Above a first member that has its
+# own, the group's comment documents no declaration, since the group is
+# flattened by `parse/group.hero`, the one caller.
+function member_doc(@c: cursor.Cursor, text: str, keyword: token.Span, group_doc: [token.Span], first: bool) -> [token.Span]
+    own = take_docs(@c, text, keyword)
+
+    if first && own.len() == 0
+        return group_doc
+    return own
+
 function reversed(spans: [token.Span]) -> [token.Span]
     out: [token.Span] @= []
     i: i64 @= spans.len() - 1
