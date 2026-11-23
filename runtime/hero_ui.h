@@ -1393,4 +1393,116 @@ int64_t hero_ui_remove_source(hero_ui_app *app, int64_t id);
  * where it changes the value. */
 #define HERO_UI_SPIN 35
 
+/* -- A TOOLBAR ----------------------------------------------------------------
+ *
+ * wxWidgets' `wxToolBar`: the common commands of a window as a row of
+ * controls above its content, drawn by the system. `HERO_UI_TOOLBAR` is made
+ * with a window as its parent, one to a window (`INVALID` for a second, and
+ * for any other parent). Its items are widgets made with it as their parent,
+ * of the kinds `HERO_UI_BUTTON`, `HERO_UI_CHECKBOX`, `HERO_UI_TEXT_FIELD`,
+ * `HERO_UI_COMBO` and `HERO_UI_SEPARATOR` (`INVALID` for any other kind), and
+ * each behaves as it does anywhere: its text, its enabled state, its tip, its
+ * value and what the person does to it are told as for a widget in a window.
+ *
+ * Where it stands is the arm's: the toolbar is placed (`hero_ui_place`) by
+ * the layout across the top of the window's content, the items placed in it
+ * from its top-left corner, and `hero_ui_preferred` answers the room it takes
+ * of the content, `0` wide and its height high: the system's toolbar height
+ * where it draws one inside the content, `0` where it draws one in the
+ * window's frame outside it (macOS: `NSToolbar` above the content, the items
+ * set out by the system in the order they were made and a `hero_ui_place` of
+ * theirs accepted and ignored). `hero_ui_set_visible` shows and hides it. A
+ * window with no room for every item is the system's to deal with (macOS
+ * folds the rest into a menu). */
+#define HERO_UI_TOOLBAR 36
+
+/* -- A STATUS BAR -------------------------------------------------------------
+ *
+ * wxWidgets' `wxStatusBar`: a bar across the foot of a window for a count or
+ * a state. `HERO_UI_STATUS_BAR` is made with a window as its parent, one to a
+ * window (`INVALID` for a second, and for any other parent), and is a frame
+ * as a group box is: its widgets are made with it as their parent, of the
+ * kinds `HERO_UI_LABEL`, `HERO_UI_PROGRESS`, `HERO_UI_BUTTON`,
+ * `HERO_UI_IMAGE` and `HERO_UI_SEPARATOR` (`INVALID` for any other kind), and
+ * stand in its own content, placed (`hero_ui_place`) from its top-left corner
+ * side by side by the face.
+ *
+ * The face places the bar itself across the foot of the window's content,
+ * its width the content's and its height `hero_ui_preferred`'s, `0` wide: the
+ * system's height for a bar the arm draws (macOS has no status bar of its
+ * own and draws one of 22 points: a hairline over the window's colour). The
+ * toolbar of the same window stands above the content as above, the status
+ * bar below it. `hero_ui_set_visible` shows and hides it. */
+#define HERO_UI_STATUS_BAR 37
+
+/* -- A DATE, A TIME, A DATE AND TIME PICKED -------------------------------------
+ *
+ * wxWidgets' `wxDatePickerCtrl` and `wxTimePickerCtrl`: the system's control for
+ * a calendar day, a time of day, or both. Three kinds: `HERO_UI_DATE_PICKER`
+ * (a day), `HERO_UI_TIME_PICKER` (a time of day to the second) and
+ * `HERO_UI_DATE_TIME_PICKER` (a day and a time to the second). Each is a widget
+ * as a slider is: made in a box, its value `hero_ui_set_value`'s and
+ * `hero_ui_value`'s, the bounds the person may pick between
+ * `hero_ui_set_range`'s, and a change by the person is `HERO_UI_EVENT_VALUE`
+ * with the new value, told once, as a spin's. A program's `hero_ui_set_value`
+ * tells nothing; `hero_ui_inject` of `HERO_UI_EVENT_VALUE` gives the value as
+ * the person picked it, told only where it changes the value.
+ *
+ * **The value is the calendar's fields read as UTC, and no time zone is
+ * involved**: the seconds since 1970-01-01T00:00:00 of the year, month, day,
+ * hour, minute and second the control shows, so the person's wall-clock
+ * choice crosses the layer as the same number on every system and in every
+ * zone. A date picker's value is a whole number of days (a multiple of
+ * 86400, midnight, negative before 1970); a time picker's is the seconds
+ * since midnight, 0 to 86399; a date and time picker's is any value in its
+ * range. A value or a range end a kind does not hold (a date picker's with
+ * a time of day, a time picker's past a day) is `HERO_UI_INVALID`.
+ *
+ * The ranges until `hero_ui_set_range` bounds them: a date picker's year 1
+ * to year 9999 (-62135596800 to 253402214400), a time picker's 0 to 86399, a
+ * date and time picker's -62135596800 to 253402300799; the value 0 until
+ * set (the picker shows the epoch, or midnight). `hero_ui_set_range` moves a
+ * value outside the new range to its nearest end, and answers `INVALID` for
+ * ends the kind does not hold or turned over. */
+#define HERO_UI_DATE_PICKER 38
+#define HERO_UI_TIME_PICKER 39
+#define HERO_UI_DATE_TIME_PICKER 40
+
+/* -- A COLOUR PICKED -----------------------------------------------------------
+ *
+ * wxWidgets' `wxColourPickerCtrl`: the system's control that shows a colour and
+ * opens the system's own colour chooser to change it. `HERO_UI_COLOR_WELL` is a
+ * widget as a spin is, but with no range: its value is `hero_ui_set_value`'s
+ * and `hero_ui_value`'s, the colour as four bytes `0xRRGGBBAA` in the sRGB
+ * space, red the highest, alpha the lowest (0 transparent to 255 opaque), so
+ * an `i64` from 0 to 4294967295 (`INVALID` outside it, and for
+ * `hero_ui_set_range`, which a colour has none of); the value 0 until set,
+ * transparent black. A colour the person picks in the chooser is
+ * `HERO_UI_EVENT_VALUE` with the new value, told once per pick as the chooser
+ * gives it; a program's `hero_ui_set_value` tells nothing, and
+ * `hero_ui_inject` of `HERO_UI_EVENT_VALUE` gives the colour as the person
+ * picked it, told only where it changes the value. The chooser lets the
+ * person pick the alpha too. */
+#define HERO_UI_COLOR_WELL 41
+
+/* -- A FONT PICKED ------------------------------------------------------------
+ *
+ * wxWidgets' `wxFontPickerCtrl`: the system's control that shows a font and
+ * opens the system's own font chooser to change it. `HERO_UI_FONT_BUTTON` is a
+ * widget with a text, `hero_ui_set_text`'s and `hero_ui_text`'s, which is the
+ * font as a descriptor `<size>|<style>|<family>`: the size in points, a whole
+ * number from 1 to 1024; the style `-`, `b` (bold), `i` (italic) or `bi`; the
+ * family's name as the system lists it, any bytes but a zero or a line break
+ * (`13|b|Menlo`), so a font crosses the layer as one text and a pick is one
+ * event. `hero_ui_set_text` answers `INVALID` with words for a descriptor that
+ * is not that shape and for a family the system does not have; the text read
+ * back is the font as the system holds it, so a style the family lacks reads
+ * back as the family has it (a family with no bold set `b` reads back `-`).
+ * A font the person picks in the chooser is `HERO_UI_EVENT_TEXT` for the
+ * widget, told once per pick, whose text `hero_ui_text` then reads; a program's
+ * `hero_ui_set_text` tells nothing and `hero_ui_inject` of `HERO_UI_EVENT_TEXT`
+ * gives the descriptor as the person picked it. The text is `13|-|` and the
+ * system's own font until set. */
+#define HERO_UI_FONT_BUTTON 42
+
 #endif

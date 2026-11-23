@@ -83,6 +83,7 @@ use poll
 use printing
 use time
 use ui/hero_ui
+use ui/internal/bars
 use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
@@ -96,6 +97,7 @@ use ui/internal/loop
 use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
+use ui/internal/pickers
 use ui/internal/render as drawing
 use ui/internal/session
 use ui/internal/sources
@@ -329,6 +331,20 @@ variant Kind
     editable_combo
     # A whole number the person types or steps by arrows.
     spin
+    # The common commands of a window as a row of controls above its content.
+    toolbar
+    # A bar across the foot of a window for a count or a state.
+    status_bar
+    # A calendar day the person picks.
+    date_picker
+    # A time of day the person picks.
+    time_picker
+    # A day and a time of day the person picks.
+    date_time_picker
+    # A colour the person picks in the system's chooser.
+    color_well
+    # A font the person picks in the system's chooser.
+    font_button
 
 # What `widget` is.
 #
@@ -868,6 +884,200 @@ function separator(@app: App, into: Widget) -> Widget?
 # draws none (Windows and Linux, pending).
 function group(@app: App, into: Widget, title: str) -> Widget?
     return frames.group(@app, into: into, title: title)
+
+# A new toolbar in window `into`, as wxWidgets' `wxToolBar`: the common
+# commands of a window as a row of controls above its content, drawn by the
+# system. Its items are the widgets made in it by passing it as `into`:
+# buttons, checkboxes, text fields, combos and separators, side by side in
+# the order they were made, each told as it is anywhere. The window docks it
+# across its width above the rest of its widgets, whatever order they were
+# made in; the room it takes of the window's content is what the system
+# draws it at, none where it draws it outside the content (macOS).
+#
+# - `app`: the app it is made in.
+# - `into`: a window, which holds one toolbar.
+#
+# Fails `closed`, `invalid` where `into` is no window or holds a toolbar
+# already, `failed`, `unsupported` where the system's arm draws none
+# (Windows and Linux, pending).
+function toolbar(@app: App, into: Widget) -> Widget?
+    return bars.toolbar(@app, into: into)
+
+# A new status bar in window `into`, as wxWidgets' `wxStatusBar`: a bar
+# across the foot of the window for a count or a state. Its items are the
+# widgets made in it by passing it as `into`: labels, progress bars, buttons,
+# pictures and separators, side by side in the order they were made, each
+# told as it is anywhere. The window docks it across its width below the
+# rest of its widgets, whatever order they were made in, at the height the
+# system draws it at (macOS has no status bar of its own: a hairline over the
+# window's colour, 22 points high).
+#
+# - `app`: the app it is made in.
+# - `into`: a window, which holds one status bar.
+#
+# Fails `closed`, `invalid` where `into` is no window or holds a status bar
+# already, `failed`, `unsupported` where the system's arm draws none
+# (Windows and Linux, pending).
+function status_bar(@app: App, into: Widget) -> Widget?
+    return bars.status_bar(@app, into: into)
+
+# A new date picker in `into`, as wxWidgets' `wxDatePickerCtrl`: the system's
+# control for a calendar day, showing the year, month and day of `at`. Its
+# value is `set_value`'s and `value_of`'s, in seconds: **the fields the control
+# shows read as UTC**, midnight of the day, a multiple of 86400, so no time
+# zone is involved and what the person picks is the same number everywhere.
+# `set_range` bounds the days the person may pick (year 1 to year 9999 until
+# set), `picked` gives the day as a `time.DateTime` and `set_picked` puts the
+# control at one, and a pick by the person is `.value_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `at`: the day shown; its hour, minute, second and nanosecond are ignored.
+#
+# Fails `closed`, `invalid` for a moment no calendar has or a year outside 1
+# to 9999, `failed`, `unsupported` where the system's arm draws none (Windows
+# and Linux, pending). See also `time_picker`, `date_time_picker`.
+function date_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_PICKER, at: at)
+
+# A new time picker in `into`, as wxWidgets' `wxTimePickerCtrl`: the system's
+# control for a time of day to the second, showing the hour, minute and
+# second of `at`. Its value is the seconds since midnight, 0 to 86399, and
+# the rest is as `date_picker`'s; `picked` gives the time on 1970-01-01.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the time shown; its year, month, day and nanosecond are ignored.
+#
+# Fails as `date_picker` does.
+function time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_TIME_PICKER, at: at)
+
+# A new date and time picker in `into`: the system's control for a day and a
+# time of day to the second, showing `at`. Its value is the seconds since
+# 1970-01-01T00:00:00 of the fields it shows, read as UTC, and the rest is as
+# `date_picker`'s.
+#
+# - `app`: the app it is made in.
+# - `into`: as `date_picker`'s.
+# - `at`: the moment shown; its nanosecond is ignored.
+#
+# Fails as `date_picker` does.
+function date_time_picker(@app: App, into: Widget, at: time.DateTime) -> Widget?
+    return pickers.picker(@app, into: into, kind: hero_ui.HERO_UI_DATE_TIME_PICKER, at: at)
+
+# The moment picker `widget` shows now, as the program put it or the person
+# picked it: a date picker's at midnight, a time picker's on 1970-01-01.
+#
+# - `app`: the app holding it.
+# - `widget`: a date, time or date and time picker.
+#
+# Fails `closed`, `invalid` for a widget that is no picker.
+function picked(app: App, widget: Widget) -> time.DateTime?
+    return pickers.picked(app, widget: widget)
+
+# Puts picker `widget` at `at`, as `date_picker` does for a new one; no event
+# comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a date, time or date and time picker.
+# - `at`: the moment, within the picker's range.
+#
+# Fails `closed`, `invalid` for a widget that is no picker, a moment no
+# calendar has or one outside the picker's range, `failed`.
+function set_picked(@app: App, widget: Widget, at: time.DateTime) -> ()?
+    return pickers.set_picked(@app, widget: widget, at: at)
+
+# A new colour well in `into`, as wxWidgets' `wxColourPickerCtrl`: the
+# system's control that shows a colour and opens the system's own colour
+# chooser to change it. Its value is `set_value`'s and `value_of`'s: the colour
+# as four sRGB bytes `0xRRGGBBAA`, a number from 0 to 4294967295 (it has no
+# range: `set_range` fails `invalid`); `picked_color` gives it as an
+# `image.Color` and `set_picked_color` puts it at one. A colour the person
+# picks is `.value_changed` with the number, told once per pick; the chooser
+# lets the person pick the alpha too.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `color`: the colour shown.
+#
+# Fails `closed`, `invalid`, `failed`, `unsupported` where the system's arm
+# draws none (Windows and Linux, pending).
+function color_well(@app: App, into: Widget, color: image.Color) -> Widget?
+    return pickers.color_well(@app, into: into, color: color)
+
+# The colour well `widget` shows now, as the program put it or the person
+# picked it.
+#
+# - `app`: the app holding it.
+# - `widget`: a colour well.
+#
+# Fails `closed`, `invalid` for a widget that is no colour well.
+function picked_color(app: App, widget: Widget) -> image.Color?
+    return pickers.picked_color(app, widget: widget)
+
+# Puts colour well `widget` at `color`; no event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a colour well.
+# - `color`: the colour.
+#
+# Fails `closed`, `invalid` for a widget that is no colour well, `failed`.
+function set_picked_color(@app: App, widget: Widget, color: image.Color) -> ()?
+    return pickers.set_picked_color(@app, widget: widget, color: color)
+
+# What a font button shows: a family and a size in points, in bold or italic.
+record Font
+    # The family's name as the system lists it, one line and not empty.
+    family: str
+    # The size in points, 1 to 1024.
+    size: i64
+    # Whether the font is bold.
+    bold: bool
+    # Whether the font is italic.
+    italic: bool
+
+# A new font button in `into`, as wxWidgets' `wxFontPickerCtrl`: the system's
+# control that shows a font and opens the system's own font chooser to change
+# it. Its text is the font as one descriptor, `<size>|<style>|<family>` (`13|b|Menlo`;
+# the style `-`, `b`, `i` or `bi`), so `text_of` reads it and a pick by the
+# person is `.text_changed` with it, told once; `picked_font` gives it as a
+# `Font` and `set_picked_font` puts it at one. The text read back is the font
+# as the system holds it, so a style the family lacks reads back as the family
+# has it.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box, a pane
+#   or a group box.
+# - `font`: the font shown.
+#
+# Fails `closed`, `invalid` for a size outside 1 to 1024, an empty family or a
+# line break in it, and on the native side for a family the system does not
+# have, `failed`, `unsupported` where the system's arm draws none (Windows and
+# Linux, pending).
+function font_button(@app: App, into: Widget, font: Font) -> Widget?
+    return pickers.font_button(@app, into: into, font: font)
+
+# The font `widget` shows now, as the program put it or the person picked it.
+#
+# - `app`: the app holding it.
+# - `widget`: a font button.
+#
+# Fails `closed`, `invalid` for a widget that is no font button.
+function picked_font(app: App, widget: Widget) -> Font?
+    return pickers.picked_font(app, widget: widget)
+
+# Puts font button `widget` at `font`; no event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a font button.
+# - `font`: the font.
+#
+# Fails as `font_button` does, `invalid` for a widget that is no font button.
+function set_picked_font(@app: App, widget: Widget, font: Font) -> ()?
+    return pickers.set_picked_font(@app, widget: widget, font: font)
 
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
@@ -1506,8 +1716,9 @@ function set_drop(@app: App, widget: Widget, on: bool) -> ()?
 # - `text`: the tip, its lines kept.
 #
 # Fails `closed`, `invalid` for a window, a box, a menu or a timer, or a
-# zero byte; `unsupported` where the system's arm shows no tip (Windows and
-# Linux, pending), `failed`. See also `tip_of`.
+# zero byte; `unsupported` where the system's arm shows no tip over what
+# it is asked (a menu item's, on Windows, which draws none), `failed`. See
+# also `tip_of`.
 function set_tip(@app: App, widget: Widget, text: str) -> ()?
     return state.set_tip(@app, widget: widget, text: text)
 
@@ -4143,4 +4354,141 @@ test "add_mailbox: a headless app answers unsupported"
 test "remove_source: a headless app answers unsupported"
     app @= open(.headless).must()
     assert fixture.code_of(remove_source(@app, key: 1)) == UNSUPPORTED
+    close(@app).must()
+
+# A toolbar docked above what the window holds, whatever order they were made in.
+test "toolbar: docked above the window's content with its buttons side by side"
+    app @= open(.headless).must()
+    w = window(@app, title: "Edit", width: 300, height: 200).must()
+    body = label(@app, into: w, text: "Body").must()
+    bar = toolbar(@app, into: w).must()
+    open_file = button(@app, into: bar, text: "Open").must()
+    assert rect_of(@app, widget: bar).must().y == 0
+    assert rect_of(@app, widget: body).must().y > rect_of(@app, widget: bar).must().height
+    assert rect_of(@app, widget: open_file).must().x > 0
+    close(@app).must()
+
+# A status bar docked below what the window holds, a label in it.
+test "status_bar: docked at the foot of the window with a label in it"
+    app @= open(.headless).must()
+    w = window(@app, title: "Count", width: 300, height: 200).must()
+    bar = status_bar(@app, into: w).must()
+    count = label(@app, into: bar, text: "3 items").must()
+    assert rect_of(@app, widget: bar).must().y + rect_of(@app, widget: bar).must().height == rect_of(@app, widget: w).must().height
+    assert text_of(app, widget: count).must() == "3 items"
+    close(@app).must()
+
+# A day picked: its value is the day's midnight in seconds, read as UTC.
+test "date_picker: a day shown as the fields of a moment and read back as seconds"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: due).must() == 1795392000
+    close(@app).must()
+
+# A time of day picked: its value is the seconds since midnight.
+test "time_picker: a time of day shown and read back as the seconds since midnight"
+    app @= open(.headless).must()
+    w = window(@app, title: "Alarm", width: 300, height: 200).must()
+    alarm = time_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 1970, month: 1, day: 1, hour: 7, minute: 30, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: alarm).must() == 7 * 3600 + 30 * 60
+    close(@app).must()
+
+# A day and a time picked: the fields read as UTC, in seconds.
+test "date_time_picker: a day and a time shown and read back as one number of seconds"
+    app @= open(.headless).must()
+    w = window(@app, title: "Meet", width: 300, height: 200).must()
+    meet = date_time_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 17, minute: 40, second: 9, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: meet).must() == 1795392000 + 17 * 3600 + 40 * 60 + 9
+    close(@app).must()
+
+# A picker read back as the moment it shows.
+test "picked: the moment a picker shows, as a calendar date"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 9, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert picked(app, widget: due).must() == time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    close(@app).must()
+
+# A picker put at another moment by the program.
+test "set_picked: a picker moved to another day, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Due", width: 300, height: 200).must()
+    due = date_picker(
+        @app,
+        into: w,
+        at: time.DateTime(year: 2026, month: 11, day: 23, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    set_picked(
+        @app,
+        widget: due,
+        at: time.DateTime(year: 1970, month: 1, day: 2, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    assert value_of(app, widget: due).must() == 86400
+    close(@app).must()
+
+# A colour shown in a colour well.
+test "color_well: a colour shown and read back as the colour it was given"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 255, g: 128, b: 0, a: 255)).must()
+    assert picked_color(app, widget: well).must() == image.Color(r: 255, g: 128, b: 0, a: 255)
+    close(@app).must()
+
+# The colour a well shows, as a colour.
+test "picked_color: the colour a colour well shows, with its alpha"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 1, g: 2, b: 3, a: 4)).must()
+    assert picked_color(app, widget: well).must().a == 4
+    close(@app).must()
+
+# A colour well put at another colour by the program.
+test "set_picked_color: a colour well moved to another colour, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 300, height: 200).must()
+    well = color_well(@app, into: w, color: image.Color(r: 0, g: 0, b: 0, a: 255)).must()
+    set_picked_color(@app, widget: well, color: image.Color(r: 9, g: 8, b: 7, a: 255)).must()
+    assert picked_color(app, widget: well).must().r == 9
+    close(@app).must()
+
+# A font shown in a font button, as its descriptor.
+test "font_button: a font shown as one text of size, style and family"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: true, italic: false)).must()
+    assert text_of(app, widget: pick).must() == "13|b|Menlo"
+    close(@app).must()
+
+# The font a button shows, as a record.
+test "picked_font: the font a font button shows, as a family, a size and a style"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: false, italic: true)).must()
+    assert picked_font(app, widget: pick).must() == Font(family: "Menlo", size: 13, bold: false, italic: true)
+    close(@app).must()
+
+# A font button put at another font by the program.
+test "set_picked_font: a font button moved to another font, which tells no event"
+    app @= open(.headless).must()
+    w = window(@app, title: "Editor", width: 300, height: 200).must()
+    pick = font_button(@app, into: w, font: Font(family: "Menlo", size: 13, bold: false, italic: false)).must()
+    set_picked_font(@app, widget: pick, font: Font(family: "Menlo", size: 18, bold: true, italic: false)).must()
+    assert text_of(app, widget: pick).must() == "18|b|Menlo"
     close(@app).must()

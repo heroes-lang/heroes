@@ -298,6 +298,46 @@ capability ui/spin  a number typed, or stepped up and down
   wx      wxSpinCtrl, wxSpinCtrlDouble
   note    catalogue CT22; a whole number between a range's ends, each arrow changing it by 1 (a step of the program's own and a decimal number, `wxSpinCtrlDouble`, are not offered); `set_value`, `value_of` and `set_range` as a slider's, `.slide` giving the value typed or stepped to, `.value_changed` told at each arrow and where a typed number is committed (Return or the field giving the keys up), one past the range clamped and a text that is no number put back; macOS by an `NSTextField` and an `NSStepper` in a view of their own; Windows by the up-down control (`UPDOWN_CLASS`) bought to an `EDIT`, its own stepping stopped and the arm's own step of 1 told, a typed number committed at the field's losing the keys and at Return, negative numbers allowed by an edit that takes any text and a commit that judges it, Linux by a `GtkSpinButton` with no decimals, its typed text read by the arm's own `input` as a whole number or put back (a range beyond 2^53 answers `limit`, GTK's adjustment being a double)
 
+capability ui/toolbar  the common commands of a window as a row of controls above its content
+  heroes  ui.toolbar, ui.Kind.toolbar
+  go      -
+  rust    -
+  python  -
+  wx      wxToolBar, wxFrame::CreateToolBar
+  note    catalogue CT47; a box of a window, one to a window, docked across its width above the rest of its widgets and holding buttons, checkboxes, text fields, combos and separators side by side in the order made, each told as it is anywhere; the room it takes of the content is the system's answer (`preferred`'s height) and the headless side's is `sizes.TOOLBAR_HEIGHT`; macOS by an `NSToolbar` in the window's frame above the content (a widget of the toolbar is the view of an `NSToolbarItem`, set out by the system, so the room it takes of the content is none); Windows pending (the toolbar control, `TOOLBARCLASSNAME`, or a plain child window holding the widgets), Linux pending (a `GtkBox` of the widgets, GTK 4 having removed `GtkToolbar`)
+
+capability ui/status-bar  a bar across the foot of a window for a count or a state
+  heroes  ui.status_bar, ui.Kind.status_bar
+  go      -
+  rust    -
+  python  -
+  wx      wxStatusBar, wxFrame::CreateStatusBar
+  note    catalogue CT48; a box of a window, one to a window, docked across its width below the rest of its widgets (a toolbar above them) and holding labels, progress bars, buttons, pictures and separators side by side in the order made, a frame as a group box is; its height is the system's answer (`preferred`'s) and the headless side's is `sizes.STATUS_HEIGHT`; macOS has no status bar widget and draws one, a flipped view of 22 points with a hairline over the window's colour; Windows pending (the status bar control, `STATUSCLASSNAME`, or a plain child window holding the widgets), Linux pending (a `GtkBox` of the widgets, `GtkStatusbar` being deprecated since 4.10)
+
+capability ui/pickers  a day, a time of day, or both, picked in the system's own control
+  heroes  ui.date_picker, ui.time_picker, ui.date_time_picker, ui.picked, ui.set_picked, ui.Kind.date_picker, ui.Kind.time_picker, ui.Kind.date_time_picker
+  go      -
+  rust    -
+  python  -
+  wx      wxDatePickerCtrl, wxTimePickerCtrl, wxDateTimePickerCtrl
+  note    catalogue CT42, CT43; three kinds, each a widget as a slider is: `set_value`, `value_of`, `set_range` (the bounds the person picks between) and `.value_changed` told once for a pick by the person; the value is the calendar's fields read as UTC, in seconds, so no time zone is involved (a date picker's a whole day, a time picker's the seconds since midnight, a date and time picker's the seconds since 1970-01-01T00:00:00) and `picked` and `set_picked` speak `time.DateTime`; macOS by `NSDatePicker` (text field and stepper) with its calendar and time zone set to UTC; Windows pending (`DATETIMEPICK_CLASS`, `DTS_SHORTDATEFORMAT` and `DTS_TIMEFORMAT`, `DTM_SETSYSTEMTIME`, `DTN_DATETIMECHANGE`), Linux pending (a `GtkCalendar` in a popover over a text field and `GtkSpinButton`s for the time); the month calendar on its own (CT44) is not offered
+
+capability ui/color-picker  a colour picked in the system's own control and chooser
+  heroes  ui.color_well, ui.picked_color, ui.set_picked_color, ui.Kind.color_well
+  go      -
+  rust    -
+  python  tkinter.colorchooser.askcolor
+  wx      wxColourPickerCtrl, wxColourDialog
+  note    catalogue CT45; a widget with no range: its value is `set_value`'s and `value_of`'s, the colour as four sRGB bytes `0xRRGGBBAA` (`picked_color` and `set_picked_color` speak `image.Color`), and `.value_changed` is told once for a pick by the person, the chooser giving the alpha too; macOS by an `NSColorWell` with the shared `NSColorPanel` showing alpha, its colour read in sRGB; Windows pending (a button over `ChooseColor` or the system's colour dialog), Linux pending (`GtkColorDialogButton`)
+
+capability ui/font-picker  a font picked in the system's own control and chooser
+  heroes  ui.font_button, ui.picked_font, ui.set_picked_font, ui.Font, ui.Kind.font_button
+  go      -
+  rust    -
+  python  tkinter.font.Font, tkinter.font.families
+  wx      wxFontPickerCtrl, wxFontDialog
+  note    catalogue CT46; a widget whose text is the font as one descriptor `<size>|<style>|<family>` (size 1 to 1024, style -, b, i or bi), so `set_text` and `text_of` carry it, a pick by the person is `.text_changed` told once and `picked_font` and `set_picked_font` speak `ui.Font`; macOS by a button that opens the shared `NSFontPanel` answered through `NSFontManager`'s `changeFont:`, a family the system lacks refused on the native side and a style the family lacks read back as the family has it; Windows pending (a button over `ChooseFontW`), Linux pending (`GtkFontDialogButton`)
+
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture
   go      ui.NewImage, Image.Append

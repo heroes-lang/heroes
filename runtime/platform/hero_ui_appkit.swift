@@ -232,6 +232,21 @@ private final class FlippedView: NSView {
     }
 }
 
+// A status bar: the window's foot, a hairline above the widgets it holds on
+// the window's own colour, flipped as the content it stands in is.
+private final class StatusBarView: NSView {
+    override var isFlipped: Bool {
+        return true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.windowBackgroundColor.setFill()
+        bounds.fill()
+        NSColor.separatorColor.setFill()
+        NSRect(x: 0, y: 0, width: bounds.width, height: 1).fill()
+    }
+}
+
 // A spin: the field of a whole number and the stepper beside it, laid out
 // again as the view is sized. The stepper holds the value the program and the
 // person have settled on; the field may hold a number being typed.
@@ -277,6 +292,25 @@ private final class SpinView: NSView {
 
 // One native widget and what it is made of.
 @MainActor
+// What a window's toolbar shows, in the order the widgets were made: AppKit
+// asks its delegate for an item by identifier as it inserts one, and holds the
+// delegate weakly, so the toolbar's widget keeps this.
+private final class ToolbarKeeper: NSObject, NSToolbarDelegate {
+    var items: [NSToolbarItem] = []
+
+    func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        return items.first { $0.itemIdentifier == itemIdentifier }
+    }
+
+    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return items.map { $0.itemIdentifier }
+    }
+
+    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        return items.map { $0.itemIdentifier }
+    }
+}
+
 private final class Native {
     let id: Int64
     let kind: Int64
@@ -311,6 +345,13 @@ private final class Native {
     // A text field's selection, in bytes of its text, kept when it last
     // gave the keys up; nil for its text's end.
     var fieldRange: (Int64, Int64)?
+    // A toolbar's own toolbar and the items it shows; the item of a widget
+    // standing in a toolbar.
+    var toolbar: NSToolbar?
+    var keeper: ToolbarKeeper?
+    var toolbarItem: NSToolbarItem?
+    // A font button's font.
+    var font: NSFont?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -334,6 +375,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     var widgets: [Int64: Native] = [:]
     var tables: [ObjectIdentifier: Int64] = [:]
     var words = ""
+    // The font button the font chooser answers to.
+    var fontOwner: Int64?
     var pushed = 0
     // Set while the program sets what would otherwise queue an event.
     var muted = false
@@ -551,6 +594,48 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             popup.action = #selector(comboChosen(_:))
             popup.tag = Int(widget.id)
             return popup
+        case kindFontButton:
+            let button = NSButton(title: "", target: self, action: #selector(fontClicked(_:)))
+            button.bezelStyle = .rounded
+            button.tag = Int(widget.id)
+            let font = NSFont.systemFont(ofSize: 13)
+            widget.font = font
+            button.title = fontDescriptor(font)
+            return button
+        case kindColorWell:
+            let well = NSColorWell(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            well.color = colorOf(0)
+            // The chooser lets the person pick the alpha, as the value holds it.
+            NSColorPanel.shared.showsAlpha = true
+            well.target = self
+            well.action = #selector(colorPicked(_:))
+            well.tag = Int(widget.id)
+            return well
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            let picker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            picker.datePickerStyle = .textFieldAndStepper
+            picker.datePickerMode = .single
+            // The fields are read as UTC, so a value is the same seconds in
+            // every zone, and no zone shifts what the person picked.
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+            picker.calendar = calendar
+            picker.timeZone = calendar.timeZone
+            switch kind {
+            case kindDatePicker:
+                picker.datePickerElements = .yearMonthDay
+            case kindTimePicker:
+                picker.datePickerElements = .hourMinuteSecond
+            default:
+                picker.datePickerElements = [.yearMonthDay, .hourMinuteSecond]
+            }
+            picker.minDate = Date(timeIntervalSince1970: TimeInterval(pickerLeast[kind] ?? 0))
+            picker.maxDate = Date(timeIntervalSince1970: TimeInterval(pickerMost[kind] ?? 0))
+            picker.dateValue = Date(timeIntervalSince1970: 0)
+            picker.target = self
+            picker.action = #selector(picked(_:))
+            picker.tag = Int(widget.id)
+            return picker
         case kindSpin:
             let spin = SpinView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
             spin.field.target = self
@@ -626,6 +711,20 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let status = widget.status {
             NSStatusBar.system.removeStatusItem(status)
             widget.status = nil
+        }
+        if let item = widget.toolbarItem, let owner = widgets[widget.parent], let bar = owner.toolbar {
+            if let at = bar.items.firstIndex(where: { $0 === item }) {
+                muted = true
+                bar.removeItem(at: at)
+                muted = false
+            }
+            owner.keeper?.items.removeAll { $0 === item }
+        }
+        if widget.kind == kindToolbar {
+            muted = true
+            widgets[widget.parent]?.window?.toolbar = nil
+            muted = false
+            widget.toolbar = nil
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -857,6 +956,41 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         queue(eventValue, Int64(sender.tag), spin.value, 0)
     }
 
+    // The font button pressed: the system's font chooser opens on its font, and
+    // what the person picks there comes back to `changeFont`.
+    @objc func fontClicked(_ sender: NSButton) {
+        guard let widget = widgets[Int64(sender.tag)], let font = widget.font else {
+            return
+        }
+        fontOwner = widget.id
+        let manager = NSFontManager.shared
+        manager.target = self
+        manager.action = #selector(changeFont(_:))
+        manager.setSelectedFont(font, isMultiple: false)
+        manager.orderFrontFontPanel(self)
+    }
+
+    @objc func changeFont(_ sender: NSFontManager?) {
+        guard let manager = sender, let id = fontOwner, let widget = widgets[id], let held = widget.font else {
+            return
+        }
+        let next = manager.convert(held)
+        widget.font = next
+        (widget.view as? NSButton)?.title = fontDescriptor(next)
+        queue(eventText, id, 0, 0)
+    }
+
+    @objc func colorPicked(_ sender: NSColorWell) {
+        queue(eventValue, Int64(sender.tag), colorValue(sender.color), 0)
+    }
+
+    @objc func picked(_ sender: NSDatePicker) {
+        guard let widget = widgets[Int64(sender.tag)] else {
+            return
+        }
+        queue(eventValue, widget.id, pickerSeconds(sender, widget.kind), 0)
+    }
+
     @objc func slid(_ sender: NSSlider) {
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
     }
@@ -952,7 +1086,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let window = note.object as? NSWindow, let widget = widgets.values.first(where: { $0.window === window }) else {
             return
         }
-        let size = window.contentLayoutRect.size
+        // The content's own size: a toolbar is part of the frame outside it,
+        // and `contentLayoutRect` then answers the frame less the toolbar.
+        let size = window.contentRect(forFrameRect: window.frame).size
         queue(eventResize, widget.id, Int64(size.width.rounded()), Int64(size.height.rounded()))
     }
 
@@ -999,6 +1135,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widget.window?.title = text
         case kindGroup:
             (widget.view as? NSBox)?.title = text
+        case kindFontButton:
+            guard let font = fontNamed(text, &words) else {
+                return answerInvalid
+            }
+            widget.font = font
+            (widget.view as? NSButton)?.title = fontDescriptor(font)
         case kindPage:
             if let tabs = widgets[widget.parent]?.view as? NSTabView {
                 for item in tabs.tabViewItems where item.view === widget.view {
@@ -1123,6 +1265,18 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             spin.show(value)
+        case kindColorWell:
+            guard let well = widget.view as? NSColorWell, value >= 0, value <= 0xFFFF_FFFF else {
+                return answerInvalid
+            }
+            well.color = colorOf(value)
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            guard let picker = widget.view as? NSDatePicker, pickerHolds(widget.kind, value),
+                  Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
+                  Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
+                return answerInvalid
+            }
+            picker.dateValue = Date(timeIntervalSince1970: TimeInterval(value))
         case kindProgress:
             guard let bar = widget.view as? NSProgressIndicator, Double(value) >= bar.minValue, Double(value) <= bar.maxValue else {
                 return answerInvalid
@@ -1175,6 +1329,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let bar = widget.view as? NSProgressIndicator {
             bar.minValue = Double(least)
             bar.maxValue = Double(most)
+            return answerOk
+        }
+        if let picker = widget.view as? NSDatePicker, isPicker(widget.kind) {
+            guard pickerHolds(widget.kind, least), pickerHolds(widget.kind, most), least < most else {
+                return answerInvalid
+            }
+            let held = pickerSeconds(picker, widget.kind)
+            picker.minDate = Date(timeIntervalSince1970: TimeInterval(least))
+            picker.maxDate = Date(timeIntervalSince1970: TimeInterval(most))
+            let kept = min(max(held, least), most)
+            if kept != held {
+                picker.dateValue = Date(timeIntervalSince1970: TimeInterval(kept))
+            }
             return answerOk
         }
         return answerInvalid
@@ -1234,6 +1401,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
             } else if let item = widget.item {
                 item.isHidden = !on
+            } else if widget.kind == kindToolbar {
+                widgets[widget.parent]?.window?.toolbar?.isVisible = on
             } else {
                 widget.view?.isHidden = !on
             }
@@ -1358,7 +1527,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             window.contentMinSize = size
             return answerOk
         }
-        if window.contentLayoutRect.size != size {
+        if window.contentRect(forFrameRect: window.frame).size != size {
             // AppKit keeps a window's bottom-left corner where its size
             // changes; `hero_ui.h` places a window by its top-left corner,
             // so that corner is kept, and a window the program placed stays
@@ -1379,6 +1548,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         // The system sizes a page and a pane itself.
         if widget.kind == kindPage || widget.kind == kindPane {
             return answerInvalid
+        }
+        // The toolbar sets its items out itself, in the order they were made.
+        if widget.kind == kindToolbar || widget.toolbarItem != nil {
+            return answerOk
         }
         if index < 0 {
             guard let view = widget.view else {
@@ -1418,6 +1591,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
             return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            return (widget.view as? NSDatePicker)?.fittingSize ?? NSSize(width: 0, height: 0)
+        case kindColorWell:
+            return NSSize(width: 44, height: 23)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
         case kindSeparator:
@@ -1456,6 +1633,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let box = widget.view as? NSBox, widget.kind == kindGroup {
             return box.title
         }
+        if widget.kind == kindFontButton, let font = widget.font {
+            return fontDescriptor(font)
+        }
         return (widget.view as? NSTextField)?.stringValue
     }
 
@@ -1476,6 +1656,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return Int64(((widget.view as? NSSlider)?.doubleValue ?? 0).rounded())
         case kindSpin:
             return (widget.view as? SpinView)?.value ?? 0
+        case kindColorWell:
+            return colorValue((widget.view as? NSColorWell)?.color ?? NSColor.clear)
+        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+            guard let picker = widget.view as? NSDatePicker else {
+                return 0
+            }
+            return pickerSeconds(picker, widget.kind)
         case kindProgress:
             return Int64(((widget.view as? NSProgressIndicator)?.doubleValue ?? 0).rounded())
         case kindCombo:
@@ -1564,6 +1751,15 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             } else if let field = widget.view as? NSTextField, field.isEnabled {
                 field.stringValue = text
                 queue(eventText, id, 0, 0)
+            } else if widget.kind == kindFontButton, let button = widget.view as? NSButton, button.isEnabled {
+                guard let font = fontNamed(text, &words) else {
+                    return answerInvalid
+                }
+                if widget.font.map(fontDescriptor) != fontDescriptor(font) {
+                    widget.font = font
+                    button.title = fontDescriptor(font)
+                    queue(eventText, id, 0, 0)
+                }
             } else {
                 return answerInvalid
             }
@@ -1615,6 +1811,28 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
                 if spin.field.isEnabled && spin.value != value {
                     spin.show(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
+            if let well = widget.view as? NSColorWell {
+                guard value >= 0, value <= 0xFFFF_FFFF else {
+                    return answerInvalid
+                }
+                if well.isEnabled && colorValue(well.color) != value {
+                    well.color = colorOf(value)
+                    queue(eventValue, id, value, 0)
+                }
+                return answerOk
+            }
+            if let picker = widget.view as? NSDatePicker, isPicker(widget.kind) {
+                guard pickerHolds(widget.kind, value),
+                      Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
+                      Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
+                    return answerInvalid
+                }
+                if picker.isEnabled && pickerSeconds(picker, widget.kind) != value {
+                    picker.dateValue = Date(timeIntervalSince1970: TimeInterval(value))
                     queue(eventValue, id, value, 0)
                 }
                 return answerOk
@@ -2670,6 +2888,8 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             return (owner.view as? NSScrollView)?.documentView
         case kindGroup:
             return (owner.view as? NSBox)?.contentView
+        case kindStatusBar:
+            return owner.view
         default:
             return nil
         }
@@ -2690,7 +2910,36 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
     // Makes `made`, of a kind of BOXES THE SYSTEM DRAWS, in `owner`; nil
     // for every other kind, which `create` makes itself.
     func createBox(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        if owner.kind == kindToolbar {
+            return createToolbarItem(id, kind, owner, made)
+        }
         switch kind {
+        case kindStatusBar:
+            // One to a window, across its content's foot.
+            guard owner.kind == kindWindow, let content = contentOf(owner),
+                  !widgets.values.contains(where: { $0.kind == kindStatusBar && $0.parent == owner.id }) else {
+                return answerInvalid
+            }
+            let bar = StatusBarView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            content.addSubview(bar)
+            made.view = bar
+        case kindToolbar:
+            // The system draws the toolbar in the window's frame above its
+            // content, one to a window, and takes no room from the content.
+            guard owner.kind == kindWindow, let window = owner.window, window.toolbar == nil else {
+                return answerInvalid
+            }
+            let keeper = ToolbarKeeper()
+            let bar = NSToolbar(identifier: NSToolbar.Identifier("org.heroes-lang.toolbar.\(id)"))
+            bar.delegate = keeper
+            bar.displayMode = .iconOnly
+            bar.allowsUserCustomization = false
+            bar.autosavesConfiguration = false
+            muted = true
+            window.toolbar = bar
+            muted = false
+            made.toolbar = bar
+            made.keeper = keeper
         case kindPage:
             guard owner.kind == kindTabs, let tabs = owner.view as? NSTabView else {
                 return answerInvalid
@@ -2778,6 +3027,36 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         return answerOk
     }
 
+    // A widget made in a toolbar: its view is the toolbar item's, after the
+    // items made before it. Only the leaves a toolbar holds are made.
+    func createToolbarItem(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        guard kind == kindButton || kind == kindCheckbox || kind == kindTextField || kind == kindCombo || kind == kindSeparator,
+              let bar = owner.toolbar, let keeper = owner.keeper, let view = viewOf(kind, made) else {
+            return answerInvalid
+        }
+        view.translatesAutoresizingMaskIntoConstraints = false
+        if let button = view as? NSButton, kind == kindButton {
+            button.bezelStyle = .texturedRounded
+        }
+        if kind == kindTextField {
+            view.widthAnchor.constraint(equalToConstant: fieldWidth).isActive = true
+        }
+        if kind == kindSeparator {
+            view.widthAnchor.constraint(equalToConstant: 1).isActive = true
+            view.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        }
+        let item = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier("org.heroes-lang.toolbar.item.\(id)"))
+        item.view = view
+        keeper.items.append(item)
+        muted = true
+        bar.insertItem(withItemIdentifier: item.itemIdentifier, at: bar.items.count)
+        muted = false
+        made.view = view
+        made.toolbarItem = item
+        widgets[id] = made
+        return answerOk
+    }
+
     // The room tabs or a scrolled box draws around its content.
     func insets(_ id: Int64) -> (Int64, Int64, Int64, Int64)? {
         guard let widget = widgets[id] else {
@@ -2824,7 +3103,9 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
         case kindSplitRow, kindSplitColumn:
             let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
             return NSSize(width: thickness, height: thickness)
-        case kindTabs, kindPage, kindScroll, kindPane, kindGroup:
+        case kindStatusBar:
+            return NSSize(width: 0, height: statusBarHeight)
+        case kindTabs, kindPage, kindScroll, kindPane, kindGroup, kindToolbar:
             return NSSize(width: 0, height: 0)
         default:
             return nil
@@ -3484,6 +3765,101 @@ private let kindSeparator: Int64 = 32
 private let kindGroup: Int64 = 33
 private let kindEditableCombo: Int64 = 34
 private let kindSpin: Int64 = 35
+private let kindToolbar: Int64 = 36
+private let kindStatusBar: Int64 = 37
+private let kindDatePicker: Int64 = 38
+private let kindTimePicker: Int64 = 39
+private let kindDateTimePicker: Int64 = 40
+private let kindColorWell: Int64 = 41
+private let kindFontButton: Int64 = 42
+
+// A font as the layer's text holds it, `<size>|<style>|<family>` (`hero_ui.h`).
+private func fontDescriptor(_ font: NSFont) -> String {
+    let traits = NSFontManager.shared.traits(of: font)
+    let style = (traits.contains(.boldFontMask) ? "b" : "") + (traits.contains(.italicFontMask) ? "i" : "")
+    return "\(Int(font.pointSize.rounded()))|\(style.isEmpty ? "-" : style)|\(font.familyName ?? font.fontName)"
+}
+
+// The font a descriptor names, or nil with the words saying why not.
+private func fontNamed(_ text: String, _ words: inout String) -> NSFont? {
+    let parts = text.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false).map(String.init)
+    guard parts.count == 3, let size = Int(parts[0]), size >= 1, size <= 1024, ["-", "b", "i", "bi"].contains(parts[1]), !parts[2].isEmpty else {
+        words = "a font is `<size>|<style>|<family>` (a size from 1 to 1024, a style of -, b, i or bi, a family), and \(text) is not"
+        return nil
+    }
+    let manager = NSFontManager.shared
+    guard manager.availableFontFamilies.contains(parts[2]) else {
+        words = "the system has no font family named \(parts[2])"
+        return nil
+    }
+    var traits: NSFontTraitMask = []
+    if parts[1].contains("b") {
+        traits.insert(.boldFontMask)
+    }
+    if parts[1].contains("i") {
+        traits.insert(.italicFontMask)
+    }
+    guard let font = manager.font(withFamily: parts[2], traits: traits, weight: 5, size: CGFloat(size)) else {
+        words = "the system has no font of family \(parts[2]) at that size"
+        return nil
+    }
+    return font
+}
+
+// A colour well's value is its colour as four sRGB bytes, 0xRRGGBBAA.
+private func colorValue(_ color: NSColor) -> Int64 {
+    guard let rgb = color.usingColorSpace(.sRGB) else {
+        return 0
+    }
+    func byte(_ component: CGFloat) -> Int64 {
+        return Int64((min(max(component, 0), 1) * 255).rounded())
+    }
+    return byte(rgb.redComponent) << 24 | byte(rgb.greenComponent) << 16 | byte(rgb.blueComponent) << 8 | byte(rgb.alphaComponent)
+}
+
+private func colorOf(_ value: Int64) -> NSColor {
+    return NSColor(srgbRed: CGFloat((value >> 24) & 255) / 255, green: CGFloat((value >> 16) & 255) / 255, blue: CGFloat((value >> 8) & 255) / 255, alpha: CGFloat(value & 255) / 255)
+}
+
+// The values a picker holds are its fields read as UTC (`hero_ui.h`): a date
+// picker's a whole day's seconds, a time picker's the seconds since midnight.
+private let secondsInDay: Int64 = 86400
+private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800]
+private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799]
+
+private func isPicker(_ kind: Int64) -> Bool {
+    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker
+}
+
+// The seconds a picker's date is, as its kind holds them: a date picker's
+// the day's, a time picker's those since midnight.
+private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
+    let whole = Int64(picker.dateValue.timeIntervalSince1970.rounded(.down))
+    let day = Int64((Double(whole) / Double(secondsInDay)).rounded(.down)) * secondsInDay
+    switch kind {
+    case kindDatePicker:
+        return day
+    case kindTimePicker:
+        return whole - day
+    default:
+        return whole
+    }
+}
+
+// Whether `value` is one a picker of `kind` holds.
+private func pickerHolds(_ kind: Int64, _ value: Int64) -> Bool {
+    switch kind {
+    case kindDatePicker:
+        return value % secondsInDay == 0 && value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
+    case kindTimePicker:
+        return value >= 0 && value < secondsInDay
+    default:
+        return value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
+    }
+}
+
+// The height of a status bar, in points: Finder's own.
+private let statusBarHeight: CGFloat = 22
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a

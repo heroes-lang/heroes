@@ -60,11 +60,21 @@ function measure(@nodes: {i64: model.Node}, id: i64) -> [i64]
         sizes: [[i64]] @= []
         spans: [i64] @= []
 
+        # The bars a window docks take their own room across it, beside what
+        # the rest of its widgets need.
+        docked: [i64] @= [0, 0]
+
         for child in shown(nodes, ids: n.children)
-            sizes @ sizes.push(measure(@nodes, id: child))
-            spans @ spans.push(nodes[child].must().span)
+            need = measure(@nodes, id: child)
+
+            if model.is_bar(nodes[child].must().kind)
+                docked @ [most(a: docked[0], b: need[0]), docked[1] + need[1]]
+            else
+                sizes @ sizes.push(need)
+                spans @ spans.push(nodes[child].must().span)
 
         inner @ frames.need(n, needs: sizes, column: box_need(n, sizes: sizes, spans: spans))
+        inner @ [most(a: inner[0], b: docked[0]), inner[1] + docked[1]]
     width = most(a: inner[0], b: n.min_width) + 2 * n.margin
     height = most(a: inner[1], b: n.min_height) + 2 * n.margin
     n @ nodes[id].must()
@@ -81,7 +91,7 @@ function box_need(n: model.Node, sizes: [[i64]], spans: [i64]) -> [i64]
     if sizes.len() == 0
         return [pad, pad]
 
-    if n.kind == hero_ui.HERO_UI_ROW
+    if n.kind == hero_ui.HERO_UI_ROW || model.is_bar(n.kind)
         return [
             sum_of(sizes, axis: 0) + gaps(spacing: n.spacing, count: sizes.len()) + pad
             most_of(sizes, axis: 1) + pad
@@ -108,7 +118,7 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
 
     if !model.holds_widgets(n.kind)
         return
-    kids = shown(nodes, ids: n.children)
+    kids @= shown(nodes, ids: n.children)
 
     if kids.len() == 0
         return
@@ -132,6 +142,31 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
     if model.is_frame(n.kind) && n.kind != hero_ui.HERO_UI_WINDOW
         left @ 0
         top @ 0
+
+    # A window's bars stand across it, the toolbars above its content, the
+    # status bars below it, and the rest of its widgets in what they leave.
+    if n.kind == hero_ui.HERO_UI_WINDOW
+        docked = docking(nodes, ids: kids)
+        above @= 0
+
+        for bar in docked[0]
+            high = nodes[bar].must().need_height
+            arrange(@nodes, id: bar, x: left, y: top + above, width: room_w, height: high)
+            above @ above + high
+
+        down @= 0
+
+        for bar in docked[2]
+            high = nodes[bar].must().need_height
+            down @ down + high
+            arrange(@nodes, id: bar, x: left, y: top + room_h - down, width: room_w, height: high)
+
+        top @ top + above
+        room_h @ most(a: room_h - above - down, b: 0)
+        kids @ docked[1]
+
+        if kids.len() == 0
+            return
 
     # A group box's children stand in the content its frame and title leave.
     if n.kind == hero_ui.HERO_UI_GROUP
@@ -159,10 +194,28 @@ function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64,
 
     if n.kind == hero_ui.HERO_UI_GRID
         arrange_grid(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih])
-    else if n.kind == hero_ui.HERO_UI_ROW
+    else if n.kind == hero_ui.HERO_UI_ROW || model.is_bar(n.kind)
         arrange_line(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih], along: 0)
     else
         arrange_line(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih], along: 1)
+
+# The shown children `ids` of a window as three lists in the order they were
+# made: the bars that dock above its content, the widgets in its content,
+# and the bars that dock below it.
+function docking(nodes: {i64: model.Node}, ids: [i64]) -> [[i64]]
+    above: [i64] @= []
+    between: [i64] @= []
+    below: [i64] @= []
+
+    for id in ids
+        if nodes[id].must().kind == hero_ui.HERO_UI_TOOLBAR
+            above @ above.push(id)
+        else if nodes[id].must().kind == hero_ui.HERO_UI_STATUS_BAR
+            below @ below.push(id)
+        else
+            between @ between.push(id)
+
+    return [above, between, below]
 
 # Arranges `kids`, the shown children of `box`, along one line of `area`
 # (`[x, y, width, height]`): `along` 0 for a row, side by side from the left,

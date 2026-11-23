@@ -21,6 +21,7 @@ use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
+use ui/internal/pickers
 use ui/internal/sizes
 use ui/internal/trees
 
@@ -124,6 +125,27 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_SPIN
         return .spin
 
+    if code == hero_ui.HERO_UI_TOOLBAR
+        return .toolbar
+
+    if code == hero_ui.HERO_UI_STATUS_BAR
+        return .status_bar
+
+    if code == hero_ui.HERO_UI_DATE_PICKER
+        return .date_picker
+
+    if code == hero_ui.HERO_UI_TIME_PICKER
+        return .time_picker
+
+    if code == hero_ui.HERO_UI_DATE_TIME_PICKER
+        return .date_time_picker
+
+    if code == hero_ui.HERO_UI_COLOR_WELL
+        return .color_well
+
+    if code == hero_ui.HERO_UI_FONT_BUTTON
+        return .font_button
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -210,6 +232,9 @@ function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
     n @= texted(app, widget: widget)?
     one_line = n.kind != hero_ui.HERO_UI_LABEL && n.kind != hero_ui.HERO_UI_TEXT_AREA
     check.text_ok(text: text, one_line: one_line, what: "the text")?
+
+    if n.kind == hero_ui.HERO_UI_FONT_BUTTON
+        _ = pickers.font_of_text(text)?
     n.text @ text
 
     if n.kind == hero_ui.HERO_UI_EDITABLE_COMBO
@@ -282,8 +307,14 @@ function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
 function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
     n @= valued(app, widget: widget, kind: kind)?
 
-    if kind == hero_ui.HERO_UI_SLIDER && (n.kind == hero_ui.HERO_UI_SLIDER || n.kind == hero_ui.HERO_UI_SPIN) && (value < n.least || value > n.most)
+    if kind == hero_ui.HERO_UI_SLIDER && (n.kind == hero_ui.HERO_UI_SLIDER || n.kind == hero_ui.HERO_UI_SPIN || model.is_picker(n.kind) || n.kind == hero_ui.HERO_UI_COLOR_WELL) && (value < n.least || value > n.most)
         return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
+
+    if model.is_picker(n.kind) && !model.picker_holds(kind: n.kind, value: value)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the value {value} is no value a {model.kind_name(n.kind)} holds: {picker_words(n.kind)}"
+        )
 
     if model.is_split(n.kind)
         frames.divider_ok(value)?
@@ -312,13 +343,25 @@ function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN],
-        what: "a slider, a spin, a progress bar or a split"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_COLOR_WELL],
+        what: "a slider, a spin, a progress bar, a split, a picker or a colour well"
     )
+
+# What a picker of `kind` holds, in words.
+function picker_words(kind: i64) -> str
+    if kind == hero_ui.HERO_UI_DATE_PICKER
+        return "a whole day's seconds, a multiple of 86400, in the years 1 to 9999"
+
+    if kind == hero_ui.HERO_UI_TIME_PICKER
+        return "the seconds since midnight, 0 to 86399"
+    return "the seconds since 1970-01-01T00:00:00 of fields read as UTC, in the years 1 to 9999"
 
 # Sets a slider's or a progress bar's range (`ui.set_range`).
 function set_range(@app: ui.App, widget: ui.Widget, least: i64, most: i64) -> ()?
     n @= valued(app, widget: widget, kind: hero_ui.HERO_UI_SLIDER)?
+
+    if n.kind == hero_ui.HERO_UI_COLOR_WELL
+        return fail(code: failure.INVALID, msg: "a colour well has no range: its value is a colour, 0 to 4294967295")
 
     if least >= most
         return fail(
@@ -328,6 +371,12 @@ function set_range(@app: ui.App, widget: ui.Widget, least: i64, most: i64) -> ()
 
     if n.kind == hero_ui.HERO_UI_PROGRESS && least != 0
         return fail(code: failure.INVALID, msg: f"a progress bar runs from 0, and {least} was asked")
+
+    if model.is_picker(n.kind) && (!model.picker_holds(kind: n.kind, value: least) || !model.picker_holds(kind: n.kind, value: most))
+        return fail(
+            code: failure.INVALID,
+            msg: f"the range {least} to {most} holds a value no {model.kind_name(n.kind)} holds: {picker_words(n.kind)}"
+        )
     n.least @ least
     n.most @ most
 
