@@ -1,0 +1,242 @@
+# The pages of Rebel's programs: each program's own `README.md`, its header
+# comment rendered as the Markdown it holds (spec § 1) and what its folder
+# says beside it, and `examples-rebel/INDEX.md`, one line per program linking
+# its page. The header is the one source of what a program is and how it runs
+# for real, so a page repeats it whole and adds only what the folder says:
+# the demo's command, the faces its catalogue lists, and its folders' sizes.
+
+use <rebel>/strings
+
+use packages_text
+use programs
+use prose
+
+# The page's last paragraph: what writes it, from what, and how to write it
+# again.
+constant WRITTEN: str
+    "This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make."
+
+# The program `p`'s own page.
+#
+# - `p`: the program, read from its folder.
+function readme(p: programs.Program) -> str
+    parts: [str] @= ["# " + p.name, strings.trim_end(p.header.join("\n"))]
+
+    if p.twin
+        parts @ parts.push(twin_section(p))
+    else
+        parts @ parts.push(demo_section(p))
+    parts @ parts.push(faces_section(p))
+    parts @ parts.push(folders_section(p))
+    parts @ parts.push("---\n\n" + WRITTEN)
+    return parts.join("\n\n") + "\n"
+
+# What an application's demo is and the command that runs it.
+#
+# - `p`: an application.
+function demo_section(p: programs.Program) -> str
+    words = if p.words.len() > 0
+        "with the words of `main.args`"
+    else
+        "with no word"
+
+    input = if p.stdin.len() > 0
+        " and `main.stdin` on its input"
+    else
+        ""
+    lines: [str] @= [
+        "## Its demo"
+        ""
+        f"Run from the repository's root {words}{input}, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:"
+        ""
+        "    " + command(p)
+    ]
+
+    if p.varies
+        lines @ lines.push("")
+        lines @ lines.push(
+            "A line `main.varies` names is printed in another form where another machine decides it, each form written there."
+        )
+
+    if p.skips
+        lines @ lines.push("")
+        lines @ lines.push("`main.skips` names the platforms where the demo is built and not run, and why.")
+    return lines.join("\n")
+
+# What a twin's original is, and the command that runs the twin as the check
+# runs it.
+#
+# - `p`: a twin.
+function twin_section(p: programs.Program) -> str
+    original = programs.original_of(p)
+
+    words = if p.words.len() > 0
+        "with that program's words"
+    else
+        "with no word, as that program is"
+
+    input = if p.stdin.len() > 0
+        " and input"
+    else
+        ""
+    return ["## Its original", "", f"The twin of [`{original}/`](../../{original}/), the compiler's own program, which takes no library. Run from the repository's root {words}{input}, it prints that program's `main.expected` byte for byte, and the check of Rebel's programs holds it to it (`tests/harness/rebel_apps.hero`):", "", "    " + command(p)].join(
+        "\n"
+    )
+
+# The command that runs `p` from the repository's root, as the check does:
+# its words, each as a shell reads it back, and its input where it has one.
+#
+# - `p`: the program.
+function command(p: programs.Program) -> str
+    out @= "heroes run " + p.folder + "/main.hero"
+
+    if p.words.len() > 0
+        out @ out + " --"
+
+    for word in p.words
+        out @ out + " " + prose.shell_word(word)
+
+    if p.stdin.len() > 0
+        out @ out + " < " + prose.shell_word(p.stdin)
+    return out
+
+# The faces `p`'s catalogue lists, each linked to its reference page.
+#
+# - `p`: the program.
+function faces_section(p: programs.Program) -> str
+    linked: [str] @= []
+
+    for face in p.faces
+        linked @ linked.push(f"[`{face}`]({packages_text.page_of(face)})")
+
+    listed = prose.counted(count: p.faces.len(), one: "face", many: "faces")
+    return ["## The packages it uses", "", f"Its catalogue, `heroes.toml`, reads Rebel from `{p.rebel_path}` and lists {listed} on its `packages` line, each linked here to its reference: " + linked.join(", ") + "."].join(
+        "\n"
+    )
+
+# What `p`'s folders hold, its own first, then each below it.
+#
+# - `p`: the program.
+function folders_section(p: programs.Program) -> str
+    sum = programs.total(p.tallies)
+    folders = prose.counted(count: p.tallies.len(), one: "folder", many: "folders")
+    files = prose.counted(count: sum.files, one: "file", many: "files")
+    lines = prose.counted(count: sum.lines, one: "line", many: "lines")
+    modules = prose.counted(count: sum.modules, one: "module", many: "modules")
+    module_lines = prose.counted(count: sum.module_lines, one: "line", many: "lines")
+    rows: [str] @= [
+        "## Its folders"
+        ""
+        f"{folders}, {files} and {lines}, this page aside; of them {modules}, `.hero` files, of {module_lines}."
+        ""
+        "| folder | files | lines | modules | their lines |"
+        "|---|---:|---:|---:|---:|"
+    ]
+
+    for t in p.tallies
+        shown = if t.folder.len() == 0
+            "./"
+        else
+            t.folder + "/"
+        cells = [
+            prose.code(shown)
+            prose.thousands(t.files)
+            prose.thousands(t.lines)
+            prose.thousands(t.modules)
+            prose.thousands(t.module_lines)
+        ]
+        rows @ rows.push("| " + cells.join(" | ") + " |")
+
+    return rows.join("\n")
+
+# What `p` is in one sentence: its header's first, without the opening that
+# names it, `<name>: ` for an application or ``The twin of `examples/<name>/`: ``
+# for a twin, which the index's line says beside it.
+#
+# - `p`: the program.
+function summary(p: programs.Program) -> str
+    sentence = prose.lead(p.header)
+
+    opening = if p.twin
+        "The twin of `" + programs.original_of(p) + "/`: "
+    else
+        p.name + ": "
+    return strings.trim_prefix(s: sentence, prefix: opening)
+
+# `examples-rebel/INDEX.md`: each program on one line, its name linked to its
+# page, the applications first, then the twins.
+#
+# - `found`: every program, by its folder's bytes.
+function index_page(found: [programs.Program]) -> str
+    applications: [str] @= []
+    twins: [str] @= []
+
+    for p in found
+        if p.twin
+            original = programs.original_of(p)
+            twins @ twins.push(
+                f"- [{p.name}]({p.name}/README.md), the twin of [`{original}/`](../{original}/): " + summary(p)
+            )
+        else
+            applications @ applications.push(f"- [{p.name}]({p.name}/README.md): " + summary(p))
+
+    count_applications = prose.counted(count: applications.len(), one: "application", many: "applications")
+    count_twins = prose.counted(count: twins.len(), one: "twin", many: "twins")
+    return ["# Rebel's programs", "", f"The programs of `examples-rebel/` written with Rebel, each a project of its own with its catalogue: {count_applications} and {count_twins}. `README.md` § A10 says what each kind is and how the check of Rebel's programs holds it; each program's own page says what it is and how to run it for real, its demo's command, the packages it uses and what its folders hold. Rebel's packages themselves are indexed in [`PACKAGES.md`](PACKAGES.md). The drivers beside them, `reach_<package>.hero`, run each package's tests and are no program of this list.", "", "## Applications", "", "Programs somebody would use, each doing one job through many packages; its demo is its test.", "", applications.join("\n"), "", "## Twins", "", "Programs of `examples/`, the compiler's own, written again with Rebel: each prints its original's output byte for byte.", "", twins.join("\n"), "", "---", "", "This page is written by `generators/rebel_index/`, never by hand, from each program's `main.hero` opening comment. Change that, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what the programs make."].join("\n") + "\n"
+
+## Tests
+
+function sample(twin: bool) -> programs.Program
+    return programs.Program(
+        name: "kit",
+        folder: "examples-rebel/kit",
+        twin: twin,
+        header: ["kit: a tool. It works.", "", "    kit serve"],
+        rebel_path: "../../packages/rebel/0.1.0/files",
+        faces: ["json", "unicode/segment"],
+        words: ["demo", "a b"],
+        stdin: "examples-rebel/kit/main.stdin",
+        varies: false,
+        skips: true,
+        tallies: [programs.Tally(folder: "", files: 4, lines: 1200, modules: 1, module_lines: 100), programs.Tally(folder: "store", files: 1, lines: 30, modules: 1, module_lines: 30)]
+    )
+
+test "command: the words quoted where a shell needs it, and the input"
+    assert command(sample(false)) == "heroes run examples-rebel/kit/main.hero -- demo 'a b' < examples-rebel/kit/main.stdin"
+
+test "summary: an application's name and a twin's opening taken off, any other opening kept"
+    assert summary(sample(false)) == "a tool."
+    twin = sample(true)
+    other = programs.Program(
+        name: twin.name,
+        folder: twin.folder,
+        twin: true,
+        header: ["The twin of `examples/kit/`: a kit, written with Rebel. More."],
+        rebel_path: twin.rebel_path,
+        faces: twin.faces,
+        words: [],
+        stdin: "",
+        varies: false,
+        skips: false,
+        tallies: twin.tallies
+    )
+    assert summary(other) == "a kit, written with Rebel."
+    assert command(other) == "heroes run examples-rebel/kit/main.hero"
+
+test "readme: the header whole, the demo, the faces linked, the folders counted"
+    page = readme(sample(false))
+    assert strings.has_prefix(s: page, prefix: "# kit\n\nkit: a tool. It works.\n\n    kit serve\n\n## Its demo\n")
+    assert strings.contains(s: page, substr: "[`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/)")
+    assert strings.contains(s: page, substr: "2 folders, 5 files and 1,230 lines, this page aside; of them 2 modules")
+    assert strings.contains(s: page, substr: "| `store/` | 1 | 30 | 1 | 30 |")
+    assert strings.contains(s: page, substr: "`main.skips` names")
+    assert strings.has_suffix(s: page, suffix: "says whether this page is still what they make.\n")
+
+test "index_page: an application and a twin, each on its line under its heading"
+    page = index_page([sample(false), sample(true)])
+    assert strings.contains(s: page, substr: "1 application and 1 twin.")
+    assert strings.contains(s: page, substr: "\n- [kit](kit/README.md): a tool.\n")
+    assert strings.contains(
+        s: page,
+        substr: "\n- [kit](kit/README.md), the twin of [`examples/kit/`](../examples/kit/): kit: a tool.\n"
+    )

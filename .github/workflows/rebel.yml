@@ -176,7 +176,10 @@ jobs:
   # lets it be copied and whose source serves only its latest version is kept
   # in the generator's own folder; any other is fetched here by the URL the
   # generator records and held to the SHA-256 it pins, so no generator can rot
-  # unseen. One leg: the tables are text, the same on every platform.
+  # unseen. `generators/rebel_index/` reads no data from outside: it writes the
+  # pages of Rebel's programs and the index of its packages from the tree
+  # itself, and its `check` holds them to it the same way. One leg: the tables
+  # are text, the same on every platform.
   generators:
     name: Linux x86-64, every generated table checked against its generator
     runs-on: ubuntu-26.04
@@ -391,6 +394,15 @@ jobs:
               "https://www.unicode.org/Public/17.0.0/ucd/$f"
           done
           ./heroes run generators/json_idna/main.hero -- check build/generators/ucd-17.0.0
+
+      # Each program's page, `examples-rebel/<name>/README.md`, the short list
+      # `examples-rebel/INDEX.md`, and `examples-rebel/PACKAGES.md`, read from
+      # what `heroes doc` prints of every face, run by the compiler built
+      # above: a face it refuses fails the step by name. A compiler change that
+      # moves what `heroes doc` prints is seen here at the next run, decision
+      # 7's trade written at this file's head.
+      - name: generators/rebel_index, the pages of Rebel's programs and the index of its packages
+        run: ./heroes run generators/rebel_index/main.hero -- check ./heroes
 
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,

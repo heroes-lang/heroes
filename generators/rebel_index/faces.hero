@@ -1,0 +1,368 @@
+# Rebel's faces as the packages' index reads them, every word from the tree:
+# the faces of the newest version folder, each `.hero` a program names (none
+# under an `internal/` folder and no floor, a module named `hero_<x>`: the
+# net's reading in `tests/harness/rebel_tree.hero` and the site's in
+# `site/src/lib/reference.ts`); their layers, from README § A1's table, a face
+# no row names standing in the row of the package whose path is the longest
+# prefix of its own (`tokenizer/tables/o200k_base` under `tokenizer/tables`);
+# README § A4's codes; and each face's reference, what `heroes doc` prints
+# of it, run in a folder whose catalogue reads the version by a `path` entry
+# with no `packages` line, so every face is reached whatever any program
+# lists.
+
+use <rebel>/fs
+use <rebel>/numbers
+use <rebel>/process
+use <rebel>/strings
+use <rebel>/time
+
+use reference
+
+# Where Rebel's versions stand, from the repository's root.
+constant TREE: str
+    "packages/rebel"
+
+# Rebel's rules page, which holds the layers (§ A1) and the codes (§ A4).
+constant GUIDE: str
+    "examples-rebel/README.md"
+
+# The folder `heroes doc` runs in, under the repository's `build/`, which
+# git ignores.
+constant SCRATCH: str
+    "build/rebel_index"
+
+# The longest `heroes doc` of one face may take, in seconds, past which it is
+# ended and the face told: about 2 s each on this Mac on 2026-11-22, beside
+# four other agents' builds.
+constant DOC_SECONDS: i64
+    300
+
+# One row of README § A1: a package, its layer, and the faces it stands for,
+# its own first.
+record Row
+    # Its layer, from 0.
+    layer: i64
+    # The package's path.
+    package: str
+    # Its faces: the package's own module, then those under it no row names.
+    faces: [str]
+
+# What `heroes doc` answered of one face: its reference, or why there is none.
+record Answer
+    # The face's path.
+    face: str
+    # Its reference, read back; a failure where `heroes doc` refused the
+    # face or answered what no reference is.
+    reference: reference.Reference?
+
+# The newest version folder of `TREE`, `<major>.<minor>.<patch>`, compared
+# number by number.
+#
+# Fails `not_found` where `TREE` holds none, and as reading it fails.
+function newest_version() -> str?
+    best @= ""
+
+    for e in fs.read_dir(TREE)?
+        if e.kind == .directory && version_shape(e.name) && (best.len() == 0 || newer(a: e.name, b: best))
+            best @ e.name
+
+    if best.len() == 0
+        return fail(code: "not_found", msg: f"{TREE} holds no version folder, `<major>.<minor>.<patch>`")
+    return ok(best)
+
+# Whether `name` is `<major>.<minor>.<patch>`, three runs of digits.
+#
+# - `name`: a folder's name.
+function version_shape(name: str) -> bool
+    parts = strings.split(s: name, sep: ".")
+
+    if parts.len() != 3
+        return false
+
+    for part in parts
+        if part.len() == 0
+            return false
+
+        for at in range(from: 0, to: part.len())
+            if part[at] < '0' || part[at] > '9'
+                return false
+
+    return true
+
+# Whether the version `a` is newer than `b`, both of `version_shape`.
+#
+# - `a`: one version.
+# - `b`: the other.
+function newer(a: str, b: str) -> bool
+    x = strings.split(s: a, sep: ".")
+    y = strings.split(s: b, sep: ".")
+
+    for at in range(from: 0, to: 3)
+        if x[at].len() != y[at].len()
+            return x[at].len() > y[at].len()
+
+        for digit in range(from: 0, to: x[at].len())
+            if x[at][digit] != y[at][digit]
+                return x[at][digit] > y[at][digit]
+
+    return false
+
+# Every face of the version folder `files`, by its path's bytes.
+#
+# - `files`: the version's `files/` folder, from the repository's root.
+#
+# Fails as reading a folder fails.
+function faces_of(files: str) -> [str]?
+    out: [str] @= []
+    modules(root: files, below: "", @out)?
+    return ok(sort(out))
+
+# Adds to `found` the face of each `.hero` under the folder `below` of `root`,
+# its path below `root` without `.hero`, every folder walked.
+#
+# - `root`: the version's `files/` folder.
+# - `below`: the folder under it, "" for `root`.
+# - `found`: the faces so far, which it adds to.
+#
+# Fails as reading a folder fails.
+function modules(root: str, below: str, @found: [str]) -> ()?
+    here = if below.len() == 0
+        root
+    else
+        root + "/" + below
+
+    for e in fs.read_dir(here)?
+        path = if below.len() == 0
+            e.name
+        else
+            below + "/" + e.name
+
+        if e.kind == .directory
+            modules(root: root, below: path, @found)?
+        else if e.kind == .file && strings.has_suffix(s: e.name, suffix: ".hero")
+            face = strings.trim_suffix(s: path, suffix: ".hero")
+
+            if is_face(face)
+                found @ found.push(face)
+
+    return ok()
+
+# Whether the module `path` is a face a program names: no part after the first
+# is `internal`, and its last part does not begin `hero_`.
+#
+# - `path`: the module's path below the version's `files/`, `.hero` off.
+function is_face(path: str) -> bool
+    parts = strings.split(s: path, sep: "/")
+
+    for at in range(from: 1, to: parts.len() - 1)
+        if parts[at] == "internal"
+            return false
+
+    return !strings.has_prefix(s: parts[parts.len() - 1], prefix: "hero_")
+
+# The text of `guide` between the line opening `## <from>` and the one
+# opening `## <to>`.
+#
+# - `guide`: the rules page's text.
+# - `from`: the section's number, `A1`.
+# - `to`: the next section's.
+#
+# Fails `not_found` where either heading is missing or out of order.
+function section(guide: str, from: str, to: str) -> str?
+    start = strings.index_of(s: guide, substr: "\n## " + from + ".")?
+    end = strings.index_of(s: guide, substr: "\n## " + to + ".")?
+
+    if end < start
+        return fail(code: "not_found", msg: f"{GUIDE}: § {to} stands before § {from}")
+    return ok(guide.slice(from: start, to: end))
+
+# README § A1's rows, each holding the faces of `faces` it stands for, in the
+# table's order.
+#
+# - `guide`: the rules page's text.
+# - `faces`: every face of the version.
+#
+# Fails `invalid` where a row names no face, or a face has no row and no
+# row's package holds it, every disagreement named; `not_found` where § A1
+# or § A2 is missing.
+function rows_of(guide: str, faces: [str]) -> [Row]?
+    out: [Row] @= []
+
+    for line in strings.lines(section(guide: guide, from: "A1", to: "A2")?)
+        row = row_of(line)
+
+        if row.package.len() > 0
+            out @ out.push(row)
+
+    problems: [str] @= []
+    named: {str: bool} @= {}
+    held: {str: bool} @= {}
+
+    for face in faces
+        held[face] @ true
+
+    for row in out
+        named[row.package] @ true
+
+        if held[row.package].is_err()
+            problems @ problems.push(f"the row `{row.package}` names no face")
+
+    for face in faces
+        if !named[face].is_err()
+            continue
+        home @= -1
+
+        for at in range(from: 0, to: out.len())
+            if strings.has_prefix(s: face, prefix: out[at].package + "/") && (home < 0 || out[at].package.len() > out[home].package.len())
+                home @ at
+
+        if home < 0
+            problems @ problems.push(f"the face `{face}` has no row, and no row's package holds it")
+        else
+            out[home].faces @ out[home].faces.push(face)
+
+    if problems.len() > 0
+        return fail(code: "invalid", msg: f"{GUIDE} § A1 and Rebel's tree disagree: " + problems.join("; "))
+    return ok(out)
+
+# The row a line of § A1's table is, `| <layer> | `<package>` | ...`; a row
+# with no package where the line is none.
+#
+# - `line`: one line of § A1.
+function row_of(line: str) -> Row
+    none = Row(layer: 0, package: "", faces: [])
+
+    if !strings.has_prefix(s: line, prefix: "| ")
+        return none
+    cells = strings.split(s: line, sep: " | ")
+
+    if cells.len() < 3 || !strings.has_prefix(s: cells[1], prefix: "`") || !strings.has_suffix(s: cells[1], suffix: "`")
+        return none
+    digits = strings.trim_prefix(s: cells[0], prefix: "| ")
+
+    if digits.len() == 0
+        return none
+
+    for at in range(from: 0, to: digits.len())
+        if digits[at] < '0' || digits[at] > '9'
+            return none
+
+    layer = match numbers.parse_int(digits)
+        .ok n  => n
+        .err _ => return none
+
+    package = cells[1].slice(from: 1, to: cells[1].len() - 1)
+    return Row(layer: layer, package: package, faces: [package])
+
+# README § A4's codes: the words in backticks of the first cell of each row of
+# its table, `| `code` | means |`.
+#
+# - `guide`: the rules page's text.
+#
+# Fails `not_found` where § A4 or § A5 is missing, and `invalid` where its
+# table holds no code.
+function vocabulary(guide: str) -> {str: bool}?
+    out: {str: bool} @= {}
+
+    for line in strings.lines(section(guide: guide, from: "A4", to: "A5")?)
+        cells = strings.split(s: line, sep: " | ")
+
+        if !strings.has_prefix(s: line, prefix: "| `") || cells.len() < 2
+            continue
+        pieces = strings.split(s: cells[0], sep: "`")
+        at @= 1
+
+        while at < pieces.len()
+            out[pieces[at]] @ true
+            at @ at + 2
+
+    if keys(out).len() == 0
+        return fail(code: "invalid", msg: f"{GUIDE} § A4: its table holds no code")
+    return ok(out)
+
+# What `heroes doc` answers of each of `faces`, run by `compiler` in
+# `SCRATCH`, whose catalogue reads the version `version` by its folder.
+#
+# - `compiler`: the compiler, absolute.
+# - `version`: the version folder's name.
+# - `faces`: the faces, in the order asked.
+#
+# Fails where the folder or its catalogue cannot be written, or a run cannot
+# be started.
+function answers(compiler: str, version: str, faces: [str]) -> [Answer]?
+    fs.make_dir_all(SCRATCH)?
+    write_file(path: SCRATCH + "/heroes.toml", text: f"[dependencies.rebel]\npath = \"../../{TREE}/{version}/files\"\n")?
+    limit = time.seconds(DOC_SECONDS)?
+    out: [Answer] @= []
+
+    for face in faces
+        command = process.command(program: compiler, arguments: ["doc", "<rebel>/" + face])
+        placed = process.with_dir(command, SCRATCH)
+        piped = process.with_error(process.with_output(placed, .pipe), .pipe)
+        asked = process.with_time_limit(piped, limit)
+        finished = process.run(asked)?
+        out @ out.push(Answer(face: face, reference: answered(face: face, finished: finished)))
+
+    return ok(out)
+
+# The reference `finished` holds of `face`: its output read back where it
+# exited 0.
+#
+# - `face`: the face asked.
+# - `finished`: how `heroes doc` ended, and what it wrote.
+#
+# Fails `invalid` where it exited 1, refusing the face, the message holding
+# what it told; `failed` where it ended otherwise; and as reading its output
+# fails.
+function answered(face: str, finished: process.Finished) -> reference.Reference?
+    told = finished.error.validated_bytes().default("(its error output is not UTF-8)")
+
+    match finished.status
+        .exited e =>
+            if e.code == 1
+                return fail(code: "invalid", msg: f"heroes doc refuses <rebel>/{face}:\n{told}")
+
+            if e.code != 0
+                return fail(code: "failed", msg: f"heroes doc ended with the code {e.code} on <rebel>/{face}:\n{told}")
+        .signaled s => return fail(
+            code: "failed",
+            msg: f"heroes doc was ended by the signal {s.signal} on <rebel>/{face}"
+        )
+        .timed_out => return fail(code: "failed", msg: f"heroes doc ran past {DOC_SECONDS} s on <rebel>/{face}")
+
+    printed = finished.output.validated_bytes()?
+
+    match reference.read_reference(printed: printed, title: "<rebel>/" + face)
+        .ok r  => return ok(r)
+        .err e => return fail(code: e.code, msg: f"<rebel>/{face}: " + e.msg)
+
+## Tests
+
+test "version_shape and newer: three numbers compared as numbers"
+    assert version_shape("0.1.0") && !version_shape("0.1") && !version_shape("0.1.x") && !version_shape("0..1")
+    assert newer(a: "0.10.0", b: "0.9.9") && !newer(a: "0.1.0", b: "0.1.0") && newer(a: "1.0.0", b: "0.99.99")
+
+test "is_face: a face, a private module, a floor, and `internal` as the first part"
+    assert is_face("csv") && is_face("unicode/segment") && is_face("internal")
+    assert !is_face("json/internal/read") && !is_face("os/hero_proc")
+
+test "row_of: a row of the table, its head, its rule and a line of prose"
+    row = row_of("| 3 | `unicode/segment` | what it holds | `unicode` |  |")
+    assert row.layer == 3 && row.package == "unicode/segment" && row.faces == ["unicode/segment"]
+    assert row_of("| layer | package | what it holds | may use | C under it |").package == ""
+    assert row_of("|---|---|---|---|---|").package == ""
+    assert row_of("A hundred and fifty-five packages.").package == ""
+
+test "rows_of: a face under its longest row, and a face with no row refused"
+    guide = "x\n## A1. P\n\n| 0 | `a` | h |  |  |\n| 1 | `a/b` | h |  |  |\n## A2. Q\n"
+    rows = rows_of(guide: guide, faces: ["a", "a/b", "a/b/c", "a/d"]).must()
+    assert rows.len() == 2 && rows[0].faces == ["a", "a/d"] && rows[1].faces == ["a/b", "a/b/c"]
+    assert rows_of(guide: guide, faces: ["a", "a/b", "z"]).is_err()
+    assert rows_of(guide: guide, faces: ["a"]).is_err()
+
+test "vocabulary: every code of the table's first column, and a section with none refused"
+    guide = "x\n## A4. F\n\n| code | means |\n|---|---|\n| `not_found` | n |\n| `exists`, `not_empty` | e |\n\n## A5. G\n"
+    codes = vocabulary(guide).must()
+    assert keys(codes) == ["not_found", "exists", "not_empty"]
+    assert vocabulary("x\n## A4. F\n## A5. G\n").is_err()
+    assert vocabulary("x\n## A5. G\n").is_err()
