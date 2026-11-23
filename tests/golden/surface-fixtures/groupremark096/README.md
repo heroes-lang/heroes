@@ -70,6 +70,6 @@ first member is ever a doc* above, and *which has no doc to protect*, are no
 longer so: the parser gives the first member the comment directly above it
 inside the block, as it gives every other member, and the comment above the
 `extern` keyword only where the member has none of its own
-(`selfhost/parse/group.hero`'s `member_doc`). The remark of `beside.hero`
+(`selfhost/doc_comments.hero`'s `member_doc`). The remark of `beside.hero`
 before the first member has a blank line under it, so it is no doc and the
 file is the same bytes; its first lines say so since that day.

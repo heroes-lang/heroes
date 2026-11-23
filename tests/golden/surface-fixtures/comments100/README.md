@@ -33,7 +33,7 @@ the doc. A `##` heading is never read as one, so it gains none.
 **Amended 2026-11-22 by defect 2634.** The parser gives a group's first
 member the comment directly above it inside the block, as it gives every
 other member, and the group's comment above the head only where the member
-has none of its own (`selfhost/parse/group.hero`'s `member_doc`). So a
+has none of its own (`selfhost/doc_comments.hero`'s `member_doc`). So a
 comment directly under a head and directly above that head's first member
 is that member's doc, and each remark under a head in these two files has a
 blank line under it, which keeps it the remark the shape is about; the
