@@ -40,6 +40,7 @@
 #include <shellapi.h>
 #include <oleacc.h>
 #include <wchar.h>
+#include "hero_ui_canvas_win32.h"
 #include "hero_ui_print_win32.h"
 #include "hero_ui_web_win32.h"
 #include "hero_ui_win32_watch.h"
@@ -183,6 +184,8 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 static const wchar_t hero_ui_win_window_class[] = L"HeroesUiWindow";
 static const wchar_t hero_ui_win_panel_class[] = L"HeroesUiPanel";
 static const wchar_t hero_ui_win_picture_class[] = L"HeroesUiPicture";
+/* A drawing area's window, which paints itself. */
+static const wchar_t hero_ui_win_canvas_class[] = L"HeroesUiCanvas";
 
 /* The manifest of the activation context (THE SYSTEM'S CURRENT LOOK). */
 static const char hero_ui_win_manifest[] = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n"
@@ -328,6 +331,9 @@ struct hero_ui_native {
     bool choice_waits;
     /* A tree's items, in the order added. */
     struct hero_ui_win_node *nodes;
+    /* A drawing area's drawing, its pointer and its keys
+     * (`hero_ui_canvas_win32.c`). */
+    hero_ui_canvas_win32 *canvas;
     int64_t node_count;
     int64_t node_room;
     /* A text widget's text as its control last held it, UTF-16 as the
@@ -1659,9 +1665,55 @@ static LRESULT hero_ui_win_notified(NMHDR *head) {
     }
 }
 
+/* -- A drawing area's window ------------------------------------------------- */
+
+static void hero_ui_win_give_keys(hero_ui_native *window, HWND control);
+static hero_ui_native *hero_ui_win_key_button(int64_t id);
+static void hero_ui_win_canvas_role(const hero_ui_native *area);
+
+/* The scale of drawing area `area`'s window, as the window keeps it. */
+static UINT hero_ui_win_canvas_dpi(const hero_ui_native *area) {
+    const hero_ui_native *window = hero_ui_win_window(area->window);
+
+    return window != NULL && window->dpi != 0 ? window->dpi : 96;
+}
+
+/* `WM_GETDLGCODE` of drawing area `area`: every key, Tab and the arrows
+ * among them, as the macOS arm's area takes every key it is given; Return
+ * and Escape alone go on to the dialog manager where the window has a button
+ * they press, as AppKit's key equivalents press it before the area hears
+ * them. */
+static LRESULT hero_ui_win_canvas_keys(const hero_ui_native *area, const MSG *message) {
+    const hero_ui_native *window = hero_ui_win_window(area->window);
+
+    if (message != NULL && window != NULL && message->message == WM_KEYDOWN && ((message->wParam == VK_RETURN && hero_ui_win_key_button(window->enter_button) != NULL) || (message->wParam == VK_ESCAPE && hero_ui_win_key_button(window->escape_button) != NULL))) {
+        return DLGC_WANTARROWS | DLGC_WANTTAB | DLGC_WANTCHARS;
+    }
+    return DLGC_WANTALLKEYS | DLGC_WANTARROWS | DLGC_WANTTAB | DLGC_WANTCHARS;
+}
+
 static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     hero_ui_native *widget;
+    LRESULT canvas_answer;
 
+    widget = hero_ui_win_of(hwnd);
+    if (widget != NULL && widget->kind == HERO_UI_CANVAS && widget->canvas != NULL && widget->hwnd == hwnd) {
+        if (message == WM_GETDLGCODE) {
+            return hero_ui_win_canvas_keys(widget, (const MSG *)lparam);
+        }
+        if (message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN || message == WM_MBUTTONDOWN || message == WM_XBUTTONDOWN) {
+            /* A press in the area gives it the keys, as a person's click in
+             * a field does. */
+            hero_ui_native *window = hero_ui_win_window(widget->window);
+
+            if (window != NULL) {
+                hero_ui_win_give_keys(window, hwnd);
+            }
+        }
+        if (hero_ui_canvas_win32_message(widget->canvas, widget->id, hwnd, hero_ui_win_canvas_dpi(widget), message, wparam, lparam, &canvas_answer)) {
+            return canvas_answer;
+        }
+    }
     if (message == hero_ui_win_taskbar_created && message != 0) {
         widget = hero_ui_win_of(hwnd);
         if (widget != NULL && widget->kind == HERO_UI_TRAY) {
@@ -1789,7 +1841,7 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             if (window != NULL && window->unframed) {
                 LRESULT hit = DefWindowProcW(hwnd, message, wparam, lparam);
 
-                if (hit != HTCLIENT || widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
+                if (hit != HTCLIENT || widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN || widget->kind == HERO_UI_CANVAS) {
                     return hit;
                 }
                 return widget->kind == HERO_UI_WINDOW && widget->hwnd == hwnd ? hero_ui_win_edge(window, lparam) : HTTRANSPARENT;
@@ -1954,7 +2006,7 @@ int64_t hero_ui_arm_open(void) {
     if (!hero_ui_win_ready) {
         HBRUSH face = (HBRUSH)(INT_PTR)(COLOR_3DFACE + 1);
 
-        if (!hero_ui_win_register(hero_ui_win_window_class, face, LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION)) || !hero_ui_win_register(hero_ui_win_panel_class, face, NULL) || !hero_ui_win_register(hero_ui_win_picture_class, NULL, NULL)) {
+        if (!hero_ui_win_register(hero_ui_win_window_class, face, LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION)) || !hero_ui_win_register(hero_ui_win_panel_class, face, NULL) || !hero_ui_win_register(hero_ui_win_picture_class, NULL, NULL) || !hero_ui_win_register(hero_ui_win_canvas_class, NULL, NULL)) {
             return hero_ui_win_failed("registering the window classes", GetLastError());
         }
         hero_ui_win_ready = true;
@@ -2089,6 +2141,8 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
         }
         break;
     }
+    hero_ui_canvas_win32_free(widget->canvas);
+    widget->canvas = NULL;
     if (widget->kind == HERO_UI_TABLE) {
         hero_ui_win_drop_cells(widget);
     }
@@ -2154,6 +2208,7 @@ void hero_ui_arm_close(void) {
         hero_ui_win_destroy_tree(first);
     }
     hero_ui_free_map();
+    hero_ui_canvas_win32_end();
     hero_ui_win_props_end();
     hero_ui_win_notifier_end();
     hero_ui_win_undocked = false;
@@ -2455,6 +2510,12 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_IMAGE:
         made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_picture_class, 0, 0, id);
         break;
+    case HERO_UI_CANVAS:
+        made->canvas = hero_ui_canvas_win32_new(&answer);
+        if (made->canvas != NULL) {
+            made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_canvas_class, WS_TABSTOP, 0, id);
+        }
+        break;
     case HERO_UI_MENU:
     case HERO_UI_CONTEXT_MENU:
         made->menu = CreatePopupMenu();
@@ -2536,6 +2597,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (made->font != NULL) {
             (void)DeleteObject(made->font);
         }
+        hero_ui_canvas_win32_free(made->canvas);
         hero_layer_free(made->label);
         hero_layer_free(made);
         return answer;
@@ -2561,6 +2623,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         (void)SendMessageW(made->hwnd, EM_SETLIMITTEXT, 0, 0);
         /* Where it fails the field shows its own menu alone. */
         (void)hero_ui_win_subclass_edit(made->hwnd);
+        break;
+    case HERO_UI_CANVAS:
+        hero_ui_win_canvas_role(made);
         break;
     case HERO_UI_PAGE: {
         TCITEMW item;
@@ -4078,7 +4143,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR && kind != HERO_UI_GROUP && kind != HERO_UI_EDITABLE_COMBO && kind != HERO_UI_SPIN && kind != HERO_UI_TOOLBAR && kind != HERO_UI_STATUS_BAR && !hero_ui_win_stamp_kind(kind) && kind != HERO_UI_COLOR_WELL && kind != HERO_UI_FONT_BUTTON) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY && kind != HERO_UI_SEPARATOR && kind != HERO_UI_GROUP && kind != HERO_UI_EDITABLE_COMBO && kind != HERO_UI_SPIN && kind != HERO_UI_TOOLBAR && kind != HERO_UI_STATUS_BAR && !hero_ui_win_stamp_kind(kind) && kind != HERO_UI_COLOR_WELL && kind != HERO_UI_FONT_BUTTON && kind != HERO_UI_CANVAS) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -4958,6 +5023,7 @@ static bool hero_ui_win_takes_keys(int64_t kind) {
     case HERO_UI_FONT_BUTTON:
     case HERO_UI_EDITABLE_COMBO:
     case HERO_UI_SPIN:
+    case HERO_UI_CANVAS:
         return true;
     default:
         return false;
@@ -5136,6 +5202,7 @@ int64_t hero_ui_arm_set_focus(int64_t id) {
     case HERO_UI_LIST_MULTIPLE:
     case HERO_UI_TABLE:
     case HERO_UI_TREE:
+    case HERO_UI_CANVAS:
         hero_ui_win_give_keys(window, widget->hwnd);
         return HERO_UI_OK;
     case HERO_UI_EDITABLE_COMBO:
@@ -9766,6 +9833,24 @@ static int64_t hero_ui_win_name_again(hero_ui_native *widget) {
     return FAILED(done) ? hero_ui_win_failed("naming a widget for a screen reader", (DWORD)done) : HERO_UI_OK;
 }
 
+/* A drawing area is one element for a screen reader, of role image
+ * (`ROLE_SYSTEM_GRAPHIC`, which a window of this arm's own class is not
+ * given by the system), its name the program's; its parts are not offered.
+ * Where the service could not be made it keeps the system's role. */
+static void hero_ui_win_canvas_role(const hero_ui_native *area) {
+    static const GUID role_property = {0xcb905ff2, 0x7bd1, 0x4c05, {0xb3, 0xc8, 0xe6, 0xc2, 0x41, 0x36, 0x4d, 0x70}};
+    IAccPropServices *props = hero_ui_win_props_of();
+    VARIANT role;
+
+    if (props == NULL || area->hwnd == NULL) {
+        return;
+    }
+    VariantInit(&role);
+    role.vt = VT_I4;
+    role.lVal = ROLE_SYSTEM_GRAPHIC;
+    (void)props->lpVtbl->SetHwndProp(props, area->hwnd, (DWORD)OBJID_CLIENT, CHILDID_SELF, role_property, role);
+}
+
 /* Label `label`'s words changed or it is gone: every widget it names is
  * named again. */
 static void hero_ui_win_label_changed(int64_t label, bool gone) {
@@ -10923,6 +11008,46 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
     hero_layer_free(narrow);
     *length = bytes;
     return HERO_UI_OK;
+}
+
+/* -- A DRAWING AREA (`hero_ui_canvas_win32.c`) ------------------------------
+ *
+ * The area's window is this arm's; its drawing, its pointer and its keys are
+ * the member's, which these calls reach with the window and its scale. */
+
+/* Drawing area `id`, or NULL with `*answer` `NOT_FOUND` or `INVALID`. */
+static hero_ui_native *hero_ui_win_canvas_of(int64_t id, int64_t *answer) {
+    hero_ui_native *area = hero_ui_find(id);
+
+    *answer = area == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    return area != NULL && area->kind == HERO_UI_CANVAS && area->canvas != NULL && area->hwnd != NULL ? area : NULL;
+}
+
+int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    return area == NULL ? answer : hero_ui_canvas_win32_set(area->canvas, area->hwnd, list, count);
+}
+
+int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    if (area == NULL) {
+        return answer;
+    }
+    /* The size the layer placed it at, in points. */
+    *width = area->width;
+    *height = area->height;
+    return hero_ui_canvas_win32_snapshot(area->canvas, area->width, area->height, rgba, count);
+}
+
+int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    return area == NULL ? answer : hero_ui_canvas_win32_pointer(area->canvas, area->id, area->hwnd, hero_ui_win_canvas_dpi(area), x, y, phase, button, clicks, modifiers);
 }
 
 #endif
