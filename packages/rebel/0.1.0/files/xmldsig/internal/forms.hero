@@ -1,0 +1,135 @@
+# The forms XML Signature writes bytes in that differ from the ones the
+# packages under it read: base 64 broken over lines, as `ds:CryptoBinary` and
+# `base64Binary` allow, and an ECDSA signature as its two numbers side by
+# side, R then S, each as long as the curve's order (RFC 4051 § 3.3), where
+# `crypto/keypairs` reads and writes X9.62's DER.
+
+use asn1
+use big
+use bytes
+
+# The code of bytes not of their form.
+constant INVALID: str
+    "invalid"
+
+# The bytes of `s`, base 64 with XML's white space anywhere in it: spaces,
+# tabs, carriage returns and line feeds are taken out before it is read.
+# Fails `invalid` as `bytes.parse_base64` does, `what` naming the element.
+function base64_of(s: str, what: str) -> [u8]?
+    kept: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b == ' ' || b == '\t' || b == '\r' || b == '\n'
+            kept @ kept.push(s.slice(from: run, to: i))
+            run @ i + 1
+        i @ i + 1
+
+    kept @ kept.push(s.slice(from: run, to: s.len()))
+
+    match bytes.parse_base64(kept.join(""))
+        .ok b  => return ok(b)
+        .err e => return fail(code: INVALID, msg: f"{what} is not base 64: {e.msg}")
+
+# `data` as base 64 in lines of 76 characters, each line but the last ended by
+# a line feed, as XML Signature's examples write it.
+function base64_lines(data: [u8]) -> str
+    s = bytes.format_base64(data)
+    lines: [str] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        end = if at + 76 < s.len()
+            at + 76
+        else
+            s.len()
+        lines @ lines.push(s.slice(from: at, to: end))
+        at @ end
+
+    return lines.join("\n")
+
+# X9.62's DER of the ECDSA signature `raw`, R and S side by side, each half of
+# it. Fails `invalid` where `raw` is empty or of an odd length.
+function ecdsa_der(raw: [u8]) -> [u8]?
+    if raw.len() == 0 || raw.len() % 2 != 0
+        return fail(
+            code: INVALID,
+            msg: f"an ECDSA signature value of {raw.len()} bytes, where R and S are two halves of one length"
+        )
+    half = raw.len() / 2
+    r = asn1.from_integer(big.from_bytes(raw.slice(from: 0, to: half), order: .big_endian))
+    s = asn1.from_integer(big.from_bytes(raw.slice(from: half, to: raw.len()), order: .big_endian))
+
+    match asn1.encode_der(.sequence(items: [r, s]))
+        .ok der => return ok(der)
+        .err e  => return fail(code: INVALID, msg: f"an ECDSA signature value: {e.msg}")
+
+# The ECDSA signature `der`, X9.62's DER, as R and S side by side, each of
+# `size` bytes. Fails `invalid` where `der` is not two positive integers that
+# fit.
+function ecdsa_raw(der: [u8], size: i64) -> [u8]?
+    parts = match asn1.decode_der(der)
+        .ok v =>
+            match asn1.items_of(v)
+                .ok items => items
+                .err e    => return fail(code: INVALID, msg: f"an ECDSA signature: {e.msg}")
+        .err e => return fail(code: INVALID, msg: f"an ECDSA signature: {e.msg}")
+
+    if parts.len() != 2
+        return fail(code: INVALID, msg: f"an ECDSA signature of {parts.len()} numbers, where R and S are two")
+    out: [u8] @= []
+
+    for part in parts
+        n = match asn1.integer_of(part)
+            .ok v  => v
+            .err e => return fail(code: INVALID, msg: f"an ECDSA signature's number: {e.msg}")
+
+        match big.to_bytes_width(n, width: size, order: .big_endian)
+            .ok b =>
+                for byte in b
+                    out @ out.push(byte)
+            .err e => return fail(code: INVALID, msg: f"an ECDSA signature's number past {size} bytes: {e.msg}")
+
+    return ok(out)
+
+## Tests
+
+test "base64_of: empty, broken by every kind of white space, and a byte outside the alphabet"
+    assert base64_of(s: "", what: "x").must().len() == 0
+    assert base64_of(s: " AQ\r\nID\tBA== \n", what: "x").must() == [1, 2, 3, 4]
+
+    match base64_of(s: "AQ*D", what: "the value")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg.len() > 10
+
+test "base64_lines: none, one short line, and a break after 76 characters"
+    empty: [u8] = []
+    assert base64_lines(empty) == ""
+    assert base64_lines([1, 2, 3]) == "AQID"
+    sixty: [u8] @= []
+
+    for _ in range(from: 0, to: 60)
+        sixty @ sixty.push(255)
+
+    text = base64_lines(sixty)
+    assert text.len() == 81 && text[76] == '\n'
+    assert base64_of(s: text, what: "x").must() == sixty
+
+test "ecdsa_der and ecdsa_raw: a signature turned to DER and back, a leading zero kept, an odd length refused"
+    raw: [u8] = [0, 1, 2, 3, 128, 5, 6, 7]
+    der = ecdsa_der(raw).must()
+
+    # cryptography 50.0.2's encode_dss_signature(0x010203, 0x80050607).
+    assert der == [48, 12, 2, 3, 1, 2, 3, 2, 5, 0, 128, 5, 6, 7]
+    assert ecdsa_raw(der: der, size: 4).must() == raw
+
+    match ecdsa_der([1, 2, 3])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match ecdsa_raw(der: der, size: 2)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

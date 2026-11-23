@@ -5,6 +5,7 @@
 
 use image
 use image/colorspace
+use math
 
 # What a page's samples are and how to read them.
 record Spec
@@ -61,9 +62,9 @@ function ycbcr_color(y: i64, cb: i64, cr: i64, refs: [i64] lent) -> image.Color
     ys = clamp8(v: y - refs[0], span: refs[1] - refs[0], full: 255)
     cbs = (cb - refs[2]) * 127 / spanned(refs[3] - refs[2])
     crs = (cr - refs[4]) * 127 / spanned(refs[5] - refs[4])
-    r = clamp_to(ys + crs * 1402 / 1000)
-    g = clamp_to(ys - (cbs * 344 + crs * 714) / 1000)
-    b = clamp_to(ys + cbs * 1772 / 1000)
+    r = math.clamp_i64(x: ys + crs * 1402 / 1000, low: 0, high: 255)
+    g = math.clamp_i64(x: ys - (cbs * 344 + crs * 714) / 1000, low: 0, high: 255)
+    b = math.clamp_i64(x: ys + cbs * 1772 / 1000, low: 0, high: 255)
     return image.Color(r: to_u8(r).must(), g: to_u8(g).must(), b: to_u8(b).must(), a: 255)
 
 # `d`, or 1 where it is 0, so that it divides.
@@ -82,15 +83,6 @@ function clamp8(v: i64, span: i64, full: i64) -> i64
     if r > full
         return full
     return r
-
-# `v` kept within 0 to 255.
-function clamp_to(v: i64) -> i64
-    if v < 0
-        return 0
-
-    if v > 255
-        return 255
-    return v
 
 # The image of `samples`, `s.spp` samples a pixel row after row. Fails
 # `invalid` where `samples` holds another count, a palette is too short, or

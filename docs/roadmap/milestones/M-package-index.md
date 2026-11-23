@@ -50,3 +50,29 @@ the author's decision 4 of 2026-11-15 (`docs/roadmap/milestones/M-rebel-library.
 manager written with the library has a row of its own, row 78, and this row comes after it, as the
 paragraph above decided on 2026-11-17. So the paragraph of 2026-11-15 that made 2315 this row's
 stands at its date and holds no longer; the issue's GitHub milestone moves with it.
+
+**A variant the opening sitting measures, the author's of 2026-11-23** (given while M-rebel-library's folders
+were being moved, `docs/roadmap/milestones/M-rebel-library.md` § The author's answers of 2026-11-23, about 23:00),
+meant as: *the index should not hold a package's files, only a pointer, a sort of link, saying how to fetch them;
+one day the index may be a repository of its own, as Homebrew's taps are, Rebel another, its examples a third.* It
+turns part of the choice of 2026-11-17 above, *the indexes as files a site serves*, so the sitting puts the two side
+by side and the author chooses with the measurements in front of them. What the sitting is handed, each read on
+2026-11-23 and to be read again on its own day:
+
+- **the protocol that stands**: `<index>/<name>/versions`, `<index>/<name>/<version>/list` and
+  `<index>/<name>/<version>/files/<path>`, every file at its own address and never rewritten once published
+  (panel 235, ratified 2026-11-07; `selfhost/fetch/index_source.hero`), its names fixed by the `fetch` goldens;
+- **what a pointer already is**: a catalogue's git entry, `git`, `tag`, `commit` and `sum`, which a program can write
+  today with no index, so an index of pointers is a list from a name and a version to such an entry;
+- **what it does not yet say**: the git entry names no folder inside a repository (searched in the specification,
+  `docs/design.md` and `M-package-manager.md`, nothing found), so a package must stand at its repository's root or
+  the form must learn a folder;
+- **the question a sitting owes an answer to**: a pointer keeps a version's integrity, the `sum` being checked either
+  way, and gives up its availability, since a repository deleted or a tag rewritten ends a build the index cannot
+  mend; which is why the precedents to verify, never to recall, are Go's module proxy and checksum database beside
+  its fetch from version control, Homebrew's formulae beside the bottles it hosts itself, and crates.io's index of
+  checksums beside the archives it stores;
+- **two facts of the day it was given**: Rebel's source stood at `packages/rebel/0.1.0/files`, a published version's
+  address, with neither `versions` nor `list`, which is what moved it to `rebel/library/` (whether a source's path
+  carries its version at all is this sitting's too); and `index.heroes-lang.org`, the address a catalogue with no
+  `index` line reads, resolved to nothing, `heroes add rebel` ending at exit 2 on `curl`'s *Could not resolve host*.

@@ -63,6 +63,8 @@ variant Compression
     ccitt_g4
     # Another compression, by its number in the Compression tag.
     other
+        # The number the tag holds, as `compression_of` was given it: 34712
+        # for JPEG 2000, say. `encode` writes none of these.
         code: i64
 
 # The unit a resolution is given in.
@@ -255,6 +257,9 @@ variant Depth
     # One bit a pixel: gray from `threshold` up is white, the rest black. The
     # fax codings take this and nothing else.
     bilevel
+        # The gray, 0 to 255, from which a pixel is white; `encode` refuses
+        # another. An image in colour is made gray first, as `image.convert`
+        # does.
         threshold: i64
 
 # How `encode` writes a file.

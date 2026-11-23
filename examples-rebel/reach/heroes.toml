@@ -1,5 +1,5 @@
 [dependencies.rebel]
-path = "../packages/rebel/0.1.0/files"
+path = "../../packages/rebel/0.1.0/files"
 packages = [
     "acme",
     "amqp",
@@ -196,5 +196,6 @@ packages = [
     "x509",
     "xlsx",
     "xml",
+    "xmldsig",
     "yaml",
 ]

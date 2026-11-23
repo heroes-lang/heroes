@@ -16,7 +16,7 @@
 #     A step of this file's own ran `heroes doc` over every face from step 65a
 #     to step 94a, which removed it as the check's repetition;
 #   - **every package's own tests**, through the drivers
-#     `examples-rebel/reach_*.hero` (the `plan` job counts them), each
+#     `examples-rebel/reach/reach_*.hero` (the `plan` job counts them), each
 #     `heroes test` plain, and on the two Linux legs also under
 #     `--sanitize`, since LeakSanitizer is there and a driver reaches the
 #     floors' C bindings (`.claude/rules/platforms.md` § Linux is where a leak
@@ -157,8 +157,9 @@ jobs:
       # turns this step red, as do fewer modules documented than the suite's
       # least (`LEAST_REFERENCES`, 175 on 2026-11-21: 152 faces and 23
       # floors). That is every face the step
-      # `heroes doc over every face` ran from step 65a, read through
-      # `examples-rebel/heroes.toml`'s one `path`, the same version folder, and
+      # `heroes doc over every face` ran from step 65a, read through the
+      # drivers' catalogue's one `path` (`examples-rebel/reach/heroes.toml`
+      # since step 127a), the same version folder, and
       # each face by the same rule (a part `internal` after the first is
       # private, a last part beginning `hero_` a floor), with the floors added:
       # step 94a removed that step as the check's repetition.
@@ -447,7 +448,7 @@ jobs:
         run: |
           set -euo pipefail
           drivers=()
-          for file in $(ls examples-rebel/reach_*.hero | LC_ALL=C sort); do
+          for file in $(ls examples-rebel/reach/reach_*.hero | LC_ALL=C sort); do
             name=$(basename "$file" .hero)
             if ! printf '%s\n' "$name" | grep -Eqx 'reach_[a-z0-9_]+'; then
               echo "::error::$file is named outside \`reach_[a-z0-9_]+\`, which this step writes into JSON and a shell's words"
@@ -456,7 +457,7 @@ jobs:
             drivers+=("$name")
           done
           if [ "${#drivers[@]}" -eq 0 ]; then
-            echo "::error::no examples-rebel/reach_*.hero, so no package's tests would run"
+            echo "::error::no examples-rebel/reach/reach_*.hero, so no package's tests would run"
             exit 1
           fi
           json=""
@@ -764,7 +765,7 @@ jobs:
           for name in $DRIVERS; do
             base=$(printf '%s' "$name" | tr -d _)
             for run in $RUNS; do
-              set -- "examples-rebel/$name.hero"
+              set -- "examples-rebel/reach/$name.hero"
               if [ "$RUNNER_OS" = "Windows" ]; then set -- "$@" --library "$SQLITE_LIB"; fi
               if [ "$run" = "sanitize" ]; then set -- "$@" --sanitize; fi
               log="$logs/$name.$run.log"

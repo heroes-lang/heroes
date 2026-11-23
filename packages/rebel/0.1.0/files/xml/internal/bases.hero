@@ -1,0 +1,284 @@
+# The value Canonical XML 1.1 gives `xml:base` on an element whose ancestors
+# are left out of the text: the values of the ancestors and the element's own
+# joined as RFC 3986 § 5.2 resolves a reference against a base, with the
+# changes Canonical XML 1.1 § 2.4 makes so that two relative values join into a
+# relative one: a base needs no scheme, a fragment is dropped, a leading `../`
+# is kept, a run of `/` is one `/`, and a trailing `..` ends in `/`.
+
+use strings
+
+# The parts RFC 3986's appendix B reads a reference into. `has_` says whether
+# the part was written at all, which an empty part does not say.
+record Parts
+    # The scheme before `:`, empty where none.
+    scheme: str
+    # Whether `//` and an authority were written.
+    has_authority: bool
+    # The authority after `//`.
+    authority: str
+    # The path, possibly empty.
+    path: str
+    # Whether `?` was written.
+    has_query: bool
+    # The query after `?`.
+    query: str
+
+# `s` read into its parts by appendix B's expression; the fragment after `#`
+# is dropped, as § 2.4 asks.
+function parts_of(s: str) -> Parts
+    end: i64 @= 0
+
+    while end < s.len() && s[end] != '#'
+        end @ end + 1
+
+    # A scheme is what stands before the first `:` that comes before any `/`,
+    # `?` or `#`, and is not empty.
+    at: i64 @= 0
+
+    while at < end && s[at] != ':' && s[at] != '/' && s[at] != '?'
+        at @ at + 1
+
+    scheme: str @= ""
+    from: i64 @= 0
+
+    if at < end && at > 0 && s[at] == ':'
+        scheme @ s.slice(from: 0, to: at)
+        from @ at + 1
+
+    has_authority: bool @= false
+    authority: str @= ""
+
+    if from + 1 < end && s[from] == '/' && s[from + 1] == '/'
+        stop: i64 @= from + 2
+
+        while stop < end && s[stop] != '/' && s[stop] != '?'
+            stop @ stop + 1
+
+        has_authority @ true
+        authority @ s.slice(from: from + 2, to: stop)
+        from @ stop
+
+    question: i64 @= from
+
+    while question < end && s[question] != '?'
+        question @ question + 1
+
+    path = s.slice(from: from, to: question)
+
+    if question < end
+        return Parts(
+            scheme: scheme,
+            has_authority: has_authority,
+            authority: authority,
+            path: path,
+            has_query: true,
+            query: s.slice(from: question + 1, to: end)
+        )
+    return Parts(
+        scheme: scheme,
+        has_authority: has_authority,
+        authority: authority,
+        path: path,
+        has_query: false,
+        query: ""
+    )
+
+# `p` written back as text.
+function written(p: Parts) -> str
+    pieces: [str] @= []
+
+    if p.scheme != ""
+        pieces @ pieces.push(p.scheme + ":")
+
+    if p.has_authority
+        pieces @ pieces.push("//" + p.authority)
+    pieces @ pieces.push(p.path)
+
+    if p.has_query
+        pieces @ pieces.push("?" + p.query)
+    return pieces.join("")
+
+# `path` with its `.` and `..` segments taken away as § 2.4 changes RFC 3986
+# § 5.2.4: a run of `/` read as one, a `..` that climbs above a relative
+# path's start kept, one above an absolute path's root dropped, and the
+# result ending in `/` where the path ended in `/`, `.` or `..`.
+function without_dots(path: str) -> str
+    absolute = path.len() > 0 && path[0] == '/'
+    kept: [str] @= []
+    trailing: bool @= false
+    start: i64 @= 0
+
+    while start <= path.len()
+        stop: i64 @= start
+
+        while stop < path.len() && path[stop] != '/'
+            stop @ stop + 1
+
+        segment = path.slice(from: start, to: stop)
+        last = stop >= path.len()
+
+        if segment == "" || segment == "."
+            trailing @ last
+        else if segment == ".."
+            trailing @ last
+
+            if kept.len() > 0 && kept[kept.len() - 1] != ".."
+                kept @ kept.slice(from: 0, to: kept.len() - 1)
+            else if !absolute
+                kept @ kept.push("..")
+        else
+            trailing @ false
+            kept @ kept.push(segment)
+        start @ stop + 1
+
+    body = kept.join("/")
+
+    if absolute
+        if kept.len() > 0 && trailing
+            return "/" + body + "/"
+        return "/" + body
+
+    if kept.len() > 0 && trailing
+        return body + "/"
+    return body
+
+# `reference` resolved against `base` as RFC 3986 § 5.2.2 does, with § 2.4's
+# changes: `base` may lack a scheme, a trailing `..` in its path is read as
+# `../`, and the fragments of both are dropped.
+function resolved(base: str, reference: str) -> str
+    b = parts_of(base)
+    r = parts_of(reference)
+
+    if r.scheme != ""
+        return written(
+            Parts(scheme: r.scheme, has_authority: r.has_authority, authority: r.authority, path: without_dots(r.path), has_query: r.has_query, query: r.query)
+        )
+
+    if r.has_authority
+        return written(
+            Parts(scheme: b.scheme, has_authority: true, authority: r.authority, path: without_dots(r.path), has_query: r.has_query, query: r.query)
+        )
+
+    if r.path == ""
+        if r.has_query
+            return written(
+                Parts(scheme: b.scheme, has_authority: b.has_authority, authority: b.authority, path: b.path, has_query: true, query: r.query)
+            )
+        return written(
+            Parts(scheme: b.scheme, has_authority: b.has_authority, authority: b.authority, path: b.path, has_query: b.has_query, query: b.query)
+        )
+
+    if r.path[0] == '/'
+        return written(
+            Parts(scheme: b.scheme, has_authority: b.has_authority, authority: b.authority, path: without_dots(r.path), has_query: r.has_query, query: r.query)
+        )
+
+    base_path = if b.path == ".." || strings.has_suffix(s: b.path, suffix: "/..")
+        b.path + "/"
+    else
+        b.path
+
+    merged = if b.has_authority && base_path == ""
+        "/" + r.path
+    else
+        base_path.slice(from: 0, to: last_slash(base_path) + 1) + r.path
+    return written(
+        Parts(scheme: b.scheme, has_authority: b.has_authority, authority: b.authority, path: without_dots(merged), has_query: r.has_query, query: r.query)
+    )
+
+# The index of the last `/` in `s`, -1 where it holds none.
+function last_slash(s: str) -> i64
+    at: i64 @= s.len() - 1
+
+    while at >= 0 && s[at] != '/'
+        at @ at - 1
+
+    return at
+
+# The value `values`, every `xml:base` from the outermost element left out to
+# the element written, joined from the innermost outward as § 2.4 says: the
+# last joined onto the one before it, and so on to the first. The empty list
+# gives the empty text.
+function fixed(values: [str]) -> str
+    if values.len() == 0
+        return ""
+    joined: str @= values[values.len() - 1]
+    at: i64 @= values.len() - 2
+
+    while at >= 0
+        joined @ resolved(base: values[at], reference: joined)
+        at @ at - 1
+
+    return joined
+
+## Tests
+
+test "without_dots: Canonical XML 1.1's own table, the empty, the root and the relative edges"
+    assert without_dots("") == ""
+    assert without_dots(".") == ""
+    assert without_dots("./") == ""
+    assert without_dots("./.") == ""
+    assert without_dots("..") == "../"
+    assert without_dots("../..") == "../../"
+    assert without_dots("../../../") == "../../../"
+    assert without_dots("../../..") == "../../../"
+    assert without_dots("no/..") == ""
+    assert without_dots("no/../") == ""
+    assert without_dots("no/../..") == "../"
+    assert without_dots("no/../../") == "../"
+    assert without_dots("no/../yes") == "yes"
+    assert without_dots("no/../yes/") == "yes/"
+    assert without_dots("no/../yes/no/..") == "yes/"
+    assert without_dots("../../no/../..") == "../../../"
+    assert without_dots("../../no/..") == "../../"
+    assert without_dots("../../no/../") == "../../"
+    assert without_dots("no/.././/pseudo-netpath/seg/file.ext") == "pseudo-netpath/seg/file.ext"
+    assert without_dots("no/..//.///pseudo-netpath/seg/file.ext") == "pseudo-netpath/seg/file.ext"
+    assert without_dots("yes/no//..//.///pseudo-netpath/seg/file.ext") == "yes/pseudo-netpath/seg/file.ext"
+    assert without_dots("/a/b/c/./../../g") == "/a/g"
+    assert without_dots("mid/content=5/../6") == "mid/6"
+    assert without_dots("..yes/..no/..no/..no/../../../..yes") == "..yes/..yes"
+    assert without_dots("..yes/..no/..no/..no/../../../..yes/") == "..yes/..yes/"
+    assert without_dots("//no/..") == "/"
+    assert without_dots("yes/no/../") == "yes/"
+    assert without_dots("yes/no/no/../..") == "yes/"
+    assert without_dots("yes/no/no/no/../../..") == "yes/"
+    assert without_dots("yes/no/../yes/no/no/../..") == "yes/yes/"
+    assert without_dots("yes/no/no/no/../../../yes") == "yes/yes"
+    assert without_dots("yes/no/no/no/../../../yes/") == "yes/yes/"
+    assert without_dots("../../..no/..") == "../../"
+    assert without_dots("..yes/...no/..no/..no/../../..") == "..yes/"
+    assert without_dots("..yes/..no/../..yes/..no/..no/../..") == "..yes/..yes/"
+
+test "without_dots: an absolute path never climbs above its root"
+    assert without_dots("/") == "/"
+    assert without_dots("/.") == "/"
+    assert without_dots("/./") == "/"
+    assert without_dots("/././") == "/"
+    assert without_dots("/..") == "/"
+    assert without_dots("/../../..") == "/"
+    assert without_dots("//..//..//..") == "/"
+    assert without_dots("/./.././.././..") == "/"
+    assert without_dots("/no/../") == "/"
+    assert without_dots("/yes/no/../") == "/yes/"
+    assert without_dots("/yes/no/no/no/../../..") == "/yes/"
+    assert without_dots("/..no/../") == "/"
+    assert without_dots("/..yes/..no/..no/../..") == "/..yes/"
+
+test "resolved: § 2.4's three pairs of relative values, and an absolute base"
+    assert resolved(base: "abc/", reference: "../") == ""
+    assert resolved(base: "../", reference: "../") == "../../"
+    assert resolved(base: "..", reference: "..") == "../../"
+    assert resolved(base: "http://e.org/x/y/", reference: "q/r") == "http://e.org/x/y/q/r"
+    assert resolved(base: "http://e.org/x/y/", reference: "../z/w") == "http://e.org/x/z/w"
+    assert resolved(base: "http://e.org", reference: "a") == "http://e.org/a"
+    assert resolved(base: "http://e.org/a?q#f", reference: "") == "http://e.org/a?q"
+    assert resolved(base: "http://e.org/a", reference: "?r#g") == "http://e.org/a?r"
+    assert resolved(base: "http://e.org/a/b", reference: "//other.org/c/../d") == "http://other.org/d"
+    assert resolved(base: "x/y", reference: "urn:z:é") == "urn:z:é"
+
+test "fixed: none, one, and § 2.4's example of two ancestors left out"
+    assert fixed([]) == ""
+    assert fixed(["a/b"]) == "a/b"
+    assert fixed(["..", "..", "x"]) == "../../x"
+    assert fixed(["http://e.org/x/y/", "../z/w", "q/r"]) == "http://e.org/x/z/q/r"

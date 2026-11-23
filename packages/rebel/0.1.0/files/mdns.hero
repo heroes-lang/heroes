@@ -35,12 +35,13 @@
 # held to its limits.
 #
 # The codes it fails with: `invalid`, `not_found`, `not_text`, `exists`,
-# `limit`, `unsupported`, `failed`, `timeout` and `stopped`.
+# `limit`, `unsupported`, `failed`, `timeout`, `stopped` and `closed`.
 
 use bytes
 use dns
 use mdns/internal/cache
 use mdns/internal/failure
+use mdns/internal/fixture
 use mdns/internal/hosting
 use mdns/internal/model
 use mdns/internal/names
@@ -93,6 +94,10 @@ constant TIMEOUT: str
 constant STOPPED: str
     failure.STOPPED
 
+# A browser or a responder used after it was closed.
+constant CLOSED: str
+    failure.CLOSED
+
 ## Services
 
 # One attribute of a service, a key and, where it has one, a value
@@ -122,9 +127,12 @@ record Service
     host: str
     # The port, 0 to 65535.
     port: i64
-    # The SRV record's priority and weight, 0 to 65535, 0 and 0 where nothing
-    # says otherwise.
+    # The SRV record's priority, 0 to 65535, the lowest tried first; 0 where
+    # nothing says otherwise.
     priority: i64
+    # The SRV record's weight, 0 to 65535, which shares the load among the
+    # instances of one priority, the heavier asked more often; 0 where nothing
+    # says otherwise.
     weight: i64
     # The host's addresses: those of the host as far as they were heard when
     # browsing; the addresses a published service gives, those of every
@@ -187,7 +195,7 @@ function attribute_of(attributes: [Attribute], key: str) -> [u8]?
 #
 # - `texts`: the character strings of the record, as `dns.Data.txt` holds
 #   them.
-function parse_attributes(texts: [[u8]]) -> [Attribute]
+function decode_attributes(texts: [[u8]]) -> [Attribute]
     out: [Attribute] @= []
 
     for a in txt.decode(texts)
@@ -203,7 +211,7 @@ function parse_attributes(texts: [[u8]]) -> [Attribute]
 # Fails `invalid` where a key is empty or holds a byte that is not printable
 # ASCII or is `=`, where a string would pass 255 bytes, and where a key
 # stands twice, its letters compared without regard to case.
-function format_attributes(attributes: [Attribute]) -> [[u8]]?
+function encode_attributes(attributes: [Attribute]) -> [[u8]]?
     items: [txt.Attribute] @= []
 
     for a in attributes
@@ -244,7 +252,7 @@ function browse(type: str, wait: time.Duration, interfaces: [str]) -> [Service]?
 
     for d in found
         out @ out.push(
-            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: decode_attributes(d.texts))
         )
 
     return ok(out)
@@ -306,7 +314,7 @@ function resolve(instance: str, type: str, wait: time.Duration, interfaces: [str
         )
     d = found.must()
     return ok(
-        Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+        Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: decode_attributes(d.texts))
     )
 
 # The addresses of the host `name` under `local.`, asked for and waited for
@@ -409,8 +417,8 @@ function watch(type: str, interfaces: [str]) -> Watch?
 # - `wait`: the longest to wait, zero or more.
 #
 # A change is told once, in the order it was found. Fails `timeout` where none
-# came in time, `stopped` where the stop was asked, and `failed` where the
-# system refuses a send. See also `watch`.
+# came in time, `stopped` where the stop was asked, `failed` where the system
+# refuses a send, and `closed` where `w` was closed. See also `watch`.
 function next_change(@w: Watch, wait: time.Duration) -> Change?
     ms = spans.millis_of(wait)?
     moved = watching.next(@w.state, wait_ms: ms)?
@@ -424,7 +432,7 @@ function next_change(@w: Watch, wait: time.Duration) -> Change?
         priority: d.priority,
         weight: d.weight,
         addresses: d.addresses,
-        attributes: parse_attributes(d.texts)
+        attributes: decode_attributes(d.texts)
     )
 
     if moved.kind == 0
@@ -437,6 +445,9 @@ function next_change(@w: Watch, wait: time.Duration) -> Change?
 # Closes the browser's sockets.
 #
 # - `w`: the browser; it is empty afterwards.
+#
+# Fails `closed` where it was closed already, and `failed` where the system
+# refuses to close a socket. See also `watch`.
 function close_watch(@w: Watch) -> ()?
     return session.close(@w.state.session)
 
@@ -484,11 +495,11 @@ function publish(@r: Responder, s: Service) -> Service?
         priority: s.priority,
         weight: s.weight,
         addresses: s.addresses,
-        texts: format_attributes(s.attributes)?
+        texts: encode_attributes(s.attributes)?
     )
     p = hosting.publish(@r.state, d: d)?
     return ok(
-        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: parse_attributes(p.texts))
+        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: decode_attributes(p.texts))
     )
 
 # Serves for `wait` milliseconds: every query heard about a published service
@@ -501,8 +512,8 @@ function publish(@r: Responder, s: Service) -> Service?
 # - `wait`: how long to serve, zero or more.
 #
 # Answers the services published again under other names, as they now stand;
-# none, usually. Fails `stopped` where the stop was asked, and `failed` where
-# the system refuses a send.
+# none, usually. Fails `stopped` where the stop was asked, `failed` where the
+# system refuses a send, and `closed` where `r` was closed.
 function serve(@r: Responder, wait: time.Duration) -> [Service]?
     ms = spans.millis_of(wait)?
     again = serving.serve(@r.state, wait_ms: ms)?
@@ -510,7 +521,7 @@ function serve(@r: Responder, wait: time.Duration) -> [Service]?
 
     for d in again
         out @ out.push(
-            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: parse_attributes(d.texts))
+            Service(instance: d.instance, type: d.type, subtypes: d.subtypes, host: d.host, port: d.port, priority: d.priority, weight: d.weight, addresses: d.addresses, attributes: decode_attributes(d.texts))
         )
 
     return ok(out)
@@ -538,11 +549,11 @@ function update(@r: Responder, s: Service) -> Service?
         priority: s.priority,
         weight: s.weight,
         addresses: s.addresses,
-        texts: format_attributes(s.attributes)?
+        texts: encode_attributes(s.attributes)?
     )
     p = hosting.update(@r.state, d: d)?
     return ok(
-        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: parse_attributes(p.texts))
+        Service(instance: p.instance, type: p.type, subtypes: p.subtypes, host: p.host, port: p.port, priority: p.priority, weight: p.weight, addresses: p.addresses, attributes: decode_attributes(p.texts))
     )
 
 # Withdraws the service `instance` of `type`: a goodbye is multicast, which
@@ -561,13 +572,16 @@ function withdraw(@r: Responder, instance: str, type: str) -> ()?
 # Says goodbye for every service published and closes the responder's sockets.
 #
 # - `r`: the responder; it is empty afterwards.
+#
+# A goodbye the system refuses to send is passed over, since the records it
+# would have withdrawn run out of time in every cache anyway. Fails `closed`
+# where it was closed already, and `failed` where the system refuses to close
+# a socket. See also `responder`.
 function close_responder(@r: Responder) -> ()?
     return hosting.close(@r.state)
 
-## Examples
+## Tests
 
-# The name of a service with a space and a dot in its instance, and its
-# attribute read back by its key.
 test "name_of and attribute_of: a name with escapes, a value, an empty value and a key alone"
     s = Service(
         instance: "Joe's Printer. 2",
@@ -586,21 +600,21 @@ test "name_of and attribute_of: a name with escapes, a value, an empty value and
     assert attribute_of(s.attributes, key: "flag").is_err()
     assert attribute_of(s.attributes, key: "absent").is_err()
 
-test "service, format_attributes and parse_attributes: the defaults, attributes written and read back, and one that is wrong"
+test "service, encode_attributes and decode_attributes: the defaults, attributes written and read back, and one that is wrong"
     s = service(instance: "Desk", type: "_http._tcp", port: 8080)
     assert s.host == "" && s.addresses == [] && s.priority == 0
-    assert format_attributes(s.attributes).must() == [[]]
-    assert parse_attributes([[]]) == []
-    written = format_attributes(
+    assert encode_attributes(s.attributes).must() == [[]]
+    assert decode_attributes([[]]) == []
+    written = encode_attributes(
         [Attribute(key: "path", value: ok(bytes.from_text("/a=b"))), Attribute(key: "secure", value: fail(code: NOT_FOUND, msg: "none"))]
     ).must()
     assert written == [bytes.from_text("path=/a=b"), bytes.from_text("secure")]
-    read = parse_attributes(written)
+    read = decode_attributes(written)
     assert read.len() == 2
     assert attribute_of(read, key: "path").must() == bytes.from_text("/a=b")
     assert attribute_of(read, key: "secure").is_err()
-    assert format_attributes([Attribute(key: "a=b", value: ok([]))]).is_err()
-    assert format_attributes([Attribute(key: "k", value: ok([])), Attribute(key: "K", value: ok([]))]).is_err()
+    assert encode_attributes([Attribute(key: "a=b", value: ok([]))]).is_err()
+    assert encode_attributes([Attribute(key: "k", value: ok([])), Attribute(key: "K", value: ok([]))]).is_err()
 
 test "browse, browse_types, resolve, lookup_addresses and lookup_reverse: what is refused before a socket is opened"
     wait = time.milliseconds(1).must()
@@ -615,3 +629,272 @@ test "browse, browse_types, resolve, lookup_addresses and lookup_reverse: what i
     assert failure.code_of(lookup_addresses("bad..local", wait: wait, interfaces: [])) == INVALID
     assert failure.code_of(watch("ipp._tcp", interfaces: [])) == INVALID
     assert failure.code_of(responder(absent)) == NOT_FOUND
+
+test "close_watch and close_responder: a second close is refused, and nothing is closed twice"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    w @= watch("_ipp._tcp", interfaces: [lo]).must()
+    close_watch(@w).must()
+    assert failure.code_of(close_watch(@w)) == CLOSED
+    assert failure.code_of(next_change(@w, wait: time.milliseconds(10).must())) == CLOSED
+    r @= responder([lo]).must()
+    close_responder(@r).must()
+    assert failure.code_of(close_responder(@r)) == CLOSED
+    assert failure.code_of(serve(@r, wait: time.milliseconds(10).must())) == CLOSED
+    assert failure.code_of(publish(@r, s: service(instance: "Desk", type: "_http._tcp", port: 80))) == CLOSED
+
+## Examples
+
+# A service to publish: the machine's own host and addresses, no attributes
+# and no subtypes until the program gives some.
+test "service: a printer's queue on port 631"
+    s = service(instance: "Front Desk", type: "_ipp._tcp", port: 631)
+    assert s.instance == "Front Desk" && s.port == 631
+    assert s.host == "" && s.addresses == [] && s.attributes == []
+
+# The name a service goes by in the records, the dot in its instance written
+# after a backslash.
+test "name_of: an instance with a dot and a space"
+    s = service(instance: "Joe's Printer. 2", type: "_ipp._tcp", port: 631)
+    assert name_of(s).must() == "Joe's Printer\\. 2._ipp._tcp.local."
+
+# A printer's queue read from its attributes by its key, in any case.
+test "attribute_of: a value found by its key"
+    attributes = [Attribute(key: "rp", value: ok(bytes.from_text("ipp/print")))]
+    assert attribute_of(attributes, key: "RP").must() == bytes.from_text("ipp/print")
+
+# The strings of a TXT record read as attributes: a key with a value, and a
+# key alone, which has none.
+test "decode_attributes: a path and a flag"
+    read = decode_attributes([bytes.from_text("path=/a=b"), bytes.from_text("secure")])
+    assert read.len() == 2
+    assert attribute_of(read, key: "path").must() == bytes.from_text("/a=b")
+    assert attribute_of(read, key: "secure").is_err()
+
+# Attributes written as the strings of a TXT record, in their order.
+test "encode_attributes: a path and a flag"
+    path = Attribute(key: "path", value: ok(bytes.from_text("/a=b")))
+    flag = Attribute(key: "secure", value: fail(code: NOT_FOUND, msg: "a key alone"))
+    assert encode_attributes([path, flag]).must() == [bytes.from_text("path=/a=b"), bytes.from_text("secure")]
+
+# The instances of a service type that a host on the loopback announces,
+# heard for a second, each with its port and its attributes. An example that
+# needs the network runs on the loopback alone, and is skipped where the
+# loopback carries no multicast.
+test "browse: the instances of a type heard in a second"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    found = browse(host.type, wait: time.seconds(1).must(), interfaces: [lo]).must()
+    assert found.len() == 1
+    assert found[0].instance == host.instance && found[0].port == fixture.PORT
+    assert attribute_of(found[0].attributes, key: "k").must() == bytes.from_text("v")
+    assert fixture.finish(@host) == ""
+
+# The service types offered on the loopback, heard for a second: the one a
+# host announces among them.
+test "browse_types: the type a host announces"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    types = browse_types(time.seconds(1).must(), interfaces: [lo]).must()
+    listed: bool @= false
+
+    for t in types
+        if t == host.type
+            listed @ true
+
+    assert listed
+    assert fixture.finish(@host) == ""
+
+# One instance asked for by its name, answered as soon as its host's address
+# is heard.
+test "resolve: an instance's host, port and address"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    s = resolve(instance: host.instance, type: host.type, wait: time.seconds(2).must(), interfaces: [lo]).must()
+    assert s.host == host.host && s.port == fixture.PORT
+    assert s.addresses == [net.loopback_v4()]
+    assert fixture.finish(@host) == ""
+
+# The address of a host under `local.`, answered as soon as one is heard.
+test "lookup_addresses: a host's address"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    found = lookup_addresses(host.host, wait: time.seconds(2).must(), interfaces: [lo]).must()
+    assert found == [net.loopback_v4()]
+    assert fixture.finish(@host) == ""
+
+# The names an address goes by, heard for a second: the host on the loopback
+# that answers for 127.0.0.1 among them.
+test "lookup_reverse: the names of 127.0.0.1"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    names_heard = lookup_reverse(net.loopback_v4(), wait: time.seconds(1).must(), interfaces: [lo]).must()
+    listed: bool @= false
+
+    for n in names_heard
+        if n == host.host
+            listed @ true
+
+    assert listed
+    assert fixture.finish(@host) == ""
+
+# A browser on a type no one offers, which tells nothing in the time given.
+test "watch: a browser told nothing of a type no one offers"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    w @= watch("_hero-nobody._tcp", interfaces: [lo]).must()
+    assert failure.code_of(next_change(@w, wait: time.milliseconds(300).must())) == TIMEOUT
+    close_watch(@w).must()
+
+# The changes of a type as they come: an instance appears while its host
+# announces it, and goes when the host says goodbye.
+test "next_change: an instance that appears, then goes"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    host @= fixture.announcing(lo).must()
+    w @= watch(host.type, interfaces: [lo]).must()
+
+    match next_change(@w, wait: time.seconds(2).must()).must()
+        .appeared c    => assert c.service.instance == host.instance && c.service.port == fixture.PORT
+        .changed _     => assert false
+        .disappeared _ => assert false
+
+    match next_change(@w, wait: time.seconds(5).must()).must()
+        .disappeared c => assert c.service.instance == host.instance
+        .appeared _    => assert false
+        .changed _     => assert false
+
+    close_watch(@w).must()
+    assert fixture.finish(@host) == ""
+
+# A browser closed once the program has heard what it needed.
+test "close_watch: a browser closed"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    w @= watch("_ipp._tcp", interfaces: [lo]).must()
+    close_watch(@w).must()
+
+# A responder on the loopback, which publishes nothing until it is asked.
+test "responder: a responder that publishes nothing yet"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    r @= responder([lo]).must()
+    close_responder(@r).must()
+
+# A service published under a host name of its own: its names probed for,
+# then announced, and answered as they were settled on.
+test "publish: a service on the loopback"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    s = fixture.fresh_service().must()
+    r @= responder([lo]).must()
+    p = publish(@r, s: s).must()
+    assert p.instance == s.instance && p.host == s.host && p.port == s.port
+    assert name_of(p).must() == "Hero Example." + s.type + ".local."
+    close_responder(@r).must()
+
+# A responder answering a browser that started after its announcements: the
+# questions are answered while it serves, and nothing had to be published
+# again under another name.
+test "serve: a browser answered"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    s = fixture.fresh_service().must()
+    r @= responder([lo]).must()
+    _ = publish(@r, s: s).must()
+    b @= fixture.browsing(interface: lo, type: s.type).must()
+    assert serve(@r, wait: time.seconds(2).must()).must().len() == 0
+    assert fixture.heard(@b) == "Hero Example:" + to_str(s.port)
+    close_responder(@r).must()
+
+# A published service moved to another port, announced again.
+test "update: a service moved to another port"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    s = fixture.fresh_service().must()
+    r @= responder([lo]).must()
+    p = publish(@r, s: s).must()
+    moved = Service(
+        instance: p.instance,
+        type: p.type,
+        subtypes: p.subtypes,
+        host: p.host,
+        port: 4343,
+        priority: p.priority,
+        weight: p.weight,
+        addresses: p.addresses,
+        attributes: p.attributes
+    )
+    assert update(@r, s: moved).must().port == 4343
+    close_responder(@r).must()
+
+# A published service withdrawn, a goodbye sent for it; it is withdrawn once.
+test "withdraw: a service said goodbye for"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    s = fixture.fresh_service().must()
+    r @= responder([lo]).must()
+    _ = publish(@r, s: s).must()
+    withdraw(@r, instance: s.instance, type: s.type).must()
+    assert failure.code_of(withdraw(@r, instance: s.instance, type: s.type)) == NOT_FOUND
+    close_responder(@r).must()
+
+# A responder closed with a service still published, which it says goodbye
+# for.
+test "close_responder: a responder closed with its service"
+    lo = fixture.loopback()
+
+    if lo == ""
+        print("skipped: no loopback interface carries multicast on this system")
+        return
+    s = fixture.fresh_service().must()
+    r @= responder([lo]).must()
+    _ = publish(@r, s: s).must()
+    close_responder(@r).must()

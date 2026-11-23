@@ -4732,11 +4732,12 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 #endif
 
-/* THE DRAWING AREA'S CALLS, which neither C arm draws yet: each refuses in
- * words of its own (`hero_ui_refused`). An arm that draws the area defines
- * them in its own member, and its system leaves this block's condition. */
+/* THE DRAWING AREA'S CALLS on Windows, whose arm draws no area yet: each
+ * refuses in words of its own (`hero_ui_refused`). An arm that draws the
+ * area defines them in its own member, and its system leaves this block's
+ * condition: GTK 4's in `hero_ui_gtk.c`, over `hero_ui_canvas_gtk.c`. */
 
-#if !defined(__APPLE__)
+#if defined(_WIN32)
 
 int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
     (void)id;

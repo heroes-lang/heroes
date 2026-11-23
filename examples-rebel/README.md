@@ -64,7 +64,7 @@ package moves its row in the same change. There is no cycle.
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
-| 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
+| 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping; Canonical XML 1.0, 1.1 and exclusive | `numbers`, `strings`, `unicode` |  |
 | 2 | `html` | HTML read as a browser reads it (WHATWG), never failing; searched by tag, attribute, class and CSS selectors; changed and written; every named character reference | `strings`, `unicode` |  |
 | 2 | `url` | a URL parsed, built, escaped | `numbers`, `strings` |  |
 | 2 | `crypto` | SHA-1, SHA-2, HMAC, HKDF, PBKDF2, comparison in constant time | `bytes` | `hero_crypto.h` |
@@ -90,7 +90,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
 | 2 | `image/colorspace` | a colour in HSV, HLS, CMYK, YCbCr and YIQ and back, and an image split into the planes of a space and merged again; Lab is pending | `image`, `math` |  |
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
-| 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image` |  |
+| 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image`, `math` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
 | 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
@@ -168,11 +168,11 @@ package moves its row in the same change. There is no cycle.
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 5 | `image/ico` | ICO and CUR read and written: every image of an icon or cursor (PNG and bitmap entries of 1, 4, 8, 24 and 32 bits with their masks) as RGBA, a cursor's hot spot; written with PNG or 32-bit bitmap entries | `bytes`, `hash`, `image`, `image/png` |  |
-| 5 | `image/tiff` | TIFF read and written: every page of a file, in strips or tiles, coded by PackBits, LZW, Deflate, Zstandard, JPEG or the fax codings, 1 to 16 bits a sample as gray, RGB, a palette, CMYK or YCbCr, with alpha; written in every coding but JPEG, classic or BigTIFF, as strips or tiles, or as one bit a pixel | `bytes`, `compress`, `compress/zstd`, `hash`, `image`, `image/colorspace`, `image/jpeg` |  |
+| 5 | `image/tiff` | TIFF read and written: every page of a file, in strips or tiles, coded by PackBits, LZW, Deflate, Zstandard, JPEG or the fax codings, 1 to 16 bits a sample as gray, RGB, a palette, CMYK or YCbCr, with alpha; written in every coding but JPEG, classic or BigTIFF, as strips or tiles, or as one bit a pixel | `bytes`, `compress`, `compress/zstd`, `hash`, `image`, `image/colorspace`, `image/jpeg`, `math` |  |
 | 5 | `pdf` | PDF documents written (text in the standard fonts and in embedded TrueType fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `font`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 5 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads`, `time` | `hero_ipc.h` |
 | 5 | `audio` | sound in memory converted between encodings, channel counts and rates by band-limited interpolation; WAV read and written, PCM of 1 to 32 bits and floats, WAVE_FORMAT_EXTENSIBLE and RF64; the system's devices listed, sounds played and recorded as streams (CoreAudio on macOS, WASAPI on Windows, PulseAudio's library or PipeWire's server on Linux) and waited on in a `poll.Set`, a null device for tests, the microphone's permission, the beep | `bytes`, `fs`, `io`, `math`, `net`, `poll`, `time` | `hero_audio.h` |
-| 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time` |  |
+| 5 | `mdns` | multicast DNS and DNS-based service discovery (RFC 6762, 6763): the instances of a service type found, watched, resolved, the types and a `.local` name looked up, and a service published, probed for, announced and answered for; sharing port 5353 with the system's own responder; a domain other than `local.` and a service for another host refused | `bytes`, `dns`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `threads`, `time` |  |
 | 5 | `ui` | windows of the system's own widgets (AppKit on macOS, Win32 on Windows, GTK 4 elsewhere), laid out by rows, columns and grids the same on every system, what the person did asked for as events; a headless side, drawn as text, for tests and demos | `bytes`, `image`, `os`, `poll`, `printing`, `time`, `unicode/segment` | `hero_ui.h` |
 | 5 | `ical/vcard` | vCard 3.0 and 4.0 (RFC 6350, 2426): contacts read into names, telephones, addresses and the rest with their groups and types, written; every line a record does not hold kept; version 2.1, photos and keys as bytes, groups of cards and the conversion between versions refused or not written yet | `bytes`, `ical`, `strings` |  |
 | 5 | `ssh` | an SSH 2 client: the host key checked against `known_hosts`, a sign-in by key or password, programs run with their output and exit status, shells and subsystems in a terminal, connections forwarded both ways; SSH's public key lines, OpenSSH's private key files and `known_hosts` lines read and written | `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `fs`, `io`, `net`, `numbers`, `os`, `pem`, `strings`, `time` |  |
@@ -183,6 +183,7 @@ package moves its row in the same change. There is no cycle.
 | 6 | `jobs/postgres_store` | jobs kept in PostgreSQL: claimed with FOR UPDATE SKIP LOCKED, enqueued in the program's own transaction | `jobs`, `json`, `os`, `sql`, `sql/postgres`, `strings`, `time` |  |
 | 6 | `jobs/redis_store` | jobs kept in Redis: every change a Lua script the server runs whole | `bytes`, `jobs`, `json`, `numbers`, `os`, `redis`, `strings`, `time` |  |
 | 6 | `ui/webview` | a web page as a program's interface, in the manner of Tauri: the system's own web view as a widget of a `ui` app, its HTML, CSS and scripts served from the program's own assets at `app://localhost` with no port, a content security policy on every response, the page held to its own origin, and a bridge of texts and framed calls between the page and the program | `bytes`, `json`, `printing`, `time`, `ui` | `hero_ui.h` |
+| 6 | `xmldsig` | XML Signature checked against a trusted key and made, enveloped or detached, over Canonical XML; SHA-1 refused | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `strings`, `x509`, `xml` |  |
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
@@ -235,7 +236,7 @@ qualified everywhere else, never redefined; among them:
   thin binding of one header, one Heroes function per C function. No policy
   in it; the face turns C's answers into `T?`.
 - **The ledger**, `<package>.ledger` (A8).
-- **The driver**, `examples-rebel/reach_<package>.hero`: a program whose `main`
+- **The driver**, `examples-rebel/reach/reach_<package>.hero`: a program whose `main`
   names something of the package, so that its tests can be run.
 - **A large table or a large capability goes in a subpackage**
   (`unicode/normalize`, `compress/zstd`, `sql/sqlite`), so only the programs
@@ -576,9 +577,14 @@ is something this project measured or the specification states.
 
 `examples-rebel/` holds three kinds of program, told apart by where they stand:
 
-- **The drivers**, `examples-rebel/reach_<package>.hero` (§ A2), one for each face, whose
-  `heroes test` runs that face's tests; they read the one catalogue at the folder's root,
-  `examples-rebel/heroes.toml`.
+- **The drivers**, `examples-rebel/reach/reach_<package>.hero` (§ A2), one for each face,
+  whose `heroes test` runs that face's tests; they stand together in the drivers' folder,
+  `reach/`, and read its one catalogue, `examples-rebel/reach/heroes.toml`, whose `path` to
+  Rebel is the folder's only way out of itself: a driver names no file of another folder, so
+  the folder moves whole with its catalogue's one line changed. That folder is
+  no program: the check of Rebel's programs and the site pass it by under one name each
+  (`DRIVERS` in `tests/harness/rebel_apps_run.hero`, `generators/rebel_index/programs.hero`
+  and `site/src/lib/examples-model.ts`), and Rebel's pipeline runs each driver's tests.
 - **The twins**, `examples-rebel/<name>/`, one for each program of the compiler's own
   `examples/<name>/` that once used a library: the same program written with Rebel, the
   hand-written helpers replaced by Rebel's packages and the program's own logic kept. A twin
@@ -797,13 +803,13 @@ function is_digit(c: str) -> bool
 From the worktree's root, for the package `<p>`:
 
 - **Write the face first, bodies as `???`.** `./heroes check
-  examples-rebel/reach_<p>.hero` accepts a module with holes and lists each
+  examples-rebel/reach/reach_<p>.hero` accepts a module with holes and lists each
   hole with the type it expects; a caller of a function with a hole already
   type-checks.
 - **Format at the moment of writing**: `./heroes fmt <file> --in-place`.
 - **While writing, `./heroes check` only.** It compiles no C and costs little.
 - **When a module is whole, its tests**: `./heroes test
-  examples-rebel/reach_<p>.hero`. A module holding a `???` builds no binary, so
+  examples-rebel/reach/reach_<p>.hero`. A module holding a `???` builds no binary, so
   the tests of a package run once every module the driver reaches is whole.
   The machine is shared and its memory is short (author, 2026-11-16 11:40: two
   test runs at once at most): one test run of yours at a time, and none while

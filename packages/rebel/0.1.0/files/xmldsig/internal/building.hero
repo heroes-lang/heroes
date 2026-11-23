@@ -1,0 +1,209 @@
+# A `ds:Signature` element built and put into a document: its references
+# digested first, from the document as it was, then the element inserted with
+# an empty `SignatureValue`, then `SignedInfo` written in its canonical form
+# where it stands, which is what the signer signs. The value is filled in last;
+# it stands outside `SignedInfo`, so filling it changes nothing signed.
+
+use bytes
+use x509
+use xml
+use xmldsig/internal/dereference
+use xmldsig/internal/forms
+use xmldsig/internal/names
+
+# A document holding a signature whose value is still empty.
+record Prepared
+    # The document, the signature inserted.
+    doc: xml.Document
+    # The place of its `SignatureValue`.
+    value_place: [i64]
+    # `SignedInfo` in its canonical form: the bytes to sign.
+    signed_info: [u8]
+
+# What a reference made needs of the signing.
+record Choice
+    # The signature method's identifier.
+    method: str
+    # The digest method's identifier.
+    digest: str
+    # The canonical form of `SignedInfo` and of each reference.
+    canonical: xml.CanonicalOptions
+    # The attribute an element's identifier is read from.
+    id_attribute: str
+    # The certificates written in `KeyInfo`, the signer's first.
+    certificates: [x509.Certificate]
+
+# The XML Signature element `local`, prefixed `ds`.
+function ds(local: str) -> xml.Element
+    return xml.element_in(space: names.SPACE, name: "ds:" + local)
+
+# The XML Signature element `local` whose `Algorithm` is `uri`.
+function with_algorithm(local: str, uri: str) -> xml.Element
+    return xml.with_attribute(ds(local), name: "Algorithm", value: uri)
+
+# The InclusiveNamespaces element listing `prefixes`, added to `e` where the
+# exclusive form lists any.
+function with_prefixes(e: xml.Element, canonical: xml.CanonicalOptions) -> xml.Element
+    match canonical.method
+        .exclusive x =>
+            if x.prefixes.len() == 0
+                return e
+            listed = xml.with_attribute(
+                xml.with_namespace(xml.element_in(space: names.EXCLUSIVE_SPACE, name: "ec:InclusiveNamespaces"), prefix: "ec", space: names.EXCLUSIVE_SPACE),
+                name: "PrefixList",
+                value: x.prefixes.join(" ")
+            )
+            return xml.with_child(e: e, inner: listed)
+        .inclusive | .inclusive_11 => return e
+
+# The `URI` naming the element at `place` in `doc`: `""` for a root that holds
+# no identifier, `#` and its identifier otherwise. Fails `invalid` where an
+# element below the root holds none, or the identifier names another element
+# too.
+function uri_of(doc: xml.Document, place: [i64], id_attribute: str) -> str?
+    e = xml.element_at_place(doc, place: place)?
+
+    match xml.attribute(e, name: id_attribute)
+        .ok id =>
+            named = dereference.place_of_id(doc: doc, id: id, id_attributes: [id_attribute])?
+
+            if named != place
+                return fail(code: names.INVALID, msg: f"the identifier \"{id}\" names another element first")
+            return ok("#" + id)
+        .err _ =>
+            if place.len() == 0
+                return ok("")
+            return fail(
+                code: names.INVALID,
+                msg: f"<{xml.format_name(e.name)}> holds no {id_attribute} attribute, by which a reference names an element below the root"
+            )
+
+# The `Reference` to the element at `place` of `doc`, its digest computed from
+# `doc` as it stands; `enveloped` where the signature will stand inside it.
+function reference_of(doc: xml.Document, place: [i64], enveloped: bool, choice: Choice) -> xml.Element?
+    uri = uri_of(doc: doc, place: place, id_attribute: choice.id_attribute)?
+    canonical: xml.CanonicalOptions @= choice.canonical
+    canonical.comments @ false
+
+    text = if uri == ""
+        xml.canonicalize(doc, options: canonical)?
+    else
+        xml.canonicalize_at(doc, place: place, options: canonical)?
+    digest = names.digest_of(uri: choice.digest, data: bytes.from_text(text))?
+    transforms: [xml.Node] @= []
+
+    if enveloped
+        transforms @ transforms.push(.element(v: with_algorithm(local: "Transform", uri: names.ENVELOPED)))
+    transforms @ transforms.push(
+        .element(v: with_prefixes(e: with_algorithm(local: "Transform", uri: names.canonical_uri(choice.canonical)), canonical: choice.canonical))
+    )
+    holder: xml.Element @= ds("Transforms")
+    holder.children @ transforms
+    reference: xml.Element @= xml.with_attribute(ds("Reference"), name: "URI", value: uri)
+    reference.children @ [
+        .element(v: holder)
+        .element(v: with_algorithm(local: "DigestMethod", uri: choice.digest))
+        .element(v: xml.with_text(ds("DigestValue"), text: bytes.format_base64(digest)))
+    ]
+    return ok(reference)
+
+# `doc` with the element at `place` replaced by `e`.
+function replaced(doc: xml.Document, place: [i64], e: xml.Element) -> xml.Document?
+    chain: [xml.Element] @= []
+    here: xml.Element @= doc.root
+
+    for step in place
+        chain @ chain.push(here)
+
+        next = match here.children[step]
+            .element x => x.v
+            .text _ | .comment _ | .instruction _ => return fail(
+                code: names.INVALID,
+                msg: f"child {step} of <{xml.format_name(here.name)}> is no element"
+            )
+
+        here @ next
+
+    inner: xml.Element @= e
+    at: i64 @= chain.len()
+
+    while at > 0
+        at @ at - 1
+        outer: xml.Element @= chain[at]
+        outer.children[place[at]] @ .element(v: inner)
+        inner @ outer
+
+    built: xml.Document @= doc
+    built.root @ inner
+    return ok(built)
+
+# `doc` with a signature of the elements at `signed` inserted as child
+# `before` of the element at `parent`, its value empty, and the bytes to sign.
+# Fails `invalid` where `before` is outside 0 to the children's count, where
+# `signed` is empty or an element in it has no identifier, and as the digests
+# and the canonical forms fail.
+function prepare(doc: xml.Document, parent: [i64], before: i64, signed: [[i64]], choice: Choice) -> Prepared?
+    if signed.len() == 0
+        return fail(code: names.INVALID, msg: "a signature of no element: name one place at least")
+    holder = xml.element_at_place(doc, place: parent)?
+
+    if before < 0 || before > holder.children.len()
+        return fail(
+            code: names.INVALID,
+            msg: f"a signature put before child {before} of <{xml.format_name(holder.name)}>, which has {holder.children.len()}"
+        )
+    references: [xml.Node] @= []
+
+    for place in signed
+        inside = parent.len() >= place.len() && parent.slice(from: 0, to: place.len()) == place
+        references @ references.push(
+            .element(v: reference_of(doc: doc, place: place, enveloped: inside, choice: choice)?)
+        )
+
+    info: xml.Element @= ds("SignedInfo")
+    info_children: [xml.Node] @= [
+        .element(v: with_prefixes(e: with_algorithm(local: "CanonicalizationMethod", uri: names.canonical_uri(choice.canonical)), canonical: choice.canonical))
+        .element(v: with_algorithm(local: "SignatureMethod", uri: choice.method))
+    ]
+
+    for r in references
+        info_children @ info_children.push(r)
+
+    info.children @ info_children
+    signature: xml.Element @= xml.with_namespace(ds("Signature"), prefix: "ds", space: names.SPACE)
+    parts: [xml.Node] @= [.element(v: info), .element(v: ds("SignatureValue"))]
+
+    if choice.certificates.len() > 0
+        data: xml.Element @= ds("X509Data")
+        certificates: [xml.Node] @= []
+
+        for c in choice.certificates
+            certificates @ certificates.push(
+                .element(v: xml.with_text(ds("X509Certificate"), text: forms.base64_lines(c.der)))
+            )
+
+        data.children @ certificates
+        parts @ parts.push(.element(v: xml.with_child(e: ds("KeyInfo"), inner: data)))
+    signature.children @ parts
+    widened: xml.Element @= holder
+    kept: [xml.Node] @= holder.children.slice(from: 0, to: before)
+    kept @ kept.push(.element(v: signature))
+
+    for n in holder.children.slice(from: before, to: holder.children.len())
+        kept @ kept.push(n)
+
+    widened.children @ kept
+    with_signature = replaced(doc: doc, place: parent, e: widened)?
+    at: [i64] @= parent
+    at @ at.push(before)
+    info_place: [i64] @= at
+    info_place @ info_place.push(0)
+    value_place: [i64] @= at
+    value_place @ value_place.push(1)
+    text = xml.canonicalize_at(with_signature, place: info_place, options: choice.canonical)?
+    return ok(Prepared(doc: with_signature, value_place: value_place, signed_info: bytes.from_text(text)))
+
+# The prepared document with its signature's value `value` written in.
+function finished(prepared: Prepared, value: [u8]) -> xml.Document?
+    filled = xml.with_text(ds("SignatureValue"), text: forms.base64_lines(value))
+    return replaced(doc: prepared.doc, place: prepared.value_place, e: filled)

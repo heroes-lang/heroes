@@ -649,7 +649,7 @@ Put as four questions with the picture of what stood before and after the push (
 five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*:
 
 - **The push waits** for the lanes then running (the Windows box's round, the three `blocking` defects 2522, 2578
-  and 2583, the reach programs moved into `examples-rebel/reach/`) and for the last check on the exact tree pushed:
+  and 2583, the reach programs moved into `examples-rebel/reach/`, planned 2026-11-23) and for the last check on the exact tree pushed:
   the two-stage build and its fixpoint, the compiler's own tests, the net's own tests and the site's build; the whole
   net stays the CI's, as decided before.
 - **The drawing area, its mouse and its keys (DR01 to DR03) on Win32 and GTK 4, and the month calendar (CT44) on the
@@ -661,6 +661,122 @@ five `blocking` defects open, 79 issues open), the author answered *1a 2b 3b 4a*
   embedded in the program, stays a language form for a sitting of its own.
 - **Decision 2610, the register of the decisions this milestone invalidates, closes at the milestone's close**, its
   dated comments standing as the register.
+
+## The author's answers of 2026-11-23, about 23:00: where Rebel's folders stand, with three repositories in view
+
+Asked whether `generators/` and `examples-rebel/` belong beside `packages/rebel`, the author answered, meant as:
+*all of it inside one folder `rebel`; the index must not hold Rebel's files, only a pointer, a sort of link, saying
+how to fetch them; and this is for the future, since the index may one day be a repository of its own, as
+Homebrew's taps are, Rebel another with its generators, and Rebel's examples a third.* So, measured the same
+evening before the answer (nothing of `examples-rebel`, `generators` or `packages/rebel` is on `origin/main` yet,
+so no public history moves): the catalogue the specification states already has two entry forms, from an index
+(`version`, `sum`) and from git (`git`, `tag`, `commit`, `sum`), so the pointer needs **no new form**, and the
+compiler resolves Rebel through a `path` entry (`examples-rebel/reach/heroes.toml` since step 127a, at the top of
+`examples-rebel/` that evening, 2026-11-23), the net, the site and the CI being
+what reads `packages/rebel` (28 files). The git form names no subfolder (searched in the specification,
+`docs/design.md` and `M-package-manager.md`, nothing found), so a git pointer needs the package at a repository's
+root: while Rebel is a folder of this repository the entry is a `path`, and it becomes a git entry the day the
+repository exists.
+
+The layout, made **once, at the round's end, by a script, after every lane has merged**:
+
+```
+rebel/library/0.1.0/files/   the package, today packages/rebel/0.1.0/files
+rebel/examples/              today examples-rebel, its reach programs in rebel/examples/reach/
+rebel/generators/            today generators
+packages/rebel/0.1.0/        the entry only: a catalogue entry, a path now, git, tag, commit and sum later
+```
+
+What the three future repositories ask of it, so that each folder can be lifted out as it stands: the folders
+depend on one another **only through catalogue entries**, never by a relative path into a sibling; every place of
+the net, the site and the CI that reads the library's folder reads it through one named constant, so a later split
+changes one line; the one generator that reads the examples (`rebel_index`, by the Rebel CI's own comment) is the
+seam, noted where it stands; and the instruments of the net that judge Rebel travel with Rebel when it leaves, the
+compiler's own net using no library (CLAUDE.md § 13).
+
+**Corrected the same night, about 23:20, by the coordinator's own reading, asked by the author to think it through**:
+the block above says the pointer *needs no new form* and draws `packages/rebel/0.1.0/` holding *the entry only*. Both
+are true of a program's catalogue and false of the index. An index is a protocol the compiler reads, ratified with
+panel 235 (2026-11-07): `<index>/<name>/versions`, `<index>/<name>/<version>/list` and
+`<index>/<name>/<version>/files/<path>`, every file at its own address and never rewritten once published
+(`selfhost/fetch/index_source.hero`); and the site's build refuses any other file under `packages/` as a build error
+(`checkIndex`, `site/src/lib/examples-model.ts`). So an index that holds a pointer in place of the files is a change
+of that protocol, a sitting's, and belongs to M-package-index's opening one. Measured beside it: `packages/rebel/`
+holds neither `versions` nor `list`, so it is a source tree in an index's shape and no index a client can read;
+`index.heroes-lang.org`, the address a catalogue with no `index` line reads, resolves to nothing (`heroes add rebel`
+in an empty folder: exit 2, *`curl` exited 6 ... Could not resolve host*), while the site and the rules page tell a
+reader to type that command; `runtime/platform/`, the C floor under Rebel, is 59 files and 92,568 lines inside the
+compiler's runtime, and the specification names no way for a package to carry C of its own (searched, nothing found:
+a question, not a premise), so a repository of Rebel's own would hold its Heroes half alone.
+
+**The author's answer to that reading, about 23:30, *1a 2a***, on two questions put with it:
+
+- **The folders move, the index's protocol does not** (*1a*). At the round's end, once, by a script: the package's
+  source to `rebel/library/0.1.0/files/` (planned 2026-11-23), the examples to `rebel/examples/` (planned 2026-11-23) with their reach programs in
+  `rebel/examples/reach/`, the generators to `rebel/generators/` (planned 2026-11-23), and **`packages/` leaves the tree** until
+  M-package-index gives it an index a client can read. The reason outranks tidiness: the source every lane rewrites
+  stood at the address of a published version, which the index's own rule says is never rewritten. The version folder
+  stays in the source's path tonight, since taking it out changes how the net and the site find the newest version and
+  not only where. The author's pointer, an index that says where a package is fetched from as Homebrew's taps do, is
+  written on `M-package-index.md` as a variant its opening sitting measures. This supersedes, for where Rebel's source
+  stands, the local static index at the repository's root of panel 235's R15 and panel 238's R10; the register
+  (decision 2610) takes its line when the move lands.
+- **The site and the rules page say what works on the day of the push** (*2a*): a program takes Rebel today by a
+  `path` entry from a clone of this repository (`heroes add --path ... --as rebel`), and `heroes add rebel` by name
+  waits for the index's row; no page tells a reader to type a command that exits 2.
+
+## The plan as it stands, 2026-11-23 about 23:30: the order to the one push and past it
+
+Written at the author's request, so that it is not lost. It is a snapshot of the evening: **the truth afterwards is
+`git log` and GitHub's open issues** (`heroes run tests/harness/issues.hero -- open`), which this section never
+replaces; the coordinator's day-to-day state is `rebel-scratch/coord/agents-live.md` (ignored by git).
+
+**Where it stands.** `main` at `128e5eb66` is 877 commits past `origin/main` and not pushed; every lane works in a
+worktree under `.claude/worktrees/` cut from `main`, and the coordinator merges each commit in with `merge-tree` first.
+The two-stage build from the seed and the site's build passed on `e8e3f3662`, an older `main`; the whole net and every
+platform leg are the CI's, as the author decided. 96 repaired issues were closed on GitHub on 2026-11-23 (163 open
+became 67), then 2702 (its residue is 2745), 2746 to 2748 (Windows error codes, run on the Windows box: 10, 2, 1 and 7
+tests passed) and 2522, 2583 and 2578. **Open `blocking`: 2572 alone**, whose two FIFO tests are the compiler's own and
+wait for the CI's Windows leg.
+
+**Before the one push** (the author's answers *1a 2b 3b 4a* and *1a 2a*, above), in this order:
+
+1. **The lanes in flight**, each merged as it commits: `rebel-suite2` (the `rebel` suite read 11 passed and 68 failed
+   at `e8e3f3662`), `ui-canvas-win32` and `ui-canvas-gtk` (DR01 to DR03), `ui-ax-cal` (CT44 on the three systems, AX04),
+   `gap-ssh` (I29), `gap-pki2` (B08, J15, J09, J10), `reach-move` (the 194 reach programs into one folder),
+   `box-validate` (the round on the Windows box, which stays up to about 06:30).
+2. **Wave B**, opened when the Mac has room (it swapped 4.2 of 5.1 GB with nine lanes running): `gap-webp` (K04's lossy
+   half), `gap-os2` (G06, G07, G08, G10), `gap-service2` (H14's three pending blocks, H15, H16), `gap-i18n` (A12, A23,
+   A24), `gap-imap` (I26), `gap-net2` (I22), `gap-data2` (E10, F05's shared limit), `gap-font2` (plots and charts as images or SVG, K22). N09, files
+   embedded in the program, stays a language form for a sitting of its own. The briefs are `coord/round-3b-brief.md`
+   and `coord/round-3b-lanes.md`.
+3. **The layout move**, last, one script by one lane after every other lane has merged
+   (`coord/layout-move-brief.md`): `rebel/library/0.1.0/files` (planned 2026-11-23), `rebel/examples` (the reach programs in
+   `rebel/examples/reach`, planned 2026-11-23), `rebel/generators` (planned 2026-11-23); `packages/` leaves the tree; the 85 generated files that carry their
+   generator's path are regenerated, never edited; the site and the rules page say a program takes Rebel today by a path
+   entry from a clone.
+4. **The last check on the exact tree pushed**: the two-stage build and its fixpoint, the compiler's own tests, the
+   net's own tests, the site's build.
+5. **The author's *yes*, for one push**, which publishes the site (762 of the 853 commits then counted touched the
+   paths `deploy-site.yml` watches). Asked every time.
+
+**After the push, to close the milestone**: the CI's first run of Rebel's own pipeline is the largest unknown, and what
+it reds is repaired on `main`, one commit per cause, each red a new `blocking` defect naming its leg; zero `blocking` and
+`systemic` issues (2572 waits on its Windows leg); decision 2610 closed with its comments as the register; then
+`/step` § 5's checklist: the emissions of the cases this Mac skips blessed on Linux arm64 where the emitted C moved, the
+latency ledger's row and its comparison with `m-package-manager`'s compiler, the journal, the beat, the ROADMAP's
+status, the predictions scored (the one registered on 2026-11-15 above), the `/learn` offers written and none put to the
+author, the open features and tasks two tags old re-checked; beside the CI, the census and the formatter's strided
+pass if `selfhost/print/` moved; then the tag `m-rebel-library`, whose push is asked.
+
+**Left for after the milestone**: the catalogue's `could` rows and its 32 refusals; N09 (a sitting); M-rebel-packages-manager
+(row 78) and M-package-index (row 79), whose opening sitting measures the author's pointer variant and the index's
+address; Rebel, its examples and the index as repositories of their own; the `ui` package's native arms still refused by
+name where a system has none.
+
+**Waiting on the author**: the push; the 19 faces of Rebel no application lists (issue 2714, a task); the design choice
+of defect 2704 (callback frames abandoned by a C jump are not audited for missing decrefs), reported for the author's
+reading.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

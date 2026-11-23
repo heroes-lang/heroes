@@ -17,8 +17,8 @@
 #
 # It fails with `invalid`, `limit` and `unsupported`.
 #
-# Not written yet, each a `pending` block of its ledger: the lossy VP8 coding
-# read and written.
+# Not written yet, each a `pending` block of its ledger: a lossy (VP8) picture
+# read; a picture written lossily at a quality.
 
 use bytes
 use hash
