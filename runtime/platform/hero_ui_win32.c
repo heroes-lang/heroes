@@ -4956,6 +4956,8 @@ static bool hero_ui_win_takes_keys(int64_t kind) {
     case HERO_UI_DATE_TIME_PICKER:
     case HERO_UI_COLOR_WELL:
     case HERO_UI_FONT_BUTTON:
+    case HERO_UI_EDITABLE_COMBO:
+    case HERO_UI_SPIN:
         return true;
     default:
         return false;
@@ -5104,6 +5106,18 @@ static void hero_ui_win_first_shown(hero_ui_native *window) {
     }
 }
 
+/* The whole text of editable combo box or spin `widget` chosen, as the dialog
+ * manager chooses a field's text when the person's Tab gives it the keys, so
+ * that what is typed next replaces it, as on the other arms; the choice
+ * stays while the keys are elsewhere. */
+static void hero_ui_win_select_all(const hero_ui_native *widget) {
+    if (widget->kind == HERO_UI_EDITABLE_COMBO) {
+        (void)SendMessageW(widget->hwnd, CB_SETEDITSEL, 0, MAKELPARAM(0, -1));
+    } else if (widget->kind == HERO_UI_SPIN) {
+        (void)SendMessageW(widget->hwnd, EM_SETSEL, 0, -1);
+    }
+}
+
 int64_t hero_ui_arm_set_focus(int64_t id) {
     hero_ui_native *widget = hero_ui_find(id);
     hero_ui_native *window;
@@ -5123,6 +5137,11 @@ int64_t hero_ui_arm_set_focus(int64_t id) {
     case HERO_UI_TABLE:
     case HERO_UI_TREE:
         hero_ui_win_give_keys(window, widget->hwnd);
+        return HERO_UI_OK;
+    case HERO_UI_EDITABLE_COMBO:
+    case HERO_UI_SPIN:
+        hero_ui_win_give_keys(window, widget->hwnd);
+        hero_ui_win_select_all(widget);
         return HERO_UI_OK;
     default:
         return HERO_UI_INVALID;
