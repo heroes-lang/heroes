@@ -226,7 +226,18 @@ test "a program reaches a member written in Swift only through the C member that
     assert reached(t, named: none).must().len() == 0
     assert reached(t, named: ["hero_net.h", "hero_time.h", "stdio.h"]).must().len() == 0
     assert reached(t, named: ["hero_crypto.h"]).must() == [t.runtime + "/platform/hero_crypto_cryptokit.swift"]
-    assert reached(t, named: ["hero_ui.h"]).must() == [t.runtime + "/platform/hero_ui_appkit.swift"]
+
+    # `hero_ui.c` includes the four AppKit members' headers (the app's window
+    # code, its dialogs, its system services and the rest), so the C member
+    # that `hero_ui.h` opens into reaches each of the four, in the order
+    # `runtime/runtime.c` includes them (`runtime_key.swift_members`).
+    appkit = [
+        t.runtime + "/platform/hero_ui_appkit.swift"
+        t.runtime + "/platform/hero_ui_appkit_windows.swift"
+        t.runtime + "/platform/hero_ui_appkit_dialogs.swift"
+        t.runtime + "/platform/hero_ui_appkit_system.swift"
+    ]
+    assert reached(t, named: ["hero_ui.h"]).must() == appkit
     assert reached(t, named: ["hero_ui.h", "hero_crypto.h"]).must() == layer_swift.members(t).must()
 
     # Read from a unit's text, a group's header angled as the emitter writes it.
