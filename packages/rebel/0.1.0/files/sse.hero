@@ -435,15 +435,22 @@ function publish(@hub: Hub, event: http.Event) -> i64?
 # - `hub`: the hub.
 #
 # How many clients were dropped. Call it on a timer, `due` saying how long
-# until it is next needed. Fails as `time.mark` and `time.elapsed` fail, where
-# the system cannot read its monotonic clock. See also `publish`.
+# until it is next needed. Fails as `time.mark` fails, where the system cannot
+# read its monotonic clock, the hub then left as it was. See also `publish`.
 function heartbeat(@hub: Hub) -> i64?
     now = time.mark()?
     kept: [members.Member] @= []
     dropped: i64 @= 0
 
     for m in hub.members
-        if time.elapsed(m.quiet)?.nanoseconds < hub.heartbeat.nanoseconds
+        # Measured against the one reading taken above, so no failure can end
+        # the loop with a client's connection closed and the client still
+        # held, which a later write would close again.
+        quiet = match time.between_marks(from: m.quiet, to: now)
+            .ok d  => d.nanoseconds
+            .err _ => hub.heartbeat.nanoseconds
+
+        if quiet < hub.heartbeat.nanoseconds
             kept @ kept.push(m)
             continue
 
