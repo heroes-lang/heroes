@@ -13,6 +13,7 @@ use ui/internal/clock
 use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
+use ui/internal/fixture
 use ui/internal/model
 use ui/internal/native
 use ui/internal/sizes
@@ -51,7 +52,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], shown: [], dialogs_made: 0, docked: true, notices: [], appearance: .light, quits_held: 0, clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], shown: [], dialogs_made: 0, docked: true, notices: [], appearance: .light, quits_held: 0, identity: "", windowed: false, claimed: false, clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).
@@ -82,7 +83,9 @@ function window(@app: ui.App, title: str, width: i64, height: i64) -> ui.Widget?
     n.width @ width
     n.height @ height
     n.padding @ model.WINDOW_PADDING
-    return added(@app, n: n)
+    made = added(@app, n: n)?
+    app.windowed @ true
+    return ok(made)
 
 # A new widget or box of `kind` in `into`, showing `text` or holding
 # `items`: the first item chosen for a combo box or a radio group.
@@ -97,6 +100,18 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
 
     if (kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP) && items.len() > 0
         n.chosen @ [0]
+    return added(@app, n: n)
+
+# A new separator (`ui.separator`), filling its box across.
+function separator(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_SEPARATOR,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.fill @ true
     return added(@app, n: n)
 
 # A new text field whose text is masked (`ui.password_field`).
@@ -127,6 +142,25 @@ function grid(@app: ui.App, into: ui.Widget, columns: i64) -> ui.Widget?
     )
     n.columns @ columns
     return added(@app, n: n)
+
+# Has a widget of a grid take `columns` of its columns (`ui.set_span`).
+function set_span(@app: ui.App, widget: ui.Widget, columns: i64) -> ()?
+    n @= check.node_of(app, widget: widget)?
+    found = model.node_of(app.table, id: n.parent)
+
+    if found.is_err() || found.must().kind != hero_ui.HERO_UI_GRID
+        return fail(code: failure.INVALID, msg: f"widget {n.id} stands in no grid, whose columns alone a widget spans")
+    box = found.must()
+
+    if columns < 1 || columns > box.columns
+        return fail(
+            code: failure.INVALID,
+            msg: f"a span of {columns} columns in a grid of {box.columns}; it takes 1 to {box.columns}"
+        )
+    n.span @ columns
+    model.put(@app.table, n: n)
+    model.marks_dirty(@app.table, window: n.window)
+    return ok()
 
 # A new checkbox (`ui.checkbox`).
 function checkbox(@app: ui.App, into: ui.Widget, text: str, checked: bool) -> ui.Widget?
@@ -311,3 +345,62 @@ function measure(app: ui.App, n: model.Node) -> [i64]?
     if !model.is_placed(n.kind)
         return ok([0, 0])
     return native.measure(app, n: n)
+
+test "set_span: a field across two columns of a form placed under its label and its neighbour, refused outside a grid, at 0 and past the grid's columns (catalogue LY03)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    form = ui.grid(@app, into: shown, columns: 2).must()
+    name = ui.label(@app, into: form, text: "Name").must()
+    first = ui.text_field(@app, into: form, text: "").must()
+    notes = ui.text_area(@app, into: form, text: "").must()
+    alone = ui.button(@app, into: shown, text: "OK").must()
+    assert fixture.code_of(ui.set_span(@app, widget: alone, columns: 1)) == ui.INVALID
+    assert fixture.code_of(ui.set_span(@app, widget: notes, columns: 0)) == ui.INVALID
+    assert fixture.code_of(ui.set_span(@app, widget: notes, columns: 3)) == ui.INVALID
+    ui.set_span(@app, widget: notes, columns: 2).must()
+    label_at = ui.rect_of(@app, widget: name).must()
+    field_at = ui.rect_of(@app, widget: first).must()
+    notes_at = ui.rect_of(@app, widget: notes).must()
+
+    # The area starts the second row under the label, the field beside the
+    # label in the first.
+    assert notes_at.x == label_at.x && notes_at.y > field_at.y && field_at.x > label_at.x
+    ui.close(@app).must()
+
+test "separator: across a column between two widgets, one point high and as wide as the column, down a row one point wide (catalogue LY12)"
+    app @= fixture.test_app()
+    shown = fixture.window_of(app)
+    above = ui.button(@app, into: shown, text: "Above the line").must()
+    line = ui.separator(@app, into: shown).must()
+    below = ui.button(@app, into: shown, text: "Below").must()
+    side = ui.row(@app, into: shown).must()
+    _ = ui.label(@app, into: side, text: "Left").must()
+    upright = ui.separator(@app, into: side).must()
+    _ = ui.label(@app, into: side, text: "Right").must()
+    assert ui.kind_of(app, widget: line).must() == .separator
+    at = ui.rect_of(@app, widget: line).must()
+    top = ui.rect_of(@app, widget: above).must()
+    bottom = ui.rect_of(@app, widget: below).must()
+    down = ui.rect_of(@app, widget: upright).must()
+    assert at.height == 1 && at.y > top.y && at.y < bottom.y && at.width >= top.width
+    assert down.width == 1 && down.height >= 1
+    ui.close(@app).must()
+
+test "separator: on the native side the system's line made and placed across its column (catalogue LY12)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.window(@app, title: "Line", width: 200, height: 100).must()
+    _ = ui.button(@app, into: shown, text: "Above").must()
+    made = ui.separator(@app, into: shown)
+    refusal = fixture.unsupported_words(made)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    line = made.must()
+    _ = ui.button(@app, into: shown, text: "Below").must()
+    at = ui.rect_of(@app, widget: line).must()
+    _ = ui.wait(@app, within: time.milliseconds(50).must()).is_err()
+    ui.close(@app).must()
+    assert at.height == 1 && at.width > 100

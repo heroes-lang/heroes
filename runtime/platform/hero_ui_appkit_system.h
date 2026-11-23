@@ -38,4 +38,8 @@ int64_t hero_ui_appkit_answer_quit(int64_t go);
 
 int64_t hero_ui_appkit_ask_quit(int64_t session_end);
 
+void hero_ui_appkit_quit_watch(void);
+
+int64_t hero_ui_appkit_open_items(int64_t what, const uint8_t *items, int64_t count);
+
 #endif

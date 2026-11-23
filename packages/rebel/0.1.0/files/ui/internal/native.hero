@@ -12,6 +12,7 @@ use ui/internal/desk
 use ui/internal/drops
 use ui/internal/failure
 use ui/internal/model
+use ui/internal/session
 
 # The bytes a text is first read into; a longer one is read again with room
 # for it.
@@ -506,6 +507,7 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 text: ""
             )
         .drop_files d => return drops.injected(app, window: d.window, x: d.x, y: d.y, paths: d.paths)
+        .hand h => return session.injected(app, what: h.what, items: h.items)
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # The layer's number for `appearance`.

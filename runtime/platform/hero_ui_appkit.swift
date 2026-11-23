@@ -429,6 +429,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     // draw.
     func viewOf(_ kind: Int64, _ widget: Native) -> NSView? {
         switch kind {
+        case kindSeparator:
+            // AppKit draws a separator along its longer side.
+            let line = NSBox(frame: NSRect(x: 0, y: 0, width: 1, height: 1))
+            line.boxType = .separator
+            return line
         case kindLabel:
             let label = NSTextField(labelWithString: "")
             label.maximumNumberOfLines = 0
@@ -1276,6 +1281,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
         case kindTextArea:
             return NSSize(width: areaWidth, height: areaHeight)
+        case kindSeparator:
+            return NSSize(width: 1, height: 1)
         case kindList, kindListMultiple:
             return NSSize(width: fieldWidth, height: areaHeight)
         case kindProgress, kindSlider:
@@ -3276,6 +3283,7 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 // `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
 private let kindContextMenu: Int64 = 30
 private let kindTray: Int64 = 31
+private let kindSeparator: Int64 = 32
 
 // The height of a tray icon's image in the menu bar, in points: the bar's
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a
@@ -3806,4 +3814,97 @@ public func hero_ui_appkit_text_selection(_ id: Int64, _ start: UnsafeMutablePoi
     start.pointee = from
     end.pointee = to
     return answer
+}
+
+// MARK: the app's identity
+
+// Gives the app its name, which the application menu shows ("About",
+// "Hide", "Quit"), where the identifier is the bundle's own or the app
+// stands in none. A process outside a bundle keeps the executable's name
+// in the menu bar's bold title, which the system reads from the bundle
+// alone.
+@c
+public func hero_ui_appkit_set_identity(_ identifier: UnsafePointer<UInt8>?, _ identifierCount: Int64, _ name: UnsafePointer<UInt8>?, _ nameCount: Int64) -> Int64 {
+    let named = text(identifier, identifierCount)
+    let shown = text(name, nameCount)
+    return MainActor.assumeIsolated { () -> Int64 in
+        if let bundled = Bundle.main.bundleIdentifier, bundled != named {
+            backend()?.words = "the app's bundle names itself \(bundled), and an app in a bundle is the bundle's identity"
+            return answerInvalid
+        }
+        ProcessInfo.processInfo.processName = shown
+        backend()?.refreshMenuBar()
+        return answerOk
+    }
+}
+
+// MARK: a tip over a widget
+
+extension Backend {
+    // The tip widget `id` holds, nil for a kind that holds none: a widget's
+    // view's, a menu item's, a tray icon's button's.
+    func tipOf(_ widget: Native) -> String? {
+        if widget.kind == kindTray {
+            return widget.status?.button?.toolTip ?? ""
+        }
+        if widget.kind == kindMenuItem {
+            return widget.item?.toolTip ?? ""
+        }
+        if widget.kind == kindWindow || widget.kind == kindMenu || widget.kind == kindContextMenu || widget.view == nil {
+            return nil
+        }
+        return widget.view?.toolTip ?? ""
+    }
+
+    func setTip(_ id: Int64, _ text: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard tipOf(widget) != nil else {
+            return answerInvalid
+        }
+        let tip: String? = text.isEmpty ? nil : text
+        if widget.kind == kindTray {
+            widget.status?.button?.toolTip = tip
+        } else if widget.kind == kindMenuItem {
+            widget.item?.toolTip = tip
+        } else {
+            widget.view?.toolTip = tip
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_tip(_ id: Int64, _ words: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let tip = text(words, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setTip(id, tip) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tip(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ length: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let length = length else {
+        return answerInvalid
+    }
+    let (answer, bytes) = MainActor.assumeIsolated { () -> (Int64, [UInt8]) in
+        guard let shared = backend(), let widget = shared.widgets[id] else {
+            return (answerNotFound, [])
+        }
+        guard let tip = shared.tipOf(widget) else {
+            return (answerInvalid, [])
+        }
+        return (answerOk, Array(tip.utf8))
+    }
+    if answer != answerOk {
+        return answer
+    }
+    length.pointee = Int64(bytes.count)
+    if let buffer = buffer, bytes.count <= Int(count) {
+        for at in 0..<bytes.count {
+            buffer[at] = bytes[at]
+        }
+    }
+    return answerOk
 }

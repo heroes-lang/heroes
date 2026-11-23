@@ -76,7 +76,15 @@
 #include <wchar.h>
 #include "hero_ui_web_win32.h"
 #elif defined(__APPLE__)
+#include <dispatch/dispatch.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <sys/file.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 #include "hero_ui_appkit.h"
 #include "hero_ui_appkit_system.h"
 #else
@@ -178,11 +186,17 @@ int64_t hero_ui_arm_open(void) {
     int64_t count = 0;
     const char *bridge = hero_ui_web_bridge(&count);
 
-    int64_t kind = hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
+    int64_t kind;
 
+    /* The application delegate stands before AppKit's launch, which hands
+     * it the documents the system opened the app with. */
+    hero_ui_appkit_session_watch(hero_ui_dialog_told);
+    kind = hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
     if (kind == HERO_UI_OK) {
+        hero_ui_appkit_quit_watch();
         hero_ui_appkit_appearance_watch(hero_ui_dialog_told);
-        hero_ui_appkit_session_watch(hero_ui_dialog_told);
+    } else {
+        hero_ui_appkit_session_watch(NULL);
     }
     return kind;
 }
@@ -730,6 +744,11 @@ static _Thread_local uint32_t hero_ui_given_back;
 static _Thread_local uint32_t hero_ui_native_slot;
 /* How many native apps are open in the process: 0 or 1. */
 static _Atomic int64_t hero_ui_natives;
+/* The native app's identity (`hero_ui_set_identity`), its length 0 until
+ * given, and whether it has made a window, after which none is given. */
+static _Thread_local char hero_ui_identity[HERO_UI_IDENTITY_MOST + 1];
+static _Thread_local int64_t hero_ui_identity_count;
+static _Thread_local bool hero_ui_windowed;
 /* The last number an app was given. */
 static _Atomic int64_t hero_ui_numbers;
 
@@ -1838,6 +1857,10 @@ int64_t hero_ui_close(hero_ui_app *app) {
     }
     if (slot->backend == HERO_UI_NATIVE) {
         hero_ui_arm_dialogs_end(0);
+        hero_ui_arm_instance_end();
+        hero_ui_identity_count = 0;
+        hero_ui_identity[0] = '\0';
+        hero_ui_windowed = false;
         hero_ui_arm_close();
         hero_ui_web_give_back_all();
         hero_ui_native_slot = 0;
@@ -1858,6 +1881,7 @@ static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const voi
 static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id);
 static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const void *paths, uint64_t count);
 static int64_t hero_ui_session_answered(int64_t kind, const char *what);
+static int64_t hero_ui_open_as_system(int64_t value, int64_t what, const void *items, uint64_t count);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -1867,7 +1891,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TRAY) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_SEPARATOR) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -1875,13 +1899,26 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
+#if !defined(__APPLE__)
+    /* The kinds after the tray no C arm makes yet: refused by name here,
+     * before an arm's `makes` that knows them not. */
+    if (kind > HERO_UI_TRAY) {
+        return hero_ui_elsewhere(hero_ui_making(kind));
+    }
+#endif
     if (!hero_ui_arm_makes(kind, parent)) {
         return hero_ui_elsewhere(hero_ui_making(kind));
     }
     if (kind == HERO_UI_WEBVIEW) {
         return hero_ui_web_create(id, parent);
     }
-    return hero_ui_answered(hero_ui_arm_create(id, kind, parent), "making a widget", id);
+    if (hero_ui_answered(hero_ui_arm_create(id, kind, parent), "making a widget", id) != 0) {
+        return -1;
+    }
+    if (kind == HERO_UI_WINDOW) {
+        hero_ui_windowed = true;
+    }
+    return 0;
 }
 
 int64_t hero_ui_destroy(hero_ui_app *app, int64_t id) {
@@ -2191,6 +2228,9 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     }
     if (kind == HERO_UI_EVENT_DROP) {
         return hero_ui_drop_as_person(id, value, second, text, count);
+    }
+    if (kind == HERO_UI_EVENT_OPEN) {
+        return hero_ui_open_as_system(value, second, text, count);
     }
     if (kind == HERO_UI_EVENT_QUIT) {
         if (id != 0 || (value != 0 && value != 1) || second != 0 || count != 0) {
@@ -2525,6 +2565,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a context menu";
     case HERO_UI_TRAY:
         return "making a tray icon";
+    case HERO_UI_SEPARATOR:
+        return "making a separator";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
@@ -3575,6 +3617,369 @@ int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
     return hero_ui_appkit_text_selection(id, start, end);
 }
 
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
+    return hero_ui_appkit_set_identity(identifier, identifier_count, name, name_count);
+}
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    return hero_ui_appkit_set_tip(id, text, count);
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    return hero_ui_appkit_tip(id, buffer, count, length);
+}
+
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
+    return hero_ui_appkit_open_items(what, items, count);
+}
+
+/* ONE INSTANCE, on macOS: a lock file and a local socket in the user's own
+ * temporary folder (`_CS_DARWIN_USER_TEMP_DIR`, which no other user reads),
+ * both named by a hash of the identity, since a socket's path holds 104
+ * bytes. The first process to lock the file holds the claim and listens; a
+ * later one connects and hands its arguments over, the first answering one
+ * byte once it has them. The listener is read on the main queue, which the
+ * loop's pump runs; each hand-over is read on a queue of its own with a
+ * deadline, so a peer that stalls never holds the user interface, and is
+ * queued on the main queue as `HERO_UI_EVENT_OPEN`. A hand-over read after
+ * the claim ended is dropped. */
+
+/* The words of the claim's last refusal, which `hero_ui_claim_answered`
+ * tells: the macOS arm's own, its other words being its members'. */
+static _Thread_local char hero_ui_claim_words[HERO_UI_WORDS_MOST];
+
+/* `kind`, its words `words` kept for the entry point. */
+static int64_t hero_ui_claim_refused(int64_t kind, const char *words) {
+    (void)hero_ui_copy_text(hero_ui_claim_words, sizeof hero_ui_claim_words, words);
+    return kind;
+}
+
+/* The hand-over's first bytes. */
+static const char hero_ui_hand_magic[8] = {'H', 'E', 'R', 'O', 'U', 'I', '1', '\0'};
+
+/* The seconds a hand-over's peer has for each read and write. */
+#define HERO_UI_HAND_SECONDS 5
+
+static int hero_ui_instance_lock = -1;
+static int hero_ui_instance_listener = -1;
+static dispatch_source_t hero_ui_instance_source;
+/* Counted up at each claim's end, so a hand-over read for an earlier claim
+ * is dropped. */
+static uint64_t hero_ui_instance_era;
+
+/* One hand-over being read: the connection, the identity it must name, the
+ * claim's era, and what was read. */
+typedef struct hero_ui_hand {
+    int socket;
+    uint64_t era;
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t *arguments;
+    uint32_t count;
+} hero_ui_hand;
+
+/* The path of the claim's file ending `suffix` for `identity` into `path`
+ * (`most` bytes); false where the folder is unknown or the path too long. */
+static bool hero_ui_instance_path(const char *identity, const char *suffix, char *path, size_t most) {
+    char folder[1024];
+    uint64_t hash = 14695981039346656037ULL;
+    size_t length = confstr(_CS_DARWIN_USER_TEMP_DIR, folder, sizeof folder);
+    int written;
+
+    if (length == 0 || length > sizeof folder) {
+        return false;
+    }
+    for (const char *at = identity; *at != '\0'; at += 1) {
+        hash = (hash ^ (uint8_t)*at) * 1099511628211ULL;
+    }
+    written = snprintf(path, most, "%s%shero-ui-%016llx%s", folder, folder[length - 2] == '/' ? "" : "/", (unsigned long long)hash, suffix);
+    return written > 0 && (size_t)written < most;
+}
+
+/* Reads or writes all `count` bytes at `bytes` on `socket`, its deadline its
+ * own; false at its end, a failure or the deadline. */
+static bool hero_ui_whole(int socket, void *bytes, size_t count, bool writing) {
+    uint8_t *at = bytes;
+
+    while (count > 0) {
+        ssize_t done = writing ? send(socket, at, count, 0) : recv(socket, at, count, 0);
+
+        if (done < 0 && errno == EINTR) {
+            continue;
+        }
+        if (done <= 0) {
+            return false;
+        }
+        at += done;
+        count -= (size_t)done;
+    }
+    return true;
+}
+
+/* Gives `socket` a deadline of `HERO_UI_HAND_SECONDS` for each read and
+ * write, no `SIGPIPE`, and no life in a child process. */
+static void hero_ui_hand_socket(int socket) {
+    struct timeval limit = {HERO_UI_HAND_SECONDS, 0};
+    int on = 1;
+
+    (void)fcntl(socket, F_SETFD, FD_CLOEXEC);
+    (void)setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &limit, sizeof limit);
+    (void)setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &limit, sizeof limit);
+    (void)setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on);
+}
+
+/* Connects to the claim's socket at `path` and hands `arguments` over,
+ * named for `identity`: true once the first process answered it has them.
+ * Tries for two seconds, the first process perhaps not listening yet. */
+static bool hero_ui_hand_to(const char *path, const char *identity, const uint8_t *arguments, uint32_t count) {
+    struct sockaddr_un address;
+    uint8_t length[4] = {(uint8_t)count, (uint8_t)(count >> 8), (uint8_t)(count >> 16), (uint8_t)(count >> 24)};
+    uint8_t answer = 0;
+
+    memset(&address, 0, sizeof address);
+    address.sun_family = AF_UNIX;
+    (void)snprintf(address.sun_path, sizeof address.sun_path, "%s", path);
+    for (int tries = 0; tries < 20; tries += 1) {
+        int socket_id = socket(AF_UNIX, SOCK_STREAM, 0);
+        bool handed;
+
+        if (socket_id < 0) {
+            return false;
+        }
+        hero_ui_hand_socket(socket_id);
+        if (connect(socket_id, (struct sockaddr *)&address, sizeof address) != 0) {
+            (void)close(socket_id);
+            (void)usleep(100000);
+            continue;
+        }
+        handed = hero_ui_whole(socket_id, (void *)hero_ui_hand_magic, sizeof hero_ui_hand_magic, true) && hero_ui_whole(socket_id, (void *)identity, strlen(identity) + 1, true) && hero_ui_whole(socket_id, length, sizeof length, true) && (count == 0 || hero_ui_whole(socket_id, (void *)arguments, count, true)) && hero_ui_whole(socket_id, &answer, 1, false) && answer == '1';
+        (void)close(socket_id);
+        return handed;
+    }
+    return false;
+}
+
+/* On the main queue: queues a hand-over read for the claim still held. */
+static void hero_ui_hand_told(void *context) {
+    hero_ui_hand *hand = context;
+    int64_t items = 0;
+
+    if (hand->era == hero_ui_instance_era && hero_ui_instance_listener >= 0) {
+        for (uint32_t at = 0; at < hand->count; at += 1) {
+            if (hand->arguments[at] == 0) {
+                items += 1;
+            }
+        }
+        hero_ui_dialog_told(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, hand->arguments, (int64_t)hand->count);
+    }
+    free(hand->arguments);
+    free(hand);
+}
+
+/* On a queue of its own: reads one hand-over, answers its peer, and hands
+ * it to the main queue where it holds a list of UTF-8 arguments for this
+ * identity. */
+static void hero_ui_hand_read(void *context) {
+    hero_ui_hand *hand = context;
+    char magic[sizeof hero_ui_hand_magic];
+    char named[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t length[4];
+    size_t at = 0;
+    bool good = hero_ui_whole(hand->socket, magic, sizeof magic, false) && memcmp(magic, hero_ui_hand_magic, sizeof magic) == 0;
+
+    while (good && at < sizeof named) {
+        good = hero_ui_whole(hand->socket, named + at, 1, false);
+        if (good && named[at] == '\0') {
+            break;
+        }
+        at += 1;
+    }
+    good = good && at < sizeof named && strcmp(named, hand->identity) == 0 && hero_ui_whole(hand->socket, length, sizeof length, false);
+    if (good) {
+        hand->count = (uint32_t)length[0] | ((uint32_t)length[1] << 8) | ((uint32_t)length[2] << 16) | ((uint32_t)length[3] << 24);
+        good = hand->count <= HERO_UI_TEXT_MOST;
+    }
+    if (good && hand->count > 0) {
+        hand->arguments = malloc(hand->count);
+        good = hand->arguments != NULL && hero_ui_whole(hand->socket, hand->arguments, hand->count, false);
+        if (good) {
+            uint32_t start = 0;
+
+            good = hand->arguments[hand->count - 1] == 0;
+            for (uint32_t i = 0; good && i < hand->count; i += 1) {
+                if (hand->arguments[i] == 0) {
+                    good = hero_ui_is_utf8(hand->arguments + start, i - start);
+                    start = i + 1;
+                }
+            }
+        }
+    }
+    if (good) {
+        uint8_t answer = '1';
+
+        good = hero_ui_whole(hand->socket, &answer, 1, true);
+    }
+    (void)close(hand->socket);
+    if (!good) {
+        free(hand->arguments);
+        free(hand);
+        return;
+    }
+    dispatch_async_f(dispatch_get_main_queue(), hand, hero_ui_hand_told);
+}
+
+/* On the main queue, the listener readable: takes each connection waiting
+ * from a process of this user, and reads it on a queue of its own. */
+static void hero_ui_instance_accept(void *context) {
+    (void)context;
+    for (;;) {
+        int socket_id = accept(hero_ui_instance_listener, NULL, NULL);
+        uid_t user;
+        gid_t group;
+        hero_ui_hand *hand;
+
+        if (socket_id < 0) {
+            return;
+        }
+        hero_ui_hand_socket(socket_id);
+        (void)fcntl(socket_id, F_SETFL, fcntl(socket_id, F_GETFL) & ~O_NONBLOCK);
+        hand = calloc(1, sizeof *hand);
+        if (hand == NULL || getpeereid(socket_id, &user, &group) != 0 || user != geteuid()) {
+            free(hand);
+            (void)close(socket_id);
+            continue;
+        }
+        hand->socket = socket_id;
+        hand->era = hero_ui_instance_era;
+        (void)snprintf(hand->identity, sizeof hand->identity, "%s", hero_ui_identity);
+        dispatch_async_f(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), hand, hero_ui_hand_read);
+    }
+}
+
+static void hero_ui_instance_closed(void *context) {
+    (void)close((int)(intptr_t)context);
+}
+
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first) {
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    char lock_path[1100];
+    struct sockaddr_un address;
+    int lock;
+    int listener;
+
+    if (hero_ui_instance_listener >= 0) {
+        *first = 1;
+        return HERO_UI_OK;
+    }
+    memcpy(identity, identifier, (size_t)identifier_count);
+    identity[identifier_count] = '\0';
+    memset(&address, 0, sizeof address);
+    address.sun_family = AF_UNIX;
+    if (!hero_ui_instance_path(identity, ".lock", lock_path, sizeof lock_path) || !hero_ui_instance_path(identity, ".sock", address.sun_path, sizeof address.sun_path)) {
+        return hero_ui_claim_refused(HERO_UI_UNSUPPORTED, "the user's temporary folder is unknown, or its path leaves a local socket's no room");
+    }
+    lock = open(lock_path, O_RDWR | O_CREAT | O_CLOEXEC, 0600);
+    if (lock < 0) {
+        return hero_ui_claim_refused(HERO_UI_OTHER, "the claim's lock file could not be opened in the user's temporary folder");
+    }
+    if (flock(lock, LOCK_EX | LOCK_NB) != 0) {
+        (void)close(lock);
+        if (errno != EWOULDBLOCK) {
+            return hero_ui_claim_refused(HERO_UI_OTHER, "the claim's lock file could not be locked");
+        }
+        if (!hero_ui_hand_to(address.sun_path, identity, arguments, (uint32_t)count)) {
+            return hero_ui_claim_refused(HERO_UI_OTHER, "another process holds this identity's claim and took no hand-over within its deadline");
+        }
+        *first = 0;
+        return HERO_UI_OK;
+    }
+    (void)unlink(address.sun_path);
+    listener = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (listener < 0 || fcntl(listener, F_SETFD, FD_CLOEXEC) != 0 || bind(listener, (struct sockaddr *)&address, sizeof address) != 0 || listen(listener, 16) != 0 || fcntl(listener, F_SETFL, O_NONBLOCK) != 0) {
+        if (listener >= 0) {
+            (void)close(listener);
+        }
+        (void)close(lock);
+        return hero_ui_claim_refused(HERO_UI_OTHER, "the claim's local socket could not listen in the user's temporary folder");
+    }
+    hero_ui_instance_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, (uintptr_t)listener, 0, dispatch_get_main_queue());
+    if (hero_ui_instance_source == NULL) {
+        (void)close(listener);
+        (void)unlink(address.sun_path);
+        (void)close(lock);
+        return hero_ui_claim_refused(HERO_UI_LIMIT, "no memory for the claim's listener");
+    }
+    hero_ui_instance_lock = lock;
+    hero_ui_instance_listener = listener;
+    dispatch_set_context(hero_ui_instance_source, (void *)(intptr_t)listener);
+    dispatch_source_set_event_handler_f(hero_ui_instance_source, hero_ui_instance_accept);
+    dispatch_source_set_cancel_handler_f(hero_ui_instance_source, hero_ui_instance_closed);
+    dispatch_resume(hero_ui_instance_source);
+    *first = 1;
+    return HERO_UI_OK;
+}
+
+/* On a queue of its own: hands this process's own claim the arguments a
+ * later launch would, for `hero_ui_inject`. */
+typedef struct hero_ui_own_hand {
+    char path[sizeof(((struct sockaddr_un *)0)->sun_path)];
+    char identity[HERO_UI_IDENTITY_MOST + 1];
+    uint8_t *arguments;
+    uint32_t count;
+} hero_ui_own_hand;
+
+static void hero_ui_hand_own(void *context) {
+    hero_ui_own_hand *own = context;
+
+    (void)hero_ui_hand_to(own->path, own->identity, own->arguments, own->count);
+    free(own->arguments);
+    free(own);
+}
+
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
+    hero_ui_own_hand *own;
+
+    if (hero_ui_instance_listener < 0) {
+        return hero_ui_claim_refused(HERO_UI_INVALID, "this process holds no claim of its identity to hand arguments to");
+    }
+    own = calloc(1, sizeof *own);
+    if (own == NULL || (count > 0 && (own->arguments = malloc((size_t)count)) == NULL)) {
+        if (own != NULL) {
+            free(own);
+        }
+        return HERO_UI_LIMIT;
+    }
+    if (!hero_ui_instance_path(hero_ui_identity, ".sock", own->path, sizeof own->path)) {
+        free(own->arguments);
+        free(own);
+        return hero_ui_claim_refused(HERO_UI_OTHER, "the claim's local socket has no path");
+    }
+    (void)snprintf(own->identity, sizeof own->identity, "%s", hero_ui_identity);
+    if (count > 0) {
+        memcpy(own->arguments, arguments, (size_t)count);
+    }
+    own->count = (uint32_t)count;
+    dispatch_async_f(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), own, hero_ui_hand_own);
+    return HERO_UI_OK;
+}
+
+void hero_ui_arm_instance_end(void) {
+    char path[sizeof(((struct sockaddr_un *)0)->sun_path)];
+
+    if (hero_ui_instance_listener < 0) {
+        return;
+    }
+    hero_ui_instance_era += 1;
+    if (hero_ui_instance_path(hero_ui_identity, ".sock", path, sizeof path)) {
+        (void)unlink(path);
+    }
+    dispatch_source_cancel(hero_ui_instance_source);
+    dispatch_release(hero_ui_instance_source);
+    hero_ui_instance_source = NULL;
+    hero_ui_instance_listener = -1;
+    (void)close(hero_ui_instance_lock);
+    hero_ui_instance_lock = -1;
+}
+
 #elif defined(_WIN32)
 
 /* The words of the last refusal of a call on the system around the
@@ -3650,6 +4055,54 @@ int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end) {
     (void)start;
     (void)end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a text widget's selection on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_identity(const uint8_t *identifier, int64_t identifier_count, const uint8_t *name, int64_t name_count) {
+    (void)identifier;
+    (void)identifier_count;
+    (void)name;
+    (void)name_count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer gives the system the app's identity on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_claim_instance(const uint8_t *identifier, int64_t identifier_count, const uint8_t *arguments, int64_t count, int64_t *first) {
+    (void)identifier;
+    (void)identifier_count;
+    (void)arguments;
+    (void)count;
+    (void)first;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer keeps one instance of an app on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
+    (void)arguments;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer hands a later launch's arguments to the first on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_open_items(int64_t what, const uint8_t *items, int64_t count) {
+    (void)what;
+    (void)items;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to open documents as the system would on macOS alone, and this system's arm has no such call");
+}
+
+void hero_ui_arm_instance_end(void) {
+}
+
+int64_t hero_ui_arm_set_tip(int64_t id, const uint8_t *text, int64_t count) {
+    (void)id;
+    (void)text;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows a tip over a widget on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    (void)id;
+    (void)buffer;
+    (void)count;
+    (void)length;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's tip on macOS alone, and this system's arm has no such call");
 }
 
 #endif
@@ -3865,4 +4318,159 @@ int64_t hero_ui_text_selection(hero_ui_app *app, int64_t id, int64_t *start, int
     *start = from;
     *end = to;
     return 0;
+}
+
+/* -- THE APP'S IDENTITY, ONE INSTANCE, AND DOCUMENTS FROM THE SYSTEM -------- */
+
+/* The answer `kind` of the one instance's call `what`: on macOS in the
+ * words its refusal left, which are `hero_ui.c`'s own; elsewhere as every
+ * call's. */
+static int64_t hero_ui_claim_answered(int64_t kind, const char *what) {
+#if defined(__APPLE__)
+    char words[HERO_UI_WORDS_MOST];
+
+    if (kind != HERO_UI_OK && kind != HERO_UI_LIMIT && hero_ui_claim_words[0] != '\0') {
+        (void)snprintf(words, sizeof words, "%s: %s", what, hero_ui_claim_words);
+        hero_ui_claim_words[0] = '\0';
+        return hero_ui_said(kind, words);
+    }
+#endif
+    return hero_ui_answered(kind, what, 0);
+}
+
+/* Whether `identifier` (`count` bytes) is a reverse domain name: two or more
+ * parts joined by dots, each ASCII letters, digits and hyphens, the first a
+ * letter, at most `HERO_UI_IDENTITY_MOST` bytes. */
+static bool hero_ui_identity_ok(const uint8_t *identifier, uint64_t count) {
+    int64_t parts = 1;
+    bool fresh = true;
+
+    if (count == 0 || count > HERO_UI_IDENTITY_MOST) {
+        return false;
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        uint8_t c = identifier[at];
+        bool letter = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+
+        if (c == '.') {
+            if (fresh) {
+                return false;
+            }
+            parts += 1;
+            fresh = true;
+        } else if (fresh) {
+            if (!letter) {
+                return false;
+            }
+            fresh = false;
+        } else if (!letter && !(c >= '0' && c <= '9') && c != '-') {
+            return false;
+        }
+    }
+    return !fresh && parts >= 2;
+}
+
+int64_t hero_ui_set_identity(hero_ui_app *app, const void *identifier, uint64_t identifier_count, const void *name, uint64_t name_count) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+    int64_t kind;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(identifier, identifier_count, "the identifier", false) || !hero_ui_text_given(name, name_count, "the name", false)) {
+        return -1;
+    }
+    if (!hero_ui_identity_ok(identifier, identifier_count)) {
+        return hero_ui_said(HERO_UI_INVALID, "an app's identifier is a reverse domain name: two or more parts joined by dots, each ASCII letters, digits and hyphens, the first a letter, at most 128 bytes");
+    }
+    if (name_count == 0 || memchr(name, '\n', (size_t)name_count) != NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "an app's name is one line, not empty");
+    }
+    if (hero_ui_identity_count > 0 || hero_ui_windowed) {
+        return hero_ui_said(HERO_UI_INVALID, "an app is given its identity once, before its first window");
+    }
+    kind = hero_ui_arm_set_identity(identifier, (int64_t)identifier_count, name, (int64_t)name_count);
+    /* An identity the system refuses as given (another bundle's) is told
+     * in the arm's words. */
+    if (kind == HERO_UI_INVALID) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "the system refused it, giving no words");
+        }
+        (void)snprintf(words, sizeof words, "giving the app its identity: %s", theirs);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (hero_ui_answered(kind, "giving the app its identity", 0) != 0) {
+        return -1;
+    }
+    memcpy(hero_ui_identity, identifier, (size_t)identifier_count);
+    hero_ui_identity[identifier_count] = '\0';
+    hero_ui_identity_count = (int64_t)identifier_count;
+    return 0;
+}
+
+int64_t hero_ui_claim_instance(hero_ui_app *app, const void *arguments, uint64_t count) {
+    int64_t first = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(arguments, count, "the arguments", true)) {
+        return -1;
+    }
+    if (hero_ui_identity_count == 0) {
+        return hero_ui_said(HERO_UI_INVALID, "an app claims its one instance once it has its identity (hero_ui_set_identity)");
+    }
+    if (hero_ui_claim_answered(hero_ui_arm_claim_instance((const uint8_t *)hero_ui_identity, hero_ui_identity_count, arguments, (int64_t)count, &first), "claiming the app's one instance") != 0) {
+        return -1;
+    }
+    return first == 1 ? 1 : 0;
+}
+
+/* `hero_ui_inject`'s `HERO_UI_EVENT_OPEN`: hands `value` items of kind
+ * `what`, each followed by one zero byte, as the system would. */
+static int64_t hero_ui_open_as_system(int64_t value, int64_t what, const void *items, uint64_t count) {
+    const uint8_t *bytes = items;
+    int64_t texts = 0;
+
+    if (!hero_ui_text_given(items, count, "the items opened", true)) {
+        return -1;
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == 0) {
+            if (what != HERO_UI_OPEN_ARGUMENTS && (at == 0 || bytes[at - 1] == 0)) {
+                return hero_ui_said(HERO_UI_INVALID, "a path or an address opened is empty");
+            }
+            texts += 1;
+        }
+    }
+    if (what < HERO_UI_OPEN_FILES || what > HERO_UI_OPEN_ARGUMENTS || texts != value || (what != HERO_UI_OPEN_ARGUMENTS && value == 0)) {
+        return hero_ui_said(HERO_UI_INVALID, "an opening is HERO_UI_OPEN_*, `value` the count of its items, each followed by one zero byte, one or more for files and addresses");
+    }
+    if (what == HERO_UI_OPEN_ARGUMENTS) {
+        return hero_ui_claim_answered(hero_ui_arm_hand_over(bytes, (int64_t)count), "handing a later launch's arguments to the app");
+    }
+    return hero_ui_session_answered(hero_ui_arm_open_items(what, bytes, (int64_t)count), "asking the app to open documents as the system would");
+}
+
+/* -- A TIP OVER A WIDGET ---------------------------------------------------- */
+
+int64_t hero_ui_set_tip(hero_ui_app *app, int64_t id, const void *text, uint64_t count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the tip", false)) {
+        return -1;
+    }
+    return hero_ui_answered(hero_ui_arm_set_tip(id, text, (int64_t)count), "giving a widget its tip", id);
+}
+
+int64_t hero_ui_tip(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) {
+    int64_t length = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && buffer == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the tip and none given");
+    }
+    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
+        count = (uint64_t)HERO_UI_TEXT_MOST;
+    }
+    if (hero_ui_answered(hero_ui_arm_tip(id, buffer, (int64_t)count, &length), "reading a widget's tip", id) != 0) {
+        return -1;
+    }
+    return length;
 }

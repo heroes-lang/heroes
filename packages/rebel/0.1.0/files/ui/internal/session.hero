@@ -1,9 +1,15 @@
 # The app's life among the system's: its ask to end the app at the
 # session's end or at another program's request, which the program answers
-# (`ui.answer_quit`). The native side holds each ask in the floor until the
-# program answers it, or until `ui.close` answers that the app ends; the
-# headless side counts the asks its inputs made and not yet answered.
+# (`ui.answer_quit`); the app's identity, its one instance, and what the
+# system or a later launch hands it (`ui.set_identity`,
+# `ui.claim_instance`, `.handed`). The native side holds each ask in the
+# floor until the program answers it, or until `ui.close` answers that the
+# app ends, and the claim until the app closes; the headless side counts
+# the asks its inputs made and not yet answered, and is always its
+# identity's one instance.
 
+use bytes
+use os
 use time
 use ui
 use ui/hero_ui
@@ -11,6 +17,7 @@ use ui/internal/check
 use ui/internal/desk
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/native
 
 # Answers every ask to end the app held (`ui.answer_quit`).
 function answer_quit(@app: ui.App, go: bool) -> ()?
@@ -40,7 +47,166 @@ function quits_of(@app: ui.App) -> [ui.Event]?
             .ok event =>
                 match event
                     .quit_asked _ => out @ out.push(event)
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .files_dropped _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .files_dropped _ | .handed _ =>
+                        _ = 0
+            .err e =>
+                if e.code != failure.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+    return ok(out)
+
+# Whether `identifier` is a reverse domain name: two or more parts joined
+# by dots, each ASCII letters, digits and hyphens, the first a letter, at
+# most `HERO_UI_IDENTITY_MOST` bytes.
+function identity_ok(identifier: str) -> bool
+    if identifier.len() == 0 || identifier.len() > hero_ui.HERO_UI_IDENTITY_MOST
+        return false
+    parts @= 1
+    fresh @= true
+
+    for at in range(from: 0, to: identifier.len())
+        c = identifier[at]
+        letter = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+        if c == '.'
+            if fresh
+                return false
+            parts @ parts + 1
+            fresh @ true
+        else if fresh
+            if !letter
+                return false
+            fresh @ false
+        else if !letter && !(c >= '0' && c <= '9') && c != '-'
+            return false
+
+    return !fresh && parts >= 2
+
+# Gives the app its identity (`ui.set_identity`).
+function set_identity(@app: ui.App, identifier: str, name: str) -> ()?
+    check.opened(app)?
+
+    if !identity_ok(identifier)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the identifier \"{identifier}\" is no reverse domain name: two or more parts joined by dots, each ASCII letters, digits and hyphens, the first a letter, at most {hero_ui.HERO_UI_IDENTITY_MOST} bytes"
+        )
+    check.text_ok(text: name, one_line: true, what: "the name")?
+
+    if name == ""
+        return fail(code: failure.INVALID, msg: "an app's name is one line, not empty")
+
+    if app.identity != "" || app.windowed
+        return fail(code: failure.INVALID, msg: "an app is given its identity once, before its first window")
+
+    if app.native
+        named @= bytes.from_text(identifier)
+        shown @= bytes.from_text(name)
+
+        if hero_ui.set_identity(app.handle, identifier: @named, name: @shown) < 0
+            return failure.last("giving the app its identity")
+    app.identity @ identifier
+    return ok()
+
+# Makes this process its identity's one instance (`ui.claim_instance`).
+function claim_instance(@app: ui.App, arguments: [str]) -> bool?
+    check.opened(app)?
+
+    if app.identity == ""
+        return fail(
+            code: failure.INVALID,
+            msg: "an app claims its one instance once it has its identity (`set_identity`)"
+        )
+
+    for i in range(from: 0, to: arguments.len())
+        check.text_ok(text: arguments[i], one_line: false, what: f"argument {i}")?
+
+    if !app.native
+        app.claimed @ true
+        return ok(true)
+    joined @= native.texts_of(arguments)
+    first = hero_ui.claim_instance(app.handle, @joined)
+
+    if first < 0
+        return failure.last("claiming the app's one instance")
+
+    if first == 1
+        app.claimed @ true
+    return ok(first == 1)
+
+# The kind the layer's number `code` names, files for an unknown one.
+function handed_of(code: i64) -> ui.Handed
+    if code == hero_ui.HERO_UI_OPEN_URLS
+        return .addresses
+
+    if code == hero_ui.HERO_UI_OPEN_ARGUMENTS
+        return .arguments
+    return .files
+
+# The layer's number for `what`.
+function handed_code(what: ui.Handed) -> i64
+    return match what
+        .files     => hero_ui.HERO_UI_OPEN_FILES
+        .addresses => hero_ui.HERO_UI_OPEN_URLS
+        .arguments => hero_ui.HERO_UI_OPEN_ARGUMENTS
+
+# Fails `invalid` where `items` of `what` cannot be handed as the system or
+# a later launch would: no file or address, an empty one, a zero byte, or
+# arguments with no claim to take them.
+function hand_ok(app: ui.App, what: ui.Handed, items: [str]) -> ()?
+    for i in range(from: 0, to: items.len())
+        check.text_ok(text: items[i], one_line: false, what: f"item {i}")?
+
+    match what
+        .arguments =>
+            if !app.claimed
+                return fail(
+                    code: failure.INVALID,
+                    msg: "the app holds no claim of its one instance to hand arguments to (`claim_instance`)"
+                )
+        .files | .addresses =>
+            if items.len() == 0
+                return fail(code: failure.INVALID, msg: "the system hands one file or address or more")
+
+            for i in range(from: 0, to: items.len())
+                if items[i] == ""
+                    return fail(code: failure.INVALID, msg: f"item {i} handed is empty")
+
+    return ok()
+
+# What handing `items` of `what` tells on the headless side: each address
+# one event, as the system sends each its own.
+function handed(what: ui.Handed, items: [str]) -> [ui.Event]
+    if what == .addresses
+        out: [ui.Event] @= []
+
+        for item in items
+            out @ out.push(.handed(what: what, items: [item]))
+
+        return out
+    return [.handed(what: what, items: items)]
+
+# Hands `items` of `what` to the native app as the system or a later
+# launch would, through the floor.
+function injected(app: ui.App, what: ui.Handed, items: [str]) -> ()?
+    joined @= native.texts_of(items)
+
+    if hero_ui.inject(app.handle, kind: hero_ui.HERO_UI_EVENT_OPEN, id: 0, value: items.len(), second: handed_code(what), @joined, count: to_u64(joined.len()).must()) < 0
+        return failure.last("handing the app what the system would")
+    return ok()
+
+# What the system or a later launch handed a native app within a second,
+# its other events passed over; fails as the wait does but for its
+# timeout, so an injected opening the system refuses is told by its words.
+function handed_of_waiting(@app: ui.App) -> [ui.Event]?
+    out: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 10)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .handed _ => out @ out.push(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                         _ = 0
             .err e =>
                 if e.code != failure.TIMEOUT
@@ -101,3 +267,79 @@ test "answer_quit: on the native side the system's quit Apple event, a session's
     assert other == [.quit_asked(session_end: false)]
     assert held == [.quit_asked(session_end: false)]
     assert fixture.code_of(still) == ui.TIMEOUT
+
+test "set_identity: on the headless side a reverse domain name taken once before the first window, its one instance claimed, and what a later launch and the system hand told (catalogue AP23, AP05, AP06)"
+    app @= ui.open(.headless).must()
+
+    for wrong in ["", "editor", "org..x", ".org.x", "org.x.", "1org.x", "org.x_y", "org.é"]
+        assert fixture.code_of(ui.set_identity(@app, identifier: wrong, name: "Editor")) == ui.INVALID
+
+    assert fixture.code_of(ui.set_identity(@app, identifier: "org.example.editor", name: "")) == ui.INVALID
+    assert fixture.code_of(ui.claim_instance(@app, arguments: [])) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .hand(what: .arguments, items: ["a"]))) == ui.INVALID
+    ui.set_identity(@app, identifier: "org.example.Editor-2", name: "Editor").must()
+    assert fixture.code_of(ui.set_identity(@app, identifier: "org.example.other", name: "Other")) == ui.INVALID
+    assert ui.claim_instance(@app, arguments: ["--new"]).must()
+    assert ui.claim_instance(@app, arguments: []).must()
+    _ = ui.window(@app, title: "Editor", width: 200, height: 100).must()
+    assert fixture.code_of(ui.inject(@app, input: .hand(what: .files, items: []))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .hand(what: .addresses, items: [""]))) == ui.INVALID
+    ui.inject(@app, input: .hand(what: .arguments, items: ["--line", "", "b c.txt"])).must()
+    ui.inject(@app, input: .hand(what: .files, items: ["/a", "/b c"])).must()
+    ui.inject(@app, input: .hand(what: .addresses, items: ["editor://x", "editor://y"])).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .handed(what: .arguments, items: ["--line", "", "b c.txt"])
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .handed(what: .files, items: ["/a", "/b c"])
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .handed(what: .addresses, items: ["editor://x"])
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .handed(what: .addresses, items: ["editor://y"])
+    ui.close(@app).must()
+
+    later @= ui.open(.headless).must()
+    _ = ui.window(@later, title: "Late", width: 200, height: 100).must()
+    assert fixture.code_of(ui.set_identity(@later, identifier: "org.example.editor", name: "Editor")) == ui.INVALID
+    ui.close(@later).must()
+
+test "claim_instance: on the native side the one instance claimed through its lock and socket, a later launch's arguments handed over and told, files by the system's open Apple event and addresses by its get-address event, and the claim given up at close (catalogue AP23, AP05, AP06)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+
+    # An identity of this process's own, so a case running at once in
+    # another process claims its own.
+    identity = f"org.heroes-lang.rebel.case{os.pid()}"
+    app @= ui.open(.native).must()
+    named = ui.set_identity(@app, identifier: identity, name: "Rebel Case")
+    refusal = fixture.unsupported_words(named)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    named.must()
+    before = handed_of_waiting(@app).must()
+    first = ui.claim_instance(@app, arguments: []).must()
+    again = ui.claim_instance(@app, arguments: []).must()
+    _ = ui.window(@app, title: "Case", width: 200, height: 100).must()
+    ui.inject(@app, input: .hand(what: .arguments, items: ["--line", "", "b c.txt"])).must()
+    late = handed_of_waiting(@app).must()
+    ui.inject(@app, input: .hand(what: .files, items: ["/usr/bin/true", "/usr/lib"])).must()
+    opened = handed_of_waiting(@app)
+
+    # A system that keeps the claim but opens nothing as its own request
+    # tells it when the wait gives the input (defect 2698's shape).
+    opened_refusal = fixture.unsupported_words(opened)
+
+    if opened_refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: opened_refusal)
+    files = opened.must()
+    ui.inject(@app, input: .hand(what: .addresses, items: ["rebel-case://a/b?c", "rebel-case://d"])).must()
+    addresses = handed_of_waiting(@app).must()
+    ui.close(@app).must()
+
+    reopened @= ui.open(.native).must()
+    ui.set_identity(@reopened, identifier: identity, name: "Rebel Case").must()
+    claimed_again = ui.claim_instance(@reopened, arguments: []).must()
+    ui.close(@reopened).must()
+    assert before == []
+    assert first && again && claimed_again
+    assert late == [.handed(what: .arguments, items: ["--line", "", "b c.txt"])]
+    assert files == [.handed(what: .files, items: ["/usr/bin/true", "/usr/lib"])]
+    assert addresses == [.handed(what: .addresses, items: ["rebel-case://a/b?c"]), .handed(what: .addresses, items: ["rebel-case://d"])]
