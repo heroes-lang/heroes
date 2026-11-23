@@ -1,0 +1,206 @@
+# The connection protocol's channels (RFC 4254): opened, fed and read
+# within their windows, asked for a program, a shell, a subsystem or a
+# terminal, ended and closed; and the one message handed to its channel at a
+# time, `dispatch`, which every wait of this package loops on. A channel is
+# found by this side's number, so a server's message for a number this side
+# never gave fails `invalid` and reaches no other channel.
+
+use bytes
+use ssh/internal/session
+use ssh/internal/wire
+
+## Codes
+
+# A message that is not what the protocol allows here.
+constant INVALID: str
+    "invalid"
+
+# The channel is closed.
+constant CLOSED: str
+    "closed"
+
+# The server refused what was asked.
+constant PERMISSION: str
+    "permission"
+
+## Finding a channel
+
+# Where the channel `local` stands in `s`'s list. Aborts for a number this
+# side never gave, which the program holds.
+function place_of(s: session.Session lent, local: i64) -> i64
+    at: i64 @= 0
+
+    while at < s.channels.len()
+        if s.channels[at].local == local
+            return at
+        at @ at + 1
+
+    assert false
+    return -1
+
+# Where the channel `local` stands, failing `invalid` for a number the
+# server named and this side never gave.
+function place_named(s: session.Session lent, local: i64) -> i64?
+    at: i64 @= 0
+
+    while at < s.channels.len()
+        if s.channels[at].local == local
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: INVALID, msg: f"the server named channel {local}, which this client never opened")
+
+## One message
+
+# Reads one message of the connection and hands it to its place; answers
+# what the server asks that this client does not do.
+function dispatch(@s: session.Session) -> ()?
+    payload = session.next(@s)?
+    kind = payload[0]
+    r @= wire.reader(payload)
+    _ = wire.take(@r, n: 1, what: "a message's kind")?
+
+    if kind == 80
+        _ = wire.read_text(@r, what: "a global request's name")?
+
+        if wire.read_bool(@r, what: "a global request's reply")?
+            session.send(@s, payload: [82])?
+        return ok()
+
+    if kind == 81
+        s.global_answers @ s.global_answers.push(ok(wire.read_rest(@r)))
+        return ok()
+
+    if kind == 82
+        s.global_answers @ s.global_answers.push(fail(code: PERMISSION, msg: "the server refused the request"))
+        return ok()
+
+    if kind == 90
+        return offered(@s, r: r)
+
+    if kind < 91 || kind > 100
+        return unknown(@s)
+    local = wire.read_u32(@r, what: "a channel's number")?
+    at = place_named(s, local: local)?
+
+    if kind == 91
+        s.channels[at].remote @ wire.read_u32(@r, what: "the server's channel number")?
+        s.channels[at].out_window @ wire.read_u32(@r, what: "the server's window")?
+        s.channels[at].out_packet @ wire.read_u32(@r, what: "the server's largest packet")?
+        s.channels[at].confirmed @ true
+        return ok()
+
+    if kind == 92
+        reason = wire.read_u32(@r, what: "a refusal's code")?
+        words = wire.read_text(@r, what: "a refusal's words")?
+        s.channels[at].refused @ f"{words} (code {reason})"
+        s.channels[at].closed @ true
+        return ok()
+
+    if kind == 93
+        more = wire.read_u32(@r, what: "a window's growth")?
+        grown = s.channels[at].out_window + more
+
+        if grown > 4294967295
+            return fail(code: INVALID, msg: "the server grew a window past 2^32 - 1")
+        s.channels[at].out_window @ grown
+        return ok()
+
+    if kind == 94 || kind == 95
+        if kind == 95
+            _ = wire.read_u32(@r, what: "extended data's type")?
+        data = wire.read_string(@r, what: "a channel's data")?
+
+        if data.len() > s.channels[at].in_window
+            return fail(code: INVALID, msg: "the server sent past the channel's window")
+        s.channels[at].in_window @ s.channels[at].in_window - data.len()
+        received(@s.channels[at], data: data, errors: kind == 95)
+        return ok()
+
+    if kind == 96
+        s.channels[at].ended @ true
+        return ok()
+
+    if kind == 97
+        s.channels[at].ended @ true
+        s.channels[at].closed @ true
+
+        if !s.channels[at].close_sent
+            s.channels[at].close_sent @ true
+            close: [u8] @= [97]
+            wire.put_u32(@close, n: s.channels[at].remote)
+            session.send(@s, payload: close)?
+        return ok()
+
+    if kind == 98
+        return channel_request(@s, at: at, r: r)
+    s.channels[at].answers @ s.channels[at].answers.push(kind == 99)
+    return ok()
+
+# Data the server sent kept in the channel's buffer: `errors` for extended
+# data, the output otherwise. One copy of the buffer per packet: a push per
+# byte through the field would copy it per byte.
+function received(@c: session.Channel, data: [u8], errors: bool)
+    if errors
+        c.errors @ bytes.concat([c.errors, data])
+    else
+        c.output @ bytes.concat([c.output, data])
+
+# A request the server makes of a channel: the exit status and signal
+# kept, every other refused where it asks for an answer.
+function channel_request(@s: session.Session, at: i64, r: wire.Reader) -> ()?
+    rest @= r
+    name = wire.read_text(@rest, what: "a channel request's name")?
+    wants = wire.read_bool(@rest, what: "a channel request's reply")?
+
+    if name == "exit-status"
+        s.channels[at].status @ ok(wire.read_u32(@rest, what: "an exit status")?)
+    else if name == "exit-signal"
+        s.channels[at].signal @ ok(wire.read_text(@rest, what: "an exit signal")?)
+    else if wants
+        refusal: [u8] @= [100]
+        wire.put_u32(@refusal, n: s.channels[at].remote)
+        session.send(@s, payload: refusal)?
+    return ok()
+
+# A channel the server opens: a remote forward's kept for `accept`, every
+# other refused (RFC 4254 § 5.1, code 1, administratively prohibited).
+function offered(@s: session.Session, r: wire.Reader) -> ()?
+    rest @= r
+    kind = wire.read_text(@rest, what: "a channel's type")?
+    remote = wire.read_u32(@rest, what: "the server's channel number")?
+    window = wire.read_u32(@rest, what: "the server's window")?
+    packet = wire.read_u32(@rest, what: "the server's largest packet")?
+
+    if kind == "forwarded-tcpip"
+        bound_host = wire.read_text(@rest, what: "a forward's address")?
+        bound_port = wire.read_u32(@rest, what: "a forward's port")?
+        origin_host = wire.read_text(@rest, what: "a forward's origin")?
+        origin_port = wire.read_u32(@rest, what: "a forward's origin port")?
+
+        if is_forwarded(s, host: bound_host, port: bound_port)
+            s.offered @ s.offered.push(
+                session.Offered(remote: remote, window: window, packet: packet, bound_host: bound_host, bound_port: bound_port, origin_host: origin_host, origin_port: origin_port)
+            )
+            return ok()
+    refusal: [u8] @= [92]
+    wire.put_u32(@refusal, n: remote)
+    wire.put_u32(@refusal, n: 1)
+    wire.put_text(@refusal, text: "this client opens no channel of that kind")
+    wire.put_text(@refusal, text: "")
+    return session.send(@s, payload: refusal)
+
+# Whether this side asked the server to forward `host` at `port`.
+function is_forwarded(s: session.Session lent, host: str, port: i64) -> bool
+    for asked in s.forwards
+        if asked == f"{host}:{port}"
+            return true
+
+    return false
+
+# A message this client does not know answered UNIMPLEMENTED with its
+# sequence number (RFC 4253 § 11.4).
+function unknown(@s: session.Session) -> ()?
+    answer: [u8] @= [3]
+    wire.put_u32(@answer, n: (s.t.incoming.sequence + 4294967295) % 4294967296)
+    return session.send(@s, payload: answer)

@@ -1,0 +1,407 @@
+# SSH's key exchange (RFC 4253 § 7 and 8): the two KEXINIT messages, the
+# algorithms both sides speak agreed in the client's order, an ephemeral
+# key agreed by X25519 (`curve25519-sha256`, RFC 8731) or ECDH on P-256 or
+# P-384 (RFC 5656), the server's signature of the exchange hash checked
+# against its host key and the host key against `known_hosts`, and the
+# keys of each direction derived (RFC 4253 § 7.2) into counted keys of
+# `crypto/seal`. OpenSSH's strict key exchange (`kex-strict-*-v00`) is asked
+# for, so a message slipped into the first exchange ends it.
+
+use bytes
+use crypto
+use crypto/keypairs
+use crypto/seal
+use fs
+use os
+use ssh/internal/blobs
+use ssh/internal/known
+use ssh/internal/transport
+use ssh/internal/wire
+
+## Codes
+
+# A message of the exchange that is not what it must be, a signature that
+# does not hold, a host key that changed or is revoked.
+constant INVALID: str
+    "invalid"
+
+# A host `known_hosts` does not name, where the program did not ask to add
+# it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The server speaks no algorithm this client does.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## What the client offers
+
+# The key exchanges the client offers, in its order: X25519's first where
+# the system has X25519, then ECDH, then the two markers that ask for the
+# server's extensions and for the strict exchange.
+function kex_algorithms() -> [str]
+    names: [str] @= []
+
+    if keypairs.is_available(.x25519)
+        names @ names.push("curve25519-sha256")
+        names @ names.push("curve25519-sha256@libssh.org")
+    names @ names.push("ecdh-sha2-nistp256")
+    names @ names.push("ecdh-sha2-nistp384")
+    names @ names.push("ext-info-c")
+    names @ names.push("kex-strict-c-v00@openssh.com")
+    return names
+
+# The ciphers the client offers, AES-GCM alone.
+function ciphers() -> [str]
+    return ["aes256-gcm@openssh.com", "aes128-gcm@openssh.com"]
+
+# The host key algorithms the client offers: those `known_types` holds for
+# the host first, in its order, so a host already known is asked for the
+# key the file holds, then the others.
+function host_key_order(known_types: [str] lent) -> [str]
+    order: [str] @= []
+
+    for key_type in known_types
+        for algorithm in blobs.host_key_algorithms()
+            if blobs.key_type_of(algorithm) == key_type && !known.any_is(order, x: algorithm)
+                order @ order.push(algorithm)
+
+    for algorithm in blobs.host_key_algorithms()
+        if !known.any_is(order, x: algorithm)
+            order @ order.push(algorithm)
+
+    return order
+
+# A KEXINIT message (RFC 4253 § 7.1) offering `kexes`, `host_keys` and
+# the ciphers `offered` both ways, with a cookie of 16 bytes drawn from the system's
+# generator.
+function kexinit(kexes: [str] lent, host_keys: [str] lent, offered: [str] lent) -> [u8]?
+    out: [u8] @= [20]
+    cookie = os.random_bytes(16)?
+
+    for b in cookie
+        out @ out.push(b)
+
+    none: [str] = []
+    wire.put_name_list(@out, names: kexes)
+    wire.put_name_list(@out, names: host_keys)
+    wire.put_name_list(@out, names: offered)
+    wire.put_name_list(@out, names: offered)
+    wire.put_name_list(@out, names: none)
+    wire.put_name_list(@out, names: none)
+    wire.put_name_list(@out, names: ["none"])
+    wire.put_name_list(@out, names: ["none"])
+    wire.put_name_list(@out, names: none)
+    wire.put_name_list(@out, names: none)
+    wire.put_bool(@out, v: false)
+    wire.put_u32(@out, n: 0)
+    return ok(out)
+
+## The server's offer
+
+# What a server's KEXINIT offers.
+record Offer
+    # Its key exchanges, in its order.
+    kexes: [str]
+    # Its host key algorithms.
+    host_keys: [str]
+    # Its ciphers from the client to the server.
+    ciphers_in: [str]
+    # Its ciphers from the server to the client.
+    ciphers_out: [str]
+    # Its compressions each way.
+    compressions_in: [str]
+    # Its compressions from the server.
+    compressions_out: [str]
+    # Whether a guessed exchange message follows it.
+    guess_follows: bool
+
+# The offer `payload`, a KEXINIT message, holds.
+function offer_of(payload: [u8]) -> Offer?
+    r @= wire.reader(payload)
+    kind = wire.read_byte(@r, what: "a KEXINIT's kind")?
+
+    if kind != 20
+        return fail(code: INVALID, msg: f"message {kind} where a KEXINIT was due")
+    _ = wire.take(@r, n: 16, what: "a KEXINIT's cookie")?
+    kexes = wire.read_name_list(@r, what: "the server's key exchanges")?
+    host_keys = wire.read_name_list(@r, what: "the server's host key algorithms")?
+    ciphers_in = wire.read_name_list(@r, what: "the server's ciphers")?
+    ciphers_out = wire.read_name_list(@r, what: "the server's ciphers")?
+    _ = wire.read_name_list(@r, what: "the server's MACs")?
+    _ = wire.read_name_list(@r, what: "the server's MACs")?
+    compressions_in = wire.read_name_list(@r, what: "the server's compressions")?
+    compressions_out = wire.read_name_list(@r, what: "the server's compressions")?
+    _ = wire.read_name_list(@r, what: "the server's languages")?
+    _ = wire.read_name_list(@r, what: "the server's languages")?
+    follows = wire.read_bool(@r, what: "a KEXINIT's guess")?
+    _ = wire.read_u32(@r, what: "a KEXINIT's reserved number")?
+    return ok(
+        Offer(kexes: kexes, host_keys: host_keys, ciphers_in: ciphers_in, ciphers_out: ciphers_out, compressions_in: compressions_in, compressions_out: compressions_out, guess_follows: follows)
+    )
+
+# The first of `mine` that `theirs` holds (RFC 4253 § 7.1), the markers
+# that name no algorithm passed over.
+function agree(mine: [str] lent, theirs: [str] lent, what: str) -> str?
+    for name in mine
+        if name != "ext-info-c" && name != "kex-strict-c-v00@openssh.com" && known.any_is(theirs, x: name)
+            return ok(name)
+
+    return fail(
+        code: UNSUPPORTED,
+        msg: f"no {what} both sides speak: the client offers {join(mine, ",")}, the server {join(theirs, ",")}"
+    )
+
+## The exchange
+
+# How the server's host key is judged: against the `known_hosts` file at
+# `known_hosts`, for `host` at `port`, a host it does not name refused or
+# added.
+record Check
+    # The host as the program named it.
+    host: str
+    # Its port.
+    port: i64
+    # The path of the `known_hosts` file; a file that does not exist names
+    # no host, and an empty path judges nothing, for a key only fetched.
+    known_hosts: str
+    # Whether a host the file does not name is added to it, trusted on first
+    # use, rather than refused.
+    add_unknown: bool
+    # Whether a line added hashes the host's name.
+    hashed: bool
+    # The key exchanges offered, in order; empty for `kex_algorithms()`.
+    kexes: [str]
+    # The host key algorithms offered; empty for those `known_hosts` puts
+    # first and then the others.
+    host_keys: [str]
+    # The ciphers offered; empty for `ciphers()`.
+    ciphers: [str]
+
+# The key exchanges `check` offers.
+function kexes_of(check: Check lent) -> [str]
+    if check.kexes.len() == 0
+        return kex_algorithms()
+    return check.kexes
+
+# The ciphers `check` offers.
+function ciphers_of(check: Check lent) -> [str]
+    if check.ciphers.len() == 0
+        return ciphers()
+    return check.ciphers
+
+# The exchange `mine` and `theirs`, the two KEXINIT messages, begin, run on
+# `t` to both NEWKEYS: the host key's blob. `first` says it is the
+# connection's first exchange; `pinned`, empty on the first, is the host
+# key every later exchange must present again.
+function run(@t: transport.Transport, check: Check lent, mine: [u8], theirs: [u8], first: bool, pinned: [u8]) -> [u8]?
+    offer = offer_of(theirs)?
+    mine_offer = offer_of(mine)?
+    kex = agree(mine: mine_offer.kexes, theirs: offer.kexes, what: "key exchange")?
+    host_algorithm = agree(mine: mine_offer.host_keys, theirs: offer.host_keys, what: "host key algorithm")?
+    cipher_out = agree(mine: mine_offer.ciphers_in, theirs: offer.ciphers_in, what: "cipher")?
+    cipher_in = agree(mine: mine_offer.ciphers_out, theirs: offer.ciphers_out, what: "cipher")?
+    _ = agree(mine: ["none"], theirs: offer.compressions_in, what: "compression")?
+    _ = agree(mine: ["none"], theirs: offer.compressions_out, what: "compression")?
+
+    if first
+        t.strict @ known.any_is(offer.kexes, x: "kex-strict-s-v00@openssh.com")
+    strict_now = first && t.strict
+
+    if offer.guess_follows && (offer.kexes[0] != kex || offer.host_keys[0] != host_algorithm)
+        _ = next_message(@t, strict: strict_now)?
+    kind = kind_of_kex(kex)
+    ephemeral @= keypairs.generate(kind)?
+    exchanged = exchange_with(@t, ephemeral: ephemeral, kex: kex, mine: mine, theirs: theirs, strict: strict_now)
+    keypairs.close_private(@ephemeral)?
+    done = exchanged?
+    host_key = done.host_key
+
+    if pinned.len() > 0 && host_key != pinned
+        return fail(code: INVALID, msg: "the server presented another host key in a later key exchange")
+
+    if blobs.parts_of(host_key)?.key_type != blobs.key_type_of(host_algorithm)
+        return fail(code: INVALID, msg: f"the server's host key is not of the algorithm {host_algorithm} agreed")
+
+    if !blobs.verify(blob: host_key, algorithm: host_algorithm, data: done.hash, signature: done.signature)?
+        return fail(code: INVALID, msg: f"the server's {host_algorithm} signature of the exchange does not hold")
+
+    if first
+        judge(check, key_type: blobs.key_type_of(host_algorithm), blob: host_key)?
+        t.session_id @ done.hash
+    secret = wire_secret(done.secret)
+    transport.send(@t, payload: [21])?
+    out_key = derived(session_id: t.session_id, secret: secret, hash: done.hash, kex: kex, letters: [65, 67], cipher: cipher_out, way: .sealing)?
+    transport.install(@t.out, key: out_key, strict: t.strict)?
+    reply = next_message(@t, strict: strict_now)?
+
+    if reply != [21]
+        return fail(code: INVALID, msg: f"message {reply[0]} where NEWKEYS was due")
+    in_key = derived(session_id: t.session_id, secret: secret, hash: done.hash, kex: kex, letters: [66, 68], cipher: cipher_in, way: .opening)?
+    transport.install(@t.incoming, key: in_key, strict: t.strict)?
+    return ok(host_key)
+
+# The kind of ephemeral key a key exchange agrees with.
+function kind_of_kex(kex: str) -> keypairs.Kind
+    if kex == "ecdh-sha2-nistp256"
+        return .p256
+
+    if kex == "ecdh-sha2-nistp384"
+        return .p384
+    return .x25519
+
+# The exchange hash of `kex` over `data`: SHA-384 for P-384, SHA-256 else.
+function digest_of(kex: str, data: [u8]) -> [u8]
+    if kex == "ecdh-sha2-nistp384"
+        return crypto.sha384(data)
+    return crypto.sha256(data)
+
+# What the server's reply gives: its host key, the secret agreed, the
+# exchange hash and the server's signature of it.
+record Done
+    # The host key's blob.
+    host_key: [u8]
+    # The agreed secret's bytes, big-endian.
+    secret: [u8]
+    # The exchange hash.
+    hash: [u8]
+    # The server's signature blob.
+    signature: [u8]
+
+# The ECDH exchange with `ephemeral`: the client's point sent, the server's
+# reply read, the secret agreed and the hash computed (RFC 5656 § 4, RFC
+# 8731 § 3).
+function exchange_with(@t: transport.Transport, ephemeral: keypairs.PrivateKey, kex: str, mine: [u8], theirs: [u8], strict: bool) -> Done?
+    public @= keypairs.public_of(ephemeral)?
+    point_made = keypairs.encode_public_raw(public)
+    keypairs.close_public(@public)?
+    point = point_made?
+    init: [u8] @= [30]
+    wire.put_string(out: @init, data: point)
+    transport.send(@t, payload: init)?
+    reply = next_message(@t, strict: strict)?
+    r @= wire.reader(reply)
+    kind = wire.read_byte(@r, what: "the exchange's reply")?
+
+    if kind != 31
+        return fail(code: INVALID, msg: f"message {kind} where the exchange's reply was due")
+    host_key = wire.read_string(@r, what: "the server's host key")?
+    server_point = wire.read_string(@r, what: "the server's point")?
+    signature = wire.read_string(@r, what: "the server's signature")?
+    wire.expect_end(r, what: "the exchange's reply")?
+    theirs_key @= keypairs.decode_public_raw(kind_of_kex(kex), raw: server_point)?
+    agreed = keypairs.agree(mine: ephemeral, theirs: theirs_key)
+    keypairs.close_public(@theirs_key)?
+    secret = agreed?
+    hashed: [u8] @= []
+    wire.put_text(@hashed, text: transport.CLIENT_VERSION)
+    wire.put_text(@hashed, text: t.server_version)
+    wire.put_string(out: @hashed, data: mine)
+    wire.put_string(out: @hashed, data: theirs)
+    wire.put_string(out: @hashed, data: host_key)
+    wire.put_string(out: @hashed, data: point)
+    wire.put_string(out: @hashed, data: server_point)
+    wire.put_mpint(out: @hashed, magnitude: secret)
+    return ok(Done(host_key: host_key, secret: secret, hash: digest_of(kex, data: hashed), signature: signature))
+
+# The secret as the derivation hashes it: an `mpint`.
+function wire_secret(secret: [u8]) -> [u8]
+    out: [u8] @= []
+    wire.put_mpint(out: @out, magnitude: secret)
+    return out
+
+# The counted key of one direction (RFC 4253 § 7.2): its nonce derived with
+# the letter `letters[0]`, its key with `letters[1]`.
+function derived(session_id: [u8], secret: [u8], hash: [u8], kex: str, letters: [u8], cipher: str, way: seal.Way) -> seal.Key?
+    algorithm: seal.Algorithm @= .aes_128_gcm
+    size: i64 @= 16
+
+    if cipher == "aes256-gcm@openssh.com"
+        algorithm @ .aes_256_gcm
+        size @ 32
+    nonce = derive(session_id: session_id, secret: secret, hash: hash, kex: kex, letter: letters[0], n: 12)
+    key = derive(session_id: session_id, secret: secret, hash: hash, kex: kex, letter: letters[1], n: size)
+    return seal.from_secret_counted(algorithm, secret: key, first_nonce: nonce, counting: .incremented, way: way)
+
+# `n` bytes derived for `letter`: HASH(K || H || letter || session_id),
+# extended by HASH(K || H || what came before) while short.
+function derive(session_id: [u8], secret: [u8], hash: [u8], kex: str, letter: u8, n: i64) -> [u8]
+    made: [u8] @= digest_of(kex, data: bytes.concat([secret, hash, [letter], session_id]))
+
+    while made.len() < n
+        made @ bytes.concat([made, digest_of(kex, data: bytes.concat([secret, hash, made]))])
+
+    return made.slice(from: 0, to: n)
+
+# The next message of the exchange: IGNORE and DEBUG passed over unless
+# the exchange is strict, DISCONNECT told.
+function next_message(@t: transport.Transport, strict: bool) -> [u8]?
+    while true
+        payload = transport.receive_packet(@t)?
+        kind = payload[0]
+
+        if kind == 1
+            return fail(
+                code: transport.CLOSED,
+                msg: "the server disconnected during the key exchange: " + reason_of(payload)
+            )
+
+        if (kind == 2 || kind == 4) && !strict
+            continue
+
+        if kind < 20 || kind > 49
+            if kind != 21
+                return fail(code: INVALID, msg: f"message {kind} during the key exchange")
+        return ok(payload)
+
+# The reason a DISCONNECT message gives, or its number where its text does
+# not read.
+function reason_of(payload: [u8]) -> str
+    r @= wire.reader(payload)
+    _ = wire.take(@r, n: 1, what: "DISCONNECT").default([])
+    code = wire.read_u32(@r, what: "a disconnection's code").default(0)
+    words = wire.read_text(@r, what: "a disconnection's reason").default("")
+    return f"{words} (code {code})"
+
+## The host key judged
+
+# Fails where `check`'s `known_hosts` does not trust `blob` for its host:
+# `invalid` for a key changed or revoked, `not_found` for a host it does not
+# name unless the check adds it. A check naming no file trusts every key: a
+# host key fetched to be shown, never one signed in to.
+function judge(check: Check lent, key_type: str, blob: [u8]) -> ()?
+    if check.known_hosts == ""
+        return ok()
+    text = known_hosts_text(check.known_hosts)?
+    name = known.name_of(check.host, port: check.port)
+    print_of = blobs.fingerprint(blob)
+
+    match known.lookup(text: text, host: check.host, port: check.port, key_type: key_type, blob: blob)
+        .known => return ok()
+        .revoked r => return fail(
+            code: INVALID,
+            msg: f"the host key {print_of} of {name} is revoked by line {r.line} of {check.known_hosts}"
+        )
+        .changed c => return fail(
+            code: INVALID,
+            msg: f"the host key of {name} is {key_type} {print_of}, and line {c.line} of {check.known_hosts} holds another for it: the key changed, or someone stands between"
+        )
+        .unknown =>
+            if !check.add_unknown
+                return fail(
+                    code: NOT_FOUND,
+                    msg: f"{check.known_hosts} does not name {name}, whose {key_type} host key is {print_of}"
+                )
+            line = known.line_of(host: check.host, port: check.port, key_type: key_type, blob: blob, hashed: check.hashed)?
+            fs.append_text(path: check.known_hosts, text: line + "\n")?
+            return ok()
+
+# The text of the `known_hosts` file at `path`, empty where it does not
+# exist.
+function known_hosts_text(path: str) -> str?
+    match read_file(path)
+        .ok text => return ok(text)
+        .err e =>
+            if e.code == "file_not_found"
+                return ok("")
+            return fail(code: e.code, msg: e.msg)

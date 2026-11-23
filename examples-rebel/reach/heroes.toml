@@ -160,6 +160,7 @@ packages = [
     "sql/postgres",
     "sql/sqlite",
     "sse",
+    "ssh",
     "stats",
     "strings",
     "template",

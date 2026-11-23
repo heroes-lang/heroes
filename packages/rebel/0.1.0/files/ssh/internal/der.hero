@@ -1,0 +1,199 @@
+# The few DER forms (ITU-T X.690) the keys of `ssh` cross through, since
+# `crypto/keypairs` reads and writes keys as PKCS #8 and
+# SubjectPublicKeyInfo while SSH writes their numbers bare: an RSA key's
+# modulus and exponents, an EC key's scalar and point, an ECDSA signature's
+# two numbers. Written here rather than through `asn1`, which would raise
+# `ssh` a layer for four tags; read strictly, a length in its shortest form.
+
+## Codes
+
+# Bytes that are not the DER asked for.
+constant INVALID: str
+    "invalid"
+
+## Writing
+
+# One element of tag `tag` holding `content`: the tag, the length in its
+# shortest form, the content.
+function element(tag: u8, content: [u8] lent) -> [u8]
+    out: [u8] @= [tag]
+    n = content.len()
+
+    if n < 128
+        out @ out.push(to_u8(n).must())
+    else
+        width: i64 @= 0
+        rest: i64 @= n
+
+        while rest > 0
+            width @ width + 1
+            rest @ rest >> 8
+
+        out @ out.push(to_u8(128 + width).must())
+        shift: i64 @= (width - 1) * 8
+
+        while shift >= 0
+            out @ out.push(to_u8(n >> shift & 255).must())
+            shift @ shift - 8
+
+    for b in content
+        out @ out.push(b)
+
+    return out
+
+# The positive or zero integer whose big-endian magnitude is `magnitude` as
+# a DER INTEGER: leading zeros dropped, one zero put back before a first
+# byte past 127.
+function integer(magnitude: [u8] lent) -> [u8]
+    first: i64 @= 0
+
+    while first < magnitude.len() - 1 && magnitude[first] == 0
+        first @ first + 1
+
+    body: [u8] @= []
+
+    if magnitude.len() == 0
+        body @ [0]
+    else
+        if magnitude[first] > 127
+            body @ body.push(0)
+
+        while first < magnitude.len()
+            body @ body.push(magnitude[first])
+            first @ first + 1
+    return element(tag: 2, content: body)
+
+# The small integer `n`, 0 to 127, as a DER INTEGER.
+function small(n: i64) -> [u8]
+    return element(tag: 2, content: [to_u8(n).must()])
+
+# `parts` joined into a SEQUENCE.
+function sequence(parts: [[u8]] lent) -> [u8]
+    body: [u8] @= []
+
+    for part in parts
+        for b in part
+            body @ body.push(b)
+
+    return element(tag: 48, content: body)
+
+# `content` as an OCTET STRING.
+function octets(content: [u8] lent) -> [u8]
+    return element(tag: 4, content: content)
+
+# `content` as a BIT STRING with no unused bit.
+function bits(content: [u8] lent) -> [u8]
+    body: [u8] @= [0]
+
+    for b in content
+        body @ body.push(b)
+
+    return element(tag: 3, content: body)
+
+# `inner` wrapped in the context-specific constructed tag `[number]`.
+function tagged(number: i64, inner: [u8] lent) -> [u8]
+    return element(tag: to_u8(160 + number).must(), content: inner)
+
+## Reading
+
+# One element read at the start of `data`: its tag, its content and the
+# bytes after it.
+record Element
+    # The tag byte.
+    tag: u8
+    # The content.
+    content: [u8]
+    # The bytes after the element.
+    after: [u8]
+
+# The element at the start of `data`, its length in DER's shortest form.
+function read(data: [u8] lent) -> Element?
+    if data.len() < 2
+        return fail(code: INVALID, msg: "DER: fewer than two bytes")
+    first = to_i64(data[1]).must()
+    at: i64 @= 2
+    n: i64 @= first
+
+    if first > 127
+        width = first - 128
+
+        if width < 1 || width > 4 || data.len() < 2 + width
+            return fail(code: INVALID, msg: "DER: a length of no form read here")
+        n @ 0
+
+        while at < 2 + width
+            n @ n << 8 | to_i64(data[at]).must()
+            at @ at + 1
+
+        if n < 128 || data[2] == 0
+            return fail(code: INVALID, msg: "DER: a length not in its shortest form")
+
+    if n > data.len() - at
+        return fail(code: INVALID, msg: f"DER: a length of {n} past the {data.len() - at} bytes left")
+    return ok(
+        Element(tag: data[0], content: data.slice(from: at, to: at + n), after: data.slice(from: at + n, to: data.len()))
+    )
+
+# The elements a constructed content holds, in order.
+function read_all(content: [u8] lent) -> [Element]?
+    found: [Element] @= []
+    rest: [u8] @= content
+
+    while rest.len() > 0
+        e = read(rest)?
+        found @ found.push(e)
+        rest @ e.after
+
+    return ok(found)
+
+# The magnitude of a positive or zero DER INTEGER `e`, its sign byte
+# dropped; a negative one fails `invalid`.
+function magnitude_of(e: Element lent) -> [u8]?
+    if e.tag != 2 || e.content.len() == 0
+        return fail(code: INVALID, msg: "DER: not an INTEGER")
+
+    if e.content[0] > 127
+        return fail(code: INVALID, msg: "DER: a negative INTEGER")
+
+    if e.content[0] == 0 && e.content.len() > 1
+        return ok(e.content.slice(from: 1, to: e.content.len()))
+    return ok(e.content)
+
+## Tests
+
+test "element and read: a short length, a long one of one and two bytes, and the shortest form held"
+    short = element(tag: 4, content: [1, 2])
+    assert short == [4, 2, 1, 2]
+    long = element(tag: 4, content: bytes_of(200))
+    assert long[1] == 129 && long[2] == 200 && long.len() == 203
+    longer = element(tag: 4, content: bytes_of(300))
+    assert longer[1] == 130 && longer[2] == 1 && longer[3] == 44
+    assert read(long).must().content.len() == 200
+    assert read(longer).must().content.len() == 300
+    assert read([4, 129, 5, 1, 2, 3, 4, 5]).is_err()
+    assert read([4, 3, 1]).is_err()
+    assert read([4]).is_err()
+
+test "integer and magnitude_of: zero, a byte past 127, leading zeros dropped"
+    assert integer([]) == [2, 1, 0]
+    assert integer([0, 0]) == [2, 1, 0]
+    assert integer([128]) == [2, 2, 0, 128]
+    assert integer([0, 0, 1, 2]) == [2, 2, 1, 2]
+    assert magnitude_of(read(integer([200, 1])).must()).must() == [200, 1]
+    assert magnitude_of(read([2, 1, 255]).must()).is_err()
+
+test "sequence, bits, octets and tagged: their tags around their contents"
+    assert sequence([small(1), octets([9])]) == [48, 6, 2, 1, 1, 4, 1, 9]
+    assert bits([7]) == [3, 2, 0, 7]
+    assert tagged(number: 1, inner: [5]) == [161, 1, 5]
+    parts = read_all(read(sequence([small(1), small(2)])).must().content).must()
+    assert parts.len() == 2 && parts[1].content == [2]
+
+# `n` bytes of 7, a content of a length chosen.
+function bytes_of(n: i64) -> [u8]
+    out: [u8] @= []
+
+    while out.len() < n
+        out @ out.push(7)
+
+    return out
