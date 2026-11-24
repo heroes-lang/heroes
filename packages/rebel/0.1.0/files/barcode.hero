@@ -1,8 +1,9 @@
 # Barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their two- and
 # five-digit add-ons (ISO/IEC 15420 and the GS1 General Specifications),
-# Code 128 and GS1-128 (ISO/IEC 15417), each with its check characters and
-# its quiet zones, and written as SVG text or drawn into an `image`, the
-# digits a person reads set under the bars.
+# Code 128 and GS1-128 (ISO/IEC 15417), and Data Matrix ECC 200 and GS1
+# Data Matrix (ISO/IEC 16022), each with its check characters or error
+# correction and its quiet zones, and written as SVG text or drawn into an
+# `image`, the digits a person reads set under a linear symbol's bars.
 #
 # It makes symbols and does not read them: finding a barcode in a photograph
 # is a task of vision this package leaves alone. QR codes are `qr`'s. It
@@ -18,14 +19,13 @@
 # range; `unsupported`, where the data is longer than the symbology holds;
 # and `limit`, where an image would pass 16,384 pixels a side.
 #
-# Not written yet, each a `pending` block of its ledger: a Data Matrix ECC
-# 200 of a text, bytes or GS1 element strings, every square and rectangular
-# size; a PDF417 of a text or bytes, at a level of error correction and a
+# Not written yet, each a `pending` block of its ledger: a PDF417 of a text or bytes, at a level of error correction and a
 # count of columns; Code 39, Code 93, Code 11, Codabar, Interleaved and
 # Standard 2 of 5, ITF-14, EAN-14.
 
 use barcode/internal/code128 as c128
 use barcode/internal/codes
+use barcode/internal/dm_symbol
 use barcode/internal/gs1
 use barcode/internal/render
 use barcode/internal/samples
@@ -69,6 +69,11 @@ variant Symbology
     code128
     # GS1-128, Code 128 holding GS1 element strings, FNC1 first.
     gs1_128
+    # Data Matrix ECC 200, any bytes, a text of more than ASCII marked as
+    # UTF-8.
+    data_matrix
+    # GS1 Data Matrix, Data Matrix holding GS1 element strings, FNC1 first.
+    gs1_data_matrix
 
 # Text written with a symbol: the digits a person reads.
 record Caption
@@ -266,7 +271,7 @@ function upce(digits: str) -> Symbol?
 function with_add_on(symbol: Symbol, digits: str) -> Symbol?
     match symbol.symbology
         .ean13 | .upca | .upce => _ = 0
-        .ean8 | .code128 | .gs1_128 => return fail(
+        .ean8 | .code128 | .gs1_128 | .data_matrix | .gs1_data_matrix => return fail(
             code: codes.INVALID,
             msg: "an add-on follows an EAN-13, a UPC-A or a UPC-E alone"
         )
@@ -408,6 +413,136 @@ function format_elements(elements: [Element]) -> str
         out @ out.push(f"({e.ai}){e.data}")
 
     return out.join("")
+
+## Data Matrix
+
+# The shapes a Data Matrix may take.
+variant Shape
+    # Square, 10 by 10 to 144 by 144 modules.
+    square
+    # Rectangular, 8 by 18 to 16 by 48 modules.
+    rectangle
+    # Either, whichever holds the data in fewer modules of data.
+    either
+
+# How big a Data Matrix is made.
+variant Size
+    # The smallest symbol of a shape that holds the data.
+    smallest
+        # The shape it takes.
+        shape: Shape
+    # A symbol of one of the 30 sizes ECC 200 defines.
+    fixed
+        # Its rows of modules.
+        rows: i64
+        # Its columns of modules.
+        columns: i64
+
+# The Data Matrix of `text`, its encodations chosen so that its codewords
+# are fewest.
+#
+# - `text`: the text; one holding only ASCII is written as it is, any other
+#   behind the ECI that marks it UTF-8 (ECI 000026), so a reader gives it
+#   back as written; one byte at least.
+# - `size`: the smallest of a shape, or one size.
+#
+# The quiet zone is one module on each side, the least the standard asks.
+# Fails `invalid` where `text` is empty or `size` names no size of ECC 200;
+# `unsupported` where
+# the data does not fit it, or past the largest, 144 by 144, which holds
+# 1558 codewords. See also `data_matrix_bytes`, `gs1_data_matrix`.
+function data_matrix(text: str, size: Size) -> Symbol?
+    if text.len() == 0
+        return fail(code: codes.INVALID, msg: "a Data Matrix holds one byte or more, and the data is empty")
+
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    pieces: [i64] @= []
+    prefix: [i64] @= []
+
+    for i in range(from: 0, to: text.len())
+        pieces @ pieces.push(to_i64(text[i]).must())
+
+        if text[i] >= 128
+            prefix @ [241, 27]
+
+    return ok(
+        Symbol(symbology: .data_matrix, rows: dm_symbol.make(pieces: pieces, prefix: prefix, order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: text)
+    )
+
+# The Data Matrix of `data`, read back as its bytes.
+#
+# - `data`: any bytes, which a reader takes as ISO/IEC 8859-1 unless the
+#   program that reads them knows better; one at least.
+# - `size`: the smallest of a shape, or one size.
+#
+# `text` is the bytes read as ISO/IEC 8859-1. Fails as `data_matrix` fails.
+# See also `data_matrix`.
+function data_matrix_bytes(data: [u8], size: Size) -> Symbol?
+    if data.len() == 0
+        return fail(code: codes.INVALID, msg: "a Data Matrix holds one byte or more, and the data is empty")
+
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    pieces: [i64] @= []
+
+    for b in data
+        pieces @ pieces.push(to_i64(b).must())
+
+    return ok(
+        Symbol(symbology: .data_matrix, rows: dm_symbol.make(pieces: pieces, prefix: [], order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: c128.latin1_text(data))
+    )
+
+# The GS1 Data Matrix of `elements`: FNC1 first, then each identifier and
+# its data, FNC1 after each element whose length GS1 does not fix, but the
+# last.
+#
+# - `elements`: one or more element strings.
+# - `size`: the smallest of a shape, or one size.
+#
+# `text` is the elements as `format_elements` writes them. Fails `invalid`
+# where an element is not one GS1 writes (see `parse_elements`) or none is
+# given, and as `data_matrix` fails. See also `gs1_128`.
+function gs1_data_matrix(elements: [Element], size: Size) -> Symbol?
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    if elements.len() == 0
+        return fail(code: codes.INVALID, msg: "a GS1 symbol holds one element or more, and none is given")
+    ais: [str] @= []
+    values: [str] @= []
+
+    for e in elements
+        gs1.check(ai: e.ai, value: e.data)?
+        ais @ ais.push(e.ai)
+        values @ values.push(e.data)
+
+    return ok(
+        Symbol(symbology: .gs1_data_matrix, rows: dm_symbol.make(pieces: gs1.pieces(ais: ais, values: values), prefix: [], order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: gs1.caption(ais: ais, values: values))
+    )
 
 ## Written out
 
@@ -606,3 +741,21 @@ test "to_image_with_text: an EAN-13 with its digits"
     f = font.parse(samples.truetype(), 0).must()
     img = to_image_with_text(symbol: ean13("590123412345").must(), options: default_image_options(), f: f).must()
     assert img.height == (69 + 11) * 3
+
+# A Data Matrix of a short text in the smallest square.
+test "data_matrix: six digits in 10 by 10"
+    s = data_matrix(text: "123456", size: .smallest(shape: .square)).must()
+    assert s.rows.len() == 10
+
+# A Data Matrix of bytes in a rectangle.
+test "data_matrix_bytes: bytes in the smallest rectangle"
+    s = data_matrix_bytes(data: [0, 255, 128], size: .smallest(shape: .rectangle)).must()
+    assert s.rows.len() == 8
+
+# A GS1 Data Matrix of a GTIN and an expiry date.
+test "gs1_data_matrix: a GTIN and an expiry date"
+    s = gs1_data_matrix(
+        elements: [Element(ai: "01", data: "09501101530003"), Element(ai: "17", data: "250630")],
+        size: .smallest(shape: .square)
+    ).must()
+    assert s.text == "(01)09501101530003(17)250630"

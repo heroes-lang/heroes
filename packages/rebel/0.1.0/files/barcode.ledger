@@ -86,10 +86,11 @@ capability barcode/gs1-elements  element strings read from and written as the te
 ## Two-dimensional
 
 capability barcode/data-matrix  a Data Matrix ECC 200 of a text, bytes or GS1 element strings, every square and rectangular size
-  heroes  pending
+  heroes  barcode.data_matrix, barcode.data_matrix_bytes, barcode.gs1_data_matrix, barcode.Shape, barcode.Size
   go      datamatrix.Encode
   rust    -
   python  zxingcpp.create_barcode (DataMatrix)
+  note    the encodations ASCII, C40, Text, X12, EDIFACT and Base 256 chosen by a search for the fewest codewords over every place and encodation, where the standard's informative look-ahead guesses; a text of more than ASCII behind ECI 000026, which zxing-cpp reads back as UTF-8; all 30 ECC 200 sizes, the smallest of a shape or one fixed. zxing-cpp read all 44 Data Matrix symbols of the oracle (every size, each encodation, all 256 bytes, 3116 digits in 144 by 144, a text of 1,090 characters, a rectangle, GS1) from PNG, CairoSVG and resvg, and its own writer made the same modules for "123456", a lone letter, a text in Text and fifty digits; for capitals and digits it chose another encodation of the same size. Empty data is `invalid`, as zxing-cpp's writer refuses it. Reader programming, structured append and the rectangular extension of ISO/IEC 21471 are not written
 
 capability barcode/pdf417  a PDF417 of a text or bytes, at a level of error correction and a count of columns
   heroes  pending
