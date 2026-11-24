@@ -99,6 +99,7 @@ packages = [
     "log",
     "log/files",
     "mail",
+    "mail/imap",
     "mail/smtp",
     "maps",
     "markdown",

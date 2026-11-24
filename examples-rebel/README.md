@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-six packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-eight packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -158,6 +158,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
+| 5 | `mail/imap` | mail read from a server: IMAP4rev2 and IMAP4rev1 with STARTTLS or TLS, LOGIN and SASL (PLAIN, XOAUTH2, OAUTHBEARER), mailboxes listed, made and selected, messages fetched whole or in parts with their envelopes and structures, searched, flagged, copied, moved, appended and expunged by number or UID, news waited for with IDLE; every answer read against the grammar and bounded in bytes | `bytes`, `io`, `mail`, `net`, `numbers`, `strings`, `time`, `tls`, `unicode` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read and made and signed, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `net`, `os`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |

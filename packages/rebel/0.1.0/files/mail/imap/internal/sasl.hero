@@ -1,0 +1,86 @@
+# The first answers of the SASL mechanisms a client logs in with: PLAIN
+# (RFC 4616), XOAUTH2 (Google's and Microsoft's documentation of it) and
+# OAUTHBEARER (RFC 7628), each refused where a value holds a byte that
+# would end a field early.
+
+use bytes
+
+# The code of a value refused.
+constant INVALID: str
+    "invalid"
+
+# PLAIN's answer: the identity to act as, the user and the password, each
+# after a zero byte. Fails `invalid` where one holds a zero byte.
+function plain(identity: str, user: str, password: str) -> [u8]?
+    for v in [identity, user, password]
+        if bytes.from_text(v).any(is_zero)
+            return fail(code: INVALID, msg: "a name or a password for PLAIN holds a zero byte, which ends its field")
+
+    return ok(bytes.concat([bytes.from_text(identity), [0], bytes.from_text(user), [0], bytes.from_text(password)]))
+
+# Whether `b` is the zero byte.
+function is_zero(b: u8) -> bool
+    return b == 0
+
+# Whether `b` is below a space.
+function is_control(b: u8) -> bool
+    return b < ' '
+
+# XOAUTH2's answer: `user=`, the user, `^Aauth=Bearer `, the token, `^A^A`.
+# Fails `invalid` where a value holds a byte below a space.
+function xoauth2(user: str, token: str) -> [u8]?
+    if bytes.from_text(user).any(is_control) || bytes.from_text(token).any(is_control)
+        return fail(
+            code: INVALID,
+            msg: "a user or a token for XOAUTH2 holds a byte below a space, which ends its field"
+        )
+    return ok(bytes.from_text("user=" + user + "\u{1}auth=Bearer " + token + "\u{1}\u{1}"))
+
+# OAUTHBEARER's answer: the GS2 header naming the user (`,` and `=` written
+# `=2C` and `=3D`), then `host`, the token, and `^A^A`. Fails `invalid` where
+# a value holds a byte below a space.
+function oauthbearer(user: str, host: str, token: str) -> [u8]?
+    for v in [user, host, token]
+        if bytes.from_text(v).any(is_control)
+            return fail(
+                code: INVALID,
+                msg: "a user, a host or a token for OAUTHBEARER holds a byte below a space, which ends its field"
+            )
+
+    named = if user == ""
+        ""
+    else
+        "a=" + escaped(user)
+    return ok(bytes.from_text("n," + named + ",\u{1}host=" + host + "\u{1}auth=Bearer " + token + "\u{1}\u{1}"))
+
+# `user` with `=` and `,` written as RFC 5801's saslname writes them.
+function escaped(user: str) -> str
+    out: [str] @= []
+
+    for ch in user.chars()
+        if ch == "="
+            out @ out.push("=3D")
+        else if ch == ","
+            out @ out.push("=2C")
+        else
+            out @ out.push(ch)
+
+    return join(out, "")
+
+## Tests
+
+test "plain: RFC 4616's example, an empty identity, a zero byte refused"
+    assert bytes.format_base64(plain(identity: "", user: "tim", password: "tanstaaftanstaaf").must()) == "AHRpbQB0YW5zdGFhZnRhbnN0YWFm"
+    assert bytes.format_base64(plain(identity: "Ursel", user: "Kurt", password: "xipj3plmq").must()) == "VXJzZWwAS3VydAB4aXBqM3BsbXE="
+    assert !plain(identity: "", user: "a\u{1}", password: "b").is_err()
+    assert plain(identity: "", user: "tim", password: bytes.to_text([97, 0, 98]).must()).is_err()
+
+test "xoauth2: Google's example, a control byte refused"
+    assert bytes.format_base64(xoauth2(user: "someuser@example.com", token: "ya29.vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg").must()) == "dXNlcj1zb21ldXNlckBleGFtcGxlLmNvbQFhdXRoPUJlYXJlciB5YTI5LnZGOWRmdDRxbVRjMk52YjNSbGNrQmhkSFJoZG1semRHRXVZMjl0Q2cBAQ=="
+    assert xoauth2(user: "a\u{1}b", token: "t").is_err()
+
+test "oauthbearer: RFC 7628's example without its port, a name with a comma and an equals sign, no user"
+    assert bytes.format_base64(oauthbearer(user: "user@example.com", host: "server.example.com", token: "vF9dft4qmTc2Nvb3RlckBhbHRhdmlzdGEuY29tCg==").must()) == "bixhPXVzZXJAZXhhbXBsZS5jb20sAWhvc3Q9c2VydmVyLmV4YW1wbGUuY29tAWF1dGg9QmVhcmVyIHZGOWRmdDRxbVRjMk52YjNSbGNrQmhiSFJoZG1semRHRXVZMjl0Q2c9PQEB"
+    assert oauthbearer(user: "a,b=c", host: "h", token: "t").must() == bytes.from_text("n,a=a=2Cb=3Dc,\u{1}host=h\u{1}auth=Bearer t\u{1}\u{1}")
+    assert oauthbearer(user: "", host: "h", token: "t").must() == bytes.from_text("n,,\u{1}host=h\u{1}auth=Bearer t\u{1}\u{1}")
+    assert oauthbearer(user: "u", host: "h\r\n", token: "t").is_err()

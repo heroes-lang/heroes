@@ -1,0 +1,294 @@
+# The connection under an IMAP session and the bytes of the server's
+# answers: one place for its stream, the reader's, through which every
+# command is written and every line and literal read and the stream is
+# closed; a deadline set before each step; and a budget of bytes for the
+# answer to one command, every line and every literal counted against it
+# before it is read, so a literal's length the server announces is never
+# trusted beyond what the program allowed, and a server that never ends a
+# line is told and never followed.
+
+use bytes
+use io
+use net
+use time
+use tls
+
+# The code of an answer that is not IMAP, and of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a connection closed.
+constant CLOSED: str
+    "closed"
+
+# The code of an answer larger than the budget allows.
+constant LIMIT: str
+    "limit"
+
+# The most bytes read from the stream at once while a literal comes.
+constant CHUNK: i64
+    65536
+
+# What carries the session: a TCP connection of `net` in plain text, or a
+# TLS stream; `tls.set_deadline` sets either's deadline, the reader's stream.
+variant Link
+    # Plain text.
+    plain
+    # TLS.
+    secure
+
+# The connection and the line being read: its link, the one reader whose
+# stream is the session's only place for it, the budget, and the current
+# line of the answer with the place the parser has reached in it.
+record Session
+    # What carries it.
+    link: Link
+    # The reader, and through `reader.stream` the stream itself.
+    reader: io.Reader
+    # How long each step may take, `time.max_duration()` for no limit.
+    deadline: time.Duration
+    # The most bytes the answer to one command may hold, literals included.
+    max_bytes: i64
+    # The bytes the current answer may still hold.
+    left: i64
+    # The line being parsed, without its CRLF.
+    line: [u8]
+    # The place in `line` the parser has reached.
+    at: i64
+    # The number of the last tag written.
+    tag: i64
+
+# A session over `stream`, carried by `link`.
+function over(stream: io.Stream, link: Link, deadline: time.Duration, max_bytes: i64) -> Session
+    return Session(
+        link: link,
+        reader: io.reader(stream),
+        deadline: deadline,
+        max_bytes: max_bytes,
+        left: max_bytes,
+        line: [],
+        at: 0,
+        tag: 0
+    )
+
+# Whether the session's stream is closed.
+function is_closed(s: Session lent) -> bool
+    return io.is_closed(s.reader.stream)
+
+# The milliseconds of `d` as `net` takes them: `time.max_duration()` is
+# `net.FOREVER`, any other rounded up to a whole millisecond, so zero alone
+# waits not at all.
+function net_ms(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    whole = d.nanoseconds / 1_000_000
+
+    if d.nanoseconds % 1_000_000 != 0
+        return whole + 1
+    return whole
+
+# Makes the next steps end by `deadline` from now, `time.max_duration()` for
+# no limit.
+function set_deadline(s: Session lent, deadline: time.Duration) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the IMAP connection is closed")
+    return tls.set_deadline(s.reader.stream, deadline: deadline)
+
+# Begins the answer to a command: its deadline set and its budget whole.
+function begin(@s: Session) -> ()?
+    s.left @ s.max_bytes
+    return set_deadline(s, deadline: s.deadline)
+
+# The next tag, `A` and four digits or more: `A0001`.
+function next_tag(@s: Session) -> str
+    s.tag @ s.tag + 1
+    n = to_str(s.tag)
+
+    if n.len() >= 4
+        return "A" + n
+    return "A" + repeat("0", to_u64(4 - n.len()).must()) + n
+
+# Writes `data` to the server.
+function write(s: Session lent, data: [u8]) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the IMAP connection is closed")
+    return io.write(s.reader.stream, data: data)
+
+# Closes the connection through its one place.
+function close(@s: Session) -> ()?
+    return io.close(@s.reader.stream)
+
+# How many bytes the reader holds and has not given out.
+function unread(s: Session lent) -> i64
+    return io.buffered(s.reader).len()
+
+# Waits, by the deadline set, until a byte has come, taking none. Fails
+# `closed` where the stream ends first, `timeout` where the deadline passes.
+function wait_byte(@s: Session) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the IMAP connection is closed")
+
+    if io.peek(@s.reader, n: 1)?.len() == 0
+        return fail(code: CLOSED, msg: "the server closed the connection")
+    return ok()
+
+# Takes `n` bytes from the budget. Fails `limit` where fewer are left.
+function spend(@s: Session, n: i64) -> ()?
+    if n > s.left
+        return fail(
+            code: LIMIT,
+            msg: f"the server's answer passed the {s.max_bytes} bytes the client allows it (`Options.max_bytes`)"
+        )
+    s.left @ s.left - n
+    return ok()
+
+# Reads the next line of the answer into `s.line`, without its CRLF, and
+# puts the parser at its start. Fails `invalid` where the line ends with a
+# line feed that no carriage return comes before, `closed` where the stream
+# ends first, `limit` past the budget.
+function next_line(@s: Session) -> ()?
+    if is_closed(s)
+        return fail(code: CLOSED, msg: "the IMAP connection is closed")
+    out: [u8] @= []
+
+    while true
+        held = io.buffered(s.reader)
+
+        if held.len() == 0
+            one = io.read_n(@s.reader, n: 1)?
+
+            if one.len() == 0
+                if out.len() == 0
+                    return fail(code: CLOSED, msg: "the server closed the connection where an answer was awaited")
+                return fail(
+                    code: CLOSED,
+                    msg: f"the server closed the connection in the middle of a line: {excerpt(out)}"
+                )
+            spend(@s, n: 1)?
+            out @ out.push(one[0])
+
+            if one[0] == '\n'
+                break
+            continue
+        end = bytes.index_of(s: held, substr: [10])
+
+        match end
+            .ok at =>
+                spend(@s, n: at + 1)?
+                taken = io.read_n(@s.reader, n: at + 1)?
+
+                for b in taken
+                    out @ out.push(b)
+
+                break
+            .err _ =>
+                spend(@s, n: held.len())?
+                taken = io.read_n(@s.reader, n: held.len())?
+
+                for b in taken
+                    out @ out.push(b)
+
+    if out.len() < 2 || out[out.len() - 2] != '\r'
+        return fail(code: INVALID, msg: f"the server ended a line with no CRLF: {excerpt(out)}")
+    s.line @ out.slice(from: 0, to: out.len() - 2)
+    s.at @ 0
+    return ok()
+
+# Reads the `n` bytes of a literal the line announced, then the line that
+# goes on after it. Fails `limit` where `n` passes the budget, before a byte
+# of it is read, and `closed` where the stream ends first.
+function literal(@s: Session, n: i64) -> [u8]?
+    spend(@s, n: n)?
+    parts: [[u8]] @= []
+    got @= 0
+
+    while got < n
+        want = if n - got < CHUNK
+            n - got
+        else
+            CHUNK
+        chunk = io.read_n(@s.reader, n: want)?
+
+        if chunk.len() == 0
+            return fail(code: CLOSED, msg: f"the server closed the connection after {got} bytes of a literal of {n}")
+        got @ got + chunk.len()
+        parts @ parts.push(chunk)
+
+    data = bytes.concat(parts)
+    next_line(@s)?
+    return ok(data)
+
+# The first 80 bytes of `raw` escaped, for a message, and `...` where it is
+# longer: a server's bytes are never shown raw.
+function excerpt(raw: [u8]) -> str
+    if raw.len() <= 80
+        return bytes.format_escaped(raw)
+    return bytes.format_escaped(raw.slice(from: 0, to: 80)) + "..."
+
+## Tests
+
+test "next_line: lines with CRLF, a long line read across the reader's buffer, a bare line feed, the end inside a line"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1_000_000)
+    server @= two.second.stream
+    io.write_text(server, text: "* OK ready\r\n\r\n" + repeat("x", 70000) + "\r\nbad\n").must()
+    next_line(@s).must()
+    assert s.line == bytes.from_text("* OK ready") && s.at == 0
+    next_line(@s).must()
+    assert s.line.len() == 0
+    next_line(@s).must()
+    assert s.line.len() == 70000
+
+    match next_line(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the server ended a line with no CRLF: bad\\n"
+
+    io.write_text(server, text: "cut").must()
+    io.close(@server).must()
+
+    match next_line(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@s).must()
+
+test "literal: its bytes and the line after, a length past the budget refused before a byte is read"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 40)
+    server @= two.second.stream
+    io.write_text(server, text: "a{5}\r\nhe\r\no)\r\n").must()
+    begin(@s).must()
+    next_line(@s).must()
+    assert literal(@s, n: 5).must() == bytes.from_text("he\r\no") && s.line == bytes.from_text(")")
+    assert s.left == 40 - 6 - 5 - 3
+
+    match literal(@s, n: 4_000_000_000)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    io.close(@server).must()
+    close(@s).must()
+
+test "next_tag: four digits, then more"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100)
+    assert next_tag(@s) == "A0001" && next_tag(@s) == "A0002"
+    s.tag @ 9999
+    assert next_tag(@s) == "A10000"
+    close(@s).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+test "set_deadline: an answer that never comes ends by its deadline, then a closed session refuses"
+    two = net.pair(deadline_ms: net.FOREVER).must()
+    s @= over(two.first.stream, link: .plain, deadline: time.milliseconds(200).must(), max_bytes: 100)
+    server @= two.second.stream
+    begin(@s).must()
+
+    match next_line(@s)
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    close(@s).must()
+    assert set_deadline(s, deadline: time.milliseconds(10).must()).is_err() && write(s, data: [65]).is_err() && next_line(@s).is_err()
+    io.close(@server).must()

@@ -1,0 +1,92 @@
+# Waiting for news with IDLE (RFC 2177, RFC 9051): begun once the server says `+`, the news that
+# come while idling read whole, the first waited for up to a deadline that
+# never cuts a response in half, and DONE answered by its tagged status.
+
+use bytes
+use mail/imap/internal/flow
+use mail/imap/internal/response
+use mail/imap/internal/wire
+use time
+
+# Begins IDLE: sends it and waits for the server's `+`.
+function idle(@c: flow.Conn) -> ()?
+    if !flow.has(c, name: "IDLE") && !c.rev2
+        return fail(code: flow.UNSUPPORTED, msg: "the server does not offer IDLE")
+
+    if c.idling != ""
+        return fail(code: flow.INVALID, msg: "the client is idling already")
+    wire.begin(@c.wire)?
+    tag = wire.next_tag(@c.wire)
+    wire.write(c.wire, data: bytes.from_text(tag + " IDLE\r\n"))?
+    data: [response.Data] @= []
+    turn = flow.wait(@c, tag: tag, @data, continuation: true)?
+
+    for d in data
+        flow.keep(@c, d: d)
+
+    if !turn.continued
+        return flow.refusal(turn.status, asked: "IDLE", signing_in: false)
+    c.idling @ tag
+    return ok()
+
+# The untagged responses that come while idling, waiting up to `within` for
+# the first and taking the others already arrived; [] where none came.
+function idle_wait(@c: flow.Conn, within: time.Duration) -> [response.Data]?
+    if c.idling == ""
+        return fail(code: flow.INVALID, msg: "the client is not idling: `idle` begins an IDLE")
+    out: [response.Data] @= []
+
+    if io_held(c) == 0
+        wire.set_deadline(c.wire, deadline: within)?
+
+        match io_peek(@c)
+            .ok _ => _ = 0
+            .err e =>
+                if e.code == "timeout"
+                    return ok(out)
+                return fail(code: e.code, msg: flow.closed_words(c, msg: e.msg, code: e.code))
+
+    while true
+        wire.begin(@c.wire)?
+
+        match response.read(@c.wire)
+            .err e => return fail(code: e.code, msg: flow.closed_words(c, msg: e.msg, code: e.code))
+            .ok r =>
+                match r
+                    .untagged u =>
+                        flow.note(@c, d: u.data)
+                        out @ out.push(u.data)
+                    .tagged t => return fail(
+                        code: flow.INVALID,
+                        msg: f"the server ended the IDLE {t.tag} by itself: " + flow.shown(t.status)
+                    )
+                    .continuation _ => _ = 0
+
+        if io_held(c) == 0
+            break
+
+    return ok(out)
+
+# How many bytes the reader holds unread.
+function io_held(c: flow.Conn lent) -> i64
+    return wire.unread(c.wire)
+
+# Waits for a byte to come, by the deadline set.
+function io_peek(@c: flow.Conn) -> ()?
+    return wire.wait_byte(@c.wire)
+
+# Ends the IDLE: says DONE and reads up to its tagged status, the untagged
+# data between answered.
+function idle_done(@c: flow.Conn) -> [response.Data]?
+    if c.idling == ""
+        return fail(code: flow.INVALID, msg: "the client is not idling: `idle` begins an IDLE")
+    tag = c.idling
+    c.idling @ ""
+    wire.begin(@c.wire)?
+    wire.write(c.wire, data: bytes.from_text("DONE\r\n"))?
+    data: [response.Data] @= []
+    turn = flow.wait(@c, tag: tag, @data, continuation: false)?
+
+    if turn.status.condition != "OK"
+        return flow.refusal(turn.status, asked: "IDLE", signing_in: false)
+    return ok(data)

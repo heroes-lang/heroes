@@ -1,0 +1,1478 @@
+# Mail read from a server by IMAP (RFC 9051, IMAP4rev2, and RFC 3501,
+# IMAP4rev1): a client that connects in plain text, by STARTTLS or by TLS
+# from the first byte (RFC 8314, port 993), logs in by LOGIN or by
+# AUTHENTICATE with PLAIN, XOAUTH2 or OAUTHBEARER, enables IMAP4rev2 where
+# the server offers it, lists, makes, renames and selects mailboxes, fetches
+# messages whole or in parts (envelopes, body structures, sections, partial
+# fetches, BINARY), searches, changes flags, copies, moves, appends and
+# expunges, by message number or by UID, and waits for news with IDLE.
+#
+# **The server's answers are never trusted.** Each is read against RFC
+# 9051's grammar and refused with `invalid` where it breaks it; a literal's
+# length is checked against `Options.max_bytes`, the most the answer to one
+# command may hold, before a byte of it is read, and a body structure or a
+# list nested past 64 levels is refused before it can exhaust the stack.
+# **The server's certificate is always checked**, by `tls`, against the
+# system's store or the roots a program names; a password is never sent in
+# plain text but to the loopback host; and STARTTLS that the server refuses,
+# or a greeting of PREAUTH before it, fails rather than going on in plain
+# text, as an attacker in between would have it.
+#
+# It does not read or build a message (`mail`), send one (`mail/smtp`), or
+# serve IMAP: it is a client. A step fails with the code of what went wrong:
+# `closed`, `timeout`, `stopped`, `not_found` and `failed` from the
+# connection, `invalid` for an argument refused, an answer that is not IMAP
+# or a BAD, and for a NO the code its response code means (RFC 5530):
+# `permission` (AUTHENTICATIONFAILED and the refusal of a login), `not_found`
+# (NONEXISTENT, TRYCREATE), `exists` (ALREADYEXISTS), `limit` (OVERQUOTA,
+# LIMIT, TOOBIG, and an answer past `max_bytes`), `unsupported` (a capability
+# the server lacks), `failed` for any other; the message then opens with the
+# status, and `last_status_of` answers it whole.
+#
+# Not written yet, each a `pending` block of its ledger: SORT and THREAD
+# (RFC 5256), QUOTA (RFC 9208), ACL (RFC 4314), METADATA (RFC 5464),
+# NAMESPACE (RFC 2342), and CONDSTORE's and QRESYNC's resynchronisation (RFC
+# 7162) beyond the MODSEQ a fetch reads.
+
+use bytes
+use io
+use mail
+use mail/imap/internal/answers
+use mail/imap/internal/command
+use mail/imap/internal/fake
+use mail/imap/internal/flow
+use mail/imap/internal/opening
+use mail/imap/internal/query
+use mail/imap/internal/sasl
+use mail/imap/internal/signin
+use mail/imap/internal/utf7
+use mail/imap/internal/waiting
+use time
+
+## Codes
+
+# An argument refused, an answer that is not IMAP, a BAD, or a certificate
+# `tls` refused: every function.
+constant INVALID: str
+    "invalid"
+
+# The connection closed, or the server said BYE: every function.
+constant CLOSED: str
+    "closed"
+
+# The host's name has no address, or a mailbox does not exist (NONEXISTENT,
+# TRYCREATE).
+constant NOT_FOUND: str
+    "not_found"
+
+# A mailbox made or renamed exists already (ALREADYEXISTS).
+constant EXISTS: str
+    "exists"
+
+# A step took longer than its deadline: every function that talks.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while a step waited (`os.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# The server refused a login or a right: AUTHENTICATIONFAILED, NOPERM, and
+# a NO to LOGIN or AUTHENTICATE.
+constant PERMISSION: str
+    "permission"
+
+# A quota or a size passed (OVERQUOTA, LIMIT, TOOBIG), or an answer larger
+# than `Options.max_bytes`.
+constant LIMIT: str
+    "limit"
+
+# The server lacks a capability a step needs: MOVE, UIDPLUS, IDLE, a SASL
+# mechanism, BINARY.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# Any other refusal of the server, or a failure of the connection the other
+# codes do not name; the message carries the status or the system's words.
+constant FAILED: str
+    "failed"
+
+## Ports
+
+# IMAP's port, in plain text and for STARTTLS (RFC 9051).
+constant PORT_IMAP: i64
+    143
+
+# IMAP over TLS from the first byte (RFC 8314).
+constant PORT_IMAPS: i64
+    993
+
+## Connecting
+
+# How a connection is protected.
+variant Security
+    # Plain text first, then STARTTLS, which must succeed: port 143.
+    starttls
+    # TLS from the first byte: port 993.
+    implicit
+    # Plain text throughout: a server on the machine itself. A password is
+    # never sent over it but to the loopback host.
+    plain
+
+# How a client connects. `options` builds one; a program changes the fields
+# it needs.
+record Options
+    # The server's name, which its certificate must name: `imap.example.org`.
+    host: str
+    # The port, 1 to 65535.
+    port: i64
+    # How the connection is protected.
+    security: Security
+    # The PEM of the only authorities trusted, "" for the system's store, as
+    # `tls.Client` takes it.
+    roots: str
+    # How long each step may take, the connection and its handshake one
+    # step, each command and its answer another: zero or more, a part of a
+    # millisecond counting as a whole one, `time.max_duration()` setting no
+    # limit.
+    deadline: time.Duration
+    # The most bytes the server's answer to one command may hold, its
+    # literals included, 4096 or more: a literal announced past it is
+    # refused with `limit` before a byte of it is read.
+    max_bytes: i64
+
+# The options of a connection to `host` protected by `security`, on the port
+# it is used on: 143 for `.starttls` and `.plain`, 993 for `.implicit`; the
+# system's authorities, 60 seconds a step, 64 MiB an answer.
+#
+# - `host`: the server's name.
+# - `security`: how the connection is protected.
+#
+# See also `connect`.
+function options(host: str, security: Security) -> Options
+    port = match security
+        .starttls => PORT_IMAP
+        .implicit => PORT_IMAPS
+        .plain    => PORT_IMAP
+
+    return Options(
+        host: host,
+        port: port,
+        security: security,
+        roots: "",
+        deadline: time.minutes(1).must(),
+        max_bytes: 67_108_864
+    )
+
+# An IMAP session with a server, made by `connect`. It holds a connection:
+# `logout` or `close` ends it, and one nobody ends is told when `main`
+# returns.
+record Client
+    # The connection and what the session knows of the server; the
+    # package's own, read through the functions of this module.
+    conn: flow.Conn
+
+# A session with the server `opts` names: connected, protected as `opts`
+# says, its greeting read and its capabilities known.
+#
+# - `opts`: the options.
+#
+# The client is the caller's to end with `logout` or `close`. A greeting of
+# PREAUTH logs the client in, and IMAP4rev2 is then enabled where offered.
+# Fails `invalid` where an option is refused, the server's certificate is
+# (`tls`'s reason), or the greeting is not OK or PREAUTH; `closed` where it
+# is BYE; as `net` and `tls` fail to connect. See also `options`, `logout`.
+function connect(opts: Options) -> Client?
+    kind = match opts.security
+        .starttls => flow.STARTTLS
+        .implicit => flow.IMPLICIT
+        .plain    => flow.PLAIN
+
+    c = opening.open(host: opts.host, port: opts.port, security: kind, roots: opts.roots, deadline: opts.deadline, max_bytes: opts.max_bytes)?
+    return ok(Client(conn: c))
+
+# Says LOGOUT, reads the server's BYE and status, and closes the
+# connection, whatever they are.
+#
+# - `c`: the client, ended by this call.
+#
+# Fails where the connection fails; it is closed either way. See also
+# `close`.
+function logout(@c: Client) -> ()?
+    return opening.logout(@c.conn)
+
+# Closes the connection without a word to the server.
+#
+# - `c`: the client, ended by this call.
+#
+# Fails `closed` where it is closed already. See also `logout`.
+function close(@c: Client) -> ()?
+    return answers.close(@c.conn)
+
+# Says NOOP: the server's news since the last command are kept for
+# `take_updates`.
+#
+# - `c`: the client.
+#
+# Fails as a command fails. See also `take_updates`, `idle`.
+function noop(@c: Client) -> ()?
+    _ = flow.run(@c.conn, pieces: [.text(s: "NOOP")], takes: [], asked: "NOOP")?
+    return ok()
+
+# Says CHECK on IMAP4rev1, a checkpoint of the mailbox selected; NOOP on
+# IMAP4rev2, which has no CHECK and does its work at every command.
+#
+# - `c`: the client.
+#
+# Fails as a command fails. See also `noop`.
+function check(@c: Client) -> ()?
+    word = if c.conn.rev2
+        "NOOP"
+    else
+        "CHECK"
+    _ = flow.run(@c.conn, pieces: [.text(s: word)], takes: [], asked: word)?
+    return ok()
+
+## What the server said
+
+# A status the server said: OK, NO, BAD, BYE or PREAUTH, with its response
+# code.
+record Status
+    # `OK`, `NO`, `BAD`, `BYE` or `PREAUTH`.
+    condition: str
+    # The response code's name, upper case: `TRYCREATE`; "" for none.
+    code: str
+    # The code's arguments as the server wrote them, "" for none.
+    args: str
+    # The text after the code, as the server wrote it.
+    text: str
+
+# The server's greeting; with STARTTLS `tls` read it, and this holds its
+# condition alone.
+#
+# - `c`: the client.
+#
+# See also `last_status_of`.
+function greeting_of(c: Client) -> Status
+    return answers.public_status(c.conn.greeting)
+
+# The tagged status that ended the last command, a refusal's included.
+#
+# - `c`: the client.
+#
+# See also `format_status`.
+function last_status_of(c: Client) -> Status
+    return answers.public_status(c.conn.last)
+
+# `s` as one line for a person: its condition, its code in brackets, its
+# text; any byte outside printable ASCII escaped.
+#
+# - `s`: the status.
+#
+# See also `last_status_of`.
+function format_status(s: Status) -> str
+    return answers.shown(s)
+
+# The capabilities the server names, upper case: `IMAP4REV2`, `IDLE`,
+# `AUTH=PLAIN`.
+#
+# - `c`: the client.
+#
+# They change after STARTTLS and after a login; this client learns them
+# anew each time. See also `has_capability`, `capability`.
+function capabilities_of(c: Client) -> [str]
+    return c.conn.capabilities
+
+# Whether the server names `name` among its capabilities, in any case.
+#
+# - `c`: the client.
+# - `name`: the capability: `MOVE`, `AUTH=XOAUTH2`.
+#
+# See also `capabilities_of`.
+function has_capability(c: Client, name: str) -> bool
+    return flow.has(c.conn, name: name)
+
+# Asks the server for its capabilities anew, and answers them.
+#
+# - `c`: the client; its capabilities are replaced.
+#
+# Fails as a command fails. See also `capabilities_of`.
+function capability(@c: Client) -> [str]?
+    return flow.capability(@c.conn)
+
+# Whether IMAP4rev2 is in force: the server offered it and this client
+# enabled it after the login. Mailbox names are then UTF-8, SEARCH answers
+# by ESEARCH, and LSUB, CHECK and RECENT are gone.
+#
+# - `c`: the client.
+#
+# See also `enable`.
+function is_rev2(c: Client) -> bool
+    return c.conn.rev2
+
+# Whether TLS protects the connection.
+#
+# - `c`: the client.
+#
+# See also `Security`.
+function is_tls(c: Client) -> bool
+    return c.conn.is_tls
+
+## Logging in
+
+# Logs in with LOGIN, `user` and `password` sent as the server's strings.
+#
+# - `c`: the client; its capabilities are learnt anew.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails `invalid` where the connection is plain text to another machine;
+# `unsupported` where the server names LOGINDISABLED; `permission` where it
+# refuses. See also `auth_plain`.
+function login(@c: Client, user: str, password: str) -> ()?
+    return signin.login(@c.conn, user: user, password: password)
+
+# Logs in by AUTHENTICATE PLAIN (RFC 4616), the first answer sent with the
+# command where the server offers SASL-IR.
+#
+# - `c`: the client; its capabilities are learnt anew.
+# - `identity`: the user to act as, "" for `user` itself.
+# - `user`: the user's name.
+# - `password`: the password.
+#
+# Fails `invalid` where a value holds a zero byte or the connection is
+# plain text to another machine; `unsupported` where the server does not
+# offer AUTH=PLAIN; `permission` where it refuses. See also `login`.
+function auth_plain(@c: Client, identity: str, user: str, password: str) -> ()?
+    first = sasl.plain(identity: identity, user: user, password: password)?
+    return signin.authenticate(@c.conn, mech: "PLAIN", first: first, abort: "*")
+
+# Logs in by AUTHENTICATE XOAUTH2, as Google's and Microsoft's servers take
+# an OAuth 2.0 access token; where the server refuses, it says why in a
+# challenge, shown in the failure.
+#
+# - `c`: the client; its capabilities are learnt anew.
+# - `user`: the user's address.
+# - `token`: the access token.
+#
+# Fails `invalid` where a value holds a byte below a space or the
+# connection is plain text to another machine; `unsupported` where the
+# server does not offer AUTH=XOAUTH2; `permission` where it refuses. See
+# also `auth_oauthbearer`.
+function auth_xoauth2(@c: Client, user: str, token: str) -> ()?
+    first = sasl.xoauth2(user: user, token: token)?
+    return signin.authenticate(@c.conn, mech: "XOAUTH2", first: first, abort: "")
+
+# Logs in by AUTHENTICATE OAUTHBEARER (RFC 7628) with an OAuth 2.0 bearer
+# token; where the server refuses, it says why in a challenge, shown in the
+# failure.
+#
+# - `c`: the client; its capabilities are learnt anew.
+# - `user`: the user's name, "" to let the token name it.
+# - `token`: the bearer token.
+#
+# Fails as `auth_xoauth2` does, AUTH=OAUTHBEARER being the one asked. See
+# also `auth_xoauth2`.
+function auth_oauthbearer(@c: Client, user: str, token: str) -> ()?
+    first = sasl.oauthbearer(user: user, host: c.conn.host, token: token)?
+    return signin.authenticate(@c.conn, mech: "OAUTHBEARER", first: first, abort: "AQ==")
+
+# Enables the extensions `names` with ENABLE (RFC 5161), and answers those
+# the server enabled.
+#
+# - `c`: the client.
+# - `names`: the capabilities: `CONDSTORE`.
+#
+# IMAP4rev2 is enabled by the login already, where offered. Fails `invalid`
+# where a name is not an atom; `unsupported` where the server has no
+# ENABLE. See also `is_rev2`.
+function enable(@c: Client, names: [str]) -> [str]?
+    return answers.enable(@c.conn, names: names)
+
+## Mailboxes
+
+# A mailbox a LIST names.
+record Mailbox
+    # Its name, decoded from modified UTF-7 where UTF-8 is not in force:
+    # `INBOX`, `Archive/2026`.
+    name: str
+    # The character between the levels of its name, "" where the server
+    # has no hierarchy.
+    delimiter: str
+    # Its attributes as the server wrote them: `\HasNoChildren`,
+    # `\Noselect`, `\Sent`, `\Trash`.
+    attributes: [str]
+
+# The mailboxes whose names `pattern` matches below `reference` (LIST).
+#
+# - `c`: the client.
+# - `reference`: the name the pattern is read under, "" for the top.
+# - `pattern`: the names asked, `*` matching any characters and `%` any
+#   but the delimiter: `*` for every mailbox.
+#
+# Fails as a command fails, and `invalid` where a name the server sends is
+# not modified UTF-7. See also `list_subscribed`.
+function list(@c: Client, reference: str, pattern: str) -> [Mailbox]?
+    return answers.list(@c.conn, reference: reference, pattern: pattern, subscribed: false)
+
+# The subscribed mailboxes whose names `pattern` matches below `reference`:
+# LSUB on IMAP4rev1, LIST (SUBSCRIBED) on IMAP4rev2, which has no LSUB.
+#
+# - `c`: the client.
+# - `reference`: the name the pattern is read under.
+# - `pattern`: the names asked, as `list` reads it.
+#
+# Fails as `list` fails. See also `subscribe`.
+function list_subscribed(@c: Client, reference: str, pattern: str) -> [Mailbox]?
+    return answers.list(@c.conn, reference: reference, pattern: pattern, subscribed: true)
+
+# Makes the mailbox `name` (CREATE).
+#
+# - `c`: the client.
+# - `name`: the new mailbox's name.
+#
+# Fails `exists` where it exists; as a command fails. See also `delete`.
+function create(@c: Client, name: str) -> ()?
+    return answers.on_mailbox(@c.conn, word: "CREATE", name: name)
+
+# Removes the mailbox `name` (DELETE).
+#
+# - `c`: the client.
+# - `name`: the mailbox.
+#
+# Fails `not_found` where it does not exist; as a command fails. See also
+# `create`.
+function delete(@c: Client, name: str) -> ()?
+    return answers.on_mailbox(@c.conn, word: "DELETE", name: name)
+
+# Renames the mailbox `from` to `to` (RENAME); INBOX renamed moves its
+# messages into a new mailbox and stays.
+#
+# - `c`: the client.
+# - `from`: the mailbox's name.
+# - `to`: its new name.
+#
+# Fails `not_found` and `exists` as the server says; as a command fails.
+# See also `create`.
+function rename(@c: Client, from: str, to: str) -> ()?
+    return answers.rename(@c.conn, from: from, to: to)
+
+# Subscribes to the mailbox `name` (SUBSCRIBE).
+#
+# - `c`: the client.
+# - `name`: the mailbox.
+#
+# Fails as a command fails. See also `unsubscribe`, `list_subscribed`.
+function subscribe(@c: Client, name: str) -> ()?
+    return answers.on_mailbox(@c.conn, word: "SUBSCRIBE", name: name)
+
+# Unsubscribes from the mailbox `name` (UNSUBSCRIBE).
+#
+# - `c`: the client.
+# - `name`: the mailbox.
+#
+# Fails as a command fails. See also `subscribe`.
+function unsubscribe(@c: Client, name: str) -> ()?
+    return answers.on_mailbox(@c.conn, word: "UNSUBSCRIBE", name: name)
+
+# What STATUS says of a mailbox: -1 for a number the server did not give.
+record MailboxStatus
+    # The mailbox's name.
+    name: str
+    # Its messages.
+    messages: i64
+    # Its messages that are new this session, IMAP4rev1 only.
+    recent: i64
+    # The UID the next message will have.
+    uid_next: i64
+    # The UIDVALIDITY: UIDs mean the same messages while it stays.
+    uid_validity: i64
+    # Its messages without `\Seen`.
+    unseen: i64
+    # Its messages with `\Deleted`, IMAP4rev2 only.
+    deleted: i64
+    # The size of its messages in bytes, IMAP4rev2 only.
+    size: i64
+
+# What the mailbox `name` holds, without selecting it (STATUS): MESSAGES,
+# UIDNEXT, UIDVALIDITY and UNSEEN, with RECENT on IMAP4rev1 and DELETED and
+# SIZE on IMAP4rev2.
+#
+# - `c`: the client.
+# - `name`: the mailbox.
+#
+# Fails `not_found` where it does not exist; as a command fails. See also
+# `examine`.
+function status(@c: Client, name: str) -> MailboxStatus?
+    return answers.mailbox_status(@c.conn, name: name)
+
+## Selecting
+
+# A mailbox selected or examined, as the server described it.
+record Selected
+    # The mailbox's name.
+    name: str
+    # Whether it is read-only: examined, or the server allows no change.
+    read_only: bool
+    # Its messages.
+    exists: i64
+    # Its messages new this session, IMAP4rev1 only; 0 on IMAP4rev2.
+    recent: i64
+    # The flags its messages may carry.
+    flags: [str]
+    # The flags a change can keep, `\*` where new keywords may be made.
+    permanent_flags: [str]
+    # The UIDVALIDITY, 0 where the server gave none.
+    uid_validity: i64
+    # The UID the next message will have, 0 where the server gave none.
+    uid_next: i64
+    # The number of the first message without `\Seen`, IMAP4rev1 only; 0
+    # for none.
+    unseen: i64
+    # CONDSTORE's highest mod-sequence, 0 where the server gave none.
+    highest_modseq: i64
+
+# Selects the mailbox `name` to read and change it (SELECT).
+#
+# - `c`: the client.
+# - `name`: the mailbox: `INBOX` in any case is the inbox.
+#
+# A failure leaves no mailbox selected. Fails `not_found` where it does not
+# exist; as a command fails. See also `examine`, `close_mailbox`.
+function select(@c: Client, name: str) -> Selected?
+    return answers.select(@c.conn, name: name, read_only: false)
+
+# Selects the mailbox `name` to read it alone (EXAMINE): nothing changes it,
+# `\Seen` included.
+#
+# - `c`: the client.
+# - `name`: the mailbox.
+#
+# Fails as `select` fails. See also `select`.
+function examine(@c: Client, name: str) -> Selected?
+    return answers.select(@c.conn, name: name, read_only: true)
+
+# Leaves the mailbox selected, removing its messages marked `\Deleted`
+# where it is not read-only (CLOSE).
+#
+# - `c`: the client.
+#
+# Fails as a command fails. See also `unselect`.
+function close_mailbox(@c: Client) -> ()?
+    _ = flow.run(@c.conn, pieces: [.text(s: "CLOSE")], takes: [], asked: "CLOSE")?
+    return ok()
+
+# Leaves the mailbox selected and removes nothing (UNSELECT, RFC 3691 and
+# IMAP4rev2).
+#
+# - `c`: the client.
+#
+# Fails `unsupported` where the server offers neither; as a command fails.
+# See also `close_mailbox`.
+function unselect(@c: Client) -> ()?
+    if !c.conn.rev2 && !flow.has(c.conn, name: "UNSELECT")
+        return fail(code: UNSUPPORTED, msg: "the server offers neither UNSELECT nor IMAP4rev2")
+    _ = flow.run(@c.conn, pieces: [.text(s: "UNSELECT")], takes: [], asked: "UNSELECT")?
+    return ok()
+
+## Sets of messages
+
+# Messages named by number or by UID, as IMAP writes a set: `1:4,9`,
+# `100:*`. A step that takes a set says UID FETCH, UID STORE and the others
+# where `uid`. `seqs`, `uids` and the ranges build one; a set written by
+# hand is checked where it is used.
+record Set
+    # Whether the numbers are UIDs rather than message numbers.
+    uid: bool
+    # The numbers: `1:4,9`, `*` for the last message.
+    text: str
+
+# The number that stands for the last message in a range, `*`.
+constant LAST: i64
+    0
+
+# The messages numbered `numbers`, in order; 0 is the last.
+#
+# - `numbers`: message numbers from 1 to 4294967295, or `LAST`.
+#
+# See also `uids`, `seq_range`.
+function seqs(numbers: [i64]) -> Set
+    return Set(uid: false, text: query.listed(numbers))
+
+# The messages whose UIDs are `numbers`; 0 is the last.
+#
+# - `numbers`: UIDs from 1 to 4294967295, or `LAST`.
+#
+# See also `seqs`, `uid_range`.
+function uids(numbers: [i64]) -> Set
+    return Set(uid: true, text: query.listed(numbers))
+
+# The messages numbered `first` to `last`.
+#
+# - `first`: the first number, 1 or more, or `LAST`.
+# - `last`: the last number, or `LAST` for the last message.
+#
+# See also `uid_range`.
+function seq_range(first: i64, last: i64) -> Set
+    return Set(uid: false, text: query.spanned(first: first, last: last))
+
+# The messages whose UIDs run from `first` to `last`.
+#
+# - `first`: the first UID, 1 or more, or `LAST`.
+# - `last`: the last UID, or `LAST` for the last message.
+#
+# See also `seq_range`.
+function uid_range(first: i64, last: i64) -> Set
+    return Set(uid: true, text: query.spanned(first: first, last: last))
+
+# Each number `s` names, ranges written out, in the order written.
+#
+# - `s`: a set with no `*`, as COPYUID and APPENDUID answer one.
+# - `most`: the most numbers answered.
+#
+# Fails `invalid` where `s` is no set or holds `*`; `limit` where it names
+# more than `most`. See also `seqs`.
+function numbers_of(s: Set, most: i64) -> [i64]?
+    return query.expanded(s.text, most: most)
+
+## Fetching
+
+# What a fetch asks of each message. The body's sections are fetched with
+# `.PEEK`, so fetching never sets `\Seen`: `store` does.
+variant Item
+    # The flags.
+    flags
+    # The envelope: date, subject, addresses, message id.
+    envelope
+    # The MIME structure, with its extension data (BODYSTRUCTURE).
+    structure
+    # When the server received the message.
+    internal_date
+    # Its size in bytes (RFC822.SIZE).
+    size
+    # Its UID.
+    uid
+    # Its mod-sequence (CONDSTORE, which the server must offer).
+    modseq
+    # A body section, whole or in part (BODY.PEEK[...]).
+    body
+        # The section: "" for the whole message, `HEADER`, `TEXT`, `1.2`,
+        # `1.2.MIME`, `HEADER.FIELDS (Subject From)`.
+        section: str
+        # The first byte answered, -1 for the whole section.
+        start: i64
+        # The most bytes answered from `start`, ignored for the whole.
+        count: i64
+    # A section decoded from its transfer encoding by the server
+    # (BINARY.PEEK[...], RFC 3516, which the server must offer).
+    binary
+        # The section: a part's numbers, "" for the whole message.
+        section: str
+        # The first byte answered, -1 for the whole section.
+        start: i64
+        # The most bytes answered from `start`.
+        count: i64
+    # The size of a section once decoded (BINARY.SIZE[...]).
+    binary_size
+        # The section, a part's numbers.
+        section: str
+
+# A message's envelope, its fields as the message's own header writes them.
+record Envelope
+    # The `Date` field as written, "" for none: `mail.parse_date` reads it.
+    date: str
+    # The `Subject` field as written, encoded words and all:
+    # `mail.decode_header` decodes it.
+    subject: str
+    # `From`.
+    from: [mail.Address]
+    # `Sender`.
+    sender: [mail.Address]
+    # `Reply-To`.
+    reply_to: [mail.Address]
+    # `To`, a group's members in its place.
+    to: [mail.Address]
+    # `Cc`.
+    cc: [mail.Address]
+    # `Bcc`.
+    bcc: [mail.Address]
+    # `In-Reply-To` as written.
+    in_reply_to: str
+    # `Message-ID` as written.
+    message_id: str
+
+# One part of a message's MIME structure.
+record Part
+    # The media type, lower case: `text`, `multipart`, `message`.
+    type: str
+    # The subtype, lower case: `plain`, `mixed`, `rfc822`.
+    subtype: str
+    # The parameters of `Content-Type`, names lower case: `charset`.
+    params: {str: str}
+    # `Content-ID`, "" for none.
+    id: str
+    # `Content-Description`, "" for none.
+    description: str
+    # `Content-Transfer-Encoding`, lower case: `base64`.
+    encoding: str
+    # The size of the part's body in its encoding, in bytes.
+    size: i64
+    # The lines of a `text` part or an enclosed message, -1 for any other.
+    lines: i64
+    # `Content-MD5`, "" for none.
+    md5: str
+    # The disposition, lower case: `attachment`, `inline`; "" for none.
+    disposition: str
+    # The disposition's parameters, names lower case: `filename`.
+    disposition_params: {str: str}
+    # The languages of `Content-Language`.
+    language: [str]
+    # `Content-Location`, "" for none.
+    location: str
+    # A multipart's parts, or the one body of an enclosed message.
+    parts: [Part]
+    # An enclosed message's envelope, one or none.
+    envelope: [Envelope]
+
+# A body section a fetch answered.
+record Body
+    # The section, upper case: "" for the whole message, `HEADER`,
+    # `1.2.TEXT`, `HEADER.FIELDS (SUBJECT)`.
+    section: str
+    # Where a partial answer begins, -1 for the whole section.
+    origin: i64
+    # Its bytes; empty for NIL.
+    data: [u8]
+    # Whether the server decoded it from its transfer encoding (BINARY).
+    binary: bool
+
+# One message as a fetch, a store or the server's news answered it.
+record Message
+    # Its message number.
+    seq: i64
+    # The names of the items answered, upper case, in order: `UID`,
+    # `FLAGS`, `BODY[HEADER]`; an item absent here was not answered.
+    items: [str]
+    # Its UID, 0 where not answered.
+    uid: i64
+    # Its flags.
+    flags: [str]
+    # Its envelope.
+    envelope: Envelope
+    # Its MIME structure.
+    structure: Part
+    # When the server received it.
+    internal_date: mail.Date
+    # Its size in bytes, 0 where not answered.
+    size: i64
+    # Its mod-sequence, 0 where not answered.
+    modseq: i64
+    # The body sections answered.
+    bodies: [Body]
+    # The decoded size of each section BINARY.SIZE answered.
+    binary_sizes: {str: i64}
+
+# The messages `which` names, each with the items `items` asks (FETCH, or
+# UID FETCH where `which.uid`); UID is always asked with a UID FETCH.
+#
+# - `c`: the client, with a mailbox selected.
+# - `which`: the messages.
+# - `items`: what to fetch of each, at least one.
+#
+# A message the server tells of without being asked, its flags changed by
+# another session, is answered among them. Fails `invalid` where `which` is
+# no set or a section is no section; `limit` past `Options.max_bytes`;
+# `unsupported` where BINARY or CONDSTORE is asked and not offered; as a
+# command fails. See also `body_of`, `Item`.
+function fetch(@c: Client, which: Set, items: [Item]) -> [Message]?
+    return answers.fetch(@c.conn, set: which.text, uid: which.uid, asked: query.fetch_items(c.conn, asked: items)?)
+
+# The bytes of the section `section` that `m` answered.
+#
+# - `m`: the message.
+# - `section`: the section as `Item.body` named it, in any case.
+#
+# Fails `not_found` where `m` holds no such section. See also `fetch`.
+function body_of(m: Message, section: str) -> [u8]?
+    want = command.section_text(section)?
+
+    for b in m.bodies
+        if b.section == want
+            return ok(b.data)
+
+    return fail(code: NOT_FOUND, msg: f"the message {m.seq} holds no section \"{want}\"")
+
+## Searching
+
+# One key of a search; the keys of a list must all hold.
+variant Key
+    # Every message.
+    all
+    # With `\Answered`.
+    answered
+    # With `\Deleted`.
+    deleted
+    # With `\Draft`.
+    draft
+    # With `\Flagged`.
+    flagged
+    # With `\Seen`.
+    seen
+    # Without `\Answered`.
+    unanswered
+    # Without `\Deleted`.
+    undeleted
+    # Without `\Draft`.
+    undraft
+    # Without `\Flagged`.
+    unflagged
+    # Without `\Seen`.
+    unseen
+    # With the keyword.
+    keyword
+        # The keyword: `$Junk`.
+        flag: str
+    # Without the keyword.
+    unkeyword
+        # The keyword.
+        flag: str
+    # Whose `From` holds the text.
+    from
+        # The text, in any case.
+        text: str
+    # Whose `To` holds the text.
+    to
+        # The text.
+        text: str
+    # Whose `Cc` holds the text.
+    cc
+        # The text.
+        text: str
+    # Whose `Bcc` holds the text.
+    bcc
+        # The text.
+        text: str
+    # Whose `Subject` holds the text.
+    subject
+        # The text.
+        text: str
+    # Whose body holds the text.
+    body
+        # The text.
+        text: str
+    # Whose header or body holds the text.
+    text
+        # The text.
+        text: str
+    # Whose header field `name` holds the text; "" matches any message that
+    # has the field.
+    header
+        # The field's name: `List-Id`.
+        name: str
+        # The text.
+        text: str
+    # Received before the day.
+    before
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Received on the day.
+    on
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Received on the day or after.
+    since
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Whose `Date` is before the day.
+    sent_before
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Whose `Date` is the day.
+    sent_on
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Whose `Date` is the day or after.
+    sent_since
+        # A moment of the day, read in UTC.
+        day: time.Instant
+    # Larger than the size.
+    larger
+        # Bytes.
+        size: i64
+    # Smaller than the size.
+    smaller
+        # Bytes.
+        size: i64
+    # In the set.
+    within
+        # The messages, by number or by UID.
+        set: Set
+    # Where none of the keys hold together.
+    not
+        # The keys.
+        keys: [Key]
+    # Where the keys of either side hold.
+    either
+        # The keys of one side.
+        left: [Key]
+        # The keys of the other.
+        right: [Key]
+
+# The messages where every key of `criteria` holds (SEARCH, or UID SEARCH
+# where `by_uid`), in increasing order; texts are sent as UTF-8.
+#
+# - `c`: the client, with a mailbox selected.
+# - `criteria`: the keys, at least one.
+# - `by_uid`: whether the numbers answered are UIDs.
+#
+# Fails `invalid` where a key is refused (an empty list, a set that is no
+# set, a size below 0); `limit` where the server's answer names more
+# numbers than `Options.max_bytes` allows at eight bytes each; as a command
+# fails. See also `Key`, `fetch`.
+function search(@c: Client, criteria: [Key], by_uid: bool) -> [i64]?
+    return answers.search(@c.conn, criteria: query.criteria(criteria, utf8: c.conn.rev2)?, uid: by_uid)
+
+## Changing messages
+
+# How `store` changes flags.
+variant Change
+    # The flags added.
+    add
+    # The flags removed.
+    remove
+    # The flags put in place of all others.
+    replace
+
+# Changes the flags of the messages `which` names (STORE, or UID STORE), and
+# answers each message with its flags after the change.
+#
+# - `c`: the client, with a mailbox selected read-write.
+# - `which`: the messages.
+# - `change`: added, removed or replaced.
+# - `flags`: system flags (`\Seen`, `\Answered`, `\Flagged`, `\Deleted`,
+#   `\Draft`) and keywords.
+#
+# Fails `invalid` where a flag is refused (`\Recent`, `\*`, a keyword with
+# a byte no atom holds); as a command fails. See also `Change`.
+function store(@c: Client, which: Set, change: Change, flags: [str]) -> [Message]?
+    word = match change
+        .add     => "+FLAGS"
+        .remove  => "-FLAGS"
+        .replace => "FLAGS"
+
+    return answers.store(@c.conn, set: which.text, uid: which.uid, word: word, flags: flags)
+
+# What COPYUID and APPENDUID say of messages copied, moved or appended
+# (UIDPLUS, RFC 4315): empty sets where the server says nothing.
+record Copied
+    # The UIDVALIDITY of the mailbox they went to, 0 where unknown.
+    uid_validity: i64
+    # Their UIDs where they were.
+    from: Set
+    # Their UIDs where they went, in the order of `from`.
+    to: Set
+
+# Copies the messages `which` names into the mailbox `to` (COPY, or UID
+# COPY).
+#
+# - `c`: the client, with a mailbox selected.
+# - `which`: the messages.
+# - `to`: the mailbox they go to.
+#
+# Fails `not_found` where `to` does not exist (TRYCREATE); as a command
+# fails. See also `move`.
+function copy(@c: Client, which: Set, to: str) -> Copied?
+    return answers.copy(@c.conn, set: which.text, uid: which.uid, to: to, word: "COPY")
+
+# Moves the messages `which` names into the mailbox `to` (MOVE, RFC 6851
+# and IMAP4rev2, or UID MOVE): one step, which no copy and expunge make.
+#
+# - `c`: the client, with a mailbox selected read-write.
+# - `which`: the messages.
+# - `to`: the mailbox they go to.
+#
+# The messages moved leave the mailbox selected, told by its EXPUNGE news,
+# kept for `take_updates`. Fails `unsupported` where the server offers
+# neither MOVE nor IMAP4rev2; as `copy` fails. See also `copy`.
+function move(@c: Client, which: Set, to: str) -> Copied?
+    if !c.conn.rev2 && !flow.has(c.conn, name: "MOVE")
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the server offers neither MOVE nor IMAP4rev2: copy, store \\Deleted and expunge the UIDs instead"
+        )
+    return answers.copy(@c.conn, set: which.text, uid: which.uid, to: to, word: "MOVE")
+
+# Removes the messages marked `\Deleted` from the mailbox selected
+# (EXPUNGE), and answers the number each had as it went, in the server's
+# order: each later number counts the ones removed before it.
+#
+# - `c`: the client, with a mailbox selected read-write.
+#
+# Fails as a command fails. See also `expunge_uids`.
+function expunge(@c: Client) -> [i64]?
+    return answers.expunge(@c.conn, set: "")
+
+# Removes the messages marked `\Deleted` among the UIDs `which` names, and
+# no other (UID EXPUNGE, UIDPLUS and IMAP4rev2).
+#
+# - `c`: the client, with a mailbox selected read-write.
+# - `which`: the messages, by UID.
+#
+# Fails `invalid` where `which` is not by UID; `unsupported` where the
+# server offers neither UIDPLUS nor IMAP4rev2; as a command fails. See also
+# `expunge`.
+function expunge_uids(@c: Client, which: Set) -> [i64]?
+    if !which.uid
+        return fail(code: INVALID, msg: "UID EXPUNGE takes a set of UIDs: build it with `uids` or `uid_range`")
+
+    if !c.conn.rev2 && !flow.has(c.conn, name: "UIDPLUS")
+        return fail(code: UNSUPPORTED, msg: "the server offers neither UIDPLUS nor IMAP4rev2")
+    return answers.expunge(@c.conn, set: which.text)
+
+# What APPENDUID says of a message appended: 0 where the server says
+# nothing.
+record Appended
+    # The UIDVALIDITY of the mailbox.
+    uid_validity: i64
+    # The message's UID.
+    uid: i64
+
+# Adds `message` to the mailbox `to` with the flags `flags` (APPEND), the
+# server's clock naming when it was received.
+#
+# - `c`: the client.
+# - `to`: the mailbox.
+# - `message`: the message, RFC 5322's bytes with CRLF line ends: what
+#   `mail` builds.
+# - `flags`: its flags, [] for none.
+#
+# A message holding a NUL byte is sent as a literal8 where the server
+# offers BINARY or IMAP4rev2. Fails `invalid` where it holds NUL and the
+# server offers neither, or a flag is refused; `limit` where it passes the
+# server's APPENDLIMIT; `not_found` where `to` does not exist; as a command
+# fails. See also `append_dated`.
+function append(@c: Client, to: str, message: [u8], flags: [str]) -> Appended?
+    return answers.append(@c.conn, to: to, message: message, flags: flags, date: "")
+
+# Adds `message` to the mailbox `to` as `append` does, received at `date`.
+#
+# - `c`: the client.
+# - `to`: the mailbox.
+# - `message`: the message.
+# - `flags`: its flags.
+# - `date`: when it counts as received, written in its own offset.
+#
+# Fails as `append` fails, and `invalid` where `date` is outside the years
+# 1 to 9999. See also `append`.
+function append_dated(@c: Client, to: str, message: [u8], flags: [str], date: mail.Date) -> Appended?
+    return answers.append(@c.conn, to: to, message: message, flags: flags, date: command.date_time_text(date)?)
+
+## News
+
+# Something the server told without being asked: a message arrived or
+# went, flags changed, an alert.
+variant Update
+    # The mailbox holds this many messages now (EXISTS).
+    exists
+        # The number of messages.
+        count: i64
+    # This many messages are new this session (RECENT, IMAP4rev1).
+    recent
+        # The number of messages.
+        count: i64
+    # The message with this number went, every later one moving down by
+    # one (EXPUNGE).
+    expunge
+        # Its message number.
+        seq: i64
+    # A message's items changed, its flags most often (FETCH).
+    fetch
+        # The message, with the items the server told.
+        message: Message
+    # The flags of the mailbox changed (FLAGS).
+    flags
+        # The flags.
+        flags: [str]
+    # A status: OK with ALERT, NO with a warning, BYE before the server
+    # closes.
+    said
+        # The status.
+        status: Status
+    # A response this client reads no further.
+    other
+        # Its name, upper case.
+        name: str
+
+# The news the server told since the last call, oldest first, and empties
+# them.
+#
+# - `c`: the client.
+#
+# At most 10,000 are kept; past them the oldest go, `lost_updates_of`
+# counting them. See also `idle`, `noop`.
+function take_updates(@c: Client) -> [Update]
+    return answers.take_updates(@c.conn)
+
+# How many news `take_updates` lost to its bound since the session began.
+#
+# - `c`: the client.
+#
+# See also `take_updates`.
+function lost_updates_of(c: Client) -> i64
+    return c.conn.lost
+
+# Begins IDLE (RFC 2177, IMAP4rev2): the server tells its news as they come
+# until `idle_done`. The client takes no other command meanwhile; a server
+# may end an IDLE after 30 minutes, so a program ends and begins it again
+# within 29.
+#
+# - `c`: the client, with a mailbox selected.
+#
+# Fails `unsupported` where the server offers neither IDLE nor IMAP4rev2;
+# `invalid` where it idles already; as a command fails. See also
+# `idle_wait`, `idle_done`.
+function idle(@c: Client) -> ()?
+    return waiting.idle(@c.conn)
+
+# The news that come while idling: it waits up to `within` for the first
+# and answers it with every other already arrived; [] where none came.
+#
+# - `c`: the client, idling.
+# - `within`: how long to wait, zero to look and not wait.
+#
+# Fails `invalid` where the client is not idling; `closed` where the server
+# said BYE or closed. See also `idle`, `idle_done`.
+function idle_wait(@c: Client, within: time.Duration) -> [Update]?
+    return ok(answers.updates(waiting.idle_wait(@c.conn, within: within)?))
+
+# Ends the IDLE (DONE), and answers the news that came before its end.
+#
+# - `c`: the client, idling.
+#
+# Fails `invalid` where the client is not idling; as a command fails. See
+# also `idle`.
+function idle_done(@c: Client) -> [Update]?
+    return ok(answers.updates(waiting.idle_done(@c.conn)?))
+
+## Mailbox names
+
+# `name` in IMAP4rev1's modified UTF-7 (RFC 3501 § 5.1.3), as this client
+# writes a name where UTF-8 is not in force: `Entwürfe` is `Entw&APw-rfe`.
+#
+# - `name`: the name.
+#
+# See also `parse_utf7`.
+function format_utf7(name: str) -> str
+    return utf7.encoded(name)
+
+# The name modified UTF-7 `wire` writes.
+#
+# - `wire`: the name as a server wrote it.
+#
+# Fails `invalid` where it is not modified UTF-7 or not written as
+# `format_utf7` would write it, so two spellings never name one mailbox.
+# See also `format_utf7`.
+function parse_utf7(wire: str) -> str?
+    return utf7.decoded(wire)
+
+## Tests
+
+test "login: a password quoted, the capabilities of the tagged OK, IMAP4rev2 enabled"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1 IMAP4rev2 IDLE MOVE] Logged in\r\n* ENABLED IMAP4rev2\r\nA0002 OK Enabled\r\n",
+        capabilities: ["IMAP4REV1", "IMAP4REV2", "AUTH=PLAIN"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    login(@c, user: "ana", password: "a \"b\"").must()
+    assert is_rev2(c) && has_capability(c, name: "move") && !has_capability(c, name: "AUTH=PLAIN")
+    assert fake.heard(@c.conn, @server) == "A0001 LOGIN ana \"a \\\"b\\\"\"\r\nA0002 ENABLE IMAP4rev2\r\n"
+
+test "login: AUTHENTICATIONFAILED is permission, LOGINDISABLED unsupported, a plain connection to another machine refused"
+    p = fake.play(
+        script: "A0001 NO [AUTHENTICATIONFAILED] Authentication failed.\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+
+    match login(@c, user: "ana", password: "x")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && e.msg == "NO [AUTHENTICATIONFAILED] Authentication failed.: the server refused LOGIN"
+
+    c.conn.capabilities @ ["IMAP4REV1", "LOGINDISABLED"]
+
+    match login(@c, user: "ana", password: "x")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    c.conn.host @ "imap.example.org"
+
+    match login(@c, user: "ana", password: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert fake.heard(@c.conn, @server) == "A0001 LOGIN ana x\r\n"
+
+test "auth_plain: with SASL-IR in one line, without it after the server's `+`"
+    p = fake.play(
+        script: "A0001 OK done\r\n* CAPABILITY IMAP4rev1\r\nA0002 OK x\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=PLAIN", "SASL-IR"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    auth_plain(@c, identity: "", user: "tim", password: "tanstaaftanstaaf").must()
+    assert fake.heard(@c.conn, @server) == "A0001 AUTHENTICATE PLAIN AHRpbQB0YW5zdGFhZnRhbnN0YWFm\r\nA0002 CAPABILITY\r\n"
+    q = fake.play(
+        script: "+ \r\nA0001 OK [CAPABILITY IMAP4rev1] done\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=PLAIN"],
+        rev2: false
+    )
+    d @= Client(conn: q.conn)
+    other @= q.server
+    auth_plain(@d, identity: "", user: "tim", password: "tanstaaftanstaaf").must()
+    assert fake.heard(@d.conn, @other) == "A0001 AUTHENTICATE PLAIN\r\nAHRpbQB0YW5zdGFhZnRhbnN0YWFm\r\n"
+
+test "auth_xoauth2: the server's challenge shown and answered by an empty line, then its NO"
+    p = fake.play(
+        script: "+ eyJzdGF0dXMiOiI0MDEifQ==\r\nA0001 NO [AUTHENTICATIONFAILED] Invalid credentials\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=XOAUTH2", "SASL-IR"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+
+    match auth_xoauth2(@c, user: "a@b.c", token: "t")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && e.msg == "NO [AUTHENTICATIONFAILED] Invalid credentials (the server's challenge: {\"status\":\"401\"}): the server refused AUTHENTICATE XOAUTH2"
+
+    assert fake.heard(@c.conn, @server) == "A0001 AUTHENTICATE XOAUTH2 dXNlcj1hQGIuYwFhdXRoPUJlYXJlciB0AQE=\r\n\r\n"
+
+test "select: RFC 9051's example of SELECT's answer read whole, EXAMINE read-only, a failure's code"
+    p = fake.play(
+        script: "* 172 EXISTS\r\n* OK [UIDVALIDITY 3857529045] UIDs valid\r\n* OK [UIDNEXT 4392] Predicted next UID\r\n* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft)\r\n* OK [PERMANENTFLAGS (\\Deleted \\Seen \\*)] Limited\r\n* LIST () \"/\" INBOX\r\nA0001 OK [READ-WRITE] SELECT completed\r\nA0002 OK [READ-ONLY] done\r\nA0003 NO [NONEXISTENT] Mailbox doesn't exist: Nope\r\n",
+        capabilities: ["IMAP4REV2"],
+        rev2: true
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    s = select(@c, name: "inbox").must()
+    assert s == Selected(name: "inbox", read_only: false, exists: 172, recent: 0, flags: ["\\Answered", "\\Flagged", "\\Deleted", "\\Seen", "\\Draft"], permanent_flags: ["\\Deleted", "\\Seen", "\\*"], uid_validity: 3857529045, uid_next: 4392, unseen: 0, highest_modseq: 0)
+    assert examine(@c, name: "Archive").must().read_only
+
+    match select(@c, name: "Nope")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert take_updates(@c).len() == 0
+    assert fake.heard(@c.conn, @server) == "A0001 SELECT INBOX\r\nA0002 EXAMINE Archive\r\nA0003 SELECT Nope\r\n"
+
+test "list: names in modified UTF-7 read, a pattern written, subscribed by LSUB on IMAP4rev1 and LIST (SUBSCRIBED) on IMAP4rev2"
+    p = fake.play(
+        script: "* LIST (\\HasNoChildren) \".\" \"Entw&APw-rfe\"\r\n* LIST (\\Noselect \\HasChildren) \".\" Archive\r\nA0001 OK done\r\n* LSUB () \".\" INBOX\r\nA0002 OK done\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    every = list(@c, reference: "", pattern: "*").must()
+    assert every == [Mailbox(name: "Entwürfe", delimiter: ".", attributes: ["\\HasNoChildren"]), Mailbox(name: "Archive", delimiter: ".", attributes: ["\\Noselect", "\\HasChildren"])]
+    assert list_subscribed(@c, reference: "", pattern: "Entwürfe.%").must() == [Mailbox(name: "INBOX", delimiter: ".", attributes: [])]
+    assert fake.heard(@c.conn, @server) == "A0001 LIST \"\" *\r\nA0002 LSUB \"\" Entw&APw-rfe.%\r\n"
+    q = fake.play(
+        script: "* LIST (\\Subscribed) \"/\" \"Entwürfe\"\r\nA0001 OK done\r\n",
+        capabilities: ["IMAP4REV2"],
+        rev2: true
+    )
+    d @= Client(conn: q.conn)
+    other @= q.server
+    assert list_subscribed(@d, reference: "", pattern: "*").must() == [Mailbox(name: "Entwürfe", delimiter: "/", attributes: ["\\Subscribed"])]
+    assert fake.heard(@d.conn, @other) == "A0001 LIST (SUBSCRIBED) \"\" *\r\n"
+
+test "status, create, rename, delete: RFC 9051's STATUS example, ALREADYEXISTS as exists"
+    p = fake.play(
+        script: "* STATUS blurdybloop (MESSAGES 231 UIDNEXT 44292)\r\nA0001 OK STATUS completed\r\nA0002 NO [ALREADYEXISTS] Mailbox already exists\r\nA0003 OK done\r\nA0004 OK done\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert status(@c, name: "blurdybloop").must() == MailboxStatus(name: "blurdybloop", messages: 231, recent: -1, uid_next: 44292, uid_validity: -1, unseen: -1, deleted: -1, size: -1)
+
+    match create(@c, name: "x y")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    rename(@c, from: "a", to: "b").must()
+    delete(@c, name: "b").must()
+    assert fake.heard(@c.conn, @server) == "A0001 STATUS blurdybloop (MESSAGES RECENT UIDNEXT UIDVALIDITY UNSEEN)\r\nA0002 CREATE \"x y\"\r\nA0003 RENAME a b\r\nA0004 DELETE b\r\n"
+
+test "fetch: RFC 3501's envelope and structure, a section in a literal, a partial fetch, an unasked flag change kept"
+    script = "* 12 FETCH (UID 4827313 FLAGS (\\Seen) RFC822.SIZE 4286 ENVELOPE (\"Wed, 17 Jul 1996 02:23:25 -0700 (PDT)\" \"IMAP4rev1 WG mtg summary and minutes\" ((\"Terry Gray\" NIL \"gray\" \"cac.washington.edu\")) NIL NIL ((NIL NIL \"imap\" \"cac.washington.edu\")) NIL NIL NIL \"<B27397-0100000@cac.washington.edu>\") BODYSTRUCTURE (\"TEXT\" \"PLAIN\" (\"CHARSET\" \"US-ASCII\") NIL NIL \"7BIT\" 3028 92) BODY[HEADER.FIELDS (SUBJECT)] {14}\r\nSubject: x\r\n\r\n BODY[TEXT]<0> \"Hello\")\r\nA0001 OK FETCH completed\r\n"
+    p = fake.play(script: script, capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    got = fetch(
+        @c,
+        which: uids([4827313]),
+        items: [.uid, .flags, .size, .envelope, .structure, .body(section: "header.fields (Subject)", start: -1, count: 0), .body(section: "TEXT", start: 0, count: 5)]
+    ).must()
+    assert got.len() == 1 && got[0].seq == 12 && got[0].uid == 4827313 && got[0].flags == ["\\Seen"] && got[0].size == 4286
+    assert got[0].envelope.subject == "IMAP4rev1 WG mtg summary and minutes" && got[0].envelope.from[0].local == "gray"
+    assert got[0].structure.type == "text" && got[0].structure.lines == 92 && got[0].structure.params == {"charset": "US-ASCII"}
+    assert body_of(got[0], section: "HEADER.FIELDS (subject)").must() == bytes.from_text("Subject: x\r\n\r\n") && body_of(got[0], section: "text").must() == bytes.from_text("Hello")
+    assert body_of(got[0], section: "1").is_err()
+    assert fake.heard(@c.conn, @server) == "A0001 UID FETCH 4827313 (UID FLAGS RFC822.SIZE ENVELOPE BODYSTRUCTURE BODY.PEEK[HEADER.FIELDS (SUBJECT)] BODY.PEEK[TEXT]<0.5>)\r\n"
+
+test "fetch: a literal past `max_bytes` refused with limit before it is read, a set and a section refused before a byte is sent"
+    p = fake.play(script: "* 1 FETCH (BODY[] {4000000000}\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+
+    match fetch(@c, which: seqs([1]), items: [.body(section: "", start: -1, count: 0)])
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert fetch(@c, which: Set(uid: false, text: "1\r\nA9 LOGOUT"), items: [.flags]).is_err()
+    assert fetch(@c, which: seqs([1]), items: [.body(section: "TEXT]\r\nA9 LOGOUT", start: -1, count: 0)]).is_err()
+    assert fetch(@c, which: seqs([1]), items: []).is_err()
+    assert fake.heard(@c.conn, @server) == "A0001 FETCH 1 (BODY.PEEK[])\r\n"
+
+test "search: SEARCH on IMAP4rev1 with CHARSET for UTF-8, ESEARCH on IMAP4rev2 written out"
+    p = fake.play(
+        script: "+ go\r\n* SEARCH 84 2 882\r\nA0001 OK SEARCH completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert search(@c, criteria: [.unseen, .subject(text: "café")], by_uid: false).must() == [2, 84, 882]
+    assert fake.heard(@c.conn, @server) == "A0001 SEARCH CHARSET UTF-8 UNSEEN SUBJECT {5}\r\ncafé\r\n"
+    q = fake.play(
+        script: "* ESEARCH (TAG \"A0001\") UID ALL 4:6,9\r\nA0001 OK done\r\n",
+        capabilities: ["IMAP4REV2"],
+        rev2: true
+    )
+    d @= Client(conn: q.conn)
+    other @= q.server
+    assert search(@d, criteria: [.either(left: [.flagged], right: [.from(text: "ana")])], by_uid: true).must() == [4, 5, 6, 9]
+    assert fake.heard(@d.conn, @other) == "A0001 UID SEARCH OR FLAGGED FROM \"ana\"\r\n"
+
+test "store, copy, move, expunge: FETCH answers, COPYUID in the tagged OK and in an untagged one, EXPUNGE numbers"
+    script = "* 2 FETCH (FLAGS (\\Deleted \\Seen))\r\nA0001 OK STORE completed\r\nA0002 OK [COPYUID 38505 304,319:320 3956:3958] Done\r\n* OK [COPYUID 432432 42:43 1:2] Moved\r\n* 3 EXPUNGE\r\n* 3 EXPUNGE\r\nA0003 OK Done\r\n* 3 EXPUNGE\r\n* 8 EXPUNGE\r\nA0004 OK EXPUNGE completed\r\n"
+    p = fake.play(script: script, capabilities: ["IMAP4REV1", "MOVE", "UIDPLUS"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    changed = store(@c, which: seqs([2]), change: .add, flags: ["\\Deleted"]).must()
+    assert changed.len() == 1 && changed[0].flags == ["\\Deleted", "\\Seen"]
+    copied = copy(@c, which: uids([304, 319, 320]), to: "saved").must()
+    assert copied == Copied(uid_validity: 38505, from: Set(uid: true, text: "304,319:320"), to: Set(uid: true, text: "3956:3958"))
+    assert numbers_of(copied.from, most: 10).must() == [304, 319, 320]
+    moved = move(@c, which: uid_range(first: 42, last: 43), to: "Trash").must()
+    assert moved.uid_validity == 432432 && moved.to.text == "1:2"
+    assert take_updates(@c) == [.expunge(seq: 3), .expunge(seq: 3)]
+    assert expunge(@c).must() == [3, 8]
+    assert fake.heard(@c.conn, @server) == "A0001 STORE 2 +FLAGS (\\Deleted)\r\nA0002 UID COPY 304,319,320 saved\r\nA0003 UID MOVE 42:43 Trash\r\nA0004 EXPUNGE\r\n"
+
+test "move and expunge_uids: refused where the server lacks MOVE or UIDPLUS, and a set not by UID"
+    p = fake.play(script: "", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+
+    match move(@c, which: seqs([1]), to: "x")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert expunge_uids(@c, which: seqs([1])).is_err()
+
+    match expunge_uids(@c, which: uids([1]))
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert fake.heard(@c.conn, @server) == ""
+
+test "append: a literal sent after the server's `+`, APPENDUID read; with LITERAL+ sent at once; TRYCREATE as not_found"
+    p = fake.play(
+        script: "+ Ready\r\nA0001 OK [APPENDUID 38505 3955] APPEND completed\r\nA0002 OK done\r\nA0003 NO [TRYCREATE] no such mailbox\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    message = bytes.from_text("Subject: x\r\n\r\nhi\r\n")
+    assert append(@c, to: "saved", message: message, flags: ["\\Seen"]).must() == Appended(uid_validity: 38505, uid: 3955)
+    c.conn.capabilities @ ["IMAP4REV1", "LITERAL+"]
+    date = mail.Date(
+        instant: time.from_unix(whole_seconds: 837596665, extra_nanoseconds: 0).must(),
+        offset_minutes: -420,
+        offset_known: true
+    )
+    assert append_dated(@c, to: "saved", message: message, flags: [], date: date).must() == Appended(uid_validity: 0, uid: 0)
+
+    match append(@c, to: "nope", message: message, flags: [])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert append(@c, to: "x", message: [65, 0, 66], flags: []).is_err()
+    assert fake.heard(@c.conn, @server) == "A0001 APPEND saved (\\Seen) {18}\r\nSubject: x\r\n\r\nhi\r\n\r\nA0002 APPEND saved \"17-Jul-1996 02:44:25 -0700\" {18+}\r\nSubject: x\r\n\r\nhi\r\n\r\nA0003 APPEND nope {18+}\r\nSubject: x\r\n\r\nhi\r\n\r\n"
+
+test "idle: the server's `+`, news while idling, none within the wait, DONE and its tagged OK"
+    p = fake.play(
+        script: "+ idling\r\n* 4 EXISTS\r\n* 2 FETCH (FLAGS (\\Seen))\r\n",
+        capabilities: ["IMAP4REV1", "IDLE"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    idle(@c).must()
+    news = idle_wait(@c, within: time.seconds(2).must()).must()
+    assert news.len() == 2 && news[0] == .exists(count: 4)
+    assert idle_wait(@c, within: time.milliseconds(100).must()).must().len() == 0
+    assert noop(@c).is_err()
+    io.write_text(server, text: "* 5 EXISTS\r\nA0001 OK IDLE terminated\r\n").must()
+    assert idle_done(@c).must() == [.exists(count: 5)]
+    assert fake.heard(@c.conn, @server) == "A0001 IDLE\r\nDONE\r\n"
+
+test "a BYE then the end: closed, with the server's words"
+    p = fake.play(script: "* BYE Autologout; idle for too long\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    io.close(@server).must()
+
+    match noop(@c)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED && e.msg == "BYE Autologout; idle for too long: the server said BYE and closed the connection"
+
+    match close(@c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+test "format_utf7 and parse_utf7: RFC 3501's example both ways, a second spelling refused"
+    assert format_utf7("~peter/mail/台北/日本語") == "~peter/mail/&U,BTFw-/&ZeVnLIqe-"
+    assert parse_utf7("~peter/mail/&U,BTFw-/&ZeVnLIqe-").must() == "~peter/mail/台北/日本語"
+    assert parse_utf7("&AGE-").is_err()
+
+## Examples
+
+# The subjects of the unseen messages of a mailbox, read without marking
+# them seen.
+test "fetch: the subjects of the unseen messages"
+    p = fake.play(
+        script: "* 0 EXISTS\r\nA0001 OK [READ-ONLY] done\r\nA0002 OK SEARCH completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    _ = examine(@c, name: "INBOX").must()
+    found = search(@c, criteria: [.unseen], by_uid: true).must()
+
+    if found.len() > 0
+        for m in fetch(@c, which: uids(found), items: [.envelope]).must()
+            print(m.envelope.subject)
+
+    assert found.len() == 0
+    _ = fake.heard(@c.conn, @server)
