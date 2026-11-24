@@ -129,11 +129,18 @@ function carries(line: Line, wide: bool) -> bool
         return line.v6
     return line.v4
 
-# Opens the shared socket of one family and joins its group on each line.
+# Opens the shared socket of one family and joins its group on each line;
+# where it answers a failure the socket is closed.
 function joined(lines: [Line], wide: bool) -> Joined?
     host = net.parse_host(group_text(wide))?
     socket @= net.open_udp_shared(any_address(wide), port: PORT)?
-    net.set_multicast_hops(socket, hops: 255)?
+
+    match net.set_multicast_hops(socket, hops: 255)
+        .ok _ => _ = 0
+        .err e =>
+            _ = net.close_udp(@socket).is_err()
+            return fail(code: e.code, msg: e.msg)
+
     out: [Line] @= []
     took: i64 @= 0
     last: str @= "no interface carries the family"
@@ -165,7 +172,8 @@ function joined(lines: [Line], wide: bool) -> Joined?
 # where it names none.
 #
 # Fails `not_found` as `lines_for` does, `failed` where no family could be
-# joined on any interface, and as `net.open_udp_shared` fails.
+# joined on any interface, and as `net.open_udp_shared`, `poll.make` and
+# `poll.add_udp` fail; a failure leaves no socket and no set open.
 function open(interfaces: [str]) -> Transport?
     chosen: [Line] @= lines_for(interfaces)?
     sockets: [net.UdpSocket] @= []
@@ -191,13 +199,41 @@ function open(interfaces: [str]) -> Transport?
 
     if sockets.len() == 0
         return fail(code: failure.FAILED, msg: f"multicast DNS could not be joined: {problem}")
-    set = poll.make(4)?
+    return watched(sockets: sockets, wide: wide, lines: chosen)
+
+# The transport over `sockets`, each added to a new poll set to be read.
+# Where the set cannot be made or a socket added, every socket and the set
+# are closed before the failure is answered: the caller of a failed `open`
+# holds nothing, so nothing of it may stay open.
+#
+# Fails as `poll.make` and `poll.add_udp` fail, `closed` where a socket of
+# `sockets` is closed.
+function watched(sockets: [net.UdpSocket], wide: [bool], lines: [Line]) -> Transport?
+    set @= match poll.make(4)
+        .ok made => made
+        .err e =>
+            closed_all(sockets)
+            return fail(code: e.code, msg: e.msg)
+
     ids: [i64] @= []
 
     for socket in sockets
-        ids @ ids.push(poll.add_udp(set, u: socket, interest: .read)?)
+        match poll.add_udp(set, u: socket, interest: .read)
+            .ok key => ids @ ids.push(key)
+            .err e =>
+                closed_all(sockets)
+                _ = poll.close(@set).is_err()
+                return fail(code: e.code, msg: e.msg)
 
-    return ok(Transport(sockets: sockets, wide: wide, keys: ids, lines: chosen, set: set))
+    return ok(Transport(sockets: sockets, wide: wide, keys: ids, lines: lines, set: set))
+
+# Closes every socket of `sockets`, each through a copy of its place, on the
+# way out of a failure: what one close answers is left unsaid, the caller
+# being told the failure that led here.
+function closed_all(sockets: [net.UdpSocket])
+    for i in range(from: 0, to: sockets.len())
+        s @= sockets[i]
+        _ = net.close_udp(@s).is_err()
 
 # Closes the sockets, which leaves the groups, and the set, and empties the
 # transport. A socket is closed through a copy of its place, whose emptying
@@ -345,3 +381,33 @@ function receive(t: Transport, wait_ms: i64) -> Packet?
                 return ok(Packet(data: d.data, sender: d.sender, wide: t.wide[i]))
 
     return fail(code: failure.TIMEOUT, msg: f"no datagram came in {wait_ms} ms")
+
+## Tests
+
+# A socket closed before it is given is one the set cannot take, as
+# `poll.add_udp` refuses it: the one way a test makes `open`'s later steps
+# fail. A handle left open fails the run at its end, the runtime telling
+# where it was taken.
+test "watched: a socket the set cannot take, last, first or alone, and every socket and the set are closed before the failure is answered"
+    for place in [0, 1, 2]
+        held = net.open_udp("127.0.0.1", port: 0).must()
+        gone @= net.open_udp("127.0.0.1", port: 0).must()
+        net.close_udp(@gone).must()
+        given: [net.UdpSocket] @= [held, gone]
+
+        if place == 1
+            given @ [gone, held]
+
+        if place == 2
+            given @ [gone]
+            other @= held
+            net.close_udp(@other).must()
+
+        match watched(sockets: given, wide: [false, false], lines: [])
+            .ok _  => assert false
+            .err e => assert e.code == failure.CLOSED
+
+test "watched: no socket, an empty transport whose close gives its set back"
+    t @= watched(sockets: [], wide: [], lines: []).must()
+    assert t.keys.len() == 0
+    close(@t).must()
