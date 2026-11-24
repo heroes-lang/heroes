@@ -1,0 +1,757 @@
+# A chart on two axes laid out: the axes' ranges found from the shapes and
+# moved out to their ticks, the margins measured from the text in the font
+# (title, tick labels, axis labels, legend), the shapes mapped to pixels and
+# cut to the plot, and every part drawn in order: grid, shapes, axis lines and
+# ticks, labels, title, legend.
+#
+# The face makes the shapes from a program's series, bars or bins and checks
+# them before it calls: every number finite or, in a line or its points, not a
+# number for a gap, and every value a logarithmic axis places above zero but
+# a bar's or an area's base.
+
+use chart/internal/clip
+use chart/internal/codes
+use chart/internal/dates
+use chart/internal/samples
+use chart/internal/scene
+use chart/internal/ticks
+use font
+use image
+use image/vector
+use math
+
+# How an axis places its values.
+variant Scale
+    # In proportion.
+    linear
+    # In proportion to their logarithms in `base`.
+    log
+        base: f64
+    # Seconds since 1970-01-01 in UTC, ticked at the calendar's steps.
+    time
+    # Categories, the `i`th from `i` to `i + 1`, labelled at its middle.
+    band
+        names: [str]
+
+# An axis as the face asks it.
+record Axis
+    label: str
+    scale: Scale
+    # Whether `low` and `high` are the range, as given, instead of the data's.
+    fixed: bool
+    low: f64
+    high: f64
+    # About how many ticks, or 0 for as many as the axis's length holds.
+    count: i64
+    grid: bool
+
+# A thing drawn on the axes, in the axes' values.
+variant Shape
+    # A line through points, broken where a value is not a number.
+    path
+        name: str
+        xs: [f64]
+        ys: [f64]
+        color: image.Color
+        width: f64
+    # A polygon filled.
+    region
+        xs: [f64]
+        ys: [f64]
+        color: image.Color
+    # A disc at each point.
+    dots
+        name: str
+        xs: [f64]
+        ys: [f64]
+        color: image.Color
+        radius: f64
+    # A rectangle, a pixel left between it and its neighbours along the
+    # columns where `gap_x` and along the rows where `gap_y`.
+    box
+        x0: f64
+        x1: f64
+        y0: f64
+        y1: f64
+        color: image.Color
+        gap_x: bool
+        gap_y: bool
+
+# How a legend's entry shows its series.
+variant KeyMark
+    # A short line.
+    line
+    # A disc.
+    dot
+    # A short line through a disc.
+    line_dot
+    # A filled square.
+    swatch
+
+# An entry of the legend.
+record Key
+    name: str
+    color: image.Color
+    mark: KeyMark
+
+# The frame of a chart: its size, its text and its colours.
+record Look
+    width: i64
+    height: i64
+    title: str
+    text_size: f64
+    background: image.Color
+    ink: image.Color
+    grid: image.Color
+    legend: bool
+
+# A tick placed: its value and its label, empty where it carries none.
+record Mark
+    value: f64
+    label: str
+
+# An axis's range and the pixels it spans, `from` for `low` and `to` for
+# `high`.
+record Placed
+    scale: Scale
+    low: f64
+    high: f64
+    from: f64
+    to: f64
+
+# The sizes the layout measures text by.
+record Metrics
+    size: f64
+    pad: f64
+    tick: f64
+    gap: f64
+    ascent: f64
+    descent: f64
+    line: f64
+    cap: f64
+
+## Ranges
+
+# Whether `scale` is a logarithmic one.
+function is_log(scale: Scale) -> bool
+    return match scale
+        .log _                    => true
+        .linear | .time | .band _ => false
+
+# The values of the shapes along one axis that its range must hold: the
+# columns where `along_x`, else the rows. On a logarithmic axis a line's or
+# a point's value at or below zero is refused, and a region's or a box's is
+# its base and left out.
+function values_along(shapes: [Shape] lent, along_x: bool, log: bool) -> [f64]?
+    out: [f64] @= []
+
+    for s in shapes
+        match s
+            .path p =>
+                vs = pick(xs: p.xs, ys: p.ys, along_x: along_x)
+
+                for i in range(from: 0, to: vs.len())
+                    v = vs[i]
+
+                    if v == v
+                        if log && v <= 0.0
+                            return fail(
+                                code: codes.INVALID,
+                                msg: f"the series \"{p.name}\" has {v} at {i}, which a logarithmic axis cannot place"
+                            )
+                        out @ out.push(v)
+            .dots d =>
+                vs = pick(xs: d.xs, ys: d.ys, along_x: along_x)
+
+                for i in range(from: 0, to: vs.len())
+                    v = vs[i]
+
+                    if v == v
+                        if log && v <= 0.0
+                            return fail(
+                                code: codes.INVALID,
+                                msg: f"the series \"{d.name}\" has {v} at {i}, which a logarithmic axis cannot place"
+                            )
+                        out @ out.push(v)
+            .region r =>
+                for v in pick(xs: r.xs, ys: r.ys, along_x: along_x)
+                    if v == v && (!log || v > 0.0)
+                        out @ out.push(v)
+            .box b =>
+                vs @= [b.y0, b.y1]
+
+                if along_x
+                    vs @ [b.x0, b.x1]
+
+                for v in vs
+                    if !log || v > 0.0
+                        out @ out.push(v)
+
+    return ok(out)
+
+# `xs` where `along_x`, else `ys`.
+function pick(xs: [f64], ys: [f64], along_x: bool) -> [f64]
+    if along_x
+        return xs
+    return ys
+
+# The range of an axis before its ticks move it: the band's, the one given,
+# or the values' widened where they are one value and defaulted where there
+# are none.
+function raw_range(axis: Axis lent, values: [f64] lent) -> ticks.Span
+    match axis.scale
+        .band b                  => return ticks.Span(low: 0.0, high: to_f64(b.names.len()))
+        .linear | .log _ | .time => _ = 0
+
+    if axis.fixed
+        return ticks.Span(low: axis.low, high: axis.high)
+
+    if values.len() == 0
+        return match axis.scale
+            .log l            => ticks.Span(low: 1.0, high: l.base)
+            .time             => ticks.Span(low: 0.0, high: 86400.0)
+            .linear | .band _ => ticks.Span(low: 0.0, high: 1.0)
+    low @= values[0]
+    high @= values[0]
+
+    for v in values
+        if v < low
+            low @ v
+
+        if v > high
+            high @ v
+
+    if low < high
+        return ticks.Span(low: low, high: high)
+
+    return match axis.scale
+        .log l => ticks.Span(low: low / l.base, high: low * l.base)
+        .time  => ticks.Span(low: low - 43200.0, high: low + 43200.0)
+        .linear | .band _ =>
+            if low == 0.0
+                ticks.Span(low: -1.0, high: 1.0)
+            else
+                ticks.Span(low: low - math.abs(low) / 10.0, high: low + math.abs(low) / 10.0)
+
+# The range moved out to the ticks of about `count`, unless it was given.
+function niced(axis: Axis lent, raw: ticks.Span, count: i64) -> ticks.Span
+    if axis.fixed
+        return raw
+    n = to_f64(count)
+
+    return match axis.scale
+        .linear => ticks.nice(low: raw.low, high: raw.high, count: n)
+        .log l  => ticks.log_nice(low: raw.low, high: raw.high, base: l.base)
+        .time =>
+            ms = dates.nice(start: raw.low * 1000.0, stop: raw.high * 1000.0, count: n)
+            ticks.Span(low: ms.low / 1000.0, high: ms.high / 1000.0)
+        .band _ => raw
+
+# The ticks of `axis` over `span` for about `count`, labelled.
+function marks_of(axis: Axis lent, span: ticks.Span, count: i64) -> [Mark]
+    n = to_f64(count)
+    out: [Mark] @= []
+
+    match axis.scale
+        .linear =>
+            places = ticks.decimals(ticks.step_of(start: span.low, stop: span.high, count: n))
+
+            for t in ticks.ticks(start: span.low, stop: span.high, count: n)
+                out @ out.push(Mark(value: t, label: ticks.label(x: t, places: places)))
+        .log l =>
+            ts = ticks.log_ticks(low: span.low, high: span.high, base: l.base, count: n)
+            shown = ticks.log_labelled(values: ts, base: l.base, count: n)
+
+            for i in range(from: 0, to: ts.len())
+                if shown[i]
+                    out @ out.push(Mark(value: ts[i], label: ticks.short_label(ts[i])))
+                else
+                    out @ out.push(Mark(value: ts[i], label: ""))
+        .time =>
+            interval = dates.choose(start: span.low * 1000.0, stop: span.high * 1000.0, count: n)
+
+            for t in dates.ticks_of(start: span.low * 1000.0, stop: span.high * 1000.0, interval: interval)
+                out @ out.push(Mark(value: to_f64(t) / 1000.0, label: dates.label(t)))
+        .band b =>
+            for i in range(from: 0, to: b.names.len())
+                out @ out.push(Mark(value: to_f64(i) + 0.5, label: b.names[i]))
+
+    return out
+
+# The pixel of `v` on a placed axis; a value at or below zero on a
+# logarithmic axis, a base, is its low end.
+function place(p: Placed lent, v: f64) -> f64
+    fraction @= 0.0
+
+    match p.scale
+        .log l =>
+            if v <= 0.0
+                return p.from
+            low = ticks.log_of(x: p.low, base: l.base)
+            high = ticks.log_of(x: p.high, base: l.base)
+            fraction @ (ticks.log_of(x: v, base: l.base) - low) / (high - low)
+        .linear | .time | .band _ => fraction @ (v - p.low) / (p.high - p.low)
+
+    return p.from + fraction * (p.to - p.from)
+
+## Measures
+
+# The sizes text is measured by at `size` pixels to the em.
+function metrics(f: font.Font lent, size: f64) -> Metrics?
+    ascent = scene.ascent_of(f: f, size: size)?
+    descent = scene.descent_of(f: f, size: size)?
+    return ok(
+        Metrics(size: size, pad: math.round(size * 0.75), tick: math.round(size * 0.4), gap: math.round(size * 0.3), ascent: ascent, descent: descent, line: ascent + descent, cap: scene.cap_of(f: f, size: size)?)
+    )
+
+# The widths of the labels of `marks`.
+function widths_of(f: font.Font lent, marks: [Mark] lent, size: f64) -> [f64]?
+    out: [f64] @= []
+
+    for m in marks
+        out @ out.push(scene.width_of(f: f, text: m.label, size: size)?)
+
+    return ok(out)
+
+# The fewest labels to skip so that no two shown overlap: the step `k` for
+# which the labels at every `k`th tick, centred at `centers` with `sizes`
+# along the axis, stand at least `room` apart. A tick with an empty label
+# shows nothing and is passed over.
+function thinning(centers: [f64] lent, sizes: [f64] lent, shown: [bool] lent, room: f64) -> i64
+    k @= 1
+
+    while k < centers.len()
+        fits @= true
+        last @= -1
+
+        for i in range(from: 0, to: centers.len())
+            if i % k == 0 && shown[i]
+                if last >= 0
+                    apart = math.abs(centers[i] - centers[last])
+
+                    if apart < (sizes[i] + sizes[last]) / 2.0 + room
+                        fits @ false
+                last @ i
+
+        if fits
+            return k
+        k @ k + 1
+
+    return k
+
+## Drawing
+
+# A straight line from (`x0`, `y0`) to (`x1`, `y1`) stroked `width` wide.
+function line_item(x0: f64, y0: f64, x1: f64, y1: f64, color: image.Color, width: f64) -> scene.Item
+    path: [vector.Segment] @= []
+    vector.move_to(@path, x: x0, y: y0)
+    vector.line_to(@path, x: x1, y: y1)
+    return .stroke(path: path, color: color, width: width)
+
+# The middle of the pixel `v` falls in, where a line one pixel wide is crisp.
+function crisp(v: f64) -> f64
+    return math.floor(v) + 0.5
+
+# The pixels of the points (`xs[i]`, `ys[i]`), a value that is not a number
+# kept so.
+function mapped(xs: [f64] lent, ys: [f64] lent, px: Placed lent, py: Placed lent) -> [vector.Point]
+    out: [vector.Point] @= []
+
+    for i in range(from: 0, to: xs.len())
+        x @= xs[i]
+        y @= ys[i]
+
+        if x == x
+            x @ place(p: px, v: x)
+
+        if y == y
+            y @ place(p: py, v: y)
+        out @ out.push(vector.Point(x: x, y: y))
+
+    return out
+
+# The items of one shape, mapped and cut to `r`.
+function shape_items(s: Shape lent, px: Placed lent, py: Placed lent, r: clip.Rect) -> [scene.Item]
+    out: [scene.Item] @= []
+
+    match s
+        .path p =>
+            points = mapped(xs: p.xs, ys: p.ys, px: px, py: py)
+            xs: [f64] @= []
+            ys: [f64] @= []
+
+            for q in points
+                xs @ xs.push(q.x)
+                ys @ ys.push(q.y)
+
+            path: [vector.Segment] @= []
+
+            for run in clip.polyline(xs: xs, ys: ys, r: r)
+                vector.add_polyline(@path, run)
+
+            out @ out.push(.stroke(path: path, color: p.color, width: p.width))
+        .region g =>
+            cut = clip.polygon(points: mapped(xs: g.xs, ys: g.ys, px: px, py: py), r: r)
+
+            if cut.len() >= 3
+                path: [vector.Segment] @= []
+                vector.add_polygon(@path, cut)
+                out @ out.push(.fill(path: path, color: g.color))
+        .dots d =>
+            path: [vector.Segment] @= []
+
+            for q in mapped(xs: d.xs, ys: d.ys, px: px, py: py)
+                numbers = q.x == q.x && q.y == q.y
+
+                if numbers && q.x >= r.left - 0.5 && q.x <= r.right + 0.5 && q.y >= r.top - 0.5 && q.y <= r.bottom + 0.5
+                    vector.add_ellipse(@path, center_x: q.x, center_y: q.y, radius_x: d.radius, radius_y: d.radius)
+
+            out @ out.push(.fill(path: path, color: d.color))
+        .box b =>
+            xa = place(p: px, v: b.x0)
+            xb = place(p: px, v: b.x1)
+            ya = place(p: py, v: b.y0)
+            yb = place(p: py, v: b.y1)
+            left @= math.max(a: math.min(a: xa, b: xb), b: r.left)
+            right @= math.min(a: math.max(a: xa, b: xb), b: r.right)
+            top @= math.max(a: math.min(a: ya, b: yb), b: r.top)
+            bottom @= math.min(a: math.max(a: ya, b: yb), b: r.bottom)
+
+            if b.gap_x && right - left >= 3.0
+                left @ left + 0.5
+                right @ right - 0.5
+
+            if b.gap_y && bottom - top >= 3.0
+                top @ top + 0.5
+                bottom @ bottom - 0.5
+
+            if right > left && bottom > top
+                path: [vector.Segment] @= []
+                vector.add_rect(@path, x: left, y: top, width: right - left, height: bottom - top)
+                out @ out.push(.fill(path: path, color: b.color))
+
+    return out
+
+# The text of a line at `size` in the look's ink.
+function text_item(text: str, x: f64, y: f64, size: f64, anchor: scene.Anchor, turned: bool, ink: image.Color) -> scene.Item
+    return .text(line: scene.Text(text: text, x: x, y: y, size: size, anchor: anchor, turned: turned, color: ink))
+
+# The mark of a legend's entry in the box from `x` across `width`, its
+# middle at row `y`.
+function key_items(k: Key lent, x: f64, y: f64, width: f64, m: Metrics lent) -> [scene.Item]
+    out: [scene.Item] @= []
+    radius = m.size * 0.3
+
+    match k.mark
+        .line => out @ out.push(
+            line_item(x0: x, y0: y, x1: x + width, y1: y, color: k.color, width: math.max(a: 1.0, b: m.size / 6.0))
+        )
+        .dot =>
+            path: [vector.Segment] @= []
+            vector.add_ellipse(@path, center_x: x + width / 2.0, center_y: y, radius_x: radius, radius_y: radius)
+            out @ out.push(.fill(path: path, color: k.color))
+        .line_dot =>
+            out @ out.push(
+                line_item(x0: x, y0: y, x1: x + width, y1: y, color: k.color, width: math.max(a: 1.0, b: m.size / 6.0))
+            )
+            path: [vector.Segment] @= []
+            vector.add_ellipse(@path, center_x: x + width / 2.0, center_y: y, radius_x: radius, radius_y: radius)
+            out @ out.push(.fill(path: path, color: k.color))
+        .swatch =>
+            path: [vector.Segment] @= []
+            side = m.cap * 1.2
+            vector.add_rect(@path, x: x + (width - side) / 2.0, y: y - side / 2.0, width: side, height: side)
+            out @ out.push(.fill(path: path, color: k.color))
+
+    return out
+
+# How a legend of `entries` is set beside a plot `height` high: its entries in
+# columns of `rows` each, `column` wide, `width` in all.
+record Legend
+    rows: i64
+    columns: i64
+    column: f64
+    width: f64
+
+# The legend's measure, or an empty one where it is not drawn.
+function legend_of(entries: [Key] lent, f: font.Font lent, m: Metrics lent, height: f64, shown: bool) -> Legend?
+    if !shown || entries.len() == 0
+        return ok(Legend(rows: 0, columns: 0, column: 0.0, width: 0.0))
+    widest @= 0.0
+
+    for k in entries
+        widest @ math.max(a: widest, b: scene.width_of(f: f, text: k.name, size: m.size)?)
+
+    column = m.size * 1.5 + m.gap + widest
+    rows = math.max_i64(a: 1, b: to_i64(math.floor(height / m.line)).must())
+    columns = (entries.len() + rows - 1) / rows
+    return ok(
+        Legend(rows: rows, columns: columns, column: column, width: to_f64(columns) * column + to_f64(columns - 1) * m.pad)
+    )
+
+# The legend's items, its first entry's top left at (`x`, `y`).
+function legend_items(entries: [Key] lent, legend: Legend lent, x: f64, y: f64, m: Metrics lent, ink: image.Color) -> [scene.Item]
+    out: [scene.Item] @= []
+
+    for i in range(from: 0, to: entries.len())
+        column = i / legend.rows
+        row = i % legend.rows
+        left = x + to_f64(column) * (legend.column + m.pad)
+        middle = y + to_f64(row) * m.line + m.line / 2.0
+
+        for item in key_items(k: entries[i], x: left, y: middle, width: m.size * 1.5, m: m)
+            out @ out.push(item)
+
+        out @ out.push(
+            text_item(text: entries[i].name, x: left + m.size * 1.5 + m.gap, y: middle + m.cap / 2.0, size: m.size, anchor: .start, turned: false, ink: ink)
+        )
+
+    return out
+
+# The ticks of one axis for a length of `length` pixels, the count asked or
+# one tick each `spacing` pixels.
+function count_for(axis: Axis lent, length: f64, spacing: f64) -> i64
+    if axis.count > 0
+        return axis.count
+    return math.max_i64(a: 2, b: to_i64(math.floor(length / spacing)).must())
+
+# The whole chart laid out.
+#
+# Fails `invalid` where the chart leaves its plot less than two text sizes
+# a side, or a value a logarithmic axis cannot place; and as the font's
+# measure fails, `not_found` for a character it lacks.
+function layout(look: Look lent, x: Axis lent, y: Axis lent, shapes: [Shape] lent, entries: [Key] lent, f: font.Font lent) -> scene.Scene?
+    m = metrics(f: f, size: look.text_size)?
+    title_size = look.text_size * 1.4
+    title_m = metrics(f: f, size: title_size)?
+    width = to_f64(look.width)
+    height = to_f64(look.height)
+    top @= m.pad
+
+    if look.title != ""
+        top @ m.pad + title_m.line + m.pad
+    bottom @= m.pad + m.tick + m.gap + m.line
+
+    if x.label != ""
+        bottom @ bottom + m.gap + m.line
+    plot_top = math.ceil(top)
+    plot_bottom = math.floor(height - bottom)
+    plot_height = plot_bottom - plot_top
+
+    if plot_height < 2.0 * look.text_size
+        return fail(
+            code: codes.INVALID,
+            msg: f"the chart is {look.height} pixels high, which leaves {plot_height} for its plot under its text; make it higher or its text smaller"
+        )
+    xs_values = values_along(shapes: shapes, along_x: true, log: is_log(x.scale))?
+    ys_values = values_along(shapes: shapes, along_x: false, log: is_log(y.scale))?
+    y_count = count_for(axis: y, length: plot_height, spacing: look.text_size * 3.5)
+    y_span = niced(axis: y, raw: raw_range(axis: y, values: ys_values), count: y_count)
+    y_marks = marks_of(axis: y, span: y_span, count: y_count)
+    y_widths = widths_of(f: f, marks: y_marks, size: look.text_size)?
+    widest_y @= 0.0
+
+    for w in y_widths
+        widest_y @ math.max(a: widest_y, b: w)
+
+    left @= m.pad + widest_y + m.gap + m.tick
+
+    if y.label != ""
+        left @ left + m.line + m.gap
+    legend = legend_of(entries: entries, f: f, m: m, height: plot_height, shown: look.legend)?
+    right @= m.pad
+
+    if legend.width > 0.0
+        right @ right + legend.width + m.pad
+    x_raw = raw_range(axis: x, values: xs_values)
+    x_count @= 0
+    x_span @= x_raw
+    x_marks: [Mark] @= []
+    x_widths: [f64] @= []
+    plot_left @= 0.0
+    plot_right @= 0.0
+
+    for round in range(from: 0, to: 2)
+        plot_left @ math.ceil(left)
+        plot_right @ math.floor(width - right)
+        x_count @ count_for(axis: x, length: plot_right - plot_left, spacing: look.text_size * 6.5)
+        x_span @ niced(axis: x, raw: x_raw, count: x_count)
+        x_marks @ marks_of(axis: x, span: x_span, count: x_count)
+        x_widths @ widths_of(f: f, marks: x_marks, size: look.text_size)?
+
+        if round == 0 && x_marks.len() > 0
+            placed = Placed(scale: x.scale, low: x_span.low, high: x_span.high, from: plot_left, to: plot_right)
+            first = place(p: placed, v: x_marks[0].value) - x_widths[0] / 2.0
+            last = place(p: placed, v: x_marks[x_marks.len() - 1].value) + x_widths[x_widths.len() - 1] / 2.0
+
+            if first < m.pad
+                left @ left + m.pad - first
+
+            if last > width - m.pad && legend.width == 0.0
+                right @ right + last - (width - m.pad)
+
+    plot_width = plot_right - plot_left
+
+    if plot_width < 2.0 * look.text_size
+        return fail(
+            code: codes.INVALID,
+            msg: f"the chart is {look.width} pixels wide, which leaves {plot_width} for its plot beside its text; make it wider or its text smaller"
+        )
+    px = Placed(scale: x.scale, low: x_span.low, high: x_span.high, from: plot_left, to: plot_right)
+    py_from @= plot_bottom
+    py_to @= plot_top
+
+    match y.scale
+        .band _ =>
+            py_from @ plot_top
+            py_to @ plot_bottom
+        .linear | .log _ | .time => _ = 0
+
+    py = Placed(scale: y.scale, low: y_span.low, high: y_span.high, from: py_from, to: py_to)
+    r = clip.Rect(left: plot_left, top: plot_top, right: plot_right, bottom: plot_bottom)
+    items: [scene.Item] @= []
+
+    x_band = match x.scale
+        .band _                  => true
+        .linear | .log _ | .time => false
+
+    y_band = match y.scale
+        .band _                  => true
+        .linear | .log _ | .time => false
+
+    if x.grid && !x_band
+        for mk in x_marks
+            if mk.label != ""
+                c = crisp(place(p: px, v: mk.value))
+                items @ items.push(line_item(x0: c, y0: plot_top, x1: c, y1: plot_bottom, color: look.grid, width: 1.0))
+
+    if y.grid && !y_band
+        for mk in y_marks
+            if mk.label != ""
+                c = crisp(place(p: py, v: mk.value))
+                items @ items.push(line_item(x0: plot_left, y0: c, x1: plot_right, y1: c, color: look.grid, width: 1.0))
+
+    for s in shapes
+        for item in shape_items(s: s, px: px, py: py, r: r)
+            items @ items.push(item)
+
+    axis_x = plot_left - 0.5
+    axis_y = plot_bottom + 0.5
+    items @ items.push(line_item(x0: axis_x, y0: plot_top, x1: axis_x, y1: axis_y, color: look.ink, width: 1.0))
+    items @ items.push(line_item(x0: axis_x, y0: axis_y, x1: plot_right, y1: axis_y, color: look.ink, width: 1.0))
+    x_centers: [f64] @= []
+    x_shown: [bool] @= []
+
+    for mk in x_marks
+        c = place(p: px, v: mk.value)
+        x_centers @ x_centers.push(c)
+        x_shown @ x_shown.push(mk.label != "")
+        items @ items.push(
+            line_item(x0: crisp(c), y0: axis_y, x1: crisp(c), y1: axis_y + m.tick, color: look.ink, width: 1.0)
+        )
+
+    x_step = thinning(centers: x_centers, sizes: x_widths, shown: x_shown, room: look.text_size * 0.5)
+    x_baseline = axis_y + m.tick + m.gap + m.ascent
+
+    for i in range(from: 0, to: x_marks.len())
+        if i % x_step == 0 && x_shown[i]
+            items @ items.push(
+                text_item(text: x_marks[i].label, x: x_centers[i], y: x_baseline, size: look.text_size, anchor: .middle, turned: false, ink: look.ink)
+            )
+
+    y_centers: [f64] @= []
+    y_shown: [bool] @= []
+    y_sizes: [f64] @= []
+
+    for mk in y_marks
+        c = place(p: py, v: mk.value)
+        y_centers @ y_centers.push(c)
+        y_shown @ y_shown.push(mk.label != "")
+        y_sizes @ y_sizes.push(m.line)
+        items @ items.push(
+            line_item(x0: axis_x - m.tick, y0: crisp(c), x1: axis_x, y1: crisp(c), color: look.ink, width: 1.0)
+        )
+
+    y_step = thinning(centers: y_centers, sizes: y_sizes, shown: y_shown, room: look.text_size * 0.2)
+
+    for i in range(from: 0, to: y_marks.len())
+        if i % y_step == 0 && y_shown[i]
+            items @ items.push(
+                text_item(text: y_marks[i].label, x: axis_x - m.tick - m.gap, y: y_centers[i] + m.cap / 2.0, size: look.text_size, anchor: .end, turned: false, ink: look.ink)
+            )
+
+    if x.label != ""
+        items @ items.push(
+            text_item(text: x.label, x: (plot_left + plot_right) / 2.0, y: x_baseline + m.descent + m.gap + m.ascent, size: look.text_size, anchor: .middle, turned: false, ink: look.ink)
+        )
+
+    if y.label != ""
+        items @ items.push(
+            text_item(text: y.label, x: m.pad + m.ascent, y: (plot_top + plot_bottom) / 2.0, size: look.text_size, anchor: .middle, turned: true, ink: look.ink)
+        )
+
+    if look.title != ""
+        items @ items.push(
+            text_item(text: look.title, x: (plot_left + plot_right) / 2.0, y: m.pad + title_m.ascent, size: title_size, anchor: .middle, turned: false, ink: look.ink)
+        )
+
+    if legend.width > 0.0
+        for item in legend_items(entries: entries, legend: legend, x: plot_right + m.pad, y: plot_top, m: m, ink: look.ink)
+            items @ items.push(item)
+
+    return ok(scene.Scene(width: look.width, height: look.height, background: look.background, items: items))
+
+## Tests
+
+test "thinning: every label where they fit, every other where they crowd"
+    assert thinning(centers: [0.0, 50.0, 100.0], sizes: [20.0, 20.0, 20.0], shown: [true, true, true], room: 6.0) == 1
+    assert thinning(centers: [0.0, 20.0, 40.0, 60.0], sizes: [20.0, 20.0, 20.0, 20.0], shown: [true, true, true, true], room: 6.0) == 2
+    assert thinning(centers: [0.0, 20.0, 40.0], sizes: [20.0, 20.0, 20.0], shown: [true, false, true], room: 6.0) == 1
+
+test "raw_range: one value widened, no value defaulted"
+    a = Axis(label: "", scale: .linear, fixed: false, low: 0.0, high: 0.0, count: 0, grid: true)
+    assert raw_range(axis: a, values: [5.0]) == ticks.Span(low: 4.5, high: 5.5)
+    assert raw_range(axis: a, values: [0.0]) == ticks.Span(low: -1.0, high: 1.0)
+    assert raw_range(axis: a, values: []) == ticks.Span(low: 0.0, high: 1.0)
+    l = Axis(label: "", scale: .log(base: 10.0), fixed: false, low: 0.0, high: 0.0, count: 0, grid: true)
+    assert raw_range(axis: l, values: [100.0]) == ticks.Span(low: 10.0, high: 1000.0)
+
+test "place: in proportion, and a base at zero at a logarithmic axis's low end"
+    p = Placed(scale: .log(base: 10.0), low: 1.0, high: 100.0, from: 200.0, to: 0.0)
+    assert place(p: p, v: 0.0) == 200.0
+    assert place(p: p, v: 10.0) == 100.0
+    q = Placed(scale: .linear, low: 0.0, high: 10.0, from: 0.0, to: 100.0)
+    assert place(p: q, v: 2.5) == 25.0
+
+test "layout: a chart too small for its text, and a zero on a logarithmic axis, are refused"
+    f = font.parse(samples.truetype(), 0).must()
+    look = Look(
+        width: 40,
+        height: 30,
+        title: "",
+        text_size: 12.0,
+        background: image.Color(r: 255, g: 255, b: 255, a: 255),
+        ink: image.Color(r: 0, g: 0, b: 0, a: 255),
+        grid: image.Color(r: 200, g: 200, b: 200, a: 255),
+        legend: false
+    )
+    a = Axis(label: "", scale: .linear, fixed: false, low: 0.0, high: 0.0, count: 0, grid: true)
+    line: [Shape] = [.path(name: "a", xs: [0.0, 1.0], ys: [0.0, 1.0], color: look.ink, width: 1.0)]
+    assert layout(look: look, x: a, y: a, shapes: line, entries: [], f: f).is_err()
+    big = Look(
+        width: 400,
+        height: 300,
+        title: "",
+        text_size: 12.0,
+        background: look.background,
+        ink: look.ink,
+        grid: look.grid,
+        legend: false
+    )
+    l = Axis(label: "", scale: .log(base: 10.0), fixed: false, low: 0.0, high: 0.0, count: 0, grid: true)
+
+    match layout(look: big, x: a, y: l, shapes: line, entries: [], f: f)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert layout(look: big, x: a, y: a, shapes: line, entries: [], f: f).must().items.len() > 0

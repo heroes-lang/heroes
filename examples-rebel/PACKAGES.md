@@ -1,6 +1,6 @@
 # Rebel 0.1.0: every package, for a program that uses it
 
-Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 181 faces in 9 layers, with every one of their 6,044 functions, 1,036 records, 392 variants and 1,528 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
+Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 182 faces in 9 layers, with every one of their 6,062 functions, 1,037 records, 394 variants and 1,539 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
 
 ## How to take Rebel
 
@@ -183,6 +183,7 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/): Mail sent by SMTP (RFC 5321): a client that connects in plain text, by STARTTLS (RFC 3207) or by TLS from the first byte (RFC 8314, port 465), reads the extensions EHLO names, logs in by AUTH PLAIN, LOGIN, CRAM-MD5 or XOAUTH2, and sends a message to its recipients with SIZE, 8BITMIME, SMTPUTF8 and PIPELINING where the server offers them; each step bounded by a deadline, every reply a value with its code.
 - [`x509`](https://heroes-lang.org/rebel/x509/): Certificates of X.509 read as RFC 5280 writes them: the subject and the issuer with their attributes, the validity, the serial, the public key, the signature's algorithm and bytes, and every common extension decoded, an unknown one kept with its criticality; certificate requests (PKCS #10, RFC 2986) and revocation lists (RFC 5280 § 5) read; a signature checked by the system's own cryptography through `crypto/keypairs`; a chain put in order from a leaf and a pool, and checked; a host name and an address matched against a certificate as RFC 6125 says; and certificates, requests and revocation lists made and signed through `crypto/keypairs`.
 - [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/): A folder, a folder's whole tree or one file watched, and every change the system tells of it handed to the program as an `Event`, in order: an entry created, removed, written, its facts changed, or renamed with both its names; events lost told as one `overflow`; the watched folder itself gone.
+- [`fs/xattr`](https://heroes-lang.org/rebel/fs/xattr/): The extended attributes of a file or a folder: named values it carries beside its bytes, listed, read, written, removed and copied to another path, so a backup keeps a macOS file's tags (`com.apple.metadata:_kMDItemUserTags`) and quarantine (`com.apple.quarantine`), a Linux file's SELinux label (`security.selinux`), and what a program stored beside a file of its own.
 - [`service`](https://heroes-lang.org/rebel/service/): The program as a service of the system that starts it.
 - [`sql/odbc`](https://heroes-lang.org/rebel/sql/odbc/): Any database the system's ODBC driver manager reaches, through the API every driver of Rebel keeps over `sql`'s types, name for name, as `sql`'s opening comment writes it: `open`, `close`, `is_closed`, `ping`, `exec`, `query`, `query_one`, `exec_script`, `prepare`, `exec_prepared`, `query_prepared`, `close_statement`, `begin`, `commit`, `rollback` and `in_transaction`.
 - [`ldap`](https://heroes-lang.org/rebel/ldap/): An LDAP client written in Heroes: it speaks LDAPv3 (RFC 4511) to a directory server over a TCP connection of `net` or a TLS connection of `tls`, every message BER of `asn1`, and links no library.
@@ -3339,6 +3340,10 @@ WebP read and written: still pictures and animations, lossless and lossy, with t
 - `function composite(w: Webp, limits: image.Limits) -> [image.Image]?`, called `webp.composite(w, limits)`: The canvas after each frame of `w` is drawn, as an animation shows them: the canvas starts transparent, each frame is laid over what is under it by its alpha or replaces it, and a frame marked to be cleared leaves its rectangle transparent before the next is drawn. Fails `limit`.
 - `function encode(w: Webp) -> [u8]?`, called `webp.encode(w)`: The file holding `w`: a single lossless frame as a plain `VP8L` file, anything else (an animation, an ICC profile, EXIF or XMP) in the extended format. Fails `invalid`.
 - `function encode_image(img: image.Image) -> [u8]?`, called `webp.encode_image(img)`: `img` as a still lossless WebP file. Fails as `encode` fails.
+- `constant MAX_LOSSY_SIDE: i64`, value `16383`: The most columns or rows a lossy frame holds: its header's 14 bits.
+- `record Lossy(quality: i64, filter: i64, sharpness: i64, segments: i64, partitions: i64)`: How `encode_lossy` writes a picture.
+- `function lossy(quality: i64) -> Lossy`, called `webp.lossy(quality)`: The usual way to write a picture at `quality`: the normal filter at sharpness 0, four segments, one token partition.
+- `function encode_lossy(img: image.Image, how: Lossy) -> [u8]?`, called `webp.encode_lossy(img, how)`: `img` as a still lossy WebP file: a VP8 key frame, each macroblock predicted as a whole or by 4x4 blocks, whichever costs less for the error it leaves, its residue quantized at the step the quality names; and where any alpha is below 255, the extended format with the alpha in an ALPH chunk, kept exactly. Fails `invalid`, `limit`.
 
 
 ### url/idna
@@ -7082,6 +7087,34 @@ A folder, a folder's whole tree or one file watched, and every change the system
 - `function format_event(e: Event) -> str`, called `watch.format_event(e)`: An event as one line a person reads: what happened, whether to a folder, and its path in double quotes as it stands; a rename names both paths.
 
 
+### fs/xattr
+
+Layer 5, named `use <rebel>/fs/xattr`, [its reference](https://heroes-lang.org/rebel/fs/xattr/).
+
+The extended attributes of a file or a folder: named values it carries beside its bytes, listed, read, written, removed and copied to another path, so a backup keeps a macOS file's tags (`com.apple.metadata:_kMDItemUserTags`) and quarantine (`com.apple.quarantine`), a Linux file's SELinux label (`security.selinux`), and what a program stored beside a file of its own.
+
+- `constant INVALID: str`, value `calls.INVALID`: A name that is empty, holds a zero byte, is longer than the system takes, or on Windows holds `:`, `\` or `/`; a path that holds a zero byte; a value of a form the name keeps for itself (Darwin's `com.apple.FinderInfo` is 32 bytes).
+- `constant FILE_NOT_FOUND: str`, value `calls.FILE_NOT_FOUND`: The path names nothing.
+- `constant NOT_FOUND: str`, value `calls.NOT_FOUND`: The path has no attribute of that name.
+- `constant EXISTS: str`, value `calls.EXISTS`: The path has an attribute of that name, and `write_with` was told `.only_new`.
+- `constant PERMISSION: str`, value `calls.PERMISSION`: The system refuses the call to this program: the file's permission, a namespace this user may not write, a name the system keeps for itself, a `user.` attribute on a Linux link.
+- `constant NOT_A_DIRECTORY: str`, value `calls.NOT_A_DIRECTORY`: A part of the path on its way is not a folder.
+- `constant NOT_TEXT: str`, value `calls.NOT_TEXT`: A name the system lists is not UTF-8, or on Windows the path or the name handed is not.
+- `constant LIMIT: str`, value `calls.LIMIT`: The system has no room for the attribute, the value is larger than the volume keeps for one, or one read is past a GiB.
+- `constant UNSUPPORTED: str`, value `calls.UNSUPPORTED`: The volume keeps no extended attribute of that kind, or the system keeps none that is read here.
+- `constant FAILED: str`, value `calls.FAILED`: The system refused for a reason none of the codes above names; the message carries its number.
+- `variant When = .always | .only_new | .only_existing`: What `write_with` does where the attribute is there, or is not.
+- `function names(path: str) -> [str]?`, called `xattr.names(path)`: The names of `path`'s extended attributes, in the order the system lists them. Fails `file_not_found`, `not_text`.
+- `function link_names(path: str) -> [str]?`, called `xattr.link_names(path)`: The names of the extended attributes of the link at `path` itself, as `names` lists them. Fails as `names` does.
+- `function read(path: str, name: str) -> [u8]?`, called `xattr.read(path: path, name: name)`: The value of `path`'s extended attribute `name`, its bytes, which may be none. Fails `not_found`, `file_not_found`, `invalid`, `limit`.
+- `function link_read(path: str, name: str) -> [u8]?`, called `xattr.link_read(path: path, name: name)`: The value of the extended attribute `name` of the link at `path` itself. Fails as `read` does.
+- `function write(path: str, name: str, value: [u8]) -> ()?`, called `xattr.write(path: path, name: name, value)`: Writes `value` as `path`'s extended attribute `name`, made where it is not there and replaced where it is. Fails `limit`, `permission`.
+- `function write_with(path: str, name: str, value: [u8], when: When, follow: bool) -> ()?`, called `xattr.write_with(path: path, name: name, value, when, follow)`: Writes `value` as `path`'s extended attribute `name` where `when` says, on the link itself where `follow` is false. Fails `exists`, `not_found`, `permission`.
+- `function remove(path: str, name: str) -> ()?`, called `xattr.remove(path: path, name: name)`: Removes `path`'s extended attribute `name`. Fails `not_found`.
+- `function link_remove(path: str, name: str) -> ()?`, called `xattr.link_remove(path: path, name: name)`: Removes the extended attribute `name` of the link at `path` itself. Fails as `remove` does.
+- `function copy(from: str, to: str) -> ()?`, called `xattr.copy(from: from, to: to)`: Writes every extended attribute of `from` on `to`, each made or replaced; an attribute `to` has and `from` has not stays. Fails `permission`.
+
+
 ### service
 
 Layer 5, named `use <rebel>/service`, [its reference](https://heroes-lang.org/rebel/service/).
@@ -7118,18 +7151,19 @@ The program as a service of the system that starts it.
 - `function add_to(set: poll.Set, s: Service) -> i64?`, called `service.add_to(set, s)`: Adds the service to the set `set` and answers the entry's key: a wait on the set tells the key readable while a control waits, and the program then takes the controls with `wait` and a limit of zero. Fails `closed`, `limit`.
 - `function state_name(state: State) -> str`, called `service.state_name(state)`: The state as a word the system's own tools use: `sc query` prints `STOP_PENDING` for `stop_pending`, and this prints `stop_pending`.
 - `function format_control(c: Control) -> str`, called `service.format_control(c)`: The control as one line a person reads: its kind, and the event and session where the kind has them.
-- `variant Notice = .ready | .reloading | .stopping | .status(text: str) | .errno(number: i64) | .main_pid(pid: i64) | .watchdog | .watchdog_trigger | .watchdog_timeout(span: time.Duration) | .extend_timeout(span: time.Duration)`: What a program tells the manager that supervises it, one case for each of systemd's assignments (`sd_notify(3)`).
+- `variant Notice = .ready | .reloading | .stopping | .status(text: str) | .errno(number: i64) | .main_pid(pid: i64) | .watchdog | .watchdog_trigger | .watchdog_timeout(span: time.Duration) | .extend_timeout(span: time.Duration) | .bus_error(name: str) | .varlink_error(name: str) | .exit_status(code: i64) | .notify_access(who: NotifyAccess) | .restart_reset`: What a program tells the manager that supervises it, one case for each of systemd's assignments (`sd_notify(3)`).
+- `variant NotifyAccess = .none | .main | .exec | .all`: Which processes of a service the manager takes notices from: the values of `NotifyAccess=` in `systemd.service(5)`.
 - `function can_notify() -> bool`, called `service.can_notify()`: Whether this system has systemd's notice socket: POSIX does, and Windows does not.
 - `function format_notices(notices: [Notice], monotonic: time.Duration) -> str?`, called `service.format_notices(notices, monotonic)`: The notices as the datagram one `notify` sends: their assignments, a line for each, with no newline at the end. Fails `invalid`.
 - `function parse_notices(text: str) -> [Notice]?`, called `service.parse_notices(text)`: The notices a datagram holds, in order: what a supervisor reads of `format_notices`. Fails `invalid`.
 - `function notify(notices: [Notice]) -> bool?`, called `service.notify(notices)`: Tells the manager the notices, as one datagram to the socket `$NOTIFY_SOCKET` names: true where it went, false where no manager named a socket, as when the program is started by hand. Fails `invalid`, `unsupported`, `not_found`, `permission`, `limit`.
 - `function watchdog_timeout() -> time.Duration?`, called `service.watchdog_timeout()`: The time the manager's watchdog allows between two `watchdog` notices, from `$WATCHDOG_USEC`: the program sends one about every half of it. Fails `not_found`, `invalid`.
-- `variant Handed = .listener(socket: net.Listener) | .connection(conn: net.Conn) | .datagram(socket: net.UdpSocket) | .other(words: str)`: What a manager handed the program: a socket of `net` where it is one, the words for what it is where it is not.
+- `variant Handed = .listener(socket: net.Listener) | .connection(conn: net.Conn) | .datagram(socket: net.UdpSocket) | .local_listener(socket: ipc.Listener) | .local_connection(stream: io.Stream) | .fifo(stream: io.Stream) | .special(stream: io.Stream) | .other(words: str)`: What a manager handed the program: a socket of `net` where it is one, the words for what it is where it is not.
 - `record Inherited(name: str, handed: Handed)`: One descriptor handed over, with the name its unit gave it.
 - `function is_booted_by_systemd() -> bool`, called `service.is_booted_by_systemd()`: Whether the system was booted with systemd as its init, which is what `sd_booted(3)` asks: the directory `/run/systemd/system/` exists.
 - `function can_inherit() -> bool`, called `service.can_inherit()`: Whether this system has systemd's socket activation: POSIX does.
 - `function can_inherit_launchd() -> bool`, called `service.can_inherit_launchd()`: Whether this system has launchd's socket activation: macOS does.
-- `function inherit() -> [Inherited]?`, called `service.inherit()`: The sockets systemd handed this program, from descriptor 3 on (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set close-on-exec and non-blocking and made a value of `net`. Fails `exists`, `invalid`, `limit`, `unsupported`.
+- `function inherit() -> [Inherited]?`, called `service.inherit()`: The sockets and files systemd handed this program, from descriptor 3 on (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set close-on-exec and made a value of `net`, of `ipc` or of `io`. Fails `exists`, `invalid`, `limit`, `unsupported`.
 - `function inherit_launchd(name: str) -> [Inherited]?`, called `service.inherit_launchd(name)`: The sockets launchd hands the job under `name` (`launch_activate_socket`), as `inherit` makes them, each named `name`. launchd hands a name's sockets over once. Fails `not_found`, `exists`, `limit`, `invalid`, `unsupported`.
 
 
@@ -8892,6 +8926,13 @@ Jobs kept in PostgreSQL, in a table of the program's own database, as river keep
 - `function retry(@db: postgres.Db, id: i64) -> jobs.Info?`, called `postgres_store.retry(@db, id)`: Makes job `id` ready to run now, and answers it: a job failed, cancelled or completed runs again, with one attempt more where it had none left; a job waiting is made ready at once. Fails `not_found`, `invalid`, `exists`.
 - `function delete(@db: postgres.Db, id: i64) -> ()?`, called `postgres_store.delete(@db, id)`: Removes job `id`, whatever it stands in but `running`. Fails `not_found`, `invalid`.
 - `function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?`, called `postgres_store.enqueue_due(@db, schedules)`: Enqueues the job of each schedule of `schedules` whose run is due, and answers the ids enqueued: any number of programs may call it, as often as they like, and each due run is enqueued once. Fails `not_found`.
+- `function set_limit(@db: postgres.Db, name: str, every: time.Duration, burst: i64) -> jobs.Bucket?`, called `postgres_store.set_limit(@db, name, every, burst)`: Makes the limit `name` full, a token every `every` and a burst of `burst`, or gives the limit of that name this rate and burst, holding the tokens it held, as many as the new burst allows, a debt kept: `jobs.bucket` and `jobs.with_rate` kept in the store, where every worker of the database takes from the one limit. Fails `invalid`, `does_not_fit`.
+- `function remove_limit(@db: postgres.Db, name: str) -> ()?`, called `postgres_store.remove_limit(@db, name)`: Removes the limit `name`; a worker that asks it next fails `not_found`. Fails `not_found`, `invalid`.
+- `function limit_named(@db: postgres.Db, name: str) -> jobs.Bucket?`, called `postgres_store.limit_named(@db, name)`: The limit `name` as it stands now, its `seen` the server's time of the reading: `jobs.tokens(limit, at: limit.seen)` is what it holds then. Fails `not_found`, `invalid`.
+- `function allow(@db: postgres.Db, name: str, n: i64) -> jobs.Allowed?`, called `postgres_store.allow(@db, name, n)`: Whether `n` tokens of the limit `name` are there now, taking them where they are, as `jobs.allow` does of a bucket the program holds; any number of workers on any number of connections take from it, and none more than it holds. Fails `invalid`, `not_found`, `does_not_fit`.
+- `function reserve(@db: postgres.Db, name: str, n: i64) -> jobs.Reservation?`, called `postgres_store.reserve(@db, name, n)`: Takes `n` tokens of the limit `name` now even if they are not there, and tells how long to wait for them: reservations of every worker queue, each behind the ones before, as `jobs.reserve` does. Fails `invalid`, `not_found`, `does_not_fit`.
+- `function reserve_within(@db: postgres.Db, name: str, n: i64, within: time.Duration) -> jobs.Reservation?`, called `postgres_store.reserve_within(@db, name, n, within)`: `reserve`, the tokens taken only where the wait for them is no longer than `within`, as `jobs.reserve_within` does. Fails `timeout`.
+- `function cancel_reservation(@db: postgres.Db, name: str, taken: jobs.Reservation) -> jobs.Bucket?`, called `postgres_store.cancel_reservation(@db, name, taken)`: Gives the reservation `taken` of the limit `name` back, as far as no later taking of any worker has used what it took, as `jobs.cancel` does, and answers the limit after. Fails `invalid`, `not_found`.
 
 
 ### jobs/redis_store

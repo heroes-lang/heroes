@@ -1,0 +1,428 @@
+# The ticks of a numeric axis: where they stand on a linear axis as
+# d3-array's `ticks` places them (steps of 1, 2 or 5 times a power of ten),
+# the ends moved out to such a step as d3-scale's linear `nice` moves them,
+# and the labels written as d3-format's `,f` writes them at the precision the
+# step needs; on a logarithmic axis the powers of the base and their
+# multiples as d3-scale's `log.ticks` places them, and the ticks it labels.
+#
+# Every number here is finite and every range runs upward: the face refuses
+# the rest before it calls.
+
+use math
+use numbers
+
+# The square roots of 50, 10 and 2, the bounds of a step's leading figure
+# above which d3 rounds it to 10, 5 and 2.
+constant E10: f64
+    7.0710678118654755
+
+# The square root of 10.
+constant E5: f64
+    3.1622776601683795
+
+# The square root of 2.
+constant E2: f64
+    1.4142135623730951
+
+# The most ticks the subdivisions of a logarithmic axis may make, as a
+# multiple of the count asked, before the powers alone are ticked instead.
+constant MOST_PER_COUNT: f64
+    10.0
+
+# A run of ticks: the multiples `first` to `last` of a step that is `inc`
+# where `inc` is positive, and `1 / -inc` where it is negative, so that a step
+# below 1 is a division by a whole number and its multiples are exact.
+record Spec
+    first: f64
+    last: f64
+    inc: f64
+
+# Two ends of a range, `low` below `high`.
+record Span
+    low: f64
+    high: f64
+
+# `x` rounded to the nearest whole number, a half rounding up, as
+# JavaScript's `Math.round` rounds.
+function js_round(x: f64) -> f64
+    r = math.floor(x)
+
+    if x - r >= 0.5
+        return r + 1.0
+    return r
+
+# The run of ticks from `start` to `stop` for about `count` of them.
+function spec(start: f64, stop: f64, count: f64) -> Spec
+    step = (stop - start) / math.max(a: 0.0, b: count)
+    power = math.floor(math.log10(step))
+    error = step / math.pow(base: 10.0, exponent: power)
+    factor @= 1.0
+
+    if error >= E10
+        factor @ 10.0
+    else if error >= E5
+        factor @ 5.0
+    else if error >= E2
+        factor @ 2.0
+    i1 @= 0.0
+    i2 @= 0.0
+    inc @= 0.0
+
+    if power < 0.0
+        inc @ math.pow(base: 10.0, exponent: -power) / factor
+        i1 @ js_round(start * inc)
+        i2 @ js_round(stop * inc)
+
+        if i1 / inc < start
+            i1 @ i1 + 1.0
+
+        if i2 / inc > stop
+            i2 @ i2 - 1.0
+        inc @ -inc
+    else
+        inc @ math.pow(base: 10.0, exponent: power) * factor
+        i1 @ js_round(start / inc)
+        i2 @ js_round(stop / inc)
+
+        if i1 * inc < start
+            i1 @ i1 + 1.0
+
+        if i2 * inc > stop
+            i2 @ i2 - 1.0
+
+    if i2 < i1 && 0.5 <= count && count < 2.0
+        return spec(start: start, stop: stop, count: count * 2.0)
+    return Spec(first: i1, last: i2, inc: inc)
+
+# About `count` ticks from `start` to `stop`, both included where they fall
+# on a step.
+function ticks(start: f64, stop: f64, count: f64) -> [f64]
+    out: [f64] @= []
+
+    if !(count > 0.0)
+        return out
+
+    if start == stop
+        out @ out.push(start)
+        return out
+    s = spec(start: start, stop: stop, count: count)
+
+    if !(s.last >= s.first)
+        return out
+    n = s.last - s.first + 1.0
+    i @= 0.0
+
+    while i < n
+        if s.inc < 0.0
+            out @ out.push((s.first + i) / -s.inc)
+        else
+            out @ out.push((s.first + i) * s.inc)
+        i @ i + 1.0
+
+    return out
+
+# The step between ticks as `spec` gives it: positive, or negative for the
+# inverse of a step below 1.
+function increment(start: f64, stop: f64, count: f64) -> f64
+    return spec(start: start, stop: stop, count: count).inc
+
+# The step between ticks.
+function step_of(start: f64, stop: f64, count: f64) -> f64
+    inc = increment(start: start, stop: stop, count: count)
+
+    if inc < 0.0
+        return 1.0 / -inc
+    return inc
+
+# The range moved out to the steps of about `count` ticks, as d3-scale's
+# linear `nice` moves it: at most ten rounds, each with the step of the range
+# the round before made, ending once the step stays the same; a range no
+# round settles is given back as it was.
+function nice(low: f64, high: f64, count: f64) -> Span
+    start @= low
+    stop @= high
+    prestep @= 0.0
+    rounds @= 0
+
+    while rounds < 10
+        step = increment(start: start, stop: stop, count: count)
+
+        if rounds > 0 && step == prestep
+            return Span(low: start, high: stop)
+
+        if step > 0.0
+            start @ math.floor(start / step) * step
+            stop @ math.ceil(stop / step) * step
+        else if step < 0.0
+            start @ math.ceil(start * step) / step
+            stop @ math.floor(stop * step) / step
+        else
+            break
+        prestep @ step
+        rounds @ rounds + 1
+
+    return Span(low: low, high: high)
+
+# The range moved out as d3-array's `nice` moves it, which `bin` uses: until
+# the step stays the same, is 0 or is not finite.
+function nice_unbounded(low: f64, high: f64, count: f64) -> Span
+    start @= low
+    stop @= high
+    prestep @= 0.0
+    rounds @= 0
+
+    while true
+        step = increment(start: start, stop: stop, count: count)
+
+        if rounds > 0 && step == prestep || step == 0.0 || !math.is_finite(step)
+            return Span(low: start, high: stop)
+
+        if step > 0.0
+            start @ math.floor(start / step) * step
+            stop @ math.ceil(stop / step) * step
+        else
+            start @ math.ceil(start * step) / step
+            stop @ math.floor(stop * step) / step
+        prestep @ step
+        rounds @ rounds + 1
+
+# The decimal exponent of `x`, as its exponent form writes it: -1 for 0.2.
+function exponent_of(x: f64) -> i64
+    text = numbers.format_float_exp_shortest(math.abs(x))
+    e @= 0
+    negative @= false
+    seen @= false
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if seen
+            if b == '-'
+                negative @ true
+            else if b >= '0' && b <= '9'
+                e @ e * 10 + to_i64(b - '0').must()
+        else if b == 'e'
+            seen @ true
+
+    if negative
+        return -e
+    return e
+
+# The digits after the point a label needs for ticks `step` apart, as
+# d3-format's `precisionFixed` counts them.
+function decimals(step: f64) -> i64
+    return math.max_i64(a: 0, b: -exponent_of(step))
+
+# `x` written with `places` digits after the point and its whole part grouped
+# by threes with commas, as d3-format's `,f` writes it, a minus sign the
+# ASCII hyphen and a value rounded to zero unsigned.
+function label(x: f64, places: i64) -> str
+    text = numbers.trim_negative_zero(numbers.format_float(x: x, precision: places))
+    return numbers.group_digits(s: text, sep: ",", size: 3)
+
+## Logarithmic axes
+
+# The logarithm of `x` in `base`, as d3-scale takes it: `log10`, `log2` and
+# the natural logarithm exactly where the base is theirs.
+function log_of(x: f64, base: f64) -> f64
+    if base == 10.0
+        return math.log10(x)
+
+    if base == 2.0
+        return math.log2(x)
+
+    if base == math.E
+        return math.ln(x)
+    return math.ln(x) / math.ln(base)
+
+# `base` to the power `e`: for base 10 and a whole `e` the double nearest
+# that power, as d3-scale reads `1e` and the exponent.
+function power_of(e: f64, base: f64) -> f64
+    if base == 10.0 && math.fraction(e) == 0.0 && math.abs(e) <= 400.0
+        whole = to_i64(e).must()
+        return numbers.parse_float(f"1e{whole}").default(math.pow(base: 10.0, exponent: e))
+
+    if base == math.E
+        return math.exp(e)
+    return math.pow(base: base, exponent: e)
+
+# The ticks of a logarithmic axis from `low` to `high`, both above zero, for
+# about `count` of them, as d3-scale's `log.ticks` places them: for a whole
+# base and fewer decades than `count`, every power and its whole multiples
+# below the next power, falling back to linear ticks where those are fewer
+# than half the count; else the powers alone at a step of whole exponents.
+# Where the multiples would pass ten times the count, as a base past a
+# thousand makes them, the linear ticks stand instead.
+function log_ticks(low: f64, high: f64, base: f64, count: f64) -> [f64]
+    i = log_of(x: low, base: base)
+    j = log_of(x: high, base: base)
+
+    if math.fraction(base) == 0.0 && j - i < count
+        z: [f64] @= []
+        e @= math.floor(i)
+        last = math.ceil(j)
+        crowded @= false
+
+        while e <= last && !crowded
+            k @= 1.0
+
+            while k < base && !crowded
+                t @= 0.0
+
+                if e < 0.0
+                    t @ k / power_of(e: -e, base: base)
+                else
+                    t @ k * power_of(e: e, base: base)
+
+                if t > high
+                    break
+
+                if t >= low
+                    z @ z.push(t)
+
+                    if to_f64(z.len()) > MOST_PER_COUNT * count
+                        crowded @ true
+                k @ k + 1.0
+
+            e @ e + 1.0
+
+        if crowded || to_f64(z.len()) * 2.0 < count
+            return ticks(start: low, stop: high, count: count)
+        return z
+    exponents = ticks(start: i, stop: j, count: math.min(a: j - i, b: count))
+    out: [f64] @= []
+
+    for x in exponents
+        out @ out.push(power_of(e: x, base: base))
+
+    return out
+
+# Which of `values`, the ticks, carry a label, as d3-scale's `log.tickFormat` chooses:
+# each tick's leading multiple of its nearest power, read in a base's step,
+# at most the base times `count` over the ticks' number.
+function log_labelled(values: [f64], base: f64, count: f64) -> [bool]
+    out: [bool] @= []
+
+    if values.len() == 0
+        return out
+    k = math.max(a: 1.0, b: base * count / to_f64(values.len()))
+
+    for d in values
+        i @= d / power_of(e: js_round(log_of(x: d, base: base)), base: base)
+
+        if i * base < base - 0.5
+            i @ i * base
+        out @ out.push(i <= k)
+
+    return out
+
+# The range moved out to whole powers of `base`, as d3-scale's `log.nice`.
+function log_nice(low: f64, high: f64, base: f64) -> Span
+    return Span(
+        low: power_of(e: math.floor(log_of(x: low, base: base)), base: base),
+        high: power_of(e: math.ceil(log_of(x: high, base: base)), base: base)
+    )
+
+# The label of a tick of a logarithmic axis: from 0.0001 to below a million
+# its shortest decimal, whole part grouped by threes with commas; past either
+# end its shortest exponent form, `1e6` and `2.5e-7`.
+function short_label(x: f64) -> str
+    if x >= 0.0001 && x < 1000000.0
+        text = numbers.format_float_shortest(x)
+
+        if text.len() > 2 && text.slice(from: text.len() - 2, to: text.len()) == ".0"
+            return numbers.group_digits(s: text.slice(from: 0, to: text.len() - 2), sep: ",", size: 3)
+        return numbers.group_digits(s: text, sep: ",", size: 3)
+    text = numbers.format_float_exp_shortest(x)
+    out: [str] @= []
+    in_exponent @= false
+    leading @= true
+
+    for c in text.chars()
+        if in_exponent
+            if c == "-"
+                out @ out.push(c)
+            else if c == "+"
+                _ = 0
+            else if c == "0" && leading
+                _ = 0
+            else
+                leading @ false
+                out @ out.push(c)
+        else
+            out @ out.push(c)
+
+            if c == "e"
+                in_exponent @ true
+
+    return out.join("")
+
+## Tests
+
+# The expected values are d3-array 3.2.4's and d3-scale 4.0.2's answers to
+# the same calls, run under Node 26 on 2026-11-24.
+
+test "ticks: no tick for a count of 0, one for a range of one value"
+    assert ticks(start: 0.0, stop: 1.0, count: 0.0).len() == 0
+    assert ticks(start: 2.5, stop: 2.5, count: 5.0) == [2.5]
+
+test "js_round: a half rounds up, as JavaScript rounds it"
+    assert js_round(-2.5) == -2.0
+    assert js_round(2.5) == 3.0
+    assert js_round(-2.6) == -3.0
+
+test "ticks: d3's tens from 3 to 97"
+    assert ticks(start: 3.0, stop: 97.0, count: 10.0) == [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0]
+
+test "ticks: a step below 1 is a division, as d3 makes 0.002 to 0.012"
+    assert ticks(start: 0.001, stop: 0.0123, count: 5.0) == [0.002, 0.004, 0.006, 0.008, 0.01, 0.012]
+    assert label(x: 0.01, places: decimals(step_of(start: 0.001, stop: 0.0123, count: 5.0))) == "0.010"
+
+test "ticks: a count of 1 over one unit, as d3's 17 and 18"
+    assert ticks(start: 17.0, stop: 18.0, count: 1.0) == [17.0, 18.0]
+
+test "nice: d3-scale's ranges moved out"
+    assert nice(low: 3.0, high: 97.0, count: 10.0) == Span(low: 0.0, high: 100.0)
+    assert nice(low: 0.001, high: 0.0123, count: 5.0) == Span(low: 0.0, high: 0.014)
+    assert nice(low: -1234.0, high: 56789.0, count: 8.0) == Span(low: -10000.0, high: 60000.0)
+
+test "label: the whole part grouped by threes, no sign on a zero"
+    assert label(x: 50000.0, places: 0) == "50,000"
+    assert label(x: -0.0001, places: 2) == "0.00"
+    assert label(x: -1234.5, places: 1) == "-1,234.5"
+
+test "decimals: the digits a step needs"
+    assert decimals(0.2) == 1
+    assert decimals(5.0) == 0
+    assert decimals(0.0005) == 4
+
+test "log_ticks: d3's ticks of 1 to 1000 and the ones it labels"
+    ts = log_ticks(low: 1.0, high: 1000.0, base: 10.0, count: 10.0)
+    assert ts.len() == 28
+    assert ts[9] == 10.0
+    assert ts[27] == 1000.0
+    shown = log_labelled(values: ts, base: 10.0, count: 10.0)
+    assert shown[0] && shown[1] && shown[2]
+    assert !shown[3]
+    assert shown[9]
+
+test "log_ticks: past the count of decades, the powers alone, as d3's 1 to 1e12"
+    ts = log_ticks(low: 1.0, high: 1000000000000.0, base: 10.0, count: 10.0)
+    assert ts.len() == 13
+    assert ts[12] == 1000000000000.0
+
+test "log_ticks: base 2, as d3's 1 to 1024"
+    assert log_ticks(low: 1.0, high: 1024.0, base: 2.0, count: 10.0) == [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0, 512.0, 1024.0]
+
+test "log_ticks: a base whose multiples would crowd the axis takes linear ticks"
+    ts = log_ticks(low: 1.0, high: 100000.0, base: 100000.0, count: 5.0)
+    assert ts == ticks(start: 1.0, stop: 100000.0, count: 5.0)
+
+test "log_nice: to whole powers, as d3 moves 0.5 to 5000"
+    assert log_nice(low: 0.5, high: 5000.0, base: 10.0) == Span(low: 0.1, high: 10000.0)
+
+test "short_label: a decimal inside its range, an exponent past it"
+    assert short_label(1000.0) == "1,000"
+    assert short_label(0.5) == "0.5"
+    assert short_label(1000000.0) == "1e6"
+    assert short_label(0.000025) == "2.5e-5"

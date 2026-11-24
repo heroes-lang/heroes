@@ -1,0 +1,119 @@
+# How `syslog` fails: the codes of README § A4 it answers, and the floor's last
+# failure turned into one, with what was asked and why. Private to the package
+# (README § A2).
+
+use syslog/hero_syslog
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant LIMIT: str
+    "limit"
+
+constant EXISTS: str
+    "exists"
+
+constant FAILED: str
+    "failed"
+
+# The layer's own words for its last failure, "" for none.
+function layer_words() -> str
+    room: [u8] @= []
+
+    for _ in range(from: 0, to: 192)
+        room @ room.push(0)
+
+    length = hero_syslog.last_message(@room)
+
+    if length <= 0 || length > 192
+        return ""
+
+    match room.slice(from: 0, to: length).validated_bytes()
+        .ok text => return text
+        .err _   => return ""
+
+# The code a kind of the floor is.
+function code_of(kind: i64) -> str
+    if kind == hero_syslog.HERO_SYSLOG_INVALID
+        return INVALID
+
+    if kind == hero_syslog.HERO_SYSLOG_UNSUPPORTED
+        return UNSUPPORTED
+
+    if kind == hero_syslog.HERO_SYSLOG_NOT_FOUND
+        return NOT_FOUND
+
+    if kind == hero_syslog.HERO_SYSLOG_DENIED
+        return PERMISSION
+
+    if kind == hero_syslog.HERO_SYSLOG_LIMIT
+        return LIMIT
+
+    if kind == hero_syslog.HERO_SYSLOG_EXISTS
+        return EXISTS
+    return FAILED
+
+# Why a kind failed, in words: the layer's where it had some, the system's
+# number where it gave one.
+#
+# - `words`: the layer's own words, "" for none.
+# - `os_error`: the system's number, 0 for none.
+function why_of(words: str, os_error: i64) -> str
+    if words != "" && os_error != 0
+        return f"{words} (error {os_error})"
+
+    if words != ""
+        return words
+
+    if os_error != 0
+        return f"the system refused: error number {os_error}"
+    return "the system refused"
+
+# The floor's last failure as a `T?`, its message beginning with `asked`.
+#
+# - `asked`: what was being done, in words that begin the message.
+function last<T>(asked: str) -> T?
+    code = code_of(hero_syslog.last_error())
+    return fail(code: code, msg: f"{asked}: {why_of(words: layer_words(), os_error: hero_syslog.last_os_error())}")
+
+# A failure the package finds itself, with its words.
+#
+# - `code`: the code of README § A4.
+# - `asked`: what was being done.
+# - `why`: why it cannot be.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+test "code_of: every kind of the floor is a code of README § A4, an unknown one failed"
+    assert code_of(hero_syslog.HERO_SYSLOG_INVALID) == INVALID
+    assert code_of(hero_syslog.HERO_SYSLOG_UNSUPPORTED) == UNSUPPORTED
+    assert code_of(hero_syslog.HERO_SYSLOG_NOT_FOUND) == NOT_FOUND
+    assert code_of(hero_syslog.HERO_SYSLOG_DENIED) == PERMISSION
+    assert code_of(hero_syslog.HERO_SYSLOG_LIMIT) == LIMIT
+    assert code_of(hero_syslog.HERO_SYSLOG_EXISTS) == EXISTS
+    assert code_of(hero_syslog.HERO_SYSLOG_TIMEOUT) == FAILED
+    assert code_of(hero_syslog.HERO_SYSLOG_OTHER) == FAILED
+    assert code_of(99) == FAILED
+
+test "why_of: the layer's words, the system's number, both, or neither"
+    assert why_of(words: "", os_error: 0) == "the system refused"
+    assert why_of(words: "", os_error: 13) == "the system refused: error number 13"
+    assert why_of(words: "no source", os_error: 0) == "no source"
+    assert why_of(words: "no source", os_error: 2) == "no source (error 2)"
+
+test "last: the floor's own failure, read right after its call, with what was asked first"
+    assert hero_syslog.unified(subsystem: "", category: "", level: 0, line: "") == -1
+    r: ()? = last(asked: "writing")
+
+    match r
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg.len() > 9

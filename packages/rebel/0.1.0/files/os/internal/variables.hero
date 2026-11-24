@@ -7,6 +7,7 @@
 # layer, each entry `name=value` and a zero byte.
 
 use os/hero_os
+use os/hero_sys
 use os/internal/codes
 use os/internal/filled
 
@@ -221,9 +222,56 @@ test "entries and as_map: PATH among them, every name not empty and with no =, a
         assert !name.any(is_equals)
 
     read_all = as_map().must()
-    assert read_all["PATH"].must() == value_of("PATH").must()
+    told: [str] @= []
+
+    for name in keys(read_all)
+        if reads_as(name: name, wanted: "PATH")
+            told @ told.push(name)
+
+    assert told.len() == 1
+    assert read_all[told[0]].must() == value_of("PATH").must()
     assert keys(read_all).len() == every.names.len()
+
+test "reads_as: byte for byte on every system, and on Windows also without ASCII case"
+    windows = hero_sys.system() == hero_sys.HERO_SYS_SYSTEM_WINDOWS
+    assert reads_as(name: "PATH", wanted: "PATH")
+    assert reads_as(name: "Path", wanted: "PATH") == windows
+    assert reads_as(name: "path", wanted: "PATH") == windows
+    assert !reads_as(name: "", wanted: "PATH")
+    assert !reads_as(name: "PATHS", wanted: "PATH")
+    assert !reads_as(name: "PAT", wanted: "PATH")
+    assert !reads_as(name: "@", wanted: "`")
+    assert !reads_as(name: "[", wanted: "{")
+    assert !reads_as(name: "PATH", wanted: "PATI")
 
 # Whether `b` is the byte of `=`.
 function is_equals(b: u8) -> bool
     return b == '='
+
+# Whether the system reads the variable named `name` when asked for `wanted`,
+# an ASCII name: byte for byte, and on Windows also without ASCII case, since
+# Windows compares names without case and keeps each in the spelling it was
+# set with (a process started from Explorer holds `Path`, one started by Git's
+# bash `PATH`, and `value_of("PATH")` finds either). `@` and `` ` ``, `[` and
+# `{` differ by the same bit as a letter's two cases and are never one.
+function reads_as(name: str, wanted: str) -> bool
+    if name == wanted
+        return true
+
+    if hero_sys.system() != hero_sys.HERO_SYS_SYSTEM_WINDOWS || name.len() != wanted.len()
+        return false
+    at: i64 @= 0
+
+    while at < name.len()
+        if upper(name[at]) != upper(wanted[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# `b` with an ASCII lower-case letter made its upper case; every other byte
+# as it is.
+function upper(b: u8) -> u8
+    if b >= 'a' && b <= 'z'
+        return b - 'a' + 'A'
+    return b

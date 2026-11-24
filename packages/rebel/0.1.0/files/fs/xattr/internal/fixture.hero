@@ -1,0 +1,40 @@
+# What the tests of `fs/xattr` stand on, and nothing else calls: a folder each
+# test makes under `build/` and removes, the question every test that writes
+# an attribute asks first, and a count of one name in a list.
+
+use fs
+use fs/xattr/hero_xattr
+use fs/xattr/internal/calls
+
+# A folder of its own for one test, under `build/` of the folder the tests run
+# from, so nothing is written outside it.
+#
+# - `name`: the test's own word, in the folder's name.
+function folder(name: str) -> str
+    fs.make_dir_all("build").must()
+    return fs.make_temp_dir(dir: "build", pattern: f"rebel-xattr-{name}-*").must()
+
+# Whether the volume under `path` keeps a `user.` attribute: true where one
+# is written and removed, false where the writing answers `unsupported`; any
+# other answer fails the test.
+#
+# - `path`: a file or a folder the test made.
+function kept(path: str) -> bool
+    match calls.written(path: path, name: "user.rebel.probe", value: [1], mode: hero_xattr.HERO_XATTR_EITHER, follow: 1)
+        .ok _ => return !calls.removed(path: path, name: "user.rebel.probe", follow: 1).is_err()
+        .err e =>
+            assert e.code == calls.UNSUPPORTED
+            return false
+
+# How many times `name` stands in `found`.
+#
+# - `found`: a list of names.
+# - `name`: the name counted.
+function count_of(found: [str], name: str) -> i64
+    count: i64 @= 0
+
+    for each in found
+        if each == name
+            count @ count + 1
+
+    return count

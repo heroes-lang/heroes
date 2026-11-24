@@ -109,7 +109,11 @@ function env_bytes(name: str) -> [u8]?
 # (`env_all_bytes` reads them), and with the system's code where it cannot be
 # read. An entry with no `=`, or one whose name is empty, as Windows' own
 # `=C:` are, is left out, so every name here is one `env` reads; where a name
-# stands twice its first value is kept, the one `env` answers.
+# stands twice its first value is kept, the one `env` answers. A key is the
+# name as the system keeps it, and the map's keys are matched byte for byte:
+# Windows keeps a name in the spelling it was set with, `Path` in a process
+# Explorer starts, and `env` finds it without case where `every["PATH"]`
+# does not.
 function env_all() -> {str: str}?
     return variables.as_map()
 
@@ -1363,7 +1367,14 @@ test "env_all and env_all_bytes: PATH among them, every name read back by env, o
     raw = env_all_bytes().must()
     names = keys(every)
     assert names.len() == raw.len() && names.len() > 0
-    assert every["PATH"].must() == env("PATH").must()
+    told: [str] @= []
+
+    for name in names
+        if variables.reads_as(name: name, wanted: "PATH")
+            told @ told.push(name)
+
+    assert told.len() == 1
+    assert every[told[0]].must() == env("PATH").must()
     at: i64 @= 0
 
     while at < raw.len()
