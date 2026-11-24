@@ -131,14 +131,44 @@ function allow(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Allowed?
 #
 # - `limit`: the bucket.
 # - `at`: the time.
+#
+# The whole tokens and the fraction are read on whole numbers, the time held
+# up to 2^64 - 1 ns either way, and only then made a float. A bucket that
+# earns a token in no time, which only a hand-made one does, holds its burst.
 function tokens(limit: jobs.Bucket, at: time.Instant) -> f64
-    t = moment(limit: limit, at: at)
-    behind = time.between(from: limit.empty_at, to: t).default(time.max_duration())
-    held = time.to_float(behind, .nanosecond) / to_f64(limit.every.nanoseconds)
-
-    if held > to_f64(limit.burst)
+    if limit.every.nanoseconds < 1
         return to_f64(limit.burst)
-    return held
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+    every = to_u64(limit.every.nanoseconds).must()
+    whole = held.nanoseconds / every
+
+    if held.backwards
+        return -(to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every))
+
+    if limit.burst < 1 || whole >= to_u64(limit.burst).must()
+        return to_f64(limit.burst)
+    return to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every)
+
+# The whole tokens a bucket holds at `at`, never below none, read on whole
+# numbers.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+function available(limit: jobs.Bucket, at: time.Instant) -> i64
+    if limit.burst < 1
+        return 0
+
+    if limit.every.nanoseconds < 1
+        return limit.burst
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+
+    if held.backwards
+        return 0
+    whole = held.nanoseconds / to_u64(limit.every.nanoseconds).must()
+
+    if whole >= to_u64(limit.burst).must()
+        return limit.burst
+    return to_i64(whole).must()
 
 # A reservation given back, as far as no later reservation has used it.
 #
@@ -378,6 +408,39 @@ test "with_rate: a debt past an i64 of nanoseconds, which only a change of rate 
         match reshape(limit: made, at: origin(), every: time.nanoseconds(1), burst: 1)
             .ok _  => assert false
             .err e => assert e.code == INVALID
+
+test "available and tokens: 1 ns short of three tokens at 2^53 + 1 ns a token holds two, a debt past an i64 none and its count below nothing, a full burst of 2^61 all of it, a hand-made bucket of no rate its burst, and on every row of a change of rate the most allow grants"
+    short @= make(every: time.nanoseconds(9_007_199_254_740_993), burst: 200, at: origin()).must()
+    short @ reserve(limit: short, at: origin(), n: 200).must().bucket
+    almost = time.add(t: origin(), d: time.nanoseconds(27_021_597_764_222_978)).must()
+    assert available(limit: short, at: almost) == 2 && tokens(limit: short, at: almost) > 2.0
+    assert allow(limit: short, at: almost, n: 2).must().granted && !allow(limit: short, at: almost, n: 3).must().granted
+    three = time.add(t: almost, d: time.nanoseconds(1)).must()
+    assert available(limit: short, at: three) == 3 && allow(limit: short, at: three, n: 3).must().granted
+    from = time.add(t: time.min_instant(), d: time.nanoseconds(2_305_843_009_213_693_952)).must()
+    owed @= make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: from).must()
+
+    for _ in range(from: 0, to: 4)
+        owed @ reserve(limit: owed, at: from, n: 2_305_843_009_213_693_952).must().bucket
+
+    owed @ reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1_152_921_504_606_846_976).must()
+    assert available(limit: owed, at: from) == 0 && tokens(limit: owed, at: from) == to_f64(-6_917_529_027_641_081_856)
+    full = make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: origin()).must()
+    assert available(limit: full, at: at_ms(1)) == 2_305_843_009_213_693_952 && tokens(limit: full, at: at_ms(1)) == to_f64(2_305_843_009_213_693_952)
+    free = jobs.Bucket(every: time.nanoseconds(0), burst: 3, empty_at: origin(), seen: origin())
+    assert available(limit: free, at: origin()) == 3 && tokens(limit: free, at: origin()) == 3.0
+    none = jobs.Bucket(every: time.nanoseconds(1), burst: 0, empty_at: at_ms(-1), seen: origin())
+    assert available(limit: none, at: origin()) == 0 && tokens(limit: none, at: origin()) == 0.0
+
+    for row in change_rows()
+        changed_to = reshaped(row).must()
+        most = available(limit: changed_to, at: changed_to.seen)
+
+        if most >= 1
+            assert allow(limit: changed_to, at: changed_to.seen, n: most).must().granted
+
+        if most < changed_to.burst
+            assert !allow(limit: changed_to, at: changed_to.seen, n: most + 1).must().granted
 
 test "bucket: a rate of nothing, a burst of nothing, a burst that takes too long to earn, and an instant at the end of the range"
     now = origin()
