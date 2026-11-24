@@ -1,0 +1,57 @@
+# The ledger of `x509/ocsp`: what OCSP (RFC 6960, with RFC 5019's
+# lightweight profile and RFC 8954's nonce) lets a program do to learn
+# whether a certificate is revoked, one block per capability, and what Rebel
+# answers. Go 1.27.4's, Rust's and Python 3.15.2's standard libraries hold no
+# OCSP client (`go list std`, the std documentation of the three Rust
+# toolchains of this machine and Python's `ssl` searched for it, 2026-11-24):
+# Go's is `golang.org/x/crypto/ocsp` outside it, Python's is the
+# `cryptography` package's `x509.ocsp`, so their lines are `-` where the
+# standard library has nothing and the notes name the libraries outside. Go's
+# standard `crypto/tls` hands a stapled response over, and its names are
+# written where they belong. The yardsticks are the specifications and the
+# second implementations the tests rest on, run this session: OpenSSL
+# 4.1.0's `openssl ocsp` made the requests and responses read here, answered
+# the requests made here as a responder, and checked the responses made here;
+# Python's `cryptography` 50.0.2 read the same responses.
+
+capability ocsp/request  a request made for one certificate or several, its CertID by SHA-1 or SHA-2, with a nonce
+  heroes  ocsp.id_of, ocsp.CertId, ocsp.create_request, ocsp.new_nonce, ocsp.is_issued_by
+  go      -
+  rust    -
+  python  -
+  note    the bytes are OpenSSL's own for the same certificates, by SHA-1 and SHA-256, with RFC 8954's nonce of up to 32 bytes and without; Python's `cryptography` names it `ocsp.OCSPRequestBuilder` and `x509.OCSPNonce`. A request is not signed: no responder in use asks for one, and `sig_required` is answered as a status
+
+capability ocsp/send  a request sent by POST, or the URL of a GET (RFC 6960 appendix A)
+  heroes  ocsp.check, ocsp.get_url
+  go      -
+  rust    -
+  python  -
+  note    `check` posts `application/ocsp-request` through `http`, to every responder the certificate's `authorityInfoAccess` names in turn until one answers; `get_url` escapes the base 64 as Python's `urllib.parse.quote` does, for a request short enough to go by GET (RFC 5019 § 5)
+
+capability ocsp/read-response  a response read: its status, its signer named by subject or by key hash, every certificate's status, moments and reason, its nonce and the certificates it carries
+  heroes  ocsp.decode_response, ocsp.Response, ocsp.ResponseStatus, ocsp.Basic, ocsp.Single, ocsp.Status, ocsp.ResponderId, ocsp.format_response_status
+  go      -
+  rust    -
+  python  -
+  note    Python's `cryptography` reads the same fields through `ocsp.load_der_ocsp_response`, `ocsp.OCSPResponse`, `ocsp.OCSPSingleResponse`, `ocsp.OCSPCertStatus`, `ocsp.OCSPResponseStatus`; every value the tests expect is what it read from OpenSSL's responses. The signed bytes are kept as received, never written again. A critical extension not understood is refused, and a response type other than the basic one is `unsupported`
+
+capability ocsp/verify  a response checked against the issuer or a responder it delegated to, the nonce and the freshness held, the certificate's own status answered
+  heroes  ocsp.status_of, ocsp.signer_of, ocsp.Options, ocsp.default_options
+  go      -
+  rust    -
+  python  -
+  note    the signer is the issuer, or a certificate the response carries that the issuer signed, with `OCSPSigning` and, where written, a key usage allowing a signature, valid at the moment; a signer without the purpose is refused, as OpenSSL refuses it, and so is one whose key usage lacks digitalSignature, which OpenSSL 4.1.0 verifies (it reads the extended key usage alone) and RFC 5280 § 4.2.1.3 forbids. `thisUpdate` and `producedAt` not after the moment and `nextUpdate` not before it, five minutes of skew; with no `nextUpdate`, an hour of age. The certificate must be the issuer's, its signature checked. Not checked, as RFC 6960 § 4.2.2.2.1 leaves it to the client: a delegated responder's own revocation. Python's `cryptography` leaves every one of these checks to its caller
+
+capability ocsp/stapled  a response a TLS server stapled checked
+  heroes  ocsp.decode_response, ocsp.status_of
+  go      tls.ConnectionState.OCSPResponse, tls.Certificate.OCSPStaple
+  rust    -
+  python  -
+  note    the bytes a server staples are the same OCSPResponse, checked by `status_of` with no nonce, its freshness standing for one. Taking them out of a handshake is `tls`'s capability `tls/revocation`, pending there: the platforms' TLS this package's `tls` calls do not hand them over as it calls them
+
+capability ocsp/respond  a responder's side: a request read, a response made and signed by the issuer or a delegated responder, an error answered
+  heroes  ocsp.decode_request, ocsp.Request, ocsp.create_response, ocsp.ResponseTemplate, ocsp.Answer, ocsp.create_error_response
+  go      -
+  rust    -
+  python  -
+  note    the ResponseData written is OpenSSL's byte for byte for the same answers, by name and by key hash, with the nonce echoed; OpenSSL's `openssl ocsp -respin` checks a response made here. The response is read back and its signature checked before it is answered, so a key that is not the signer's is refused. Python's `cryptography` names it `ocsp.OCSPResponseBuilder`

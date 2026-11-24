@@ -1,0 +1,289 @@
+# The certificates, requests and responses the tests read, made by OpenSSL
+# 4.1.0's `openssl ocsp` on 2026-11-24 from one CA's database, where serial 2
+# is valid and serial 3 revoked on 2026-11-01 12:00:00 UTC for keyCompromise:
+# every response's `thisUpdate` and `producedAt` are 2026-11-24 01:21:45 UTC
+# and its `nextUpdate`, where written, seven days later, but for
+# `response_bad_usage`'s. Every key is P-256 and signs by ECDSA with SHA-256.
+# Each is a function only the tests call.
+
+use bytes
+use time
+
+# The CA, `CN=Hero Test CA`, P-256, self-signed: the issuer of every certificate here.
+function ca() -> [u8]
+    lines = [
+        "MIIBXzCCAQWgAwIBAgIBATAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwHhcN"
+        "MjYxMTI0MDAxNjExWhcNMzYxMTIxMDAxNjExWjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwWTAT"
+        "BgcqhkjOPQIBBggqhkjOPQMBBwNCAATN70qywepwHaG9pNvvKkaf0anrI+8yHdP9V9zt7sccezJI"
+        "fl6y87UhoaocPQysgoAyH2y8JGkUoDj7h+C03/qco0IwQDAdBgNVHQ4EFgQUEJTCRL0wmi0rPADa"
+        "tBu9NjTv+BcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwCgYIKoZIzj0EAwIDSAAw"
+        "RQIgO6a/0lhqaQmJZgMFVHjxel9grrj43FMmZHCcSsVA+DICIQC6adqhekL71cg6gP/mMn/lqBYR"
+        "JtVvNYkjY1dVJjBgGg=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf `CN=leaf.example`, serial 2, good; its `authorityInfoAccess` names `http://127.0.0.1:18888/`.
+function leaf() -> [u8]
+    lines = [
+        "MIIBbjCCARWgAwIBAgIBAjAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwHhcN"
+        "MjYxMTI0MDAxNjExWhcNMzYxMTIxMDAxNjExWjAXMRUwEwYDVQQDDAxsZWFmLmV4YW1wbGUwWTAT"
+        "BgcqhkjOPQIBBggqhkjOPQMBBwNCAARvzBO3++pdpOZgTOX3WLMgmshyFWp4puCCCTsTbmwIx06i"
+        "Tfct+3sa+hU0wgTq3vKQH7mX0nnPiyFD3bkX+Hfpo1IwUDAJBgNVHRMEAjAAMA4GA1UdDwEB/wQE"
+        "AwIHgDAzBggrBgEFBQcBAQQnMCUwIwYIKwYBBQUHMAGGF2h0dHA6Ly8xMjcuMC4wLjE6MTg4ODgv"
+        "MAoGCCqGSM49BAMCA0cAMEQCIBoNpnzrsWcbUXdRa1JPm0S6bWTSr/MIUzbpnxcnXTg4AiABKT3p"
+        "1FeBPLbHjbYPvtKwjFNAMJnL8+QmIXhYx2L43A=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf `CN=revoked.example`, serial 3, revoked 2026-11-01 12:00:00 for keyCompromise.
+function revoked() -> [u8]
+    lines = [
+        "MIIBYTCCAQigAwIBAgIBAzAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwHhcN"
+        "MjYxMTI0MDEyMTQ1WhcNMzYxMTIxMDEyMTQ1WjAaMRgwFgYDVQQDDA9yZXZva2VkLmV4YW1wbGUw"
+        "WTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQkO4oz3SxN5LE6wK2wvYGDI4um81Edg4B1Z3e7pXaW"
+        "mn0cK54pF864wp76H+wMstnJipCk7WRCb38GbS7dX5u9o0IwQDAJBgNVHRMEAjAAMDMGCCsGAQUF"
+        "BwEBBCcwJTAjBggrBgEFBQcwAYYXaHR0cDovLzEyNy4wLjAuMToxODg4OC8wCgYIKoZIzj0EAwID"
+        "RwAwRAIgQui6Y65NpgCoMitiy0Gcupjv+Kxz8dvdVqNHhDUm0ewCIG5VwZ44qYkb4iye5T4pUkrC"
+        "cezobxf6I6DjQKM43rUj"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's delegated responder `CN=Hero OCSP Responder`, serial 4, with the purpose `OCSPSigning`.
+function responder() -> [u8]
+    lines = [
+        "MIIBVTCB/KADAgECAgEEMAoGCCqGSM49BAMCMBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTAeFw0y"
+        "NjExMjQwMTIxNDVaFw0zNjExMjEwMTIxNDVaMB4xHDAaBgNVBAMME0hlcm8gT0NTUCBSZXNwb25k"
+        "ZXIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATNqXVOMcIiFdIclfm0jIpb+MwhqTx0DnCqbQan"
+        "Bx6Dat5bcLXLEs9d154yfHBQwrkZRxbOpl/UjiKbG0H6YZiIozIwMDAJBgNVHRMEAjAAMA4GA1Ud"
+        "DwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDCTAKBggqhkjOPQQDAgNIADBFAiEAtNBUElQS"
+        "ZV1HXljOL6TrmVRthvku27OiH0zHzGcM5+cCIH+asVUuEvw3n6nDXZvmOpsj5RPJZJw02fkAf8Wv"
+        "RWk6"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The same key in a certificate of the CA without the purpose `OCSPSigning`, serial 5.
+function not_responder() -> [u8]
+    lines = [
+        "MIIBQDCB56ADAgECAgEFMAoGCCqGSM49BAMCMBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTAeFw0y"
+        "NjExMjQwMTIxNDVaFw0zNjExMjEwMTIxNDVaMB4xHDAaBgNVBAMME0hlcm8gT0NTUCBSZXNwb25k"
+        "ZXIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATNqXVOMcIiFdIclfm0jIpb+MwhqTx0DnCqbQan"
+        "Bx6Dat5bcLXLEs9d154yfHBQwrkZRxbOpl/UjiKbG0H6YZiIox0wGzAJBgNVHRMEAjAAMA4GA1Ud"
+        "DwEB/wQEAwIHgDAKBggqhkjOPQQDAgNIADBFAiEAovqPkfU6KYfFalYEgYio/CW/y50dgPABkdbo"
+        "o1vCjQ8CIBDxL5pX1ptNhPfE+GG8LZfB9nM7hy5R0vk8rzQyZHsg"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's private key, PKCS #8: a key of these tests alone.
+function ca_key() -> [u8]
+    lines = [
+        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgYXQux6hWKOjMI7sLPCYF5aRA4RHt"
+        "6QE2B6Dv/+34222hRANCAATN70qywepwHaG9pNvvKkaf0anrI+8yHdP9V9zt7sccezJIfl6y87Uh"
+        "oaocPQysgoAyH2y8JGkUoDj7h+C03/qc"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The delegated responder's private key, PKCS #8: a key of these tests alone.
+function responder_key() -> [u8]
+    lines = [
+        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglF/bJJjFPeruWHThBMm/ram3IfYp"
+        "aw/psxlHiQ2zeOChRANCAATNqXVOMcIiFdIclfm0jIpb+MwhqTx0DnCqbQanBx6Dat5bcLXLEs9d"
+        "154yfHBQwrkZRxbOpl/UjiKbG0H6YZiI"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# `openssl ocsp -issuer ca.crt -cert leaf.crt -nonce`: one SHA-1 CertID and a nonce.
+function request_nonce() -> [u8]
+    lines = [
+        "MGcwZTA+MDwwOjAJBgUrDgMCGgUABBQmuGwVu/lA0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADa"
+        "tBu9NjTv+BcCAQKiIzAhMB8GCSsGAQUFBzABAgQSBBDkvReiCPARirPPxRd+f4VR"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The same with `-no_nonce`.
+function request_plain() -> [u8]
+    lines = [
+        "MEIwQDA+MDwwOjAJBgUrDgMCGgUABBQmuGwVu/lA0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADa"
+        "tBu9NjTv+BcCAQI="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf and the revoked leaf in one request, no nonce.
+function request_two() -> [u8]
+    lines = [
+        "MIGAMH4wfDA8MDowCQYFKw4DAhoFAAQUJrhsFbv5QNJJ9kdGw7mFe3gDHawEFBCUwkS9MJotKzwA"
+        "2rQbvTY07/gXAgECMDwwOjAJBgUrDgMCGgUABBQmuGwVu/lA0kn2R0bDuYV7eAMdrAQUEJTCRL0w"
+        "mi0rPADatBu9NjTv+BcCAQM="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's CertID by SHA-256, `-sha256`, no nonce.
+function request_sha256() -> [u8]
+    lines = [
+        "MF4wXDBaMFgwVjANBglghkgBZQMEAgEFAAQgpk4JAG6oTt54zWUyVfwtWUndp378Cn+0V4r9sGxN"
+        "1RoEIMOTfd+flnvTOGYPRAakUh7I7rYod+aAH7rTPZlhH9cWAgEC"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's answer to `request_nonce`, signed by the CA, its nonce echoed, next update in 7 days.
+function response_nonce() -> [u8]
+    lines = [
+        "MIICmQoBAKCCApIwggKOBgkrBgEFBQcwAQEEggJ/MIICezCBt6EZMBcxFTATBgNVBAMMDEhlcm8g"
+        "VGVzdCBDQRgPMjAyNjExMjQwMTIxNDVaMGQwYjA6MAkGBSsOAwIaBQAEFCa4bBW7+UDSSfZHRsO5"
+        "hXt4Ax2sBBQQlMJEvTCaLSs8ANq0G702NO/4FwIBAoAAGA8yMDI2MTEyNDAxMjE0NVqgERgPMjAy"
+        "NjEyMDEwMTIxNDVaoSMwITAfBgkrBgEFBQcwAQIEEgQQ5L0XogjwEYqzz8UXfn+FUTAKBggqhkjO"
+        "PQQDAgNIADBFAiEAiY6cA9QtlD/YTtgHApLTIgWqVQMP237w6y7joyePcBcCIG/XWyIcr0H9rMQu"
+        "SZ1xnP1YHrOlgCtPR4GTtvrHNE6qoIIBZzCCAWMwggFfMIIBBaADAgECAgEBMAoGCCqGSM49BAMC"
+        "MBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTAeFw0yNjExMjQwMDE2MTFaFw0zNjExMjEwMDE2MTFa"
+        "MBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM3vSrLB"
+        "6nAdob2k2+8qRp/Rqesj7zId0/1X3O3uxxx7Mkh+XrLztSGhqhw9DKyCgDIfbLwkaRSgOPuH4LTf"
+        "+pyjQjBAMB0GA1UdDgQWBBQQlMJEvTCaLSs8ANq0G702NO/4FzAPBgNVHRMBAf8EBTADAQH/MA4G"
+        "A1UdDwEB/wQEAwIBBjAKBggqhkjOPQQDAgNIADBFAiA7pr/SWGppCYlmAwVUePF6X2CuuPjcUyZk"
+        "cJxKxUD4MgIhALpp2qF6QvvVyDqA/+Yyf+WoFhEm1W81iSNjV1UmMGAa"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's answer to `request_two`: good, and revoked for keyCompromise.
+function response_two() -> [u8]
+    lines = [
+        "MIIC8AoBAKCCAukwggLlBgkrBgEFBQcwAQEEggLWMIIC0jCCAQ2hGTAXMRUwEwYDVQQDDAxIZXJv"
+        "IFRlc3QgQ0EYDzIwMjYxMTI0MDEyMTQ1WjCB3jBiMDowCQYFKw4DAhoFAAQUJrhsFbv5QNJJ9kdG"
+        "w7mFe3gDHawEFBCUwkS9MJotKzwA2rQbvTY07/gXAgECgAAYDzIwMjYxMTI0MDEyMTQ1WqARGA8y"
+        "MDI2MTIwMTAxMjE0NVoweDA6MAkGBSsOAwIaBQAEFCa4bBW7+UDSSfZHRsO5hXt4Ax2sBBQQlMJE"
+        "vTCaLSs8ANq0G702NO/4FwIBA6EWGA8yMDI2MTEwMTEyMDAwMFqgAwoBARgPMjAyNjExMjQwMTIx"
+        "NDVaoBEYDzIwMjYxMjAxMDEyMTQ1WjAKBggqhkjOPQQDAgNIADBFAiEAulQssVnVS9/nZV9WZF1l"
+        "MYv4Ekmt41lQHmMmdjnVCf8CIG5eZ8+cwjO1l37u2D5g0Mcj2bX2P50pwajP+nNBu+I4oIIBZzCC"
+        "AWMwggFfMIIBBaADAgECAgEBMAoGCCqGSM49BAMCMBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTAe"
+        "Fw0yNjExMjQwMDE2MTFaFw0zNjExMjEwMDE2MTFaMBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTBZ"
+        "MBMGByqGSM49AgEGCCqGSM49AwEHA0IABM3vSrLB6nAdob2k2+8qRp/Rqesj7zId0/1X3O3uxxx7"
+        "Mkh+XrLztSGhqhw9DKyCgDIfbLwkaRSgOPuH4LTf+pyjQjBAMB0GA1UdDgQWBBQQlMJEvTCaLSs8"
+        "ANq0G702NO/4FzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBBjAKBggqhkjOPQQDAgNI"
+        "ADBFAiA7pr/SWGppCYlmAwVUePF6X2CuuPjcUyZkcJxKxUD4MgIhALpp2qF6QvvVyDqA/+Yyf+Wo"
+        "FhEm1W81iSNjV1UmMGAa"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The answer to `request_plain` signed by the delegated responder, which it carries, its ID by name.
+function response_delegated() -> [u8]
+    lines = [
+        "MIICcQoBAKCCAmowggJmBgkrBgEFBQcwAQEEggJXMIICUzCBmaEgMB4xHDAaBgNVBAMME0hlcm8g"
+        "T0NTUCBSZXNwb25kZXIYDzIwMjYxMTI0MDEyMTQ1WjBkMGIwOjAJBgUrDgMCGgUABBQmuGwVu/lA"
+        "0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADatBu9NjTv+BcCAQKAABgPMjAyNjExMjQwMTIxNDVa"
+        "oBEYDzIwMjYxMjAxMDEyMTQ1WjAKBggqhkjOPQQDAgNIADBFAiEAvH+DJunSK5oB6+075jupLnAw"
+        "sZJMSf+NYVsBpJrC1EYCIBLOvG1D5+g+jOXYmv9O7rFCY3161sPUbrAVB/zyk+HXoIIBXTCCAVkw"
+        "ggFVMIH8oAMCAQICAQQwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2"
+        "MTEyNDAxMjE0NVoXDTM2MTEyMTAxMjE0NVowHjEcMBoGA1UEAwwTSGVybyBPQ1NQIFJlc3BvbmRl"
+        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM2pdU4xwiIV0hyV+bSMilv4zCGpPHQOcKptBqcH"
+        "HoNq3ltwtcsSz13XnjJ8cFDCuRlHFs6mX9SOIpsbQfphmIijMjAwMAkGA1UdEwQCMAAwDgYDVR0P"
+        "AQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMJMAoGCCqGSM49BAMCA0gAMEUCIQC00FQSVBJl"
+        "XUdeWM4vpOuZVG2G+S7bs6IfTMfMZwzn5wIgf5qxVS4S/DefqcNdm+Y6myPlE8lknDTZ+QB/xa9F"
+        "aTo="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The same with the responder's ID by its key's hash, `-resp_key_id`.
+function response_delegated_key() -> [u8]
+    lines = [
+        "MIICZwoBAKCCAmAwggJcBgkrBgEFBQcwAQEEggJNMIICSTCBj6IWBBT8EhxGLvTP6SEzz/q/5Rai"
+        "U3z6PxgPMjAyNjExMjQwMTIxNDVaMGQwYjA6MAkGBSsOAwIaBQAEFCa4bBW7+UDSSfZHRsO5hXt4"
+        "Ax2sBBQQlMJEvTCaLSs8ANq0G702NO/4FwIBAoAAGA8yMDI2MTEyNDAxMjE0NVqgERgPMjAyNjEy"
+        "MDEwMTIxNDVaMAoGCCqGSM49BAMCA0gAMEUCIDn9+BVFAkAfRzIBphIgyoOjc1QcooV9I7lHpGUn"
+        "Sa93AiEA4NKvRGlFm4//1/dauoO2YYa1+TVk8iZj8feIdl8OhBqgggFdMIIBWTCCAVUwgfygAwIB"
+        "AgIBBDAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwHhcNMjYxMTI0MDEyMTQ1"
+        "WhcNMzYxMTIxMDEyMTQ1WjAeMRwwGgYDVQQDDBNIZXJvIE9DU1AgUmVzcG9uZGVyMFkwEwYHKoZI"
+        "zj0CAQYIKoZIzj0DAQcDQgAEzal1TjHCIhXSHJX5tIyKW/jMIak8dA5wqm0Gpwceg2reW3C1yxLP"
+        "XdeeMnxwUMK5GUcWzqZf1I4imxtB+mGYiKMyMDAwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4Aw"
+        "EwYDVR0lBAwwCgYIKwYBBQUHAwkwCgYIKoZIzj0EAwIDSAAwRQIhALTQVBJUEmVdR15Yzi+k65lU"
+        "bYb5Ltuzoh9Mx8xnDOfnAiB/mrFVLhL8N5+pw12b5jqbI+UTyWScNNn5AH/Fr0VpOg=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The answer signed by `not_responder`, which a checker must refuse.
+function response_not_responder() -> [u8]
+    lines = [
+        "MIICWwoBAKCCAlQwggJQBgkrBgEFBQcwAQEEggJBMIICPTCBmaEgMB4xHDAaBgNVBAMME0hlcm8g"
+        "T0NTUCBSZXNwb25kZXIYDzIwMjYxMTI0MDEyMTQ1WjBkMGIwOjAJBgUrDgMCGgUABBQmuGwVu/lA"
+        "0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADatBu9NjTv+BcCAQKAABgPMjAyNjExMjQwMTIxNDVa"
+        "oBEYDzIwMjYxMjAxMDEyMTQ1WjAKBggqhkjOPQQDAgNHADBEAiBDQHB4R6Ri5CyLClEsyQ8ak7VC"
+        "Na5zG338ONRzy2IwrgIgdFb4weU7cqJol8xL4F+DEkiIxlk8+0PJ6ZfmMYqKh76gggFIMIIBRDCC"
+        "AUAwgeegAwIBAgIBBTAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxIZXJvIFRlc3QgQ0EwHhcNMjYx"
+        "MTI0MDEyMTQ1WhcNMzYxMTIxMDEyMTQ1WjAeMRwwGgYDVQQDDBNIZXJvIE9DU1AgUmVzcG9uZGVy"
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzal1TjHCIhXSHJX5tIyKW/jMIak8dA5wqm0Gpwce"
+        "g2reW3C1yxLPXdeeMnxwUMK5GUcWzqZf1I4imxtB+mGYiKMdMBswCQYDVR0TBAIwADAOBgNVHQ8B"
+        "Af8EBAMCB4AwCgYIKoZIzj0EAwIDSAAwRQIhAKL6j5H1OimHxWpWBIGIqPwlv8udHYDwAZHW6KNb"
+        "wo0PAiAQ8S+aV9abTYT3xPhhvC2XwfZzO4cuUdL5PK80MmR7IA=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's answer to `request_sha256`, its CertID by SHA-256.
+function response_sha256() -> [u8]
+    lines = [
+        "MIICkAoBAKCCAokwggKFBgkrBgEFBQcwAQEEggJ2MIICcjCBr6EZMBcxFTATBgNVBAMMDEhlcm8g"
+        "VGVzdCBDQRgPMjAyNjExMjQwMTIxNDVaMIGAMH4wVjANBglghkgBZQMEAgEFAAQgpk4JAG6oTt54"
+        "zWUyVfwtWUndp378Cn+0V4r9sGxN1RoEIMOTfd+flnvTOGYPRAakUh7I7rYod+aAH7rTPZlhH9cW"
+        "AgECgAAYDzIwMjYxMTI0MDEyMTQ1WqARGA8yMDI2MTIwMTAxMjE0NVowCgYIKoZIzj0EAwIDRwAw"
+        "RAIgDJEfeJxzG0CDjT9UrY+rSDe2wkUpn5oz2GX5lgfthnECIE3rWmbvOgX6l/ZycC2rvZM17ofY"
+        "C7fGSlv2N/MQFV/voIIBZzCCAWMwggFfMIIBBaADAgECAgEBMAoGCCqGSM49BAMCMBcxFTATBgNV"
+        "BAMMDEhlcm8gVGVzdCBDQTAeFw0yNjExMjQwMDE2MTFaFw0zNjExMjEwMDE2MTFaMBcxFTATBgNV"
+        "BAMMDEhlcm8gVGVzdCBDQTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM3vSrLB6nAdob2k2+8q"
+        "Rp/Rqesj7zId0/1X3O3uxxx7Mkh+XrLztSGhqhw9DKyCgDIfbLwkaRSgOPuH4LTf+pyjQjBAMB0G"
+        "A1UdDgQWBBQQlMJEvTCaLSs8ANq0G702NO/4FzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQE"
+        "AwIBBjAKBggqhkjOPQQDAgNIADBFAiA7pr/SWGppCYlmAwVUePF6X2CuuPjcUyZkcJxKxUD4MgIh"
+        "ALpp2qF6QvvVyDqA/+Yyf+WoFhEm1W81iSNjV1UmMGAa"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The CA's answer to `request_plain` with no next update.
+function response_no_next() -> [u8]
+    lines = [
+        "MIICXwoBAKCCAlgwggJUBgkrBgEFBQcwAQEEggJFMIICQTB/oRkwFzEVMBMGA1UEAwwMSGVybyBU"
+        "ZXN0IENBGA8yMDI2MTEyNDAxMjE0NVowUTBPMDowCQYFKw4DAhoFAAQUJrhsFbv5QNJJ9kdGw7mF"
+        "e3gDHawEFBCUwkS9MJotKzwA2rQbvTY07/gXAgECgAAYDzIwMjYxMTI0MDEyMTQ1WjAKBggqhkjO"
+        "PQQDAgNHADBEAiA3pmRJvBY2VOf9XJJ89ZyHGZRbJdxm8mxFJAFddhLGaAIgAVxsJ7RHVv7tbjCg"
+        "m/i09cxnQ8wWFqxEISKDzrGfHcqgggFnMIIBYzCCAV8wggEFoAMCAQICAQEwCgYIKoZIzj0EAwIw"
+        "FzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2MTEyNDAwMTYxMVoXDTM2MTEyMTAwMTYxMVow"
+        "FzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEze9KssHq"
+        "cB2hvaTb7ypGn9Gp6yPvMh3T/Vfc7e7HHHsySH5esvO1IaGqHD0MrIKAMh9svCRpFKA4+4fgtN/6"
+        "nKNCMEAwHQYDVR0OBBYEFBCUwkS9MJotKzwA2rQbvTY07/gXMA8GA1UdEwEB/wQFMAMBAf8wDgYD"
+        "VR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIDumv9JYamkJiWYDBVR48XpfYK64+NxTJmRw"
+        "nErFQPgyAiEAumnaoXpC+9XIOoD/5jJ/5agWESbVbzWJI2NXVSYwYBo="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The responder's key in a certificate of the CA with `OCSPSigning` and a key usage of keyEncipherment alone, serial 6, valid from 2026-11-24 02:39:27.
+function bad_usage() -> [u8]
+    lines = [
+        "MIIBVDCB/KADAgECAgEGMAoGCCqGSM49BAMCMBcxFTATBgNVBAMMDEhlcm8gVGVzdCBDQTAeFw0y"
+        "NjExMjQwMjM5MjdaFw0zNjExMjEwMjM5MjdaMB4xHDAaBgNVBAMME0hlcm8gT0NTUCBSZXNwb25k"
+        "ZXIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATNqXVOMcIiFdIclfm0jIpb+MwhqTx0DnCqbQan"
+        "Bx6Dat5bcLXLEs9d154yfHBQwrkZRxbOpl/UjiKbG0H6YZiIozIwMDAJBgNVHRMEAjAAMA4GA1Ud"
+        "DwEB/wQEAwIFIDATBgNVHSUEDDAKBggrBgEFBQcDCTAKBggqhkjOPQQDAgNHADBEAiBHshZHcOj/"
+        "u9YoBQkTfxqgreZIKeXEahiTKb3TdQEO3gIgc/S8FgQYWirUPJ5GjjLKWsIOYKkEXxPqXOlqwisK"
+        "yqg="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The answer to `request_plain` signed by `bad_usage`, produced at 2026-11-24 02:39:29, which OpenSSL 4.1.0 verifies and RFC 5280 § 4.2.1.3 refuses.
+function response_bad_usage() -> [u8]
+    lines = [
+        "MIICcAoBAKCCAmkwggJlBgkrBgEFBQcwAQEEggJWMIICUjCBmaEgMB4xHDAaBgNVBAMME0hlcm8g"
+        "T0NTUCBSZXNwb25kZXIYDzIwMjYxMTI0MDIzOTI5WjBkMGIwOjAJBgUrDgMCGgUABBQmuGwVu/lA"
+        "0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADatBu9NjTv+BcCAQKAABgPMjAyNjExMjQwMjM5Mjla"
+        "oBEYDzIwMjYxMjAxMDIzOTI5WjAKBggqhkjOPQQDAgNIADBFAiEAnYzCh+kjOVkRrlz3FJK74LmN"
+        "5bXZMP1whGfypAP7/QcCIAIARfly+SO2TkXvCaHO0s281WO3QNQToSpqpLYZmd1ZoIIBXDCCAVgw"
+        "ggFUMIH8oAMCAQICAQYwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2"
+        "MTEyNDAyMzkyN1oXDTM2MTEyMTAyMzkyN1owHjEcMBoGA1UEAwwTSGVybyBPQ1NQIFJlc3BvbmRl"
+        "cjBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM2pdU4xwiIV0hyV+bSMilv4zCGpPHQOcKptBqcH"
+        "HoNq3ltwtcsSz13XnjJ8cFDCuRlHFs6mX9SOIpsbQfphmIijMjAwMAkGA1UdEwQCMAAwDgYDVR0P"
+        "AQH/BAQDAgUgMBMGA1UdJQQMMAoGCCsGAQUFBwMJMAoGCCqGSM49BAMCA0cAMEQCIEeyFkdw6P+7"
+        "1igFCRN/GqCt5kgp5cRqGJMpvdN1AQ7eAiBz9LwWBBhaKtQ8nkaOMspawg5gqQRfE+pc6WrCKwrK"
+        "qA=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The moment of 2026-`month`-`day` at `hour`:`minute`:`second` UTC.
+function at(month: i64, day: i64, hour: i64, minute: i64, second: i64) -> time.Instant
+    return time.from_date_time(date(month: month, day: day, hour: hour, minute: minute, second: second)).must()
+
+# The date and time of 2026-`month`-`day` at `hour`:`minute`:`second` UTC.
+function date(month: i64, day: i64, hour: i64, minute: i64, second: i64) -> time.DateTime
+    return time.DateTime(year: 2026, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: 0)

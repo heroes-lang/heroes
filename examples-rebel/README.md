@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-eight packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-nine packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -196,6 +196,7 @@ package moves its row in the same change. There is no cycle.
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made by `x509.create_request` | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |
+| 7 | `x509/ocsp` | OCSP (RFC 6960): a request made by SHA-1 or SHA-2 with a nonce and sent by POST or GET, a response read and checked against the issuer or its delegated responder, its nonce and freshness held, a stapled one too; a responder's request read and its response signed | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `http`, `os`, `strings`, `time`, `x509` |  |
 | 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `retries`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `bytes`, `errors`, `http`, `json`, `numbers`, `strings`, `unicode` |  |
