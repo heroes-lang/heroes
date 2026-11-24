@@ -46,6 +46,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "hero_ui_canvas_gtk.h"
+#include "hero_ui_parts_gtk.h"
 #include "hero_ui_print_gtk.h"
 #include "hero_ui_web_gtk.h"
 
@@ -9648,6 +9649,9 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
         hero_ui_gtk.accessible_reset_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL);
         hero_layer_free(widget->accessible);
         widget->accessible = NULL;
+        if (widget->kind == HERO_UI_CANVAS) {
+            hero_ui_parts_gtk_named(widget->widget, NULL);
+        }
         return HERO_UI_OK;
     }
     made = hero_ui_gtk_text(name, count, false);
@@ -9657,6 +9661,10 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
     hero_ui_gtk.accessible_update_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL, made, -1);
     hero_layer_free(widget->accessible);
     widget->accessible = made;
+    if (widget->kind == HERO_UI_CANVAS) {
+        /* The image standing for an area with no parts carries its name. */
+        hero_ui_parts_gtk_named(widget->widget, made);
+    }
     return HERO_UI_OK;
 }
 
@@ -12016,6 +12024,48 @@ int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int
         }
     }
     answer = hero_ui_canvas_gtk_pointer(widget->canvas, window->widget, x, y, phase, button, clicks, modifiers, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+/* -- A DRAWING AREA'S PARTS ------------------------------------------------
+ *
+ * The parts and what GTK offers a screen reader of them are
+ * `hero_ui_parts_gtk.c`'s: these calls find the area and keep the words of
+ * a refusal for `hero_ui.c`. */
+
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_set(widget->widget, list, count, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_read(widget->widget, buffer, count, length, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_act(widget->widget, part, act, words, sizeof words);
     return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
 }
 
