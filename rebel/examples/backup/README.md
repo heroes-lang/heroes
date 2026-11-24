@@ -16,7 +16,7 @@ archive; a repository is copied offsite, still sealed.
 
 Run for real:
 
-    heroes build examples-rebel/backup/main.hero -O2 -o backup
+    heroes build rebel/examples/backup/main.hero -O2 -o backup
     export BACKUP_REPOSITORY=/var/backups/repo    # or s3:https://host/bucket/prefix
     ./backup init                                 # asks the password twice
     ./backup run ~/Documents                      # the AWS_* variables for a bucket
@@ -73,11 +73,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/backup/main.hero -- demo
+    heroes run rebel/examples/backup/main.hero -- demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 25 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`containers/bits`](https://heroes-lang.org/rebel/containers/bits/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/seal`](https://heroes-lang.org/rebel/crypto/seal/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`url`](https://heroes-lang.org/rebel/url/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 25 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`containers/bits`](https://heroes-lang.org/rebel/containers/bits/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/seal`](https://heroes-lang.org/rebel/crypto/seal/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`url`](https://heroes-lang.org/rebel/url/).
 
 ## Its folders
 
@@ -98,4 +98,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

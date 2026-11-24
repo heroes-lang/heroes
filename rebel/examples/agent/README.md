@@ -13,7 +13,7 @@ too, and falls back from one provider to the other.
 Run for real, with a key in the environment (`ANTHROPIC_API_KEY`,
 `OPENAI_API_KEY`), or typed at the prompt where none is set:
 
-    heroes build examples-rebel/agent/main.hero -o agent
+    heroes build rebel/examples/agent/main.hero -o agent
     ./agent index ./docs --store .agent
     ./agent search --store .agent "install on macOS"
     ./agent ask --store .agent --provider anthropic --fallback openai "How do I install it?"
@@ -58,11 +58,11 @@ The Rebel packages it uses, and for what:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/agent/main.hero -- demo --work build/agent/demo
+    heroes run rebel/examples/agent/main.hero -- demo --work build/agent/demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/jq`](https://heroes-lang.org/rebel/json/jq/), [`jsonrpc`](https://heroes-lang.org/rebel/jsonrpc/), [`llm/anthropic`](https://heroes-lang.org/rebel/llm/anthropic/), [`llm/openai`](https://heroes-lang.org/rebel/llm/openai/), [`mcp`](https://heroes-lang.org/rebel/mcp/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`tokenizer`](https://heroes-lang.org/rebel/tokenizer/), [`tokenizer/tables`](https://heroes-lang.org/rebel/tokenizer/tables/), [`vectors`](https://heroes-lang.org/rebel/vectors/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/jq`](https://heroes-lang.org/rebel/json/jq/), [`jsonrpc`](https://heroes-lang.org/rebel/jsonrpc/), [`llm/anthropic`](https://heroes-lang.org/rebel/llm/anthropic/), [`llm/openai`](https://heroes-lang.org/rebel/llm/openai/), [`mcp`](https://heroes-lang.org/rebel/mcp/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`tokenizer`](https://heroes-lang.org/rebel/tokenizer/), [`tokenizer/tables`](https://heroes-lang.org/rebel/tokenizer/tables/), [`vectors`](https://heroes-lang.org/rebel/vectors/).
 
 ## Its folders
 
@@ -83,4 +83,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

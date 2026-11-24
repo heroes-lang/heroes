@@ -17,7 +17,7 @@ The pipeline serves its own metrics to Prometheus.
 
 Run for real:
 
-    heroes build examples-rebel/ingest/main.hero -o ingest
+    heroes build rebel/examples/ingest/main.hero -o ingest
     ./ingest check pipeline.toml            # read the file, say what it names
     ./ingest migrate pipeline.toml          # apply the schema
     ./ingest run pipeline.toml              # consume until Ctrl-C or SIGTERM
@@ -56,11 +56,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/ingest/main.hero -- demo
+    heroes run rebel/examples/ingest/main.hero -- demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 32 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress/bzip2`](https://heroes-lang.org/rebel/compress/bzip2/), [`compress/lz4`](https://heroes-lang.org/rebel/compress/lz4/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`errors`](https://heroes-lang.org/rebel/errors/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jobs`](https://heroes-lang.org/rebel/jobs/), [`jobs/postgres_store`](https://heroes-lang.org/rebel/jobs/postgres_store/), [`json`](https://heroes-lang.org/rebel/json/), [`kafka`](https://heroes-lang.org/rebel/kafka/), [`lists`](https://heroes-lang.org/rebel/lists/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`poll`](https://heroes-lang.org/rebel/poll/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`scram`](https://heroes-lang.org/rebel/scram/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/postgres`](https://heroes-lang.org/rebel/sql/postgres/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 32 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress/bzip2`](https://heroes-lang.org/rebel/compress/bzip2/), [`compress/lz4`](https://heroes-lang.org/rebel/compress/lz4/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`errors`](https://heroes-lang.org/rebel/errors/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jobs`](https://heroes-lang.org/rebel/jobs/), [`jobs/postgres_store`](https://heroes-lang.org/rebel/jobs/postgres_store/), [`json`](https://heroes-lang.org/rebel/json/), [`kafka`](https://heroes-lang.org/rebel/kafka/), [`lists`](https://heroes-lang.org/rebel/lists/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`poll`](https://heroes-lang.org/rebel/poll/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`scram`](https://heroes-lang.org/rebel/scram/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/postgres`](https://heroes-lang.org/rebel/sql/postgres/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/).
 
 ## Its folders
 
@@ -83,4 +83,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

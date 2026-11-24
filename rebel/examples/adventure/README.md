@@ -5,7 +5,7 @@ written with Rebel. It prints byte for byte what `examples/adventure/`
 prints from the same arguments, so that program's `main.expected` is this
 one's test too.
 
-    heroes run examples-rebel/adventure/main.hero -- examples/adventure/walkthrough.txt
+    heroes run rebel/examples/adventure/main.hero -- examples/adventure/walkthrough.txt
 
     main.hero    the program: the script, the transcript, no `exit`
     game.hero    one turn: a state in, a state and some lines out
@@ -30,11 +30,11 @@ its end.
 
 The twin of [`examples/adventure/`](../../examples/adventure/), the compiler's own program, which takes no library. Run from the repository's root with that program's words, it prints that program's `main.expected` byte for byte, and the check of Rebel's programs holds it to it (`tests/harness/rebel_apps.hero`):
 
-    heroes run examples-rebel/adventure/main.hero -- examples/adventure/walkthrough.txt
+    heroes run rebel/examples/adventure/main.hero -- examples/adventure/walkthrough.txt
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 3 faces on its `packages` line, each linked here to its reference: [`graphs`](https://heroes-lang.org/rebel/graphs/), [`maps`](https://heroes-lang.org/rebel/maps/), [`strings`](https://heroes-lang.org/rebel/strings/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 3 faces on its `packages` line, each linked here to its reference: [`graphs`](https://heroes-lang.org/rebel/graphs/), [`maps`](https://heroes-lang.org/rebel/maps/), [`strings`](https://heroes-lang.org/rebel/strings/).
 
 ## Its folders
 
@@ -46,4 +46,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

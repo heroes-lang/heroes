@@ -14,7 +14,7 @@ reads.
 
 Run it for real from the repository's root:
 
-    heroes build examples-rebel/l10n/main.hero -o build/l10n/l10n
+    heroes build rebel/examples/l10n/main.hero -o build/l10n/l10n
     cd my-project && ../build/l10n/l10n init --domain shop --locales de,fr,ja
     l10n extract && l10n merge && l10n export --locale de -o de.xlsx
     l10n import de.xlsx --locale de && l10n check && l10n compile
@@ -59,11 +59,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/l10n/main.hero -- demo
+    heroes run rebel/examples/l10n/main.hero -- demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`csv`](https://heroes-lang.org/rebel/csv/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/locales`](https://heroes-lang.org/rebel/i18n/locales/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`sets`](https://heroes-lang.org/rebel/sets/), [`time`](https://heroes-lang.org/rebel/time/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url/idna`](https://heroes-lang.org/rebel/url/idna/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`csv`](https://heroes-lang.org/rebel/csv/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/locales`](https://heroes-lang.org/rebel/i18n/locales/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`sets`](https://heroes-lang.org/rebel/sets/), [`time`](https://heroes-lang.org/rebel/time/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url/idna`](https://heroes-lang.org/rebel/url/idna/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
 
 ## Its folders
 
@@ -85,4 +85,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

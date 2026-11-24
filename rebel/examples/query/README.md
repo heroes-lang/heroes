@@ -6,7 +6,7 @@ joined, ordered, grouped and counted, written with Rebel. It prints byte for
 byte what `examples/query/` prints from the same arguments, so that
 program's `main.expected` is this one's test too.
 
-    heroes run examples-rebel/query/main.hero -- build/query-table.csv
+    heroes run rebel/examples/query/main.hero -- build/query-table.csv
 
     main.hero         the program: the round trip, then the report
     data/row.hero     a row, the generator, and the table written as CSV
@@ -51,11 +51,11 @@ refusal is asked of the value in `data/table.hero`.
 
 The twin of [`examples/query/`](../../examples/query/), the compiler's own program, which takes no library. Run from the repository's root with that program's words, it prints that program's `main.expected` byte for byte, and the check of Rebel's programs holds it to it (`tests/harness/rebel_apps.hero`):
 
-    heroes run examples-rebel/query/main.hero -- build/query-table.csv
+    heroes run rebel/examples/query/main.hero -- build/query-table.csv
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 4 faces on its `packages` line, each linked here to its reference: [`csv`](https://heroes-lang.org/rebel/csv/), [`lists`](https://heroes-lang.org/rebel/lists/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`strings`](https://heroes-lang.org/rebel/strings/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 4 faces on its `packages` line, each linked here to its reference: [`csv`](https://heroes-lang.org/rebel/csv/), [`lists`](https://heroes-lang.org/rebel/lists/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`strings`](https://heroes-lang.org/rebel/strings/).
 
 ## Its folders
 
@@ -71,4 +71,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

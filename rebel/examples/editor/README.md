@@ -16,7 +16,7 @@ order of their paths; keys and colours come from a settings file.
 
 Run for real, on a terminal:
 
-    heroes build examples-rebel/editor/main.hero -o editor
+    heroes build rebel/examples/editor/main.hero -o editor
     ./editor notes.txt todo.md
     ./editor --encoding latin1 old-invoice.txt
     ./editor --config my-editor.toml --tab-width 8 src/*.txt
@@ -50,11 +50,11 @@ The Rebel packages it uses, and for what:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/editor/main.hero -- --demo
+    heroes run rebel/examples/editor/main.hero -- --demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 20 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/deque`](https://heroes-lang.org/rebel/containers/deque/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`json`](https://heroes-lang.org/rebel/json/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 20 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/deque`](https://heroes-lang.org/rebel/containers/deque/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`json`](https://heroes-lang.org/rebel/json/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
 
 ## Its folders
 
@@ -77,4 +77,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

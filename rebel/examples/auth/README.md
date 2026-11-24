@@ -10,7 +10,7 @@ revocation and introspection. People of the organisation's LDAP directory
 are imported every night and log in with their directory password; a
 service account logs in by SCRAM-SHA-256 over HTTP to run the import.
 
-    heroes build examples-rebel/auth/main.hero -o auth
+    heroes build rebel/examples/auth/main.hero -o auth
     auth serve auth.toml          # serve, the configuration `core/settings` shows
     auth import auth.toml         # run the directory import once
     auth verifier directory-sync  # a service account's SCRAM verifier, the password on stdin
@@ -47,11 +47,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/auth/main.hero -- demo build/auth/demo
+    heroes run rebel/examples/auth/main.hero -- demo build/auth/demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`keyring`](https://heroes-lang.org/rebel/keyring/), [`ldap`](https://heroes-lang.org/rebel/ldap/), [`mail`](https://heroes-lang.org/rebel/mail/), [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/), [`maps`](https://heroes-lang.org/rebel/maps/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`oauth2`](https://heroes-lang.org/rebel/oauth2/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`qr`](https://heroes-lang.org/rebel/qr/), [`random`](https://heroes-lang.org/rebel/random/), [`scram`](https://heroes-lang.org/rebel/scram/), [`strings`](https://heroes-lang.org/rebel/strings/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`webauthn`](https://heroes-lang.org/rebel/webauthn/), [`x509`](https://heroes-lang.org/rebel/x509/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`keyring`](https://heroes-lang.org/rebel/keyring/), [`ldap`](https://heroes-lang.org/rebel/ldap/), [`mail`](https://heroes-lang.org/rebel/mail/), [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/), [`maps`](https://heroes-lang.org/rebel/maps/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`oauth2`](https://heroes-lang.org/rebel/oauth2/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`qr`](https://heroes-lang.org/rebel/qr/), [`random`](https://heroes-lang.org/rebel/random/), [`scram`](https://heroes-lang.org/rebel/scram/), [`strings`](https://heroes-lang.org/rebel/strings/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`webauthn`](https://heroes-lang.org/rebel/webauthn/), [`x509`](https://heroes-lang.org/rebel/x509/).
 
 ## Its folders
 
@@ -75,4 +75,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

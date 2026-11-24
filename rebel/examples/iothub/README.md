@@ -53,13 +53,13 @@ The Rebel packages it uses, and for what:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/iothub/main.hero -- demo
+    heroes run rebel/examples/iothub/main.hero -- demo
 
 A line `main.varies` names is printed in another form where another machine decides it, each form written there.
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`amqp`](https://heroes-lang.org/rebel/amqp/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`random`](https://heroes-lang.org/rebel/random/), [`retries`](https://heroes-lang.org/rebel/retries/), [`serial`](https://heroes-lang.org/rebel/serial/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`amqp`](https://heroes-lang.org/rebel/amqp/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`random`](https://heroes-lang.org/rebel/random/), [`retries`](https://heroes-lang.org/rebel/retries/), [`serial`](https://heroes-lang.org/rebel/serial/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
 
 ## Its folders
 
@@ -80,4 +80,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

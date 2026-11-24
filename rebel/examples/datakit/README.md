@@ -11,7 +11,7 @@ view; and writes a PDF report.
 
 Run it for real from the repository's root:
 
-    heroes build examples-rebel/datakit/main.hero -o build/datakit/datakit
+    heroes build rebel/examples/datakit/main.hero -o build/datakit/datakit
     build/datakit/datakit convert orders.csv -o orders.xlsx
     build/datakit/datakit query orders.csv --where "total > 100" --group region --agg "count(), sum(total)"
     build/datakit/datakit sql orders.csv customers.csv --query "SELECT ..."
@@ -57,11 +57,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/datakit/main.hero -- demo
+    heroes run rebel/examples/datakit/main.hero -- demo
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`big`](https://heroes-lang.org/rebel/big/), [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`csv`](https://heroes-lang.org/rebel/csv/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`ini`](https://heroes-lang.org/rebel/ini/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/path`](https://heroes-lang.org/rebel/json/path/), [`lists`](https://heroes-lang.org/rebel/lists/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`property`](https://heroes-lang.org/rebel/property/), [`scanner`](https://heroes-lang.org/rebel/scanner/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`big`](https://heroes-lang.org/rebel/big/), [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`csv`](https://heroes-lang.org/rebel/csv/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`ini`](https://heroes-lang.org/rebel/ini/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/path`](https://heroes-lang.org/rebel/json/path/), [`lists`](https://heroes-lang.org/rebel/lists/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`property`](https://heroes-lang.org/rebel/property/), [`scanner`](https://heroes-lang.org/rebel/scanner/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
 
 ## Its folders
 
@@ -79,4 +79,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

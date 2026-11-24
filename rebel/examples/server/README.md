@@ -5,8 +5,8 @@ on a thread of its own, written with Rebel. Run with no words it prints byte
 for byte what `examples/server/` prints, so that program's `main.expected`
 is this one's test too.
 
-    heroes run examples-rebel/server/main.hero
-    heroes run examples-rebel/server/main.hero -- serve 8080
+    heroes run rebel/examples/server/main.hero
+    heroes run rebel/examples/server/main.hero -- serve 8080
 
 Run with no words it is the loopback shape: server and client in one
 process, the client on a thread of its own sending two requests on one
@@ -48,11 +48,11 @@ words; Rebel's `http.respond_not_found` writes Go's, which do not.
 
 The twin of [`examples/server/`](../../examples/server/), the compiler's own program, which takes no library. Run from the repository's root with no word, as that program is, it prints that program's `main.expected` byte for byte, and the check of Rebel's programs holds it to it (`tests/harness/rebel_apps.hero`):
 
-    heroes run examples-rebel/server/main.hero
+    heroes run rebel/examples/server/main.hero
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 6 faces on its `packages` line, each linked here to its reference: [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`net`](https://heroes-lang.org/rebel/net/), [`os`](https://heroes-lang.org/rebel/os/), [`strings`](https://heroes-lang.org/rebel/strings/), [`threads`](https://heroes-lang.org/rebel/threads/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 6 faces on its `packages` line, each linked here to its reference: [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`net`](https://heroes-lang.org/rebel/net/), [`os`](https://heroes-lang.org/rebel/os/), [`strings`](https://heroes-lang.org/rebel/strings/), [`threads`](https://heroes-lang.org/rebel/threads/).
 
 ## Its folders
 
@@ -64,4 +64,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

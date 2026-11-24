@@ -5,7 +5,7 @@ canonical form out, written with Rebel. It prints byte for byte what
 `examples/json/` prints from the same arguments, so that program's
 `main.expected` is this one's test too.
 
-    heroes run examples-rebel/json/main.hero -- examples/json/sample.json title
+    heroes run rebel/examples/json/main.hero -- examples/json/sample.json title
 
 What Rebel does here that `examples/json/` writes for itself:
 
@@ -38,11 +38,11 @@ their UTF-16 code units, writes `\b` and `\f` by name and a small number as
 
 The twin of [`examples/json/`](../../examples/json/), the compiler's own program, which takes no library. Run from the repository's root with that program's words, it prints that program's `main.expected` byte for byte, and the check of Rebel's programs holds it to it (`tests/harness/rebel_apps.hero`):
 
-    heroes run examples-rebel/json/main.hero -- examples/json/sample.json title
+    heroes run rebel/examples/json/main.hero -- examples/json/sample.json title
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 2 faces on its `packages` line, each linked here to its reference: [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 2 faces on its `packages` line, each linked here to its reference: [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/).
 
 ## Its folders
 
@@ -54,4 +54,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

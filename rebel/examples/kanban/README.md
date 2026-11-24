@@ -10,10 +10,10 @@ a search, an undo, is a call of the page's script over the bridge
 (`heroes.invoke`), answered by the program, which then tells the page the
 board changed.
 
-    heroes build examples-rebel/kanban/main.hero -o kanban
-    ./kanban --web examples-rebel/kanban/web    # the board in a window
+    heroes build rebel/examples/kanban/main.hero -o kanban
+    ./kanban --web rebel/examples/kanban/web    # the board in a window
     ./kanban --data boards.sqlite               # another database
-    ./kanban --demo --web examples-rebel/kanban/web
+    ./kanban --demo --web rebel/examples/kanban/web
 
 The demo runs the back end on the headless side with no screen: the window
 and the page's files made as on the desktop, a scripted session of the
@@ -36,11 +36,11 @@ they stand.
 
 Run from the repository's root with the words of `main.args`, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/kanban/main.hero -- --demo --web examples-rebel/kanban/web
+    heroes run rebel/examples/kanban/main.hero -- --demo --web rebel/examples/kanban/web
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 14 faces on its `packages` line, each linked here to its reference: [`fs`](https://heroes-lang.org/rebel/fs/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`json`](https://heroes-lang.org/rebel/json/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`ui`](https://heroes-lang.org/rebel/ui/), [`ui/webview`](https://heroes-lang.org/rebel/ui/webview/), [`uuid`](https://heroes-lang.org/rebel/uuid/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 14 faces on its `packages` line, each linked here to its reference: [`fs`](https://heroes-lang.org/rebel/fs/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`json`](https://heroes-lang.org/rebel/json/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`ui`](https://heroes-lang.org/rebel/ui/), [`ui/webview`](https://heroes-lang.org/rebel/ui/webview/), [`uuid`](https://heroes-lang.org/rebel/uuid/).
 
 ## Its folders
 
@@ -60,4 +60,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

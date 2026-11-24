@@ -1,6 +1,6 @@
 # Rebel's programs
 
-The programs of `examples-rebel/` written with Rebel, each a project of its own with its catalogue: 26 applications and 16 twins. `README.md` § A10 says what each kind is and how the check of Rebel's programs holds it; each program's own page says what it is and how to run it for real, its demo's command, the packages it uses and what its folders hold. Rebel's packages themselves are indexed in [`PACKAGES.md`](PACKAGES.md). The drivers beside them, `reach_<package>.hero`, run each package's tests and are no program of this list.
+The programs of `rebel/examples/` written with Rebel, each a project of its own with its catalogue: 26 applications and 16 twins. `README.md` § A10 says what each kind is and how the check of Rebel's programs holds it; each program's own page says what it is and how to run it for real, its demo's command, the packages it uses and what its folders hold. Rebel's packages themselves are indexed in [`PACKAGES.md`](PACKAGES.md). The drivers beside them, `reach_<package>.hero`, run each package's tests and are no program of this list.
 
 ## Applications
 
@@ -56,4 +56,4 @@ Programs of `examples/`, the compiler's own, written again with Rebel: each prin
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from each program's `main.hero` opening comment. Change that, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what the programs make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from each program's `main.hero` opening comment. Change that, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what the programs make.

@@ -19,7 +19,7 @@ metrics, is owned by one thread the workers ask by message
 
 Run for real:
 
-    heroes build examples-rebel/gateway/main.hero -o gateway
+    heroes build rebel/examples/gateway/main.hero -o gateway
     ./gateway check routes.toml     # read the routing file, print its routes
     ./gateway serve routes.toml     # serve until Ctrl-C
 
@@ -50,11 +50,11 @@ Rebel's packages, and what for:
 
 Run from the repository's root with the words of `main.args` and `main.stdin` on its input, as the check of Rebel's programs runs it (`tests/harness/rebel_apps.hero`), it plays a whole session on this machine and prints `main.expected` byte for byte:
 
-    heroes run examples-rebel/gateway/main.hero -- demo < examples-rebel/gateway/main.stdin
+    heroes run rebel/examples/gateway/main.hero -- demo < rebel/examples/gateway/main.stdin
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 29 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/cache`](https://heroes-lang.org/rebel/containers/cache/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`graphql`](https://heroes-lang.org/rebel/graphql/), [`grpc`](https://heroes-lang.org/rebel/grpc/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`http2`](https://heroes-lang.org/rebel/http2/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`pem`](https://heroes-lang.org/rebel/pem/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`x509`](https://heroes-lang.org/rebel/x509/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 29 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/cache`](https://heroes-lang.org/rebel/containers/cache/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`graphql`](https://heroes-lang.org/rebel/graphql/), [`grpc`](https://heroes-lang.org/rebel/grpc/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`http2`](https://heroes-lang.org/rebel/http2/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`pem`](https://heroes-lang.org/rebel/pem/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`x509`](https://heroes-lang.org/rebel/x509/).
 
 ## Its folders
 
@@ -77,4 +77,4 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ---
 
-This page is written by `generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.
+This page is written by `rebel/generators/rebel_index/`, never by hand, from the program's own files: its `main.hero`'s opening comment, its catalogue `heroes.toml`, its `main.args` and what its folders hold. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this page is still what they make.

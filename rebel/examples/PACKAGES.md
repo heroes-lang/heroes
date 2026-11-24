@@ -1,24 +1,21 @@
 # Rebel 0.1.0: every package, for a program that uses it
 
-Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 188 faces in 9 layers, with every one of their 6,109 functions, 1,063 records, 413 variants and 1,604 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
+Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 188 faces in 9 layers, with every one of their 6,116 functions, 1,063 records, 413 variants and 1,604 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
 
 ## How to take Rebel
 
-A program names a package of Rebel through its catalogue, `heroes.toml`, which stands beside the file it compiles and which `heroes add` writes, run in the program's folder: nobody types a catalogue. From an index that publishes Rebel:
+A program names a package of Rebel through its catalogue, `heroes.toml`, which stands beside the file it compiles and which `heroes add` writes, run in the program's folder: nobody types a catalogue. A program takes Rebel today from a clone of its repository, read where it stands:
 
-    heroes add rebel --index <address>
+    heroes add --path <clone>/rebel/library/0.1.0/files --as rebel
     heroes add rebel/csv
 
-or from a checkout of the repository, Rebel read where it stands:
-
-    heroes add --path <checkout>/packages/rebel/0.1.0/files --as rebel
-    heroes add rebel/csv
+No index publishes Rebel yet, so `heroes add rebel` by its name, which asks an index, waits for one that does; a `path` entry is read where it stands, and nothing verifies it.
 
 `heroes add rebel/<face>` adds a face to the entry's `packages` line, which names every face the program uses: a `use` of a face the line does not name is refused, and an entry fetched from an index places the faces it names and the modules they use, nothing else. A module then writes `use <rebel>/csv` and calls the face by the last part of its path: `csv.parse(text)`.
 
 ## How to read this index
 
-- The faces stand by layer, from 0: a package uses only packages of a lower layer (`examples-rebel/README.md` § A1). The list below names each with its purpose, the first sentence of its module comment; then each face has a section of its own, headed `### <face>`, in the same order.
+- The faces stand by layer, from 0: a package uses only packages of a lower layer (`rebel/examples/README.md` § A1). The list below names each with its purpose, the first sentence of its module comment; then each face has a section of its own, headed `### <face>`, in the same order.
 - A section opens with the face's layer, the `use` line that names it, and its reference page, which shows every declaration whole: each parameter, its edges and its examples. `heroes doc <rebel>/<face>`, run in a program's folder, prints the same text.
 - Then each declaration of the face, in the order the face writes it, on one line:
   - a function: its signature as `heroes doc` prints it, the call a program writes (each argument its parameter's name, with a label exactly where the call needs one, `@` where the function changes the caller's place), the first sentence of its comment, and the codes its comment names from its `Fails` on, or, where it names none, its `Fails` sentence whole, a failure handed on from what it calls;
@@ -26,7 +23,7 @@ or from a checkout of the repository, Rebel read where it stands:
   - a variant: its cases as a program writes them, `variant Name = .case | .case(field: type)`;
   - a constant: its declaration, then its value where it is written on one line; a failure code is one of them.
 - A type another face declares is written qualified, `io.Stream`, as the face writes it.
-- A failure's code is one word of a closed vocabulary, the same in every package (`examples-rebel/README.md` § A4): `not_found`, `file_not_found`, `exists`, `permission`, `not_a_directory`, `is_a_directory`, `not_empty`, `invalid`, `does_not_fit`, `not_text`, `closed`, `timeout`, `stopped`, `limit`, `unsupported`, `failed`.
+- A failure's code is one word of a closed vocabulary, the same in every package (`rebel/examples/README.md` § A4): `not_found`, `file_not_found`, `exists`, `permission`, `not_a_directory`, `is_a_directory`, `not_empty`, `invalid`, `does_not_fit`, `not_text`, `closed`, `timeout`, `stopped`, `limit`, `unsupported`, `failed`.
 
 ## The faces by layer
 
@@ -6256,8 +6253,8 @@ Background work kept in a store and run by workers, as Celery, Sidekiq and river
 - `function reserve_within(limit: Bucket, at: time.Instant, n: i64, within: time.Duration) -> Reservation?`, called `jobs.reserve_within(limit, at, n, within)`: `reserve`, kept only where the wait is no longer than `within`. Fails `timeout`.
 - `function cancel(limit: Bucket, taken: Reservation, at: time.Instant) -> Bucket?`, called `jobs.cancel(limit, taken, at)`: Gives a reservation back, as far as no later reservation has used what it took. Fails `does_not_fit`.
 - `function tokens(limit: Bucket, at: time.Instant) -> f64`, called `jobs.tokens(limit, at)`: The tokens the bucket holds at `at`, a fraction of one and the debt of reservations that wait included, as a negative number.
-- `function available(limit: Bucket, at: time.Instant) -> i64`, called `jobs.available(limit, at)`: The whole tokens the bucket holds at `at`, never below none.
-- `function with_rate(limit: Bucket, at: time.Instant, every: time.Duration, burst: i64) -> Bucket?`, called `jobs.with_rate(limit, at, every, burst)`: The bucket with another rate and another burst, holding at `at` the tokens it held, as many as the new burst allows. Fails `invalid`, `does_not_fit`.
+- `function available(limit: Bucket, at: time.Instant) -> i64`, called `jobs.available(limit, at)`: The whole tokens the bucket holds at `at`, never below none: the most `allow` grants at that time, counted on whole numbers.
+- `function with_rate(limit: Bucket, at: time.Instant, every: time.Duration, burst: i64) -> Bucket?`, called `jobs.with_rate(limit, at, every, burst)`: The bucket with another rate and another burst, holding at `at` the tokens it held, as many as the new burst allows. Fails `invalid`, `limit`, `does_not_fit`.
 - `record Sometimes(first: i64, every: i64, interval: time.Duration, count: i64, last: time.Instant?)`: Something done now and then: the first calls, every so many, and at most once in a span, as Go's `rate.Sometimes` decides it, kept as a value with the clock the caller's.
 - `record Sampled(due: bool, state: Sometimes)`: What `sometimes_due` answers.
 - `function sometimes(first: i64, every: i64, interval: time.Duration) -> Sometimes?`, called `jobs.sometimes(first: first, every: every, interval)`: A `Sometimes` of no calls yet. Fails `invalid`.
@@ -9109,7 +9106,7 @@ Layer 6, named `use <rebel>/jobs/redis_store`, [its reference](https://heroes-la
 
 Jobs kept in Redis, as Sidekiq, asynq and RQ keep them: each job a hash, each queue sorted sets of the jobs ready, waiting, running and finished, and every change a Lua script the server runs whole, so any number of workers each claim a job once and never see one half moved.
 
-- `constant PREFIX: str`, value `"rebel_jobs:"`: The prefix of every key the store writes: `rebel_jobs:job:<id>` for a job's fields, `rebel_jobs:ready:<queue>` and the other sets of a queue, `rebel_jobs:unique:<key>`, `rebel_jobs:periodic:<name>`.
+- `constant PREFIX: str`, value `"rebel_jobs:"`: The prefix of every key the store writes: `rebel_jobs:job:<id>` for a job's fields, `rebel_jobs:ready:<queue>` and the other sets of a queue, `rebel_jobs:unique:<key>`, `rebel_jobs:periodic:<name>`, `rebel_jobs:limit:<name>` for a limit workers share.
 - `function enqueue(@c: redis.Client, job: jobs.Job) -> i64?`, called `redis_store.enqueue(@c, job)`: Enqueues `job` and answers its id. Fails `exists`.
 - `function enqueue_many(@c: redis.Client, batch: [jobs.Job]) -> [i64]?`, called `redis_store.enqueue_many(@c, batch)`: Enqueues every job of `batch`, all or none, in one script, and answers their ids in its order. Fails as `enqueue` fails for the first job refused, the message naming its place in `batch`, and then keeps none of them.
 - `function find_unique(@c: redis.Client, key: str) -> jobs.Info?`, called `redis_store.find_unique(@c, key)`: The job not finished, waiting or running, that holds the unique key `key`. Fails `invalid`, `not_found`.
@@ -9132,6 +9129,13 @@ Jobs kept in Redis, as Sidekiq, asynq and RQ keep them: each job a hash, each qu
 - `function retry(@c: redis.Client, id: i64) -> jobs.Info?`, called `redis_store.retry(@c, id)`: Makes job `id` ready to run now, and answers it: a job failed, cancelled or completed runs again, with one attempt more where it had none left; a job waiting is made ready at once. Fails `not_found`, `invalid`, `exists`.
 - `function delete(@c: redis.Client, id: i64) -> ()?`, called `redis_store.delete(@c, id)`: Removes job `id`, whatever it stands in but `running`. Fails `not_found`, `invalid`.
 - `function enqueue_due(@c: redis.Client, schedules: [jobs.Periodic]) -> [i64]?`, called `redis_store.enqueue_due(@c, schedules)`: Enqueues the job of each schedule of `schedules` whose run is due, and answers the ids enqueued: any number of programs may call it, as often as they like, and each due run is enqueued once. Fails `not_found`.
+- `function set_limit(@c: redis.Client, name: str, every: time.Duration, burst: i64) -> jobs.Bucket?`, called `redis_store.set_limit(@c, name, every, burst)`: Makes the limit `name` full, a token every `every` and a burst of `burst`, or gives the limit of that name this rate and burst, holding the tokens it held, as many as the new burst allows, a debt kept: `jobs.bucket` and `jobs.with_rate` kept in the store, where every worker of the server takes from the one limit. Fails `invalid`, `does_not_fit`.
+- `function remove_limit(@c: redis.Client, name: str) -> ()?`, called `redis_store.remove_limit(@c, name)`: Removes the limit `name`; a worker that asks it next fails `not_found`. Fails `not_found`, `invalid`.
+- `function limit_named(@c: redis.Client, name: str) -> jobs.Bucket?`, called `redis_store.limit_named(@c, name)`: The limit `name` as it stands now, its `seen` the server's time of the reading: `jobs.tokens(limit, at: limit.seen)` is what it holds then. Fails `not_found`, `invalid`.
+- `function allow(@c: redis.Client, name: str, n: i64) -> jobs.Allowed?`, called `redis_store.allow(@c, name, n)`: Whether `n` tokens of the limit `name` are there now, taking them where they are, as `jobs.allow` does of a bucket the program holds; any number of workers on any number of connections take from it, and none more than it holds. Fails `invalid`, `not_found`, `does_not_fit`.
+- `function reserve(@c: redis.Client, name: str, n: i64) -> jobs.Reservation?`, called `redis_store.reserve(@c, name, n)`: Takes `n` tokens of the limit `name` now even if they are not there, and tells how long to wait for them: reservations of every worker queue, each behind the ones before, as `jobs.reserve` does. Fails `invalid`, `not_found`, `does_not_fit`.
+- `function reserve_within(@c: redis.Client, name: str, n: i64, within: time.Duration) -> jobs.Reservation?`, called `redis_store.reserve_within(@c, name, n, within)`: `reserve`, the tokens taken only where the wait for them is no longer than `within`, as `jobs.reserve_within` does. Fails `timeout`.
+- `function cancel_reservation(@c: redis.Client, name: str, taken: jobs.Reservation) -> jobs.Bucket?`, called `redis_store.cancel_reservation(@c, name, taken)`: Gives the reservation `taken` of the limit `name` back, as far as no later taking of any worker has used what it took, as `jobs.cancel` does, and answers the limit after. Fails `invalid`, `not_found`, `does_not_fit`.
 
 
 ### ui/webview
@@ -10940,4 +10944,4 @@ A reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.Reverse
 
 ---
 
-This index is written by `generators/rebel_index/`, never by hand, from `heroes doc`'s reference of every face of `packages/rebel/0.1.0/files/` and from `examples-rebel/README.md` § A1 and § A4. Change those, then run `heroes run generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this index is still what they make.
+This index is written by `rebel/generators/rebel_index/`, never by hand, from `heroes doc`'s reference of every face of `rebel/library/0.1.0/files/` and from `rebel/examples/README.md` § A1 and § A4. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this index is still what they make.
