@@ -86,7 +86,7 @@ constant SYSLOG_SOCKET: str
 
 # The most bytes of a name.
 constant NAME_MOST: i64
-    checks.NAME_MOST
+    64
 
 ## Levels and logs
 
