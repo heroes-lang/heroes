@@ -411,14 +411,7 @@ function encode_trust_store(certificates: [x509.Certificate], names: [str], pass
         return fail(code: INVALID, msg: "the trust store written does not read back")
     return ok(file)
 
-## Examples
-
-# A server's identity read from a `.pfx`, as `tls.Server` takes it.
-test "identities_of: a server's key and chain from a file OpenSSL wrote"
-    contents = decode(der: samples.modern(), password: "hero").must()
-    identity = identities_of(contents).must()[0]
-    assert pem.parse(key_pem(identity)).must().label == "PRIVATE KEY"
-    assert identity.chain.len() == 2
+## Tests
 
 test "decode: OpenSSL's default, the key and both certificates, their names and the MAC"
     contents = decode(der: samples.modern(), password: "hero").must()
@@ -587,3 +580,60 @@ test "chain_pem and key_pem: the chain's two blocks in order, and the key as PKC
     assert chain.len() == 2
     assert chain[0].der == identity.chain[0].der
     assert pem.parse(key_pem(identity)).must().data == written.key_plain()
+
+## Examples
+
+# A server's identity read from a `.pfx`, as `tls.Server` takes it.
+test "identities_of: a server's key and chain from a file OpenSSL wrote"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    identity = identities_of(contents).must()[0]
+    assert pem.parse(key_pem(identity)).must().label == "PRIVATE KEY"
+    assert identity.chain.len() == 2
+
+# A `.pfx` file opened by its password, its MAC checked: the key and the
+# certificates it holds.
+test "decode: a file OpenSSL wrote"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    assert contents.keys.len() == 1 && contents.certificates.len() == 2
+
+# A file written with no MAC, as some tools write one, read all the same.
+test "decode_without_integrity: a file with no MAC"
+    contents = decode_without_integrity(der: samples.no_mac(), password: "hero").must()
+    assert contents.integrity == .none && contents.keys.len() == 1
+
+# A server's chain as PEM, the key's own certificate first: `tls.Server`'s
+# `chain`.
+test "chain_pem: a server's chain"
+    identity = identities_of(decode(der: samples.modern(), password: "hero").must()).must()[0]
+    assert x509.parse_certificates(chain_pem(identity)).must().len() == 2
+
+# A server's key as PKCS #8 PEM: `tls.Server`'s `key`.
+test "key_pem: a server's key"
+    identity = identities_of(decode(der: samples.modern(), password: "hero").must()).must()[0]
+    assert pem.parse(key_pem(identity)).must().label == "PRIVATE KEY"
+
+# What a file is written with where the program asks nothing more.
+test "default_options: AES-256 and Java's 10000 iterations"
+    o = default_options()
+    assert o.protection == .aes256 && o.iterations == 10000
+
+# A key and its chain written as a `.pfx` under a password, then read back.
+test "encode: a key and its chain"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    key @= keypairs.decode_private_der(written.key_plain()).must()
+    chain = identities_of(contents).must()[0].chain
+    file = encode(key: key, chain: chain, name: "server", password: "secret", options: default_options()).must()
+    keypairs.close_private(@key).must()
+    assert decode(der: file, password: "secret").must().keys[0].name == "server"
+
+# A trust store for a Java program: one authority's certificate, named and
+# trusted for every purpose.
+test "encode_trust_store: one authority for Java"
+    chain = identities_of(decode(der: samples.modern(), password: "hero").must()).must()[0].chain
+    store = encode_trust_store(
+        certificates: [chain[1]],
+        names: ["heroca"],
+        password: "changeit",
+        options: default_options()
+    ).must()
+    assert decode(der: store, password: "changeit").must().certificates[0].trusted_for == [ANY_EXTENDED_KEY_USAGE]
