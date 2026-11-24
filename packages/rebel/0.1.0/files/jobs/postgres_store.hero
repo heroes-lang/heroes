@@ -41,6 +41,7 @@
 
 use jobs
 use jobs/internal/limits
+use jobs/internal/taking
 use jobs/postgres_store/internal/buckets
 use jobs/postgres_store/internal/live
 use jobs/postgres_store/internal/rows
@@ -556,7 +557,10 @@ function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?
 # - `burst`: the most tokens it holds, so the most attempts that go at once.
 #
 # The statement locks the limit's row: inside the program's transaction the
-# row stays locked, and every other taker waits, until it ends. Fails
+# row stays locked, and every other taker waits, until it ends. A change
+# keeps the tokens held, a debt and a fraction of a token included, as
+# exactly that many times the new `every`, rounded to the nearest nanosecond,
+# a tie away from nothing, as `jobs.with_rate` does. Fails
 # `invalid` as `jobs.bucket` does and where `name` is empty, too long or holds
 # a zero byte; `does_not_fit` where the debt kept at the new rate reaches past
 # what an `Instant` holds, the limit unchanged; and with the database's
@@ -607,7 +611,7 @@ function limit_named(@db: postgres.Db, name: str) -> jobs.Bucket?
 # and with the database's failure. See also `reserve`, `set_limit`.
 function allow(@db: postgres.Db, name: str, n: i64) -> jobs.Allowed?
     taken = buckets.take(@db, name: name, n: n, longest: time.Duration(nanoseconds: 0), clock: .server)?
-    return buckets.allowed(taken)
+    return taking.allowed(taken)
 
 # Takes `n` tokens of the limit `name` now even if they are not there, and
 # tells how long to wait for them: reservations of every worker queue, each
@@ -637,7 +641,7 @@ function reserve(@db: postgres.Db, name: str, n: i64) -> jobs.Reservation?
 # does. See also `allow`.
 function reserve_within(@db: postgres.Db, name: str, n: i64, within: time.Duration) -> jobs.Reservation?
     taken = buckets.take(@db, name: name, n: n, longest: within, clock: .server)?
-    return buckets.reserved(taken, within: within)
+    return taking.reserved(taken, within: within)
 
 # Gives the reservation `taken` of the limit `name` back, as far as no later
 # taking of any worker has used what it took, as `jobs.cancel` does, and

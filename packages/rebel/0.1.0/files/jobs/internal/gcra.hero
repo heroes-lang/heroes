@@ -7,6 +7,7 @@
 # in an `Instant` fails `does_not_fit` and changes nothing.
 
 use jobs
+use jobs/internal/spans
 use time
 
 constant INVALID: str
@@ -130,14 +131,44 @@ function allow(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Allowed?
 #
 # - `limit`: the bucket.
 # - `at`: the time.
+#
+# The whole tokens and the fraction are read on whole numbers, the time held
+# up to 2^64 - 1 ns either way, and only then made a float. A bucket that
+# earns a token in no time, which only a hand-made one does, holds its burst.
 function tokens(limit: jobs.Bucket, at: time.Instant) -> f64
-    t = moment(limit: limit, at: at)
-    behind = time.between(from: limit.empty_at, to: t).default(time.max_duration())
-    held = time.to_float(behind, .nanosecond) / to_f64(limit.every.nanoseconds)
-
-    if held > to_f64(limit.burst)
+    if limit.every.nanoseconds < 1
         return to_f64(limit.burst)
-    return held
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+    every = to_u64(limit.every.nanoseconds).must()
+    whole = held.nanoseconds / every
+
+    if held.backwards
+        return -(to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every))
+
+    if limit.burst < 1 || whole >= to_u64(limit.burst).must()
+        return to_f64(limit.burst)
+    return to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every)
+
+# The whole tokens a bucket holds at `at`, never below none, read on whole
+# numbers.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+function available(limit: jobs.Bucket, at: time.Instant) -> i64
+    if limit.burst < 1
+        return 0
+
+    if limit.every.nanoseconds < 1
+        return limit.burst
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+
+    if held.backwards
+        return 0
+    whole = held.nanoseconds / to_u64(limit.every.nanoseconds).must()
+
+    if whole >= to_u64(limit.burst).must()
+        return limit.burst
+    return to_i64(whole).must()
 
 # A reservation given back, as far as no later reservation has used it.
 #
@@ -166,25 +197,43 @@ function cancel(limit: jobs.Bucket, taken: jobs.Reservation, at: time.Instant) -
     return ok(jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: moved, seen: t))
 
 # The bucket with another time to earn a token and another burst, holding at
-# `at` the tokens it held, as many as the new burst allows.
+# `at` the tokens it held, as many as the new burst allows, a debt kept.
 #
 # - `limit`: the bucket.
 # - `at`: the time of the change.
 # - `every`: the new time to earn one token.
 # - `burst`: the new burst.
 #
-# Fails `invalid` as `make` does and `does_not_fit` where the sums leave an `Instant`.
+# A change keeps the tokens held, a debt and a fraction of a token included,
+# as exactly that many times the new `every`, rounded to the nearest
+# nanosecond, a tie away from nothing: `(t - empty_at) * every / limit.every`
+# on whole numbers, which `spans.scaled` keeps inside a `u64`. Fails `invalid`
+# as `make` does, and where `limit` earns a token in no time or holds fewer
+# than one, as no bucket `make` makes does; `does_not_fit` where the instant
+# it leaves is not an `Instant`.
 function reshape(limit: jobs.Bucket, at: time.Instant, every: time.Duration, burst: i64) -> jobs.Bucket?
     fresh = make(every: every, burst: burst, at: at)?
-    t = moment(limit: limit, at: at)
-    held = tokens(limit: limit, at: t)
 
-    kept = if held > to_f64(burst)
-        to_f64(burst)
+    if limit.every.nanoseconds < 1 || limit.burst < 1
+        return fail(
+            code: INVALID,
+            msg: f"the bucket changed holds {limit.burst} tokens at one every {time.format_duration(limit.every)}: a bucket holds at least one token, and a token takes more than nothing to earn"
+        )
+    t = moment(limit: limit, at: at)
+
+    least = if burst < limit.burst
+        burst
     else
-        held
-    owed = time.from_seconds_float(-kept * to_f64(every.nanoseconds) / 1000000000.0)?
-    return ok(jobs.Bucket(every: fresh.every, burst: fresh.burst, empty_at: time.add(t: t, d: owed)?, seen: t))
+        limit.burst
+    held = spans.between(from: limit.empty_at, to: t)
+    old_every = to_u64(limit.every.nanoseconds).must()
+
+    kept = if !held.backwards && held.nanoseconds / old_every >= to_u64(least).must()
+        to_u64(least * every.nanoseconds).must()
+    else
+        spans.scaled(n: held.nanoseconds, by: to_u64(every.nanoseconds).must(), over: old_every)?
+    empty = spans.shift(t: t, by: spans.Span(nanoseconds: kept, backwards: !held.backwards))?
+    return ok(jobs.Bucket(every: fresh.every, burst: fresh.burst, empty_at: empty, seen: t))
 
 # Whether the next call of a `Sometimes` is due.
 #
@@ -329,6 +378,70 @@ test "with_rate: the tokens held kept across a new rate and burst, a debt kept, 
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
+test "with_rate: the tokens kept to the nanosecond across rates of 1 ns to 2^61 ns, at 2^53 and past it, bursts of 1 to 2^61, a bucket full, half full, empty and in debt, changed at its last taking and 1 ms after, to its own rate, a slower one and a faster one, a tie and a near tie, as Python 3's integers answer"
+    for row in change_rows()
+        assert changed(row) == row
+
+test "with_rate: a debt past an i64 of nanoseconds, which only a change of rate makes, kept at a new rate; a product past 2^64 and an instant past an Instant does_not_fit; and a bucket no rate made invalid"
+    from = time.add(t: time.min_instant(), d: time.nanoseconds(2_305_843_009_213_693_952)).must()
+    owed @= make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: from).must()
+
+    for _ in range(from: 0, to: 4)
+        owed @ reserve(limit: owed, at: from, n: 2_305_843_009_213_693_952).must().bucket
+
+    assert owed.empty_at == time.epoch()
+    owed @ reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1_152_921_504_606_846_976).must()
+    assert owed.empty_at == time.Instant(unix_nanoseconds: 6_917_529_027_641_081_856)
+    assert reshape(limit: owed, at: from, every: time.nanoseconds(1), burst: 1).must().empty_at == time.epoch()
+    assert reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1).must().empty_at == owed.empty_at
+    late = time.add(t: time.max_instant(), d: time.seconds(-5).must()).must()
+    short @= make(every: time.seconds(1).must(), burst: 1, at: late).must()
+    short @ reserve(limit: short, at: late, n: 1).must().bucket
+    short @ reserve(limit: short, at: late, n: 1).must().bucket
+
+    for bad in [reshape(limit: owed, at: from, every: time.nanoseconds(3), burst: 1), reshape(limit: owed, at: from, every: time.nanoseconds(4), burst: 1), reshape(limit: short, at: late, every: time.nanoseconds(2_305_843_009_213_693_952), burst: 1), reshaped([9_007_199_254_740_993, 200, 400, 0, 2_305_843_009_213_693_952, 1]), reshaped([100_000_000_000_000_001, 20, 40, 1_000_000, 2_305_843_009_213_693_952, 1])]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == DOES_NOT_FIT
+
+    for made in [jobs.Bucket(every: time.nanoseconds(0), burst: 1, empty_at: origin(), seen: origin()), jobs.Bucket(every: time.nanoseconds(1), burst: 0, empty_at: origin(), seen: origin())]
+        match reshape(limit: made, at: origin(), every: time.nanoseconds(1), burst: 1)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "available and tokens: 1 ns short of three tokens at 2^53 + 1 ns a token holds two, a debt past an i64 none and its count below nothing, a full burst of 2^61 all of it, a hand-made bucket of no rate its burst, and on every row of a change of rate the most allow grants"
+    short @= make(every: time.nanoseconds(9_007_199_254_740_993), burst: 200, at: origin()).must()
+    short @ reserve(limit: short, at: origin(), n: 200).must().bucket
+    almost = time.add(t: origin(), d: time.nanoseconds(27_021_597_764_222_978)).must()
+    assert available(limit: short, at: almost) == 2 && tokens(limit: short, at: almost) > 2.0
+    assert allow(limit: short, at: almost, n: 2).must().granted && !allow(limit: short, at: almost, n: 3).must().granted
+    three = time.add(t: almost, d: time.nanoseconds(1)).must()
+    assert available(limit: short, at: three) == 3 && allow(limit: short, at: three, n: 3).must().granted
+    from = time.add(t: time.min_instant(), d: time.nanoseconds(2_305_843_009_213_693_952)).must()
+    owed @= make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: from).must()
+
+    for _ in range(from: 0, to: 4)
+        owed @ reserve(limit: owed, at: from, n: 2_305_843_009_213_693_952).must().bucket
+
+    owed @ reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1_152_921_504_606_846_976).must()
+    assert available(limit: owed, at: from) == 0 && tokens(limit: owed, at: from) == to_f64(-6_917_529_027_641_081_856)
+    full = make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: origin()).must()
+    assert available(limit: full, at: at_ms(1)) == 2_305_843_009_213_693_952 && tokens(limit: full, at: at_ms(1)) == to_f64(2_305_843_009_213_693_952)
+    free = jobs.Bucket(every: time.nanoseconds(0), burst: 3, empty_at: origin(), seen: origin())
+    assert available(limit: free, at: origin()) == 3 && tokens(limit: free, at: origin()) == 3.0
+    none = jobs.Bucket(every: time.nanoseconds(1), burst: 0, empty_at: at_ms(-1), seen: origin())
+    assert available(limit: none, at: origin()) == 0 && tokens(limit: none, at: origin()) == 0.0
+
+    for row in change_rows()
+        changed_to = reshaped(row).must()
+        most = available(limit: changed_to, at: changed_to.seen)
+
+        if most >= 1
+            assert allow(limit: changed_to, at: changed_to.seen, n: most).must().granted
+
+        if most < changed_to.burst
+            assert !allow(limit: changed_to, at: changed_to.seen, n: most + 1).must().granted
+
 test "bucket: a rate of nothing, a burst of nothing, a burst that takes too long to earn, and an instant at the end of the range"
     now = origin()
     zero = time.Duration(nanoseconds: 0)
@@ -403,3 +516,108 @@ test "sample: the first calls, every third, and an interval, as x/time/rate's So
 # - `interval_ms`: the span in milliseconds.
 function sometimes_for(first: i64, every: i64, interval_ms: i64) -> jobs.Sometimes
     return jobs.sometimes(first: first, every: every, interval: time.milliseconds(interval_ms).must()).must()
+
+# A bucket of a token every `row[0]` nanoseconds and a burst of `row[1]`,
+# full at the origin and `row[2]` tokens reserved there, changed `row[3]`
+# nanoseconds later to a token every `row[4]` nanoseconds and a burst of
+# `row[5]`: what `reshape` answers.
+#
+# - `row`: the six numbers, and any after them.
+function reshaped(row: [i64]) -> jobs.Bucket?
+    limit @= make(every: time.nanoseconds(row[0]), burst: row[1], at: origin()).must()
+    left @= row[2]
+
+    while left > 0
+        n = if left < row[1]
+            left
+        else
+            row[1]
+        limit @ reserve(limit: limit, at: origin(), n: n).must().bucket
+        left @ left - n
+
+    t = time.add(t: origin(), d: time.nanoseconds(row[3])).must()
+    return reshape(limit: limit, at: t, every: time.nanoseconds(row[4]), burst: row[5])
+
+# A row of a test of `reshape`, as `reshaped` reads it: its six numbers and
+# the instant the change leaves the bucket empty at, in nanoseconds after the
+# origin.
+#
+# - `row`: the six numbers, and any after them.
+function changed(row: [i64]) -> [i64]
+    after = reshaped(row).must()
+    return row.slice(from: 0, to: 6).push(time.between(from: origin(), to: after.empty_at).must().nanoseconds)
+
+# The rows the tests of a change of rate share, `jobs.with_rate`'s here and
+# both stores': each a bucket's every and burst in nanoseconds, the tokens
+# reserved at the origin, how long after them the change comes, the new
+# every and burst, and the instant the change leaves the bucket empty at, in
+# nanoseconds after the origin, as Python 3's integers answered on
+# 2026-11-24, the tokens kept being `(2 * |n| * every + old) // (2 * old)`
+# with the sign of `n`, the time held.
+function change_rows() -> [[i64]]
+    return [
+        [1, 1_000_000, 0, 0, 1, 1_000_000, -1_000_000]
+        [1, 1_000_000, 0, 1_000_000, 4, 1_000_000, -3_000_000]
+        [1, 1_000_000, 500_000, 0, 1, 1_000_000, -500_000]
+        [1, 1_000_000, 500_000, 1_000_000, 1, 1, 999_999]
+        [1, 1_000_000, 1_000_000, 0, 9_007_199_254_740_993, 200, 0]
+        [1, 1_000_000, 1_000_000, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [1, 1_000_000, 2_000_000, 0, 1, 2_305_843_009_213_693_952, 1_000_000]
+        [1, 1_000_000, 2_000_000, 1_000_000, 1, 1_000_000, 1_000_000]
+        [1, 2_305_843_009_213_693_952, 0, 0, 1, 2_305_843_009_213_693_952, -2_305_843_009_213_693_952]
+        [1, 2_305_843_009_213_693_952, 0, 1_000_000, 1, 1, 999_999]
+        [1, 2_305_843_009_213_693_952, 1_152_921_504_606_846_976, 0, 9_007_199_254_740_993, 200, -1_801_439_850_948_198_600]
+        [1, 2_305_843_009_213_693_952, 1_152_921_504_606_846_976, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952, 0, 1, 2_305_843_009_213_693_952, 0]
+        [1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952, 1_000_000, 4, 576_460_752_303_423_488, -3_000_000]
+        [1, 2_305_843_009_213_693_952, 4_611_686_018_427_387_904, 0, 1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952]
+        [1, 2_305_843_009_213_693_952, 4_611_686_018_427_387_904, 1_000_000, 1, 1, 2_305_843_009_213_693_952]
+        [333, 50, 0, 0, 111, 50, -5_550]
+        [333, 50, 0, 1_000_000, 1, 1, 999_999]
+        [333, 50, 25, 0, 9_007_199_254_740_993, 200, -225_179_981_368_524_825]
+        [333, 50, 25, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [333, 50, 50, 0, 1, 2_305_843_009_213_693_952, 0]
+        [333, 50, 50, 1_000_000, 333, 50, 983_350]
+        [333, 50, 100, 0, 1_000, 50, 50_000]
+        [333, 50, 100, 1_000_000, 111, 50, 994_450]
+        [7_000_000_000, 2, 0, 0, 1, 1, -1]
+        [7_000_000_000, 2, 0, 1_000_000, 9_007_199_254_740_993, 200, -18_014_398_508_481_986]
+        [7_000_000_000, 2, 1, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [7_000_000_000, 2, 1, 1_000_000, 1, 2_305_843_009_213_693_952, 999_999]
+        [7_000_000_000, 2, 2, 0, 7_000_000_000, 2, 0]
+        [7_000_000_000, 2, 2, 1_000_000, 21_000_000_001, 2, -2_000_000]
+        [7_000_000_000, 2, 4, 0, 2_333_333_333, 2, 4_666_666_666]
+        [7_000_000_000, 2, 4, 1_000_000, 1, 1, 1_000_002]
+        [9_007_199_254_740_992, 200, 0, 0, 9_007_199_254_740_993, 200, -1_801_439_850_948_198_600]
+        [9_007_199_254_740_992, 200, 0, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [9_007_199_254_740_992, 200, 100, 0, 1, 2_305_843_009_213_693_952, -100]
+        [9_007_199_254_740_992, 200, 100, 1_000_000, 9_007_199_254_740_992, 200, -900_719_925_474_099_200]
+        [9_007_199_254_740_992, 200, 200, 0, 27_021_597_764_222_977, 85, 0]
+        [9_007_199_254_740_992, 200, 200, 1_000_000, 3_002_399_751_580_330, 200, 666_667]
+        [9_007_199_254_740_992, 200, 400, 0, 1, 1, 200]
+        [9_007_199_254_740_992, 200, 400, 1_000_000, 9_007_199_254_740_993, 200, 1_801_439_850_948_198_600]
+        [9_007_199_254_740_993, 200, 0, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [9_007_199_254_740_993, 200, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_800]
+        [9_007_199_254_740_993, 200, 100, 0, 9_007_199_254_740_993, 200, -900_719_925_474_099_300]
+        [9_007_199_254_740_993, 200, 100, 1_000_000, 27_021_597_764_222_980, 85, -2_296_835_809_957_953_300]
+        [9_007_199_254_740_993, 200, 200, 0, 3_002_399_751_580_331, 200, 0]
+        [9_007_199_254_740_993, 200, 200, 1_000_000, 1, 1, 1_000_000]
+        [9_007_199_254_740_993, 200, 400, 1_000_000, 1, 2_305_843_009_213_693_952, 1_000_200]
+        [2_305_843_009_213_693_952, 1, 0, 0, 9_007_199_254_740_993, 200, -9_007_199_254_740_993]
+        [2_305_843_009_213_693_952, 1, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_999]
+        [2_305_843_009_213_693_952, 1, 1, 0, 2_305_843_009_213_693_952, 1, 0]
+        [2_305_843_009_213_693_952, 1, 1, 1_000_000, 768_614_336_404_564_650, 1, 666_667]
+        [2_305_843_009_213_693_952, 1, 2, 0, 1, 1, 1]
+        [2_305_843_009_213_693_952, 1, 2, 1_000_000, 9_007_199_254_740_993, 200, 9_007_199_255_737_087]
+        [100_000_000_000_000_001, 20, 0, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [100_000_000_000_000_001, 20, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_980]
+        [100_000_000_000_000_001, 20, 10, 0, 100_000_000_000_000_001, 20, -1_000_000_000_000_000_010]
+        [100_000_000_000_000_001, 20, 10, 1_000_000, 300_000_000_000_000_004, 7, -2_099_999_999_999_000_028]
+        [100_000_000_000_000_001, 20, 20, 0, 33_333_333_333_333_333, 20, 0]
+        [100_000_000_000_000_001, 20, 20, 1_000_000, 1, 1, 1_000_000]
+        [100_000_000_000_000_001, 20, 40, 0, 9_007_199_254_740_993, 200, 180_143_985_094_819_860]
+        [1, 1_000_000, 0, 1_000_000_000, 9_007_199_254_740_993, 200, -1_801_439_849_948_198_600]
+        [1, 1_000_000, 0, 1_000_000_000, 9_007_199_254_740_992, 200, -1_801_439_849_948_198_400]
+        [7_000_000_000, 2, 4, 83_001_685, 700_000_000, 5, 1_474_701_517]
+        [100_000_000_000_000_001, 20, 10, 50_000_000_000_000_000, 1, 20, 49_999_999_999_999_990]
+    ]

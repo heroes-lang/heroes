@@ -272,26 +272,31 @@ function allowed_code(r: jobs.Allowed?) -> str
         .ok _  => return "ok"
         .err e => return e.code
 
-# Whether the instant `got` a store's change of rate leaves is the one
-# `want` of `jobs.with_rate` or within the error of its float: `with_rate`
-# rounds the tokens held through a float of seconds, a few of whose last
-# places a span past 2^53 nanoseconds loses, and sends a tie between two
-# nanoseconds to the even one, where the store rounds the exact quotient,
-# half away from nothing.
+# A row of `gcra.change_rows` as the store answers it: a limit `name` of a
+# token every `row[0]` nanoseconds and a burst of `row[1]`, set at the
+# origin, `row[2]` tokens reserved there, changed `row[3]` nanoseconds later
+# to a token every `row[4]` nanoseconds and a burst of `row[5]`; answers the
+# row's six numbers and the instant the store leaves the limit empty at, in
+# nanoseconds after the origin.
 #
-# - `got`: the instant the store answered.
-# - `want`: the instant `jobs.with_rate` answered.
-# - `seen`: the time of the change, which the span is counted from.
-function near(got: time.Instant, want: time.Instant, seen: time.Instant) -> bool
-    apart = got.unix_nanoseconds - want.unix_nanoseconds
-    span = seen.unix_nanoseconds - want.unix_nanoseconds
+# - `c`: the client.
+# - `name`: the limit's name, one no other row takes.
+# - `row`: the six numbers, and any after them.
+function changed(@c: redis.Client, name: str, row: [i64]) -> [i64]?
+    _ = set(@c, name: name, every: time.nanoseconds(row[0]), burst: row[1], clock: at_ms(0))?
+    left @= row[2]
 
-    magnitude = if span < 0
-        -span
-    else
-        span
-    bound = 1 + magnitude / 1_125_899_906_842_624
-    return apart <= bound && -apart <= bound
+    while left > 0
+        n = if left < row[1]
+            left
+        else
+            row[1]
+        _ = reserve_at(@c, name: name, n: n, ms: 0)?
+        left @ left - n
+
+    at = time.add(t: gcra.origin(), d: time.nanoseconds(row[3]))?
+    after = set(@c, name: name, every: time.nanoseconds(row[4]), burst: row[5], clock: .scripted(at: at))?
+    return ok(row.slice(from: 0, to: 6).push(time.between(from: gcra.origin(), to: after.empty_at)?.nanoseconds))
 
 # The code `r` failed with, or `ok`.
 #
@@ -498,7 +503,7 @@ test "take: time named earlier than an earlier call is read at that call's time,
             assert gcra.close(a: tokens_at(@c, name: "one", ms: 0), b: 0.0)
             redis.close(@c).must()
 
-test "take, give_back and set: a thousand takings, reservations, give-backs and changes of rate at scripted times, rates past 2^53 nanoseconds among them, each answered as jobs's own bucket answers it, a change of rate within the error of its float"
+test "take, give_back and set: a thousand takings, reservations, give-backs and changes of rate at scripted times, rates past 2^53 nanoseconds among them, each answered as jobs's own bucket answers it, a change of rate to the nanosecond"
     match live.connect()
         .err e => skip_test(reason: e.msg)
         .ok first =>
@@ -559,9 +564,20 @@ test "take, give_back and set: a thousand takings, reservations, give-backs and 
                                 burst: bursts[pick],
                                 clock: at_ms(ms)
                             ).must()
-                            assert got.every == want.every && got.burst == want.burst && got.seen == want.seen
-                            assert near(got: got.empty_at, want: want.empty_at, seen: want.seen)
+                            assert got == want
                             mine @ got
                             held @ []
+
+            redis.close(@c).must()
+
+test "set: every row of a change of rate jobs.with_rate is tested on, rates of 1 ns to 2^61 ns, at 2^53 and past it, a limit full, half full, empty and in debt, a tie and a near tie, each to the nanosecond as Python 3's integers answer"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            rows = gcra.change_rows()
+
+            for i in range(from: 0, to: rows.len())
+                assert changed(@c, name: f"shape{i}", row: rows[i]).must() == rows[i]
 
             redis.close(@c).must()

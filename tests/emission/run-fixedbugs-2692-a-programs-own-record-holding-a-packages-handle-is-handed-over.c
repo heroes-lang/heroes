@@ -323,7 +323,7 @@ void h_main_main(void) { HeroMail * h0_states = {0}; HERO_NODEBUG h_0opt_16d320d
     hero_unreachable();
 hero_bb3:
 #line 17 "tests/golden/run/fixedbugs-2692-a-programs-own-record-holding-a-packages-handle-is-handed-over.case/main.hero"
-    t27 = h2_t; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 17, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t27, &hero_here); h_0take_1b9a87(&hero_box->answer, &t28); hero_thread_box_free(hero_box); } hero_print_int(t28); hero_print_end();
+    t27 = h2_t; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 17, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t27, &hero_here); t28 = *(int64_t *)__builtin_memset(&t28, 0, sizeof t28); h_0take_1b9a87(&hero_box->answer, &t28); hero_thread_box_free(hero_box); } hero_print_int(t28); hero_print_end();
 #line 328 "main.c"
     hero_mail_release_at(&h0_states);
     h_0opt_16d320dd_release(hero_slot_escape(&h1_f0));
@@ -345,7 +345,7 @@ hero_bb4:
 
 #line 23 "tests/golden/run/fixedbugs-2692-a-programs-own-record-holding-a-packages-handle-is-handed-over.case/main.hero"
 int64_t h_main_owner(HeroMail * h0_states) { h_0opt_19de4933 h1_got = {0}; HERO_NODEBUG h_0opt_19de4933 h2_f0 = {0}, h3_f1 = {0}, h7_own7 = {0}, t5, t6, t7, t12, t13, t17, t19, t25, t26, t27, t28; h_main_State h4_state = {0}; h_1vaultstore_Store h5_held = {0}; HERO_NODEBUG int64_t h6_ret0, t2, t3, t4, t8, t9, t11, t14, t15, t22, t23, t24; HERO_NODEBUG HeroMail *t1; HERO_NODEBUG bool t10, t16; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_main_State t20, t29; HERO_NODEBUG h_1vaultstore_Store t21, t30; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_states; t2 = INT64_C(0); t3 = INT64_C(1); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.owner", 24, 37); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.owner", 24, 11}; HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t1, &t5.hero_as.hero_ok, t4, &hero_here); if (hero_answer == 0) t5.hero_tag = INT64_C(0); else { t5.hero_tag = INT64_C(1); t5.hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped(); } } t25 = h7_own7; h7_own7 = t5; h_0opt_19de4933_release(&t25); t26 = h1_got; h_0opt_19de4933_retain(&t5); h1_got = t5; h_0opt_19de4933_release(&t26);
+    t1 = h0_states; t2 = INT64_C(0); t3 = INT64_C(1); if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow_at("main.hero", "main.owner", 24, 37); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.owner", 24, 11}; t5 = *(h_0opt_19de4933 *)__builtin_memset(&t5, 0, sizeof t5); t5.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t1, &t5.hero_as.hero_ok, t4, &hero_here); if (hero_answer != 0) t5 = (h_0opt_19de4933){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t25 = h7_own7; h7_own7 = t5; h_0opt_19de4933_release(&t25); t26 = h1_got; h_0opt_19de4933_retain(&t5); h1_got = t5; h_0opt_19de4933_release(&t26);
 #line 26
     t6 = h1_got; t27 = h2_f0; h_0opt_19de4933_retain(&t6); h2_f0 = t6; h_0opt_19de4933_release(&t27); t7 = h2_f0; t8 = t7.hero_tag; t9 = INT64_C(1); t10 = t8 == t9; if (t10) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 28

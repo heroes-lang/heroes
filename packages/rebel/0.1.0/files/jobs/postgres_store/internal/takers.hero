@@ -6,13 +6,16 @@
 # is its first argument (`heroes test` starts one process per test), so the
 # child runs the same test, finds `ROLE` second among its arguments, plays
 # its takers and ends with its code; no program calls this but the tests of
-# `jobs/postgres_store`.
+# `jobs/postgres_store`. A taker closes its connection on every path, its
+# failures included, so no run ends holding a connection nobody gives back.
 
+use jobs/internal/taking
 use jobs/postgres_store/internal/buckets
 use jobs/postgres_store/internal/live
 use numbers
 use os
 use process
+use sql
 use sql/postgres
 use strings
 use threads
@@ -137,22 +140,32 @@ function child() -> i64
 
             return 0
 
-# One taker, on a connection of its own: its answer as `run` says.
+# One taker, on a connection of its own, closed whatever the takings
+# answered: its answer as `run` says.
 #
 # - `words`: `take`, the schema, the limit, the mode and the times.
 function take_all(words: [str]) -> str
-    match takings(schema: words[1], limit: words[2], mode: words[3], times: numbers.parse_int(words[4]).default(0))
-        .ok said => return said
-        .err e   => return f"error: {e.code}: {e.msg}"
+    match live.connect_shared(words[1])
+        .err e => return f"error: {e.code}: {e.msg}"
+        .ok first =>
+            db @= first
+            said = takings(@db, limit: words[2], mode: words[3], times: numbers.parse_int(words[4]).default(0))
+            closed = postgres.close(@db)
 
-# The takings of one taker.
+            match said
+                .err e => return f"error: {e.code}: {e.msg}"
+                .ok text =>
+                    match closed
+                        .err e => return f"error: closing: {e.code}: {e.msg}"
+                        .ok _  => return text
+
+# The takings of one taker, on `db`, which the caller closes.
 #
-# - `schema`: the schema.
+# - `db`: the taker's own connection.
 # - `limit`: the limit's name.
 # - `mode`: `allow` or `reserve`.
 # - `times`: how many.
-function takings(schema: str, limit: str, mode: str, times: i64) -> str?
-    db @= live.connect_shared(schema)?
+function takings(@db: postgres.Db, limit: str, mode: str, times: i64) -> str?
     granted: i64 @= 0
     ready: [str] @= []
     none = time.Duration(nanoseconds: 0)
@@ -160,14 +173,23 @@ function takings(schema: str, limit: str, mode: str, times: i64) -> str?
 
     for _ in range(from: 0, to: times)
         if mode == "allow"
-            if buckets.allowed(buckets.take(@db, name: limit, n: 1, longest: none, clock: .server)?)?.granted
+            if taking.allowed(buckets.take(@db, name: limit, n: 1, longest: none, clock: .server)?)?.granted
                 granted @ granted + 1
         else
-            r = buckets.reserved(buckets.take(@db, name: limit, n: 1, longest: forever, clock: .server)?, within: forever)?
+            r = taking.reserved(buckets.take(@db, name: limit, n: 1, longest: forever, clock: .server)?, within: forever)?
             ready @ ready.push(to_str(r.ready.unix_nanoseconds))
-
-    postgres.close(@db)?
 
     if mode == "allow"
         return ok(to_str(granted))
     return ok(ready.join(","))
+
+test "take_all live: a limit that is not there answers its failure, and the taker's connection is closed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            shared = "rebel_jobs_absent_" + to_str(os.pid())
+            said = take_all(["take", shared, "absent", "allow", "3"])
+            assert strings.has_prefix(s: said, prefix: "error: not_found: ")
+            _ = postgres.exec(@db, "DROP SCHEMA " + sql.quote_identifier(shared).must() + " CASCADE", []).must()
+            postgres.close(@db).must()

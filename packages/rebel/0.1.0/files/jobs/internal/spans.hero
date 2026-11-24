@@ -1,0 +1,184 @@
+# Spans of nanoseconds between instants and their change of rate, on whole
+# numbers: two instants can be up to 2^64 - 1 nanoseconds apart, past what an
+# `i64` holds, so a span is a `u64` and a direction, and a span times one rate
+# over another is the exact quotient, rounded once. Nothing here passes a
+# `u64`, so nothing aborts; an answer past one fails `does_not_fit`.
+
+use time
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The smallest `i64`, the earliest instant in nanoseconds.
+constant EARLIEST: i64
+    -9_223_372_036_854_775_807 - 1
+
+# 2^63, the distance from the earliest instant to the epoch.
+constant HALF: u64
+    9_223_372_036_854_775_808
+
+# The largest `u64`, 2^64 - 1.
+constant MAX_U64: u64
+    18_446_744_073_709_551_615
+
+# The span between two instants: how far apart, and which way.
+record Span
+    # The length in nanoseconds, up to 2^64 - 1.
+    nanoseconds: u64
+    # Whether it runs back, from the later instant to the earlier.
+    backwards: bool
+
+# A quotient of whole numbers and what it leaves.
+record Quotient
+    # The quotient, rounded toward zero.
+    whole: u64
+    # The remainder, below the divisor.
+    rest: u64
+
+# `high - low`, `low` no later than `high`: up to 2^64 - 1, where the two
+# are more than an `i64` apart.
+#
+# - `low`: the earlier, in nanoseconds since the epoch.
+# - `high`: the later, in nanoseconds since the epoch.
+function distance(low: i64, high: i64) -> u64
+    if low >= 0 || high < 0
+        return to_u64(high - low).must()
+    return to_u64(high).must() + to_u64(-(low + 1)).must() + 1
+
+# The span from one instant to another, back where `to` is the earlier.
+#
+# - `from`: the instant counted from.
+# - `to`: the instant counted to.
+function between(from: time.Instant, to: time.Instant) -> Span
+    if to.unix_nanoseconds < from.unix_nanoseconds
+        return Span(nanoseconds: distance(low: to.unix_nanoseconds, high: from.unix_nanoseconds), backwards: true)
+    return Span(nanoseconds: distance(low: from.unix_nanoseconds, high: to.unix_nanoseconds), backwards: false)
+
+# The instant `n` nanoseconds after the earliest.
+#
+# - `n`: nanoseconds, up to 2^64 - 1, which is the latest instant.
+function at_offset(n: u64) -> time.Instant
+    if n >= HALF
+        return time.Instant(unix_nanoseconds: to_i64(n - HALF).must())
+    return time.Instant(unix_nanoseconds: to_i64(n).must() + EARLIEST)
+
+# The instant `by` after `t`, or before it where `by` runs back.
+#
+# - `t`: the instant moved from.
+# - `by`: how far, and which way.
+#
+# Fails `does_not_fit` where that is not an `Instant`.
+function shift(t: time.Instant, by: Span) -> time.Instant?
+    from_earliest = distance(low: EARLIEST, high: t.unix_nanoseconds)
+
+    if by.backwards && by.nanoseconds > from_earliest
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"{by.nanoseconds} ns before {t.unix_nanoseconds} ns past the epoch is earlier than an Instant holds, about 292 years before 1970"
+        )
+
+    if !by.backwards && by.nanoseconds > MAX_U64 - from_earliest
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"{by.nanoseconds} ns after {t.unix_nanoseconds} ns past the epoch is later than an Instant holds, about 292 years after 1970"
+        )
+
+    if by.backwards
+        return ok(at_offset(from_earliest - by.nanoseconds))
+    return ok(at_offset(from_earliest + by.nanoseconds))
+
+# `a * b` divided by `over`, `a` and `b` both below it: the quotient and the
+# remainder, built a bit of `b` at a time, so no number passes `over` twice.
+#
+# - `a`: one factor, below `over`.
+# - `b`: the other, below `over`.
+# - `over`: the divisor.
+function product(a: u64, b: u64, over: u64) -> Quotient
+    whole: u64 @= 0
+    rest: u64 @= 0
+    bit: u64 @= HALF
+
+    while bit > 0
+        if rest >= over - rest
+            rest @ rest - (over - rest)
+            whole @ whole + whole + 1
+        else
+            rest @ rest + rest
+            whole @ whole + whole
+
+        if b / bit % 2 == 1
+            if rest >= over - a
+                rest @ rest - (over - a)
+                whole @ whole + 1
+            else
+                rest @ rest + a
+        bit @ bit / 2
+
+    return Quotient(whole: whole, rest: rest)
+
+# `a + b`, failing `does_not_fit` past 2^64 - 1.
+#
+# - `a`: one term.
+# - `b`: the other.
+function plus(a: u64, b: u64) -> u64?
+    if a > MAX_U64 - b
+        return fail(code: DOES_NOT_FIT, msg: f"{a} + {b} is past 2^64 - 1")
+    return ok(a + b)
+
+# `n * by / over`, the exact quotient rounded to the nearest whole number, a
+# tie away from nothing: the span `n` held at one rate told at another.
+#
+# - `n`: the number scaled.
+# - `by`: what it is multiplied by.
+# - `over`: what it is divided by, 1 or more.
+#
+# Fails `does_not_fit` where the answer is past 2^64 - 1. Aborts where `over`
+# is 0, a precondition of every caller here.
+function scaled(n: u64, by: u64, over: u64) -> u64?
+    whole = n / over
+    left = n % over
+
+    if whole > 0 && by > MAX_U64 / whole
+        return fail(code: DOES_NOT_FIT, msg: f"{n} * {by} / {over} is past 2^64 - 1")
+    part = product(a: left, b: by % over, over: over)
+
+    near: u64 = if part.rest >= over - part.rest
+        1
+    else
+        0
+    return plus(a: plus(a: plus(a: whole * by, b: left * (by / over))?, b: part.whole)?, b: near)
+
+test "distance and between: the ends of an i64, one apart, none apart, and either way"
+    assert distance(low: EARLIEST, high: 9_223_372_036_854_775_807) == MAX_U64
+    assert distance(low: EARLIEST, high: 0) == HALF && distance(low: -1, high: 0) == 1 && distance(low: -5, high: 7) == 12
+    assert distance(low: 3, high: 3) == 0 && distance(low: -9, high: -2) == 7 && distance(low: 0, high: 9_223_372_036_854_775_807) == HALF - 1
+    assert between(from: time.max_instant(), to: time.min_instant()) == Span(nanoseconds: MAX_U64, backwards: true)
+    assert between(from: time.min_instant(), to: time.max_instant()) == Span(nanoseconds: MAX_U64, backwards: false)
+    assert between(from: time.epoch(), to: time.epoch()) == Span(nanoseconds: 0, backwards: false)
+
+test "shift: to either end of an Instant, one past either end, nothing, and back across the epoch"
+    assert shift(t: time.min_instant(), by: Span(nanoseconds: MAX_U64, backwards: false)).must() == time.max_instant()
+    assert shift(t: time.max_instant(), by: Span(nanoseconds: MAX_U64, backwards: true)).must() == time.min_instant()
+    assert shift(t: time.epoch(), by: Span(nanoseconds: 0, backwards: true)).must() == time.epoch()
+    assert shift(t: time.Instant(unix_nanoseconds: 5), by: Span(nanoseconds: 12, backwards: true)).must() == time.Instant(unix_nanoseconds: -7)
+
+    for bad in [shift(t: time.max_instant(), by: Span(nanoseconds: 1, backwards: false)), shift(t: time.min_instant(), by: Span(nanoseconds: 1, backwards: true)), shift(t: time.epoch(), by: Span(nanoseconds: MAX_U64, backwards: true))]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == DOES_NOT_FIT
+
+# Python 3's integers answered these on 2026-11-24, as
+# `(2 * n * by + over) // (2 * over)`.
+test "scaled: a tie away from nothing, a near tie, the largest answer, past it by a product and by a rounding, as Python 3's integers answer"
+    assert scaled(n: 5, by: 1, over: 2).must() == 3 && scaled(n: 7, by: 1, over: 2).must() == 4 && scaled(n: 4, by: 1, over: 3).must() == 1
+    assert scaled(n: 13_916_998_315, by: 1, over: 10).must() == 1_391_699_832
+    assert scaled(n: 1_050_000_000_000_000_010, by: 1, over: 100_000_000_000_000_001).must() == 10
+    assert scaled(n: MAX_U64, by: 1, over: 1).must() == MAX_U64 && scaled(n: 0, by: MAX_U64, over: 3).must() == 0
+    assert scaled(n: MAX_U64, by: 2_305_843_009_213_693_952, over: 2_305_843_009_213_693_953).must() == 18_446_744_073_709_551_607
+    assert scaled(n: MAX_U64, by: 2_305_843_009_213_693_951, over: 2_305_843_009_213_693_952).must() == 18_446_744_073_709_551_607
+    assert scaled(n: 123_456_789_012_345_678, by: 987_654_321, over: 1_000_000_007).must() == 121_932_630_271_300_119
+
+    for bad in [scaled(n: MAX_U64, by: 2, over: 1), scaled(n: 1_190_112_520_884_487_201, by: 31, over: 2)]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == DOES_NOT_FIT

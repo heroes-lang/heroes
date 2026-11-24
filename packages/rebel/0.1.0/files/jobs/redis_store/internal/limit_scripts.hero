@@ -192,8 +192,12 @@ function give_back() -> str
 # Makes the limit full at the time read, a token every `ARGV[1]` nanoseconds
 # and a burst of `ARGV[2]`; or, where it is there, gives it that rate and
 # burst holding the tokens it held, as many as the smaller burst allows, a
-# debt kept, each at the new rate, rounded to the nanosecond, half away from
-# nothing. Answers the limit after, or `nofit` with the limit unchanged.
+# debt kept. A change keeps the tokens held, a debt and a fraction of a token
+# included, as exactly that many times the new `every`, rounded to the
+# nearest nanosecond, a tie away from nothing, as `jobs.with_rate` does: the
+# quotient of whole numbers and its remainder, one up where twice the
+# remainder reaches the old `every`. Answers the limit after, or `nofit` with
+# the limit unchanged.
 function set() -> str
     body = [
         "local every, burst, now = int(ARGV[1]), int(ARGV[2]), clock(ARGV[3])"

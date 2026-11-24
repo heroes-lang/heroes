@@ -1,0 +1,202 @@
+# The modules a case's program reads, found through its `use` lines as the
+# compiler finds them (spec § 1 Files and layout), for a row's word about what
+# its case binds (`probe.library_asked`, defect 2481).
+#
+# WHY IT EXISTS. That word was asked of the case's own file alone, and a
+# program binds what every module it reads binds: defect 2636's surface row
+# over `include2636/zver.hero` says its case binds the platform's `z`, which
+# the `path` package `zp` it uses binds, and the row was told its case names
+# `z` in no `link` group, red on every machine (the early gate of 2026-11-24).
+#
+# WHAT IT FOLLOWS, the spec's two readings of a `use`: a plain `use a/b`
+# starts at the folder of the file compiled, or inside a package at the
+# package's own root; a `use <p>/m` reaches the module `m` of the package
+# `p`, which the program's catalogue, `heroes.toml` beside the file compiled,
+# names by a `path` from that folder. Every program lists each package it
+# holds in its own catalogue (spec § 1), so a package's own brackets are read
+# from the program's catalogue too.
+#
+# WHAT IT DOES NOT FOLLOW, said rather than implied: a package the catalogue
+# names by `version` or `git`, whose tree stands in a cache the harness does
+# not locate, and a module a `use` names that cannot be read. Neither is
+# reached, so a row resting on one is told its case binds nothing, the loud
+# direction.
+
+use absence
+use shell
+use strings
+
+# One module the program reads: its path as the walk spelled it, its text.
+record Module
+    path: str
+    text: str
+
+# A module waiting to be read, with the root its plain `use` lines start at.
+record Pending
+    path: str
+    root: str
+
+# A `path` entry of the program's catalogue.
+record Entry
+    name: str
+    path: str
+
+# The case at `path` and every module its `use` lines reach, the case first;
+# an error only where the case itself cannot be read.
+function reached(path: str) -> [Module]?
+    case_text = read_file(path)?
+    dir = absence.directory_of(path)
+    entries = catalogue_of(dir)
+    out: [Module] @= [Module(path: path, text: case_text)]
+    seen: [str] @= [path]
+    waiting: [Pending] @= next_of(text: case_text, root: dir, program: dir, entries: entries)
+
+    while waiting.len() > 0
+        one = waiting[0]
+        waiting @ waiting.slice(from: 1, to: waiting.len())
+
+        if absence.listed(names: seen, name: one.path)
+            continue
+        seen @ seen.push(one.path)
+        text = read_file(one.path)
+
+        if text.is_err()
+            continue
+        out @ out.push(Module(path: one.path, text: text.must()))
+
+        for more in next_of(text: text.must(), root: one.root, program: dir, entries: entries)
+            waiting @ waiting.push(more)
+
+    return ok(out)
+
+# The modules one file's `use` lines name, each with the root its own plain
+# `use` lines start at: the same root for a plain `use`, the package's folder
+# for a bracketed one; a package the catalogue names by no `path` is left out.
+function next_of(text: str, root: str, program: str, entries: [Entry]) -> [Pending]
+    out: [Pending] @= []
+
+    for row in strings.lines(text)
+        target = used(row)
+
+        if target.is_err()
+            continue
+        named = target.must()
+
+        if !strings.has_prefix(s: named, prefix: "<")
+            out @ out.push(Pending(path: root + "/" + named + ".hero", root: root))
+            continue
+        close = strings.index_of(text: named, needle: ">/")
+
+        if close.is_err()
+            continue
+        package = named.slice(from: 1, to: close.must())
+        folder = path_of(entries: entries, name: package)
+
+        if folder.is_err()
+            continue
+        package_root = program + "/" + folder.must()
+        rest = named.slice(from: close.must() + 2, to: named.len())
+        out @ out.push(Pending(path: package_root + "/" + rest + ".hero", root: package_root))
+
+    return out
+
+# What a `use` line names, its `as` left out: `syntax/decl` of `use
+# syntax/decl as sd`, `<zp>/zp` of `use <zp>/zp`; an error for any other line.
+function used(row: str) -> str?
+    if !strings.has_prefix(s: row, prefix: "use ")
+        return fail(code: "none", msg: "not a use")
+    words = strings.words(strings.without_prefix(text: row, prefix: "use "))
+
+    if words.len() == 0
+        return fail(code: "none", msg: "a use naming nothing")
+    return ok(words[0])
+
+# The `path` entries of the catalogue beside the file compiled, none where
+# there is no catalogue: each `[dependencies.<name>]` table's `path` line.
+function catalogue_of(dir: str) -> [Entry]
+    text = read_file(dir + "/heroes.toml")
+
+    if text.is_err()
+        return []
+    out: [Entry] @= []
+    name: str @= ""
+
+    for line in strings.lines(text.must())
+        row = strings.trimmed(line)
+
+        if strings.has_prefix(s: row, prefix: "[")
+            name @ ""
+
+            if strings.has_prefix(s: row, prefix: "[dependencies.") && strings.has_suffix(s: row, suffix: "]")
+                name @ row.slice(from: "[dependencies.".len(), to: row.len() - 1)
+            continue
+
+        if name == "" || !strings.has_prefix(s: row, prefix: "path")
+            continue
+        rest = strings.trimmed(strings.without_prefix(text: row, prefix: "path"))
+
+        if !strings.has_prefix(s: rest, prefix: "=")
+            continue
+        value = absence.quoted(strings.trimmed(strings.without_prefix(text: rest, prefix: "=")))
+
+        if !value.is_err()
+            out @ out.push(Entry(name: name, path: value.must().value))
+
+    return out
+
+# The folder a `path` entry names for `name`.
+function path_of(entries: [Entry], name: str) -> str?
+    for one in entries
+        if one.name == name
+            return ok(one.path)
+
+    return fail(code: "none", msg: "no path entry")
+
+## Tests
+
+test "a `use` names its module with its `as` left out, and nothing else is a use"
+    assert used("use <zp>/zp").must() == "<zp>/zp"
+    assert used("use syntax/decl as sd").must() == "syntax/decl"
+    assert used("# use <zp>/zp").is_err()
+    assert used("function use()").is_err()
+
+test "a catalogue's `path` entries are read by their table, a `version` entry and a comment are not"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    assert !shell.mkdir_all(scratch).is_err()
+    text = "# the program's packages\n[dependencies.zp]\npath = \"zp\"  # the author's own\n\n[dependencies.json]\nversion = \"1.4.2\"\n\n[dependencies.kit]\npath = \"vendor/kit\"\npackages = [\"csv\"]\n"
+    assert !write_file(path: scratch + "/heroes.toml", text: text).is_err()
+    got = catalogue_of(scratch)
+    assert got.len() == 2
+    assert got[0].name == "zp" && got[0].path == "zp"
+    assert got[1].name == "kit" && got[1].path == "vendor/kit"
+    assert catalogue_of(scratch + "/none").len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 2481's premise asked of a whole program: a case binding a library
+# through a module of its own folder and through a `path` package, whose own
+# plain `use` starts at the package's root, reaches all three, each once; a
+# package named by `version` is not reached and does not stop the walk.
+test "a case reaches its own folder's modules and its `path` packages', each from its own root, each once"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/case-modules"
+    assert !shell.mkdir_all(tree + "/lib").is_err()
+    assert !shell.mkdir_all(tree + "/zp/inner").is_err()
+    assert !write_file(path: tree + "/heroes.toml", text: "[dependencies.zp]\npath = \"zp\"\n\n[dependencies.far]\nversion = \"1.0.0\"\n").is_err()
+    assert !write_file(path: tree + "/main.hero", text: "use lib/own\nuse <zp>/zp\nuse <far>/far\nuse lib/own as again\n\nfunction main()\n    print(1)\n").is_err()
+    assert !write_file(path: tree + "/lib/own.hero", text: "function own() -> i64\n    return 1\n").is_err()
+    assert !write_file(path: tree + "/zp/zp.hero", text: "use inner/bind\n").is_err()
+    assert !write_file(path: tree + "/zp/inner/bind.hero", text: "extern \"zlib.h\" link \"z\"\n    function zlibVersion() -> cstr\n").is_err()
+    got = reached(tree + "/main.hero").must()
+    paths: [str] @= []
+
+    for one in got
+        paths @ paths.push(one.path)
+
+    assert paths == [tree + "/main.hero", tree + "/lib/own.hero", tree + "/zp/zp.hero", tree + "/zp/inner/bind.hero"]
+    assert absence.links(source: got[3].text, library: "z")
+    assert reached(tree + "/missing.hero").is_err()
+    assert !shell.remove_tree(scratch).is_err()
