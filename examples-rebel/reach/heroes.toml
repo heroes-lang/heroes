@@ -13,6 +13,7 @@ packages = [
     "bson",
     "bytes",
     "cbor",
+    "chart",
     "chunks",
     "compress",
     "compress/brotli",

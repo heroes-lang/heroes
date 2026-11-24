@@ -1,0 +1,372 @@
+# The shapes of a chart made from what a program gives, and checked first:
+# a series' lines, points and areas, stacked where asked, and the bars of
+# categories side by side or stacked, upright or lying; each in the colour of
+# its place in the palette, with its legend's entry.
+
+use chart/internal/codes
+use chart/internal/dates
+use chart/internal/figure
+use image
+use image/colorspace
+use math
+
+# How a series is drawn, as the face's `Mark` says.
+variant Mark
+    # A line.
+    line
+    # A disc at each point.
+    points
+    # Both.
+    line_and_points
+    # A line with the room below it filled.
+    area
+
+# A series as the face's `Series` holds it.
+record Series
+    name: str
+    xs: [f64]
+    ys: [f64]
+    mark: Mark
+
+# The shapes made and the legend's entries.
+record Built
+    shapes: [figure.Shape]
+    entries: [figure.Key]
+
+# The alpha of an area that does not stack, so that the areas behind it show.
+constant AREA_ALPHA: u8
+    102
+
+# The earliest second a time axis places: 0001-01-01T00:00:00Z.
+function first_second() -> f64
+    return to_f64(dates.first_instant()) / 1000.0
+
+# The last second a time axis places, in 9999.
+function last_second() -> f64
+    return to_f64(dates.last_instant()) / 1000.0
+
+# Refuses a value of `name`'s `vs` that is infinite, that is not a number
+# where `gaps` is false, or that a time axis cannot place where `time`.
+function check_values(name: str, what: str, vs: [f64] lent, gaps: bool, time: bool) -> ()?
+    for i in range(from: 0, to: vs.len())
+        v = vs[i]
+
+        if v != v
+            if !gaps
+                return fail(code: codes.INVALID, msg: f"{what} \"{name}\" has a value that is not a number at {i}")
+        else if !math.is_finite(v)
+            return fail(code: codes.INVALID, msg: f"{what} \"{name}\" has {v} at {i}, which no axis places")
+        else if time && (v < first_second() || v > last_second())
+            return fail(
+                code: codes.INVALID,
+                msg: f"{what} \"{name}\" has {v} at {i}, outside the years 1 to 9999 a time axis places"
+            )
+
+    return ok()
+
+# `c` with its alpha `a`.
+function with_alpha(c: image.Color, a: u8) -> image.Color
+    return image.Color(r: c.r, g: c.g, b: c.b, a: a)
+
+# The polygon of the room between the points of `top` and those of `base`,
+# both at the columns `xs`: along the top, then back along the base.
+function band_region(xs: [f64] lent, top: [f64] lent, base: [f64] lent, color: image.Color) -> figure.Shape
+    rx: [f64] @= []
+    ry: [f64] @= []
+
+    for i in range(from: 0, to: xs.len())
+        rx @ rx.push(xs[i])
+        ry @ ry.push(top[i])
+
+    i @= xs.len() - 1
+
+    while i >= 0
+        rx @ rx.push(xs[i])
+        ry @ ry.push(base[i])
+        i @ i - 1
+
+    return .region(xs: rx, ys: ry, color: color)
+
+# The shapes of `series`, each in `palette`'s colour of its place, with lines
+# `size` / 6 pixels wide and discs `size` * 0.3 in radius; areas stacked in
+# their order where `stacked`.
+#
+# Fails `invalid` where a series' columns and rows differ in number, a value
+# is infinite or, on a time axis, outside the years 1 to 9999, or stacked
+# areas differ in their columns or hold a value that is not a number.
+function plot(series: [Series] lent, palette: [image.Color] lent, stacked: bool, size: f64, time_x: bool, time_y: bool) -> Built?
+    width = math.max(a: 1.0, b: size / 6.0)
+    radius = size * 0.3
+    shapes: [figure.Shape] @= []
+    entries: [figure.Key] @= []
+    columns: [f64] @= []
+    base: [f64] @= []
+    stacking @= false
+
+    for i in range(from: 0, to: series.len())
+        s = series[i]
+
+        if s.xs.len() != s.ys.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"the series \"{s.name}\" has {s.xs.len()} columns and {s.ys.len()} rows"
+            )
+        stacks = stacked && s.mark == .area
+        check_values(name: s.name, what: "the series", vs: s.xs, gaps: !stacks, time: time_x)?
+        check_values(name: s.name, what: "the series", vs: s.ys, gaps: !stacks, time: time_y)?
+        color = palette[i % palette.len()]
+
+        if stacks
+            if !stacking
+                columns @ s.xs
+                base @ []
+
+                for _ in s.xs
+                    base @ base.push(0.0)
+
+                stacking @ true
+            else if s.xs != columns
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the stacked area \"{s.name}\" has other columns than the first stacked area; stacked areas share their columns"
+                )
+            top: [f64] @= []
+
+            for j in range(from: 0, to: s.ys.len())
+                top @ top.push(base[j] + s.ys[j])
+
+            shapes @ shapes.push(band_region(xs: s.xs, top: top, base: base, color: color))
+            base @ top
+        else
+            match s.mark
+                .line   => shapes @ shapes.push(.path(name: s.name, xs: s.xs, ys: s.ys, color: color, width: width))
+                .points => shapes @ shapes.push(.dots(name: s.name, xs: s.xs, ys: s.ys, color: color, radius: radius))
+                .line_and_points =>
+                    shapes @ shapes.push(.path(name: s.name, xs: s.xs, ys: s.ys, color: color, width: width))
+                    shapes @ shapes.push(.dots(name: s.name, xs: s.xs, ys: s.ys, color: color, radius: radius))
+                .area =>
+                    for region in area_regions(xs: s.xs, ys: s.ys, color: with_alpha(c: color, a: AREA_ALPHA))
+                        shapes @ shapes.push(region)
+
+                    shapes @ shapes.push(.path(name: s.name, xs: s.xs, ys: s.ys, color: color, width: width))
+
+        if s.name != ""
+            mark: figure.KeyMark = match s.mark
+                .line            => .line
+                .points          => .dot
+                .line_and_points => .line_dot
+                .area            => .swatch
+
+            entries @ entries.push(figure.Key(name: s.name, color: color, mark: mark))
+
+    return ok(Built(shapes: shapes, entries: entries))
+
+# The regions under an area's line down to zero, one for each run of points
+# that are numbers.
+function area_regions(xs: [f64] lent, ys: [f64] lent, color: image.Color) -> [figure.Shape]
+    out: [figure.Shape] @= []
+    run_x: [f64] @= []
+    run_y: [f64] @= []
+    zeros: [f64] @= []
+
+    for i in range(from: 0, to: xs.len() + 1)
+        ends = i == xs.len() || xs[i] != xs[i] || ys[i] != ys[i]
+
+        if ends
+            if run_x.len() >= 2
+                out @ out.push(band_region(xs: run_x, top: run_y, base: zeros, color: color))
+            run_x @ []
+            run_y @ []
+            zeros @ []
+        else
+            run_x @ run_x.push(xs[i])
+            run_y @ run_y.push(ys[i])
+            zeros @ zeros.push(0.0)
+
+    return out
+
+# The bars of `values`, one list a series and one value a category, in the
+# band of each category: side by side, or stacked where `stacked`, the
+# positive values up from zero and the negative down; lying along the
+# columns where `horizontal`. A value that is not a number makes no bar.
+#
+# Fails `invalid` where a series holds another number of values than there
+# are categories, a value is infinite, or, on a logarithmic axis (`log`),
+# below zero.
+function bars(categories: i64, names: [str] lent, values: [[f64]] lent, palette: [image.Color] lent, stacked: bool, horizontal: bool, log: bool) -> Built?
+    shapes: [figure.Shape] @= []
+    entries: [figure.Key] @= []
+    m = values.len()
+
+    for j in range(from: 0, to: m)
+        if values[j].len() != categories
+            return fail(
+                code: codes.INVALID,
+                msg: f"the bars \"{names[j]}\" hold {values[j].len()} values for {categories} categories"
+            )
+        check_values(name: names[j], what: "the bars", vs: values[j], gaps: true, time: false)?
+
+        if log
+            for i in range(from: 0, to: categories)
+                if values[j][i] == values[j][i] && values[j][i] < 0.0
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"the bars \"{names[j]}\" have {values[j][i]} at {i}, which a logarithmic axis cannot place"
+                    )
+
+        if names[j] != ""
+            entries @ entries.push(figure.Key(name: names[j], color: palette[j % palette.len()], mark: .swatch))
+
+    for i in range(from: 0, to: categories)
+        up @= 0.0
+        down @= 0.0
+        band = to_f64(i)
+
+        for j in range(from: 0, to: m)
+            v = values[j][i]
+
+            if v == v
+                color = palette[j % palette.len()]
+                low @= 0.0
+                high @= v
+                across @= band + 0.15
+                width @= 0.7
+
+                if stacked
+                    if v >= 0.0
+                        low @ up
+                        high @ up + v
+                        up @ up + v
+                    else
+                        low @ down + v
+                        high @ down
+                        down @ down + v
+                else
+                    width @ 0.8 / to_f64(m)
+                    across @ band + 0.1 + to_f64(j) * width
+
+                if horizontal
+                    shapes @ shapes.push(
+                        .box(x0: low, x1: high, y0: across, y1: across + width, color: color, gap_x: false, gap_y: !stacked)
+                    )
+                else
+                    shapes @ shapes.push(
+                        .box(x0: across, x1: across + width, y0: low, y1: high, color: color, gap_x: !stacked, gap_y: false)
+                    )
+
+    return ok(Built(shapes: shapes, entries: entries))
+
+# `count` colours, 1 or more, of hues evenly spaced around the circle from a
+# blue, each as light and as saturated as the others in HLS, taken in an
+# order that steps `stride_of(count)` hues at a time, so that each colour
+# stands far from the one before it.
+function hues(count: i64) -> [image.Color]
+    out: [image.Color] @= []
+    stride = stride_of(count)
+
+    for i in range(from: 0, to: count)
+        hue = math.rem_floor(x: 205.0 + to_f64(i * stride % count) * 360.0 / to_f64(count), by: 360.0)
+        out @ out.push(colorspace.from_hls(colorspace.Hls(hue: hue, lightness: 0.45, saturation: 0.7)))
+
+    return out
+
+# The step through `count` evenly spaced hues: the whole number nearest
+# `count` times 0.382 (the golden section's smaller part) that shares no
+# factor with `count`, so that every hue is taken once.
+function stride_of(count: i64) -> i64
+    best @= 1
+    gap @= to_f64(count)
+
+    for s in range(from: 1, to: count)
+        if math.gcd(a: s, b: count).must() == 1
+            off = math.abs(to_f64(s) - to_f64(count) * 0.382)
+
+            if off < gap
+                best @ s
+                gap @ off
+
+    return best
+
+## Tests
+
+test "stride_of: a step that shares no factor with the count"
+    assert stride_of(1) == 1
+    assert stride_of(2) == 1
+    assert stride_of(10) == 3
+    assert stride_of(3) == 1
+
+test "hues: each colour distinct, the first a blue"
+    colors = hues(10)
+    assert colors.len() == 10
+
+    for i in range(from: 0, to: 10)
+        for j in range(from: i + 1, to: 10)
+            assert colors[i] != colors[j]
+
+    assert colors[0].b > colors[0].r
+
+test "plot: columns and rows of another number are refused"
+    s = Series(name: "a", xs: [1.0, 2.0], ys: [1.0], mark: .line)
+    made = plot(series: [s], palette: hues(1), stacked: false, size: 12.0, time_x: false, time_y: false)
+    assert made.is_err()
+
+test "plot: stacked areas share their columns, and hold numbers"
+    a = Series(name: "a", xs: [1.0, 2.0], ys: [1.0, 2.0], mark: .area)
+    b = Series(name: "b", xs: [1.0, 3.0], ys: [1.0, 2.0], mark: .area)
+    assert plot(series: [a, b], palette: hues(2), stacked: true, size: 12.0, time_x: false, time_y: false).is_err()
+    c = Series(name: "c", xs: [1.0, 2.0], ys: [1.0, 0.0 / 0.0], mark: .area)
+    assert plot(series: [a, c], palette: hues(2), stacked: true, size: 12.0, time_x: false, time_y: false).is_err()
+    assert plot(series: [a, a], palette: hues(2), stacked: true, size: 12.0, time_x: false, time_y: false).must().shapes.len() == 2
+
+test "plot: an infinite value and a date past 9999 are refused"
+    inf = Series(name: "a", xs: [1.0, 1.0 / 0.0], ys: [1.0, 2.0], mark: .line)
+    assert plot(series: [inf], palette: hues(1), stacked: false, size: 12.0, time_x: false, time_y: false).is_err()
+    late = Series(name: "a", xs: [1.0, 300000000000.0], ys: [1.0, 2.0], mark: .line)
+    assert plot(series: [late], palette: hues(1), stacked: false, size: 12.0, time_x: true, time_y: false).is_err()
+
+test "area_regions: a gap parts an area into two regions"
+    assert area_regions(xs: [1.0, 2.0, 3.0, 4.0, 5.0], ys: [1.0, 2.0, 0.0 / 0.0, 3.0, 4.0], color: hues(1)[0]).len() == 2
+
+test "bars: stacked, the positive up from zero and the negative down"
+    made = bars(
+        categories: 1,
+        names: ["a", "b", "c"],
+        values: [[2.0], [-1.0], [3.0]],
+        palette: hues(3),
+        stacked: true,
+        horizontal: false,
+        log: false
+    ).must()
+    lows: [f64] @= []
+    highs: [f64] @= []
+
+    for s in made.shapes
+        match s
+            .box b =>
+                lows @ lows.push(b.y0)
+                highs @ highs.push(b.y1)
+            .path _ | .region _ | .dots _ => _ = 0
+
+    assert lows == [0.0, -1.0, 2.0]
+    assert highs == [2.0, 0.0, 5.0]
+
+test "bars: a value per category, none below zero on a logarithmic axis"
+    assert bars(
+        categories: 2,
+        names: ["a"],
+        values: [[1.0]],
+        palette: hues(1),
+        stacked: false,
+        horizontal: false,
+        log: false
+    ).is_err()
+    assert bars(
+        categories: 1,
+        names: ["a"],
+        values: [[-1.0]],
+        palette: hues(1),
+        stacked: false,
+        horizontal: false,
+        log: true
+    ).is_err()
+    assert bars(categories: 1, names: ["a"], values: [[0.0 / 0.0]], palette: hues(1), stacked: false, horizontal: false, log: true).must().shapes.len() == 0
