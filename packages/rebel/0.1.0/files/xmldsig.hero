@@ -771,3 +771,26 @@ test "sign_hmac: an enveloped HMAC over SHA-256"
         options: default_sign_options(.hmac_sha256)
     ).must()
     assert check(signed, signature: [1], verifier: .secret(key: [1, 2, 3]), options: default_check_options()).must().signed[0].uri == "#_1"
+
+# A query of SAML's HTTP-Redirect binding signed by an RSA key, the value as
+# long as the key's modulus.
+test "sign_bytes: a redirect query signed by RSA over SHA-256"
+    key @= keypairs.parse_private_pem(samples.RSA_KEY).must()
+    value = sign_bytes(bytes.from_text("SAMLRequest=x&RelayState=y"), key: key, method: .rsa_sha256).must()
+    keypairs.close_private(@key).must()
+    assert value.len() == 256
+
+# A signed redirect query checked against the sender's certificate, the
+# method read from its `SigAlg`.
+test "check_bytes: a redirect query checked against a certificate"
+    key @= keypairs.parse_private_pem(samples.RSA_KEY).must()
+    message = bytes.from_text("SAMLRequest=x&RelayState=y")
+    value = sign_bytes(message, key: key, method: .rsa_sha256).must()
+    keypairs.close_private(@key).must()
+    trusted = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+    check_bytes(
+        message: message,
+        value: value,
+        method: method_uri(.rsa_sha256),
+        verifier: .certificate(v: trusted)
+    ).must()

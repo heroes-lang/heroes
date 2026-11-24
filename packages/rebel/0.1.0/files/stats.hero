@@ -14,16 +14,16 @@
 # mean and a deviation, with its density, cumulative probability, quantiles,
 # overlap with another and the arithmetic on two, to a ten-trillionth of
 # Python's `NormalDist`. The package does not draw random samples, which is
-# `random`'s, nor count values into the bins of a histogram, which a program chooses, nor
-# keep a mean as values arrive one at a time: such a mean is a sum and a
-# count the program holds, and `mean` answers for the values it kept.
+# `random`'s (`random.normal` for a normal distribution), nor count values
+# into the bins of a histogram, which a program chooses, nor keep a mean as
+# values arrive one at a time: such a mean is a sum and a count the program
+# holds, and `mean` answers for the values it kept.
 #
 # It fails with `invalid`, for data a statistic cannot read (too few values,
 # a nan to order, lists of different lengths), and `does_not_fit`.
 #
-# Not written yet, a `pending` block of its ledger: the harmonic mean with a
-# weight for each value. Numbers drawn at random from a normal distribution
-# are `random.normal`'s.
+# Not written yet, each a `pending` block of its ledger: the harmonic mean
+# with a weight for each value.
 
 use math
 use stats/internal/exact
