@@ -1,0 +1,390 @@
+# The languages and the formats the person chose, as `i18n.system_languages`
+# and `i18n.system_locale` read them: from the system's settings through the
+# platform layer's `hero_locale` where the system keeps them (macOS,
+# Windows), each name the platform writes made a locale; and from the
+# environment, then from systemd's `/etc/locale.conf`, where it does not.
+
+use i18n
+use i18n/hero_locale
+use i18n/internal/keyword_tables
+use i18n/internal/locale_syntax
+use os
+use strings
+
+# The file systemd writes the system's own locale in, which a login session
+# takes its `LANG` and `LC_*` from (locale.conf(5)).
+constant LOCALE_CONF: str
+    "/etc/locale.conf"
+
+# The variables POSIX names the formats' categories by, the first set and not
+# empty naming the locale: every category, then times, numbers and money,
+# then the default.
+constant FORMAT_VARIABLES: [str]
+    ["LC_ALL", "LC_TIME", "LC_NUMERIC", "LC_MONETARY", "LANG"]
+
+# The variables gettext reads the languages of messages from, in its order;
+# `LANGUAGE` holds a list separated by `:`.
+constant LANGUAGE_VARIABLES: [str]
+    ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"]
+
+# Windows' sorts, the suffix of a locale name after `_`, and the collation
+# CLDR names each by, in the order of their bytes; a sort CLDR has no
+# collation for is absent. `phoneb` is German's phone book; Chinese's, by
+# surname, has none.
+constant SORT_KEYS: [str]
+    ["de phoneb", "es tradnl", "ja radstr", "zh pronun", "zh radstr", "zh stroke"]
+
+# The collation of each sort, in the order of `SORT_KEYS`.
+constant SORT_VALUES: [str]
+    ["phonebk", "trad", "unihan", "zhuyin", "unihan", "stroke"]
+
+# Whether `items` holds `item`.
+function holds(items: [str] lent, item: str) -> bool
+    for one in items
+        if one == item
+            return true
+
+    return false
+
+# Whether `items` holds `item`.
+function holds_locale(items: [i18n.Locale] lent, item: i18n.Locale) -> bool
+    for one in items
+        if one == item
+            return true
+
+    return false
+
+# What the system's settings name, as the platform writes each name: the
+# languages, the most preferred first, and the locale of the formats, the
+# empty text where none is named.
+record Named
+    languages: [str]
+    formats: str
+
+# The settings text of `hero_locale.settings` read into what it names; a
+# line of another key, or of no tab, is passed over.
+function named_of(text: str) -> Named
+    chosen: [str] @= []
+    shown: str @= ""
+
+    for line in strings.lines(text)
+        match strings.split_once(s: line, sep: "\t")
+            .ok halves =>
+                if halves.before == "language" && halves.after != ""
+                    chosen @ chosen.push(halves.after)
+                else if halves.before == "formats" && shown == ""
+                    shown @ halves.after
+            .err _ => _ = 0
+
+    return Named(languages: chosen, formats: shown)
+
+# What the system's settings name, or why they cannot be read: `unsupported`
+# where this system keeps none a program can read, `failed` where it does and
+# will not say, the system's words in the message.
+function read() -> Named?
+    room: i64 @= 4_096
+    round: i64 @= 0
+
+    while round < 5
+        buffer: [u8] @= []
+        got = hero_locale.settings(@buffer, n: to_u64(room).must())
+        kind = got >> 32
+        text = buffer.slice(from: 0, to: got & 4_294_967_295).validated_bytes().default("")
+
+        if kind == hero_locale.HERO_LOCALE_OK
+            return ok(named_of(text))
+
+        if kind == hero_locale.HERO_LOCALE_UNSUPPORTED
+            return fail(code: i18n.UNSUPPORTED, msg: f"reading the system's locale settings: {text}")
+
+        if kind != hero_locale.HERO_LOCALE_LIMIT
+            return fail(code: i18n.FAILED, msg: f"reading the system's locale settings: {text}")
+        room @ room * 8
+        round @ round + 1
+
+    return fail(code: i18n.FAILED, msg: "reading the system's locale settings: they pass 1,048,576 bytes")
+
+# `value` of `keys_sorted` and `values` for `key`, or the empty text.
+function lookup(keys_sorted: [str] lent, values: [str] lent, key: str) -> str
+    at = locale_syntax.search(keys_sorted, key: key)
+
+    if at < 0
+        return ""
+    return values[at]
+
+# `locale` with the keyword ICU writes as `key=value`, its long names made
+# BCP 47's; `locale` itself where BCP 47 has no such key or cannot write the
+# value, a time zone of no CLDR id among them.
+function with_icu_keyword(locale: i18n.Locale, key: str, value: str) -> i18n.Locale
+    lower_key = strings.to_lower_ascii(strings.trim(key))
+    lower_value = strings.to_lower_ascii(strings.trim(value))
+    short: str @= lookup(keys_sorted: keyword_tables.KEY_ALIASES, values: keyword_tables.KEY_NAMES, key: lower_key)
+
+    if short == ""
+        short @ lower_key
+    named: str @= lookup(
+        keys_sorted: keyword_tables.VALUE_ALIASES,
+        values: keyword_tables.VALUE_NAMES,
+        key: short + " " + lower_value
+    )
+
+    if named == ""
+        named @ lower_value
+
+    match i18n.with_unicode_keyword(locale, key: short, value: named)
+        .ok with => return with
+        .err _   => return locale
+
+# ICU's locale identifier, as macOS's `CFLocaleGetIdentifier` writes it, read
+# as a locale: `en_US@rg=itzzzz` is `en-US-u-rg-itzzzz`, `it_IT@calendar=
+# gregorian` is `it-IT-u-ca-gregory`, `sr_Latn_RS` is `sr-Latn-RS`. A tag of
+# BCP 47 reads as itself.
+#
+# Fails `invalid` where what stands before `@` is not a well-formed tag once
+# its `_` are `-`; a keyword BCP 47 cannot write is left out.
+function locale_of_icu(name: str) -> i18n.Locale?
+    base: str @= name
+    keywords: str @= ""
+
+    match strings.split_once(s: name, sep: "@")
+        .ok halves =>
+            base @ halves.before
+            keywords @ halves.after
+        .err _ => _ = 0
+
+    parts: [str] @= []
+
+    for part in strings.split_any(s: base, set: "_-")
+        if part != ""
+            parts @ parts.push(part)
+
+    locale @= i18n.parse_locale(parts.join("-"))?
+
+    for pair in strings.split(s: keywords, sep: ";")
+        match strings.split_once(s: pair, sep: "=")
+            .ok halves => locale @ with_icu_keyword(locale: locale, key: halves.before, value: halves.after)
+            .err _     => _ = 0
+
+    return ok(locale)
+
+# A locale name of Windows read as a locale: `it-IT` is itself, and a sort
+# after `_` becomes CLDR's collation, `de-DE_phoneb` being `de-DE-u-co-phonebk`.
+#
+# A sort CLDR has no collation for (Hungarian's technical, Georgian's modern,
+# Chinese's by surname, the invariant locale's mathematical) is left out.
+# Fails `invalid` where the name before `_` is not a well-formed tag.
+function locale_of_windows(name: str) -> i18n.Locale?
+    base: str @= name
+    order: str @= ""
+
+    match strings.split_once(s: name, sep: "_")
+        .ok halves =>
+            base @ halves.before
+            order @ strings.to_lower_ascii(halves.after)
+        .err _ => _ = 0
+
+    locale = i18n.parse_locale(base)?
+
+    if order == ""
+        return ok(locale)
+    collation = lookup(keys_sorted: SORT_KEYS, values: SORT_VALUES, key: locale.language + " " + order)
+
+    if collation == ""
+        return ok(locale)
+    return i18n.with_unicode_keyword(locale, key: "co", value: collation)
+
+# A name the system's settings write read as a locale, as `system` writes
+# names: ICU's on macOS, Windows' own on Windows.
+function locale_of_system(name: str, system: os.System) -> i18n.Locale?
+    if system == .windows
+        return locale_of_windows(name)
+    return locale_of_icu(name)
+
+# The variables of systemd's `locale.conf`, `text`, each `NAME=value`, a value
+# in double or single quotes taken out of them; a line opening with `#` and a
+# line of no `=` are passed over.
+function conf_variables(text: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for raw in strings.lines(text)
+        line = strings.trim(raw)
+
+        if line == "" || strings.has_prefix(s: line, prefix: "#")
+            continue
+
+        match strings.split_once(s: line, sep: "=")
+            .ok halves =>
+                value: str @= strings.trim(halves.after)
+
+                if value.len() >= 2 && (value[0] == '"' && value[value.len() - 1] == '"' || value[0] == '\'' && value[value.len() - 1] == '\'')
+                    value @ value.slice(from: 1, to: value.len() - 1)
+                out[strings.trim(halves.before)] @ value
+            .err _ => _ = 0
+
+    return out
+
+# The variables of `names` the environment sets to a text that is not empty;
+# where it sets none, those of systemd's `locale.conf`, the system's own
+# locale, where the file can be read.
+function posix_variables(names: [str] lent) -> {str: str}
+    out: {str: str} @= {}
+
+    for name in names
+        match os.env(name)
+            .ok value =>
+                if value != ""
+                    out[name] @ value
+            .err _ => _ = 0
+
+    if out.len() > 0
+        return out
+
+    match read_file(LOCALE_CONF)
+        .ok text =>
+            vars = conf_variables(text)
+
+            for name in keys(vars)
+                value = vars[name].must()
+
+                if value != "" && holds(names, item: name)
+                    out[name] @ value
+        .err _ => _ = 0
+
+    return out
+
+# The languages of POSIX's variables `vars`, in gettext's order: the first of
+# `LANGUAGE_VARIABLES` set, `LANGUAGE` read as a list; none where that one is
+# `C` or `POSIX`.
+#
+# Fails `invalid` where a name is not one `i18n.parse_posix` reads.
+function posix_languages(vars: {str: str} lent) -> [i18n.Locale]?
+    out: [i18n.Locale] @= []
+
+    for name in LANGUAGE_VARIABLES
+        match vars[name]
+            .ok value =>
+                for part in strings.split(s: value, sep: ":")
+                    if part == "C" || part == "POSIX" || strings.has_prefix(s: part, prefix: "C.")
+                        return ok(out)
+
+                    if part != ""
+                        out @ out.push(i18n.parse_posix(part)?)
+
+                return ok(out)
+            .err _ => _ = 0
+
+    return ok(out)
+
+# The locale of POSIX's variables `vars` for the formats: the first of
+# `FORMAT_VARIABLES` set, `C` and `POSIX` read as the root, `und`.
+#
+# Fails `not_found` where none is set, and `invalid` where the name is not one
+# `i18n.parse_posix` reads.
+function posix_formats(vars: {str: str} lent) -> i18n.Locale?
+    for name in FORMAT_VARIABLES
+        match vars[name]
+            .ok value =>
+                if strings.has_prefix(s: value, prefix: "C.")
+                    return i18n.parse_posix("C")
+                return i18n.parse_posix(value)
+            .err _ => _ = 0
+
+    return fail(
+        code: i18n.NOT_FOUND,
+        msg: "no locale is set: none of LC_ALL, LC_TIME, LC_NUMERIC, LC_MONETARY and LANG in the environment or in /etc/locale.conf"
+    )
+
+# The languages the person chose, the most preferred first, each once.
+function languages() -> [i18n.Locale]?
+    system = os.system()
+    out: [i18n.Locale] @= []
+
+    match read()
+        .ok named =>
+            for name in named.languages
+                locale = locale_of_system(name: name, system: system)?
+
+                if !holds_locale(out, item: locale)
+                    out @ out.push(locale)
+
+            return ok(out)
+        .err e =>
+            if e.code != i18n.UNSUPPORTED
+                return fail(code: e.code, msg: e.msg)
+
+    for locale in posix_languages(posix_variables(LANGUAGE_VARIABLES))?
+        if !holds_locale(out, item: locale)
+            out @ out.push(locale)
+
+    return ok(out)
+
+# The locale the person's numbers, dates, times and currencies are written in.
+function formats() -> i18n.Locale?
+    match read()
+        .ok named =>
+            if named.formats == ""
+                return fail(code: i18n.NOT_FOUND, msg: "the system's settings name no locale for the formats")
+            return locale_of_system(name: named.formats, system: os.system())
+        .err e =>
+            if e.code != i18n.UNSUPPORTED
+                return fail(code: e.code, msg: e.msg)
+
+    return posix_formats(posix_variables(FORMAT_VARIABLES))
+
+## Tests
+
+test "named_of: no text, both keys, a line of another key or of no tab passed over, the first formats kept"
+    assert named_of("") == Named(languages: [], formats: "")
+    named = named_of(
+        "language\tit-IT\nlanguage\ten-US\nformats\ten_US@rg=itzzzz\nformats\tde_DE\nother\tx\nno tab\nlanguage\t\n"
+    )
+    assert named.languages == ["it-IT", "en-US"]
+    assert named.formats == "en_US@rg=itzzzz"
+
+test "locale_of_icu: a tag, ICU's underscores, keywords made BCP 47's, one BCP 47 cannot write left out"
+    assert i18n.format_locale(locale_of_icu("it-IT").must()) == "it-IT"
+    assert i18n.format_locale(locale_of_icu("zh_Hant_TW").must()) == "zh-Hant-TW"
+    assert i18n.format_locale(locale_of_icu("sr-Latn_RS").must()) == "sr-Latn-RS"
+    assert i18n.format_locale(locale_of_icu("en_US@rg=itzzzz").must()) == "en-US-u-rg-itzzzz"
+    assert i18n.format_locale(locale_of_icu("it_GB@calendar=gregorian;rg=itzzzz").must()) == "it-GB-u-ca-gregory-rg-itzzzz"
+    assert i18n.format_locale(locale_of_icu("en_US@fw=mon;hours=h23;measure=metric").must()) == "en-US-u-fw-mon-hc-h23-ms-metric"
+    assert i18n.format_locale(locale_of_icu("de_DE@collation=phonebook;currency=EUR").must()) == "de-DE-u-co-phonebk-cu-eur"
+    assert i18n.format_locale(locale_of_icu("en_US@timezone=America/New_York").must()) == "en-US-u-tz-usnyc"
+    assert i18n.format_locale(locale_of_icu("ar_SA@calendar=islamic-civil").must()) == "ar-SA-u-ca-islamic-civil"
+    assert i18n.format_locale(locale_of_icu("en_US@timezone=Nowhere/At_All;numbers=arab").must()) == "en-US-u-nu-arab"
+    assert locale_of_icu("").is_err()
+    assert locale_of_icu("not a tag").is_err()
+
+test "locale_of_windows: a name, a sort CLDR names, a sort it does not, a language whose phone book it does not"
+    assert i18n.format_locale(locale_of_windows("it-IT").must()) == "it-IT"
+    assert i18n.format_locale(locale_of_windows("de-DE_phoneb").must()) == "de-DE-u-co-phonebk"
+    assert i18n.format_locale(locale_of_windows("es-ES_tradnl").must()) == "es-ES-u-co-trad"
+    assert i18n.format_locale(locale_of_windows("zh-TW_pronun").must()) == "zh-TW-u-co-zhuyin"
+    assert i18n.format_locale(locale_of_windows("ja-JP_radstr").must()) == "ja-JP-u-co-unihan"
+    assert i18n.format_locale(locale_of_windows("zh-SG_stroke").must()) == "zh-SG-u-co-stroke"
+    assert i18n.format_locale(locale_of_windows("hu-HU_technl").must()) == "hu-HU"
+    assert i18n.format_locale(locale_of_windows("zh-CN_phoneb").must()) == "zh-CN"
+    assert locale_of_windows("").is_err()
+
+test "conf_variables: comments, blank lines, quotes of both kinds, a line of no equals sign"
+    vars = conf_variables(
+        "# the system's locale\n\nLANG=\"de_DE.UTF-8\"\nLC_TIME='en_GB.UTF-8'\nLC_NUMERIC=fr_FR.UTF-8\nnonsense\n"
+    )
+    assert vars == {"LANG": "de_DE.UTF-8", "LC_TIME": "en_GB.UTF-8", "LC_NUMERIC": "fr_FR.UTF-8"}
+
+test "posix_languages: none set, LANGUAGE's list first, C ending the list, a name that does not read"
+    assert posix_languages({}).must().len() == 0
+    got = posix_languages({"LANGUAGE": "it_IT:fr::en", "LANG": "de_DE.UTF-8"}).must()
+    assert got.map(i18n.format_locale) == ["it-IT", "fr", "en"]
+    assert posix_languages({"LC_MESSAGES": "pt_BR.UTF-8", "LANG": "de_DE.UTF-8"}).must().map(i18n.format_locale) == ["pt-BR"]
+    assert posix_languages({"LC_ALL": "C.UTF-8", "LANG": "de_DE.UTF-8"}).must().len() == 0
+    assert posix_languages({"LANG": "!"}).is_err()
+
+test "posix_formats: none set, LC_ALL before the categories, the categories before LANG, C the root"
+    match posix_formats({})
+        .ok _  => assert false
+        .err e => assert e.code == i18n.NOT_FOUND
+
+    assert i18n.format_locale(posix_formats({"LC_TIME": "en_GB.UTF-8", "LANG": "de_DE.UTF-8"}).must()) == "en-GB"
+    assert i18n.format_locale(posix_formats({"LC_ALL": "fr_CA.UTF-8", "LC_TIME": "en_GB.UTF-8"}).must()) == "fr-CA"
+    assert i18n.format_locale(posix_formats({"LANG": "C.UTF-8"}).must()) == "und"

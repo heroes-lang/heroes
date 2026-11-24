@@ -1,7 +1,8 @@
-# The generator of three of `i18n`'s tables of CLDR 49's core data: its
+# The generator of four of `i18n`'s tables of CLDR 49's core data: its
 # plural rules and ranges, `i18n/internal/plural_tables.hero`; what it says
-# of the languages it has data for, `i18n/internal/locale_tables.hero`; and
-# its likely subtags and aliases, `i18n/locales/internal/locale_data.hero`;
+# of the languages it has data for, `i18n/internal/locale_tables.hero`; the
+# aliases of the Unicode locale keywords, `i18n/internal/keyword_tables.hero`;
+# and its likely subtags and aliases, `i18n/locales/internal/locale_data.hero`;
 # each written byte for byte, or checked against the table in the tree.
 #
 # Its input is CLDR 49's JSON release, fetched from `cldrkit.SOURCE_URL` into
@@ -21,6 +22,7 @@ use <cldrkit>/cldrkit
 use <tablekit>/tablekit
 
 use aliases
+use keywords
 use locales
 use plurals
 
@@ -71,7 +73,15 @@ function run(command: str, path: str) -> i64?
         "# and `aliases.json`, and wrote this module whole; its `check` command says"
         "# whether this module is still what it writes."
     ]
+    keyword_files = [
+        "# fetched 2026-11-21), its files `cldr-bcp47/bcp47/calendar.json`,"
+        "# `collation.json`, `currency.json`, `measure.json`, `number.json`,"
+        "# `segmentation.json`, `timezone.json` and `variant.json`, and wrote this"
+        "# module whole; its `check` command says whether this module is still what"
+        "# it writes."
+    ]
     alias_text = aliases.module_text(release, generated: generated_lines(alias_files))?
+    keyword_text = keywords.module_text(release, generated: generated_lines(keyword_files))?
     plural_text = plurals.module_text(release, generated: generated_lines(plural_files))?
     locale_text = locales.module_text(release, generated: generated_lines(locale_files))?
     code @= tablekit.settle(command: command, path: TABLES + "plural_tables.hero", text: plural_text)?
@@ -82,6 +92,10 @@ function run(command: str, path: str) -> i64?
     code @ tablekit.worst(
         a: code,
         b: tablekit.settle(command: command, path: LOCALES + "locale_data.hero", text: alias_text)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "keyword_tables.hero", text: keyword_text)?
     )
     return ok(code)
 
