@@ -1,0 +1,18 @@
+# The codes `chart` fails with, kept in one place so that every module of the
+# package fails alike.
+
+# The code of an input the function does not read, which the face names as
+# `chart.INVALID`.
+constant INVALID: str
+    "invalid"
+
+# The code of an image larger than the package draws, which the face names as
+# `chart.LIMIT`.
+constant LIMIT: str
+    "limit"
+
+## Tests
+
+test "codes: the two codes are the library's words"
+    assert INVALID == "invalid"
+    assert LIMIT == "limit"

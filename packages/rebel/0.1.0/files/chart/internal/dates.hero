@@ -1,0 +1,401 @@
+# The ticks of a time axis in UTC, as d3-scale's `scaleUtc` places and labels
+# them: an interval chosen from a ladder of 1, 5, 15 and 30 seconds, 1, 5, 15
+# and 30 minutes, 1, 3, 6 and 12 hours, 1 and 2 days, a week from Sunday, 1
+# and 3 months and a year, the nearest to the range over the count asked;
+# whole milliseconds below the ladder and whole years at a nice step above
+# it. Each tick is labelled by the coarsest unit it does not sit on the start
+# of, as d3-scale's multi-scale format writes it, in English.
+#
+# An instant is a whole number of milliseconds since 1970-01-01T00:00:00Z,
+# from the first day of year 1 to the last of year 9999, which the face
+# checks; the calendar is the proleptic Gregorian one, every day 86,400
+# seconds.
+
+use chart/internal/ticks
+use math
+
+# Milliseconds in a second, a minute, an hour, a day and a week.
+constant SECOND: i64
+    1000
+
+# Milliseconds in a minute.
+constant MINUTE: i64
+    60000
+
+# Milliseconds in an hour.
+constant HOUR: i64
+    3600000
+
+# Milliseconds in a day.
+constant DAY: i64
+    86400000
+
+# Milliseconds in a week.
+constant WEEK: i64
+    604800000
+
+# The units an interval counts in.
+variant Unit
+    # A millisecond.
+    millisecond
+    # A second.
+    second
+    # A minute.
+    minute
+    # An hour.
+    hour
+    # A day since 1970-01-01.
+    day
+    # A week from Sunday at midnight.
+    week
+    # A month from its first day.
+    month
+    # A year from its first of January.
+    year
+
+# A step of whole units: every tick is a multiple of `step` units, counted
+# from 1970-01-01 for the fixed units, from January for months and from year
+# 0 for years.
+record Interval
+    unit: Unit
+    step: i64
+
+# A day of the calendar.
+record Civil
+    year: i64
+    month: i64
+    day: i64
+
+# `x` divided by `by`, rounded down.
+function floor_div(x: i64, by: i64) -> i64
+    q = x / by
+
+    if x % by != 0 && x < 0 != (by < 0)
+        return q - 1
+    return q
+
+# The days from 1970-01-01 to the given day, negative before it (Howard
+# Hinnant's `days_from_civil`).
+function days_from_civil(year: i64, month: i64, day: i64) -> i64
+    y @= year
+
+    if month <= 2
+        y @ y - 1
+    era = floor_div(x: y, by: 400)
+    yoe = y - era * 400
+    mp = (month + 9) % 12
+    doy = (153 * mp + 2) / 5 + day - 1
+    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+    return era * 146097 + doe - 719468
+
+# The day of the calendar `days` after 1970-01-01 (Hinnant's
+# `civil_from_days`).
+function civil_from_days(days: i64) -> Civil
+    z = days + 719468
+    era = floor_div(x: z, by: 146097)
+    doe = z - era * 146097
+    yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    mp = (5 * doy + 2) / 153
+    day = doy - (153 * mp + 2) / 5 + 1
+    month @= mp + 3
+
+    if mp >= 10
+        month @ mp - 9
+    year @= yoe + era * 400
+
+    if month <= 2
+        year @ year + 1
+    return Civil(year: year, month: month, day: day)
+
+# The first instant of year 1, in milliseconds.
+function first_instant() -> i64
+    return days_from_civil(year: 1, month: 1, day: 1) * DAY
+
+# The last millisecond of year 9999.
+function last_instant() -> i64
+    return days_from_civil(year: 10000, month: 1, day: 1) * DAY - 1
+
+# The fixed length of a unit in milliseconds, for the units that have one.
+function length_of(unit: Unit) -> i64
+    return match unit
+        .millisecond   => 1
+        .second        => SECOND
+        .minute        => MINUTE
+        .hour          => HOUR
+        .day           => DAY
+        .week          => WEEK
+        .month | .year => 0
+
+# The ladder d3-time's `utcTicks` chooses from: each rung's interval and its
+# length in milliseconds, a month 30 days and a year 365.
+function ladder() -> [Interval]
+    return [
+        Interval(unit: .second, step: 1)
+        Interval(unit: .second, step: 5)
+        Interval(unit: .second, step: 15)
+        Interval(unit: .second, step: 30)
+        Interval(unit: .minute, step: 1)
+        Interval(unit: .minute, step: 5)
+        Interval(unit: .minute, step: 15)
+        Interval(unit: .minute, step: 30)
+        Interval(unit: .hour, step: 1)
+        Interval(unit: .hour, step: 3)
+        Interval(unit: .hour, step: 6)
+        Interval(unit: .hour, step: 12)
+        Interval(unit: .day, step: 1)
+        Interval(unit: .day, step: 2)
+        Interval(unit: .week, step: 1)
+        Interval(unit: .month, step: 1)
+        Interval(unit: .month, step: 3)
+        Interval(unit: .year, step: 1)
+    ]
+
+# The length of a rung in milliseconds, as d3-time's durations count it.
+function rung_length(i: Interval) -> f64
+    return match i.unit
+        .month                                                  => to_f64(i.step) * 30.0 * to_f64(DAY)
+        .year                                                   => to_f64(i.step) * 365.0 * to_f64(DAY)
+        .millisecond | .second | .minute | .hour | .day | .week => to_f64(i.step * length_of(i.unit))
+
+# The interval of about `count` ticks from `start` to `stop`, in
+# milliseconds, as d3-time's `utcTickInterval` chooses it.
+function choose(start: f64, stop: f64, count: f64) -> Interval
+    target = math.abs(stop - start) / count
+    rungs = ladder()
+    i @= 0
+
+    while i < rungs.len() && rung_length(rungs[i]) <= target
+        i @ i + 1
+
+    if i == rungs.len()
+        year_length = 365.0 * to_f64(DAY)
+        step = ticks.step_of(start: start / year_length, stop: stop / year_length, count: count)
+        return Interval(unit: .year, step: math.max_i64(a: 1, b: to_i64(math.floor(step)).must()))
+
+    if i == 0
+        step = math.max(a: ticks.step_of(start: start, stop: stop, count: count), b: 1.0)
+        return Interval(unit: .millisecond, step: to_i64(math.floor(step)).must())
+    below = rungs[i - 1]
+    above = rungs[i]
+
+    if target / rung_length(below) < rung_length(above) / target
+        return below
+    return above
+
+# The first month of a count of months since year 0's January.
+function months_of(t: i64) -> i64
+    c = civil_from_days(floor_div(x: t, by: DAY))
+    return c.year * 12 + c.month - 1
+
+# The first instant of the month `months` after year 0's January.
+function month_start(months: i64) -> i64
+    year = floor_div(x: months, by: 12)
+    month = months - year * 12 + 1
+    return days_from_civil(year: year, month: month, day: 1) * DAY
+
+# The latest tick of `interval` at or before `t`.
+function floor_to(t: i64, interval: Interval) -> i64
+    return match interval.unit
+        .millisecond | .second | .minute | .hour | .day =>
+            size = length_of(interval.unit) * interval.step
+            floor_div(x: t, by: size) * size
+        .week =>
+            days = floor_div(x: t, by: DAY)
+
+            # 1970-01-01 was a Thursday, four days after a Sunday.
+            weekday = (days + 4) % 7
+            (days - weekday) * DAY
+        .month =>
+            months = months_of(t)
+            month_start(floor_div(x: months, by: interval.step) * interval.step)
+        .year =>
+            c = civil_from_days(floor_div(x: t, by: DAY))
+            days_from_civil(year: floor_div(x: c.year, by: interval.step) * interval.step, month: 1, day: 1) * DAY
+
+# The tick of `interval` after the tick `t`.
+function next_of(t: i64, interval: Interval) -> i64
+    return match interval.unit
+        .millisecond | .second | .minute | .hour | .day | .week => t + length_of(interval.unit) * interval.step
+        .month                                                  => month_start(months_of(t) + interval.step)
+        .year =>
+            c = civil_from_days(floor_div(x: t, by: DAY))
+            days_from_civil(year: c.year + interval.step, month: 1, day: 1) * DAY
+
+# The earliest tick of `interval` at or after `t`.
+function ceil_to(t: i64, interval: Interval) -> i64
+    f = floor_to(t: t, interval: interval)
+
+    if f == t
+        return f
+    return next_of(t: f, interval: interval)
+
+# The ticks of `interval` from `start` to `stop`, both in milliseconds and
+# both included where they fall on a tick.
+function ticks_of(start: f64, stop: f64, interval: Interval) -> [i64]
+    out: [i64] @= []
+    t @= ceil_to(t: to_i64(math.ceil(start)).must(), interval: interval)
+
+    while to_f64(t) <= stop
+        out @ out.push(t)
+        t @ next_of(t: t, interval: interval)
+
+    return out
+
+# `n` written with at least `width` digits, zeros before.
+function padded(n: i64, width: i64) -> str
+    text @= to_str(n)
+
+    while text.len() < width
+        text @ "0" + text
+
+    return text
+
+# The English name of a month, 1 for January.
+function month_name(month: i64) -> str
+    names = [
+        "January"
+        "February"
+        "March"
+        "April"
+        "May"
+        "June"
+        "July"
+        "August"
+        "September"
+        "October"
+        "November"
+        "December"
+    ]
+    return names[month - 1]
+
+# The label of the tick `t`, as d3-scale's multi-scale UTC format writes it:
+# `.250` for a millisecond, `:05` for a second, `03:45` for a minute, `03 PM`
+# for an hour, `Mon 05` for a day, `Jan 05` for a Sunday, `January` for a
+# month and `2026` for a year.
+function label(t: i64) -> str
+    days = floor_div(x: t, by: DAY)
+    within = t - days * DAY
+    c = civil_from_days(days)
+    hour = within / HOUR
+    minute = within % HOUR / MINUTE
+    second = within % MINUTE / SECOND
+    milli = within % SECOND
+    twelve = (hour + 11) % 12 + 1
+    half @= "AM"
+
+    if hour >= 12
+        half @ "PM"
+    weekday = (days + 4) % 7
+    weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    short = month_name(c.month).slice(from: 0, to: 3)
+
+    if milli != 0
+        return "." + padded(n: milli, width: 3)
+
+    if second != 0
+        return ":" + padded(n: second, width: 2)
+
+    if minute != 0
+        return padded(n: twelve, width: 2) + ":" + padded(n: minute, width: 2)
+
+    if hour != 0
+        return padded(n: twelve, width: 2) + " " + half
+
+    if c.day != 1
+        if weekday != 0
+            return weekdays[weekday] + " " + padded(n: c.day, width: 2)
+        return short + " " + padded(n: c.day, width: 2)
+
+    if c.month != 1
+        return month_name(c.month)
+    return padded(n: c.year, width: 4)
+
+# The range moved out to the ticks of the interval about `count` ticks would
+# take, as d3-scale's time `nice` moves it.
+function nice(start: f64, stop: f64, count: f64) -> ticks.Span
+    interval = choose(start: start, stop: stop, count: count)
+    low = floor_to(t: to_i64(math.floor(start)).must(), interval: interval)
+    high = ceil_to(t: to_i64(math.ceil(stop)).must(), interval: interval)
+    return ticks.Span(low: to_f64(low), high: to_f64(high))
+
+## Tests
+
+# The expected values are d3-time 3.1.0's and d3-scale 4.0.2's answers to
+# the same ranges, run under Node 26 on 2026-11-24, and the day counts
+# Python's `datetime` gives.
+
+test "floor_div: rounds down below zero"
+    assert floor_div(x: -1, by: 7) == -1
+    assert floor_div(x: -7, by: 7) == -1
+    assert floor_div(x: 6, by: 7) == 0
+
+test "days_from_civil: the epoch, the day before it, a leap year's March and year 1"
+    assert days_from_civil(year: 1970, month: 1, day: 1) == 0
+    assert days_from_civil(year: 1969, month: 12, day: 31) == -1
+    assert days_from_civil(year: 2000, month: 3, day: 1) == 11017
+    assert days_from_civil(year: 1, month: 1, day: 1) == -719162
+
+test "civil_from_days: back to the calendar"
+    assert civil_from_days(11016) == Civil(year: 2000, month: 2, day: 29)
+    assert civil_from_days(-719162) == Civil(year: 1, month: 1, day: 1)
+    assert civil_from_days(-1) == Civil(year: 1969, month: 12, day: 31)
+
+test "ticks_of: d3's months of 2026, labelled"
+    start = 1767225600000.0
+    stop = 1798675200000.0
+    interval = choose(start: start, stop: stop, count: 10.0)
+    assert interval == Interval(unit: .month, step: 1)
+    ts = ticks_of(start: start, stop: stop, interval: interval)
+    assert ts.len() == 12
+    assert label(ts[0]) == "2026"
+    assert label(ts[1]) == "February"
+    assert ts[11] == 1796083200000
+
+test "ticks_of: d3's half minutes of a morning"
+    start = 1795510800000.0
+    stop = 1795510990000.0
+    ts = ticks_of(start: start, stop: stop, interval: choose(start: start, stop: stop, count: 6.0))
+    labels: [str] @= []
+
+    for t in ts
+        labels @ labels.push(label(t))
+
+    assert labels == ["09 AM", ":30", "09:01", ":30", "09:02", ":30", "09:03"]
+
+test "ticks_of: d3's milliseconds"
+    start = 1767225600000.0
+    stop = 1767225600750.0
+    ts = ticks_of(start: start, stop: stop, interval: choose(start: start, stop: stop, count: 5.0))
+    assert ts == [1767225600000, 1767225600200, 1767225600400, 1767225600600]
+    assert label(ts[1]) == ".200"
+
+test "ticks_of: d3's half hours across the year 2000's midnight"
+    start = 946681200000.0
+    stop = 946692000000.0
+    ts = ticks_of(start: start, stop: stop, interval: choose(start: start, stop: stop, count: 6.0))
+    labels: [str] @= []
+
+    for t in ts
+        labels @ labels.push(label(t))
+
+    assert labels == ["11 PM", "11:30", "2000", "12:30", "01 AM", "01:30", "02 AM"]
+
+test "ticks_of: d3's days, a Sunday named by its month"
+    start = 1770076800000.0
+    stop = 1771286400000.0
+    ts = ticks_of(start: start, stop: stop, interval: choose(start: start, stop: stop, count: 10.0))
+    assert ts.len() == 15
+    assert label(ts[0]) == "Tue 03"
+    assert label(ts[5]) == "Feb 08"
+
+test "ticks_of: d3's months before 1970"
+    start = -3773779200000.0
+    stop = -3750192000000.0
+    ts = ticks_of(start: start, stop: stop, interval: choose(start: start, stop: stop, count: 10.0))
+    assert ts.len() == 10
+    assert label(ts[0]) == "June"
+    assert label(ts[7]) == "1851"
+
+test "nice: d3's 2026 moved out to the next January"
+    assert nice(start: 1767225600000.0, stop: 1798675200000.0, count: 10.0) == ticks.Span(low: 1767225600000.0, high: 1798761600000.0)
