@@ -100,6 +100,6 @@ so no precedent (Rust's `C-unwind`, cgo, OCaml's callbacks) is claimed.
 
 The compiler-engineer's and the ffi-pragmatist's (table above), at the landing of R1 and R2 respectively.
 
-## The author's verdict
+## Author's verdict
 
 **Pending.** Decision issue 2758, opened with this sitting as `panel 258`.
