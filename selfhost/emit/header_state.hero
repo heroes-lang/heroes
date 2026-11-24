@@ -232,9 +232,9 @@ test "a header's packing and state left set reach no line the compiler writes"
 
 # A macro over every word of the lines, each `1`, as a header may define.
 function planted() -> str
-    out: str @= ""
+    out: [str] @= []
 
     for word in words_of(GIVEN_BACK)
-        out @ out + "#define " + word + " 1\n"
+        out @ out.push("#define " + word + " 1\n")
 
-    return out
+    return out.join("")
