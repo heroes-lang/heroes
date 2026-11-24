@@ -12,6 +12,8 @@ use time
 record Room
     # The bytes this user may still write.
     available: i64
+    # The bytes free to any user, the system's reserve included.
+    free: i64
     # The volume's size.
     total: i64
 
@@ -103,11 +105,12 @@ function room(at: str) -> Room?
     asked = f"asking the space of the volume of \"{at}\""
     codes.checked(path: at, asked: asked)?
     available: i64 @= 0
+    free: i64 @= 0
     total: i64 @= 0
 
-    if hero_disk.space(at, free_bytes: @available, total_bytes: @total) != 0
+    if hero_disk.space(at, available_bytes: @available, free_bytes: @free, total_bytes: @total) != 0
         return codes.disk_failed(asked: asked)
-    return ok(Room(available: available, total: total))
+    return ok(Room(available: available, free: free, total: total))
 
 # Whether `first` and `second` name one file, every link followed.
 #

@@ -1,0 +1,89 @@
+# The platform layer's list of the volumes mounted on the machine,
+# `hero_volumes.h`, bound thin: one function per C function, in C's order,
+# each answering what C answers. The floor of `fs`'s `volumes`: where the call
+# fails its answer is -1 and `last_error` then the kind, which `fs` turns into
+# a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. The
+# list is the header's fill form: it leaves `buffer` `n` bytes long and answers
+# how many bytes the whole list has; where that is above `n` the buffer was too
+# short and holds nothing to read, and the caller asks again with that many.
+# An entry is `FIELDS` fields, each followed by one zero byte, and the header
+# says what each holds.
+
+extern "hero_volumes.h"
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, and `HERO_VOLUMES_UNSUPPORTED` a POSIX system neither
+    # Darwin nor Linux, or a Linux with no `/proc`.
+    constant HERO_VOLUMES_OK: i64
+    constant HERO_VOLUMES_INVALID: i64
+    constant HERO_VOLUMES_DENIED: i64
+    constant HERO_VOLUMES_LIMIT: i64
+    constant HERO_VOLUMES_UNSUPPORTED: i64
+    constant HERO_VOLUMES_OTHER: i64
+    # How many fields one entry of the list holds.
+    constant HERO_VOLUMES_FIELDS: i64
+    function hero_volumes_list(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_volumes_last_error() -> i64
+    function hero_volumes_last_os_error() -> i64
+
+# How many bytes the list of the mounted volumes has, or -1. The list is
+# written into `buffer` where `n` bytes hold it: for each volume, in the order
+# the system lists its mounts, `fields` fields of text each ended by a zero
+# byte.
+#
+# - `buffer`: where the list is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read, and the caller asks again with that many.
+function list(@buffer: [u8], n: u64) -> i64
+    return hero_volumes_list(@buffer, n: n)
+
+# The kind of the last call's failure on this thread, `HERO_VOLUMES_OK` after
+# one that did not fail.
+function last_error() -> i64
+    return hero_volumes_last_error()
+
+# The platform's own number for the last failure on this thread, 0 where the
+# layer itself refused.
+function last_os_error() -> i64
+    return hero_volumes_last_os_error()
+
+# How many fields one entry of the list holds.
+function fields() -> i64
+    return HERO_VOLUMES_FIELDS
+
+## Tests
+
+test "list: no buffer measures, a short one is filled within its count, the right count is the whole list, and a large one holds the same"
+    none: [u8] @= []
+    need = list(@none, n: 0)
+    assert need > 0
+    assert none.len() == 0
+    assert last_error() == HERO_VOLUMES_OK
+    assert last_os_error() == 0
+    one: [u8] @= []
+    assert list(@one, n: 1) > 0
+    assert one.len() == 1
+    large: [u8] @= []
+    assert list(@large, n: 1048576) > 0
+    assert large.len() == 1048576
+
+test "list: a whole number of entries, each of the header's fields ending in a zero byte"
+    room: [u8] @= []
+    need = list(@room, n: 1048576)
+    assert need > 0 && need <= 1048576
+    assert room[need - 1] == 0
+    zeros: i64 @= 0
+
+    for index in range(from: 0, to: need)
+        if room[index] == 0
+            zeros @ zeros + 1
+
+    assert zeros % HERO_VOLUMES_FIELDS == 0
+    assert zeros >= HERO_VOLUMES_FIELDS
+
+test "fields: the header's count, eleven fields to an entry"
+    assert fields() == HERO_VOLUMES_FIELDS
+    assert fields() == 11

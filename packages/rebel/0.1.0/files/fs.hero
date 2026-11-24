@@ -27,8 +27,8 @@
 #
 # The floors are `os/hero_disk` (`hero_disk.h`), a path's facts and changes,
 # its links, permission bits, owners, times and locks; `io/hero_stream`
-# (`hero_stream.h`), a file opened; and `os/hero_os` (`hero_os.h`), a path
-# resolved. What is not here yet is in the ledger, `fs.ledger`, as
+# (`hero_stream.h`), a file opened; `os/hero_os` (`hero_os.h`), a path
+# resolved; and `fs/hero_volumes` (`hero_volumes.h`), the volumes mounted. What is not here yet is in the ledger, `fs.ledger`, as
 # `pending`.
 #
 # Not written yet, each a `pending` block of its ledger: operations held inside
@@ -48,6 +48,7 @@ use fs/internal/mapped
 use fs/internal/special
 use fs/internal/temporary
 use fs/internal/tree
+use fs/internal/volumes as mounted
 use fs/internal/walking
 use fs/internal/whole
 use io
@@ -194,12 +195,52 @@ record Owner
     # The group's number, 0 or above.
     group: i64
 
-# The space of the volume a path stands on, in bytes.
+# The space of the volume a path stands on, in bytes: what Python's
+# `shutil.disk_usage` calls `used` is `total` less `free`.
 record Space
-    # The bytes this user may still write.
+    # The bytes this user may still write: at most `free`, the system's
+    # reserve and this user's quota left out.
     available: i64
+    # The bytes free to any user, the system's reserve included.
+    free: i64
     # The volume's size.
     total: i64
+
+# A volume mounted on the machine, as `volumes` lists it: where it is
+# mounted, what it is, its space and what the system says of it.
+record Volume
+    # The folder it is mounted on, absolute: `/`, `/Volumes/Backup`, `C:\`,
+    # a folder a Windows volume is mounted on ending in `\`.
+    mount: str
+    # What is mounted there, as the system names it: a device
+    # (`/dev/disk3s1`, `/dev/sda2`), a share (`server:/export`,
+    # `\\server\share`), a Windows volume's name (`\\?\Volume{...}\`), or
+    # the name a file system that stores nothing gives itself (`proc`).
+    device: str
+    # The file system's name, as the system writes it: `apfs`, `ext4`,
+    # `NTFS`, `fuse.sshfs`.
+    kind: str
+    # The name a person gave the volume and a file manager shows, or "" where
+    # it has none.
+    label: str
+    # The volume's size, in bytes.
+    total: i64
+    # The bytes free on it to any user, the system's reserve included.
+    free: i64
+    # The bytes this user may still write on it, at most `free`.
+    available: i64
+    # Whether nothing may be written on it.
+    read_only: bool
+    # Whether it is stored on another machine: a share, a network file
+    # system.
+    network: bool
+    # Whether its medium can be taken out of the machine: a USB stick, a
+    # card, a disc.
+    removable: bool
+    # Whether the system marks it as no place for a person's files and keeps
+    # it out of its file manager: macOS's own volumes under `/System/Volumes`.
+    # Linux and Windows mark no volume so, and say false.
+    hidden: bool
 
 ## Whole files
 
@@ -539,7 +580,34 @@ function is_same_file(path: str, other: str) -> bool?
 # Fails `file_not_found` where nothing is there.
 function space(path: str) -> Space?
     room = changes.room(path)?
-    return ok(Space(available: room.available, total: room.total))
+    return ok(Space(available: room.available, free: room.free, total: room.total))
+
+# Every volume mounted on the machine, in the order the system lists its
+# mounts: what a file manager's sidebar and a monitor's disk table show.
+#
+# On Darwin the list is the system's table of mounts (`getfsstat`), read
+# without waiting on a network volume, whose figures are then the system's
+# last and whose label is not asked; on Linux it is `/proc/self/mountinfo`,
+# every mount of this process's view, each asked its space as `df` asks it,
+# so a share whose server does not answer holds the call as it holds `df`; on
+# Windows every drive letter, then every folder a volume is mounted on. A
+# mount the system will not tell the size of (a drive with no medium, a share
+# that does not answer, a folder this user may not enter) is left out, never
+# made up. A program that wants the volume one path stands on asks `space`.
+#
+# Fails `not_text` where a mount folder is not UTF-8, as a folder's entry
+# fails, `permission` where the system keeps its table of mounts from this
+# program, and `unsupported` on a POSIX system neither Darwin nor Linux, or a
+# Linux with no `/proc`. See also `space`.
+function volumes() -> [Volume]?
+    listed: [Volume] @= []
+
+    for e in mounted.read()?
+        listed @ listed.push(
+            Volume(mount: e.mount, device: e.device, kind: e.kind, label: e.label, total: e.total, free: e.free, available: e.available, read_only: e.read_only, network: e.network, removable: e.removable, hidden: e.hidden)
+        )
+
+    return ok(listed)
 
 ## Folders
 
@@ -1312,10 +1380,52 @@ test "exists, is_file, is_dir, is_link and is_same_file: each kind, nothing ther
         assert !exists(dir + "/dangling").must()
     assert fixture.cleared(dir)
 
-test "space: the bytes available are at most the volume's size, and nothing there"
+test "volumes: every volume has a mount folder and its figures in order, and the root is listed with a size"
+    listed = volumes().must()
+    assert listed.len() >= 1
+    roots: i64 @= 0
+
+    for v in listed
+        assert v.mount.len() > 0
+        assert v.total >= 0 && v.available >= 0 && v.available <= v.free && v.free <= v.total
+
+        if fixture.windows()
+            assert !v.hidden
+
+            if v.mount.len() == 3 && v.mount.slice(from: 1, to: 3) == ":\\" && v.kind.len() > 0 && v.total > 0
+                roots @ roots + 1
+        else if v.mount == "/" && v.kind.len() > 0
+            roots @ roots + 1
+
+    assert roots >= 1
+
+test "volumes: the volume a folder stands on is listed with the size space tells, and a second reading lists it again"
+    dir = fixture.folder("face-volumes")
+    room = space(dir).must()
+    first = volumes().must()
+    second = volumes().must()
+    sized: i64 @= 0
+
+    for v in first
+        if v.total == room.total
+            sized @ sized + 1
+
+    assert sized >= 1
+    again: i64 @= 0
+
+    for v in second
+        for w in first
+            if v.mount == w.mount && v.device == w.device && v.kind == w.kind
+                again @ again + 1
+                break
+
+    assert again >= 1
+    assert fixture.cleared(dir)
+
+test "space: the bytes available are at most those free, which are at most the volume's size, and nothing there"
     dir = fixture.folder("face-space")
     room = space(dir).must()
-    assert room.total > 0 && room.available >= 0 && room.available <= room.total
+    assert room.total > 0 && room.available >= 0 && room.available <= room.free && room.free <= room.total
 
     match space(dir + "/none")
         .ok _  => assert false
@@ -1817,6 +1927,15 @@ test "is_same_file: a file and a path through its folder"
 test "space: the working folder's volume"
     room = space(".").must()
     assert room.total > 0 && room.available <= room.total
+    used = room.total - room.free
+    assert used >= 0
+
+# A disk table: each volume a person keeps files on, its size and its use.
+test "volumes: the volumes a person browses, and how full each is"
+    for v in volumes().must()
+        if !v.hidden && v.total > 0
+            used = v.total - v.free
+            assert used >= 0 && v.mount.len() > 0
 
 # A folder made.
 test "make_dir: one folder"
