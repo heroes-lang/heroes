@@ -668,7 +668,7 @@ test "remove and stop: a service nobody installed is not found, a limit below ze
     assert stop("a", scope: .user, limit: time.nanoseconds(-1)).is_err()
 
 test "install on Windows: a user's service, a working folder and a restart at every exit refused by words"
-    if !hero_scm.on_windows()
+    if hero_scm.supported() == 0
         skip_test(reason: "only Windows has the Service Control Manager")
     d @= definition(
         name: "org.heroes-lang.never-made",

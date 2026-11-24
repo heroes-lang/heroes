@@ -121,22 +121,13 @@ function last_os_error() -> i64
 function last_message(@buffer: [u8], n: u64) -> i64
     return hero_scm_last_message(@buffer, n: n)
 
-# Whether the tests run on a system with the Service Control Manager.
-function on_windows() -> bool
-    match os.system()
-        .windows => return true
-        .darwin  => return false
-        .linux   => return false
-        .other   => return false
-
 test "hero_scm supported: Windows alone"
-    if on_windows()
-        assert supported() == 1
-    else
-        assert supported() == 0
+    match os.system()
+        .windows                  => assert supported() == 1
+        .darwin | .linux | .other => assert supported() == 0
 
 test "hero_scm calls off Windows: unsupported, the four left as they were"
-    if on_windows()
+    if supported() == 1
         skip_test(reason: "Windows has the Service Control Manager; the face's tests ask it")
     state @= 9
     pid @= 9
@@ -156,7 +147,7 @@ test "hero_scm calls off Windows: unsupported, the four left as they were"
     assert last_message(@words, n: 0) == 0
 
 test "hero_scm names on Windows: an empty name and one not installed"
-    if !on_windows()
+    if supported() == 0
         skip_test(reason: "only Windows has the Service Control Manager")
     assert start("") == -1
     assert last_error() == HERO_SCM_INVALID
