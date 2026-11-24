@@ -398,7 +398,9 @@
  * pickers, `platform/hero_ui_win32_pickers.h`, and the pure half of its
  * drawing area, `platform/hero_ui_win32_canvas.h`, with the Direct2D and
  * DirectWrite its member calls, `platform/hero_ui_win32_direct2d.h`; the
- * Win32 arm's drawing area, a member after its own header; and Monocypher's, which
+ * Win32 arm's drawing area, a member after its own header; the pure half of
+ * its drawing area's parts, `platform/hero_ui_win32_parts.h`, and the member
+ * that offers them to a screen reader after its own header; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -501,6 +503,9 @@
 #include "platform/hero_ui_win32_direct2d.h"
 #include "hero_ui_canvas_win32.h"
 #include "platform/hero_ui_canvas_win32.c"
+#include "platform/hero_ui_win32_parts.h"
+#include "hero_ui_parts_win32.h"
+#include "platform/hero_ui_parts_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #include "hero_service.h"

@@ -41,6 +41,7 @@
 #include <oleacc.h>
 #include <wchar.h>
 #include "hero_ui_canvas_win32.h"
+#include "hero_ui_parts_win32.h"
 #include "hero_ui_print_win32.h"
 #include "hero_ui_web_win32.h"
 #include "hero_ui_win32_watch.h"
@@ -334,6 +335,9 @@ struct hero_ui_native {
     /* A drawing area's drawing, its pointer and its keys
      * (`hero_ui_canvas_win32.c`). */
     hero_ui_canvas_win32 *canvas;
+    /* Its parts for a screen reader, made at the first parts the program
+     * gives (`hero_ui_parts_win32.c`). */
+    hero_ui_parts_win32 *parts;
     int64_t node_count;
     int64_t node_room;
     /* A text widget's text as its control last held it, UTF-16 as the
@@ -1721,6 +1725,9 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
                 hero_ui_win_give_keys(window, hwnd);
             }
         }
+        if (widget->parts != NULL && hero_ui_parts_win32_message(widget->parts, message, wparam, lparam, &canvas_answer)) {
+            return canvas_answer;
+        }
         if (hero_ui_canvas_win32_message(widget->canvas, widget->id, hwnd, hero_ui_win_canvas_dpi(widget), message, wparam, lparam, &canvas_answer)) {
             return canvas_answer;
         }
@@ -2152,6 +2159,8 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
         }
         break;
     }
+    hero_ui_parts_win32_free(widget->parts);
+    widget->parts = NULL;
     hero_ui_canvas_win32_free(widget->canvas);
     widget->canvas = NULL;
     if (widget->kind == HERO_UI_TABLE) {
@@ -9864,12 +9873,34 @@ static void hero_ui_win_props_end(void) {
 
 /* Sets widget `widget`'s name as its record says: the program's own, else
  * its tied label's words, else none of the arm's, the system's own then. */
+/* Drawing area `area`'s name handed to the root of its parts, which UI
+ * Automation reads in place of the system's once the area has parts: the
+ * program's name, or its tied label's words, as below. */
+static int64_t hero_ui_win_parts_named(const hero_ui_native *area) {
+    hero_ui_native *label = area->label_for != 0 ? hero_ui_find(area->label_for) : NULL;
+    wchar_t *words = NULL;
+    int64_t answer;
+
+    if (area->parts == NULL) {
+        return HERO_UI_OK;
+    }
+    if (area->access_name == NULL && label != NULL && label->hwnd != NULL) {
+        words = hero_ui_win_wide_of(label->hwnd);
+    }
+    answer = hero_ui_parts_win32_name(area->parts, (const uint16_t *)(area->access_name != NULL ? area->access_name : words));
+    hero_layer_free(words);
+    return answer;
+}
+
 static int64_t hero_ui_win_name_again(hero_ui_native *widget) {
     IAccPropServices *props = hero_ui_win_props_of();
     hero_ui_native *label = widget->label_for != 0 ? hero_ui_find(widget->label_for) : NULL;
     wchar_t *words = NULL;
     HRESULT done;
 
+    if (hero_ui_win_parts_named(widget) != HERO_UI_OK) {
+        return HERO_UI_LIMIT;
+    }
     if (props == NULL) {
         return hero_ui_refused(HERO_UI_OTHER, "Windows' accessibility property service (IAccPropServices) could not be made");
     }
@@ -9889,8 +9920,10 @@ static int64_t hero_ui_win_name_again(hero_ui_native *widget) {
 
 /* A drawing area is one element for a screen reader, of role image
  * (`ROLE_SYSTEM_GRAPHIC`, which a window of this arm's own class is not
- * given by the system), its name the program's; its parts are not offered.
- * Where the service could not be made it keeps the system's role. */
+ * given by the system), its name the program's, until the program gives it
+ * parts: from then on UI Automation reads the root of its parts in its place
+ * (`hero_ui_parts_win32.c`). Where the service could not be made it keeps
+ * the system's role. */
 static void hero_ui_win_canvas_role(const hero_ui_native *area) {
     static const GUID role_property = {0xcb905ff2, 0x7bd1, 0x4c05, {0xb3, 0xc8, 0xe6, 0xc2, 0x41, 0x36, 0x4d, 0x70}};
     IAccPropServices *props = hero_ui_win_props_of();
@@ -11102,6 +11135,68 @@ int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int
     hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
 
     return area == NULL ? answer : hero_ui_canvas_win32_pointer(area->canvas, area->id, area->hwnd, hero_ui_win_canvas_dpi(area), x, y, phase, button, clicks, modifiers);
+}
+
+/* -- A DRAWING AREA'S PARTS (`hero_ui_parts_win32.c`) -----------------------
+ *
+ * The parts are the member's, made at the first parts the program gives, so
+ * an area that never has any loads no UI Automation; the area's window, its
+ * scale and its name are this arm's, handed to them. */
+
+/* Drawing area `id`'s scale, asked at each reading of a part's box. */
+static uint32_t hero_ui_win_parts_scale(int64_t id) {
+    const hero_ui_native *area = hero_ui_find(id);
+
+    return area != NULL ? hero_ui_win_canvas_dpi(area) : 96;
+}
+
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    if (area == NULL) {
+        return answer;
+    }
+    if (area->parts == NULL) {
+        if (count == 0) {
+            /* None given and none to take back. */
+            return hero_ui_parts_win32_offered();
+        }
+        area->parts = hero_ui_parts_win32_new(area->id, area->hwnd, hero_ui_win_parts_scale, &answer);
+        if (area->parts == NULL) {
+            return answer;
+        }
+        answer = hero_ui_win_parts_named(area);
+        if (answer != HERO_UI_OK) {
+            return answer;
+        }
+    }
+    return hero_ui_parts_win32_set(area->parts, list, count);
+}
+
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    *length = 0;
+    if (area == NULL) {
+        return answer;
+    }
+    return area->parts == NULL ? hero_ui_parts_win32_offered() : hero_ui_parts_win32_read(area->parts, buffer, count, length);
+}
+
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
+    int64_t answer;
+    hero_ui_native *area = hero_ui_win_canvas_of(id, &answer);
+
+    if (area == NULL) {
+        return answer;
+    }
+    if (area->parts == NULL) {
+        answer = hero_ui_parts_win32_offered();
+        return answer != HERO_UI_OK ? answer : hero_ui_refused(HERO_UI_INVALID, "a screen reader's act on a part of a drawing area given no parts");
+    }
+    return hero_ui_parts_win32_act(area->parts, part, act);
 }
 
 #endif
