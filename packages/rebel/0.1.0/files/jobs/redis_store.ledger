@@ -43,6 +43,13 @@ capability jobs-redis/wake  a worker woken by a blocking pop or a message when a
   python  rq.Queue.dequeue_any, rq.Queue.lmove, rq.intermediate_queue
   ruby    -
 
+capability jobs-redis/rate-limit  a limit workers share kept in Redis, its tokens taken by a script the server runs whole
+  heroes  pending: no Redis server and no Redis image stand on the machine that wrote `postgres_store`'s limits (2026-11-24: no `redis-server`, no `redis-cli`, `docker images` naming none), and building or pulling one is a download the author has not allowed; the script, the bucket's instant kept under a key and moved with the server's `TIME`, is not written rather than kept unrun; meanwhile a program on Redis shares its limits through `postgres_store.allow`, or holds a `jobs.Bucket` in each worker
+  go      -
+  rust    -
+  python  -
+  ruby    -
+
 capability jobs-redis/cluster  a store spread over a Redis cluster, or found through Sentinel
   heroes  refused: `redis` refuses a cluster's redirections and knows no Sentinel, which its ledger says; the scripts name keys they compute, which a cluster's slots would refuse
   go      asynq.RedisClusterClientOpt, asynq.RedisClusterClientOpt.MakeRedisClient, asynq.RedisFailoverClientOpt, asynq.RedisFailoverClientOpt.MakeRedisClient, asynq.Inspector.ClusterKeySlot, asynq.Inspector.ClusterNodes, asynq.ClusterNode

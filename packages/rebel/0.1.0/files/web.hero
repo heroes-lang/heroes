@@ -2285,8 +2285,9 @@ function ms_of(d: time.Duration) -> i64
 # `-Host` and `-Proto` telling the client, those the client wrote kept only
 # from a proxy `proxy.trusted` holds; `Via` naming this proxy, a request that
 # names it already refused 508; `Max-Forwards` counted down, a `TRACE` or
-# `OPTIONS` at 0 answered here; `Host` as `proxy.keep_host` says; and
-# `Connection: close`, one upstream connection a request. A request that asks
+# `OPTIONS` at 0 answered here, and `OPTIONS *` too; `Host` as
+# `proxy.keep_host` says; and `Connection: close`, one upstream connection a
+# request. A request that asks
 # to switch protocols (`Connection: upgrade` and `Upgrade`, a WebSocket) is
 # passed with its `Upgrade`, and a 101 answering it is relayed byte for byte
 # both ways until either end closes or both are silent past

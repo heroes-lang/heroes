@@ -146,6 +146,12 @@ constant DATA: [str]
     [
         "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero 8203"
         "packages/rebel/0.1.0/files/i18n/dates/internal/unit_tables.hero 8203"
+        # CLDR 49's display names, its Lao names of languages and scripts
+        # among them. **A row added 2026-11-24** (defect d-gap-net2-1): the
+        # table was born at M-rebel-library's step 137e, and `unseen` reported
+        # its 223 U+200B at that merge; `\u{200b}` is refused there as in its
+        # three neighbours (measured that day, `escape_not_needed`).
+        "packages/rebel/0.1.0/files/i18n/names/internal/name_tables.hero 8203"
         "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero 8203"
         "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero 8203"
     ]

@@ -1,0 +1,147 @@
+# Opening a session and ending it: the connection in plain text, by TLS
+# from the first byte or by STARTTLS run as `tls`'s plain steps, the
+# greeting read and the capabilities learnt; LOGOUT and the close that
+# follows it whatever the server says.
+
+use bytes
+use mail/imap/internal/flow
+use mail/imap/internal/response
+use mail/imap/internal/status
+use mail/imap/internal/wire
+use net
+use strings
+use time
+use tls
+
+# A connection to `host` at `port`, protected as `security` says, its
+# greeting read and its capabilities known.
+function open(host: str, port: i64, security: i64, roots: str, deadline: time.Duration, max_bytes: i64) -> flow.Conn?
+    if host == "" || strings.contains_any(s: host, set: " \r\n\t")
+        return fail(
+            code: flow.INVALID,
+            msg: f"the host \"{bytes.format_escaped(bytes.from_text(host))}\" is empty or holds a space or a line break"
+        )
+
+    if port < 1 || port > 65535 || deadline.nanoseconds < 0 || max_bytes < 4096
+        return fail(
+            code: flow.INVALID,
+            msg: f"the port {port} is outside 1 to 65535, the deadline {time.format_duration(deadline)} below zero, or the budget {max_bytes} below 4096 bytes"
+        )
+    client = tls.Client(roots: roots, protocols: [])
+
+    w = if security == flow.PLAIN
+        wire.over(
+            net.connect(host: host, port: port, deadline_ms: wire.net_ms(deadline))?.stream,
+            link: .plain,
+            deadline: deadline,
+            max_bytes: max_bytes
+        )
+    else if security == flow.IMPLICIT
+        wire.over(
+            tls.connect(host: host, port: port, deadline: deadline, client: client)?.stream,
+            link: .secure,
+            deadline: deadline,
+            max_bytes: max_bytes
+        )
+    else
+        wire.over(
+            starttls(host: host, port: port, deadline: deadline, client: client)?.stream,
+            link: .secure,
+            deadline: deadline,
+            max_bytes: max_bytes
+        )
+    c @= flow.Conn(
+        wire: w,
+        host: host,
+        is_tls: security != flow.PLAIN,
+        capabilities: [],
+        rev2: false,
+        logged_in: false,
+        greeting: status.plain(condition: "OK", text: ""),
+        last: status.plain(condition: "", text: ""),
+        pending: [],
+        lost: 0,
+        idling: "",
+        bye: status.plain(condition: "", text: "")
+    )
+
+    match greeted(@c, security: security)
+        .ok _ => return ok(c)
+        .err e =>
+            match wire.close(@c.wire)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# A TLS stream to `host` begun by STARTTLS, `tls` reading the greeting and
+# the answer to STARTTLS in plain text: a greeting that is not OK (PREAUTH
+# among them) or a refusal of STARTTLS fails, and nothing is sent in plain
+# text past them.
+function starttls(host: str, port: i64, deadline: time.Duration, client: tls.Client) -> net.Conn?
+    steps: [tls.Step] = [
+        .expect_line(prefix: "* OK")
+        .send(data: bytes.from_text("S0 STARTTLS\r\n"))
+        .expect_line(prefix: "S0 OK")
+    ]
+
+    return match tls.connect_after(host: host, port: port, deadline: deadline, client: client, steps: steps)
+        .ok made => ok(made)
+        .err e   => fail(code: e.code, msg: "flow.STARTTLS with " + host + ": " + e.msg)
+
+# Reads the greeting where `tls` did not, and learns the capabilities.
+function greeted(@c: flow.Conn, security: i64) -> ()?
+    if security != flow.STARTTLS
+        wire.begin(@c.wire)?
+
+        match response.read(@c.wire)?
+            .untagged u =>
+                match u.data
+                    .condition k =>
+                        c.greeting @ k.status
+
+                        if k.status.condition == "BYE"
+                            return fail(
+                                code: flow.CLOSED,
+                                msg: flow.shown(k.status) + ": the server refused this client: its greeting"
+                            )
+
+                        if k.status.condition == "PREAUTH"
+                            c.logged_in @ true
+
+                        if k.status.condition != "OK" && k.status.condition != "PREAUTH"
+                            return fail(
+                                code: flow.INVALID,
+                                msg: flow.shown(k.status) + ": the server's greeting is no OK, PREAUTH or BYE"
+                            )
+
+                        if k.status.code == "CAPABILITY"
+                            c.capabilities @ k.status.capabilities
+                    .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => return fail(
+                        code: flow.INVALID,
+                        msg: "the server's greeting is no OK, PREAUTH or BYE"
+                    )
+            .tagged _ | .continuation _ => return fail(
+                code: flow.INVALID,
+                msg: "the server's greeting is no OK, PREAUTH or BYE"
+            )
+
+    if c.capabilities.len() == 0
+        _ = flow.capability(@c)?
+
+    if c.logged_in
+        flow.enable_rev2(@c)?
+    return ok()
+
+# Says LOGOUT, reads its BYE and status, and closes the connection whatever
+# they are.
+function logout(@c: flow.Conn) -> ()?
+    said = flow.run(@c, pieces: [.text(s: "LOGOUT")], takes: ["BYE"], asked: "LOGOUT")
+
+    match wire.close(@c.wire)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    match said
+        .ok _  => return ok()
+        .err e => return fail(code: e.code, msg: e.msg)

@@ -461,6 +461,8 @@
 #include "platform/hero_term.c"
 #include "hero_users.h"
 #include "platform/hero_users.c"
+#include "hero_volumes.h"
+#include "platform/hero_volumes.c"
 #include "hero_stream.h"
 #include "platform/hero_stream.c"
 #include "hero_stream_net.h"

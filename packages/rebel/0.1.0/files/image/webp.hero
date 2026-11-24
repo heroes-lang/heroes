@@ -1,24 +1,23 @@
-# WebP read and written: still pictures and animations, lossless, with the
-# ICC profile, EXIF and XMP chunks of the extended format. A lossless frame
-# is read in full (every transform, the colour cache and the groups of
-# codes) and written with a colour index or a green-subtracted, predicted
-# picture and Huffman codes of its own.
+# WebP read and written: still pictures and animations, lossless and lossy,
+# with the ICC profile, EXIF and XMP chunks of the extended format. A
+# lossless frame is read in full (every transform, the colour cache and the
+# groups of codes) and written with a colour index or a green-subtracted,
+# predicted picture and Huffman codes of its own. A lossy frame (VP8, RFC
+# 6386), with its alpha from an ALPH chunk, is read as libwebp reads it: the
+# same pixels, to the byte, as libwebp's `dwebp` gives. A still picture is
+# written lossily at a quality, its alpha kept exactly.
 #
-# It does not convert or scale: that is `image`'s. It does not decode the
-# lossy coding (VP8, with or without an ALPH chunk) and fails `unsupported`
-# for it, the message saying which frame.
+# It does not convert or scale: that is `image`'s.
 #
 # **A file is not trusted.** `decode` checks every chunk against the file's
 # length, the canvas and every frame against the caller's `image.Limits` (the
 # pixels of all the frames together against `max_pixels`) before it allocates,
 # every prefix code for completeness, and every copy of earlier pixels against
 # the pixels written, so a broken or hostile file fails `invalid` or `limit`
-# and never reads past its end.
+# and never reads past its end; a lossy frame's partitions are held to their
+# lengths, and one that ends before its last macroblock is refused.
 #
-# It fails with `invalid`, `limit` and `unsupported`.
-#
-# Not written yet, each a `pending` block of its ledger: a lossy (VP8) picture
-# read; a picture written lossily at a quality.
+# It fails with `invalid` and `limit`.
 
 use bytes
 use hash
@@ -26,9 +25,12 @@ use image
 use image/webp/internal/build
 use image/webp/internal/expect
 use image/webp/internal/fixtures
+use image/webp/internal/lossy as coding
 use image/webp/internal/read
 use image/webp/internal/riff
+use image/webp/internal/samples
 use image/webp/internal/stream
+use image/webp/internal/written
 
 ## Codes
 
@@ -92,7 +94,7 @@ constant MAX_SIDE: i64
 # `invalid` where `data` is no WebP, the message naming what: a chunk past
 # the end, a header that does not fit, a prefix code that is not complete, a
 # copy before the first pixel, a frame outside the canvas. Fails
-# `unsupported` for a lossy frame. See also `info_of` and `encode`.
+# See also `info_of` and `encode`.
 function decode(data: [u8], limits: image.Limits) -> Webp?
     p = read.parse(data, limits)?
     frames: [Frame] @= []
@@ -129,7 +131,7 @@ record Info
     width: i64
     # The rows of the canvas.
     height: i64
-    # Whether the first picture is lossless: a lossy file fails `decode`.
+    # Whether the first picture is lossless, rather than lossy.
     lossless: bool
     # Whether the file says any frame uses alpha.
     alpha: bool
@@ -308,6 +310,84 @@ function encode_image(img: image.Image) -> [u8]?
         Webp(width: img.width, height: img.height, frames: [none], animated: false, loops: 0, background: clear, icc: [], exif: [], xmp: [])
     )
 
+## Writing lossily
+
+# The most columns or rows a lossy frame holds: its header's 14 bits.
+constant MAX_LOSSY_SIDE: i64
+    16383
+
+# How `encode_lossy` writes a picture.
+record Lossy
+    # 0 to 100: 100 keeps the most detail and makes the largest file, 0 the
+    # least and the smallest.
+    quality: i64
+    # The loop filter, which smooths the edges between blocks: 0 none, 1 the
+    # simple one (luma alone), 2 the normal one.
+    filter: i64
+    # The filter's sharpness, 0 to 7: 0 smooths the most.
+    sharpness: i64
+    # The segments, 1 to 4: the macroblocks grouped by how busy they are,
+    # the busier quantized more coarsely, where detail hides the error.
+    segments: i64
+    # The token partitions, 1, 2, 4 or 8, which a reader may decode side by
+    # side.
+    partitions: i64
+
+# The usual way to write a picture at `quality`: the normal filter at
+# sharpness 0, four segments, one token partition.
+#
+# - `quality`: 0 to 100.
+function lossy(quality: i64) -> Lossy
+    return Lossy(quality: quality, filter: 2, sharpness: 0, segments: 4, partitions: 1)
+
+# `img` as a still lossy WebP file: a VP8 key frame, each macroblock
+# predicted as a whole or by 4x4 blocks, whichever costs less for the error
+# it leaves, its residue quantized at the step the quality names; and where
+# any alpha is below 255, the extended format with the alpha in an ALPH
+# chunk, kept exactly.
+#
+# - `img`: 1 to `MAX_LOSSY_SIDE` pixels a side, in any format, written as
+#   RGBA at 8 bits.
+# - `how`: the quality and the coding's choices; `lossy` makes the usual
+#   ones.
+#
+# The same picture answers the same bytes every time. Fails `invalid` where
+# a side or a setting is outside what `Lossy` names. Fails `limit` where the
+# frame's first partition, the modes of every macroblock, passes the 524,287
+# bytes its size is written in. Aborts where `img` is not valid. See also
+# `decode` and `encode_image`.
+function encode_lossy(img: image.Image, how: Lossy) -> [u8]?
+    assert image.is_valid(img)
+
+    if img.width < 1 || img.height < 1 || img.width > MAX_LOSSY_SIDE || img.height > MAX_LOSSY_SIDE
+        return fail(
+            code: image.INVALID,
+            msg: f"a picture of {img.width} by {img.height}, where a lossy frame holds 1 to {MAX_LOSSY_SIDE} a side"
+        )
+
+    if how.quality < 0 || how.quality > 100
+        return fail(code: image.INVALID, msg: f"a quality of {how.quality}, where 0 to 100 are defined")
+
+    if how.filter < 0 || how.filter > 2 || how.sharpness < 0 || how.sharpness > 7
+        return fail(
+            code: image.INVALID,
+            msg: f"a filter of {how.filter} at sharpness {how.sharpness}, where 0 to 2 and 0 to 7 are defined"
+        )
+
+    if how.segments < 1 || how.segments > 4
+        return fail(code: image.INVALID, msg: f"{how.segments} segments, where 1 to 4 are defined")
+
+    if how.partitions != 1 && how.partitions != 2 && how.partitions != 4 && how.partitions != 8
+        return fail(code: image.INVALID, msg: f"{how.partitions} token partitions, where 1, 2, 4 or 8 are defined")
+    s = coding.Settings(
+        quality: how.quality,
+        filter: how.filter,
+        sharpness: how.sharpness,
+        segments: how.segments,
+        partitions: how.partitions
+    )
+    return coding.file_of(image.convert(img, to: .rgba).pixels, width: img.width, height: img.height, s: s)
+
 ## Tests
 
 test "decode: every file cwebp wrote, pixel for pixel as dwebp reads it"
@@ -339,21 +419,128 @@ test "info_of: the size and kind of every file, lossy ones described"
         i = info_of(bytes.parse_hex(s.file).must()).must()
         assert i.width == s.width && i.height == s.height && i.lossless && !i.animated && i.frames == 1
 
-    lossy = fixtures.lossy()
-    a = info_of(bytes.parse_hex(lossy[0]).must()).must()
+    files = fixtures.lossy()
+    a = info_of(bytes.parse_hex(files[0]).must()).must()
     assert a.width == 64 && a.height == 48 && !a.lossless
-    b = info_of(bytes.parse_hex(lossy[1]).must()).must()
+    b = info_of(bytes.parse_hex(files[1]).must()).must()
     assert b.width == 30 && b.height == 21 && !b.lossless
     n = info_of(bytes.parse_hex(fixtures.animation()).must()).must()
     assert n.animated && n.frames == 3 && n.width == 41 && n.height == 27
 
-test "decode: a lossy file is refused as unsupported, with or without alpha"
-    for file in fixtures.lossy()
-        match decode(bytes.parse_hex(file).must(), image.default_limits())
-            .ok _ => assert false
-            .err e =>
-                assert e.code == image.UNSUPPORTED
-                assert e.msg.len() > 10
+test "decode: the two lossy files, RGB without alpha and RGBA with it, as dwebp reads them"
+    files = fixtures.lossy()
+    a = decode(bytes.parse_hex(files[0]).must(), image.default_limits()).must().frames[0].image
+    assert a.format == .rgb && a.width == 64 && a.height == 48
+    assert to_i64(hash.crc32(image.convert(a, to: .rgba).pixels)).must() == 383071764
+    b = decode(bytes.parse_hex(files[1]).must(), image.default_limits()).must().frames[0].image
+    assert b.format == .rgba && b.width == 30 && b.height == 21
+    assert to_i64(hash.crc32(b.pixels)).must() == 1005695004
+
+test "decode: every lossy sample, pixel for pixel as dwebp reads it"
+    for s in samples.lossy()
+        w = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert w.width == s.width && w.height == s.height && w.frames.len() == 1
+        i = w.frames[0].image
+
+        if s.alpha
+            assert i.format == .rgba
+        else
+            assert i.format == .rgb
+        assert to_i64(hash.crc32(image.convert(i, to: .rgba).pixels)).must() == s.rgba_crc
+        assert !info_of(bytes.parse_hex(s.file).must()).must().lossless
+
+test "decode: a lossy animation's frames, places, times and flags, each as dwebp reads it alone"
+    w = decode(bytes.parse_hex(samples.animation()).must(), image.default_limits()).must()
+    assert w.animated && w.loops == 3 && w.frames.len() == 2
+    assert w.width == 21 && w.height == 27
+    first = w.frames[0]
+    assert first.x == 0 && first.y == 0 && first.duration_ms == 80 && !first.replaces && !first.clears
+    second = w.frames[1]
+    assert second.x == 2 && second.y == 4 && second.duration_ms == 120 && second.replaces && second.clears
+    assert first.image.format == .rgb && second.image.format == .rgba
+
+    for i in range(from: 0, to: 2)
+        rgba = image.convert(w.frames[i].image, to: .rgba)
+        assert to_i64(hash.crc32(rgba.pixels)).must() == samples.animation_crcs()[i]
+
+    assert composite(w, limits: image.default_limits()).must().len() == 2
+
+test "encode_lossy: every setting writes the file dwebp read, read back to dwebp's pixels"
+    for f in written.files()
+        img = written.image_of(f.source)
+        how = Lossy(
+            quality: f.quality,
+            filter: f.filter,
+            sharpness: f.sharpness,
+            segments: f.segments,
+            partitions: f.partitions
+        )
+        file = encode_lossy(img, how: how).must()
+        assert file == bytes.parse_hex(f.file).must()
+        back = image.convert(decode_image(file, image.default_limits()).must(), to: .rgba)
+        assert to_i64(hash.crc32(back.pixels)).must() == f.crc
+        error @= 0
+
+        for i in range(from: 0, to: img.width * img.height)
+            for c in range(from: 0, to: 3)
+                d = to_i64(back.pixels[i * 4 + c]).must() - to_i64(img.pixels[i * 4 + c]).must()
+                error @ error + d * d
+
+            assert back.pixels[i * 4 + 3] == img.pixels[i * 4 + 3]
+
+        assert error == f.error
+
+test "encode_lossy: a higher quality errs less and takes more bytes"
+    previous_error @= -1
+    previous_size @= -1
+
+    for q in [0, 30, 75, 100]
+        for f in written.files()
+            if f.source == "smooth40x30" && f.quality == q && f.segments == 4 && f.partitions == 1 && f.sharpness == 0
+                if previous_error >= 0
+                    assert f.error < previous_error
+                    assert f.file.len() > previous_size
+                previous_error @ f.error
+                previous_size @ f.file.len()
+
+    assert previous_error >= 0
+
+test "encode_lossy: an opaque picture is a plain lossy file, one with alpha the extended format"
+    opaque = encode_lossy(written.image_of("smooth40x30"), how: lossy(quality: 50)).must()
+    assert bytes.to_text(opaque.slice(from: 12, to: 16)).must() == "VP8 "
+    i = info_of(opaque).must()
+    assert !i.lossless && !i.alpha && i.width == 40 && i.height == 30
+    clear = encode_lossy(written.image_of("a19x23"), how: lossy(quality: 50)).must()
+    assert bytes.to_text(clear.slice(from: 12, to: 16)).must() == "VP8X"
+    j = info_of(clear).must()
+    assert !j.lossless && j.alpha && j.width == 19 && j.height == 23
+    assert decode_image(clear, image.default_limits()).must().format == .rgba
+
+test "encode_lossy: a side or a setting outside what a lossy frame holds is refused"
+    small = image.blank(width: 4, height: 4, format: .rgb).must()
+    bad = [
+        Lossy(quality: -1, filter: 2, sharpness: 0, segments: 4, partitions: 1)
+        Lossy(quality: 101, filter: 2, sharpness: 0, segments: 4, partitions: 1)
+        Lossy(quality: 50, filter: 3, sharpness: 0, segments: 4, partitions: 1)
+        Lossy(quality: 50, filter: -1, sharpness: 0, segments: 4, partitions: 1)
+        Lossy(quality: 50, filter: 2, sharpness: 8, segments: 4, partitions: 1)
+        Lossy(quality: 50, filter: 2, sharpness: -1, segments: 4, partitions: 1)
+        Lossy(quality: 50, filter: 2, sharpness: 0, segments: 0, partitions: 1)
+        Lossy(quality: 50, filter: 2, sharpness: 0, segments: 5, partitions: 1)
+        Lossy(quality: 50, filter: 2, sharpness: 0, segments: 4, partitions: 3)
+        Lossy(quality: 50, filter: 2, sharpness: 0, segments: 4, partitions: 16)
+    ]
+
+    for how in bad
+        match encode_lossy(small, how: how)
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+    wide = image.blank(width: MAX_LOSSY_SIDE + 1, height: 1, format: .gray).must()
+
+    match encode_lossy(wide, how: lossy(quality: 50))
+        .ok _  => assert false
+        .err e => assert e.code == image.INVALID
 
 test "decode: the animation's frames, places, times, loop and background"
     w = decode(bytes.parse_hex(fixtures.animation()).must(), image.default_limits()).must()

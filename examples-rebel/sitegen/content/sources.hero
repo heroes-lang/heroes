@@ -25,7 +25,23 @@ constant EXISTS: str
 # The extensions, lower case and with their dot, of the images `content/`
 # may hold: those `image.kind_of` recognises.
 constant IMAGE_EXTENSIONS: [str]
-    [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pbm", ".pgm", ".ppm", ".pnm", ".pam"]
+    [
+        ".png"
+        ".jpg"
+        ".jpeg"
+        ".gif"
+        ".webp"
+        ".bmp"
+        ".pbm"
+        ".pgm"
+        ".ppm"
+        ".pnm"
+        ".pam"
+        ".tif"
+        ".tiff"
+        ".ico"
+        ".cur"
+    ]
 
 # Whether `name`, a path under the site, is an image by its extension.
 #
@@ -194,6 +210,7 @@ function fingerprint(data: [u8]) -> str
 test "is_image and is_page: by extension, in any case; a Markdown name is no image"
     assert is_image("content/a/b.JPG")
     assert is_image("content/scan.pgm")
+    assert is_image("content/buoy.webp") && is_image("content/survey.TIF") && is_image("content/flag.ico")
     assert !is_image("content/a.md")
     assert is_page("content/A.MD")
     assert !is_page("content/md")

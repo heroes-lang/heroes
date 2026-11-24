@@ -1,0 +1,179 @@
+# The ALPH chunk of a lossy picture (the WebP container's "Alpha" chunk), read
+# and written as libwebp 1.6.0 reads it: a header byte naming the compression
+# (none, or a lossless image stream whose green channel holds the alpha), the
+# prediction filter (none, horizontal, vertical, gradient) and a
+# preprocessing hint, then the filtered alpha of every pixel. The hint asks
+# no work of a reader.
+
+use image
+use image/webp/internal/encode as lossless
+use image/webp/internal/loopfilter
+use image/webp/internal/stream
+
+# The alpha of a `width` by `height` picture from the ALPH chunk payload
+# `chunk`, one byte a pixel. Fails `invalid` where the header byte names
+# what is not defined, raw alpha is shorter than the picture, or the
+# lossless stream is damaged.
+function decode(chunk: [u8] lent, width: i64, height: i64) -> [u8]?
+    if chunk.len() < 2
+        return fail(
+            code: image.INVALID,
+            msg: f"an ALPH chunk of {chunk.len()} bytes, where its header byte and data take 2"
+        )
+    head = to_i64(chunk[0]).must()
+    method = head & 3
+    kind = head >> 2 & 3
+
+    if method > 1 || head >> 4 & 3 > 1 || head >> 6 != 0
+        return fail(code: image.INVALID, msg: f"an ALPH chunk whose header byte is {head}")
+    n = width * height
+    deltas: [u8] @= []
+
+    if method == 0
+        if chunk.len() - 1 < n
+            return fail(
+                code: image.INVALID,
+                msg: f"an ALPH chunk of {chunk.len() - 1} bytes of alpha for {n} pixels"
+            )
+        deltas @ chunk.slice(from: 1, to: n + 1)
+    else
+        px = stream.body(chunk.slice(from: 1, to: chunk.len()), from: 0, width: width, height: height)?
+        i @= 0
+
+        while i < n
+            deltas @ deltas.push(px[i * 4 + 1])
+            i @ i + 1
+
+    return ok(unfilter(deltas, kind: kind, width: width, height: height))
+
+# The alpha of `deltas` with the prediction `kind` undone: each row
+# predicted from the one before as the WebP container says, the first row
+# horizontally, a row's first pixel from the pixel above it.
+function unfilter(deltas: [u8] lent, kind: i64, width: i64, height: i64) -> [u8]
+    if kind == 0
+        return deltas
+    out: [u8] @= []
+    j @= 0
+
+    while j < height
+        i @= 0
+        left @= 0
+
+        if j > 0
+            left @ to_i64(out[(j - 1) * width]).must()
+        corner @= left
+
+        while i < width
+            d = to_i64(deltas[j * width + i]).must()
+
+            pred = if j == 0 || kind == 1
+                left
+            else if kind == 2
+                to_i64(out[(j - 1) * width + i]).must()
+            else
+                gradient(left: left, top: to_i64(out[(j - 1) * width + i]).must(), corner: corner)
+
+            if j > 0
+                corner @ to_i64(out[(j - 1) * width + i]).must()
+            left @ pred + d & 255
+            out @ out.push(to_u8(left).must())
+            i @ i + 1
+
+        j @ j + 1
+
+    return out
+
+# The gradient prediction `left + top - corner` held to 0 to 255.
+function gradient(left: i64, top: i64, corner: i64) -> i64
+    return loopfilter.pixel(left + top - corner)
+
+# The deltas of `alpha` under the prediction filter `kind`, the inverse of
+# `unfilter`.
+function deltas_of(alpha: [u8] lent, kind: i64, width: i64, height: i64) -> [i64]
+    out: [i64] @= []
+    j @= 0
+
+    while j < height
+        i @= 0
+
+        while i < width
+            v = to_i64(alpha[j * width + i]).must()
+
+            pred = if kind == 0 || j == 0 && i == 0
+                0
+            else if j == 0
+                to_i64(alpha[i - 1]).must()
+            else if i == 0 || kind == 2
+                to_i64(alpha[(j - 1) * width + i]).must()
+            else if kind == 1
+                to_i64(alpha[j * width + i - 1]).must()
+            else
+                gradient(
+                    left: to_i64(alpha[j * width + i - 1]).must(),
+                    top: to_i64(alpha[(j - 1) * width + i]).must(),
+                    corner: to_i64(alpha[(j - 1) * width + i - 1]).must()
+                )
+            out @ out.push(v - pred & 255)
+            i @ i + 1
+
+        j @ j + 1
+
+    return out
+
+# The ALPH chunk payload of `alpha`, one byte a pixel of a `width` by
+# `height` picture: the prediction filter whose deltas lie nearest zero
+# (none, horizontal, vertical or gradient), and the deltas as the green of a
+# lossless image stream, which keeps them exactly.
+function encode(alpha: [u8] lent, width: i64, height: i64) -> [u8]
+    best @= 0
+    best_cost @= -1
+
+    for k in [0, 1, 2, 3]
+        cost @= 0
+
+        for d in deltas_of(alpha, kind: k, width: width, height: height)
+            cost @ cost + if d < 128
+                d
+            else
+                256 - d
+
+        if best_cost < 0 || cost < best_cost
+            best @ k
+            best_cost @ cost
+
+    px: [u8] @= []
+
+    for d in deltas_of(alpha, kind: best, width: width, height: height)
+        px @ px.push(0)
+        px @ px.push(to_u8(d).must())
+        px @ px.push(0)
+        px @ px.push(255)
+
+    packed = lossless.stream_of(px, width: width, height: height, alpha_used: false)
+    out: [u8] @= [to_u8(1 | best << 2).must()]
+
+    for b in packed.slice(from: 5, to: packed.len())
+        out @ out.push(b)
+
+    return out
+
+## Tests
+
+test "decode: a header byte naming what is undefined, raw alpha too short, a damaged stream"
+    bad_heads = [2, 3, 0x20, 0x30, 0x40, 0x80]
+
+    for h in bad_heads
+        match decode([to_u8(h).must(), 0, 0, 0, 0], width: 2, height: 2)
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+    assert decode([0], width: 1, height: 1).is_err()
+    assert decode([0, 1, 2, 3], width: 2, height: 2).is_err()
+    assert decode([0, 1, 2, 3, 4], width: 2, height: 2).must() == [1, 2, 3, 4]
+    assert decode([1, 0, 0, 0, 0], width: 2, height: 2).is_err()
+
+test "unfilter: no filter, and the first row of every filter predicted from the left"
+    assert unfilter([5, 6, 7], kind: 0, width: 3, height: 1) == [5, 6, 7]
+
+    for k in [1, 2, 3]
+        assert unfilter([5, 6, 250], kind: k, width: 3, height: 1) == [5, 11, 5]

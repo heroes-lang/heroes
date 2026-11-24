@@ -7,12 +7,20 @@
 # commits. Every call works on the program's connection of `sql/postgres`,
 # and every value goes as a parameter.
 #
-# It makes three tables, `rebel_jobs`, `rebel_jobs_periodic` and
-# `rebel_jobs_queues`, in the first schema of the connection's
-# `search_path`: `install` makes them where they are not, and `schema`
-# answers the script for a migration of `sql/migrate`. The store's clock is
-# the server's `now()`, which in a transaction stands at the transaction's
-# start; its instants are microseconds.
+# It makes four tables, `rebel_jobs`, `rebel_jobs_periodic`,
+# `rebel_jobs_queues` and `rebel_jobs_limits`, in the first schema of the
+# connection's `search_path`: `install` makes them where they are not, and
+# `schema` answers the script for a migration of `sql/migrate`. The store's
+# clock is the server's `now()`, which in a transaction stands at the
+# transaction's start; its instants are microseconds.
+#
+# It keeps the limits every worker shares, each a `jobs.Bucket` under a
+# name: `set_limit` makes one, and `allow`, `reserve`, `reserve_within` and
+# `cancel_reservation` take and give back its tokens in one statement that
+# locks its row, so workers on any number of connections take them one
+# after another and never more than it holds. A limit reads the server's
+# `clock_timestamp()` as the statement runs, never earlier than the latest
+# time it read, in nanoseconds whose steps are microseconds.
 #
 # It does not wake a worker when a job comes: `sql/postgres` does not wait
 # for `NOTIFY` (its ledger says so), so a worker that finds no job ready
@@ -33,11 +41,14 @@
 
 use jobs
 use jobs/internal/limits
+use jobs/postgres_store/internal/buckets
 use jobs/postgres_store/internal/live
 use jobs/postgres_store/internal/rows
 use jobs/postgres_store/internal/statements
 use jobs/postgres_store/internal/steps
+use jobs/postgres_store/internal/takers
 use json
+use numbers
 use os
 use sql
 use sql/postgres
@@ -529,6 +540,120 @@ function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?
 
     return ok(ids)
 
+## Limits workers share
+
+# Makes the limit `name` full, a token every `every` and a burst of `burst`,
+# or gives the limit of that name this rate and burst, holding the tokens it
+# held, as many as the new burst allows, a debt kept: `jobs.bucket` and
+# `jobs.with_rate` kept in the store, where every worker of the database
+# takes from the one limit. Answers the limit after, its `seen` the server's
+# time of the change.
+#
+# - `db`: the connection.
+# - `name`: the limit's name, a job's kind or a host or any key, checked as a
+#   kind is.
+# - `every`: the time to earn one token.
+# - `burst`: the most tokens it holds, so the most attempts that go at once.
+#
+# The statement locks the limit's row: inside the program's transaction the
+# row stays locked, and every other taker waits, until it ends. Fails
+# `invalid` as `jobs.bucket` does and where `name` is empty, too long or holds
+# a zero byte; `does_not_fit` where the debt kept at the new rate reaches past
+# what an `Instant` holds, the limit unchanged; and with the database's
+# failure. See also `allow`, `remove_limit`.
+function set_limit(@db: postgres.Db, name: str, every: time.Duration, burst: i64) -> jobs.Bucket?
+    return buckets.set(@db, name: name, every: every, burst: burst, clock: .server)
+
+# Removes the limit `name`; a worker that asks it next fails `not_found`.
+#
+# - `db`: the connection.
+# - `name`: the limit's name.
+#
+# Fails `not_found` where no limit has that name, `invalid` where `name` is
+# not one a store keeps, and with the database's failure. See also
+# `set_limit`.
+function remove_limit(@db: postgres.Db, name: str) -> ()?
+    return buckets.remove(@db, name: name)
+
+# The limit `name` as it stands now, its `seen` the server's time of the
+# reading: `jobs.tokens(limit, at: limit.seen)` is what it holds then.
+#
+# - `db`: the connection.
+# - `name`: the limit's name.
+#
+# Fails `not_found` where no limit has that name, `invalid` where `name` is
+# not one a store keeps, and with the database's failure. See also
+# `set_limit`.
+function limit_named(@db: postgres.Db, name: str) -> jobs.Bucket?
+    return buckets.read(@db, name: name, clock: .server)
+
+# Whether `n` tokens of the limit `name` are there now, taking them where
+# they are, as `jobs.allow` does of a bucket the program holds; any number of
+# workers on any number of connections take from it, and none more than it
+# holds.
+#
+# - `db`: the connection.
+# - `name`: the limit's name.
+# - `n`: how many tokens the attempt costs, 1 or more.
+#
+# Where they are not all there nothing is taken and `granted` is false, the
+# attempt asking for more than the burst included; the limit answered is the
+# one read, its `seen` the server's time, so `jobs.reserve(found.bucket, at:
+# found.bucket.seen, n)` tells the wait, which a worker gives `snooze`. The
+# time is the server's clock as the statement runs, never earlier than the
+# latest time the limit read. Fails `invalid` where `n` is below 1 or `name`
+# is not one a store keeps, `not_found` where no limit has that name,
+# `does_not_fit` where the tokens are earned past what an `Instant` holds,
+# and with the database's failure. See also `reserve`, `set_limit`.
+function allow(@db: postgres.Db, name: str, n: i64) -> jobs.Allowed?
+    taken = buckets.take(@db, name: name, n: n, longest: time.Duration(nanoseconds: 0), clock: .server)?
+    return buckets.allowed(taken)
+
+# Takes `n` tokens of the limit `name` now even if they are not there, and
+# tells how long to wait for them: reservations of every worker queue, each
+# behind the ones before, as `jobs.reserve` does.
+#
+# - `db`: the connection.
+# - `name`: the limit's name.
+# - `n`: how many tokens, from 1 to the burst.
+#
+# Fails `invalid` where `n` is below 1 or past the burst or `name` is not one
+# a store keeps, `not_found` where no limit has that name, `does_not_fit`
+# where the tokens are earned past what an `Instant` holds, and with the
+# database's failure. See also `reserve_within`, `cancel_reservation`.
+function reserve(@db: postgres.Db, name: str, n: i64) -> jobs.Reservation?
+    return reserve_within(@db, name: name, n: n, within: time.max_duration())
+
+# `reserve`, the tokens taken only where the wait for them is no longer than
+# `within`, as `jobs.reserve_within` does.
+#
+# - `db`: the connection.
+# - `name`: the limit's name.
+# - `n`: how many tokens.
+# - `within`: the longest wait the caller will accept; nothing means the
+#   tokens must be there.
+#
+# Fails `timeout` where the wait is longer, nothing taken, and as `reserve`
+# does. See also `allow`.
+function reserve_within(@db: postgres.Db, name: str, n: i64, within: time.Duration) -> jobs.Reservation?
+    taken = buckets.take(@db, name: name, n: n, longest: within, clock: .server)?
+    return buckets.reserved(taken, within: within)
+
+# Gives the reservation `taken` of the limit `name` back, as far as no later
+# taking of any worker has used what it took, as `jobs.cancel` does, and
+# answers the limit after.
+#
+# - `db`: the connection.
+# - `name`: the limit the reservation was taken of.
+# - `taken`: the reservation, as `reserve` answered it; once its time to act
+#   has passed it gives back nothing.
+#
+# Fails `invalid` where the reservation holds no token or `name` is not one
+# a store keeps, `not_found` where no limit has that name, and with the
+# database's failure. See also `reserve`.
+function cancel_reservation(@db: postgres.Db, name: str, taken: jobs.Reservation) -> jobs.Bucket?
+    return buckets.give_back(@db, name: name, taken: taken, clock: .server)
+
 ## Tests
 
 test "live: the version of the server REBEL_POSTGRES_URL names"
@@ -952,6 +1077,81 @@ test "install and schema live: the tables made again in the same schema, and the
             assert strings.has_prefix(s: schema(), prefix: "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));")
             postgres.close(@db).must()
 
+test "allow live: forty tokens shared by takers on eight threads here and on four threads in each of three child processes, two hundred asked, forty granted in all"
+    if takers.is_child()
+        exit(code: takers.child())
+
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok probe =>
+            p @= probe
+            postgres.close(@p).must()
+            shared = "rebel_jobs_allow_" + to_str(os.pid())
+            db @= live.connect_shared(shared).must()
+            _ = set_limit(@db, name: "crawl", every: time.hours(1).must(), burst: 40).must()
+            answers = takers.run(
+                schema: shared,
+                limit: "crawl",
+                mode: "allow",
+                times: 10,
+                here: 8,
+                children: 3,
+                each: 4
+            ).must()
+            granted: i64 @= 0
+
+            for one in answers
+                match numbers.parse_int(one)
+                    .ok n => granted @ granted + n
+                    .err _ =>
+                        print("a taker answered: ", one)
+                        assert false
+
+            assert answers.len() == 20 && granted == 40
+            assert !allow(@db, name: "crawl", n: 1).must().granted
+            _ = postgres.exec(@db, "DROP SCHEMA " + sql.quote_identifier(shared).must() + " CASCADE", []).must()
+            postgres.close(@db).must()
+
+test "reserve live: twenty-four reservations of a token every ten seconds by takers here and in two child processes, each ready at a time of its own, ten seconds after the one before"
+    if takers.is_child()
+        exit(code: takers.child())
+
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok probe =>
+            p @= probe
+            postgres.close(@p).must()
+            shared = "rebel_jobs_reserve_" + to_str(os.pid())
+            db @= live.connect_shared(shared).must()
+            _ = set_limit(@db, name: "feed", every: time.seconds(10).must(), burst: 1).must()
+            answers = takers.run(
+                schema: shared,
+                limit: "feed",
+                mode: "reserve",
+                times: 2,
+                here: 4,
+                children: 2,
+                each: 4
+            ).must()
+            ready: [i64] @= []
+
+            for one in answers
+                for part in strings.split(s: one, sep: ",")
+                    match numbers.parse_int(part)
+                        .ok n => ready @ ready.push(n)
+                        .err _ =>
+                            print("a taker answered: ", one)
+                            assert false
+
+            assert answers.len() == 12 && ready.len() == 24
+            ordered = sort(ready)
+
+            for i in range(from: 1, to: ordered.len())
+                assert ordered[i] - ordered[i - 1] == 10_000_000_000
+
+            _ = postgres.exec(@db, "DROP SCHEMA " + sql.quote_identifier(shared).must() + " CASCADE", []).must()
+            postgres.close(@db).must()
+
 ## Examples
 
 # The script of the tables, for a migration.
@@ -1218,4 +1418,91 @@ test "enqueue_due: a schedule first seen enqueues nothing yet"
                 job: jobs.new_job("report", .null_value)
             ).must()
             assert enqueue_due(@db, [nightly]).must() == []
+            postgres.close(@db).must()
+
+# A limit of two tokens a second with a burst of five, made full.
+test "set_limit: two a second, five at once"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            made = set_limit(@db, name: "mail", every: time.milliseconds(500).must(), burst: 5).must()
+            assert jobs.available(limit: made, at: made.seen) == 5
+            postgres.close(@db).must()
+
+# A limit no longer needed.
+test "remove_limit: a limit removed, then not found"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "import", every: time.seconds(1).must(), burst: 1).must()
+            remove_limit(@db, name: "import").must()
+            assert limit_named(@db, name: "import").is_err()
+            postgres.close(@db).must()
+
+# The tokens a limit holds now.
+test "limit_named: one of three tokens taken"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "api", every: time.hours(1).must(), burst: 3).must()
+            assert allow(@db, name: "api", n: 1).must().granted
+            now = limit_named(@db, name: "api").must()
+            assert jobs.available(limit: now, at: now.seen) == 2
+            postgres.close(@db).must()
+
+# A crawler's politeness toward one host: one request a second.
+test "allow: a second request to a host refused, and its wait"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "example.org", every: time.seconds(1).must(), burst: 1).must()
+            assert allow(@db, name: "example.org", n: 1).must().granted
+            refused = allow(@db, name: "example.org", n: 1).must()
+            assert !refused.granted
+            wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1).must())
+            postgres.close(@db).must()
+
+# Reservations of every worker queue behind one another.
+test "reserve: a third token waits its turn"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "report", every: time.hours(1).must(), burst: 2).must()
+            _ = reserve(@db, name: "report", n: 2).must()
+            third = reserve(@db, name: "report", n: 1).must()
+            assert time.is_longer(a: third.delay, b: time.minutes(59).must()) && !time.is_longer(a: third.delay, b: time.hours(1).must())
+            postgres.close(@db).must()
+
+# A wait longer than the caller accepts takes nothing.
+test "reserve_within: a wait of an hour where a minute is allowed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "sync", every: time.hours(1).must(), burst: 1).must()
+            assert allow(@db, name: "sync", n: 1).must().granted
+
+            match reserve_within(@db, name: "sync", n: 1, within: time.minutes(1).must())
+                .ok _  => assert false
+                .err e => assert e.code == jobs.TIMEOUT
+
+            postgres.close(@db).must()
+
+# A reservation a worker no longer needs, given back.
+test "cancel_reservation: the token comes back"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            _ = set_limit(@db, name: "upload", every: time.hours(1).must(), burst: 1).must()
+            assert allow(@db, name: "upload", n: 1).must().granted
+            waiting = reserve(@db, name: "upload", n: 1).must()
+            back = cancel_reservation(@db, name: "upload", taken: waiting).must()
+            assert jobs.tokens(limit: back, at: back.seen) > -0.5
             postgres.close(@db).must()

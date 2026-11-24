@@ -124,6 +124,7 @@ typedef HANDLE hero_stream_fd;
 #else
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/stat.h>
@@ -812,6 +813,80 @@ static bool hero_stream_open_fd(const char *path, int64_t access, int64_t perm, 
     return true;
 }
 #endif
+
+hero_stream *hero_stream_adopt(int64_t descriptor) {
+#if defined(_WIN32)
+    (void)descriptor;
+    hero_stream_fail(HERO_STREAM_UNSUPPORTED, 0);
+    return NULL;
+#else
+    struct stat st;
+
+    if (descriptor < 0 || descriptor > (int64_t)INT_MAX) {
+        hero_stream_fail(HERO_STREAM_INVALID, 0);
+        return NULL;
+    }
+    int fd = (int)descriptor;
+    int status = fcntl(fd, F_GETFL);
+
+    if (status < 0 || fstat(fd, &st) != 0) {
+        int64_t code = hero_stream_os_code();
+
+        hero_stream_fail(errno == EBADF ? HERO_STREAM_NOT_OPEN : HERO_STREAM_OTHER, code);
+        return NULL;
+    }
+    if (S_ISDIR(st.st_mode)) {
+        hero_stream_fail(HERO_STREAM_IS_A_DIRECTORY, 0);
+        return NULL;
+    }
+    int access = status & O_ACCMODE;
+    bool reads = access == O_RDONLY || access == O_RDWR;
+    bool writes = access == O_WRONLY || access == O_RDWR;
+
+    if (S_ISSOCK(st.st_mode) || (!reads && !writes)) {
+        hero_stream_fail(HERO_STREAM_INVALID, 0);
+        return NULL;
+    }
+    if (fd <= 2) {
+        hero_stream_fail(HERO_STREAM_EXISTS, 0);
+        return NULL;
+    }
+    bool held = false;
+
+    hero_stream_enter();
+    for (uint32_t at = 0; at < hero_stream_fresh; at += 1) {
+        if (hero_stream_slots[at].held && hero_stream_slots[at].ops == NULL && hero_stream_slots[at].fd == fd) {
+            held = true;
+        }
+    }
+    hero_stream_leave();
+    if (held) {
+        hero_stream_fail(HERO_STREAM_EXISTS, 0);
+        return NULL;
+    }
+    int64_t kind = hero_stream_kind_of_stat(fd, &st);
+    int flags = fcntl(fd, F_GETFD);
+
+    if (flags < 0 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0 || ((status & O_NONBLOCK) != 0 && fcntl(fd, F_SETFL, status & ~O_NONBLOCK) != 0)) {
+        hero_stream_failed_with(hero_stream_os_code());
+        return NULL;
+    }
+#if defined(HERO_STREAM_MARKS)
+    /* As `hero_stream_open_fd` marks a pipe it opens: one that will not take
+     * the mark could end the program at a write, and is refused. */
+    if (kind == HERO_STREAM_KIND_PIPE && fcntl(fd, F_SETNOSIGPIPE, 1) != 0) {
+        hero_stream_failed_with(hero_stream_os_code());
+        return NULL;
+    }
+#endif
+    hero_stream *s = hero_stream_keep(fd, NULL, NULL, kind, reads, writes, (status & O_APPEND) != 0);
+
+    if (s == NULL) {
+        hero_stream_shut(fd);
+    }
+    return s;
+#endif
+}
 
 hero_stream *hero_stream_open(const char *path, int64_t access, int64_t perm) {
     hero_stream_fd fd = HERO_STREAM_NO_FD;

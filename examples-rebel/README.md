@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-six packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-eight packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -119,7 +119,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `scram` | both sides of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, a server's verifiers in PostgreSQL's form, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
-| 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
+| 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries, the volumes mounted | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h`, `hero_volumes.h` |
 | 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `math`, `time` |  |
 | 4 | `plist` | Apple property lists, the XML form and the binary form `bplist00`, read into a value and written: every integer from -2^63 to 2^64 - 1, dates, data, keyed archives' references, a path of keys and places; the old OpenStep text form and a crossing to JSON refused as not written yet | `bytes`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
 | 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `os`, `threads`, `time` | `hero_poll.h` |
@@ -148,6 +148,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |
 | 4 | `ical` | iCalendar (RFC 5545): documents read as lines and components and written folded; events, to-dos, journal entries and alarms read into records; dates, floating readings and zones as one variant; `VTIMEZONE`s read as zones and zones written; recurrence rules read, checked and expanded over a window, held to `dateutil`; a calendar's occurrences with their exceptions and overrides; free and busy time, invitations, period dates and ranges not written yet | `bytes`, `lists`, `numbers`, `strings`, `time` |  |
+| 4 | `barcode` | barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their add-ons, Code 128 and GS1-128, their check characters and quiet zones, written as SVG or drawn into an image with the digits a person reads set in a font | `bytes`, `font`, `image`, `image/text` |  |
 | 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -157,6 +158,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for PostgreSQL and SQLite, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
+| 5 | `mail/imap` | mail read from a server: IMAP4rev2 and IMAP4rev1 with STARTTLS or TLS, LOGIN and SASL (PLAIN, XOAUTH2, OAUTHBEARER), mailboxes listed, made and selected, messages fetched whole or in parts with their envelopes and structures, searched, flagged, copied, moved, appended and expunged by number or UID, news waited for with IDLE; every answer read against the grammar and bounded in bytes | `bytes`, `io`, `mail`, `net`, `numbers`, `strings`, `time`, `tls`, `unicode` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read and made and signed, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `net`, `os`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |

@@ -1,0 +1,321 @@
+# A message's envelope and its body structure as FETCH answers them (RFC
+# 9051 § 7.5.2, its formal syntax § 9): the envelope's fields as the
+# message's own header writes them, its addresses with a group's members in
+# its place, and the MIME tree, every part with its fields and its
+# extension data. A structure nested deeper than `MAX_DEPTH` is refused
+# before it can exhaust the stack.
+
+use bytes
+use mail
+use mail/imap
+use mail/imap/internal/lex
+use mail/imap/internal/wire
+
+# The deepest a body structure or an extension's lists may nest.
+constant MAX_DEPTH: i64
+    64
+
+# The envelope of nothing, for a message whose envelope was not fetched.
+function no_envelope() -> imap.Envelope
+    return imap.Envelope(
+        date: "",
+        subject: "",
+        from: [],
+        sender: [],
+        reply_to: [],
+        to: [],
+        cc: [],
+        bcc: [],
+        in_reply_to: "",
+        message_id: ""
+    )
+
+# The structure of nothing, for a message whose structure was not fetched.
+function no_part() -> imap.Part
+    return imap.Part(
+        type: "",
+        subtype: "",
+        params: {},
+        id: "",
+        description: "",
+        encoding: "",
+        size: 0,
+        lines: -1,
+        md5: "",
+        disposition: "",
+        disposition_params: {},
+        language: [],
+        location: "",
+        parts: [],
+        envelope: []
+    )
+
+# The text of an nstring where the parser stands.
+function ntext(@s: wire.Session) -> str?
+    return ok(lex.text_of(lex.nstring(@s, binary: false)?))
+
+# The envelope where the parser stands.
+function envelope(@s: wire.Session) -> imap.Envelope?
+    lex.expect(@s, b: '(', what: "envelope")?
+    date = ntext(@s)?
+    lex.space(@s)?
+    subject = ntext(@s)?
+    lists: [[mail.Address]] @= []
+
+    for _ in range(from: 0, to: 6)
+        lex.space(@s)?
+        lists @ lists.push(addresses(@s)?)
+
+    lex.space(@s)?
+    in_reply_to = ntext(@s)?
+    lex.space(@s)?
+    message_id = ntext(@s)?
+    lex.expect(@s, b: ')', what: "envelope's end")?
+    return ok(
+        imap.Envelope(date: date, subject: subject, from: lists[0], sender: lists[1], reply_to: lists[2], to: lists[3], cc: lists[4], bcc: lists[5], in_reply_to: in_reply_to, message_id: message_id)
+    )
+
+# The addresses of a list where the parser stands, NIL for none; a group's
+# start and end (RFC 9051's `(NIL NIL "name" NIL)` and `(NIL NIL NIL NIL)`)
+# left out and its members kept.
+function addresses(@s: wire.Session) -> [mail.Address]?
+    out: [mail.Address] @= []
+
+    if lex.take_nil(@s)
+        return ok(out)
+    lex.expect(@s, b: '(', what: "address list")?
+
+    while true
+        _ = lex.take(@s, b: ' ')
+
+        if lex.take(@s, b: ')')
+            break
+        lex.expect(@s, b: '(', what: "address")?
+        name = ntext(@s)?
+        lex.space(@s)?
+        _ = lex.nstring(@s, binary: false)?
+        lex.space(@s)?
+        local = ntext(@s)?
+        lex.space(@s)?
+        host_nil = lex.take_nil(@s)
+
+        host = if host_nil
+            ""
+        else
+            lex.text_of(lex.string(@s, binary: false)?)
+        lex.expect(@s, b: ')', what: "address's end")?
+
+        if !host_nil
+            shown = match mail.decode_header(name)
+                .ok decoded => decoded
+                .err _      => name
+
+            out @ out.push(mail.Address(name: shown, local: local, domain: host))
+
+    return ok(out)
+
+# The body structure where the parser stands, `depth` lists deep. With
+# `extended`, BODYSTRUCTURE, the extension data may follow each part; BODY
+# has none.
+function part(@s: wire.Session, depth: i64) -> imap.Part?
+    if depth >= MAX_DEPTH
+        return fail(code: lex.INVALID, msg: f"the server's body structure nests more than {MAX_DEPTH} deep")
+    lex.expect(@s, b: '(', what: "body structure")?
+
+    if lex.peek(s) == '('
+        return multipart(@s, depth: depth)
+    out @= no_part()
+    out.type @ lower(ntext(@s)?)
+    lex.space(@s)?
+    out.subtype @ lower(ntext(@s)?)
+    lex.space(@s)?
+    out.params @ params(@s)?
+    lex.space(@s)?
+    out.id @ ntext(@s)?
+    lex.space(@s)?
+    out.description @ ntext(@s)?
+    lex.space(@s)?
+    out.encoding @ lower(ntext(@s)?)
+    lex.space(@s)?
+    out.size @ lex.number(@s)?
+
+    if out.type == "message" && (out.subtype == "rfc822" || out.subtype == "global")
+        lex.space(@s)?
+        out.envelope @ [envelope(@s)?]
+        lex.space(@s)?
+        out.parts @ [part(@s, depth: depth + 1)?]
+        lex.space(@s)?
+        out.lines @ lex.number(@s)?
+    else if out.type == "text"
+        lex.space(@s)?
+        out.lines @ lex.number(@s)?
+
+    if lex.take(@s, b: ' ')
+        out.md5 @ ntext(@s)?
+
+        if lex.take(@s, b: ' ')
+            extension(@s, @out, depth: depth)?
+    lex.expect(@s, b: ')', what: "body structure's end")?
+    return ok(out)
+
+# A multipart where the parser stands, after its `(`.
+function multipart(@s: wire.Session, depth: i64) -> imap.Part?
+    out @= no_part()
+    out.type @ "multipart"
+    children: [imap.Part] @= []
+
+    while lex.peek(s) == '('
+        children @ children.push(part(@s, depth: depth + 1)?)
+        _ = lex.take(@s, b: ' ')
+
+    out.parts @ children
+    out.subtype @ lower(ntext(@s)?)
+
+    if lex.take(@s, b: ' ')
+        out.params @ params(@s)?
+
+        if lex.take(@s, b: ' ')
+            extension(@s, @out, depth: depth)?
+    lex.expect(@s, b: ')', what: "multipart's end")?
+    return ok(out)
+
+# The disposition, the language, the location and any later extension where
+# the parser stands, each after a space.
+function extension(@s: wire.Session, @out: imap.Part, depth: i64) -> ()?
+    if lex.take_nil(@s)
+        _ = 0
+    else
+        lex.expect(@s, b: '(', what: "disposition")?
+        out.disposition @ lower(lex.text_of(lex.string(@s, binary: false)?))
+        lex.space(@s)?
+        out.disposition_params @ params(@s)?
+        lex.expect(@s, b: ')', what: "disposition's end")?
+
+    if !lex.take(@s, b: ' ')
+        return ok()
+
+    if lex.take(@s, b: '(')
+        langs: [str] @= []
+
+        while !lex.take(@s, b: ')')
+            _ = lex.take(@s, b: ' ')
+            langs @ langs.push(lex.text_of(lex.string(@s, binary: false)?))
+
+        out.language @ langs
+    else
+        language = ntext(@s)?
+
+        if language != ""
+            out.language @ [language]
+
+    if !lex.take(@s, b: ' ')
+        return ok()
+    out.location @ ntext(@s)?
+
+    while lex.take(@s, b: ' ')
+        skip(@s, depth: depth + 1)?
+
+    return ok()
+
+# Moves past one value of any shape where the parser stands: NIL, a number,
+# a string, an atom or a list of them, `depth` lists deep.
+function skip(@s: wire.Session, depth: i64) -> ()?
+    if depth >= MAX_DEPTH
+        return fail(code: lex.INVALID, msg: f"the server's answer nests lists more than {MAX_DEPTH} deep")
+
+    if lex.take(@s, b: '(')
+        while !lex.take(@s, b: ')')
+            _ = lex.take(@s, b: ' ')
+            skip(@s, depth: depth + 1)?
+
+        return ok()
+
+    if lex.peek(s) == '"' || lex.at_literal(s, binary: false)
+        _ = lex.string(@s, binary: false)?
+        return ok()
+
+    if lex.peek(s) >= '0' && lex.peek(s) <= '9'
+        _ = lex.number(@s)?
+        return ok()
+    _ = lex.flag(@s)?
+    return ok()
+
+# The parameters where the parser stands, NIL for none: names lower case.
+function params(@s: wire.Session) -> {str: str}?
+    out: {str: str} @= {}
+
+    if lex.take_nil(@s)
+        return ok(out)
+    lex.expect(@s, b: '(', what: "parameter list")?
+
+    while !lex.take(@s, b: ')')
+        _ = lex.take(@s, b: ' ')
+        name = lower(lex.text_of(lex.string(@s, binary: false)?))
+        lex.space(@s)?
+        out[name] @ lex.text_of(lex.string(@s, binary: false)?)
+
+    return ok(out)
+
+# `t` lower case, ASCII letters alone.
+function lower(t: str) -> str
+    return bytes.to_text_lossy(bytes.to_lower_ascii(bytes.from_text(t)))
+
+## Tests
+
+test "envelope: RFC 3501's example, a group's members kept, NIL fields"
+    s @= lex.net_pair()
+    s.line @ bytes.from_text(
+        "(\"Wed, 17 Jul 1996 02:23:25 -0700 (PDT)\" \"IMAP4rev1 WG mtg summary and minutes\" ((\"Terry Gray\" NIL \"gray\" \"cac.washington.edu\")) ((\"Terry Gray\" NIL \"gray\" \"cac.washington.edu\")) ((\"Terry Gray\" NIL \"gray\" \"cac.washington.edu\")) ((NIL NIL \"imap\" \"cac.washington.edu\")) ((NIL NIL \"minutes\" \"CNRI.Reston.VA.US\")(\"John Klensin\" NIL \"KLENSIN\" \"MIT.EDU\")) NIL NIL \"<B27397-0100000@cac.washington.edu>\")"
+    )
+    e = envelope(@s).must()
+    assert e.date == "Wed, 17 Jul 1996 02:23:25 -0700 (PDT)" && e.subject == "IMAP4rev1 WG mtg summary and minutes"
+    assert e.from == [mail.Address(name: "Terry Gray", local: "gray", domain: "cac.washington.edu")]
+    assert e.to == [mail.Address(name: "", local: "imap", domain: "cac.washington.edu")]
+    assert e.cc.len() == 2 && e.cc[1] == mail.Address(name: "John Klensin", local: "KLENSIN", domain: "MIT.EDU")
+    assert e.bcc.len() == 0 && e.in_reply_to == "" && e.message_id == "<B27397-0100000@cac.washington.edu>"
+    s.line @ bytes.from_text(
+        "(NIL \"=?utf-8?q?caf=C3=A9?=\" NIL NIL NIL ((NIL NIL \"team\" NIL)(\"=?utf-8?q?Ana_L=C3=ADma?=\" NIL \"ana\" \"x.org\")(NIL NIL NIL NIL)) NIL NIL NIL NIL)"
+    )
+    s.at @ 0
+    g = envelope(@s).must()
+    assert g.subject == "=?utf-8?q?caf=C3=A9?=" && g.to == [mail.Address(name: "Ana Líma", local: "ana", domain: "x.org")]
+    wire.close(@s).must()
+
+test "part: RFC 3501's multipart example, a message enclosed, extension data, a disposition"
+    s @= lex.net_pair()
+    s.line @ bytes.from_text(
+        "((\"TEXT\" \"PLAIN\" (\"CHARSET\" \"US-ASCII\") NIL NIL \"7BIT\" 1152 23)(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"US-ASCII\" \"NAME\" \"cc.diff\") \"<960723163407.20117h@cac.washington.edu>\" \"Compiler diff\" \"BASE64\" 4554 73) \"MIXED\")"
+    )
+    p = part(@s, depth: 0).must()
+    assert p.type == "multipart" && p.subtype == "mixed" && p.parts.len() == 2
+    assert p.parts[0].type == "text" && p.parts[0].params == {"charset": "US-ASCII"} && p.parts[0].size == 1152 && p.parts[0].lines == 23
+    assert p.parts[1].id == "<960723163407.20117h@cac.washington.edu>" && p.parts[1].description == "Compiler diff" && p.parts[1].encoding == "base64" && p.parts[1].params["name"].must() == "cc.diff"
+    s.line @ bytes.from_text(
+        "(\"application\" \"pdf\" (\"name\" \"a.pdf\") NIL NIL \"base64\" 100 \"md5x\" (\"attachment\" (\"filename\" \"a.pdf\")) (\"en\" \"it\") \"http://x/a\" (1 \"x\" (NIL)))"
+    )
+    s.at @ 0
+    a = part(@s, depth: 0).must()
+    assert a.lines == -1 && a.md5 == "md5x" && a.disposition == "attachment" && a.disposition_params == {"filename": "a.pdf"}
+    assert a.language == ["en", "it"] && a.location == "http://x/a" && lex.at_end(s)
+    s.line @ bytes.from_text(
+        "(\"message\" \"rfc822\" NIL NIL NIL \"7bit\" 300 (NIL \"inner\" NIL NIL NIL NIL NIL NIL NIL NIL) (\"text\" \"plain\" NIL NIL NIL \"7bit\" 10 1) 12)"
+    )
+    s.at @ 0
+    m = part(@s, depth: 0).must()
+    assert m.envelope.len() == 1 && m.envelope[0].subject == "inner" && m.parts[0].subtype == "plain" && m.lines == 12
+    wire.close(@s).must()
+
+test "part: nesting past the bound, a missing field, a list never closed"
+    s @= lex.net_pair()
+    s.line @ bytes.from_text(repeat("(", 70) + "\"text\" \"plain\" NIL NIL NIL \"7bit\" 1 1)")
+
+    match part(@s, depth: 0)
+        .ok _  => assert false
+        .err e => assert e.code == lex.INVALID && e.msg == "the server's body structure nests more than 64 deep"
+
+    for bad in ["(\"text\" \"plain\" NIL NIL NIL \"7bit\" 1)", "(\"text\" \"plain\" NIL NIL NIL \"7bit\")", "((\"text\" \"plain\" NIL NIL NIL \"7bit\" 1 1) \"mixed\""]
+        s.line @ bytes.from_text(bad)
+        s.at @ 0
+        assert part(@s, depth: 0).is_err()
+
+    wire.close(@s).must()

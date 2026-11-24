@@ -13,7 +13,11 @@
 # back by `dwebp -pam`, an animation laid out by `webpmux`, a file given an ICC
 # profile, EXIF and XMP by `webpmux`, run on 2026-11-23. Every file `encode`
 # writes was read by `dwebp` and `webpinfo` to the same pixels, outside the
-# tests, on the same day.
+# tests, on the same day. The lossy ones, run on 2026-11-24: files `cwebp`
+# wrote at qualities 0 to 100 with each filter, sharpness, segment count and
+# alpha setting, and raw alpha filtered by a program outside the tree, each
+# read back by `dwebp -pam` (its RGBA) and `dwebp -yuv` (the decoder's own
+# planes).
 
 capability webp/decode  a lossless WebP picture read
   heroes  image/webp.decode, image/webp.Webp, image/webp.Frame
@@ -51,11 +55,11 @@ capability webp/metadata  the ICC profile, EXIF and XMP chunks
   note    libwebp: WebPMuxGetChunk, WebPDemuxGetChunk. kept as bytes, neither read nor checked; written back as given
 
 capability webp/lossy  a lossy (VP8) picture read
-  heroes  pending
+  heroes  image/webp.decode, image/webp.decode_image, image/webp.composite
   go      vp8.Decoder
   rust    -
   python  WebPImagePlugin
-  note    libwebp: WebPDecode. `decode` fails `unsupported` for a lossy frame, with or without an ALPH chunk, and `info_of` describes one
+  note    libwebp: WebPDecode, WebPDecodeRGBA. a key frame of versions 0 to 3, still or in an animation: every intra mode, segments absolute or relative, both loop filters at every level and sharpness, its token partitions; its alpha from an ALPH chunk, raw or lossless, under each prediction filter; RGB through libwebp's fancy upsampler and its fixed-point conversion, so the pixels equal `dwebp`'s byte for byte; a frame that ends early, whose sizes do not fit, or that is not a key frame to show fails `invalid`
 
 capability webp/limits  a file that claims a huge picture refused before it is allocated
   heroes  image/webp.decode with image.Limits
@@ -72,11 +76,11 @@ capability webp/encode  a picture or an animation written losslessly
   note    libwebp: WebPEncode (lossless), WebPAnimEncoder. a colour index where the picture has 256 colours or fewer, otherwise green subtracted and each 32-pixel block predicted by the mode that leaves the least; pixels cut into literals and copies (hash chains, distances through the 120 near codes); Huffman codes of at most 15 bits; frames with a place, a time, blending and disposal; ICC, EXIF and XMP; the same picture answers the same bytes. Not written: the colour cache, the cross-colour transform and groups of codes by block, which only make a file smaller
 
 capability webp/encode-lossy  a picture written lossily at a quality
-  heroes  pending
+  heroes  image/webp.encode_lossy, image/webp.lossy, image/webp.Lossy
   go      -
   rust    -
   python  Image.save(format="WEBP", quality=...)
-  note    libwebp: WebPEncode, WebPConfig.quality
+  note    libwebp: WebPEncode, WebPConfig (quality, filter_strength, filter_sharpness, filter_type, segments, partitions). a still VP8 key frame: each macroblock predicted whole (DC, vertical, horizontal, true motion) or by sixteen 4x4 blocks (the ten modes), whichever leaves the smaller error for its estimated bits; the residue quantized at the step the quality names, in one to four segments by how busy the macroblocks are; the simple or the normal loop filter at a sharpness; one to eight token partitions; alpha in an ALPH chunk, lossless and exact, under the prediction filter that leaves the smallest deltas; the same picture answers the same bytes. Every file it writes in the tests is read by `dwebp` to the pixels `decode` gives. Not written: an animation's frames lossily, which `encode` writes losslessly; coefficient probabilities fitted to the picture, which only make a file smaller
 
 dropped
   python  WebPImagePlugin.WebPImageFile.seek, tell, n_frames: a file's cursor over its frames; `Webp.frames` is the list

@@ -1,0 +1,334 @@
+# The data codewords of a PDF417, by ISO/IEC 15438's three compactions:
+# text (two values of 30 in a codeword, in the alpha, lower, mixed and
+# punctuation submodes), byte (six bytes in five codewords) and numeric
+# (44 digits in 15 codewords). The data is cut into runs: thirteen digits
+# or more go to numeric, five text characters or more to text, which a
+# symbol begins in, and the rest to byte; a short run of text stays text
+# where the symbol is in text already.
+
+# The codewords that latch to text, byte (a count not a multiple of six),
+# numeric, and byte (a multiple of six), and the one that marks an ECI.
+constant TEXT_LATCH: i64
+    900
+
+constant BYTE_LATCH: i64
+    901
+
+constant NUMERIC_LATCH: i64
+    902
+
+constant BYTE_LATCH_SIX: i64
+    924
+
+constant ECI: i64
+    927
+
+# The submodes of text compaction, and their characters by value.
+constant ALPHA: i64
+    0
+
+constant LOWER: i64
+    1
+
+constant MIXED: i64
+    2
+
+constant PUNCTUATION: i64
+    3
+
+constant ALPHA_CHARACTERS: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
+
+constant LOWER_CHARACTERS: str
+    "abcdefghijklmnopqrstuvwxyz "
+
+constant MIXED_CHARACTERS: str
+    "0123456789&\r\t,:#-.$/+%*=^"
+
+constant PUNCTUATION_CHARACTERS: str
+    ";<>@[\\]_`~!\r\t,:\n-.$/\"|*()?{}'"
+
+# The value of byte `b` in `characters`, or -1.
+function value_in(characters: str, b: i64) -> i64
+    for i in range(from: 0, to: characters.len())
+        if to_i64(characters[i]).must() == b
+            return i
+
+    return -1
+
+# The characters of submode `sub`.
+function characters_of(sub: i64) -> str
+    if sub == ALPHA
+        return ALPHA_CHARACTERS
+
+    if sub == LOWER
+        return LOWER_CHARACTERS
+
+    if sub == MIXED
+        return MIXED_CHARACTERS
+    return PUNCTUATION_CHARACTERS
+
+# Whether text compaction writes byte `b`: printable ASCII, tab, line feed
+# and carriage return.
+function is_text(b: i64) -> bool
+    return b >= 32 && b <= 126 || b == 9 || b == 10 || b == 13
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: i64) -> bool
+    return b >= 48 && b <= 57
+
+# How many digits run from `i` in `data`.
+function digits_from(data: [i64] lent, i: i64) -> i64
+    j: i64 @= i
+
+    while j < data.len() && is_digit(data[j])
+        j @ j + 1
+
+    return j - i
+
+# How many text characters run from `i`, stopping before a run of
+# thirteen digits.
+function text_from(data: [i64] lent, i: i64) -> i64
+    j: i64 @= i
+
+    while j < data.len() && is_text(data[j]) && digits_from(data, i: j) < 13
+        j @ j + 1
+
+    return j - i
+
+# The codewords of the text `data[from]` to before `data[to]`, the submode
+# alpha at its start: each character in its submode, reached by a shift for
+# a lone one and a latch for a run, the values paired and an odd one padded
+# with the punctuation shift.
+function text_words(data: [i64] lent, from: i64, to: i64) -> [i64]
+    values: [i64] @= []
+    sub: i64 @= ALPHA
+
+    for i in range(from: from, to: to)
+        b = data[i]
+        here = value_in(characters: characters_of(sub), b: b)
+        next: i64 @= -1
+
+        if i + 1 < to
+            next @ data[i + 1]
+
+        if b == 32
+            if sub == PUNCTUATION
+                values @ values.push(29)
+                sub @ ALPHA
+            values @ values.push(26)
+        else if here >= 0
+            values @ values.push(here)
+        else if b >= 97 && b <= 122
+            if sub == PUNCTUATION
+                values @ values.push(29)
+            values @ values.push(27)
+            values @ values.push(b - 97)
+            sub @ LOWER
+        else if b >= 65 && b <= 90
+            if sub == LOWER && !(next >= 65 && next <= 90)
+                values @ values.push(27)
+            else if sub == LOWER
+                values @ values.push(28)
+                values @ values.push(28)
+                sub @ ALPHA
+            else if sub == MIXED
+                values @ values.push(28)
+                sub @ ALPHA
+            else
+                values @ values.push(29)
+                sub @ ALPHA
+            values @ values.push(b - 65)
+        else if value_in(characters: MIXED_CHARACTERS, b: b) >= 0
+            if sub == PUNCTUATION
+                values @ values.push(29)
+            values @ values.push(28)
+            values @ values.push(value_in(characters: MIXED_CHARACTERS, b: b))
+            sub @ MIXED
+        else
+            punct = value_in(characters: PUNCTUATION_CHARACTERS, b: b)
+
+            if next >= 0 && value_in(characters: PUNCTUATION_CHARACTERS, b: next) >= 0 && value_in(characters: MIXED_CHARACTERS, b: next) < 0
+                if sub != MIXED
+                    values @ values.push(28)
+                values @ values.push(25)
+                sub @ PUNCTUATION
+            else
+                values @ values.push(29)
+            values @ values.push(punct)
+
+    if values.len() % 2 == 1
+        values @ values.push(29)
+    out: [i64] @= []
+    k: i64 @= 0
+
+    while k < values.len()
+        out @ out.push(30 * values[k] + values[k + 1])
+        k @ k + 2
+
+    return out
+
+# The codewords of the bytes `data[from]` to before `data[to]`, the latch
+# first: each six bytes as five codewords of base 900, the rest one each.
+function byte_words(data: [i64] lent, from: i64, to: i64) -> [i64]
+    out: [i64] @= [BYTE_LATCH]
+
+    if (to - from) % 6 == 0
+        out @ [BYTE_LATCH_SIX]
+    i: i64 @= from
+
+    while to - i >= 6
+        value: i64 @= 0
+
+        for k in range(from: i, to: i + 6)
+            value @ value * 256 + data[k]
+
+        group: [i64] @= [0, 0, 0, 0, 0]
+        place: i64 @= 4
+
+        while place >= 0
+            group[place] @ value % 900
+            value @ value / 900
+            place @ place - 1
+
+        for g in group
+            out @ out.push(g)
+
+        i @ i + 6
+
+    while i < to
+        out @ out.push(data[i])
+        i @ i + 1
+
+    return out
+
+# The codewords of the digits `data[from]` to before `data[to]`, the latch
+# first: each 44 digits, a 1 before them, as a number of base 900.
+function numeric_words(data: [i64] lent, from: i64, to: i64) -> [i64]
+    out: [i64] @= [NUMERIC_LATCH]
+    i: i64 @= from
+
+    while i < to
+        end: i64 @= i + 44
+
+        if end > to
+            end @ to
+        decimal: [i64] @= [1]
+
+        for k in range(from: i, to: end)
+            decimal @ decimal.push(data[k] - 48)
+
+        for w in base900(decimal)
+            out @ out.push(w)
+
+        i @ end
+
+    return out
+
+# The number whose decimal digits are `decimal` in base 900, its highest
+# place first.
+function base900(decimal: [i64]) -> [i64]
+    digits: [i64] @= decimal
+    places: [i64] @= []
+    nonzero: bool @= true
+
+    while nonzero
+        rest: i64 @= 0
+        nonzero @ false
+
+        for k in range(from: 0, to: digits.len())
+            current = rest * 10 + digits[k]
+            digits[k] @ current / 900
+            rest @ current % 900
+
+            if digits[k] != 0
+                nonzero @ true
+
+        places @ places.push(rest)
+
+    out: [i64] @= []
+    k: i64 @= places.len() - 1
+
+    while k >= 0
+        out @ out.push(places[k])
+        k @ k - 1
+
+    return out
+
+# The data codewords of `data`, the symbol beginning in text compaction,
+# the length descriptor and the padding left to the symbol.
+function words_of(data: [i64] lent) -> [i64]
+    out: [i64] @= []
+    in_text: bool @= true
+    i: i64 @= 0
+
+    while i < data.len()
+        digits = digits_from(data, i: i)
+        text = text_from(data, i: i)
+
+        if digits >= 13
+            for w in numeric_words(data, from: i, to: i + digits)
+                out @ out.push(w)
+
+            in_text @ false
+            i @ i + digits
+        else if text >= 5 || in_text && text > 0
+            if !in_text
+                out @ out.push(TEXT_LATCH)
+
+            for w in text_words(data, from: i, to: i + text)
+                out @ out.push(w)
+
+            in_text @ true
+            i @ i + text
+        else
+            j: i64 @= i + 1
+
+            while j < data.len() && digits_from(data, i: j) < 13 && text_from(data, i: j) < 5
+                j @ j + 1
+
+            for w in byte_words(data, from: i, to: j)
+                out @ out.push(w)
+
+            in_text @ false
+            i @ j
+
+    return out
+
+## Tests
+
+test "text_words: alpha, lower case behind its latch, and a digit behind the mixed latch"
+    data = [65, 66, 67, 68]
+    assert text_words(data, from: 0, to: 4) == [1, 63]
+    assert text_words([97, 98], from: 0, to: 2) == [27 * 30 + 0, 1 * 30 + 29]
+    assert text_words([65, 49], from: 0, to: 2) == [0 * 30 + 28, 1 * 30 + 29]
+
+test "text_words: a lone punctuation mark is a shift, two are a latch"
+    assert text_words([65, 59], from: 0, to: 2) == [0 * 30 + 29, 0 * 30 + 29]
+    assert text_words([59, 59], from: 0, to: 2) == [28 * 30 + 25, 0 * 30 + 0]
+
+test "byte_words: six bytes in five codewords behind 924, a seventh alone behind 901"
+    six = [1, 2, 3, 4, 5, 6]
+    assert byte_words(six, from: 0, to: 6)[0] == 924
+    assert byte_words(six, from: 0, to: 6).len() == 6
+    seven = [1, 2, 3, 4, 5, 6, 7]
+    w = byte_words(seven, from: 0, to: 7)
+    assert w[0] == 901 && w.len() == 7 && w[6] == 7
+
+test "base900: 1000 and the 1 before 44 nines"
+    assert base900([1, 0, 0, 0]) == [1, 100]
+    assert base900([0]) == [0]
+
+test "words_of: thirteen digits are numeric, a short tail of bytes is byte"
+    digits: [i64] @= []
+
+    for _ in range(from: 0, to: 13)
+        digits @ digits.push(49)
+
+    assert words_of(digits)[0] == 902
+    assert words_of([200, 201])[0] == 901
+    assert words_of([65, 66, 67])[0] == 1
+
+test "text_words: a space is 26 in alpha, lower and mixed, and leaves punctuation for alpha"
+    assert text_words([49, 32, 65], from: 0, to: 3) == [28 * 30 + 1, 26 * 30 + 28, 0 * 30 + 29]
+    assert text_words([59, 59, 32], from: 0, to: 3) == [28 * 30 + 25, 0 * 30 + 0, 29 * 30 + 26]

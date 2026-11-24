@@ -289,6 +289,26 @@ typedef struct hero_stream_ops {
  * the table's `waitable` alone (`hero_stream_hold_waitable`). */
 hero_stream *hero_stream_make(void *payload, const hero_stream_ops *ops, int64_t kind);
 
+/* ADOPTING A DESCRIPTOR A MANAGER HANDED THE PROGRAM (M-rebel-library, for
+ * `hero_activation.h`): called from C of the layer alone, as `hero_net.h`'s
+ * `hero_net_adopt` is; a descriptor is no number a Heroes program can be
+ * trusted to hand over, so no group binds it. The FIFO, the device or the
+ * file `descriptor` is (systemd's `ListenFIFO=` and `ListenSpecial=`), ASKED
+ * and never assumed, as a stream of the kind it is, reading and writing as
+ * the descriptor was opened, which `hero_stream_close` gives back. It is set
+ * close-on-exec and made blocking, as every descriptor this layer reads and
+ * writes is: a manager that keeps the same open file only waits for it to
+ * become readable, which blocking does not change. On failure NULL, the
+ * descriptor untouched and still the caller's: `HERO_STREAM_INVALID` for a
+ * number no descriptor can be, a socket (a member of sockets adopts one) or
+ * a descriptor opened for neither reading nor writing, `HERO_STREAM_NOT_OPEN`
+ * for a number that names nothing, `HERO_STREAM_IS_A_DIRECTORY` for a
+ * folder, `HERO_STREAM_EXISTS` for one of the process's three standard
+ * descriptors or one the table holds already, `HERO_STREAM_UNSUPPORTED` on
+ * Windows, where no manager hands one over, and `HERO_STREAM_LIMIT` where
+ * the table has no room, which closes the descriptor. */
+hero_stream *hero_stream_adopt(int64_t descriptor);
+
 /* Sets this layer's last error on the calling thread, `kind` one of the
  * kinds above and `os_error` the platform's own number or 0: how a function
  * of a table says why it answered -1, and how a member that takes a stream

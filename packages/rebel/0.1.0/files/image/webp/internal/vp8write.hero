@@ -1,0 +1,228 @@
+# The first partition of a lossy key frame written, the inverse of
+# `header.parse` and `modes.read_row`, and the frame assembled from it and
+# its token partitions (RFC 6386, sections 9, 19 and 9.5). The coefficient
+# probabilities are the defaults, none replaced; the loop filter's deltas
+# raise a macroblock's level by 2 and a 4x4-predicted one's by 4 more, the
+# base level lowered by 2 to keep 16x16 ones where the quality puts them.
+
+use image
+use image/webp/internal/boolwrite
+use image/webp/internal/modes
+use image/webp/internal/probs
+
+# What the header of a frame says.
+record Plan
+    # The segments, 1 to 4; with 1 the segment header is off.
+    segments: i64
+    # Each segment's quantizer index less the base, four.
+    q_deltas: [i64]
+    # Each segment's filter level less the base, four.
+    f_deltas: [i64]
+    # The three probabilities of the segment tree.
+    segment_probs: [i64]
+    # The simple loop filter rather than the normal one.
+    simple: bool
+    # The filter level, 0 to 63; 0 filters nothing.
+    level: i64
+    # The filter's sharpness, 0 to 7.
+    sharpness: i64
+    # The token partitions as a power of two, 0 to 3.
+    parts_log2: i64
+    # The base quantizer index, 0 to 127.
+    base: i64
+    # The probability that a macroblock holds levels.
+    skip_prob: i64
+
+# A bit at even odds.
+function flag(@w: boolwrite.Writer, on: bool)
+    bit = if on
+        1
+    else
+        0
+    boolwrite.put(w: @w, prob: 128, bit: bit)
+
+# The first partition: the header `p`, then the modes of `mbs`, `across` to
+# a row.
+function first_partition(p: Plan, mbs: [modes.Modes] lent, across: i64) -> [u8]
+    w @= boolwrite.start()
+    flag(w: @w, on: false)
+    flag(w: @w, on: false)
+    flag(w: @w, on: p.segments > 1)
+
+    if p.segments > 1
+        flag(w: @w, on: true)
+        flag(w: @w, on: true)
+        flag(w: @w, on: false)
+
+        for d in p.q_deltas
+            boolwrite.optional_signed(w: @w, v: d, n: 7)
+
+        for d in p.f_deltas
+            boolwrite.optional_signed(w: @w, v: d, n: 6)
+
+        for prob in p.segment_probs
+            flag(w: @w, on: true)
+            boolwrite.literal(w: @w, v: prob, n: 8)
+
+    flag(w: @w, on: p.simple)
+    boolwrite.literal(w: @w, v: p.level, n: 6)
+    boolwrite.literal(w: @w, v: p.sharpness, n: 3)
+    flag(w: @w, on: true)
+    flag(w: @w, on: true)
+
+    for d in [2, 0, 0, 0, 4, 0, 0, 0]
+        boolwrite.optional_signed(w: @w, v: d, n: 6)
+
+    boolwrite.literal(w: @w, v: p.parts_log2, n: 2)
+    boolwrite.literal(w: @w, v: p.base, n: 7)
+
+    for _ in range(from: 0, to: 5)
+        flag(w: @w, on: false)
+
+    flag(w: @w, on: false)
+
+    for row in probs.UPDATES
+        for prob in row
+            boolwrite.put(w: @w, prob: prob, bit: 0)
+
+    flag(w: @w, on: true)
+    boolwrite.literal(w: @w, v: p.skip_prob, n: 8)
+    above: [i64] @= []
+
+    for _ in range(from: 0, to: across * 4)
+        above @ above.push(modes.B_DC)
+
+    left @= [0, 0, 0, 0]
+    i @= 0
+
+    while i < mbs.len()
+        if i % across == 0
+            left @ [0, 0, 0, 0]
+        macroblock(w: @w, m: mbs[i], p: p, above: @above, at: i % across * 4, left: @left)
+        i @ i + 1
+
+    return boolwrite.finished(w: @w)
+
+# One macroblock's segment, skip flag and modes, the 4x4 modes in the
+# contexts `above` (from `at`) and `left`, which are left holding its own.
+function macroblock(@w: boolwrite.Writer, m: modes.Modes, p: Plan, @above: [i64], at: i64, @left: [i64])
+    if p.segments > 1
+        if m.segment < 2
+            boolwrite.put(w: @w, prob: p.segment_probs[0], bit: 0)
+            boolwrite.put(w: @w, prob: p.segment_probs[1], bit: m.segment)
+        else
+            boolwrite.put(w: @w, prob: p.segment_probs[0], bit: 1)
+            boolwrite.put(w: @w, prob: p.segment_probs[2], bit: m.segment - 2)
+
+    skip = if m.skip
+        1
+    else
+        0
+    boolwrite.put(w: @w, prob: p.skip_prob, bit: skip)
+
+    if m.luma == modes.B_PRED
+        boolwrite.put(w: @w, prob: 145, bit: 0)
+
+        for y in range(from: 0, to: 4)
+            for x in range(from: 0, to: 4)
+                b = m.blocks[y * 4 + x]
+                sub_mode(w: @w, odds: modes.BMODES[above[at + x] * 10 + left[y]], mode: b)
+                above[at + x] @ b
+                left[y] @ b
+    else
+        boolwrite.put(w: @w, prob: 145, bit: 1)
+        tm_or_h = m.luma == modes.TM_PRED || m.luma == modes.H_PRED
+        boolwrite.put(w: @w, prob: 156, bit: bit_of(tm_or_h))
+
+        if tm_or_h
+            boolwrite.put(w: @w, prob: 128, bit: bit_of(m.luma == modes.TM_PRED))
+        else
+            boolwrite.put(w: @w, prob: 163, bit: bit_of(m.luma == modes.V_PRED))
+        b = modes.implied(m.luma)
+
+        for k in range(from: 0, to: 4)
+            above[at + k] @ b
+            left[k] @ b
+
+    boolwrite.put(w: @w, prob: 142, bit: bit_of(m.chroma != modes.DC_PRED))
+
+    if m.chroma != modes.DC_PRED
+        boolwrite.put(w: @w, prob: 114, bit: bit_of(m.chroma != modes.V_PRED))
+
+        if m.chroma != modes.V_PRED
+            boolwrite.put(w: @w, prob: 183, bit: bit_of(m.chroma == modes.TM_PRED))
+
+# 1 for `true`, 0 for `false`.
+function bit_of(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# A 4x4 block's mode written through the tree `modes.sub_mode` reads, at the
+# nine probabilities `odds`.
+function sub_mode(@w: boolwrite.Writer, odds: [i64] lent, mode: i64)
+    boolwrite.put(w: @w, prob: odds[0], bit: bit_of(mode != modes.B_DC))
+
+    if mode == modes.B_DC
+        return
+    boolwrite.put(w: @w, prob: odds[1], bit: bit_of(mode != modes.B_TM))
+
+    if mode == modes.B_TM
+        return
+    boolwrite.put(w: @w, prob: odds[2], bit: bit_of(mode != modes.B_VE))
+
+    if mode == modes.B_VE
+        return
+    right = mode == 4 || mode >= 7
+    boolwrite.put(w: @w, prob: odds[3], bit: bit_of(right))
+
+    if !right
+        boolwrite.put(w: @w, prob: odds[4], bit: bit_of(mode != modes.B_HE))
+
+        if mode != modes.B_HE
+            boolwrite.put(w: @w, prob: odds[5], bit: bit_of(mode == 6))
+        return
+    boolwrite.put(w: @w, prob: odds[6], bit: bit_of(mode != 4))
+
+    if mode == 4
+        return
+    boolwrite.put(w: @w, prob: odds[7], bit: bit_of(mode != 7))
+
+    if mode != 7
+        boolwrite.put(w: @w, prob: odds[8], bit: bit_of(mode == 9))
+
+# The VP8 frame of a `width` by `height` picture from its first partition
+# and its token partitions. Fails `limit` where the first partition passes
+# the 19 bits its size is written in, or a token partition the 24 bits.
+function frame(width: i64, height: i64, first: [u8] lent, parts: [[u8]] lent) -> [u8]?
+    if first.len() >= 1 << 19
+        return fail(
+            code: image.LIMIT,
+            msg: f"a first partition of {first.len()} bytes, where a VP8 frame holds 524,287"
+        )
+    tag = 1 << 4 | first.len() << 5
+    out: [u8] @= []
+
+    for v in [tag & 255, tag >> 8 & 255, tag >> 16, 0x9d, 0x01, 0x2a, width & 255, width >> 8, height & 255, height >> 8]
+        out @ out.push(to_u8(v).must())
+
+    for b in first
+        out @ out.push(b)
+
+    for k in range(from: 0, to: parts.len() - 1)
+        size = parts[k].len()
+
+        if size >= 1 << 24
+            return fail(
+                code: image.LIMIT,
+                msg: f"a token partition of {size} bytes, where a VP8 frame holds 16,777,215"
+            )
+
+        for shift in [0, 8, 16]
+            out @ out.push(to_u8(size >> shift & 255).must())
+
+    for part in parts
+        for b in part
+            out @ out.push(b)
+
+    return ok(out)

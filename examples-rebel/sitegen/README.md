@@ -37,7 +37,9 @@ What it uses of Rebel, and for what:
   URL's host and every link to an internationalized domain in ASCII.
 - `image` scales and converts pictures, read and written by `image/png`,
   `image/jpeg` (its EXIF orientation applied), `image/gif` (an animated
-  thumbnail), `image/bmp` and `image/netpbm`.
+  thumbnail), `image/webp` (lossless), `image/bmp`, `image/netpbm`,
+  `image/tiff` (its page's orientation applied) and `image/ico` (an
+  icon's largest image).
 - `xml` writes the sitemap and the feeds; `compress/brotli` the
   precompressed copies; `crypto` fingerprints sources and outputs so only
   changed files are rebuilt and written.
@@ -54,23 +56,23 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress/brotli`](https://heroes-lang.org/rebel/compress/brotli/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`html`](https://heroes-lang.org/rebel/html/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/locales`](https://heroes-lang.org/rebel/i18n/locales/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/bmp`](https://heroes-lang.org/rebel/image/bmp/), [`image/gif`](https://heroes-lang.org/rebel/image/gif/), [`image/jpeg`](https://heroes-lang.org/rebel/image/jpeg/), [`image/netpbm`](https://heroes-lang.org/rebel/image/netpbm/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url`](https://heroes-lang.org/rebel/url/), [`url/idna`](https://heroes-lang.org/rebel/url/idna/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files` and lists 36 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress/brotli`](https://heroes-lang.org/rebel/compress/brotli/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`html`](https://heroes-lang.org/rebel/html/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/locales`](https://heroes-lang.org/rebel/i18n/locales/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/bmp`](https://heroes-lang.org/rebel/image/bmp/), [`image/gif`](https://heroes-lang.org/rebel/image/gif/), [`image/ico`](https://heroes-lang.org/rebel/image/ico/), [`image/jpeg`](https://heroes-lang.org/rebel/image/jpeg/), [`image/netpbm`](https://heroes-lang.org/rebel/image/netpbm/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`image/tiff`](https://heroes-lang.org/rebel/image/tiff/), [`image/webp`](https://heroes-lang.org/rebel/image/webp/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url`](https://heroes-lang.org/rebel/url/), [`url/idna`](https://heroes-lang.org/rebel/url/idna/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
 
 ## Its folders
 
-10 folders, 34 files and 6,422 lines, this page aside; of them 31 modules, `.hero` files, of 6,240 lines.
+10 folders, 34 files and 6,651 lines, this page aside; of them 31 modules, `.hero` files, of 6,460 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 357 | 1 | 175 |
-| `content/` | 4 | 911 | 4 | 911 |
-| `demo/` | 4 | 1,060 | 4 | 1,060 |
+| `./` | 4 | 368 | 1 | 177 |
+| `content/` | 4 | 928 | 4 | 928 |
+| `demo/` | 4 | 1,159 | 4 | 1,159 |
 | `locale/` | 2 | 296 | 2 | 296 |
-| `media/` | 2 | 354 | 2 | 354 |
+| `media/` | 2 | 444 | 2 | 444 |
 | `output/` | 4 | 428 | 4 | 428 |
 | `pipeline/` | 5 | 894 | 5 | 894 |
 | `render/` | 5 | 1,211 | 5 | 1,211 |
-| `site/` | 3 | 671 | 3 | 671 |
+| `site/` | 3 | 683 | 3 | 683 |
 | `watch/` | 1 | 240 | 1 | 240 |
 
 ---

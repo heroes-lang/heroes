@@ -1,0 +1,271 @@
+# A picture written lossily: its pixels turned to Y, U and V and padded to
+# whole macroblocks by repeating the last row and column, each macroblock
+# coded by `mbcode` and its levels written to its row's token partition as
+# it goes, then the first partition, and the file: a plain `VP8 ` file, or
+# the extended format with an ALPH chunk where any alpha is below 255. The
+# quality sets the quantizer index, 100 the finest step and 0 the coarsest;
+# with segments, the macroblocks are grouped by how busy their luma is and
+# the busier groups quantized more coarsely, where detail hides the error.
+
+use image/webp/internal/alpha
+use image/webp/internal/boolwrite
+use image/webp/internal/header
+use image/webp/internal/loopfilter
+use image/webp/internal/mbcode
+use image/webp/internal/modes
+use image/webp/internal/probs
+use image/webp/internal/quant
+use image/webp/internal/residual
+use image/webp/internal/riff
+use image/webp/internal/tokens
+use image/webp/internal/vp8
+use image/webp/internal/vp8write
+use image/webp/internal/yuv
+
+# How a picture is written.
+record Settings
+    # 0 to 100.
+    quality: i64
+    # 0 no loop filter, 1 the simple one, 2 the normal one.
+    filter: i64
+    # 0 to 7.
+    sharpness: i64
+    # 1 to 4.
+    segments: i64
+    # 1, 2, 4 or 8.
+    partitions: i64
+
+# `plane`, `width` by `height`, padded to `stride` by `rows` by repeating its
+# last column and row.
+function pad(plane: [i64] lent, width: i64, height: i64, stride: i64, rows: i64) -> [i64]
+    out: [i64] @= []
+    j @= 0
+
+    while j < rows
+        jj = loopfilter.clamp(v: j, lo: 0, hi: height - 1)
+        i @= 0
+
+        while i < stride
+            out @ out.push(plane[jj * width + loopfilter.clamp(v: i, lo: 0, hi: width - 1)])
+            i @ i + 1
+
+        j @ j + 1
+
+    return out
+
+# The quantizer index of `quality`, 0 to 100, rounded: 100 gives 0, 0 gives
+# 127.
+function base_of(quality: i64) -> i64
+    return ((100 - quality) * 127 + 50) / 100
+
+# Each macroblock's segment, `count` of them, by how busy its luma is: the
+# sum of its samples' distances from their mean, the busier the higher.
+function segments_of(y: [i64] lent, stride: i64, across: i64, down: i64, count: i64) -> [i64]
+    n = across * down
+    busy: [i64] @= []
+    i @= 0
+
+    while i < n
+        at = i / across * 16 * stride + i % across * 16
+        sum @= 0
+
+        for j in range(from: 0, to: 256)
+            sum @ sum + y[at + j / 16 * stride + j % 16]
+
+        mean = sum / 256
+        spread @= 0
+
+        for j in range(from: 0, to: 256)
+            spread @ spread + loopfilter.abs(y[at + j / 16 * stride + j % 16] - mean)
+
+        busy @ busy.push(spread)
+        i @ i + 1
+
+    order = sort(busy)
+    out: [i64] @= []
+
+    for b in busy
+        s @= 0
+
+        for k in range(from: 1, to: count)
+            if b > order[n * k / count]
+                s @ k
+
+        out @ out.push(s)
+
+    return out
+
+# The probability, out of 256 and held to 1 to 255, of `part` among `whole`;
+# 255 where `whole` is 0.
+function prob_of(part: i64, whole: i64) -> i64
+    if whole == 0
+        return 255
+    return loopfilter.clamp(v: (256 * part + whole / 2) / whole, lo: 1, hi: 255)
+
+# The VP8 frame of the RGBA pixels `px`, `width` by `height`, written as `s`
+# says. Fails as `vp8write.frame` fails.
+function frame_of(px: [u8] lent, width: i64, height: i64, s: Settings) -> [u8]?
+    across = (width + 15) / 16
+    down = (height + 15) / 16
+    ys = across * 16
+    cs = across * 8
+    p = yuv.from_rgb(px, channels: 4, width: width, height: height)
+    cw = (width + 1) / 2
+    ch = (height + 1) / 2
+    src = mbcode.Planes(
+        y: pad(p[0], width: width, height: height, stride: ys, rows: down * 16),
+        u: pad(p[1], width: cw, height: ch, stride: cs, rows: down * 8),
+        v: pad(p[2], width: cw, height: ch, stride: cs, rows: down * 8),
+        stride: ys
+    )
+    base = base_of(s.quality)
+    segs = segments_of(src.y, stride: ys, across: across, down: down, count: s.segments)
+    spread = 4 + base / 16
+    q_deltas: [i64] @= []
+    f_deltas: [i64] @= []
+    matrices: [quant.Matrix] @= []
+    lambdas: [i64] @= []
+    none = quant.Indices(base: base, y1_dc: 0, y2_dc: 0, y2_ac: 0, uv_dc: 0, uv_ac: 0)
+
+    for k in range(from: 0, to: 4)
+        d = if k < s.segments
+            loopfilter.clamp(v: base + (2 * k - (s.segments - 1)) * spread / 2, lo: 0, hi: 127) - base
+        else
+            0
+        q_deltas @ q_deltas.push(d)
+
+        f = if s.filter == 0
+            0
+        else
+            d / 4
+        f_deltas @ f_deltas.push(f)
+        m = quant.matrix(base + d, d: none)
+        matrices @ matrices.push(m)
+        lambdas @ lambdas.push(loopfilter.clamp(v: m.y1_ac * m.y1_ac / 16, lo: 1, hi: 1 << 30))
+
+    level = if s.filter == 0
+        0
+    else
+        4 + base * 2 / 5 - 2
+    coeff = header.flat(probs.DEFAULTS)
+    y @= vp8.zeros(ys * down * 16)
+    u @= vp8.zeros(cs * down * 8)
+    v @= vp8.zeros(cs * down * 8)
+    wy @= vp8.zeros(predict_size(17))
+    wu @= vp8.zeros(predict_size(9))
+    wv @= vp8.zeros(predict_size(9))
+    top_nz @= vp8.zeros(across * 9)
+    parts: [boolwrite.Writer] @= []
+
+    for _ in range(from: 0, to: s.partitions)
+        parts @ parts.push(boolwrite.start())
+
+    mbs: [modes.Modes] @= []
+    skipped @= 0
+    counts @= [0, 0, 0, 0]
+    my @= 0
+
+    while my < down
+        left_nz @= vp8.zeros(9)
+        mx @= 0
+
+        while mx < across
+            seg = segs[my * across + mx]
+            counts[seg] @ counts[seg] + 1
+            c = mbcode.code(
+                src,
+                y: @y,
+                u: @u,
+                v: @v,
+                wy: @wy,
+                wu: @wu,
+                wv: @wv,
+                mx: mx,
+                my: my,
+                across: across,
+                m: matrices[seg],
+                segment: seg,
+                lambda: lambdas[seg]
+            )
+            split = c.modes.luma == modes.B_PRED
+
+            if c.modes.skip
+                residual.skipped(top: @top_nz, x: mx, left: @left_nz, split: split)
+                skipped @ skipped + 1
+            else
+                tokens.macroblock(
+                    w: @parts[my % s.partitions],
+                    coeff: coeff,
+                    levels: c.levels,
+                    split: split,
+                    top: @top_nz,
+                    x: mx,
+                    left: @left_nz
+                )
+            mbs @ mbs.push(c.modes)
+            mx @ mx + 1
+
+        my @ my + 1
+
+    total = across * down
+    plan = vp8write.Plan(
+        segments: s.segments,
+        q_deltas: q_deltas,
+        f_deltas: f_deltas,
+        segment_probs: [prob_of(part: counts[0] + counts[1], whole: total), prob_of(part: counts[0], whole: counts[0] + counts[1]), prob_of(part: counts[2], whole: counts[2] + counts[3])],
+        simple: s.filter == 1,
+        level: level,
+        sharpness: s.sharpness,
+        parts_log2: log2(s.partitions),
+        base: base,
+        skip_prob: prob_of(part: total - skipped, whole: total)
+    )
+    first = vp8write.first_partition(p: plan, mbs: mbs, across: across)
+    done: [[u8]] @= []
+
+    for k in range(from: 0, to: s.partitions)
+        done @ done.push(boolwrite.finished(w: @parts[k]))
+
+    return vp8write.frame(width: width, height: height, first: first, parts: done)
+
+# The cells of a work area of `rows` rows.
+function predict_size(rows: i64) -> i64
+    return 32 * rows
+
+# The power of two `n` is, for 1, 2, 4 and 8.
+function log2(n: i64) -> i64
+    return if n >= 8
+        3
+    else if n >= 4
+        2
+    else if n >= 2
+        1
+    else
+        0
+
+# The file holding the RGBA pixels `px`, `width` by `height`, written as `s`
+# says: a plain lossy file where every alpha is 255, else the extended format
+# with its alpha in an ALPH chunk, kept exactly. Fails as `frame_of` fails.
+function file_of(px: [u8] lent, width: i64, height: i64, s: Settings) -> [u8]?
+    frame = frame_of(px, width: width, height: height, s: s)?
+    a: [u8] @= []
+    used @= false
+    i @= 0
+
+    while i < width * height
+        a @ a.push(px[i * 4 + 3])
+
+        if px[i * 4 + 3] != 255
+            used @ true
+        i @ i + 1
+
+    body: [u8] @= []
+
+    if used
+        head: [u8] @= [0x10, 0, 0, 0]
+        riff.put(out: @head, v: width - 1, size: 3)
+        riff.put(out: @head, v: height - 1, size: 3)
+        riff.put_chunk(out: @body, tag: "VP8X", payload: head)
+        riff.put_chunk(out: @body, tag: "ALPH", payload: alpha.encode(a, width: width, height: height))
+    riff.put_chunk(out: @body, tag: "VP8 ", payload: frame)
+    return ok(riff.file_of(body))

@@ -1,0 +1,681 @@
+# A Data Matrix ECC 200 symbol made from its data codewords, by ISO/IEC
+# 16022: the sizes and what each holds, the error correction codewords of
+# Reed and Solomon's code over the field of 256 elements whose polynomial is
+# x^8 + x^5 + x^3 + x^2 + 1 (301), the blocks interleaved, the codewords
+# placed by the standard's diagonal pattern, and each data region framed by
+# its finder pattern, solid on its left and bottom, and its clock track,
+# dotted on its top and right.
+
+use barcode/internal/codes
+use barcode/internal/dm_encode
+
+# The sizes, one per row of seven: the symbol's rows and columns, a data
+# region's rows and columns, the data codewords, the error correction
+# codewords and the blocks they are cut into. The 24 square sizes first,
+# then the 6 rectangular ones.
+constant SIZES: [i64]
+    [
+        10
+        10
+        8
+        8
+        3
+        5
+        1
+        12
+        12
+        10
+        10
+        5
+        7
+        1
+        14
+        14
+        12
+        12
+        8
+        10
+        1
+        16
+        16
+        14
+        14
+        12
+        12
+        1
+        18
+        18
+        16
+        16
+        18
+        14
+        1
+        20
+        20
+        18
+        18
+        22
+        18
+        1
+        22
+        22
+        20
+        20
+        30
+        20
+        1
+        24
+        24
+        22
+        22
+        36
+        24
+        1
+        26
+        26
+        24
+        24
+        44
+        28
+        1
+        32
+        32
+        14
+        14
+        62
+        36
+        1
+        36
+        36
+        16
+        16
+        86
+        42
+        1
+        40
+        40
+        18
+        18
+        114
+        48
+        1
+        44
+        44
+        20
+        20
+        144
+        56
+        1
+        48
+        48
+        22
+        22
+        174
+        68
+        1
+        52
+        52
+        24
+        24
+        204
+        84
+        2
+        64
+        64
+        14
+        14
+        280
+        112
+        2
+        72
+        72
+        16
+        16
+        368
+        144
+        4
+        80
+        80
+        18
+        18
+        456
+        192
+        4
+        88
+        88
+        20
+        20
+        576
+        224
+        4
+        96
+        96
+        22
+        22
+        696
+        272
+        4
+        104
+        104
+        24
+        24
+        816
+        336
+        6
+        120
+        120
+        18
+        18
+        1050
+        408
+        6
+        132
+        132
+        20
+        20
+        1304
+        496
+        8
+        144
+        144
+        22
+        22
+        1558
+        620
+        10
+        8
+        18
+        6
+        16
+        5
+        7
+        1
+        8
+        32
+        6
+        14
+        10
+        11
+        1
+        12
+        26
+        10
+        24
+        16
+        14
+        1
+        12
+        36
+        10
+        16
+        22
+        18
+        1
+        16
+        36
+        14
+        16
+        32
+        24
+        1
+        16
+        48
+        14
+        22
+        49
+        28
+        1
+    ]
+
+# How many sizes `SIZES` holds.
+constant SIZE_COUNT: i64
+    30
+
+# The first rectangular size's index.
+constant FIRST_RECTANGLE: i64
+    24
+
+# Field `k` of size `index`.
+function field(index: i64, k: i64) -> i64
+    return SIZES[index * 7 + k]
+
+# The symbol's rows of size `index`.
+function rows_of(index: i64) -> i64
+    return field(index: index, k: 0)
+
+# The symbol's columns of size `index`.
+function columns_of(index: i64) -> i64
+    return field(index: index, k: 1)
+
+# The data codewords size `index` holds.
+function data_of(index: i64) -> i64
+    return field(index: index, k: 4)
+
+# The index of the size of `rows` by `columns`, or -1 where there is none.
+function index_of(rows: i64, columns: i64) -> i64
+    for i in range(from: 0, to: SIZE_COUNT)
+        if rows_of(i) == rows && columns_of(i) == columns
+            return i
+
+    return -1
+
+# The product of `a` and `b` in the field of polynomial 301: shifted and
+# added, the polynomial taken away at each carry.
+function multiply(a: i64, b: i64) -> i64
+    product: i64 @= 0
+    bit: i64 @= 7
+
+    while bit >= 0
+        product @ product << 1 ^ (product >> 7) * 0x12d
+        product @ product ^ (b >> bit & 1) * a
+        bit @ bit - 1
+
+    return product
+
+# The generator of `degree` error correction codewords, (x + 2)(x + 4)...
+# (x + 2^degree), its coefficients from the highest power's down, the
+# leading 1 left out.
+function generator(degree: i64) -> [i64]
+    poly: [i64] @= [1]
+    root: i64 @= 2
+
+    for _ in range(from: 0, to: degree)
+        next: [i64] @= []
+
+        for j in range(from: 0, to: poly.len() + 1)
+            here: i64 @= 0
+
+            if j < poly.len()
+                here @ poly[j]
+
+            if j > 0
+                here @ here ^ multiply(a: poly[j - 1], b: root)
+            next @ next.push(here)
+
+        poly @ next
+        root @ multiply(a: root, b: 2)
+
+    return poly.slice(from: 1, to: poly.len())
+
+# The `divisor.len()` error correction codewords of `data`: the remainder of
+# `data` times x to that power, divided by the generator.
+function remainder(data: [i64] lent, divisor: [i64] lent) -> [i64]
+    degree = divisor.len()
+    rest: [i64] @= []
+
+    for _ in range(from: 0, to: degree)
+        rest @ rest.push(0)
+
+    for word in data
+        factor = word ^ rest[0]
+        j: i64 @= 0
+
+        while j + 1 < degree
+            rest[j] @ rest[j + 1] ^ multiply(a: divisor[j], b: factor)
+            j @ j + 1
+
+        rest[degree - 1] @ multiply(a: divisor[degree - 1], b: factor)
+
+    return rest
+
+# Every codeword of a symbol of size `index` whose data codewords are
+# `data`, padded already to the size's count: the data, then the error
+# correction of each block, interleaved as the blocks are, block `b` taking
+# every codeword whose index modulo the blocks is `b`.
+function with_correction(data: [i64] lent, index: i64) -> [i64]
+    blocks = field(index: index, k: 6)
+    ecc = field(index: index, k: 5) / blocks
+    divisor = generator(ecc)
+    out: [i64] @= data
+    tails: [[i64]] @= []
+
+    for b in range(from: 0, to: blocks)
+        block: [i64] @= []
+        i: i64 @= b
+
+        while i < data.len()
+            block @ block.push(data[i])
+            i @ i + blocks
+
+        tails @ tails.push(remainder(data: block, divisor: divisor))
+
+    for k in range(from: 0, to: ecc)
+        for b in range(from: 0, to: blocks)
+            out @ out.push(tails[b][k])
+
+    return out
+
+# The mapping matrix of `codewords`, `rows` by `columns` with the finder and
+# clock patterns left out: each cell the codeword's bit placed there, 1 dark,
+# by the standard's diagonal pattern of eight-module shapes and its four
+# corner shapes; a cell nothing reaches is -1 until the end, where the
+# lower right corner's fixed pattern fills it.
+function placed(codewords: [i64] lent, rows: i64, columns: i64) -> [i64]
+    cells: [i64] @= []
+
+    for _ in range(from: 0, to: rows * columns)
+        cells @ cells.push(-1)
+
+    next: i64 @= 0
+    row: i64 @= 4
+    column: i64 @= 0
+
+    while row < rows || column < columns
+        if row == rows && column == 0
+            corner(@cells, rows: rows, columns: columns, shape: 1, word: word_at(codewords: codewords, at: next))
+            next @ next + 1
+
+        if row == rows - 2 && column == 0 && columns % 4 != 0
+            corner(@cells, rows: rows, columns: columns, shape: 2, word: word_at(codewords: codewords, at: next))
+            next @ next + 1
+
+        if row == rows - 2 && column == 0 && columns % 8 == 4
+            corner(@cells, rows: rows, columns: columns, shape: 3, word: word_at(codewords: codewords, at: next))
+            next @ next + 1
+
+        if row == rows + 4 && column == 2 && columns % 8 == 0
+            corner(@cells, rows: rows, columns: columns, shape: 4, word: word_at(codewords: codewords, at: next))
+            next @ next + 1
+
+        while row >= 0 && column < columns
+            if row < rows && column >= 0 && cells[row * columns + column] < 0
+                utah(
+                    @cells,
+                    rows: rows,
+                    columns: columns,
+                    row: row,
+                    column: column,
+                    word: word_at(codewords: codewords, at: next)
+                )
+                next @ next + 1
+            row @ row - 2
+            column @ column + 2
+
+        row @ row + 1
+        column @ column + 3
+
+        while row < rows && column >= 0
+            if row >= 0 && column < columns && cells[row * columns + column] < 0
+                utah(
+                    @cells,
+                    rows: rows,
+                    columns: columns,
+                    row: row,
+                    column: column,
+                    word: word_at(codewords: codewords, at: next)
+                )
+                next @ next + 1
+            row @ row + 2
+            column @ column - 2
+
+        row @ row + 3
+        column @ column + 1
+
+    assert next == codewords.len()
+
+    if cells[rows * columns - 1] < 0
+        cells[rows * columns - 1] @ 1
+        cells[rows * columns - 2] @ 0
+        cells[(rows - 1) * columns - 1] @ 0
+        cells[(rows - 1) * columns - 2] @ 1
+
+    return cells
+
+# The codeword at `at`, or 0 past the end, which the assertion after the
+# placement refuses.
+function word_at(codewords: [i64] lent, at: i64) -> i64
+    if at < codewords.len()
+        return codewords[at]
+    return 0
+
+# Places bit `bit` of `word`, 1 its highest, at `row`, `column`, wrapped
+# round the matrix as the standard wraps a shape that falls off an edge.
+function module_at(@cells: [i64], rows: i64, columns: i64, row: i64, column: i64, word: i64, bit: i64)
+    r: i64 @= row
+    c: i64 @= column
+
+    if r < 0
+        r @ r + rows
+        c @ c + 4 - (rows + 4) % 8
+
+    if c < 0
+        c @ c + columns
+        r @ r + 4 - (columns + 4) % 8
+    cells[r * columns + c] @ word >> 8 - bit & 1
+
+# The ordinary shape: eight modules whose last stands at `row`, `column`.
+function utah(@cells: [i64], rows: i64, columns: i64, row: i64, column: i64, word: i64)
+    module_at(@cells, rows: rows, columns: columns, row: row - 2, column: column - 2, word: word, bit: 1)
+    module_at(@cells, rows: rows, columns: columns, row: row - 2, column: column - 1, word: word, bit: 2)
+    module_at(@cells, rows: rows, columns: columns, row: row - 1, column: column - 2, word: word, bit: 3)
+    module_at(@cells, rows: rows, columns: columns, row: row - 1, column: column - 1, word: word, bit: 4)
+    module_at(@cells, rows: rows, columns: columns, row: row - 1, column: column, word: word, bit: 5)
+    module_at(@cells, rows: rows, columns: columns, row: row, column: column - 2, word: word, bit: 6)
+    module_at(@cells, rows: rows, columns: columns, row: row, column: column - 1, word: word, bit: 7)
+    module_at(@cells, rows: rows, columns: columns, row: row, column: column, word: word, bit: 8)
+
+# The corner shapes 1 to 4: each its eight cells, row and column by turns,
+# a negative one counted from the far edge.
+constant CORNERS: [i64]
+    [
+        -1
+        0
+        -1
+        1
+        -1
+        2
+        0
+        -2
+        0
+        -1
+        1
+        -1
+        2
+        -1
+        3
+        -1
+        -3
+        0
+        -2
+        0
+        -1
+        0
+        0
+        -4
+        0
+        -3
+        0
+        -2
+        0
+        -1
+        1
+        -1
+        -3
+        0
+        -2
+        0
+        -1
+        0
+        0
+        -2
+        0
+        -1
+        1
+        -1
+        2
+        -1
+        3
+        -1
+        -1
+        0
+        -1
+        -1
+        0
+        -3
+        0
+        -2
+        0
+        -1
+        1
+        -3
+        1
+        -2
+        1
+        -1
+    ]
+
+# Places `word` in corner shape `shape`, 1 to 4.
+function corner(@cells: [i64], rows: i64, columns: i64, shape: i64, word: i64)
+    for bit in range(from: 0, to: 8)
+        r: i64 @= CORNERS[(shape - 1) * 16 + bit * 2]
+        c: i64 @= CORNERS[(shape - 1) * 16 + bit * 2 + 1]
+
+        if r < 0
+            r @ r + rows
+
+        if c < 0
+            c @ c + columns
+        module_at(@cells, rows: rows, columns: columns, row: r, column: c, word: word, bit: bit + 1)
+
+# The modules of a symbol of size `index` whose codewords, data and error
+# correction, are `codewords`: each data region of the mapping matrix framed
+# by its finder and clock patterns.
+function modules_of(codewords: [i64] lent, index: i64) -> [[bool]]
+    rows = rows_of(index)
+    columns = columns_of(index)
+    region_rows = field(index: index, k: 2)
+    region_columns = field(index: index, k: 3)
+    across = columns / (region_columns + 2)
+    down = rows / (region_rows + 2)
+    cells = placed(codewords: codewords, rows: down * region_rows, columns: across * region_columns)
+    out: [[bool]] @= []
+
+    for y in range(from: 0, to: rows)
+        line: [bool] @= []
+        j = y % (region_rows + 2)
+
+        for x in range(from: 0, to: columns)
+            k = x % (region_columns + 2)
+            dark: bool @= false
+
+            if k == 0 || j == region_rows + 1
+                dark @ true
+            else if j == 0
+                dark @ k % 2 == 0
+            else if k == region_columns + 1
+                dark @ j % 2 == 1
+            else
+                mapped_row = y / (region_rows + 2) * region_rows + j - 1
+                mapped_column = x / (region_columns + 2) * region_columns + k - 1
+                dark @ cells[mapped_row * across * region_columns + mapped_column] == 1
+            line @ line.push(dark)
+
+        out @ out.push(line)
+
+    return out
+
+# The sizes a symbol of `shape` may take, smallest first: 0 square, 1
+# rectangular, 2 either, a tie of capacity keeping the square.
+function order_of(shape: i64) -> [i64]
+    first: i64 @= 0
+    end: i64 @= SIZE_COUNT
+
+    if shape == 0
+        end @ FIRST_RECTANGLE
+
+    if shape == 1
+        first @ FIRST_RECTANGLE
+    out: [i64] @= []
+
+    for i in range(from: first, to: end)
+        at: i64 @= out.len()
+
+        while at > 0 && data_of(out[at - 1]) > data_of(i)
+            at @ at - 1
+
+        head = out.slice(from: 0, to: at)
+        tail = out.slice(from: at, to: out.len())
+        next: [i64] @= head
+        next @ next.push(i)
+
+        for t in tail
+            next @ next.push(t)
+
+        out @ next
+
+    return out
+
+# The one size of `rows` by `columns`, as an order of one.
+#
+# Fails `invalid` where ECC 200 has no such size.
+function fixed_order(rows: i64, columns: i64) -> [i64]?
+    index = index_of(rows: rows, columns: columns)
+
+    if index < 0
+        return fail(code: codes.INVALID, msg: f"Data Matrix ECC 200 has no size of {rows} by {columns} modules")
+    return ok([index])
+
+# The modules of the Data Matrix of `pieces` behind the codewords
+# `prefix`, in the first size of `order` that holds them.
+#
+# Fails `unsupported` where none of them does.
+function make(pieces: [i64] lent, prefix: [i64] lent, order: [i64] lent) -> [[bool]]?
+    plan = dm_encode.plan_of(pieces)
+
+    for index in order
+        words = dm_encode.written(pieces: pieces, plan: plan, prefix: prefix, capacity: data_of(index))
+
+        if words.len() > 0
+            return ok(modules_of(codewords: with_correction(data: words, index: index), index: index))
+
+    last = order[order.len() - 1]
+    return fail(
+        code: codes.UNSUPPORTED,
+        msg: f"the data needs more codewords than a Data Matrix of {rows_of(last)} by {columns_of(last)} holds, {data_of(last)}"
+    )
+
+## Tests
+
+test "SIZES: every size's regions fill it, and its codewords fill its mapping matrix"
+    for i in range(from: 0, to: SIZE_COUNT)
+        region_rows = field(index: i, k: 2)
+        region_columns = field(index: i, k: 3)
+        assert rows_of(i) % (region_rows + 2) == 0
+        assert columns_of(i) % (region_columns + 2) == 0
+        bits = rows_of(i) / (region_rows + 2) * region_rows * (columns_of(i) / (region_columns + 2) * region_columns)
+        words = data_of(i) + field(index: i, k: 5)
+        assert bits / 8 == words
+        assert field(index: i, k: 5) % field(index: i, k: 6) == 0
+
+test "multiply: zero, one, the carry, and the field's polynomial"
+    assert multiply(a: 0, b: 7) == 0
+    assert multiply(a: 1, b: 200) == 200
+    assert multiply(a: 2, b: 128) == 0x2d
+    assert multiply(a: 3, b: 7) == 9
+
+# "123456" as the codewords 142, 164 and 186 in a symbol of 10 by 10, and
+# its five error correction codewords: zxing-cpp 3.1.1's writer placed the
+# same modules for the same text on 2026-11-24.
+test "with_correction: the standard's worked example of 10 by 10"
+    assert with_correction(data: [142, 164, 186], index: 0) == [142, 164, 186, 114, 25, 5, 88, 102]
+
+test "index_of: a square, a rectangle, and none"
+    assert index_of(rows: 10, columns: 10) == 0
+    assert index_of(rows: 16, columns: 48) == 29
+    assert index_of(rows: 11, columns: 11) == -1
+
+test "order_of: squares, rectangles, and both by capacity"
+    assert order_of(0).len() == 24 && order_of(0)[0] == 0
+    assert order_of(1) == [24, 25, 26, 27, 28, 29]
+    both = order_of(2)
+    assert both.len() == 30
+    assert both[0] == 0 && both[1] == 1 && both[2] == 24
+
+test "make: a size too small is unsupported"
+    pieces: [i64] @= []
+
+    for _ in range(from: 0, to: 10)
+        pieces @ pieces.push(120)
+
+    assert make(pieces: pieces, prefix: [], order: [0]).is_err()
+    assert make(pieces: pieces, prefix: [], order: [0, 3]).must().len() == 16

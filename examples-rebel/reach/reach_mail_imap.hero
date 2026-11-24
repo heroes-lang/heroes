@@ -1,0 +1,30 @@
+# Reaches Rebel's `mail/imap`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It asks the IMAP server of this machine,
+# where one listens on port 143, which capabilities it offers, and says why
+# where none answers.
+
+use <rebel>/mail/imap
+use <rebel>/time
+
+function main()
+    o = imap.options(host: "localhost", security: .plain)
+    quick = imap.Options(
+        host: o.host,
+        port: o.port,
+        security: o.security,
+        roots: o.roots,
+        deadline: time.seconds(2).must(),
+        max_bytes: o.max_bytes
+    )
+
+    match imap.connect(quick)
+        .err e => print("no server: ", e.code, ": ", e.msg)
+        .ok first =>
+            c @= first
+
+            for name in imap.capabilities_of(c)
+                print(name)
+
+            match imap.logout(@c)
+                .ok _  => print("bye")
+                .err e => print(e.code, ": ", e.msg)

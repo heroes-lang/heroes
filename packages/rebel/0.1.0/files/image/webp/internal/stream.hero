@@ -52,8 +52,15 @@ function header_of(data: [u8] lent) -> Decoded?
 function decode(data: [u8] lent, limits: image.Limits) -> Decoded?
     h = header_of(data)?
     image.check_limits(limits, width: h.width, height: h.height)?
-    b @= prefix.Bits(data: data.slice(from: 0, to: data.len()), pos: 40, over: false)
-    xsize @= h.width
+    px = body(data, from: 40, width: h.width, height: h.height)?
+    return ok(Decoded(width: h.width, height: h.height, alpha_used: h.alpha_used, pixels: px))
+
+# The RGBA pixels of the image stream in `data` from bit `from`, a picture of
+# `width` by `height` whose transforms come first: the lossless stream after
+# its header, or an ALPH chunk's after its byte. Fails `invalid`.
+function body(data: [u8] lent, from: i64, width: i64, height: i64) -> [u8]?
+    b @= prefix.Bits(data: data.slice(from: 0, to: data.len()), pos: from, over: false)
+    xsize @= width
     done: [Transform] @= []
     seen: [bool] @= [false, false, false, false]
 
@@ -67,7 +74,7 @@ function decode(data: [u8] lent, limits: image.Limits) -> Decoded?
         if kind == 0 || kind == 1
             bits = prefix.read(b: @b, n: 3) + 2
             side = 1 << bits
-            blocks = lossless.read_image(b: @b, width: xsize + side - 1 >> bits, height: h.height + side - 1 >> bits, main: false)?
+            blocks = lossless.read_image(b: @b, width: xsize + side - 1 >> bits, height: height + side - 1 >> bits, main: false)?
             done @ done.push(Transform(kind: kind, bits: bits, data: blocks, width: xsize))
         else if kind == 2
             done @ done.push(Transform(kind: 2, bits: 0, data: [], width: xsize))
@@ -89,7 +96,7 @@ function decode(data: [u8] lent, limits: image.Limits) -> Decoded?
             done @ done.push(Transform(kind: 3, bits: bits, data: table, width: xsize))
             xsize @ xsize + (1 << bits) - 1 >> bits
 
-    px @= lossless.read_image(b: @b, width: xsize, height: h.height, main: true)?
+    px @= lossless.read_image(b: @b, width: xsize, height: height, main: true)?
 
     if b.over
         return fail(code: image.INVALID, msg: "a lossless stream that ends before its last pixel")
@@ -99,13 +106,13 @@ function decode(data: [u8] lent, limits: image.Limits) -> Decoded?
         t = done[k]
 
         if t.kind == 0
-            transforms.undo_predictor(px: @px, modes: t.data, width: t.width, height: h.height, bits: t.bits)
+            transforms.undo_predictor(px: @px, modes: t.data, width: t.width, height: height, bits: t.bits)
         else if t.kind == 1
-            transforms.undo_cross_color(px: @px, elements: t.data, width: t.width, height: h.height, bits: t.bits)
+            transforms.undo_cross_color(px: @px, elements: t.data, width: t.width, height: height, bits: t.bits)
         else if t.kind == 2
-            transforms.undo_subtract_green(px: @px, count: t.width * h.height)
+            transforms.undo_subtract_green(px: @px, count: t.width * height)
         else
-            px @ transforms.undo_color_index(packed: px, table: t.data, width: t.width, height: h.height, bits: t.bits)
+            px @ transforms.undo_color_index(packed: px, table: t.data, width: t.width, height: height, bits: t.bits)
         k @ k - 1
 
-    return ok(Decoded(width: h.width, height: h.height, alpha_used: h.alpha_used, pixels: px))
+    return ok(px)

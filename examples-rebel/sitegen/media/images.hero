@@ -1,21 +1,29 @@
 # An image of the content folder written for the web: read whatever its
-# kind (PNG, JPEG, GIF, BMP, or a Netpbm scan), turned as its camera's EXIF
-# orientation says, written in a kind a browser shows where it is not one
-# (`site.toml`'s `[images.convert]`), and shown on its pages as a thumbnail
-# that fits the site's bound.
+# kind (PNG, JPEG, GIF, WebP, BMP, a Netpbm scan, TIFF, or an icon), turned
+# as its camera's EXIF orientation or its TIFF page's says, written in a
+# kind a browser shows where it is not one (`site.toml`'s
+# `[images.convert]`), and shown on its pages as a thumbnail that fits the
+# site's bound.
 #
 # An image whose kind a browser shows is copied as it is, so its metadata
 # and its quality stay the author's; only a converted image and the
 # thumbnails are encoded here. A thumbnail keeps its image's kind, but a JPEG
 # thumbnail of an image with transparency is laid over white first, since
-# JPEG holds no alpha, and an animated GIF keeps every frame (`gifs`).
+# JPEG holds no alpha, an animated GIF keeps every frame (`gifs`), and an
+# animated WebP's thumbnail is its first frame as the animation shows it. A
+# TIFF is read as its first page, an icon as its largest image, and a WebP
+# where its coding is lossless, the one `image/webp` reads: a lossy WebP
+# fails `unsupported`, as the decoder does.
 
 use <rebel>/image
 use <rebel>/image/bmp
 use <rebel>/image/gif
+use <rebel>/image/ico
 use <rebel>/image/jpeg
 use <rebel>/image/netpbm
 use <rebel>/image/png
+use <rebel>/image/tiff
+use <rebel>/image/webp
 use <rebel>/path
 use <rebel>/url
 
@@ -30,7 +38,8 @@ constant INVALID: str
 
 ## Kinds
 
-# The name `site.toml` gives `kind`: `png`, `jpeg`, `gif`, `bmp` or `netpbm`.
+# The name `site.toml` gives `kind`: `png`, `jpeg`, `gif`, `bmp`, `netpbm`,
+# `tiff`, `ico` or `webp`.
 #
 # - `kind`: a kind of image file.
 function kind_name(kind: image.Kind) -> str
@@ -40,15 +49,19 @@ function kind_name(kind: image.Kind) -> str
         .gif    => "gif"
         .bmp    => "bmp"
         .netpbm => "netpbm"
+        .tiff   => "tiff"
+        .ico    => "ico"
+        .webp   => "webp"
 
 # The extension an image written as `kind` takes, with its dot.
 #
-# - `kind`: `png`, `jpeg` or `gif`, a kind a browser shows; any other name
-#   is written as PNG.
+# - `kind`: `png`, `jpeg`, `gif` or `webp`, a kind a browser shows; any
+#   other name is written as PNG.
 function extension_of(kind: str) -> str
     return match kind
         "jpeg" => ".jpg"
         "gif"  => ".gif"
+        "webp" => ".webp"
         _      => ".png"
 
 # The kind an image of kind `read` is written as.
@@ -120,8 +133,11 @@ record Built
 # than `image.default_limits` allows fails `limit` before it is decoded.
 function build(source: str, data: [u8], settings: model.ImageSettings, base_path: str) -> Built?
     kind = match image.kind_of(data)
-        .ok k  => k
-        .err e => return fail(code: INVALID, msg: f"{source} is not a PNG, JPEG, GIF, BMP or Netpbm file: {e.msg}")
+        .ok k => k
+        .err e => return fail(
+            code: INVALID,
+            msg: f"{source} is not a PNG, JPEG, GIF, WebP, BMP, Netpbm, TIFF or ICO file: {e.msg}"
+        )
 
     read = kind_name(kind)
     target = written_kind(read, settings)
@@ -189,7 +205,9 @@ function made(data: [u8], kind: image.Kind, target: str, settings: model.ImageSe
     )
 
 # The pixels of `data`, a file of the kind `kind`, turned upright where it is
-# a JPEG whose EXIF says it is not.
+# a JPEG whose EXIF says it is not or a TIFF whose page does: a TIFF's first
+# page, an icon's largest image, a WebP's first frame as its animation
+# shows it.
 function decoded(data: [u8], kind: image.Kind, limits: image.Limits) -> image.Image?
     return match kind
         .png    => png.decode_image(data, limits)
@@ -197,15 +215,37 @@ function decoded(data: [u8], kind: image.Kind, limits: image.Limits) -> image.Im
         .gif    => gif.decode_image(data, limits)
         .bmp    => bmp.decode_image(data, limits)
         .netpbm => netpbm.decode_image(data, limits)
+        .tiff   => upright_page(tiff.decode(data, limits)?)
+        .ico    => ico.decode_image(data, limits)
+        .webp   => first_shown(webp.decode(data, limits)?, limits: limits)
 
 function upright(photo: jpeg.Jpeg) -> image.Image?
     return image.apply_orientation(photo.image, photo.orientation)
 
-# `img` as a file of the kind `kind`: `png`, `jpeg` or `gif`.
+# The first page of `scan`, turned as its Orientation tag says.
+function upright_page(scan: tiff.Tiff) -> image.Image?
+    if scan.pages.len() == 0
+        return fail(code: INVALID, msg: "a TIFF file with no page")
+
+    return image.apply_orientation(scan.pages[0].image, scan.pages[0].orientation)
+
+# The canvas after the first frame of `picture` is drawn, as a viewer shows a
+# still WebP or an animation's first moment.
+function first_shown(picture: webp.Webp, limits: image.Limits) -> image.Image?
+    canvases = webp.composite(picture, limits)?
+
+    if canvases.len() == 0
+        return fail(code: INVALID, msg: "a WebP file with no frame")
+
+    return ok(canvases[0])
+
+# `img` as a file of the kind `kind`: `png`, `jpeg`, `gif` or `webp`, a WebP
+# written lossless.
 function encoded(img: image.Image, kind: str, settings: model.ImageSettings) -> [u8]?
     return match kind
         "jpeg" => jpeg.encode(for_jpeg(img), jpeg.EncodeOptions(quality: settings.jpeg_quality, subsampling: .half))
         "gif"  => gif.encode_image(img, dither: false)
+        "webp" => webp.encode_image(img)
         _      => png.encode(img, png.default_encode_options())
 
 # `img` as JPEG holds an image: laid over white where it has alpha, and at 8
@@ -248,6 +288,56 @@ test "build: a PNG kept as it is, its thumbnail within the bound and its proport
     assert built.outputs[0].data == data
     assert built.facts.thumb_width == 10 && built.facts.thumb_height == 5
     assert built.facts.width == 40 && built.facts.size == data.len()
+
+test "build: a TIFF turned upright and an icon converted to PNG, a WebP kept with a WebP thumbnail"
+    tall = image.blank(width: 20, height: 40, format: .rgb).must()
+    no_resolution: tiff.Resolution? = fail(code: "not_found", msg: "none")
+    no_text: str? = fail(code: "not_found", msg: "none")
+    page = tiff.Page(
+        image: tall,
+        orientation: 6,
+        compression: .none,
+        reduced: false,
+        resolution: no_resolution,
+        description: no_text,
+        software: no_text,
+        date_time: no_text,
+        icc: []
+    )
+    scan = tiff.encode([page], tiff.default_encode_options()).must()
+    settings = model.ImageSettings(
+        thumb_width: 10,
+        thumb_height: 10,
+        jpeg_quality: 80,
+        convert: {"tiff": "png", "ico": "png"}
+    )
+    turned = build(source: "content/scan.tiff", data: scan, settings: settings, base_path: "/").must()
+    assert turned.facts.width == 40 && turned.facts.height == 20
+    assert turned.facts.url == "/scan.png" && turned.facts.thumb_url == "/scan.thumb.png"
+    assert image.kind_of(turned.outputs[0].data).must() == .png && image.kind_of(turned.outputs[1].data).must() == .png
+
+    no_spot: ico.Hotspot? = fail(code: "not_found", msg: "none")
+    small = ico.Entry(
+        image: image.blank(width: 16, height: 16, format: .rgba).must(),
+        storage: .png,
+        bits: 32,
+        hotspot: no_spot
+    )
+    large = ico.Entry(
+        image: image.blank(width: 32, height: 32, format: .rgba).must(),
+        storage: .bmp,
+        bits: 32,
+        hotspot: no_spot
+    )
+    icon = ico.encode(ico.Ico(kind: .icon, entries: [small, large])).must()
+    shown = build(source: "content/flag.ico", data: icon, settings: settings, base_path: "/").must()
+    assert shown.facts.width == 32 && shown.facts.url == "/flag.png"
+    assert image.kind_of(shown.outputs[0].data).must() == .png
+
+    clear = webp.encode_image(image.blank(width: 30, height: 30, format: .rgba).must()).must()
+    kept = build(source: "content/buoy.webp", data: clear, settings: settings, base_path: "/").must()
+    assert kept.outputs[0].data == clear && kept.facts.thumb_url == "/buoy.thumb.webp"
+    assert image.kind_of(kept.outputs[1].data).must() == .webp && kept.facts.thumb_width == 10
 
 test "build: bytes that are no image refused, naming the source"
     settings = model.ImageSettings(thumb_width: 10, thumb_height: 10, jpeg_quality: 80, convert: {})

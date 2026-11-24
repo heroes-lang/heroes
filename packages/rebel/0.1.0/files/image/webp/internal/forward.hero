@@ -1,0 +1,165 @@
+# The forward transforms and the quantizer of the lossy encoder. The DCT is
+# the inverse of `idct.add_inverse`'s: that transform's basis vectors are
+# orthogonal, each of squared length 4, so a 4x4 residue `P` has the
+# coefficients `T' P T / 2`, computed here in fixed point with `sqrt(2)
+# cos(pi / 8)` and `sqrt(2) sin(pi / 8)` at 12 bits. The Walsh-Hadamard
+# transform inverts `idct.wht` the same way. Coefficient `4 * v + h` is the
+# one of vertical frequency `v` and horizontal frequency `h`, as the decoder
+# reads them.
+
+use image/webp/internal/idct
+use image/webp/internal/predict
+
+# `sqrt(2) cos(pi / 8)` at 12 bits.
+constant C8: i64
+    5352
+
+# `sqrt(2) sin(pi / 8)` at 12 bits.
+constant S8: i64
+    2217
+
+# The DCT of the residue of the 4x4 block of `src` at `s` (rows `stride`
+# apart) less the block of the work area `pred` at `p` (rows `predict.BPS`
+# apart): sixteen coefficients.
+function dct(src: [i64] lent, s: i64, stride: i64, pred: [i64] lent, p: i64) -> [i64]
+    y @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    r @= 0
+
+    while r < 4
+        d0 = src[s + r * stride] - pred[p + r * predict.BPS]
+        d1 = src[s + r * stride + 1] - pred[p + r * predict.BPS + 1]
+        d2 = src[s + r * stride + 2] - pred[p + r * predict.BPS + 2]
+        d3 = src[s + r * stride + 3] - pred[p + r * predict.BPS + 3]
+        a0 = d0 + d3
+        a1 = d1 + d2
+        a2 = d1 - d2
+        a3 = d0 - d3
+        y[r * 4] @ (a0 + a1) * 4096
+        y[r * 4 + 1] @ a3 * C8 + a2 * S8
+        y[r * 4 + 2] @ (a0 - a1) * 4096
+        y[r * 4 + 3] @ a3 * S8 - a2 * C8
+        r @ r + 1
+
+    out @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    h @= 0
+
+    while h < 4
+        a0 = y[h] + y[12 + h]
+        a1 = y[4 + h] + y[8 + h]
+        a2 = y[4 + h] - y[8 + h]
+        a3 = y[h] - y[12 + h]
+        out[h] @ (a0 + a1) * 4096 + 16777216 >> 25
+        out[4 + h] @ a3 * C8 + a2 * S8 + 16777216 >> 25
+        out[8 + h] @ (a0 - a1) * 4096 + 16777216 >> 25
+        out[12 + h] @ a3 * S8 - a2 * C8 + 16777216 >> 25
+        h @ h + 1
+
+    return out
+
+# The Walsh-Hadamard transform of the sixteen DCs `dc` of a macroblock's
+# luma blocks, block `4 * row + column`: the DC block's coefficients.
+function wht(dc: [i64] lent) -> [i64]
+    t @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    r @= 0
+
+    while r < 4
+        a0 = dc[r * 4] + dc[r * 4 + 3]
+        a1 = dc[r * 4 + 1] + dc[r * 4 + 2]
+        a2 = dc[r * 4 + 1] - dc[r * 4 + 2]
+        a3 = dc[r * 4] - dc[r * 4 + 3]
+        t[r * 4] @ a0 + a1
+        t[r * 4 + 1] @ a3 + a2
+        t[r * 4 + 2] @ a0 - a1
+        t[r * 4 + 3] @ a3 - a2
+        r @ r + 1
+
+    out @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    k @= 0
+
+    while k < 4
+        a0 = t[k] + t[12 + k]
+        a1 = t[4 + k] + t[8 + k]
+        a2 = t[4 + k] - t[8 + k]
+        a3 = t[k] - t[12 + k]
+        out[k] @ a0 + a1 + 1 >> 1
+        out[4 + k] @ a3 + a2 + 1 >> 1
+        out[8 + k] @ a0 - a1 + 1 >> 1
+        out[12 + k] @ a3 - a2 + 1 >> 1
+        k @ k + 1
+
+    return out
+
+# The levels of the coefficients `c` from position `first`, the first at
+# step `dc` and the others at `ac`: the first rounded to the nearest, the
+# others with a dead zone of a sixth of a step below the half, so a
+# coefficient a little past half a step still reads as zero. A level is held
+# below 2048 and below `32767` over its step, so its dequantized value fits
+# the decoder's 16 bits.
+function quantize(c: [i64] lent, first: i64, dc: i64, ac: i64) -> [i64]
+    out @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    i @= first
+
+    while i < 16
+        q = if i == 0
+            dc
+        else
+            ac
+
+        bias = if i == 0
+            q / 2
+        else
+            q / 3
+        v = c[i]
+
+        mag = if v < 0
+            -v
+        else
+            v
+
+        top = if 2047 < 32767 / q
+            2047
+        else
+            32767 / q
+        level @= (mag + bias) / q
+
+        if level > top
+            level @ top
+
+        if v < 0
+            level @ -level
+        out[i] @ level
+        i @ i + 1
+
+    return out
+
+## Tests
+
+test "dct: a flat residue is its first coefficient alone, which the inverse turns back"
+    src = [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+    pred: [i64] @= []
+
+    for _ in range(from: 0, to: 4 * predict.BPS)
+        pred @ pred.push(2)
+
+    c = dct(src: src, s: 0, stride: 4, pred: pred, p: 0)
+    assert c == [56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    px @= pred
+    idct.add_inverse(c: c, at: 0, px: @px, pos: 0, stride: predict.BPS)
+    assert px[0] == 9 && px[3 * predict.BPS + 3] == 9 && px[4] == 2
+
+test "wht: sixteen equal DCs are the DC block's first coefficient alone, which the inverse spreads back"
+    dc = wht([5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5])
+    assert dc == [40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        out @ out.push(0)
+
+    idct.wht(dc: dc, out: @out, at: 0)
+    assert out[0] == 5 && out[16 * 15] == 5
+
+test "quantize: rounding at the first position, a dead zone at the others, levels held to the decoder's 16 bits"
+    c = [10, 10, -10, 7, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40000]
+    assert quantize(c, first: 0, dc: 4, ac: 12) == [3, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2047]
+    assert quantize(c, first: 1, dc: 4, ac: 4)[0] == 0
+    assert quantize([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -40000], first: 0, dc: 300, ac: 300)[15] == -109

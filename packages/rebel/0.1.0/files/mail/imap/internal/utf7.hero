@@ -1,0 +1,174 @@
+# Mailbox names in IMAP4rev1's modified UTF-7 (RFC 3501 § 5.1.3): printable
+# ASCII stands for itself, `&` is written `&-`, and every other run of
+# characters is base 64 of its UTF-16 code units, `,` standing for `/`, with
+# no padding, between `&` and `-`. A name has one spelling: a name read is
+# refused unless writing it again gives the same bytes, so two spellings of
+# one name never reach a program as one name.
+
+use bytes
+use strings
+use unicode
+
+# The code of a name that is not modified UTF-7.
+constant INVALID: str
+    "invalid"
+
+# `name` in modified UTF-7.
+function encoded(name: str) -> str
+    out: [str] @= []
+    run: [i64] @= []
+
+    for p in unicode.code_points(name)
+        if p >= 0x20 && p <= 0x7e
+            if run.len() > 0
+                out @ out.push(shifted(run))
+                run @ []
+
+            if p == '&'
+                out @ out.push("&-")
+            else
+                out @ out.push(unicode.from_code_point(p).must())
+        else
+            run @ run.push(p)
+
+    if run.len() > 0
+        out @ out.push(shifted(run))
+    return join(out, "")
+
+# The run of characters `points` as `&`, its base 64, and `-`.
+function shifted(points: [i64]) -> str
+    units: [u8] @= []
+
+    for p in points
+        if p >= 0x10000
+            v = p - 0x10000
+            units @ push_unit(units, unit: 0xd800 + (v >> 10))
+            units @ push_unit(units, unit: 0xdc00 + (v & 0x3ff))
+        else
+            units @ push_unit(units, unit: p)
+
+    return "&" + strings.replace_all(s: bytes.format_base64_unpadded(units), old: "/", new: ",") + "-"
+
+# `units` with the code unit `unit` appended, its high byte first.
+function push_unit(units: [u8], unit: i64) -> [u8]
+    return units.push(to_u8(unit >> 8).must()).push(to_u8(unit & 0xff).must())
+
+# The text the modified UTF-7 `wire` writes. Fails `invalid` where it holds a
+# byte outside printable ASCII, an `&` with no `-` after it, base 64 that is
+# not whole UTF-16 code units or pairs them wrongly, or a spelling other than
+# the one `encoded` writes: printable ASCII inside base 64, two runs side by
+# side, bits set past the last unit.
+function decoded(wire: str) -> str?
+    out: [str] @= []
+    i @= 0
+
+    while i < wire.len()
+        b = wire[i]
+
+        if b < 0x20 || b > 0x7e
+            return fail(
+                code: INVALID,
+                msg: f"the mailbox name \"{bytes.format_escaped(bytes.from_text(wire))}\" holds a byte outside printable ASCII, which modified UTF-7 never writes"
+            )
+
+        if b != '&'
+            out @ out.push(wire.slice(from: i, to: i + 1))
+            i @ i + 1
+            continue
+        end = strings.index_of(s: wire.slice(from: i + 1, to: wire.len()), substr: "-")
+
+        match end
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the mailbox name \"{wire}\" opens base 64 with `&` and never closes it with `-`"
+            )
+            .ok at =>
+                inner = wire.slice(from: i + 1, to: i + 1 + at)
+
+                if inner == ""
+                    out @ out.push("&")
+                else
+                    out @ out.push(unshifted(inner: inner, wire: wire)?)
+                i @ i + 2 + at
+
+    text = join(out, "")
+
+    if encoded(text) != wire
+        return fail(code: INVALID, msg: f"the mailbox name \"{wire}\" is not written as modified UTF-7 writes it")
+    return ok(text)
+
+# The characters the base 64 `inner` writes, of the name `wire`.
+function unshifted(inner: str, wire: str) -> str?
+    if strings.contains_any(s: inner, set: "/=")
+        return fail(
+            code: INVALID,
+            msg: f"the mailbox name \"{wire}\" holds `/` or `=` in its base 64, which modified UTF-7 writes `,` and never pads"
+        )
+
+    raw = match bytes.parse_base64_unpadded(strings.replace_all(s: inner, old: ",", new: "/"))
+        .ok made => made
+        .err e   => return fail(code: INVALID, msg: f"the mailbox name \"{wire}\" holds base 64 that is not: {e.msg}")
+
+    if raw.len() % 2 != 0
+        return fail(
+            code: INVALID,
+            msg: f"the mailbox name \"{wire}\" holds base 64 that is not whole UTF-16 code units"
+        )
+    points: [i64] @= []
+    k @= 0
+
+    while k < raw.len()
+        unit = to_i64(raw[k]).must() << 8 | to_i64(raw[k + 1]).must()
+        k @ k + 2
+
+        if unit >= 0xdc00 && unit <= 0xdfff
+            return fail(
+                code: INVALID,
+                msg: f"the mailbox name \"{wire}\" holds a low surrogate with no high one before it"
+            )
+
+        if unit >= 0xd800 && unit <= 0xdbff
+            if k >= raw.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"the mailbox name \"{wire}\" holds a high surrogate with no low one after it"
+                )
+            low = to_i64(raw[k]).must() << 8 | to_i64(raw[k + 1]).must()
+
+            if low < 0xdc00 || low > 0xdfff
+                return fail(
+                    code: INVALID,
+                    msg: f"the mailbox name \"{wire}\" holds a high surrogate with no low one after it"
+                )
+            k @ k + 2
+            points @ points.push(0x10000 + (unit - 0xd800 << 10) + (low - 0xdc00))
+        else
+            points @ points.push(unit)
+
+    return match unicode.from_code_points(points)
+        .ok text => ok(text)
+        .err e   => fail(code: INVALID, msg: f"the mailbox name \"{wire}\" names no character: {e.msg}")
+
+## Tests
+
+test "encoded: RFC 3501's example, ASCII alone, the ampersand, a character past the BMP, the empty name"
+    assert encoded("~peter/mail/台北/日本語") == "~peter/mail/&U,BTFw-/&ZeVnLIqe-"
+    assert encoded("Gesendete Objekte") == "Gesendete Objekte"
+    assert encoded("&") == "&-" && encoded("a&b") == "a&-b"
+    assert encoded("😀") == "&2D3eAA-" && encoded("ä😀b") == "&AOTYPd4A-b"
+    assert encoded("") == "" && encoded("\u{7f}") == "&AH8-"
+    assert encoded("été") == "&AOk-t&AOk-" && encoded("aÿĀb") == "a&AP8BAA-b"
+    assert encoded("Ελληνικά") == "&A5UDuwO7A7cDvQO5A7oDrA-"
+
+test "decoded: every name encoded read back, and the RFC's example"
+    for name in ["~peter/mail/台北/日本語", "&", "a&b", "😀", "ä😀b", "", "été", "Entwürfe", "Ελληνικά"]
+        assert decoded(encoded(name)).must() == name
+
+    assert decoded("~peter/mail/&U,BTFw-/&ZeVnLIqe-").must() == "~peter/mail/台北/日本語"
+    assert decoded("Entw&APw-rfe").must() == "Entwürfe"
+
+test "decoded: no closing dash, a slash or padding in base 64, ASCII in base 64, two runs side by side, a lone surrogate, odd bytes, 8-bit"
+    for bad in ["&AOk", "&AO/-", "&AOk=-", "&AGE-", "&AOk-&AOk-", "&2D0-", "&3gA-", "&AA-", "café", "a\tb", "&AOl-"]
+        match decoded(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

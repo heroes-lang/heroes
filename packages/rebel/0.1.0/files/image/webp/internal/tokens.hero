@@ -1,0 +1,183 @@
+# The coefficients of a macroblock written as tokens (RFC 6386, section 13),
+# the mirror of `residual.read`: the DC block first where the macroblock has
+# one, then the sixteen luma blocks, the four of U and the four of V, each
+# block's tokens in zigzag order up to its last non-zero level and an
+# end-of-block token where positions remain, each first token in the context
+# of the blocks above and to the left.
+
+use image/webp/internal/boolwrite
+use image/webp/internal/residual
+
+# Writes the levels of one block from `levels[at]` (natural order): type `t`,
+# the first token in context `ctx`, from position `first`. Answers what the
+# decoder's count will be: the position of the end-of-block token, or 16.
+function block(@w: boolwrite.Writer, coeff: [i64] lent, t: i64, ctx: i64, first: i64, levels: [i64] lent, at: i64) -> i64
+    last @= -1
+    k @= 15
+
+    while k >= first && last < 0
+        if levels[at + residual.ZIGZAG[k]] != 0
+            last @ k
+        k @ k - 1
+
+    n @= first
+    p @= residual.at_band(t: t, b: residual.BANDS[n], c: ctx)
+
+    while n < 16
+        if n > last
+            boolwrite.put(w: @w, prob: coeff[p], bit: 0)
+            return n
+        boolwrite.put(w: @w, prob: coeff[p], bit: 1)
+
+        while levels[at + residual.ZIGZAG[n]] == 0
+            boolwrite.put(w: @w, prob: coeff[p + 1], bit: 0)
+            n @ n + 1
+            p @ residual.at_band(t: t, b: residual.BANDS[n], c: 0)
+
+        boolwrite.put(w: @w, prob: coeff[p + 1], bit: 1)
+        level = levels[at + residual.ZIGZAG[n]]
+
+        v = if level < 0
+            -level
+        else
+            level
+        next @= 1
+
+        if v == 1
+            boolwrite.put(w: @w, prob: coeff[p + 2], bit: 0)
+        else
+            boolwrite.put(w: @w, prob: coeff[p + 2], bit: 1)
+            large(w: @w, coeff: coeff, p: p, v: v)
+            next @ 2
+
+        sign = if level < 0
+            1
+        else
+            0
+        boolwrite.put(w: @w, prob: 128, bit: sign)
+        n @ n + 1
+        p @ residual.at_band(t: t, b: residual.BANDS[n], c: next)
+
+    return 16
+
+# Writes a level of 2 to 2114, the inverse of `residual.large`.
+function large(@w: boolwrite.Writer, coeff: [i64] lent, p: i64, v: i64)
+    if v <= 4
+        boolwrite.put(w: @w, prob: coeff[p + 3], bit: 0)
+
+        if v == 2
+            boolwrite.put(w: @w, prob: coeff[p + 4], bit: 0)
+        else
+            boolwrite.put(w: @w, prob: coeff[p + 4], bit: 1)
+            boolwrite.put(w: @w, prob: coeff[p + 5], bit: v - 3)
+        return
+    boolwrite.put(w: @w, prob: coeff[p + 3], bit: 1)
+
+    if v <= 10
+        boolwrite.put(w: @w, prob: coeff[p + 6], bit: 0)
+
+        if v <= 6
+            boolwrite.put(w: @w, prob: coeff[p + 7], bit: 0)
+            boolwrite.put(w: @w, prob: 159, bit: v - 5)
+        else
+            boolwrite.put(w: @w, prob: coeff[p + 7], bit: 1)
+            boolwrite.put(w: @w, prob: 165, bit: v - 7 >> 1)
+            boolwrite.put(w: @w, prob: 145, bit: v - 7 & 1)
+        return
+    boolwrite.put(w: @w, prob: coeff[p + 6], bit: 1)
+
+    cat = if v < 19
+        0
+    else if v < 35
+        1
+    else if v < 67
+        2
+    else
+        3
+    high = cat >> 1
+    boolwrite.put(w: @w, prob: coeff[p + 8], bit: high)
+    boolwrite.put(w: @w, prob: coeff[p + 9 + high], bit: cat & 1)
+    extra = v - 3 - (8 << cat)
+    probs = residual.CATEGORIES[cat]
+    i @= 0
+
+    while i < probs.len()
+        boolwrite.put(w: @w, prob: probs[i], bit: extra >> probs.len() - 1 - i & 1)
+        i @ i + 1
+
+# Writes the levels of one macroblock, `levels` holding 400 (sixteen luma
+# blocks, four of U, four of V, then the DC block, sixteen each, natural
+# order), with the contexts `top` and `left` as `residual.read` keeps them.
+function macroblock(@w: boolwrite.Writer, coeff: [i64] lent, levels: [i64] lent, split: bool, @top: [i64], x: i64, @left: [i64])
+    t = x * 9
+    first @= 0
+    luma_type @= 3
+
+    if !split
+        n = block(w: @w, coeff: coeff, t: 1, ctx: top[t + 8] + left[8], first: 0, levels: levels, at: 384)
+
+        flag = if n > 0
+            1
+        else
+            0
+        top[t + 8] @ flag
+        left[8] @ flag
+        first @ 1
+        luma_type @ 0
+    y @= 0
+
+    while y < 4
+        x4 @= 0
+
+        while x4 < 4
+            n = block(
+                w: @w,
+                coeff: coeff,
+                t: luma_type,
+                ctx: top[t + x4] + left[y],
+                first: first,
+                levels: levels,
+                at: (y * 4 + x4) * 16
+            )
+
+            flag = if n > first
+                1
+            else
+                0
+            top[t + x4] @ flag
+            left[y] @ flag
+            x4 @ x4 + 1
+
+        y @ y + 1
+
+    c @= 0
+
+    while c < 2
+        k = 4 + c * 2
+        j @= 0
+
+        while j < 2
+            i @= 0
+
+            while i < 2
+                n = block(
+                    w: @w,
+                    coeff: coeff,
+                    t: 2,
+                    ctx: top[t + k + i] + left[k + j],
+                    first: 0,
+                    levels: levels,
+                    at: 256 + c * 64 + (j * 2 + i) * 16
+                )
+
+                flag = if n > 0
+                    1
+                else
+                    0
+                top[t + k + i] @ flag
+                left[k + j] @ flag
+                i @ i + 1
+
+            j @ j + 1
+
+        c @ c + 1

@@ -9,7 +9,8 @@
 # (`notify`, `watchdog_timeout`, what go-systemd's `daemon`, Rust's `sd-notify`
 # and Python's `systemd.daemon` give), **the sockets a manager hands over**
 # (`inherit` for systemd's descriptors from 3 on, `inherit_launchd` for
-# launchd's `launch_activate_socket`), each a `net` value of the program's own.
+# launchd's `launch_activate_socket`), each a `net`, `ipc` or `io` value of the
+# program's own.
 #
 # What it does NOT do: install or remove a service (the system's `sc create`
 # and `sc delete` register one by the program's path, and the account it runs
@@ -41,11 +42,11 @@
 # number reported as the service's exit code; device arrivals and hardware
 # profile changes told to the program; a power setting's change told with its
 # value; why the system started the service; services installed, started,
-# stopped, queried and removed; Unix-domain sockets, FIFOs and special files
-# handed over; the pidfd check of `$LISTEN_PIDFDID`; the notice variables of
-# bus services and tuning.
+# stopped, queried and removed.
 
 use fs
+use io
+use ipc
 use net
 use os
 use poll
@@ -531,6 +532,49 @@ variant Notice
         # How much longer the state may last, 0 or more, sent in whole
         # microseconds with a part of one counting as a whole one.
         span: time.Duration
+    # `BUSERROR=`: where the service fails, the D-Bus error that says why,
+    # which `systemctl status` shows; an empty name takes it back.
+    bus_error
+        # A D-Bus error name: two or more elements joined by `.`, each of
+        # ASCII letters, digits and `_` and not starting with a digit, at
+        # most 255 bytes (`org.freedesktop.DBus.Error.TimedOut`); or "".
+        name: str
+    # `VARLINKERROR=`: where the service fails, the Varlink error that says
+    # why; an empty name takes it back.
+    varlink_error
+        # A Varlink interface name, a `.` and an error name
+        # (`org.varlink.service.InvalidParameter`): the interface two or more
+        # elements of ASCII letters, digits and `-` joined by `.`, the first
+        # starting with a letter, none starting or ending with `-`; the error
+        # an upper-case letter, then letters and digits; or "".
+        name: str
+    # `EXIT_STATUS=`: the status the service, or a manager in a container,
+    # ends with. systemd keeps it as information and does not act on it.
+    exit_status
+        # The exit status, 0 to 255, as a process's status is.
+        code: i64
+    # `NOTIFYACCESS=`: which of the service's processes the manager takes
+    # notices from from now on, in place of the unit's `NotifyAccess=`.
+    notify_access
+        # Which processes.
+        who: NotifyAccess
+    # `RESTART_RESET=1`: the count of the service's restarts goes back to
+    # zero, so the next restart waits `RestartSec=` again where the unit
+    # lengthens the wait with `RestartSteps=` and `RestartMaxDelaySec=`.
+    restart_reset
+
+# Which processes of a service the manager takes notices from: the values of
+# `NotifyAccess=` in `systemd.service(5)`.
+variant NotifyAccess
+    # `none`: no process; every notice is passed over.
+    none
+    # `main`: the main process alone.
+    main
+    # `exec`: the main process and the processes of the unit's `Exec*=`
+    # commands.
+    exec
+    # `all`: every process of the service's control group.
+    all
 
 # Whether this system has systemd's notice socket: POSIX does, and Windows does
 # not. `notify` and `watchdog_timeout` answer `unsupported` where it has not.
@@ -546,7 +590,8 @@ function can_notify() -> bool
 #   with; read by no other notice.
 #
 # Fails `invalid` for no notice, a status holding a control character, an
-# errno number outside 1 to 4095, a pid below 1 and a span below zero.
+# errno number outside 1 to 4095, a pid below 1, a span below zero, an exit
+# status outside 0 to 255, and an error name that is none of its kind.
 function format_notices(notices: [Notice], monotonic: time.Duration) -> str?
     return notice.format(notices, monotonic: monotonic)
 
@@ -604,8 +649,36 @@ variant Handed
     datagram
         # The socket, owned by this value: close it when the program is done.
         socket: net.UdpSocket
-    # A descriptor this package has no value for: a FIFO, a file, a local
-    # socket. It is left open, and the words say what it is.
+    # A local stream socket that listens, at a path or on Linux at an
+    # abstract name (`ListenStream=` naming one, or launchd's `SockPathName`),
+    # ready to `ipc.accept` from. `ipc.close_listener` closes the program's
+    # copy and leaves the socket file, which is the manager's: it listens on
+    # it after the program, and starts the program again at a connection.
+    local_listener
+        # The listener, owned by this value: close it when the program is done.
+        socket: ipc.Listener
+    # A local stream socket connected, which systemd hands a program per
+    # connection where its unit says `Accept=yes`.
+    local_connection
+        # The connection, owned by this value: close it when the program is done.
+        stream: io.Stream
+    # A FIFO (`ListenFIFO=`), read and written as the manager opened it.
+    # systemd opens one for reading and writing, so a read waits for the
+    # next writer's bytes and never sees an end.
+    fifo
+        # The FIFO, owned by this value: close it when the program is done.
+        stream: io.Stream
+    # A character device or a file (`ListenSpecial=`), read and written as
+    # the manager opened it: for reading alone unless the unit says
+    # `Writable=yes`.
+    special
+        # The device or the file, owned by this value: close it when the
+        # program is done.
+        stream: io.Stream
+    # A descriptor no package has a value for: a local datagram or
+    # sequenced-packet socket (`ipc` has none, its ledger's
+    # `ipc/datagrams`), a netlink socket, a POSIX message queue, a USB
+    # function. It is left open, and the words say what it is.
     other
         # What the descriptor is, in words a log can carry.
         words: str
@@ -636,17 +709,22 @@ function can_inherit() -> bool
 function can_inherit_launchd() -> bool
     return hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_LAUNCHD) == 1
 
-# The sockets systemd handed this program, from descriptor 3 on
+# The sockets and files systemd handed this program, from descriptor 3 on
 # (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set
-# close-on-exec and non-blocking and made a value of `net`. The list is empty
-# for a program started by hand and for a child of one that was handed sockets,
-# the pid saying they were meant for the parent. **Once in the life of the
+# close-on-exec and made a value of `net`, of `ipc` or of `io`. The list is
+# empty for a program started by hand and for a child of one that was handed
+# them, the pid saying they were meant for the parent; where the manager also
+# set `$LISTEN_PIDFDID` (systemd 259 on), the list is empty unless it names
+# this process's pidfd, which tells this process from a later one that reuses
+# its pid, a check passed over where the system has no stable pidfd number,
+# as systemd's own reader passes over it. **Once in the life of the
 # process**: the descriptors belong to the values this returns, and the
 # environment, which Rebel never writes, is left as the manager set it.
 #
 # Fails `exists` the second time, `invalid` for a variable that is no number or
 # a descriptor the variables promise that is not open, `limit` for more than
-# 4,096 descriptors or no room in the socket table, and `unsupported` off POSIX.
+# 4,096 descriptors or no room in a table of sockets or streams, and
+# `unsupported` off POSIX.
 function inherit() -> [Inherited]?
     return handing.inherit()
 
