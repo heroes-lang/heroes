@@ -30,6 +30,22 @@ function signed_in(name: str) -> Lab?
     opts @= ssh.options(host: "127.0.0.1", user: user, known_hosts: home + "/known_hosts")
     opts.port @ port
     c @= ssh.connect(opts)?
+
+    match prepared(@c, home: home, name: name)
+        .ok dir => return ok(Lab(client: c, dir: dir))
+        .err e =>
+            # A test that is told this skips, and a client left open would
+            # end its run in a panic at the return of `main`.
+            _ = ssh.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# `c` signed in with the tests' key, and the folder `name` under the server's
+# folder made empty: answers that folder.
+#
+# - `c`: the client, connected; the caller closes it.
+# - `home`: the folder `REBEL_SSH_DIR` names, which holds the key.
+# - `name`: the test's own word.
+function prepared(@c: ssh.Client, home: str, name: str) -> str?
     key @= ssh.parse_private_key(read_file(home + "/id_ecdsa")?)?
     signed = ssh.sign_in_with_key(@c, key: key)
     ssh.close_key(@key)?
@@ -37,7 +53,7 @@ function signed_in(name: str) -> Lab?
     dir = home + "/sftp-" + name
     _ = fs.remove_all(dir).is_err()
     fs.make_dir(dir)?
-    return ok(Lab(client: c, dir: dir))
+    return ok(dir)
 
 # Removes the test's folder and closes the client.
 function done(@lab: Lab) -> ()?
