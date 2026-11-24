@@ -222,6 +222,14 @@ function aliases_of(v: json.Value) -> [str]?
             return ok(out)
         .err _ => return ok([])
 
+# Whether `v`, a value's object, is marked `_deprecated`: its alias is then
+# the value that replaces it (`islamicc`'s alias `islamic-civil` is its
+# `_preferred`), and no name is read as it.
+function deprecated(v: json.Value) -> bool
+    match json.member(v, key: "_deprecated")
+        .ok marked => return json.bool_of(marked).default(false)
+        .err _     => return false
+
 # `found` with the aliases of the keys of `u`, the `u` extension's object of
 # one file, and of their values.
 #
@@ -234,7 +242,7 @@ function read_keyword_aliases(found: KeywordAliases, u: json.Value) -> KeywordAl
             out.keys[alias] @ key.key
 
         for value in entries(key.value)?
-            if !strings.has_prefix(s: value.key, prefix: "_")
+            if !strings.has_prefix(s: value.key, prefix: "_") && !deprecated(value.value)
                 for alias in aliases_of(value.value)?
                     out.values[key.key + " " + alias] @ value.key
 
@@ -281,3 +289,7 @@ test "read_keyword_aliases: a key's alias, a value's aliases in lower case, a me
     found = read_keyword_aliases(found: KeywordAliases(keys: {}, values: {}), u: u).must()
     assert found.keys == {"timezone": "tz"}
     assert found.values == {"tz america/new_york": "usnyc", "tz us/eastern": "usnyc"}
+    old = json.parse(
+        "{\"ca\": {\"islamicc\": {\"_deprecated\": true, \"_alias\": \"islamic-civil\", \"_preferred\": \"islamic-civil\"}, \"islamic-civil\": {\"_description\": \"c\"}}}"
+    ).must()
+    assert read_keyword_aliases(found: KeywordAliases(keys: {}, values: {}), u: old).must().values.len() == 0

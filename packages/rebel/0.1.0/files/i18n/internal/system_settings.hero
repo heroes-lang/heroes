@@ -350,6 +350,7 @@ test "locale_of_icu: a tag, ICU's underscores, keywords made BCP 47's, one BCP 4
     assert i18n.format_locale(locale_of_icu("en_US@fw=mon;hours=h23;measure=metric").must()) == "en-US-u-fw-mon-hc-h23-ms-metric"
     assert i18n.format_locale(locale_of_icu("de_DE@collation=phonebook;currency=EUR").must()) == "de-DE-u-co-phonebk-cu-eur"
     assert i18n.format_locale(locale_of_icu("en_US@timezone=America/New_York").must()) == "en-US-u-tz-usnyc"
+    assert i18n.format_locale(locale_of_icu("ar_SA@calendar=islamic-civil").must()) == "ar-SA-u-ca-islamic-civil"
     assert i18n.format_locale(locale_of_icu("en_US@timezone=Nowhere/At_All;numbers=arab").must()) == "en-US-u-nu-arab"
     assert locale_of_icu("").is_err()
     assert locale_of_icu("not a tag").is_err()

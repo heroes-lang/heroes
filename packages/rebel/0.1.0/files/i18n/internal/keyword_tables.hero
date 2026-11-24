@@ -64,9 +64,7 @@ constant VALUE_ALIASES: [str]
     [
         "ca ethiopic-amete-alem"
         "ca gregorian"
-        "ca islamic-civil"
         "co dictionary"
-        "co gb2312han"
         "co phonebook"
         "co traditional"
         "ka non-ignorable"
@@ -697,9 +695,7 @@ constant VALUE_NAMES: [str]
     [
         "ethioaa"
         "gregory"
-        "islamicc"
         "dict"
-        "gb2312"
         "phonebk"
         "trad"
         "noignore"
