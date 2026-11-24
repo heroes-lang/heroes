@@ -85,7 +85,7 @@ function pair(out: [str], asked: str, place: str) -> [str]
 
 # A question whose answer is the type clang names for `given`.
 function typing(given: str, n: i64) -> str
-    return "__attribute__((unused)) static void hero_ask_f_" + n.to_str() + "(void) { struct hero_ask_result hero_r = " + given + "; (void)hero_r; }"
+    return "__attribute__((__unused__)) static void hero_ask_f_" + n.to_str() + "(void) { struct hero_ask_result hero_r = " + given + "; (void)hero_r; }"
 
 # A field's bytes times eight plus its kind: 1 a signed integer, `char`
 # under `-fsigned-char` included, 2 an unsigned one, 3 a float, 4 C's `bool`,

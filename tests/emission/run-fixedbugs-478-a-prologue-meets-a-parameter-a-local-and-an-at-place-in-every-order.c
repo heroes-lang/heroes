@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -54,26 +54,26 @@ HERO_STR_STATIC(hero_str_73, "s");
 
 #line 56 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -82,35 +82,35 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 94 "fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix(int64_t h0_a0, HeroStr *ph1_b0, int64_t h2_a1, HeroStr *ph3_b1, int64_t h4_a2, HeroStr *ph5_b2, int64_t h6_a3, HeroStr *ph7_b3, int64_t h8_a4, HeroStr *ph9_b4, int64_t h10_a5, HeroStr *ph11_b5, int64_t h12_a6, HeroStr *ph13_b6, int64_t h14_a7, HeroStr *ph15_b7, int64_t h16_a8, HeroStr *ph17_b8, int64_t h18_a9, HeroStr *ph19_b9, int64_t h20_a10, HeroStr *ph21_b10, int64_t h22_a11, HeroStr *ph23_b11, int64_t h24_a12, HeroStr *ph25_b12, int64_t h26_a13, HeroStr *ph27_b13, int64_t h28_a14, HeroStr *ph29_b14, int64_t h30_a15, HeroStr *ph31_b15, int64_t h32_a16, HeroStr *ph33_b16, int64_t h34_a17, HeroStr *ph35_b17, int64_t h36_a18, HeroStr *ph37_b18, int64_t h38_a19, HeroStr *ph39_b19, int64_t h40_a20, HeroStr *ph41_b20, int64_t h42_a21, HeroStr *ph43_b21, int64_t h44_a22, HeroStr *ph45_b22, int64_t h46_a23, HeroStr *ph47_b23, int64_t h48_a24, HeroStr *ph49_b24, int64_t h50_a25, HeroStr *ph51_b25, int64_t h52_a26, HeroStr *ph53_b26, int64_t h54_a27, HeroStr *ph55_b27, int64_t h56_a28, HeroStr *ph57_b28, int64_t h58_a29, HeroStr *ph59_b29, int64_t h60_a30, HeroStr *ph61_b30, int64_t h62_a31, HeroStr *ph63_b31, int64_t h64_a32, HeroStr *ph65_b32, int64_t h66_a33, HeroStr *ph67_b33, int64_t h68_a34, HeroStr *ph69_b34, int64_t h70_a35, HeroStr *ph71_b35, int64_t h72_a36, HeroStr *ph73_b36, int64_t h74_a37, HeroStr *ph75_b37, int64_t h76_a38, HeroStr *ph77_b38, int64_t h78_a39, HeroStr *ph79_b39);
 void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
-int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix(int64_t h0_a0, HeroStr *ph1_b0, int64_t h2_a1, HeroStr *ph3_b1, int64_t h4_a2, HeroStr *ph5_b2, int64_t h6_a3, HeroStr *ph7_b3, int64_t h8_a4, HeroStr *ph9_b4, int64_t h10_a5, HeroStr *ph11_b5, int64_t h12_a6, HeroStr *ph13_b6, int64_t h14_a7, HeroStr *ph15_b7, int64_t h16_a8, HeroStr *ph17_b8, int64_t h18_a9, HeroStr *ph19_b9, int64_t h20_a10, HeroStr *ph21_b10, int64_t h22_a11, HeroStr *ph23_b11, int64_t h24_a12, HeroStr *ph25_b12, int64_t h26_a13, HeroStr *ph27_b13, int64_t h28_a14, HeroStr *ph29_b14, int64_t h30_a15, HeroStr *ph31_b15, int64_t h32_a16, HeroStr *ph33_b16, int64_t h34_a17, HeroStr *ph35_b17, int64_t h36_a18, HeroStr *ph37_b18, int64_t h38_a19, HeroStr *ph39_b19, int64_t h40_a20, HeroStr *ph41_b20, int64_t h42_a21, HeroStr *ph43_b21, int64_t h44_a22, HeroStr *ph45_b22, int64_t h46_a23, HeroStr *ph47_b23, int64_t h48_a24, HeroStr *ph49_b24, int64_t h50_a25, HeroStr *ph51_b25, int64_t h52_a26, HeroStr *ph53_b26, int64_t h54_a27, HeroStr *ph55_b27, int64_t h56_a28, HeroStr *ph57_b28, int64_t h58_a29, HeroStr *ph59_b29, int64_t h60_a30, HeroStr *ph61_b30, int64_t h62_a31, HeroStr *ph63_b31, int64_t h64_a32, HeroStr *ph65_b32, int64_t h66_a33, HeroStr *ph67_b33, int64_t h68_a34, HeroStr *ph69_b34, int64_t h70_a35, HeroStr *ph71_b35, int64_t h72_a36, HeroStr *ph73_b36, int64_t h74_a37, HeroStr *ph75_b37, int64_t h76_a38, HeroStr *ph77_b38, int64_t h78_a39, HeroStr *ph79_b39) { int64_t h80_total; int64_t h81_l0; int64_t h82_l1; int64_t h83_l2; int64_t h84_l3; int64_t h85_l4; int64_t h86_l5; int64_t h87_l6; int64_t h88_l7; int64_t h89_l8; int64_t h90_l9; int64_t h91_l10; int64_t h92_l11; int64_t h93_l12; int64_t h94_l13; int64_t h95_l14; int64_t h96_l15; int64_t h97_l16; int64_t h98_l17; int64_t h99_l18; int64_t h100_l19; int64_t h101_l20; int64_t h102_l21; int64_t h103_l22; int64_t h104_l23; int64_t h105_l24; int64_t h106_l25; int64_t h107_l26; int64_t h108_l27; int64_t h109_l28; int64_t h110_l29; int64_t h111_l30; int64_t h112_l31; int64_t h113_l32; int64_t h114_l33; int64_t h115_l34; int64_t h116_l35; int64_t h117_l36; int64_t h118_l37; int64_t h119_l38; int64_t h120_l39; HERO_NODEBUG HeroStr h121_own121 = {0}, h122_own122 = {0}, h123_own123 = {0}, h124_own124 = {0}, h125_own125 = {0}, h126_own126 = {0}, h127_own127 = {0}, h128_own128 = {0}, h129_own129 = {0}, h130_own130 = {0}, h131_own131 = {0}, h132_own132 = {0}, h133_own133 = {0}, h134_own134 = {0}, h135_own135 = {0}, h136_own136 = {0}, h137_own137 = {0}, h138_own138 = {0}, h139_own139 = {0}, h140_own140 = {0}, h141_own141 = {0}, h142_own142 = {0}, h143_own143 = {0}, h144_own144 = {0}, h145_own145 = {0}, h146_own146 = {0}, h147_own147 = {0}, h148_own148 = {0}, h149_own149 = {0}, h150_own150 = {0}, h151_own151 = {0}, h152_own152 = {0}, h153_own153 = {0}, h154_own154 = {0}, h155_own155 = {0}, h156_own156 = {0}, h157_own157 = {0}, h158_own158 = {0}, h159_own159 = {0}, h160_own160 = {0}, t5, t6, t7, t13, t19, t20, t21, t27, t33, t34, t35, t41, t47, t48, t49, t55, t61, t62, t63, t69, t75, t76, t77, t83, t89, t90, t91, t97, t103, t104, t105, t111, t117, t118, t119, t125, t131, t132, t133, t139, t145, t146, t147, t153, t159, t160, t161, t167, t173, t174, t175, t181, t187, t188, t189, t195, t201, t202, t203, t209, t215, t216, t217, t223, t229, t230, t231, t237, t243, t244, t245, t251, t257, t258, t259, t265, t271, t272, t273, t279, t285, t286, t287, t293, t299, t300, t301, t307, t313, t314, t315, t321, t327, t328, t329, t335, t341, t342, t343, t349, t355, t356, t357, t363, t369, t370, t371, t377, t383, t384, t385, t391, t397, t398, t399, t405, t411, t412, t413, t419, t425, t426, t427, t433, t439, t440, t441, t447, t453, t454, t455, t461, t467, t468, t469, t475, t481, t482, t483, t489, t495, t496, t497, t503, t509, t510, t511, t517, t523, t524, t525, t531, t537, t538, t539, t545, t551, t552, t553, t559, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642; HERO_NODEBUG int64_t t1, t2, t3, t4, t8, t9, t10, t11, t12, t14, t15, t16, t17, t18, t22, t23, t24, t25, t26, t28, t29, t30, t31, t32, t36, t37, t38, t39, t40, t42, t43, t44, t45, t46, t50, t51, t52, t53, t54, t56, t57, t58, t59, t60, t64, t65, t66, t67, t68, t70, t71, t72, t73, t74, t78, t79, t80, t81, t82, t84, t85, t86, t87, t88, t92, t93, t94, t95, t96, t98, t99, t100, t101, t102, t106, t107, t108, t109, t110, t112, t113, t114, t115, t116, t120, t121, t122, t123, t124, t126, t127, t128, t129, t130, t134, t135, t136, t137, t138, t140, t141, t142, t143, t144, t148, t149, t150, t151, t152, t154, t155, t156, t157, t158, t162, t163, t164, t165, t166, t168, t169, t170, t171, t172, t176, t177, t178, t179, t180, t182, t183, t184, t185, t186, t190, t191, t192, t193, t194, t196, t197, t198, t199, t200, t204, t205, t206, t207, t208, t210, t211, t212, t213, t214, t218, t219, t220, t221, t222, t224, t225, t226, t227, t228, t232, t233, t234, t235, t236, t238, t239, t240, t241, t242, t246, t247, t248, t249, t250, t252, t253, t254, t255, t256, t260, t261, t262, t263, t264, t266, t267, t268, t269, t270, t274, t275, t276, t277, t278, t280, t281, t282, t283, t284, t288, t289, t290, t291, t292, t294, t295, t296, t297, t298, t302, t303, t304, t305, t306, t308, t309, t310, t311, t312, t316, t317, t318, t319, t320, t322, t323, t324, t325, t326, t330, t331, t332, t333, t334, t336, t337, t338, t339, t340, t344, t345, t346, t347, t348, t350, t351, t352, t353, t354, t358, t359, t360, t361, t362, t364, t365, t366, t367, t368, t372, t373, t374, t375, t376, t378, t379, t380, t381, t382, t386, t387, t388, t389, t390, t392, t393, t394, t395, t396, t400, t401, t402, t403, t404, t406, t407, t408, t409, t410, t414, t415, t416, t417, t418, t420, t421, t422, t423, t424, t428, t429, t430, t431, t432, t434, t435, t436, t437, t438, t442, t443, t444, t445, t446, t448, t449, t450, t451, t452, t456, t457, t458, t459, t460, t462, t463, t464, t465, t466, t470, t471, t472, t473, t474, t476, t477, t478, t479, t480, t484, t485, t486, t487, t488, t490, t491, t492, t493, t494, t498, t499, t500, t501, t502, t504, t505, t506, t507, t508, t512, t513, t514, t515, t516, t518, t519, t520, t521, t522, t526, t527, t528, t529, t530, t532, t533, t534, t535, t536, t540, t541, t542, t543, t544, t546, t547, t548, t549, t550, t554, t555, t556, t557, t558, t560, t561, t562; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix(int64_t h0_a0, HeroStr *ph1_b0, int64_t h2_a1, HeroStr *ph3_b1, int64_t h4_a2, HeroStr *ph5_b2, int64_t h6_a3, HeroStr *ph7_b3, int64_t h8_a4, HeroStr *ph9_b4, int64_t h10_a5, HeroStr *ph11_b5, int64_t h12_a6, HeroStr *ph13_b6, int64_t h14_a7, HeroStr *ph15_b7, int64_t h16_a8, HeroStr *ph17_b8, int64_t h18_a9, HeroStr *ph19_b9, int64_t h20_a10, HeroStr *ph21_b10, int64_t h22_a11, HeroStr *ph23_b11, int64_t h24_a12, HeroStr *ph25_b12, int64_t h26_a13, HeroStr *ph27_b13, int64_t h28_a14, HeroStr *ph29_b14, int64_t h30_a15, HeroStr *ph31_b15, int64_t h32_a16, HeroStr *ph33_b16, int64_t h34_a17, HeroStr *ph35_b17, int64_t h36_a18, HeroStr *ph37_b18, int64_t h38_a19, HeroStr *ph39_b19, int64_t h40_a20, HeroStr *ph41_b20, int64_t h42_a21, HeroStr *ph43_b21, int64_t h44_a22, HeroStr *ph45_b22, int64_t h46_a23, HeroStr *ph47_b23, int64_t h48_a24, HeroStr *ph49_b24, int64_t h50_a25, HeroStr *ph51_b25, int64_t h52_a26, HeroStr *ph53_b26, int64_t h54_a27, HeroStr *ph55_b27, int64_t h56_a28, HeroStr *ph57_b28, int64_t h58_a29, HeroStr *ph59_b29, int64_t h60_a30, HeroStr *ph61_b30, int64_t h62_a31, HeroStr *ph63_b31, int64_t h64_a32, HeroStr *ph65_b32, int64_t h66_a33, HeroStr *ph67_b33, int64_t h68_a34, HeroStr *ph69_b34, int64_t h70_a35, HeroStr *ph71_b35, int64_t h72_a36, HeroStr *ph73_b36, int64_t h74_a37, HeroStr *ph75_b37, int64_t h76_a38, HeroStr *ph77_b38, int64_t h78_a39, HeroStr *ph79_b39) { int64_t h80_total; int64_t h81_l0; int64_t h82_l1; int64_t h83_l2; int64_t h84_l3; int64_t h85_l4; int64_t h86_l5; int64_t h87_l6; int64_t h88_l7; int64_t h89_l8; int64_t h90_l9; int64_t h91_l10; int64_t h92_l11; int64_t h93_l12; int64_t h94_l13; int64_t h95_l14; int64_t h96_l15; int64_t h97_l16; int64_t h98_l17; int64_t h99_l18; int64_t h100_l19; int64_t h101_l20; int64_t h102_l21; int64_t h103_l22; int64_t h104_l23; int64_t h105_l24; int64_t h106_l25; int64_t h107_l26; int64_t h108_l27; int64_t h109_l28; int64_t h110_l29; int64_t h111_l30; int64_t h112_l31; int64_t h113_l32; int64_t h114_l33; int64_t h115_l34; int64_t h116_l35; int64_t h117_l36; int64_t h118_l37; int64_t h119_l38; int64_t h120_l39; HERO_NODEBUG HeroStr h121_own121 = {0}, h122_own122 = {0}, h123_own123 = {0}, h124_own124 = {0}, h125_own125 = {0}, h126_own126 = {0}, h127_own127 = {0}, h128_own128 = {0}, h129_own129 = {0}, h130_own130 = {0}, h131_own131 = {0}, h132_own132 = {0}, h133_own133 = {0}, h134_own134 = {0}, h135_own135 = {0}, h136_own136 = {0}, h137_own137 = {0}, h138_own138 = {0}, h139_own139 = {0}, h140_own140 = {0}, h141_own141 = {0}, h142_own142 = {0}, h143_own143 = {0}, h144_own144 = {0}, h145_own145 = {0}, h146_own146 = {0}, h147_own147 = {0}, h148_own148 = {0}, h149_own149 = {0}, h150_own150 = {0}, h151_own151 = {0}, h152_own152 = {0}, h153_own153 = {0}, h154_own154 = {0}, h155_own155 = {0}, h156_own156 = {0}, h157_own157 = {0}, h158_own158 = {0}, h159_own159 = {0}, h160_own160 = {0}, t5, t6, t7, t13, t19, t20, t21, t27, t33, t34, t35, t41, t47, t48, t49, t55, t61, t62, t63, t69, t75, t76, t77, t83, t89, t90, t91, t97, t103, t104, t105, t111, t117, t118, t119, t125, t131, t132, t133, t139, t145, t146, t147, t153, t159, t160, t161, t167, t173, t174, t175, t181, t187, t188, t189, t195, t201, t202, t203, t209, t215, t216, t217, t223, t229, t230, t231, t237, t243, t244, t245, t251, t257, t258, t259, t265, t271, t272, t273, t279, t285, t286, t287, t293, t299, t300, t301, t307, t313, t314, t315, t321, t327, t328, t329, t335, t341, t342, t343, t349, t355, t356, t357, t363, t369, t370, t371, t377, t383, t384, t385, t391, t397, t398, t399, t405, t411, t412, t413, t419, t425, t426, t427, t433, t439, t440, t441, t447, t453, t454, t455, t461, t467, t468, t469, t475, t481, t482, t483, t489, t495, t496, t497, t503, t509, t510, t511, t517, t523, t524, t525, t531, t537, t538, t539, t545, t551, t552, t553, t559, t563, t564, t565, t566, t567, t568, t569, t570, t571, t572, t573, t574, t575, t576, t577, t578, t579, t580, t581, t582, t583, t584, t585, t586, t587, t588, t589, t590, t591, t592, t593, t594, t595, t596, t597, t598, t599, t600, t601, t602, t603, t604, t605, t606, t607, t608, t609, t610, t611, t612, t613, t614, t615, t616, t617, t618, t619, t620, t621, t622, t623, t624, t625, t626, t627, t628, t629, t630, t631, t632, t633, t634, t635, t636, t637, t638, t639, t640, t641, t642; HERO_NODEBUG int64_t t1, t2, t3, t4, t8, t9, t10, t11, t12, t14, t15, t16, t17, t18, t22, t23, t24, t25, t26, t28, t29, t30, t31, t32, t36, t37, t38, t39, t40, t42, t43, t44, t45, t46, t50, t51, t52, t53, t54, t56, t57, t58, t59, t60, t64, t65, t66, t67, t68, t70, t71, t72, t73, t74, t78, t79, t80, t81, t82, t84, t85, t86, t87, t88, t92, t93, t94, t95, t96, t98, t99, t100, t101, t102, t106, t107, t108, t109, t110, t112, t113, t114, t115, t116, t120, t121, t122, t123, t124, t126, t127, t128, t129, t130, t134, t135, t136, t137, t138, t140, t141, t142, t143, t144, t148, t149, t150, t151, t152, t154, t155, t156, t157, t158, t162, t163, t164, t165, t166, t168, t169, t170, t171, t172, t176, t177, t178, t179, t180, t182, t183, t184, t185, t186, t190, t191, t192, t193, t194, t196, t197, t198, t199, t200, t204, t205, t206, t207, t208, t210, t211, t212, t213, t214, t218, t219, t220, t221, t222, t224, t225, t226, t227, t228, t232, t233, t234, t235, t236, t238, t239, t240, t241, t242, t246, t247, t248, t249, t250, t252, t253, t254, t255, t256, t260, t261, t262, t263, t264, t266, t267, t268, t269, t270, t274, t275, t276, t277, t278, t280, t281, t282, t283, t284, t288, t289, t290, t291, t292, t294, t295, t296, t297, t298, t302, t303, t304, t305, t306, t308, t309, t310, t311, t312, t316, t317, t318, t319, t320, t322, t323, t324, t325, t326, t330, t331, t332, t333, t334, t336, t337, t338, t339, t340, t344, t345, t346, t347, t348, t350, t351, t352, t353, t354, t358, t359, t360, t361, t362, t364, t365, t366, t367, t368, t372, t373, t374, t375, t376, t378, t379, t380, t381, t382, t386, t387, t388, t389, t390, t392, t393, t394, t395, t396, t400, t401, t402, t403, t404, t406, t407, t408, t409, t410, t414, t415, t416, t417, t418, t420, t421, t422, t423, t424, t428, t429, t430, t431, t432, t434, t435, t436, t437, t438, t442, t443, t444, t445, t446, t448, t449, t450, t451, t452, t456, t457, t458, t459, t460, t462, t463, t464, t465, t466, t470, t471, t472, t473, t474, t476, t477, t478, t479, t480, t484, t485, t486, t487, t488, t490, t491, t492, t493, t494, t498, t499, t500, t501, t502, t504, t505, t506, t507, t508, t512, t513, t514, t515, t516, t518, t519, t520, t521, t522, t526, t527, t528, t529, t530, t532, t533, t534, t535, t536, t540, t541, t542, t543, t544, t546, t547, t548, t549, t550, t554, t555, t556, t557, t558, t560, t561, t562; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h80_total = t1;
     t2 = h0_a0; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero", "fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.mix", 17, 10); h81_l0 = t4;
     t5 = (*ph1_b0); t6 = HERO_STR_LIT(hero_str_21); t7 = hero_str_concat(t5, t6); t563 = h121_own121; h121_own121 = t7; hero_str_decref(t563); t564 = (*ph1_b0); hero_str_incref(t7); (*ph1_b0) = t7; hero_str_decref(t564);
@@ -278,7 +278,7 @@ int64_t h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_mix
 }
 
 #line 139 "tests/golden/run/fixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order.hero"
-void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(void) { HeroStr h0_s0 = {0}; HeroStr h1_s1 = {0}; HeroStr h2_s2 = {0}; HeroStr h3_s3 = {0}; HeroStr h4_s4 = {0}; HeroStr h5_s5 = {0}; HeroStr h6_s6 = {0}; HeroStr h7_s7 = {0}; HeroStr h8_s8 = {0}; HeroStr h9_s9 = {0}; HeroStr h10_s10 = {0}; HeroStr h11_s11 = {0}; HeroStr h12_s12 = {0}; HeroStr h13_s13 = {0}; HeroStr h14_s14 = {0}; HeroStr h15_s15 = {0}; HeroStr h16_s16 = {0}; HeroStr h17_s17 = {0}; HeroStr h18_s18 = {0}; HeroStr h19_s19 = {0}; HeroStr h20_s20 = {0}; HeroStr h21_s21 = {0}; HeroStr h22_s22 = {0}; HeroStr h23_s23 = {0}; HeroStr h24_s24 = {0}; HeroStr h25_s25 = {0}; HeroStr h26_s26 = {0}; HeroStr h27_s27 = {0}; HeroStr h28_s28 = {0}; HeroStr h29_s29 = {0}; HeroStr h30_s30 = {0}; HeroStr h31_s31 = {0}; HeroStr h32_s32 = {0}; HeroStr h33_s33 = {0}; HeroStr h34_s34 = {0}; HeroStr h35_s35 = {0}; HeroStr h36_s36 = {0}; HeroStr h37_s37 = {0}; HeroStr h38_s38 = {0}; HeroStr h39_s39 = {0}; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123; HERO_NODEBUG int64_t t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(void) { HeroStr h0_s0 = {0}; HeroStr h1_s1 = {0}; HeroStr h2_s2 = {0}; HeroStr h3_s3 = {0}; HeroStr h4_s4 = {0}; HeroStr h5_s5 = {0}; HeroStr h6_s6 = {0}; HeroStr h7_s7 = {0}; HeroStr h8_s8 = {0}; HeroStr h9_s9 = {0}; HeroStr h10_s10 = {0}; HeroStr h11_s11 = {0}; HeroStr h12_s12 = {0}; HeroStr h13_s13 = {0}; HeroStr h14_s14 = {0}; HeroStr h15_s15 = {0}; HeroStr h16_s16 = {0}; HeroStr h17_s17 = {0}; HeroStr h18_s18 = {0}; HeroStr h19_s19 = {0}; HeroStr h20_s20 = {0}; HeroStr h21_s21 = {0}; HeroStr h22_s22 = {0}; HeroStr h23_s23 = {0}; HeroStr h24_s24 = {0}; HeroStr h25_s25 = {0}; HeroStr h26_s26 = {0}; HeroStr h27_s27 = {0}; HeroStr h28_s28 = {0}; HeroStr h29_s29 = {0}; HeroStr h30_s30 = {0}; HeroStr h31_s31 = {0}; HeroStr h32_s32 = {0}; HeroStr h33_s33 = {0}; HeroStr h34_s34 = {0}; HeroStr h35_s35 = {0}; HeroStr h36_s36 = {0}; HeroStr h37_s37 = {0}; HeroStr h38_s38 = {0}; HeroStr h39_s39 = {0}; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t82, t83, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123; HERO_NODEBUG int64_t t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_73); t84 = h0_s0; hero_str_incref(t1); h0_s0 = t1; hero_str_decref(t84);
     t2 = HERO_STR_LIT(hero_str_73); t85 = h1_s1; hero_str_incref(t2); h1_s1 = t2; hero_str_decref(t85);
     t3 = HERO_STR_LIT(hero_str_73); t86 = h2_s2; hero_str_incref(t3); h2_s2 = t3; hero_str_decref(t86);
@@ -369,106 +369,106 @@ void h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main(v
     hero_str_release_at(&h39_s39);
     return;
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41767b585fd40e16", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0353711d0e0deb1a", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder\tfixedbugs-478-a-prologue-meets-a-parameter-a-local-and-an-at-place-in-every-order\n");
     h_fixedbugs478aprologuemeetsaparameteralocalandanatplaceineveryorder_main();
     hero_runtime_check_leaks();

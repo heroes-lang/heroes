@@ -30,6 +30,44 @@
 #pragma push_macro("b")
 #pragma push_macro("type")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -37,6 +75,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -67,7 +124,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -91,7 +148,7 @@ _Static_assert(_Generic(&((Rectangle *)0)->height, float *: 1, default: 0) && si
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->frame) == 1 && sizeof(((AutomationEvent *)0)->frame) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->frame, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent frame");
 _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && sizeof(((AutomationEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((AutomationEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field AutomationEvent type");
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params"); _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 95 "main.c"
+#line 152 "main.c"
 
 #line 62 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -101,9 +158,9 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 105 "main.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 162 "main.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -151,26 +208,26 @@ HERO_STR_STATIC(hero_str_106b1639, "raylib answered ");
 HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -191,63 +248,63 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 75 "examples/raylib/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_SetRandomSeed(uint32_t a0) { (void)(SetRandomSeed)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_main_GetRandomValue(int32_t a0, int32_t a1) { (void)(GetRandomValue)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_SetRandomSeed(uint32_t hero_a0) { (void)(SetRandomSeed)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_GetRandomValue(int32_t hero_a0, int32_t hero_a1) { (void)(GetRandomValue)(hero_a0, hero_a1); }
 #line 78
-__attribute__((unused)) static void hero_ffi_probe_h_main_ColorToInt(Color a0) { (void)(ColorToInt)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_ColorToInt(Color hero_a0) { (void)(ColorToInt)(hero_a0); }
 #line 80
-__attribute__((unused)) static void hero_ffi_probe_h_main_ColorAlpha(Color a0, float a1) { (void)(ColorAlpha)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_ColorAlpha(Color hero_a0, float hero_a1) { (void)(ColorAlpha)(hero_a0, hero_a1); }
 #line 83
-__attribute__((unused)) static void hero_ffi_probe_h_main_GetSplinePointLinear(Vector2 a0, Vector2 a1, float a2) { (void)(GetSplinePointLinear)(a0, a1, a2); }
-__attribute__((unused)) static void hero_ffi_probe_h_main_CheckCollisionPointRec(Vector2 a0, Rectangle a1) { (void)(CheckCollisionPointRec)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_GetSplinePointLinear(Vector2 hero_a0, Vector2 hero_a1, float hero_a2) { (void)(GetSplinePointLinear)(hero_a0, hero_a1, hero_a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_CheckCollisionPointRec(Vector2 hero_a0, Rectangle hero_a1) { (void)(CheckCollisionPointRec)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 213 "main.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 270 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_main_0Color_eq(const Color *a, const Color *b);
-HERO_TU_LOCAL uint64_t h_main_0Color_hash(const void *elem);
-HERO_TU_LOCAL bool h_main_0Vector2_eq(const Vector2 *a, const Vector2 *b);
-HERO_TU_LOCAL uint64_t h_main_0Vector2_hash(const void *elem);
-HERO_TU_LOCAL bool h_main_0Rectangle_eq(const Rectangle *a, const Rectangle *b);
-HERO_TU_LOCAL uint64_t h_main_0Rectangle_hash(const void *elem);
-HERO_TU_LOCAL bool h_main_0AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b);
-HERO_TU_LOCAL uint64_t h_main_0AutomationEvent_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_0Color_eq(const Color *hero_a, const Color *hero_b);
+HERO_TU_LOCAL uint64_t h_main_0Color_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_main_0Vector2_eq(const Vector2 *hero_a, const Vector2 *hero_b);
+HERO_TU_LOCAL uint64_t h_main_0Vector2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_main_0Rectangle_eq(const Rectangle *hero_a, const Rectangle *hero_b);
+HERO_TU_LOCAL uint64_t h_main_0Rectangle_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_main_0AutomationEvent_eq(const AutomationEvent *hero_a, const AutomationEvent *hero_b);
+HERO_TU_LOCAL uint64_t h_main_0AutomationEvent_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_main_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Vector2 *)hero_pad_nowhere()) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Rectangle *)hero_pad_nowhere()) == 13 ? sizeof(Rectangle) : 0), __builtin_offsetof(Rectangle, x), sizeof(((Rectangle *)0)->x), __builtin_offsetof(Rectangle, y), sizeof(((Rectangle *)0)->y), __builtin_offsetof(Rectangle, width), sizeof(((Rectangle *)0)->width), __builtin_offsetof(Rectangle, height), sizeof(((Rectangle *)0)->height)};
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((unused)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(AutomationEvent *)hero_pad_nowhere()) == 13 ? sizeof(AutomationEvent) : 0), __builtin_offsetof(AutomationEvent, frame), sizeof(((AutomationEvent *)0)->frame), __builtin_offsetof(AutomationEvent, type), sizeof(((AutomationEvent *)0)->type), __builtin_offsetof(AutomationEvent, params), sizeof(((AutomationEvent *)0)->params)};
-__attribute__((unused)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_9;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Vector2 *)hero_pad_nowhere()) == 13 ? sizeof(Vector2) : 0), __builtin_offsetof(Vector2, x), sizeof(((Vector2 *)0)->x), __builtin_offsetof(Vector2, y), sizeof(((Vector2 *)0)->y)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(Rectangle *)hero_pad_nowhere()) == 13 ? sizeof(Rectangle) : 0), __builtin_offsetof(Rectangle, x), sizeof(((Rectangle *)0)->x), __builtin_offsetof(Rectangle, y), sizeof(((Rectangle *)0)->y), __builtin_offsetof(Rectangle, width), sizeof(((Rectangle *)0)->width), __builtin_offsetof(Rectangle, height), sizeof(((Rectangle *)0)->height)};
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__unused__)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(AutomationEvent *)hero_pad_nowhere()) == 13 ? sizeof(AutomationEvent) : 0), __builtin_offsetof(AutomationEvent, frame), sizeof(((AutomationEvent *)0)->frame), __builtin_offsetof(AutomationEvent, type), sizeof(((AutomationEvent *)0)->type), __builtin_offsetof(AutomationEvent, params), sizeof(((AutomationEvent *)0)->params)};
+__attribute__((__unused__)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_9;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(Color), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(Vector2), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(Rectangle), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
@@ -256,19 +313,19 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 103 "examples/raylib/main.hero"
-void h_main_main(void) { Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t28, t29; HERO_NODEBUG HeroStr t2, t26; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t30, t31, t32, t33, t37; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t25, t27, t38, t39, t40, t41, t43, t44, t48, t49; HERO_NODEBUG Vector2 t19, t22, t24, t45, t50; HERO_NODEBUG AutomationEvent t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG Rectangle t42, t46, t51; HERO_NODEBUG bool t47, t52; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 104, 5}; (void)SetRandomSeed(t1); }
-    t2 = HERO_STR_LIT(hero_str_106b1639); t3 = INT64_C(1); t4 = INT64_C(6); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 105, 31}; t5 = GetRandomValue(t3, t4); } hero_print_str(t2); hero_print_int(t5); hero_print_end();
+void h_main_main(void) { Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1, t28, t29; HERO_NODEBUG HeroStr t2, t26; HERO_NODEBUG int32_t t3, t4, t5, t12, t16, t30, t31, t32, t33, t37; HERO_NODEBUG uint8_t t6, t7, t8, t9; HERO_NODEBUG Color t10, t11, t13, t15; HERO_NODEBUG float t14, t17, t18, t20, t21, t23, t25, t27, t38, t39, t40, t41, t43, t44, t48, t49; HERO_NODEBUG Vector2 t19, t22, t24, t45, t50; HERO_NODEBUG AutomationEvent t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG Rectangle t42, t46, t51; HERO_NODEBUG bool t47, t52; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = UINT64_C(7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 104, 5}; (void)SetRandomSeed(t1); }
+    t2 = HERO_STR_LIT(hero_str_106b1639); t3 = INT64_C(1); t4 = INT64_C(6); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 105, 31}; t5 = GetRandomValue(t3, t4); } hero_print_str(t2); hero_print_int(t5); hero_print_end();
 #line 107
     t6 = UINT64_C(255); t7 = UINT64_C(0); t8 = UINT64_C(0); t9 = UINT64_C(255); t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9}; h0_red = t10; hero_pad_fill(&h0_red, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
-    t11 = h0_red; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 108, 11}; t12 = ColorToInt(t11); } hero_print_int(t12); hero_print_end();
-    t13 = h0_red; t14 = 0x1p-1; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 109, 22}; t15 = ColorAlpha(t13, t14); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 109, 11}; t16 = ColorToInt(t15); } hero_print_int(t16); hero_print_end();
+    t11 = h0_red; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 108, 11}; t12 = ColorToInt(t11); } hero_print_int(t12); hero_print_end();
+    t13 = h0_red; t14 = 0x1p-1; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 109, 22}; t15 = ColorAlpha(t13, t14); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 109, 11}; t16 = ColorToInt(t15); } hero_print_int(t16); hero_print_end();
 #line 112
     t17 = 0x0p+0; t18 = 0x0p+0; t19 = (Vector2){.x = t17, .y = t18};
     t20 = 0x1.4p+3; t21 = 0x1.4p+4; t22 = (Vector2){.x = t20, .y = t21};
     t23 = 0x1p-1;
 #line 111
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 111, 11}; t24 = GetSplinePointLinear(t19, t22, t23); } h1_mid = t24; hero_pad_fill(&h1_mid, sizeof(Vector2), 1, hero_pad_g_1, hero_pad_n_1);
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 111, 11}; t24 = GetSplinePointLinear(t19, t22, t23); } h1_mid = t24; hero_pad_fill(&h1_mid, sizeof(Vector2), 1, hero_pad_g_1, hero_pad_n_1);
 #line 116
     t25 = h1_mid.x; t26 = HERO_STR_LIT(hero_str_20); t27 = h1_mid.y; hero_print_f32(t25); hero_print_str(t26); hero_print_f32(t27); hero_print_end();
 #line 120
@@ -276,179 +333,179 @@ void h_main_main(void) { Color h0_red; Vector2 h1_mid; AutomationEvent h2_event;
     t36 = INT64_C(2); t37 = h2_event.params[((uint64_t)(t36) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "main.hero", "main.main", 121, 11), (int64_t)0) : (t36))]; hero_print_int(t37); hero_print_end();
 #line 123
     t38 = 0x0p+0; t39 = 0x0p+0; t40 = 0x1.4p+3; t41 = 0x1.4p+3; t42 = (Rectangle){.x = t38, .y = t39, .width = t40, .height = t41}; h3_box = t42; hero_pad_fill(&h3_box, sizeof(Rectangle), 1, hero_pad_g_2, hero_pad_n_2);
-    t43 = 0x1.4p+2; t44 = 0x1.4p+2; t45 = (Vector2){.x = t43, .y = t44}; t46 = h3_box; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 124, 11}; t47 = CheckCollisionPointRec(t45, t46); } hero_print_bool(t47); hero_print_end();
-    t48 = 0x1.9p+5; t49 = 0x1.4p+2; t50 = (Vector2){.x = t48, .y = t49}; t51 = h3_box; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 125, 11}; t52 = CheckCollisionPointRec(t50, t51); } hero_print_bool(t52); hero_print_end(); return;
-#line 282 "main.c"
+    t43 = 0x1.4p+2; t44 = 0x1.4p+2; t45 = (Vector2){.x = t43, .y = t44}; t46 = h3_box; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 124, 11}; t47 = CheckCollisionPointRec(t45, t46); } hero_print_bool(t47); hero_print_end();
+    t48 = 0x1.9p+5; t49 = 0x1.4p+2; t50 = (Vector2){.x = t48, .y = t49}; t51 = h3_box; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 125, 11}; t52 = CheckCollisionPointRec(t50, t51); } hero_print_bool(t52); hero_print_end(); return;
+#line 339 "main.c"
 }
-HERO_TU_LOCAL bool h_main_0Color_eq(const Color *a, const Color *b) {
-    if (!(a->r == b->r)) return false;
-    if (!(a->g == b->g)) return false;
-    if (!(a->b == b->b)) return false;
-    if (!(a->a == b->a)) return false;
+HERO_TU_LOCAL bool h_main_0Color_eq(const Color *hero_a, const Color *hero_b) {
+    if (!(hero_a->r == hero_b->r)) return false;
+    if (!(hero_a->g == hero_b->g)) return false;
+    if (!(hero_a->b == hero_b->b)) return false;
+    if (!(hero_a->a == hero_b->a)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_main_0Color_hash(const void *elem) {
-    const Color *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u8)->hash(&v->r)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->g)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->b)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->a)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_main_0Color_hash(const void *hero_elem) {
+    const Color *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->r)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->a)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_main_0Vector2_eq(const Vector2 *a, const Vector2 *b) {
-    if (!(a->x == b->x)) return false;
-    if (!(a->y == b->y)) return false;
+HERO_TU_LOCAL bool h_main_0Vector2_eq(const Vector2 *hero_a, const Vector2 *hero_b) {
+    if (!(hero_a->x == hero_b->x)) return false;
+    if (!(hero_a->y == hero_b->y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_main_0Vector2_hash(const void *elem) {
-    const Vector2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_f32)->hash(&v->x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->y)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_main_0Vector2_hash(const void *hero_elem) {
+    const Vector2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->y)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_main_0Rectangle_eq(const Rectangle *a, const Rectangle *b) {
-    if (!(a->x == b->x)) return false;
-    if (!(a->y == b->y)) return false;
-    if (!(a->width == b->width)) return false;
-    if (!(a->height == b->height)) return false;
+HERO_TU_LOCAL bool h_main_0Rectangle_eq(const Rectangle *hero_a, const Rectangle *hero_b) {
+    if (!(hero_a->x == hero_b->x)) return false;
+    if (!(hero_a->y == hero_b->y)) return false;
+    if (!(hero_a->width == hero_b->width)) return false;
+    if (!(hero_a->height == hero_b->height)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_main_0Rectangle_hash(const void *elem) {
-    const Rectangle *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_f32)->hash(&v->x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->y)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->width)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->height)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_main_0Rectangle_hash(const void *hero_elem) {
+    const Rectangle *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->y)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->width)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->height)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_main_0AutomationEvent_eq(const AutomationEvent *a, const AutomationEvent *b) {
-    if (!(a->frame == b->frame)) return false;
-    if (!(a->type == b->type)) return false;
-    if (!((a->params[0] == b->params[0] && a->params[1] == b->params[1] && a->params[2] == b->params[2] && a->params[3] == b->params[3]))) return false;
+HERO_TU_LOCAL bool h_main_0AutomationEvent_eq(const AutomationEvent *hero_a, const AutomationEvent *hero_b) {
+    if (!(hero_a->frame == hero_b->frame)) return false;
+    if (!(hero_a->type == hero_b->type)) return false;
+    if (!((hero_a->params[0] == hero_b->params[0] && hero_a->params[1] == hero_b->params[1] && hero_a->params[2] == hero_b->params[2] && hero_a->params[3] == hero_b->params[3]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_main_0AutomationEvent_hash(const void *elem) {
-    const AutomationEvent *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u32)->hash(&v->frame)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->params[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->params[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->params[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->params[3])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_main_0AutomationEvent_hash(const void *hero_elem) {
+    const AutomationEvent *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->frame)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->type)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->params[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->params[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->params[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->params[3])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a2f7c835eb51053", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7118ed7b77303268", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

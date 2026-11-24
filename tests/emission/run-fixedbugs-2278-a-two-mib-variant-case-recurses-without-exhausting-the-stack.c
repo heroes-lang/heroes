@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -132,33 +132,33 @@ typedef struct h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestac
 } h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one;
 
 typedef struct h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held {
-    h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag tag;
+    h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag hero_tag;
     union {
-        h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one c_one;
-    } as;
+        h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one hero_c_one;
+    } hero_as;
 } h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -167,47 +167,47 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 179 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(int64_t h0_n);
 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(int64_t h0_n);
@@ -220,25 +220,25 @@ int64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(
 void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_main(void);
 
 #line 77 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 t2; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0){.f_x = t1}; return t2;
 #line 226 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
 
 #line 80 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 t17; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t1); t3 = h0_n; t4 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t3); t5 = h0_n; t6 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t5); t7 = h0_n; t8 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t7); t9 = h0_n; t10 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t9); t11 = h0_n; t12 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t11); t13 = h0_n; t14 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t13); t15 = h0_n; t16 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make0(t15); t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1){.f_a = t2, .f_b = t4, .f_c = t6, .f_d = t8, .f_e = t10, .f_f = t12, .f_g = t14, .f_h = t16}; return t17;
 #line 232 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
 
 #line 83 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 t17; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t1); t3 = h0_n; t4 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t3); t5 = h0_n; t6 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t5); t7 = h0_n; t8 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t7); t9 = h0_n; t10 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t9); t11 = h0_n; t12 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t11); t13 = h0_n; t14 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t13); t15 = h0_n; t16 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make1(t15); t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2){.f_a = t2, .f_b = t4, .f_c = t6, .f_d = t8, .f_e = t10, .f_f = t12, .f_g = t14, .f_h = t16}; return t17;
 #line 238 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
 
 #line 86 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 t17; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t1); t3 = h0_n; t4 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t3); t5 = h0_n; t6 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t5); t7 = h0_n; t8 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t7); t9 = h0_n; t10 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t9); t11 = h0_n; t12 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t11); t13 = h0_n; t14 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t13); t15 = h0_n; t16 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make2(t15); t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3){.f_a = t2, .f_b = t4, .f_c = t6, .f_d = t8, .f_e = t10, .f_f = t12, .f_g = t14, .f_h = t16}; return t17;
 #line 244 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
@@ -248,7 +248,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswith
 #line 89
 #define t17 (*hero_big_t17)
 #line 89
-    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 t2, t4, t6, t8, t10, t12, t14, t16; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t1); t3 = h0_n; t4 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t3); t5 = h0_n; t6 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t5); t7 = h0_n; t8 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t7); t9 = h0_n; t10 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t9); t11 = h0_n; t12 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t11); t13 = h0_n; t14 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t13); t15 = h0_n; t16 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make3(t15); t17 = *(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)__builtin_memset(&t17, 0, sizeof t17); t17.f_a = t2; t17.f_b = t4; t17.f_c = t6; t17.f_d = t8; t17.f_e = t10; t17.f_f = t12; t17.f_g = t14; t17.f_h = t16; if (hero_out != NULL) *hero_out = t17; hero_frame_give(hero_big_t17); return;
 #line 254 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
@@ -275,7 +275,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswith
 #line 92
 #define t17 (*hero_big_t17)
 #line 92
-    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t8 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t12 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t14 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t16 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t8 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t12 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t14 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *const hero_big_t16 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t2, t1); t3 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t4, t3); t5 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t6, t5); t7 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t8, t7); t9 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t10, t9); t11 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t12, t11); t13 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t14, t13); t15 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make4(&t16, t15); t17 = *(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)__builtin_memset(&t17, 0, sizeof t17); t17.f_a = t2; t17.f_b = t4; t17.f_c = t6; t17.f_d = t8; t17.f_e = t10; t17.f_f = t12; t17.f_g = t14; t17.f_h = t16; if (hero_out != NULL) *hero_out = t17; hero_frame_give(hero_big_t17); hero_frame_give(hero_big_t16); hero_frame_give(hero_big_t14); hero_frame_give(hero_big_t12); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t2); return;
 #line 281 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
@@ -310,7 +310,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278atwomibvariantcaserecurseswith
 #line 95
 #define t17 (*hero_big_t17)
 #line 95
-    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t8 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t12 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t14 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t16 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t5, t7, t9, t11, t13, t15; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t8 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t12 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t14 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *const hero_big_t16 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t17 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t2, t1); t3 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t4, t3); t5 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t6, t5); t7 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t8, t7); t9 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t10, t9); t11 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t12, t11); t13 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t14, t13); t15 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make5(&t16, t15); t17 = *(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)__builtin_memset(&t17, 0, sizeof t17); t17.f_a = t2; t17.f_b = t4; t17.f_c = t6; t17.f_d = t8; t17.f_e = t10; t17.f_f = t12; t17.f_g = t14; t17.f_h = t16; if (hero_out != NULL) *hero_out = t17; hero_frame_give(hero_big_t17); hero_frame_give(hero_big_t16); hero_frame_give(hero_big_t14); hero_frame_give(hero_big_t12); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t2); return;
 #line 316 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
@@ -349,21 +349,21 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2278atwomibvariantcaserecursesw
 #line 98
 #define t10 (*hero_big_t10)
 #line 98
-    h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_h1_big = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_h2_held = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); int64_t h3_sum; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_h4_s0 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *const hero_big_h5_o = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one)); HERO_NODEBUG int64_t t1, t5, t8, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t3 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t7 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t9 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one)); HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_h1_big = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_h2_held = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); int64_t h3_sum; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_h4_s0 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *const hero_big_h5_o = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one)); HERO_NODEBUG int64_t t1, t5, t8, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t2 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *const hero_big_t3 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t4 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t6 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t7 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *const hero_big_t9 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held)); HERO_NODEBUG h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *const hero_big_t10 = (h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *)hero_frame_take(sizeof(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one)); HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_make6(&t2, t1); h1_big = t2;
-    t3 = h1_big; t4 = *(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)__builtin_memset(&t4, 0, sizeof t4); t4.tag = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one; t4.as.c_one.f_r = t3; h2_held = t4;
+    t3 = h1_big; t4 = *(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *)__builtin_memset(&t4, 0, sizeof t4); t4.hero_tag = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one; t4.hero_as.hero_c_one.f_r = t3; h2_held = t4;
     t5 = INT64_C(0); h3_sum = t5;
 #line 103
-    t6 = h2_held; h4_s0 = t6; t7 = h4_s0; t8 = t7.tag; switch (t8) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1:
+    t6 = h2_held; h4_s0 = t6; t7 = h4_s0; t8 = t7.hero_tag; switch (t8) { case 0: goto hero_bb2; case 1: goto hero_bb3; default: hero_unreachable(); } hero_bb1:
 #line 107
-    t13 = h0_n; t14 = INT64_C(0); t15 = t13 > t14; if (t15) goto bb5; else goto bb6; bb2:
+    t13 = h0_n; t14 = INT64_C(0); t15 = t13 > t14; if (t15) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 104
-    t9 = h4_s0; t10 = t9.as.c_one; h5_o = t10; t11 = h5_o.f_r.f_a.f_a.f_a.f_a.f_a.f_a.f_x; h3_sum = t11; goto bb1; bb3:
-    t12 = INT64_C(0); h3_sum = t12; goto bb1; bb4:
+    t9 = h4_s0; t10 = t9.hero_as.hero_c_one; h5_o = t10; t11 = h5_o.f_r.f_a.f_a.f_a.f_a.f_a.f_a.f_x; h3_sum = t11; goto hero_bb1; hero_bb3:
+    t12 = INT64_C(0); h3_sum = t12; goto hero_bb1; hero_bb4:
 #line 110
-    t22 = h3_sum; hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h5_o); hero_frame_give(hero_big_h4_s0); hero_frame_give(hero_big_h2_held); hero_frame_give(hero_big_h1_big); return t22; bb5:
+    t22 = h3_sum; hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h5_o); hero_frame_give(hero_big_h4_s0); hero_frame_give(hero_big_h2_held); hero_frame_give(hero_big_h1_big); return t22; hero_bb5:
 #line 108
-    t16 = h3_sum; t17 = h0_n; t18 = INT64_C(1); if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow_at("fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero", "fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.deep", 108, 26); t20 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(t19); if (__builtin_add_overflow(t16, t20, &t21)) hero_panic_overflow_at("fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero", "fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.deep", 108, 15); h3_sum = t21; goto bb4; bb6: goto bb4;
+    t16 = h3_sum; t17 = h0_n; t18 = INT64_C(1); if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow_at("fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero", "fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.deep", 108, 26); t20 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(t19); if (__builtin_add_overflow(t16, t20, &t21)) hero_panic_overflow_at("fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero", "fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.deep", 108, 15); h3_sum = t21; goto hero_bb4; hero_bb6: goto hero_bb4;
 #line 368 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
 #undef h1_big
@@ -379,311 +379,311 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2278atwomibvariantcaserecursesw
 #undef t10
 
 #line 112 "tests/golden/run/fixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack.hero"
-void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(5); t3 = h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_deep(t2); hero_print_int(t3); hero_print_end(); return;
 #line 386 "fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *b) {
-    if (!(a->f_x == b->f_x)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V0_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V1_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V2_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V3_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V5 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V4_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_V6 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V5_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *b) {
-    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(&a->f_r, &b->f_r))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *hero_b) {
+    if (!(h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_eq(&hero_a->f_r, &hero_b->f_r))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(&v->f_r)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0V6_hash(&hero_v->f_r)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one: return h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(&a->as.c_one, &b->as.c_one);
+HERO_TU_LOCAL bool h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_eq(const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *hero_a, const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one: return h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_eq(&hero_a->hero_as.hero_c_one, &hero_b->hero_as.hero_c_one);
         case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_none: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_hash(const void *elem) {
-    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_hash(const void *hero_elem) {
+    const h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_Held *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one: return (h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(&v->as.c_one)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_none: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_one: return (hero_h ^ h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_c_one_hash(&hero_v->hero_as.hero_c_one)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_0Held_tag_none: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41e94a9356453623", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("04655a300cfd8d3a", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack\tfixedbugs-2278-a-two-mib-variant-case-recurses-without-exhausting-the-stack\n");
     h_fixedbugs2278atwomibvariantcaserecurseswithoutexhaustingthestack_main();
     hero_runtime_check_leaks();

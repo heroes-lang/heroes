@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -53,74 +53,74 @@ HERO_STR_STATIC(hero_str_20, " ");
 
 #line 55 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_fbaec77 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint32_t ok;
-        HeroFailure err;
-    } as;
+        uint32_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_fbaec77;
 
 typedef struct h_0opt_fbbb698 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint64_t ok;
-        HeroFailure err;
-    } as;
+        uint64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_fbbb698;
 
 typedef struct h_0opt_1b9b98 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int8_t ok;
-        HeroFailure err;
-    } as;
+        int8_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_1b9b98;
 
 typedef struct h_0opt_1ec004 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint8_t ok;
-        HeroFailure err;
-    } as;
+        uint8_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_1ec004;
 
 typedef struct h_0opt_e1f4933 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int32_t ok;
-        HeroFailure err;
-    } as;
+        int32_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e1f4933;
 
 typedef struct h_0opt_fba6871 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint16_t ok;
-        HeroFailure err;
-    } as;
+        uint16_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_fba6871;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -129,96 +129,96 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 141 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v);
-HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *v);
-HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b);
-HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
-HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v);
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b);
-HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v);
-HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *v);
-HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
-HERO_TU_LOCAL void h_0opt_e1f4933_release(h_0opt_e1f4933 *v);
-HERO_TU_LOCAL bool h_0opt_e1f4933_eq(const h_0opt_e1f4933 *a, const h_0opt_e1f4933 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e1f4933_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_fba6871_retain(const h_0opt_fba6871 *v);
-HERO_TU_LOCAL void h_0opt_fba6871_release(h_0opt_fba6871 *v);
-HERO_TU_LOCAL bool h_0opt_fba6871_eq(const h_0opt_fba6871 *a, const h_0opt_fba6871 *b);
-HERO_TU_LOCAL uint64_t h_0opt_fba6871_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *hero_v);
+HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *hero_v);
+HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *hero_a, const h_0opt_fbaec77 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v);
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *hero_v);
+HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *hero_v);
+HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *hero_a, const h_0opt_1b9b98 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v);
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *hero_v);
+HERO_TU_LOCAL void h_0opt_e1f4933_release(h_0opt_e1f4933 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e1f4933_eq(const h_0opt_e1f4933 *hero_a, const h_0opt_e1f4933 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e1f4933_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_fba6871_retain(const h_0opt_fba6871 *hero_v);
+HERO_TU_LOCAL void h_0opt_fba6871_release(h_0opt_fba6871 *hero_v);
+HERO_TU_LOCAL bool h_0opt_fba6871_eq(const h_0opt_fba6871 *hero_a, const h_0opt_fba6871 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_fba6871_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 void h_fixedbugs2427theotherconversionsofau64holdattheiredges_main(void);
 
 #line 6 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-void h_fixedbugs2427theotherconversionsofau64holdattheiredges_main(void) { uint64_t h0_top; uint64_t h1_half; uint64_t h2_below; uint64_t h3_w; uint64_t h4_over; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h6_f1 = {0}, h7_f2 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t14, t15, t19, t21, t25, t26, t32, t33, t124, t125, t126, t127, t128, t129; HERO_NODEBUG h_0opt_fbaec77 h8_f3 = {0}, h9_f4 = {0}, h15_f10 = {0}, h23_own23 = {0}, h24_own24 = {0}, h30_own30 = {0}, t38, t39, t43, t45, t49, t50, t95, t96, t100, t102, t130, t131, t132, t133, t144, t145; HERO_NODEBUG h_0opt_fbbb698 h10_f5 = {0}, h25_own25 = {0}, t56, t57, t61, t63, t134, t135; HERO_NODEBUG h_0opt_1b9b98 h11_f6 = {0}, h26_own26 = {0}, t66, t67, t136, t137; HERO_NODEBUG h_0opt_1ec004 h12_f7 = {0}, h27_own27 = {0}, t73, t74, t138, t139; HERO_NODEBUG h_0opt_e1f4933 h13_f8 = {0}, h16_f11 = {0}, h28_own28 = {0}, h31_own31 = {0}, t80, t81, t104, t105, t140, t141, t146, t147; HERO_NODEBUG h_0opt_fba6871 h14_f9 = {0}, h17_f12 = {0}, h29_own29 = {0}, h32_own32 = {0}, t87, t88, t113, t114, t118, t120, t142, t143, t148, t149; HERO_NODEBUG HeroStr h18_own18 = {0}, h19_own19 = {0}, t7, t8, t10, t11, t23, t30, t47, t54, t71, t78, t85, t109, t122, t123; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t9, t12, t13, t24, t31, t37, t48, t55, t64, t65, t72, t79, t86, t92, t93, t94, t110, t111, t112; HERO_NODEBUG int64_t t16, t17, t22, t27, t28, t34, t35, t40, t41, t51, t52, t58, t59, t68, t69, t75, t76, t82, t83, t89, t90, t97, t98, t106, t107, t115, t116; HERO_NODEBUG bool t18, t29, t36, t42, t53, t60, t70, t77, t84, t91, t99, t108, t117; HERO_NODEBUG HeroFailure t20, t44, t62, t101, t119; HERO_NODEBUG uint32_t t46, t103; HERO_NODEBUG uint16_t t121; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2427theotherconversionsofau64holdattheiredges_main(void) { uint64_t h0_top; uint64_t h1_half; uint64_t h2_below; uint64_t h3_w; uint64_t h4_over; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h6_f1 = {0}, h7_f2 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t14, t15, t19, t21, t25, t26, t32, t33, t124, t125, t126, t127, t128, t129; HERO_NODEBUG h_0opt_fbaec77 h8_f3 = {0}, h9_f4 = {0}, h15_f10 = {0}, h23_own23 = {0}, h24_own24 = {0}, h30_own30 = {0}, t38, t39, t43, t45, t49, t50, t95, t96, t100, t102, t130, t131, t132, t133, t144, t145; HERO_NODEBUG h_0opt_fbbb698 h10_f5 = {0}, h25_own25 = {0}, t56, t57, t61, t63, t134, t135; HERO_NODEBUG h_0opt_1b9b98 h11_f6 = {0}, h26_own26 = {0}, t66, t67, t136, t137; HERO_NODEBUG h_0opt_1ec004 h12_f7 = {0}, h27_own27 = {0}, t73, t74, t138, t139; HERO_NODEBUG h_0opt_e1f4933 h13_f8 = {0}, h16_f11 = {0}, h28_own28 = {0}, h31_own31 = {0}, t80, t81, t104, t105, t140, t141, t146, t147; HERO_NODEBUG h_0opt_fba6871 h14_f9 = {0}, h17_f12 = {0}, h29_own29 = {0}, h32_own32 = {0}, t87, t88, t113, t114, t118, t120, t142, t143, t148, t149; HERO_NODEBUG HeroStr h18_own18 = {0}, h19_own19 = {0}, t7, t8, t10, t11, t23, t30, t47, t54, t71, t78, t85, t109, t122, t123; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t9, t12, t13, t24, t31, t37, t48, t55, t64, t65, t72, t79, t86, t92, t93, t94, t110, t111, t112; HERO_NODEBUG int64_t t16, t17, t22, t27, t28, t34, t35, t40, t41, t51, t52, t58, t59, t68, t69, t75, t76, t82, t83, t89, t90, t97, t98, t106, t107, t115, t116; HERO_NODEBUG bool t18, t29, t36, t42, t53, t60, t70, t77, t84, t91, t99, t108, t117; HERO_NODEBUG HeroFailure t20, t44, t62, t101, t119; HERO_NODEBUG uint32_t t46, t103; HERO_NODEBUG uint16_t t121; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = UINT64_C(18446744073709551615); h0_top = t1;
     t2 = UINT64_C(9223372036854775808); h1_half = t2;
     t3 = UINT64_C(9223372036854775807); h2_below = t3;
     t4 = UINT64_C(4294967295); h3_w = t4;
     t5 = UINT64_C(4294967296); h4_over = t5;
     t6 = h0_top; t7 = hero_uint_to_str(t6); t122 = h18_own18; h18_own18 = t7; hero_str_decref(t122); t8 = HERO_STR_LIT(hero_str_20); t9 = h1_half; t10 = hero_uint_to_str(t9); t123 = h19_own19; h19_own19 = t10; hero_str_decref(t123); t11 = HERO_STR_LIT(hero_str_20); t12 = h0_top; hero_print_str(t7); hero_print_str(t8); hero_print_str(t10); hero_print_str(t11); hero_print_uint(t12); hero_print_end();
-    t13 = h2_below; if (t13 <= 9223372036854775807ULL) { t14 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t13}; } else { t14 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t124 = h20_own20; h20_own20 = t14; h_0opt_e201354_release(&t124); t125 = h5_f0; h_0opt_e201354_retain(&t14); h5_f0 = t14; h_0opt_e201354_release(&t125); t15 = h5_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb1; else goto bb2; bb1: t21 = h5_f0; t22 = t21.as.ok; t23 = HERO_STR_LIT(hero_str_20); t24 = h1_half; if (t24 <= 9223372036854775807ULL) { t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t24}; } else { t25 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t126 = h21_own21; h21_own21 = t25; h_0opt_e201354_release(&t126); t127 = h6_f1; h_0opt_e201354_retain(&t25); h6_f1 = t25; h_0opt_e201354_release(&t127); t26 = h6_f1; t27 = t26.tag; t28 = INT64_C(1); t29 = t27 == t28; t30 = HERO_STR_LIT(hero_str_20); t31 = h0_top; if (t31 <= 9223372036854775807ULL) { t32 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t31}; } else { t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t128 = h22_own22; h22_own22 = t32; h_0opt_e201354_release(&t128); t129 = h7_f2; h_0opt_e201354_retain(&t32); h7_f2 = t32; h_0opt_e201354_release(&t129); t33 = h7_f2; t34 = t33.tag; t35 = INT64_C(1); t36 = t34 == t35; hero_print_int(t22); hero_print_str(t23); hero_print_bool(t29); hero_print_str(t30); hero_print_bool(t36); hero_print_end();
-    t37 = h3_w; if (t37 <= 4294967295ULL) { t38 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t37}; } else { t38 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t130 = h23_own23; h23_own23 = t38; h_0opt_fbaec77_release(&t130); t131 = h8_f3; h_0opt_fbaec77_retain(&t38); h8_f3 = t38; h_0opt_fbaec77_release(&t131); t39 = h8_f3; t40 = t39.tag; t41 = INT64_C(0); t42 = t40 == t41; if (t42) goto bb3; else goto bb4; bb2:
+    t13 = h2_below; if (t13 <= 9223372036854775807ULL) { t14 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t13}; } else { t14 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t124 = h20_own20; h20_own20 = t14; h_0opt_e201354_release(&t124); t125 = h5_f0; h_0opt_e201354_retain(&t14); h5_f0 = t14; h_0opt_e201354_release(&t125); t15 = h5_f0; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb1; else goto hero_bb2; hero_bb1: t21 = h5_f0; t22 = t21.hero_as.hero_ok; t23 = HERO_STR_LIT(hero_str_20); t24 = h1_half; if (t24 <= 9223372036854775807ULL) { t25 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t24}; } else { t25 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t126 = h21_own21; h21_own21 = t25; h_0opt_e201354_release(&t126); t127 = h6_f1; h_0opt_e201354_retain(&t25); h6_f1 = t25; h_0opt_e201354_release(&t127); t26 = h6_f1; t27 = t26.hero_tag; t28 = INT64_C(1); t29 = t27 == t28; t30 = HERO_STR_LIT(hero_str_20); t31 = h0_top; if (t31 <= 9223372036854775807ULL) { t32 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t31}; } else { t32 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t128 = h22_own22; h22_own22 = t32; h_0opt_e201354_release(&t128); t129 = h7_f2; h_0opt_e201354_retain(&t32); h7_f2 = t32; h_0opt_e201354_release(&t129); t33 = h7_f2; t34 = t33.hero_tag; t35 = INT64_C(1); t36 = t34 == t35; hero_print_int(t22); hero_print_str(t23); hero_print_bool(t29); hero_print_str(t30); hero_print_bool(t36); hero_print_end();
+    t37 = h3_w; if (t37 <= 4294967295ULL) { t38 = (h_0opt_fbaec77){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint32_t)t37}; } else { t38 = (h_0opt_fbaec77){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t130 = h23_own23; h23_own23 = t38; h_0opt_fbaec77_release(&t130); t131 = h8_f3; h_0opt_fbaec77_retain(&t38); h8_f3 = t38; h_0opt_fbaec77_release(&t131); t39 = h8_f3; t40 = t39.hero_tag; t41 = INT64_C(0); t42 = t40 == t41; if (t42) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 13
-    t19 = h5_f0; t20 = t19.as.err;
+    t19 = h5_f0; t20 = t19.hero_as.hero_err;
 #line 195 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     hero_panic_must_at(t20, "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 13, 11);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 14 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-    t45 = h8_f3; t46 = t45.as.ok; t47 = HERO_STR_LIT(hero_str_20); t48 = h4_over; if (t48 <= 4294967295ULL) { t49 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t48}; } else { t49 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t132 = h24_own24; h24_own24 = t49; h_0opt_fbaec77_release(&t132); t133 = h9_f4; h_0opt_fbaec77_retain(&t49); h9_f4 = t49; h_0opt_fbaec77_release(&t133); t50 = h9_f4; t51 = t50.tag; t52 = INT64_C(1); t53 = t51 == t52; t54 = HERO_STR_LIT(hero_str_20); t55 = h0_top; t56 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t55}; t134 = h25_own25; h25_own25 = t56; h_0opt_fbbb698_release(&t134); t135 = h10_f5; h_0opt_fbbb698_retain(&t56); h10_f5 = t56; h_0opt_fbbb698_release(&t135); t57 = h10_f5; t58 = t57.tag; t59 = INT64_C(0); t60 = t58 == t59; if (t60) goto bb5; else goto bb6; bb4: t43 = h8_f3; t44 = t43.as.err;
+    t45 = h8_f3; t46 = t45.hero_as.hero_ok; t47 = HERO_STR_LIT(hero_str_20); t48 = h4_over; if (t48 <= 4294967295ULL) { t49 = (h_0opt_fbaec77){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint32_t)t48}; } else { t49 = (h_0opt_fbaec77){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t132 = h24_own24; h24_own24 = t49; h_0opt_fbaec77_release(&t132); t133 = h9_f4; h_0opt_fbaec77_retain(&t49); h9_f4 = t49; h_0opt_fbaec77_release(&t133); t50 = h9_f4; t51 = t50.hero_tag; t52 = INT64_C(1); t53 = t51 == t52; t54 = HERO_STR_LIT(hero_str_20); t55 = h0_top; t56 = (h_0opt_fbbb698){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t55}; t134 = h25_own25; h25_own25 = t56; h_0opt_fbbb698_release(&t134); t135 = h10_f5; h_0opt_fbbb698_retain(&t56); h10_f5 = t56; h_0opt_fbbb698_release(&t135); t57 = h10_f5; t58 = t57.hero_tag; t59 = INT64_C(0); t60 = t58 == t59; if (t60) goto hero_bb5; else goto hero_bb6; hero_bb4: t43 = h8_f3; t44 = t43.hero_as.hero_err;
 #line 201 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     hero_panic_must_at(t44, "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 14, 11);
     hero_unreachable();
-bb5:
+hero_bb5:
 #line 14 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-    t63 = h10_f5; t64 = t63.as.ok; hero_print_int(t46); hero_print_str(t47); hero_print_bool(t53); hero_print_str(t54); hero_print_uint(t64); hero_print_end();
-    t65 = h1_half; if (t65 <= 127ULL) { t66 = (h_0opt_1b9b98){.tag = INT64_C(0), .as.ok = (int8_t)t65}; } else { t66 = (h_0opt_1b9b98){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t136 = h26_own26; h26_own26 = t66; h_0opt_1b9b98_release(&t136); t137 = h11_f6; h_0opt_1b9b98_retain(&t66); h11_f6 = t66; h_0opt_1b9b98_release(&t137); t67 = h11_f6; t68 = t67.tag; t69 = INT64_C(1); t70 = t68 == t69; t71 = HERO_STR_LIT(hero_str_20); t72 = h3_w; if (t72 <= 255ULL) { t73 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t72}; } else { t73 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t138 = h27_own27; h27_own27 = t73; h_0opt_1ec004_release(&t138); t139 = h12_f7; h_0opt_1ec004_retain(&t73); h12_f7 = t73; h_0opt_1ec004_release(&t139); t74 = h12_f7; t75 = t74.tag; t76 = INT64_C(1); t77 = t75 == t76; t78 = HERO_STR_LIT(hero_str_20); t79 = h3_w; if (t79 <= 2147483647ULL) { t80 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t79}; } else { t80 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t140 = h28_own28; h28_own28 = t80; h_0opt_e1f4933_release(&t140); t141 = h13_f8; h_0opt_e1f4933_retain(&t80); h13_f8 = t80; h_0opt_e1f4933_release(&t141); t81 = h13_f8; t82 = t81.tag; t83 = INT64_C(1); t84 = t82 == t83; t85 = HERO_STR_LIT(hero_str_20); t86 = h4_over; if (t86 <= 65535ULL) { t87 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t86}; } else { t87 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t142 = h29_own29; h29_own29 = t87; h_0opt_fba6871_release(&t142); t143 = h14_f9; h_0opt_fba6871_retain(&t87); h14_f9 = t87; h_0opt_fba6871_release(&t143); t88 = h14_f9; t89 = t88.tag; t90 = INT64_C(1); t91 = t89 == t90; hero_print_bool(t70); hero_print_str(t71); hero_print_bool(t77); hero_print_str(t78); hero_print_bool(t84); hero_print_str(t85); hero_print_bool(t91); hero_print_end();
-    t92 = h4_over; t93 = UINT64_C(1); if (__builtin_sub_overflow(t92, t93, &t94)) hero_panic_overflow_at("fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 25); if (t94 <= 4294967295ULL) { t95 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t94}; } else { t95 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t144 = h30_own30; h30_own30 = t95; h_0opt_fbaec77_release(&t144); t145 = h15_f10; h_0opt_fbaec77_retain(&t95); h15_f10 = t95; h_0opt_fbaec77_release(&t145); t96 = h15_f10; t97 = t96.tag; t98 = INT64_C(0); t99 = t97 == t98; if (t99) goto bb7; else goto bb8; bb6:
+    t63 = h10_f5; t64 = t63.hero_as.hero_ok; hero_print_int(t46); hero_print_str(t47); hero_print_bool(t53); hero_print_str(t54); hero_print_uint(t64); hero_print_end();
+    t65 = h1_half; if (t65 <= 127ULL) { t66 = (h_0opt_1b9b98){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int8_t)t65}; } else { t66 = (h_0opt_1b9b98){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t136 = h26_own26; h26_own26 = t66; h_0opt_1b9b98_release(&t136); t137 = h11_f6; h_0opt_1b9b98_retain(&t66); h11_f6 = t66; h_0opt_1b9b98_release(&t137); t67 = h11_f6; t68 = t67.hero_tag; t69 = INT64_C(1); t70 = t68 == t69; t71 = HERO_STR_LIT(hero_str_20); t72 = h3_w; if (t72 <= 255ULL) { t73 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t72}; } else { t73 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t138 = h27_own27; h27_own27 = t73; h_0opt_1ec004_release(&t138); t139 = h12_f7; h_0opt_1ec004_retain(&t73); h12_f7 = t73; h_0opt_1ec004_release(&t139); t74 = h12_f7; t75 = t74.hero_tag; t76 = INT64_C(1); t77 = t75 == t76; t78 = HERO_STR_LIT(hero_str_20); t79 = h3_w; if (t79 <= 2147483647ULL) { t80 = (h_0opt_e1f4933){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int32_t)t79}; } else { t80 = (h_0opt_e1f4933){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t140 = h28_own28; h28_own28 = t80; h_0opt_e1f4933_release(&t140); t141 = h13_f8; h_0opt_e1f4933_retain(&t80); h13_f8 = t80; h_0opt_e1f4933_release(&t141); t81 = h13_f8; t82 = t81.hero_tag; t83 = INT64_C(1); t84 = t82 == t83; t85 = HERO_STR_LIT(hero_str_20); t86 = h4_over; if (t86 <= 65535ULL) { t87 = (h_0opt_fba6871){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint16_t)t86}; } else { t87 = (h_0opt_fba6871){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t142 = h29_own29; h29_own29 = t87; h_0opt_fba6871_release(&t142); t143 = h14_f9; h_0opt_fba6871_retain(&t87); h14_f9 = t87; h_0opt_fba6871_release(&t143); t88 = h14_f9; t89 = t88.hero_tag; t90 = INT64_C(1); t91 = t89 == t90; hero_print_bool(t70); hero_print_str(t71); hero_print_bool(t77); hero_print_str(t78); hero_print_bool(t84); hero_print_str(t85); hero_print_bool(t91); hero_print_end();
+    t92 = h4_over; t93 = UINT64_C(1); if (__builtin_sub_overflow(t92, t93, &t94)) hero_panic_overflow_at("fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 25); if (t94 <= 4294967295ULL) { t95 = (h_0opt_fbaec77){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint32_t)t94}; } else { t95 = (h_0opt_fbaec77){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t144 = h30_own30; h30_own30 = t95; h_0opt_fbaec77_release(&t144); t145 = h15_f10; h_0opt_fbaec77_retain(&t95); h15_f10 = t95; h_0opt_fbaec77_release(&t145); t96 = h15_f10; t97 = t96.hero_tag; t98 = INT64_C(0); t99 = t97 == t98; if (t99) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 14
-    t61 = h10_f5; t62 = t61.as.err;
+    t61 = h10_f5; t62 = t61.hero_as.hero_err;
 #line 211 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     hero_panic_must_at(t62, "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 14, 62);
     hero_unreachable();
-bb7:
+hero_bb7:
 #line 16 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-    t102 = h15_f10; t103 = t102.as.ok; if (t103 <= 2147483647ULL) { t104 = (h_0opt_e1f4933){.tag = INT64_C(0), .as.ok = (int32_t)t103}; } else { t104 = (h_0opt_e1f4933){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t146 = h31_own31; h31_own31 = t104; h_0opt_e1f4933_release(&t146); t147 = h16_f11; h_0opt_e1f4933_retain(&t104); h16_f11 = t104; h_0opt_e1f4933_release(&t147); t105 = h16_f11; t106 = t105.tag; t107 = INT64_C(1); t108 = t106 == t107; t109 = HERO_STR_LIT(hero_str_20); t110 = h3_w; t111 = UINT64_C(65537); if (t111 == 0) hero_panic_at("division by zero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 65); t112 = t110 / t111; if (t112 <= 65535ULL) { t113 = (h_0opt_fba6871){.tag = INT64_C(0), .as.ok = (uint16_t)t112}; } else { t113 = (h_0opt_fba6871){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t148 = h32_own32; h32_own32 = t113; h_0opt_fba6871_release(&t148); t149 = h17_f12; h_0opt_fba6871_retain(&t113); h17_f12 = t113; h_0opt_fba6871_release(&t149); t114 = h17_f12; t115 = t114.tag; t116 = INT64_C(0); t117 = t115 == t116; if (t117) goto bb9; else goto bb10; bb8: t100 = h15_f10; t101 = t100.as.err;
+    t102 = h15_f10; t103 = t102.hero_as.hero_ok; if (t103 <= 2147483647ULL) { t104 = (h_0opt_e1f4933){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int32_t)t103}; } else { t104 = (h_0opt_e1f4933){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t146 = h31_own31; h31_own31 = t104; h_0opt_e1f4933_release(&t146); t147 = h16_f11; h_0opt_e1f4933_retain(&t104); h16_f11 = t104; h_0opt_e1f4933_release(&t147); t105 = h16_f11; t106 = t105.hero_tag; t107 = INT64_C(1); t108 = t106 == t107; t109 = HERO_STR_LIT(hero_str_20); t110 = h3_w; t111 = UINT64_C(65537); if (t111 == 0) hero_panic_at("division by zero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 65); t112 = t110 / t111; if (t112 <= 65535ULL) { t113 = (h_0opt_fba6871){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint16_t)t112}; } else { t113 = (h_0opt_fba6871){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t148 = h32_own32; h32_own32 = t113; h_0opt_fba6871_release(&t148); t149 = h17_f12; h_0opt_fba6871_retain(&t113); h17_f12 = t113; h_0opt_fba6871_release(&t149); t114 = h17_f12; t115 = t114.hero_tag; t116 = INT64_C(0); t117 = t115 == t116; if (t117) goto hero_bb9; else goto hero_bb10; hero_bb8: t100 = h15_f10; t101 = t100.hero_as.hero_err;
 #line 217 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     hero_panic_must_at(t101, "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 18);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 16 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-    t120 = h17_f12; t121 = t120.as.ok; hero_print_bool(t108); hero_print_str(t109); hero_print_int(t121); hero_print_end();
+    t120 = h17_f12; t121 = t120.hero_as.hero_ok; hero_print_bool(t108); hero_print_str(t109); hero_print_int(t121); hero_print_end();
 #line 223 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     h_0opt_e201354_release(hero_slot_escape(&h6_f1));
@@ -249,305 +249,305 @@ bb9:
     h_0opt_e1f4933_release(hero_slot_escape(&h31_own31));
     h_0opt_fba6871_release(hero_slot_escape(&h32_own32));
     return;
-bb10:
+hero_bb10:
 #line 16 "tests/golden/run/fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero"
-    t118 = h17_f12; t119 = t118.as.err;
+    t118 = h17_f12; t119 = t118.hero_as.hero_err;
 #line 256 "fixedbugs2427theotherconversionsofau64holdattheiredges.c"
     hero_panic_must_at(t119, "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.hero", "fixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges.main", 16, 58);
     hero_unreachable();
 }
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u32)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *hero_a, const h_0opt_fbaec77 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u32)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *elem) {
-    const h_0opt_fbaec77 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *hero_elem) {
+    const h_0opt_fbaec77 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u32)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u64)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u64)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
-    const h_0opt_fbbb698 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem) {
+    const h_0opt_fbbb698 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u64)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_i8)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *hero_a, const h_0opt_1b9b98 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_i8)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *elem) {
-    const h_0opt_1b9b98 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *hero_elem) {
+    const h_0opt_1b9b98 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_i8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_i8)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u8)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
-    const h_0opt_1ec004 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem) {
+    const h_0opt_1ec004 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u8)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e1f4933_release(h_0opt_e1f4933 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e1f4933_release(h_0opt_e1f4933 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e1f4933_eq(const h_0opt_e1f4933 *a, const h_0opt_e1f4933 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_i32)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e1f4933_eq(const h_0opt_e1f4933 *hero_a, const h_0opt_e1f4933 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_i32)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e1f4933_hash(const void *elem) {
-    const h_0opt_e1f4933 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e1f4933_hash(const void *hero_elem) {
+    const h_0opt_e1f4933 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_i32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_i32)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_fba6871_retain(const h_0opt_fba6871 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fba6871_retain(const h_0opt_fba6871 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_fba6871_release(h_0opt_fba6871 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fba6871_release(h_0opt_fba6871 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fba6871_eq(const h_0opt_fba6871 *a, const h_0opt_fba6871 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u16)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_fba6871_eq(const h_0opt_fba6871 *hero_a, const h_0opt_fba6871 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u16)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_fba6871_hash(const void *elem) {
-    const h_0opt_fba6871 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_fba6871_hash(const void *hero_elem) {
+    const h_0opt_fba6871 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u16)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u16)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7e5eb57661ba023c", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5056fb6f2eb763a1", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2427theotherconversionsofau64holdattheiredges\tfixedbugs-2427-the-other-conversions-of-a-u64-hold-at-their-edges\n");
     h_fixedbugs2427theotherconversionsofau64holdattheiredges_main();
     hero_runtime_check_leaks();

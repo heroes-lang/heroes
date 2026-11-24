@@ -28,6 +28,44 @@
 #include <fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.h>
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -59,7 +116,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -71,13 +128,13 @@ _Static_assert(__builtin_classify_type(((Pair *)0)->id) == 1 && sizeof(((Pair *)
 _Static_assert(sizeof(Pair) - __builtin_offsetof(Pair, pair) != 0, "heroes-ffi-flex Pair pair"); _Static_assert(_Generic(&((Pair *)0)->pair, float (*)[2]: 1, default: 0) && sizeof(Pair) - __builtin_offsetof(Pair, pair) >= sizeof(float[2]), "heroes-ffi-field Pair pair");
 _Static_assert(__builtin_classify_type(((Pair *)0)->raw) == 5 && _Generic(((Pair *)0)->raw, __typeof__(((Pair *)0)->raw): 1, default: 0) && sizeof(((Pair *)0)->raw) == sizeof(void *), "heroes-ffi-field Pair raw");
 _Static_assert(_Generic(((Pair *)0)->name, char *:1, const char *:1, signed char *:1, const signed char *:1, unsigned char *:1, const unsigned char *:1, default:0) && sizeof(((Pair *)0)->name) == sizeof(char *), "heroes-ffi-field Pair name");
-#line 75 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
+#line 132 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
 
 #line 10 "tests/golden/run/fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero"
 _Static_assert(__builtin_classify_type(*(Pair *)0) != 13 || sizeof(((Pair *)0)->id) == sizeof(Pair), "heroes-ffi-union-narrow Pair id"); _Static_assert(__builtin_classify_type(*(Pair *)0) != 13, "heroes-ffi-union-kind Pair pair"); _Static_assert(__builtin_classify_type(*(Pair *)0) != 13 || sizeof(((Pair *)0)->raw) == sizeof(Pair), "heroes-ffi-union-narrow Pair raw"); _Static_assert(__builtin_classify_type(*(Pair *)0) != 13 || sizeof(((Pair *)0)->name) == sizeof(Pair), "heroes-ffi-union-narrow Pair name");
-#line 79 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 136 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -119,26 +176,26 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_713ef5c, "a == b");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -159,190 +216,190 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 15 "tests/golden/run/fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_pair_make(int32_t a0) { (void)(pair_make)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_pair_make(int32_t hero_a0) { (void)(pair_make)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 173 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 230 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(const Pair *a, const Pair *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(const Pair *hero_a, const Pair *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-HERO_TU_LOCAL void h_0show_35500b11(HeroShow *o, const void *p);
+HERO_TU_LOCAL void h_0show_35500b11(HeroShow *hero_o, const void *hero_p);
 
 void h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Pair *)hero_pad_nowhere()) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, id), sizeof(((Pair *)0)->id), __builtin_offsetof(Pair, pair), sizeof(((Pair *)0)->pair), __builtin_offsetof(Pair, raw), sizeof(((Pair *)0)->raw), __builtin_offsetof(Pair, name), sizeof(((Pair *)0)->name)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Pair *)hero_pad_nowhere()) == 13 ? sizeof(Pair) : 0), __builtin_offsetof(Pair, id), sizeof(((Pair *)0)->id), __builtin_offsetof(Pair, pair), sizeof(((Pair *)0)->pair), __builtin_offsetof(Pair, raw), sizeof(((Pair *)0)->raw), __builtin_offsetof(Pair, name), sizeof(((Pair *)0)->name)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(Pair), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 17 "tests/golden/run/fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero"
-void h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_main(void) { Pair h0_a; Pair h1_b; HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG Pair t2, t4, t6, t7; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero", "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.main", 18, 9}; t2 = pair_make(t1); } h0_a = t2; hero_pad_fill(&h0_a, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t3 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero", "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.main", 19, 9}; t4 = pair_make(t3); } h1_b = t4; hero_pad_fill(&h1_b, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
-    t5 = HERO_STR_LIT(hero_str_713ef5c); t6 = h0_a; t7 = h1_b; t8 = h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(&t6, &t7); if (t8) goto bb1; else goto bb2; bb1: return; bb2:
-#line 208 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
+void h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_main(void) { Pair h0_a; Pair h1_b; HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG Pair t2, t4, t6, t7; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero", "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.main", 18, 9}; t2 = pair_make(t1); } h0_a = t2; hero_pad_fill(&h0_a, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t3 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero", "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.main", 19, 9}; t4 = pair_make(t3); } h1_b = t4; hero_pad_fill(&h1_b, sizeof(Pair), 1, hero_pad_g_0, hero_pad_n_0);
+    t5 = HERO_STR_LIT(hero_str_713ef5c); t6 = h0_a; t7 = h1_b; t8 = h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(&t6, &t7); if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1: return; hero_bb2:
+#line 265 "fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress.c"
     hero_panic_assert_shown_at(t5, h_0show_35500b11, &t6, &t7, 1, "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.hero", "fixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address.main", 20, 12);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(const Pair *a, const Pair *b) {
-    if (!(a->id == b->id)) return false;
-    if (!((a->pair[0] == b->pair[0] && a->pair[1] == b->pair[1]))) return false;
-    if (!(a->raw == b->raw)) return false;
-    if (!(a->name == b->name)) return false;
+HERO_TU_LOCAL bool h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_eq(const Pair *hero_a, const Pair *hero_b) {
+    if (!(hero_a->id == hero_b->id)) return false;
+    if (!((hero_a->pair[0] == hero_b->pair[0] && hero_a->pair[1] == hero_b->pair[1]))) return false;
+    if (!(hero_a->raw == hero_b->raw)) return false;
+    if (!(hero_a->name == hero_b->name)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_hash(const void *elem) {
-    const Pair *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->id)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->pair[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->pair[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
-    h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_0Pair_hash(const void *hero_elem) {
+    const Pair *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->id)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->pair[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->pair[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0show_35500b11(HeroShow *o, const void *p) {
-    const Pair *v = p;
-    hero_show_text(o, "Pair(");
-    hero_show_open(o);
-    hero_show_text(o, "id: ");
-    hero_show_child(o, hero_show_i32, &v->id);
-    hero_show_text(o, ", pair: ");
-    hero_show_fixed(o, v->pair, INT64_C(2), sizeof v->pair[0], hero_show_f32);
-    hero_show_text(o, ", raw: ");
-    hero_show_child(o, hero_show_pointer, &v->raw);
-    hero_show_text(o, ", name: ");
-    hero_show_child(o, hero_show_pointer, &v->name);
-    hero_show_close(o);
-    hero_show_text(o, ")");
+HERO_TU_LOCAL void h_0show_35500b11(HeroShow *hero_o, const void *hero_p) {
+    const Pair *hero_v = hero_p;
+    hero_show_text(hero_o, "Pair(");
+    hero_show_open(hero_o);
+    hero_show_text(hero_o, "id: ");
+    hero_show_child(hero_o, hero_show_i32, &hero_v->id);
+    hero_show_text(hero_o, ", pair: ");
+    hero_show_fixed(hero_o, hero_v->pair, INT64_C(2), sizeof hero_v->pair[0], hero_show_f32);
+    hero_show_text(hero_o, ", raw: ");
+    hero_show_child(hero_o, hero_show_pointer, &hero_v->raw);
+    hero_show_text(hero_o, ", name: ");
+    hero_show_child(hero_o, hero_show_pointer, &hero_v->name);
+    hero_show_close(hero_o);
+    hero_show_text(hero_o, ")");
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("799e4417056f87f2", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3b7b39dc33a964f5", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress\tfixedbugs-016-an-assert-on-a-group-record-writes-its-members-and-reads-no-address\n");
     h_fixedbugs016anassertonagrouprecordwritesitsmembersandreadsnoaddress_main();
     hero_runtime_check_leaks();

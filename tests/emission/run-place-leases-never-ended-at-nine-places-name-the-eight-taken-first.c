@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -110,28 +167,28 @@ HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_3e64, "yy");
 HERO_STR_STATIC(hero_str_203132, "zzz");
 
-#line 114 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+#line 171 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -152,159 +209,159 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 8 "tests/golden/run/place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_placeleasesneverendedatnineplacesnametheeighttakenfirst_strlen(const char * a0) { (void)(strlen)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_placeleasesneverendedatnineplacesnametheeighttakenfirst_strlen(const char * hero_a0) { (void)(strlen)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 223 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_placeleasesneverendedatnineplacesnametheeighttakenfirst_main(void);
 
 #line 10 "tests/golden/run/place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero"
-void h_placeleasesneverendedatnineplacesnametheeighttakenfirst_main(void) { const char * h0_a; const char * h1_b; const char * h2_c; const char * h3_d; const char * h4_e; const char * h5_f; const char * h6_g; const char * h7_h; uint64_t h8_total; HERO_NODEBUG HeroArrayHeader *h9_xs0 = {0}, *h13_own13 = {0}, *t43, *t46, *t49, *t62, *t63; HERO_NODEBUG int64_t h10_i0, t44, t45, t47, t50, t58, t59, t60; HeroStr h11_word = {0}; const char * h12_late; HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t40, t41, t42, t51, t52, t64; HERO_NODEBUG const char *t2, *t4, *t6, *t8, *t10, *t12, *t14, *t16, *t17, *t19, *t22, *t25, *t28, *t31, *t34, *t37, *t53, *t55; HERO_NODEBUG uint64_t t18, t20, t21, t23, t24, t26, t27, t29, t30, t32, t33, t35, t36, t38, t39, t54, t56, t57, t61; HERO_NODEBUG bool t48; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 11, 9}; t2 = hero_str_held_at(t1, &hero_here); } h0_a = t2;
-    t3 = HERO_STR_LIT(hero_str_3288); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 12, 9}; t4 = hero_str_held_at(t3, &hero_here); } h1_b = t4;
-    t5 = HERO_STR_LIT(hero_str_1a1f87); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 13, 9}; t6 = hero_str_held_at(t5, &hero_here); } h2_c = t6;
-    t7 = HERO_STR_LIT(hero_str_d80b3a0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 14, 9}; t8 = hero_str_held_at(t7, &hero_here); } h3_d = t8;
-    t9 = HERO_STR_LIT(hero_str_7a8c32ca); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 15, 9}; t10 = hero_str_held_at(t9, &hero_here); } h4_e = t10;
-    t11 = HERO_STR_LIT(hero_str_42f2913e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 16, 9}; t12 = hero_str_held_at(t11, &hero_here); } h5_f = t12;
-    t13 = HERO_STR_LIT(hero_str_4078b6d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 17, 9}; t14 = hero_str_held_at(t13, &hero_here); } h6_g = t14;
-    t15 = HERO_STR_LIT(hero_str_492e058e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 18, 9}; t16 = hero_str_held_at(t15, &hero_here); } h7_h = t16;
-    t17 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19}; t18 = strlen(hero_cstr_nonnull_at(t17, &hero_here)); } t19 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 34}; t20 = strlen(hero_cstr_nonnull_at(t19, &hero_here)); } if (__builtin_add_overflow(t18, t20, &t21)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t22 = h2_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 49}; t23 = strlen(hero_cstr_nonnull_at(t22, &hero_here)); } if (__builtin_add_overflow(t21, t23, &t24)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t25 = h3_d; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 64}; t26 = strlen(hero_cstr_nonnull_at(t25, &hero_here)); } if (__builtin_add_overflow(t24, t26, &t27)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t28 = h4_e; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 79}; t29 = strlen(hero_cstr_nonnull_at(t28, &hero_here)); } if (__builtin_add_overflow(t27, t29, &t30)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t31 = h5_f; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 94}; t32 = strlen(hero_cstr_nonnull_at(t31, &hero_here)); } if (__builtin_add_overflow(t30, t32, &t33)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t34 = h6_g; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 109}; t35 = strlen(hero_cstr_nonnull_at(t34, &hero_here)); } if (__builtin_add_overflow(t33, t35, &t36)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t37 = h7_h; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 124}; t38 = strlen(hero_cstr_nonnull_at(t37, &hero_here)); } if (__builtin_add_overflow(t36, t38, &t39)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); h8_total = t39;
+void h_placeleasesneverendedatnineplacesnametheeighttakenfirst_main(void) { const char * h0_a; const char * h1_b; const char * h2_c; const char * h3_d; const char * h4_e; const char * h5_f; const char * h6_g; const char * h7_h; uint64_t h8_total; HERO_NODEBUG HeroArrayHeader *h9_xs0 = {0}, *h13_own13 = {0}, *t43, *t46, *t49, *t62, *t63; HERO_NODEBUG int64_t h10_i0, t44, t45, t47, t50, t58, t59, t60; HeroStr h11_word = {0}; const char * h12_late; HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t40, t41, t42, t51, t52, t64; HERO_NODEBUG const char *t2, *t4, *t6, *t8, *t10, *t12, *t14, *t16, *t17, *t19, *t22, *t25, *t28, *t31, *t34, *t37, *t53, *t55; HERO_NODEBUG uint64_t t18, t20, t21, t23, t24, t26, t27, t29, t30, t32, t33, t35, t36, t38, t39, t54, t56, t57, t61; HERO_NODEBUG bool t48; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 11, 9}; t2 = hero_str_held_at(t1, &hero_here); } h0_a = t2;
+    t3 = HERO_STR_LIT(hero_str_3288); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 12, 9}; t4 = hero_str_held_at(t3, &hero_here); } h1_b = t4;
+    t5 = HERO_STR_LIT(hero_str_1a1f87); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 13, 9}; t6 = hero_str_held_at(t5, &hero_here); } h2_c = t6;
+    t7 = HERO_STR_LIT(hero_str_d80b3a0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 14, 9}; t8 = hero_str_held_at(t7, &hero_here); } h3_d = t8;
+    t9 = HERO_STR_LIT(hero_str_7a8c32ca); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 15, 9}; t10 = hero_str_held_at(t9, &hero_here); } h4_e = t10;
+    t11 = HERO_STR_LIT(hero_str_42f2913e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 16, 9}; t12 = hero_str_held_at(t11, &hero_here); } h5_f = t12;
+    t13 = HERO_STR_LIT(hero_str_4078b6d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 17, 9}; t14 = hero_str_held_at(t13, &hero_here); } h6_g = t14;
+    t15 = HERO_STR_LIT(hero_str_492e058e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 18, 9}; t16 = hero_str_held_at(t15, &hero_here); } h7_h = t16;
+    t17 = h0_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19}; t18 = strlen(hero_cstr_nonnull_at(t17, &hero_here)); } t19 = h1_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 34}; t20 = strlen(hero_cstr_nonnull_at(t19, &hero_here)); } if (__builtin_add_overflow(t18, t20, &t21)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t22 = h2_c; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 49}; t23 = strlen(hero_cstr_nonnull_at(t22, &hero_here)); } if (__builtin_add_overflow(t21, t23, &t24)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t25 = h3_d; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 64}; t26 = strlen(hero_cstr_nonnull_at(t25, &hero_here)); } if (__builtin_add_overflow(t24, t26, &t27)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t28 = h4_e; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 79}; t29 = strlen(hero_cstr_nonnull_at(t28, &hero_here)); } if (__builtin_add_overflow(t27, t29, &t30)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t31 = h5_f; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 94}; t32 = strlen(hero_cstr_nonnull_at(t31, &hero_here)); } if (__builtin_add_overflow(t30, t32, &t33)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t34 = h6_g; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 109}; t35 = strlen(hero_cstr_nonnull_at(t34, &hero_here)); } if (__builtin_add_overflow(t33, t35, &t36)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); t37 = h7_h; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 124}; t38 = strlen(hero_cstr_nonnull_at(t37, &hero_here)); } if (__builtin_add_overflow(t36, t38, &t39)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 19, 19); h8_total = t39;
 #line 21
-    t40 = HERO_STR_LIT(hero_str_78); t41 = HERO_STR_LIT(hero_str_3e64); t42 = HERO_STR_LIT(hero_str_203132); t43 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t43, &t40); hero_array_push_owned(&t43, &t41); hero_array_push_owned(&t43, &t42); t62 = h13_own13; h13_own13 = t43; hero_array_decref(t62); t63 = h9_xs0; hero_array_incref(t43); h9_xs0 = t43; hero_array_decref(t63); t44 = INT64_C(0); h10_i0 = t44; goto bb1; bb1: t45 = h10_i0; t46 = h9_xs0; t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len); t48 = t45 < t47; if (t48) goto bb2; else goto bb4; bb2: t49 = h9_xs0; t50 = h10_i0; t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? hero_panic_index_at(t49, t50, "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 21, 9) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]); t64 = h11_word; hero_str_incref(t51); h11_word = t51; hero_str_decref(t64);
-    t52 = h11_word; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 22, 16}; t53 = hero_str_held_at(t52, &hero_here); } h12_late = t53;
-    t54 = h8_total; t55 = h12_late; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 23, 25}; t56 = strlen(hero_cstr_nonnull_at(t55, &hero_here)); } if (__builtin_add_overflow(t54, t56, &t57)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 23, 17); h8_total = t57; goto bb3; bb3:
+    t40 = HERO_STR_LIT(hero_str_78); t41 = HERO_STR_LIT(hero_str_3e64); t42 = HERO_STR_LIT(hero_str_203132); t43 = hero_array_new(&hero_desc_str, 3); hero_array_push_owned(&t43, &t40); hero_array_push_owned(&t43, &t41); hero_array_push_owned(&t43, &t42); t62 = h13_own13; h13_own13 = t43; hero_array_decref(t62); t63 = h9_xs0; hero_array_incref(t43); h9_xs0 = t43; hero_array_decref(t63); t44 = INT64_C(0); h10_i0 = t44; goto hero_bb1; hero_bb1: t45 = h10_i0; t46 = h9_xs0; t47 = ((void)(t46 == NULL ? ((void)hero_array_len(t46), hero_unreachable()) : (void)0), t46->len); t48 = t45 < t47; if (t48) goto hero_bb2; else goto hero_bb4; hero_bb2: t49 = h9_xs0; t50 = h10_i0; t51 = ((void)((t49 == NULL || t50 < 0 || t50 >= t49->len) ? hero_panic_index_at(t49, t50, "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 21, 9) : (void)0), (void)(t49->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t49 + 1))[t50]); t64 = h11_word; hero_str_incref(t51); h11_word = t51; hero_str_decref(t64);
+    t52 = h11_word; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 22, 16}; t53 = hero_str_held_at(t52, &hero_here); } h12_late = t53;
+    t54 = h8_total; t55 = h12_late; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 23, 25}; t56 = strlen(hero_cstr_nonnull_at(t55, &hero_here)); } if (__builtin_add_overflow(t54, t56, &t57)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 23, 17); h8_total = t57; goto hero_bb3; hero_bb3:
 #line 21
-    t58 = h10_i0; t59 = INT64_C(1); if (__builtin_add_overflow(t58, t59, &t60)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 21, 9); h10_i0 = t60; goto bb1; bb4:
+    t58 = h10_i0; t59 = INT64_C(1); if (__builtin_add_overflow(t58, t59, &t60)) hero_panic_overflow_at("place-leases-never-ended-at-nine-places-name-the-eight-taken-first.hero", "place-leases-never-ended-at-nine-places-name-the-eight-taken-first.main", 21, 9); h10_i0 = t60; goto hero_bb1; hero_bb4:
 #line 25
     t61 = h8_total; hero_print_uint(t61); hero_print_end();
-#line 203 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
+#line 260 "placeleasesneverendedatnineplacesnametheeighttakenfirst.c"
     hero_array_release_at(&h9_xs0);
     hero_str_release_at(&h11_word);
     hero_array_release_at(&h13_own13);
     return;
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5dd7964c77f2d725", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77be3ab325e885a0", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("placeleasesneverendedatnineplacesnametheeighttakenfirst\tplace-leases-never-ended-at-nine-places-name-the-eight-taken-first\n");
     h_placeleasesneverendedatnineplacesnametheeighttakenfirst_main();
     hero_runtime_check_leaks();

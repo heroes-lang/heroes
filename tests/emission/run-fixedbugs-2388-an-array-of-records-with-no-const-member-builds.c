@@ -29,6 +29,44 @@
 #pragma push_macro("n")
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -78,15 +135,15 @@ _Static_assert(sizeof(struct fixedbugs_2388_plain) - __builtin_offsetof(struct f
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2388_plain *)0)->n) == 1 && sizeof(((struct fixedbugs_2388_plain *)0)->n) == sizeof(int32_t) && (_Generic(((struct fixedbugs_2388_plain *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Plain n");
 #line 16
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2388_pointing *)0)->n) == 1 && sizeof(((struct fixedbugs_2388_pointing *)0)->n) == sizeof(int32_t) && (_Generic(((struct fixedbugs_2388_pointing *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pointing n");
-#line 82 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 139 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 
 #line 9 "tests/golden/run/fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero"
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2388_cell *)0) != 13, "heroes-ffi-union Cell k v");
 #line 12
 _Static_assert(__builtin_classify_type(*(struct fixedbugs_2388_plain *)0) != 13, "heroes-ffi-union Plain items n");
-#line 88 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 145 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -127,26 +184,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -167,44 +224,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 179 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 236 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(const struct fixedbugs_2388_cell *a, const struct fixedbugs_2388_cell *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_eq(const struct fixedbugs_2388_plain *a, const struct fixedbugs_2388_plain *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_eq(const struct fixedbugs_2388_pointing *a, const struct fixedbugs_2388_pointing *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(const struct fixedbugs_2388_cell *hero_a, const struct fixedbugs_2388_cell *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_eq(const struct fixedbugs_2388_plain *hero_a, const struct fixedbugs_2388_plain *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_eq(const struct fixedbugs_2388_pointing *hero_a, const struct fixedbugs_2388_pointing *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct fixedbugs_2388_cell *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2388_cell) : 0), __builtin_offsetof(struct fixedbugs_2388_cell, k), sizeof(((struct fixedbugs_2388_cell *)0)->k), __builtin_offsetof(struct fixedbugs_2388_cell, v), sizeof(((struct fixedbugs_2388_cell *)0)->v)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct fixedbugs_2388_plain *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2388_plain) : 0), __builtin_offsetof(struct fixedbugs_2388_plain, items), sizeof(((struct fixedbugs_2388_plain *)0)->items), __builtin_offsetof(struct fixedbugs_2388_plain, n), sizeof(((struct fixedbugs_2388_plain *)0)->n)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct fixedbugs_2388_cell *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2388_cell) : 0), __builtin_offsetof(struct fixedbugs_2388_cell, k), sizeof(((struct fixedbugs_2388_cell *)0)->k), __builtin_offsetof(struct fixedbugs_2388_cell, v), sizeof(((struct fixedbugs_2388_cell *)0)->v)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct fixedbugs_2388_plain *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2388_plain) : 0), __builtin_offsetof(struct fixedbugs_2388_plain, items), sizeof(((struct fixedbugs_2388_plain *)0)->items), __builtin_offsetof(struct fixedbugs_2388_plain, n), sizeof(((struct fixedbugs_2388_plain *)0)->n)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
 #pragma push_macro("e")
 #undef e
 #pragma push_macro("n")
@@ -213,14 +270,14 @@ __attribute__((unused)) static size_t hero_pad_n_1;
 #undef p
 #pragma push_macro("pa")
 #undef pa
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(struct fixedbugs_2388_pointing, n), sizeof(((struct fixedbugs_2388_pointing *)0)->n), __builtin_offsetof(struct fixedbugs_2388_pointing, e), sizeof(((struct fixedbugs_2388_pointing *)0)->e), __builtin_offsetof(struct fixedbugs_2388_pointing, p), sizeof(((struct fixedbugs_2388_pointing *)0)->p), __builtin_offsetof(struct fixedbugs_2388_pointing, pa), sizeof(((struct fixedbugs_2388_pointing *)0)->pa)};
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(struct fixedbugs_2388_pointing, n), sizeof(((struct fixedbugs_2388_pointing *)0)->n), __builtin_offsetof(struct fixedbugs_2388_pointing, e), sizeof(((struct fixedbugs_2388_pointing *)0)->e), __builtin_offsetof(struct fixedbugs_2388_pointing, p), sizeof(((struct fixedbugs_2388_pointing *)0)->p), __builtin_offsetof(struct fixedbugs_2388_pointing, pa), sizeof(((struct fixedbugs_2388_pointing *)0)->pa)};
 #pragma pop_macro("e")
 #pragma pop_macro("n")
 #pragma pop_macro("p")
 #pragma pop_macro("pa")
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct fixedbugs_2388_cell), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct fixedbugs_2388_plain), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(struct fixedbugs_2388_pointing), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
@@ -238,156 +295,156 @@ __attribute__((__noinline__)) void h_fixedbugs2388anarrayofrecordswithnoconstmem
 #line 20
 #define t20 (*hero_big_t20)
 #line 20
-    struct fixedbugs_2388_plain h0_built; struct fixedbugs_2388_plain h1_got; struct fixedbugs_2388_pointing *const hero_big_h2_pointing = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); struct fixedbugs_2388_pointing *const hero_big_h3_handed = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_NODEBUG int32_t t1, t2, t4, t5, t8, t12, t14, t15, t16, t17, t18, t21, t22, t23; HERO_NODEBUG struct fixedbugs_2388_cell t3, t6; HERO_NODEBUG struct fixedbugs_2388_plain t9, t10; HERO_NODEBUG int64_t t11, t13; HERO_NODEBUG struct fixedbugs_2388_pointing *const hero_big_t19 = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_NODEBUG struct fixedbugs_2388_pointing *const hero_big_t20 = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_ENTRY_STOP; goto bb0; bb0:
+    struct fixedbugs_2388_plain h0_built; struct fixedbugs_2388_plain h1_got; struct fixedbugs_2388_pointing *const hero_big_h2_pointing = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); struct fixedbugs_2388_pointing *const hero_big_h3_handed = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_NODEBUG int32_t t1, t2, t4, t5, t8, t12, t14, t15, t16, t17, t18, t21, t22, t23; HERO_NODEBUG struct fixedbugs_2388_cell t3, t6; HERO_NODEBUG struct fixedbugs_2388_plain t9, t10; HERO_NODEBUG int64_t t11, t13; HERO_NODEBUG struct fixedbugs_2388_pointing *const hero_big_t19 = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_NODEBUG struct fixedbugs_2388_pointing *const hero_big_t20 = (struct fixedbugs_2388_pointing *)hero_frame_take(sizeof(struct fixedbugs_2388_pointing)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = (struct fixedbugs_2388_cell){.k = t1, .v = t2}; t4 = INT64_C(3); t5 = INT64_C(4); t6 = (struct fixedbugs_2388_cell){.k = t4, .v = t5}; t8 = INT64_C(5); t9 = (struct fixedbugs_2388_plain){.items = {t3, t6}, .n = t8}; h0_built = t9; hero_pad_fill(&h0_built, sizeof(struct fixedbugs_2388_plain), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_built) + hero_pad_k0 * sizeof(struct fixedbugs_2388_plain) + __builtin_offsetof(struct fixedbugs_2388_plain, items), sizeof(struct fixedbugs_2388_cell), sizeof(((struct fixedbugs_2388_plain *)0)->items) / sizeof(struct fixedbugs_2388_cell), hero_pad_g_0, hero_pad_n_0); }
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 22, 11}; t10 = fixedbugs_2388_plain_make(); } h1_got = t10; hero_pad_fill(&h1_got, sizeof(struct fixedbugs_2388_plain), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_got) + hero_pad_k0 * sizeof(struct fixedbugs_2388_plain) + __builtin_offsetof(struct fixedbugs_2388_plain, items), sizeof(struct fixedbugs_2388_cell), sizeof(((struct fixedbugs_2388_plain *)0)->items) / sizeof(struct fixedbugs_2388_cell), hero_pad_g_0, hero_pad_n_0); }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 22, 11}; t10 = fixedbugs_2388_plain_make(); } h1_got = t10; hero_pad_fill(&h1_got, sizeof(struct fixedbugs_2388_plain), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_got) + hero_pad_k0 * sizeof(struct fixedbugs_2388_plain) + __builtin_offsetof(struct fixedbugs_2388_plain, items), sizeof(struct fixedbugs_2388_cell), sizeof(((struct fixedbugs_2388_plain *)0)->items) / sizeof(struct fixedbugs_2388_cell), hero_pad_g_0, hero_pad_n_0); }
     t11 = INT64_C(1); t12 = h0_built.items[((uint64_t)(t11) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 23, 11), (int64_t)0) : (t11))].k; t13 = INT64_C(1); t14 = h1_got.items[((uint64_t)(t13) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 23, 30), (int64_t)0) : (t13))].v; if (__builtin_add_overflow(t12, t14, &t15)) hero_panic_overflow_at("fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 23, 11); t16 = h1_got.n; if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 23, 11); hero_print_int(t17); hero_print_end();
     t18 = INT64_C(7); t19 = *(struct fixedbugs_2388_pointing *)__builtin_memset(&t19, 0, sizeof t19); __builtin_memset(&t19, 0, sizeof t19); t19.n = t18; h2_pointing = t19; hero_pad_fill(&h2_pointing, sizeof(struct fixedbugs_2388_pointing), 1, hero_pad_g_2, hero_pad_n_2);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 25, 14}; t20 = fixedbugs_2388_pointing_make(); } h3_handed = t20; hero_pad_fill(&h3_handed, sizeof(struct fixedbugs_2388_pointing), 1, hero_pad_g_2, hero_pad_n_2);
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 25, 14}; t20 = fixedbugs_2388_pointing_make(); } h3_handed = t20; hero_pad_fill(&h3_handed, sizeof(struct fixedbugs_2388_pointing), 1, hero_pad_g_2, hero_pad_n_2);
     t21 = h2_pointing.n; t22 = h3_handed.n; if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-2388-an-array-of-records-with-no-const-member-builds.hero", "fixedbugs-2388-an-array-of-records-with-no-const-member-builds.main", 26, 11); hero_print_int(t23); hero_print_end(); hero_frame_give(hero_big_t20); hero_frame_give(hero_big_t19); hero_frame_give(hero_big_h3_handed); hero_frame_give(hero_big_h2_pointing); return;
-#line 249 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
+#line 306 "fixedbugs2388anarrayofrecordswithnoconstmemberbuilds.c"
 }
 #undef h2_pointing
 #undef h3_handed
 #undef t19
 #undef t20
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(const struct fixedbugs_2388_cell *a, const struct fixedbugs_2388_cell *b) {
-    if (!(a->k == b->k)) return false;
-    if (!(a->v == b->v)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(const struct fixedbugs_2388_cell *hero_a, const struct fixedbugs_2388_cell *hero_b) {
+    if (!(hero_a->k == hero_b->k)) return false;
+    if (!(hero_a->v == hero_b->v)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(const void *elem) {
-    const struct fixedbugs_2388_cell *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->k)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->v)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(const void *hero_elem) {
+    const struct fixedbugs_2388_cell *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->k)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->v)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_eq(const struct fixedbugs_2388_plain *a, const struct fixedbugs_2388_plain *b) {
-    if (!((h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(&a->items[0], &b->items[0]) && h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(&a->items[1], &b->items[1])))) return false;
-    if (!(a->n == b->n)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_eq(const struct fixedbugs_2388_plain *hero_a, const struct fixedbugs_2388_plain *hero_b) {
+    if (!((h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(&hero_a->items[0], &hero_b->items[0]) && h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_eq(&hero_a->items[1], &hero_b->items[1])))) return false;
+    if (!(hero_a->n == hero_b->n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_hash(const void *elem) {
-    const struct fixedbugs_2388_plain *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(&v->items[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(&v->items[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Plain_hash(const void *hero_elem) {
+    const struct fixedbugs_2388_plain *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(&hero_v->items[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Cell_hash(&hero_v->items[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->n)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_eq(const struct fixedbugs_2388_pointing *a, const struct fixedbugs_2388_pointing *b) {
+HERO_TU_LOCAL bool h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_eq(const struct fixedbugs_2388_pointing *hero_a, const struct fixedbugs_2388_pointing *hero_b) {
     hero_panic("h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash(const void *hero_elem) {
+    (void)hero_elem; hero_panic("h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_0Pointing_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("470653336b75f1e5", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("03a88c5919d277fb", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2388anarrayofrecordswithnoconstmemberbuilds\tfixedbugs-2388-an-array-of-records-with-no-const-member-builds\n");
     h_fixedbugs2388anarrayofrecordswithnoconstmemberbuilds_main();
     hero_runtime_check_leaks();

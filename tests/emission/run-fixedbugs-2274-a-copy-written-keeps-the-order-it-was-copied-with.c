@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -62,26 +62,26 @@ typedef struct h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf {
 } h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -90,51 +90,51 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 102 "fixedbugs2274acopywrittenkeepstheorderitwascopiedwith.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *v);
-HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *v);
-HERO_TU_LOCAL bool h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_eq(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *a, const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_v);
+HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_eq(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_a, const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_main(void);
 
 #line 10 "tests/golden/run/fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero"
-void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_main(void) { HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h2_s = {0}; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h3_t = {0}; HERO_NODEBUG HeroMapHeader *h4_own4 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t7, *t8, *t11, *t15, *t19, *t24, *t28, *t32, *t39, *t42, *t51, *t53, *t54, *t55, *t67, *t68; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *t12, *t16, *t25, *t29, *t56, *t58, *t63, *t65; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t3, t5, t9, t13, t14, t17, t18, t22, t26, t27, t30, t31, t33, t35, t37, t41, t43, t45, t47, t49, t57, t59, t64, t66; HERO_NODEBUG h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h9_own9 = {0}, t20, t21, t60, t61, t62; HERO_NODEBUG int64_t t2, t4, t6, t10, t23, t34, t36, t38, t44, t46, t48, t50; HERO_NODEBUG bool t40, t52; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_f1c9872); t2 = INT64_C(1); t3 = HERO_STR_LIT(hero_str_35d19427); t4 = INT64_C(2); t5 = HERO_STR_LIT(hero_str_1aebb8); t6 = INT64_C(3); t7 = hero_map_new(&hero_desc_str, &hero_desc_int, 3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 11, 21}; hero_map_put_at(t7, &t1, &t2, &hero_here); hero_map_put_at(t7, &t3, &t4, &hero_here); hero_map_put_at(t7, &t5, &t6, &hero_here); } t53 = h4_own4; h4_own4 = t7; hero_map_decref(t53); t54 = h0_m; hero_map_incref(t7); h0_m = t7; hero_map_decref(t54);
+void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_main(void) { HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h2_s = {0}; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h3_t = {0}; HERO_NODEBUG HeroMapHeader *h4_own4 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t7, *t8, *t11, *t15, *t19, *t24, *t28, *t32, *t39, *t42, *t51, *t53, *t54, *t55, *t67, *t68; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *t12, *t16, *t25, *t29, *t56, *t58, *t63, *t65; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t3, t5, t9, t13, t14, t17, t18, t22, t26, t27, t30, t31, t33, t35, t37, t41, t43, t45, t47, t49, t57, t59, t64, t66; HERO_NODEBUG h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf h9_own9 = {0}, t20, t21, t60, t61, t62; HERO_NODEBUG int64_t t2, t4, t6, t10, t23, t34, t36, t38, t44, t46, t48, t50; HERO_NODEBUG bool t40, t52; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_f1c9872); t2 = INT64_C(1); t3 = HERO_STR_LIT(hero_str_35d19427); t4 = INT64_C(2); t5 = HERO_STR_LIT(hero_str_1aebb8); t6 = INT64_C(3); t7 = hero_map_new(&hero_desc_str, &hero_desc_int, 3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 11, 21}; hero_map_put_at(t7, &t1, &t2, &hero_here); hero_map_put_at(t7, &t3, &t4, &hero_here); hero_map_put_at(t7, &t5, &t6, &hero_here); } t53 = h4_own4; h4_own4 = t7; hero_map_decref(t53); t54 = h0_m; hero_map_incref(t7); h0_m = t7; hero_map_decref(t54);
     t8 = h0_m; t55 = h1_n; hero_map_incref(t8); h1_n = t8; hero_map_decref(t55);
-    t9 = HERO_STR_LIT(hero_str_e722bc8); t10 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 13, 5}; hero_map_set_at(&(h1_n), &t9, &t10, &hero_here); }
+    t9 = HERO_STR_LIT(hero_str_e722bc8); t10 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 13, 5}; hero_map_set_at(&(h1_n), &t9, &t10, &hero_here); }
     t11 = h0_m; t12 = hero_map_keys(t11); t56 = h5_own5; h5_own5 = t12; hero_array_decref(t56); t13 = HERO_STR_LIT(hero_str_20); t14 = hero_str_join(t12, t13); t57 = h6_own6; h6_own6 = t14; hero_str_decref(t57); hero_print_str(t14); hero_print_end();
     t15 = h1_n; t16 = hero_map_keys(t15); t58 = h7_own7; h7_own7 = t16; hero_array_decref(t58); t17 = HERO_STR_LIT(hero_str_20); t18 = hero_str_join(t16, t17); t59 = h8_own8; h8_own8 = t18; hero_str_decref(t59); hero_print_str(t18); hero_print_end();
 #line 17
     t19 = h1_n; hero_map_incref(t19); t20 = (h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf){.f_books = t19}; t60 = h9_own9; h9_own9 = t20; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(&t60); t61 = h2_s; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(&t20); h2_s = t20; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(&t61);
     t21 = h2_s; t62 = h3_t; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(&t21); h3_t = t21; h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(&t62);
-    t22 = HERO_STR_LIT(hero_str_7e2df552); t23 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 19, 5}; hero_map_set_at(&(h3_t.f_books), &t22, &t23, &hero_here); }
+    t22 = HERO_STR_LIT(hero_str_7e2df552); t23 = INT64_C(5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 19, 5}; hero_map_set_at(&(h3_t.f_books), &t22, &t23, &hero_here); }
     t24 = h2_s.f_books; t25 = hero_map_keys(t24); t63 = h10_own10; h10_own10 = t25; hero_array_decref(t63); t26 = HERO_STR_LIT(hero_str_20); t27 = hero_str_join(t25, t26); t64 = h11_own11; h11_own11 = t27; hero_str_decref(t64); hero_print_str(t27); hero_print_end();
     t28 = h3_t.f_books; t29 = hero_map_keys(t28); t65 = h12_own12; h12_own12 = t29; hero_array_decref(t65); t30 = HERO_STR_LIT(hero_str_20); t31 = hero_str_join(t29, t30); t66 = h13_own13; h13_own13 = t31; hero_str_decref(t66); hero_print_str(t31); hero_print_end();
 #line 23
-    t32 = h0_m; t33 = HERO_STR_LIT(hero_str_1aebb8); t34 = INT64_C(3); t35 = HERO_STR_LIT(hero_str_f1c9872); t36 = INT64_C(1); t37 = HERO_STR_LIT(hero_str_35d19427); t38 = INT64_C(2); t39 = hero_map_new(&hero_desc_str, &hero_desc_int, 3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 23, 16}; hero_map_put_at(t39, &t33, &t34, &hero_here); hero_map_put_at(t39, &t35, &t36, &hero_here); hero_map_put_at(t39, &t37, &t38, &hero_here); } t67 = h14_own14; h14_own14 = t39; hero_map_decref(t67); t40 = hero_map_eq(t32, t39); t41 = HERO_STR_LIT(hero_str_20); t42 = h1_n; t43 = HERO_STR_LIT(hero_str_e722bc8); t44 = INT64_C(4); t45 = HERO_STR_LIT(hero_str_35d19427); t46 = INT64_C(2); t47 = HERO_STR_LIT(hero_str_1aebb8); t48 = INT64_C(3); t49 = HERO_STR_LIT(hero_str_f1c9872); t50 = INT64_C(1); t51 = hero_map_new(&hero_desc_str, &hero_desc_int, 4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 23, 61}; hero_map_put_at(t51, &t43, &t44, &hero_here); hero_map_put_at(t51, &t45, &t46, &hero_here); hero_map_put_at(t51, &t47, &t48, &hero_here); hero_map_put_at(t51, &t49, &t50, &hero_here); } t68 = h15_own15; h15_own15 = t51; hero_map_decref(t68); t52 = hero_map_eq(t42, t51); hero_print_bool(t40); hero_print_str(t41); hero_print_bool(t52); hero_print_end();
+    t32 = h0_m; t33 = HERO_STR_LIT(hero_str_1aebb8); t34 = INT64_C(3); t35 = HERO_STR_LIT(hero_str_f1c9872); t36 = INT64_C(1); t37 = HERO_STR_LIT(hero_str_35d19427); t38 = INT64_C(2); t39 = hero_map_new(&hero_desc_str, &hero_desc_int, 3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 23, 16}; hero_map_put_at(t39, &t33, &t34, &hero_here); hero_map_put_at(t39, &t35, &t36, &hero_here); hero_map_put_at(t39, &t37, &t38, &hero_here); } t67 = h14_own14; h14_own14 = t39; hero_map_decref(t67); t40 = hero_map_eq(t32, t39); t41 = HERO_STR_LIT(hero_str_20); t42 = h1_n; t43 = HERO_STR_LIT(hero_str_e722bc8); t44 = INT64_C(4); t45 = HERO_STR_LIT(hero_str_35d19427); t46 = INT64_C(2); t47 = HERO_STR_LIT(hero_str_1aebb8); t48 = INT64_C(3); t49 = HERO_STR_LIT(hero_str_f1c9872); t50 = INT64_C(1); t51 = hero_map_new(&hero_desc_str, &hero_desc_int, 4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.hero", "fixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with.main", 23, 61}; hero_map_put_at(t51, &t43, &t44, &hero_here); hero_map_put_at(t51, &t45, &t46, &hero_here); hero_map_put_at(t51, &t47, &t48, &hero_here); hero_map_put_at(t51, &t49, &t50, &hero_here); } t68 = h15_own15; h15_own15 = t51; hero_map_decref(t68); t52 = hero_map_eq(t42, t51); hero_print_bool(t40); hero_print_str(t41); hero_print_bool(t52); hero_print_end();
 #line 139 "fixedbugs2274acopywrittenkeepstheorderitwascopiedwith.c"
     hero_map_release_at(&h0_m);
     hero_map_release_at(&h1_n);
@@ -154,126 +154,126 @@ void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_main(void) { HeroMa
     hero_map_release_at(&h15_own15);
     return;
 }
-HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *v) {
-    hero_map_incref(v->f_books);
+HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_retain(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_v) {
+    hero_map_incref(hero_v->f_books);
 }
 
-HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *v) {
-    hero_map_decref(v->f_books);
+HERO_TU_LOCAL void h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_release(h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_v) {
+    hero_map_decref(hero_v->f_books);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_eq(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *a, const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *b) {
-    if (!(hero_map_eq(a->f_books, b->f_books))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_eq(const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_a, const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_b) {
+    if (!(hero_map_eq(hero_a->f_books, hero_b->f_books))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_hash(const void *elem) {
-    const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_map)->hash(&v->f_books)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_0Shelf_hash(const void *hero_elem) {
+    const h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_Shelf *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_map)->hash(&hero_v->f_books)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("01859a2d664501da", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2504d99069acf46f", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2274acopywrittenkeepstheorderitwascopiedwith\tfixedbugs-2274-a-copy-written-keeps-the-order-it-was-copied-with\n");
     h_fixedbugs2274acopywrittenkeepstheorderitwascopiedwith_main();
     hero_runtime_check_leaks();

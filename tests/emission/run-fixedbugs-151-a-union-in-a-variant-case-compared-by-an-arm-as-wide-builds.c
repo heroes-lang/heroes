@@ -28,6 +28,44 @@
 #include <fixedbugs-151-unions.h>
 #pragma push_macro("i")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -59,7 +116,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -68,13 +125,13 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 9 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(((W *)0)->i) == 1 && sizeof(((W *)0)->i) == sizeof(int32_t) && (_Generic(((W *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field W i");
-#line 72 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 129 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 
 #line 8 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
 _Static_assert(__builtin_classify_type(*(W *)0) != 13 || sizeof(((W *)0)->i) == sizeof(W), "heroes-ffi-union-narrow W i");
-#line 76 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 133 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -125,33 +182,33 @@ typedef struct h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_
 } h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has;
 
 typedef struct h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V {
-    h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag tag;
+    h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag hero_tag;
     union {
-        h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has c_has;
-    } as;
+        h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has hero_c_has;
+    } hero_as;
 } h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -172,44 +229,44 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 184 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 241 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(const W *a, const W *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(const W *hero_a, const W *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *hero_a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *hero_a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
-static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V));
+static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V));
 }
-static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_drop(void *elem) {
-    (void)elem;
+static void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq((const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)a, (const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)b);
+static bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq((const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)hero_a, (const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc = {
     sizeof(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V),
@@ -222,164 +279,164 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs151aunioninavariantcasecomparedby
 void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero"
-void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void) { h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h0_a; h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h1_b; HeroMapHeader * h2_m = {0}; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t11, *t18, *t20, *t21; HERO_NODEBUG W t1; HERO_NODEBUG h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V t2, t3, t4, t5, t8, t9, t12, t14, t16; HERO_NODEBUG bool t6, t10; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t13, t15, t17, t19; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 18, 20}; t1 = make_w(); } t2 = (h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V){.tag = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has, .as.c_has = {.f_w = t1}}; h0_a = t2;
-    t3 = (h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V){.tag = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_none}; h1_b = t3;
+void h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main(void) { h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h0_a; h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V h1_b; HeroMapHeader * h2_m = {0}; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t11, *t18, *t20, *t21; HERO_NODEBUG W t1; HERO_NODEBUG h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V t2, t3, t4, t5, t8, t9, t12, t14, t16; HERO_NODEBUG bool t6, t10; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t13, t15, t17, t19; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 18, 20}; t1 = make_w(); } t2 = (h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V){.hero_tag = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has, .hero_as.hero_c_has = {.f_w = t1}}; h0_a = t2;
+    t3 = (h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V){.hero_tag = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_none}; h1_b = t3;
     t4 = h0_a; t5 = h0_a; t6 = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(&t4, &t5); t7 = HERO_STR_LIT(hero_str_20); t8 = h0_a; t9 = h1_b; t10 = h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(&t8, &t9); hero_print_bool(t6); hero_print_str(t7); hero_print_bool(t10); hero_print_end();
     t11 = hero_map_new(&h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_desc, &hero_desc_int, 0); t20 = h3_own3; h3_own3 = t11; hero_map_decref(t20); t21 = h2_m; hero_map_incref(t11); h2_m = t11; hero_map_decref(t21);
-    t12 = h0_a; t13 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 22, 5}; hero_map_set_at(&(h2_m), &t12, &t13, &hero_here); }
-    t14 = h1_b; t15 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 23, 5}; hero_map_set_at(&(h2_m), &t14, &t15, &hero_here); }
-    t16 = h0_a; t17 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 24, 5}; hero_map_set_at(&(h2_m), &t16, &t17, &hero_here); }
+    t12 = h0_a; t13 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 22, 5}; hero_map_set_at(&(h2_m), &t12, &t13, &hero_here); }
+    t14 = h1_b; t15 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 23, 5}; hero_map_set_at(&(h2_m), &t14, &t15, &hero_here); }
+    t16 = h0_a; t17 = INT64_C(3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.hero", "fixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds.main", 24, 5}; hero_map_set_at(&(h2_m), &t16, &t17, &hero_here); }
     t18 = h2_m; t19 = hero_map_len(t18); hero_print_int(t19); hero_print_end();
-#line 235 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
+#line 292 "fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds.c"
     hero_map_release_at(&h2_m);
     hero_map_release_at(&h3_own3);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(const W *a, const W *b) {
-    if (!(a->i == b->i)) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(const W *hero_a, const W *hero_b) {
+    if (!(hero_a->i == hero_b->i)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(const void *elem) {
-    const W *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->i)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(const void *hero_elem) {
+    const W *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->i)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *b) {
-    if (!(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(&a->f_w, &b->f_w))) return false;
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *hero_a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *hero_b) {
+    if (!(h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_eq(&hero_a->f_w, &hero_b->f_w))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(const void *elem) {
-    const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(&v->f_w)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(const void *hero_elem) {
+    const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0W_hash(&hero_v->f_w)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has: return h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(&a->as.c_has, &b->as.c_has);
+HERO_TU_LOCAL bool h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_eq(const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *hero_a, const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has: return h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_eq(&hero_a->hero_as.hero_c_has, &hero_b->hero_as.hero_c_has);
         case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_none: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_hash(const void *elem) {
-    const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_hash(const void *hero_elem) {
+    const h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_V *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has: return (h ^ h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(&v->as.c_has)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_none: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_has: return (hero_h ^ h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_c_has_hash(&hero_v->hero_as.hero_c_has)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_0V_tag_none: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5c7c60637fbbd5a4", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2e9489a515fbb4bb", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds\tfixedbugs-151-a-union-in-a-variant-case-compared-by-an-arm-as-wide-builds\n");
     h_fixedbugs151aunioninavariantcasecomparedbyanarmaswidebuilds_main();
     hero_runtime_check_leaks();

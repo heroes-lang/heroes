@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -67,35 +67,35 @@ typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef HeroStr (*h_0fn_6f1dc5d7)(HeroStr);
 typedef h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P (*h_0fn_660a05e6)(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P);
 typedef struct h_0opt_30514ebf {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        h_0fn_48ac9712 ok;
-        HeroFailure err;
-    } as;
+        h_0fn_48ac9712 hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_30514ebf;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef HeroStr (*h_0fn_1fb9aa18)(HeroStr, int64_t);
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef int64_t (*h_0fn_7b615d8f)(int64_t, int64_t);
@@ -106,38 +106,38 @@ typedef int64_t (*h_0fn_7b615d8f)(int64_t, int64_t);
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 10 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_hero_thread_spawn(h_0fn_48ac9712 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_hero_thread_spawn(h_0fn_48ac9712 hero_a0, int64_t hero_a1) { (void)(hero_thread_spawn)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_hero_thread_join(int64_t hero_a0) { (void)(hero_thread_join)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 121 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_eq(const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *a, const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *v);
-HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *v);
-HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *a, const h_0opt_30514ebf *b);
-HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_eq(const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *hero_a, const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *hero_v);
+HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *hero_v);
+HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *hero_a, const h_0opt_30514ebf *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 HeroArrayHeader * h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(void);
 int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n);
@@ -155,15 +155,15 @@ HERO_TU_LOCAL h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_fixedb
 HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x);
 int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n);
 int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n);
-__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {
     hero_signal_learn();
-    if (f == (void (*)(void))h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice) return (void (*)(void))h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice;
-    return f;
+    if (hero_f == (void (*)(void))h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice) return (void (*)(void))h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice;
+    return hero_f;
 }
 
 
 #line 13 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-HeroArrayHeader * h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; t2 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice; t3 = hero_array_new(&hero_desc_func, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t4 = h0_own0; h0_own0 = t3; hero_array_decref(t4);
 #line 169 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_array_incref(t3);
@@ -172,7 +172,7 @@ HeroArrayHeader * h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(
 }
 
 #line 22 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.twice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.twice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.twice", 23, 12); return t3;
 #line 178 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
@@ -180,11 +180,12 @@ int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0
 int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(h0_n);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 49 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-void h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_main(void) { h_0fn_48ac9712 h0_h; h_0fn_6f1dc5d7 h1_k; h_0fn_48ac9712 h2_f; h_0fn_6f1dc5d7 h3_g; h_0fn_660a05e6 h4_rec; HeroMapHeader * h5_m = {0}; HERO_NODEBUG h_0opt_30514ebf h6_f0 = {0}, h13_own13 = {0}, t40, t41, t45, t47, t73, t74; int64_t h7_spawned; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t7, t8, t12, t14, t20, t23, t24, t27, t28, t36, t39, t67, t68, t69, t70; HERO_NODEBUG HeroMapHeader *h12_own12 = {0}, *t35, *t38, *t71, *t72; HERO_NODEBUG HeroArrayHeader *h14_own14 = {0}, *h15_own15 = {0}, *t51, *t56, *t75, *t76; HERO_NODEBUG h_0fn_48ac9712 t1, t2, t16, t17, t37, t48, t53, t58, t62; HERO_NODEBUG int64_t t3, t4, t9, t10, t11, t13, t15, t18, t19, t25, t26, t31, t34, t42, t43, t49, t50, t52, t54, t55, t57, t59, t60, t61, t63, t64, t65, t66; HERO_NODEBUG h_0fn_6f1dc5d7 t5, t6, t21, t22; HERO_NODEBUG h_0fn_660a05e6 t29, t30; HERO_NODEBUG h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P t32, t33; HERO_NODEBUG bool t44; HERO_NODEBUG HeroFailure t46; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_main(void) { h_0fn_48ac9712 h0_h; h_0fn_6f1dc5d7 h1_k; h_0fn_48ac9712 h2_f; h_0fn_6f1dc5d7 h3_g; h_0fn_660a05e6 h4_rec; HeroMapHeader * h5_m = {0}; HERO_NODEBUG h_0opt_30514ebf h6_f0 = {0}, h13_own13 = {0}, t40, t41, t45, t47, t73, t74; int64_t h7_spawned; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t7, t8, t12, t14, t20, t23, t24, t27, t28, t36, t39, t67, t68, t69, t70; HERO_NODEBUG HeroMapHeader *h12_own12 = {0}, *t35, *t38, *t71, *t72; HERO_NODEBUG HeroArrayHeader *h14_own14 = {0}, *h15_own15 = {0}, *t51, *t56, *t75, *t76; HERO_NODEBUG h_0fn_48ac9712 t1, t2, t16, t17, t37, t48, t53, t58, t62; HERO_NODEBUG int64_t t3, t4, t9, t10, t11, t13, t15, t18, t19, t25, t26, t31, t34, t42, t43, t49, t50, t52, t54, t55, t57, t59, t60, t61, t63, t64, t65, t66; HERO_NODEBUG h_0fn_6f1dc5d7 t5, t6, t21, t22; HERO_NODEBUG h_0fn_660a05e6 t29, t30; HERO_NODEBUG h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P t32, t33; HERO_NODEBUG bool t44; HERO_NODEBUG HeroFailure t46; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87; h0_h = t1;
     t2 = h0_h; t3 = INT64_C(4); t4 = t2(t3); hero_print_int(t4); hero_print_end();
     t5 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9; h1_k = t5;
@@ -200,12 +201,12 @@ void h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_main(void) { h_0fn_
     t29 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2; h4_rec = t29;
     t30 = h4_rec; t31 = INT64_C(12); t32 = (h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P){.f_x = t31}; t33 = t30(t32); t34 = t33.f_x; hero_print_int(t34); hero_print_end();
     t35 = hero_map_new(&hero_desc_str, &hero_desc_func, 0); t71 = h12_own12; h12_own12 = t35; hero_map_decref(t71); t72 = h5_m; hero_map_incref(t35); h5_m = t35; hero_map_decref(t72);
-    t36 = HERO_STR_LIT(hero_str_61); t37 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 65, 5}; hero_map_set_at(&(h5_m), &t36, &t37, &hero_here); }
-    t38 = h5_m; t39 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 66, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t38, &t39, &hero_here); if (found == NULL) { t40 = (h_0opt_30514ebf){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t40 = (h_0opt_30514ebf){.tag = INT64_C(0)}; (&hero_desc_func)->copy(&t40.as.ok, found); } } t73 = h13_own13; h13_own13 = t40; h_0opt_30514ebf_release(&t73); t74 = h6_f0; h_0opt_30514ebf_retain(&t40); h6_f0 = t40; h_0opt_30514ebf_release(&t74); t41 = h6_f0; t42 = t41.tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto bb1; else goto bb2; bb1: t47 = h6_f0; t48 = t47.as.ok; t49 = INT64_C(16); t50 = t48(t49); hero_print_int(t50); hero_print_end();
+    t36 = HERO_STR_LIT(hero_str_61); t37 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 65, 5}; hero_map_set_at(&(h5_m), &t36, &t37, &hero_here); }
+    t38 = h5_m; t39 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 66, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t38, &t39, &hero_here); if (hero_found == NULL) { t40 = (h_0opt_30514ebf){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t40 = (h_0opt_30514ebf){.hero_tag = INT64_C(0)}; (&hero_desc_func)->copy(&t40.hero_as.hero_ok, hero_found); } } t73 = h13_own13; h13_own13 = t40; h_0opt_30514ebf_release(&t73); t74 = h6_f0; h_0opt_30514ebf_retain(&t40); h6_f0 = t40; h_0opt_30514ebf_release(&t74); t41 = h6_f0; t42 = t41.hero_tag; t43 = INT64_C(0); t44 = t42 == t43; if (t44) goto hero_bb1; else goto hero_bb2; hero_bb1: t47 = h6_f0; t48 = t47.hero_as.hero_ok; t49 = INT64_C(16); t50 = t48(t49); hero_print_int(t50); hero_print_end();
     t51 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(); t75 = h14_own14; h14_own14 = t51; hero_array_decref(t75); t52 = INT64_C(0); t53 = ((void)((t51 == NULL || t52 < 0 || t52 >= t51->len) ? hero_panic_index_at(t51, t52, "fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 67, 11) : (void)0), (void)(t51->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t51 + 1))[t52]); t54 = INT64_C(17); t55 = t53(t54); t56 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_STEPS(); t76 = h15_own15; h15_own15 = t56; hero_array_decref(t76); t57 = INT64_C(1); t58 = ((void)((t56 == NULL || t57 < 0 || t57 >= t56->len) ? hero_panic_index_at(t56, t57, "fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 67, 26) : (void)0), (void)(t56->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t56 + 1))[t57]); t59 = INT64_C(1); t60 = t58(t59); if (__builtin_add_overflow(t55, t60, &t61)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 67, 11); hero_print_int(t61); hero_print_end();
-    t62 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; t63 = INT64_C(18); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 68, 15}; t64 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t62), t63); } h7_spawned = t64;
-    t65 = h7_spawned; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 69, 11}; t66 = hero_thread_join(t65); } hero_print_int(t66); hero_print_end();
-#line 209 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+    t62 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; t63 = INT64_C(18); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 68, 15}; t64 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t62), t63); } h7_spawned = t64;
+    t65 = h7_spawned; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 69, 11}; t66 = hero_thread_join(t65); } hero_print_int(t66); hero_print_end();
+#line 210 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_map_release_at(&h5_m);
     h_0opt_30514ebf_release(hero_slot_escape(&h6_f0));
     hero_str_release_at(&h8_own8);
@@ -217,44 +218,46 @@ void h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_main(void) { h_0fn_
     hero_array_release_at(&h14_own14);
     hero_array_release_at(&h15_own15);
     return;
-bb2:
+hero_bb2:
 #line 66 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-    t45 = h6_f0; t46 = t45.as.err;
-#line 224 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+    t45 = h6_f0; t46 = t45.hero_as.hero_err;
+#line 225 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_panic_must_at(t46, "fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.main", 66, 11);
     hero_unreachable();
 }
 
 #line 19 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(int64_t h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(int64_t h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x; return t1;
-#line 232 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 233 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(int64_t h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(h0_x);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 27 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* outer<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(int64_t h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer"); h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+/* outer<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(int64_t h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer"); h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); return t4;
-#line 245 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 247 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(int64_t h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(h0_x);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 27 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* outer<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(HeroStr h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer"); h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4, t5; HERO_NODEBUG h_0fn_6f1dc5d7 t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* outer<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(HeroStr h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer"); h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4, t5; HERO_NODEBUG h_0fn_6f1dc5d7 t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); t5 = h2_own2; h2_own2 = t4; hero_str_decref(t5);
-#line 258 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 261 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_str_incref(t4);
     hero_str_release_at(&h2_own2);
     return t4;
@@ -263,18 +266,19 @@ int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a8
 HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(HeroStr h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(h0_x);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 32 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* down<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(int64_t h0_x, int64_t h1_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down"); h_0fn_7b615d8f h2_f; HERO_NODEBUG int64_t h3_ret0, t1, t2, t4, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t3; HERO_NODEBUG h_0fn_7b615d8f t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+/* down<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(int64_t h0_x, int64_t h1_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down"); h_0fn_7b615d8f h2_f; HERO_NODEBUG int64_t h3_ret0, t1, t2, t4, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t3; HERO_NODEBUG h_0fn_7b615d8f t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 35
     t5 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87; h2_f = t5;
-    t6 = h2_f; t7 = h0_x; t8 = h1_n; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.down", 36, 17); t11 = t6(t7, t10); h3_ret0 = t11; goto bb4; bb2:
+    t6 = h2_f; t7 = h0_x; t8 = h1_n; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.down", 36, 17); t11 = t6(t7, t10); h3_ret0 = t11; goto hero_bb4; hero_bb2:
 #line 34
-    t4 = h0_x; h3_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 278 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+    t4 = h0_x; h3_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+#line 282 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     t12 = h3_ret0;
     return t12;
 }
@@ -282,18 +286,19 @@ HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d
 int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(int64_t h0_x, int64_t h1_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(h0_x, h1_n);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 32 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* down<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(HeroStr h0_x, int64_t h1_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down"); h_0fn_1fb9aa18 h2_f; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t7, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t8, t9, t10; HERO_NODEBUG bool t3; HERO_NODEBUG h_0fn_1fb9aa18 t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+/* down<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(HeroStr h0_x, int64_t h1_n) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down"); h_0fn_1fb9aa18 h2_f; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t7, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t8, t9, t10; HERO_NODEBUG bool t3; HERO_NODEBUG h_0fn_1fb9aa18 t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_n; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 35
     t5 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9; h2_f = t5;
-    t6 = h2_f; t7 = h0_x; t8 = h1_n; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.down", 36, 17); t11 = t6(t7, t10); t13 = h4_own4; h4_own4 = t11; hero_str_decref(t13); h3_ret0 = t11; goto bb4; bb2:
+    t6 = h2_f; t7 = h0_x; t8 = h1_n; t9 = INT64_C(1); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-417-every-function-value-is-named-before-c-is-written.hero", "fixedbugs-417-every-function-value-is-named-before-c-is-written.down", 36, 17); t11 = t6(t7, t10); t13 = h4_own4; h4_own4 = t11; hero_str_decref(t13); h3_ret0 = t11; goto hero_bb4; hero_bb2:
 #line 34
-    t4 = h0_x; h3_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
-#line 297 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+    t4 = h0_x; h3_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+#line 302 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     t12 = h3_ret0;
     hero_str_incref(t12);
     hero_str_release_at(&h4_own4);
@@ -303,57 +308,59 @@ int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87
 HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(HeroStr h0_x, int64_t h1_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(h0_x, h1_n);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 39 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* pick<i64> */ HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0pick_1b9a87(int64_t h0_x) { HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* pick<i64> */ HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0pick_1b9a87(int64_t h0_x) { HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 41
     t2 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; return t2;
-#line 314 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 320 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 #line 39 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* pick<str> */ HERO_TU_LOCAL h_0fn_6f1dc5d7 h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0pick_1e58d9(HeroStr h0_x) { HERO_NODEBUG h_0fn_6f1dc5d7 t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* pick<str> */ HERO_TU_LOCAL h_0fn_6f1dc5d7 h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0pick_1e58d9(HeroStr h0_x) { HERO_NODEBUG h_0fn_6f1dc5d7 t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 41
     t2 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9; return t2;
-#line 321 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 327 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 #line 44 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* keep<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0keep_1b9a87(int64_t h0_x) { __attribute__((unused)) h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* keep<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0keep_1b9a87(int64_t h0_x) { __attribute__((__unused__)) h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87; h1_f = t1;
 #line 47
     t3 = h0_x; return t3;
-#line 329 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 335 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 #line 44 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* keep<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0keep_1e58d9(HeroStr h0_x) { __attribute__((unused)) h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* keep<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0keep_1e58d9(HeroStr h0_x) { __attribute__((__unused__)) h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9; h1_f = t1;
 #line 47
     t3 = h0_x;
-#line 337 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 343 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_str_incref(t3);
     return t3;
 }
 
 #line 19 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* ident<P> */ HERO_TU_LOCAL h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* ident<P> */ HERO_TU_LOCAL h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x; return t1;
-#line 345 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 351 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
 h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h0_x);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 19 "tests/golden/run/fixedbugs-417-every-function-value-is-named-before-c-is-written.hero"
-/* ident<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* ident<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x) { hero_thread_guard("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident"); HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x;
-#line 357 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
+#line 364 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -361,152 +368,153 @@ h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_0cb_fixedbugs417ever
 HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(h0_x);
+    hero_callback_left();
     return hero_result;
 }
-HERO_TU_LOCAL bool h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_eq(const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *a, const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *b) {
-    if (!(a->f_x == b->f_x)) return false;
+HERO_TU_LOCAL bool h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_eq(const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *hero_a, const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_hash(const void *elem) {
-    const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0P_hash(const void *hero_elem) {
+    const h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *a, const h_0opt_30514ebf *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_func)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *hero_a, const h_0opt_30514ebf *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_func)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *elem) {
-    const h_0opt_30514ebf *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *hero_elem) {
+    const h_0opt_30514ebf *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_func)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_func)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("279c85c27fb26231", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("567a9a1a4992b344", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs417everyfunctionvalueisnamedbeforeciswritten\tfixedbugs-417-every-function-value-is-named-before-c-is-written\n");
     h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_main();
     hero_runtime_check_leaks();

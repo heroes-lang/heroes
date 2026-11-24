@@ -183,7 +183,7 @@ function value_header(f: containers.Function, c: state.Checked, names: ctype.Nam
     for one in params_as(f, c, names, value: true)
         params @ params.push(one)
 
-    return local_of(f) + "__attribute__((unused)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(params) + ")"
+    return local_of(f) + "__attribute__((__unused__)) " + result + " " + value_name(f, c, s, decls) + "(" + listed(params) + ")"
 
 function value_prototype(@w: writer.Writer, f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     writer.at_generated(@w)
@@ -339,7 +339,7 @@ test "the signature spells the pair rule, and an instance carries its hash"
     assert as_value(f, c, names, s, parsed.decls) == "h_t_dist"
     twin: writer.Writer @= writer.new_writer("t")
     value_twin(@twin, library, c, names, ls, parsed.decls)
-    assert writer.finish(twin) == "#line 2 \"t.c\"\n__attribute__((unused)) int64_t hero_value_h_library_dist(int64_t h0_a, int64_t *ph1_b) {\n    HERO_NODEBUG static const HeroPlace hero_here = {\"<heroes library>\", \"library.dist\", 1, 1};\n    return h_library_dist(h0_a, ph1_b, &hero_here);\n}\n"
+    assert writer.finish(twin) == "#line 2 \"t.c\"\n__attribute__((__unused__)) int64_t hero_value_h_library_dist(int64_t h0_a, int64_t *ph1_b) {\n    HERO_NODEBUG static const HeroPlace hero_here = {\"<heroes library>\", \"library.dist\", 1, 1};\n    return h_library_dist(h0_a, ph1_b, &hero_here);\n}\n"
 
     # A test block is named by index, never by title.
     tester: containers.Function @= f

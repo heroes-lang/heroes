@@ -219,8 +219,8 @@ test "a header is told it declares a name only where the name is its own, never 
         source_dir: root
     )
     words = compiling.unit_words(under)
-    sqrt = "__attribute__((unused)) static void hero_order_q(void) { (void)(sqrt); }"
-    x = "__attribute__((unused)) static void hero_order_q(void) { (void)(x2445); }"
+    sqrt = "__attribute__((__unused__)) static void hero_order_q(void) { (void)(sqrt); }"
+    x = "__attribute__((__unused__)) static void hero_order_q(void) { (void)(x2445); }"
 
     # Read alone, `stdio.h` declares no `sqrt`, which `<math.h>` declares
     # alone and after it, and not after itself read first.

@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -60,10 +60,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R0_c_a {
 } h_fixedbugs170variants32deepbuild_0R0_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R0 {
-    h_fixedbugs170variants32deepbuild_0R0_tag tag;
+    h_fixedbugs170variants32deepbuild_0R0_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R0_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R0_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R0;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R1_tag {
@@ -76,10 +76,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R1_c_a {
 } h_fixedbugs170variants32deepbuild_0R1_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R1 {
-    h_fixedbugs170variants32deepbuild_0R1_tag tag;
+    h_fixedbugs170variants32deepbuild_0R1_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R1_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R1_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R1;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R2_tag {
@@ -92,10 +92,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R2_c_a {
 } h_fixedbugs170variants32deepbuild_0R2_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R2 {
-    h_fixedbugs170variants32deepbuild_0R2_tag tag;
+    h_fixedbugs170variants32deepbuild_0R2_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R2_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R2_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R2;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R3_tag {
@@ -108,10 +108,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R3_c_a {
 } h_fixedbugs170variants32deepbuild_0R3_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R3 {
-    h_fixedbugs170variants32deepbuild_0R3_tag tag;
+    h_fixedbugs170variants32deepbuild_0R3_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R3_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R3_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R3;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R4_tag {
@@ -124,10 +124,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R4_c_a {
 } h_fixedbugs170variants32deepbuild_0R4_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R4 {
-    h_fixedbugs170variants32deepbuild_0R4_tag tag;
+    h_fixedbugs170variants32deepbuild_0R4_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R4_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R4_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R4;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R5_tag {
@@ -140,10 +140,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R5_c_a {
 } h_fixedbugs170variants32deepbuild_0R5_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R5 {
-    h_fixedbugs170variants32deepbuild_0R5_tag tag;
+    h_fixedbugs170variants32deepbuild_0R5_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R5_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R5_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R5;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R6_tag {
@@ -156,10 +156,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R6_c_a {
 } h_fixedbugs170variants32deepbuild_0R6_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R6 {
-    h_fixedbugs170variants32deepbuild_0R6_tag tag;
+    h_fixedbugs170variants32deepbuild_0R6_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R6_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R6_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R6;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R7_tag {
@@ -172,10 +172,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R7_c_a {
 } h_fixedbugs170variants32deepbuild_0R7_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R7 {
-    h_fixedbugs170variants32deepbuild_0R7_tag tag;
+    h_fixedbugs170variants32deepbuild_0R7_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R7_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R7_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R7;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R8_tag {
@@ -188,10 +188,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R8_c_a {
 } h_fixedbugs170variants32deepbuild_0R8_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R8 {
-    h_fixedbugs170variants32deepbuild_0R8_tag tag;
+    h_fixedbugs170variants32deepbuild_0R8_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R8_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R8_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R8;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R9_tag {
@@ -204,10 +204,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R9_c_a {
 } h_fixedbugs170variants32deepbuild_0R9_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R9 {
-    h_fixedbugs170variants32deepbuild_0R9_tag tag;
+    h_fixedbugs170variants32deepbuild_0R9_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R9_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R9_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R9;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R10_tag {
@@ -220,10 +220,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R10_c_a {
 } h_fixedbugs170variants32deepbuild_0R10_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R10 {
-    h_fixedbugs170variants32deepbuild_0R10_tag tag;
+    h_fixedbugs170variants32deepbuild_0R10_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R10_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R10_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R10;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R11_tag {
@@ -236,10 +236,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R11_c_a {
 } h_fixedbugs170variants32deepbuild_0R11_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R11 {
-    h_fixedbugs170variants32deepbuild_0R11_tag tag;
+    h_fixedbugs170variants32deepbuild_0R11_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R11_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R11_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R11;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R12_tag {
@@ -252,10 +252,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R12_c_a {
 } h_fixedbugs170variants32deepbuild_0R12_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R12 {
-    h_fixedbugs170variants32deepbuild_0R12_tag tag;
+    h_fixedbugs170variants32deepbuild_0R12_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R12_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R12_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R12;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R13_tag {
@@ -268,10 +268,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R13_c_a {
 } h_fixedbugs170variants32deepbuild_0R13_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R13 {
-    h_fixedbugs170variants32deepbuild_0R13_tag tag;
+    h_fixedbugs170variants32deepbuild_0R13_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R13_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R13_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R13;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R14_tag {
@@ -284,10 +284,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R14_c_a {
 } h_fixedbugs170variants32deepbuild_0R14_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R14 {
-    h_fixedbugs170variants32deepbuild_0R14_tag tag;
+    h_fixedbugs170variants32deepbuild_0R14_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R14_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R14_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R14;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R15_tag {
@@ -300,10 +300,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R15_c_a {
 } h_fixedbugs170variants32deepbuild_0R15_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R15 {
-    h_fixedbugs170variants32deepbuild_0R15_tag tag;
+    h_fixedbugs170variants32deepbuild_0R15_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R15_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R15_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R15;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R16_tag {
@@ -316,10 +316,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R16_c_a {
 } h_fixedbugs170variants32deepbuild_0R16_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R16 {
-    h_fixedbugs170variants32deepbuild_0R16_tag tag;
+    h_fixedbugs170variants32deepbuild_0R16_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R16_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R16_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R16;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R17_tag {
@@ -332,10 +332,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R17_c_a {
 } h_fixedbugs170variants32deepbuild_0R17_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R17 {
-    h_fixedbugs170variants32deepbuild_0R17_tag tag;
+    h_fixedbugs170variants32deepbuild_0R17_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R17_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R17_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R17;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R18_tag {
@@ -348,10 +348,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R18_c_a {
 } h_fixedbugs170variants32deepbuild_0R18_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R18 {
-    h_fixedbugs170variants32deepbuild_0R18_tag tag;
+    h_fixedbugs170variants32deepbuild_0R18_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R18_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R18_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R18;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R19_tag {
@@ -364,10 +364,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R19_c_a {
 } h_fixedbugs170variants32deepbuild_0R19_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R19 {
-    h_fixedbugs170variants32deepbuild_0R19_tag tag;
+    h_fixedbugs170variants32deepbuild_0R19_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R19_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R19_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R19;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R20_tag {
@@ -380,10 +380,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R20_c_a {
 } h_fixedbugs170variants32deepbuild_0R20_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R20 {
-    h_fixedbugs170variants32deepbuild_0R20_tag tag;
+    h_fixedbugs170variants32deepbuild_0R20_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R20_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R20_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R20;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R21_tag {
@@ -396,10 +396,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R21_c_a {
 } h_fixedbugs170variants32deepbuild_0R21_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R21 {
-    h_fixedbugs170variants32deepbuild_0R21_tag tag;
+    h_fixedbugs170variants32deepbuild_0R21_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R21_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R21_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R21;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R22_tag {
@@ -412,10 +412,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R22_c_a {
 } h_fixedbugs170variants32deepbuild_0R22_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R22 {
-    h_fixedbugs170variants32deepbuild_0R22_tag tag;
+    h_fixedbugs170variants32deepbuild_0R22_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R22_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R22_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R22;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R23_tag {
@@ -428,10 +428,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R23_c_a {
 } h_fixedbugs170variants32deepbuild_0R23_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R23 {
-    h_fixedbugs170variants32deepbuild_0R23_tag tag;
+    h_fixedbugs170variants32deepbuild_0R23_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R23_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R23_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R23;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R24_tag {
@@ -444,10 +444,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R24_c_a {
 } h_fixedbugs170variants32deepbuild_0R24_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R24 {
-    h_fixedbugs170variants32deepbuild_0R24_tag tag;
+    h_fixedbugs170variants32deepbuild_0R24_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R24_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R24_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R24;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R25_tag {
@@ -460,10 +460,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R25_c_a {
 } h_fixedbugs170variants32deepbuild_0R25_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R25 {
-    h_fixedbugs170variants32deepbuild_0R25_tag tag;
+    h_fixedbugs170variants32deepbuild_0R25_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R25_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R25_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R25;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R26_tag {
@@ -476,10 +476,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R26_c_a {
 } h_fixedbugs170variants32deepbuild_0R26_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R26 {
-    h_fixedbugs170variants32deepbuild_0R26_tag tag;
+    h_fixedbugs170variants32deepbuild_0R26_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R26_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R26_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R26;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R27_tag {
@@ -492,10 +492,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R27_c_a {
 } h_fixedbugs170variants32deepbuild_0R27_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R27 {
-    h_fixedbugs170variants32deepbuild_0R27_tag tag;
+    h_fixedbugs170variants32deepbuild_0R27_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R27_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R27_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R27;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R28_tag {
@@ -508,10 +508,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R28_c_a {
 } h_fixedbugs170variants32deepbuild_0R28_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R28 {
-    h_fixedbugs170variants32deepbuild_0R28_tag tag;
+    h_fixedbugs170variants32deepbuild_0R28_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R28_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R28_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R28;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R29_tag {
@@ -524,10 +524,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R29_c_a {
 } h_fixedbugs170variants32deepbuild_0R29_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R29 {
-    h_fixedbugs170variants32deepbuild_0R29_tag tag;
+    h_fixedbugs170variants32deepbuild_0R29_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R29_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R29_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R29;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R30_tag {
@@ -540,10 +540,10 @@ typedef struct h_fixedbugs170variants32deepbuild_0R30_c_a {
 } h_fixedbugs170variants32deepbuild_0R30_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R30 {
-    h_fixedbugs170variants32deepbuild_0R30_tag tag;
+    h_fixedbugs170variants32deepbuild_0R30_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R30_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R30_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R30;
 
 typedef enum h_fixedbugs170variants32deepbuild_0R31_tag {
@@ -556,33 +556,33 @@ typedef struct h_fixedbugs170variants32deepbuild_0R31_c_a {
 } h_fixedbugs170variants32deepbuild_0R31_c_a;
 
 typedef struct h_fixedbugs170variants32deepbuild_R31 {
-    h_fixedbugs170variants32deepbuild_0R31_tag tag;
+    h_fixedbugs170variants32deepbuild_0R31_tag hero_tag;
     union {
-        h_fixedbugs170variants32deepbuild_0R31_c_a c_a;
-    } as;
+        h_fixedbugs170variants32deepbuild_0R31_c_a hero_c_a;
+    } hero_as;
 } h_fixedbugs170variants32deepbuild_R31;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -591,166 +591,166 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 603 "fixedbugs170variants32deepbuild.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_c_a_eq(const h_fixedbugs170variants32deepbuild_0R0_c_a *a, const h_fixedbugs170variants32deepbuild_0R0_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_eq(const h_fixedbugs170variants32deepbuild_R0 *a, const h_fixedbugs170variants32deepbuild_R0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_c_a_eq(const h_fixedbugs170variants32deepbuild_0R1_c_a *a, const h_fixedbugs170variants32deepbuild_0R1_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_eq(const h_fixedbugs170variants32deepbuild_R1 *a, const h_fixedbugs170variants32deepbuild_R1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_c_a_eq(const h_fixedbugs170variants32deepbuild_0R2_c_a *a, const h_fixedbugs170variants32deepbuild_0R2_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_eq(const h_fixedbugs170variants32deepbuild_R2 *a, const h_fixedbugs170variants32deepbuild_R2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_c_a_eq(const h_fixedbugs170variants32deepbuild_0R3_c_a *a, const h_fixedbugs170variants32deepbuild_0R3_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_eq(const h_fixedbugs170variants32deepbuild_R3 *a, const h_fixedbugs170variants32deepbuild_R3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_c_a_eq(const h_fixedbugs170variants32deepbuild_0R4_c_a *a, const h_fixedbugs170variants32deepbuild_0R4_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_eq(const h_fixedbugs170variants32deepbuild_R4 *a, const h_fixedbugs170variants32deepbuild_R4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_c_a_eq(const h_fixedbugs170variants32deepbuild_0R5_c_a *a, const h_fixedbugs170variants32deepbuild_0R5_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_eq(const h_fixedbugs170variants32deepbuild_R5 *a, const h_fixedbugs170variants32deepbuild_R5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_c_a_eq(const h_fixedbugs170variants32deepbuild_0R6_c_a *a, const h_fixedbugs170variants32deepbuild_0R6_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_eq(const h_fixedbugs170variants32deepbuild_R6 *a, const h_fixedbugs170variants32deepbuild_R6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_c_a_eq(const h_fixedbugs170variants32deepbuild_0R7_c_a *a, const h_fixedbugs170variants32deepbuild_0R7_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_eq(const h_fixedbugs170variants32deepbuild_R7 *a, const h_fixedbugs170variants32deepbuild_R7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_c_a_eq(const h_fixedbugs170variants32deepbuild_0R8_c_a *a, const h_fixedbugs170variants32deepbuild_0R8_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_eq(const h_fixedbugs170variants32deepbuild_R8 *a, const h_fixedbugs170variants32deepbuild_R8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_c_a_eq(const h_fixedbugs170variants32deepbuild_0R9_c_a *a, const h_fixedbugs170variants32deepbuild_0R9_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_eq(const h_fixedbugs170variants32deepbuild_R9 *a, const h_fixedbugs170variants32deepbuild_R9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_c_a_eq(const h_fixedbugs170variants32deepbuild_0R10_c_a *a, const h_fixedbugs170variants32deepbuild_0R10_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_eq(const h_fixedbugs170variants32deepbuild_R10 *a, const h_fixedbugs170variants32deepbuild_R10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_c_a_eq(const h_fixedbugs170variants32deepbuild_0R11_c_a *a, const h_fixedbugs170variants32deepbuild_0R11_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_eq(const h_fixedbugs170variants32deepbuild_R11 *a, const h_fixedbugs170variants32deepbuild_R11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_c_a_eq(const h_fixedbugs170variants32deepbuild_0R12_c_a *a, const h_fixedbugs170variants32deepbuild_0R12_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_eq(const h_fixedbugs170variants32deepbuild_R12 *a, const h_fixedbugs170variants32deepbuild_R12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_c_a_eq(const h_fixedbugs170variants32deepbuild_0R13_c_a *a, const h_fixedbugs170variants32deepbuild_0R13_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_eq(const h_fixedbugs170variants32deepbuild_R13 *a, const h_fixedbugs170variants32deepbuild_R13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_c_a_eq(const h_fixedbugs170variants32deepbuild_0R14_c_a *a, const h_fixedbugs170variants32deepbuild_0R14_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_eq(const h_fixedbugs170variants32deepbuild_R14 *a, const h_fixedbugs170variants32deepbuild_R14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_c_a_eq(const h_fixedbugs170variants32deepbuild_0R15_c_a *a, const h_fixedbugs170variants32deepbuild_0R15_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_eq(const h_fixedbugs170variants32deepbuild_R15 *a, const h_fixedbugs170variants32deepbuild_R15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_c_a_eq(const h_fixedbugs170variants32deepbuild_0R16_c_a *a, const h_fixedbugs170variants32deepbuild_0R16_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_eq(const h_fixedbugs170variants32deepbuild_R16 *a, const h_fixedbugs170variants32deepbuild_R16 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_c_a_eq(const h_fixedbugs170variants32deepbuild_0R17_c_a *a, const h_fixedbugs170variants32deepbuild_0R17_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_eq(const h_fixedbugs170variants32deepbuild_R17 *a, const h_fixedbugs170variants32deepbuild_R17 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_c_a_eq(const h_fixedbugs170variants32deepbuild_0R18_c_a *a, const h_fixedbugs170variants32deepbuild_0R18_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_eq(const h_fixedbugs170variants32deepbuild_R18 *a, const h_fixedbugs170variants32deepbuild_R18 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_c_a_eq(const h_fixedbugs170variants32deepbuild_0R19_c_a *a, const h_fixedbugs170variants32deepbuild_0R19_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_eq(const h_fixedbugs170variants32deepbuild_R19 *a, const h_fixedbugs170variants32deepbuild_R19 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_c_a_eq(const h_fixedbugs170variants32deepbuild_0R20_c_a *a, const h_fixedbugs170variants32deepbuild_0R20_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_eq(const h_fixedbugs170variants32deepbuild_R20 *a, const h_fixedbugs170variants32deepbuild_R20 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_c_a_eq(const h_fixedbugs170variants32deepbuild_0R21_c_a *a, const h_fixedbugs170variants32deepbuild_0R21_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_eq(const h_fixedbugs170variants32deepbuild_R21 *a, const h_fixedbugs170variants32deepbuild_R21 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_c_a_eq(const h_fixedbugs170variants32deepbuild_0R22_c_a *a, const h_fixedbugs170variants32deepbuild_0R22_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_eq(const h_fixedbugs170variants32deepbuild_R22 *a, const h_fixedbugs170variants32deepbuild_R22 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_c_a_eq(const h_fixedbugs170variants32deepbuild_0R23_c_a *a, const h_fixedbugs170variants32deepbuild_0R23_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_eq(const h_fixedbugs170variants32deepbuild_R23 *a, const h_fixedbugs170variants32deepbuild_R23 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_c_a_eq(const h_fixedbugs170variants32deepbuild_0R24_c_a *a, const h_fixedbugs170variants32deepbuild_0R24_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_eq(const h_fixedbugs170variants32deepbuild_R24 *a, const h_fixedbugs170variants32deepbuild_R24 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_c_a_eq(const h_fixedbugs170variants32deepbuild_0R25_c_a *a, const h_fixedbugs170variants32deepbuild_0R25_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_eq(const h_fixedbugs170variants32deepbuild_R25 *a, const h_fixedbugs170variants32deepbuild_R25 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_c_a_eq(const h_fixedbugs170variants32deepbuild_0R26_c_a *a, const h_fixedbugs170variants32deepbuild_0R26_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_eq(const h_fixedbugs170variants32deepbuild_R26 *a, const h_fixedbugs170variants32deepbuild_R26 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_c_a_eq(const h_fixedbugs170variants32deepbuild_0R27_c_a *a, const h_fixedbugs170variants32deepbuild_0R27_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_eq(const h_fixedbugs170variants32deepbuild_R27 *a, const h_fixedbugs170variants32deepbuild_R27 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_c_a_eq(const h_fixedbugs170variants32deepbuild_0R28_c_a *a, const h_fixedbugs170variants32deepbuild_0R28_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_eq(const h_fixedbugs170variants32deepbuild_R28 *a, const h_fixedbugs170variants32deepbuild_R28 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_c_a_eq(const h_fixedbugs170variants32deepbuild_0R29_c_a *a, const h_fixedbugs170variants32deepbuild_0R29_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_eq(const h_fixedbugs170variants32deepbuild_R29 *a, const h_fixedbugs170variants32deepbuild_R29 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_c_a_eq(const h_fixedbugs170variants32deepbuild_0R30_c_a *a, const h_fixedbugs170variants32deepbuild_0R30_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_eq(const h_fixedbugs170variants32deepbuild_R30 *a, const h_fixedbugs170variants32deepbuild_R30 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_c_a_eq(const h_fixedbugs170variants32deepbuild_0R31_c_a *a, const h_fixedbugs170variants32deepbuild_0R31_c_a *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_c_a_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_eq(const h_fixedbugs170variants32deepbuild_R31 *a, const h_fixedbugs170variants32deepbuild_R31 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_c_a_eq(const h_fixedbugs170variants32deepbuild_0R0_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R0_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_eq(const h_fixedbugs170variants32deepbuild_R0 *hero_a, const h_fixedbugs170variants32deepbuild_R0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_c_a_eq(const h_fixedbugs170variants32deepbuild_0R1_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R1_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_eq(const h_fixedbugs170variants32deepbuild_R1 *hero_a, const h_fixedbugs170variants32deepbuild_R1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_c_a_eq(const h_fixedbugs170variants32deepbuild_0R2_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R2_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_eq(const h_fixedbugs170variants32deepbuild_R2 *hero_a, const h_fixedbugs170variants32deepbuild_R2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_c_a_eq(const h_fixedbugs170variants32deepbuild_0R3_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R3_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_eq(const h_fixedbugs170variants32deepbuild_R3 *hero_a, const h_fixedbugs170variants32deepbuild_R3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_c_a_eq(const h_fixedbugs170variants32deepbuild_0R4_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R4_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_eq(const h_fixedbugs170variants32deepbuild_R4 *hero_a, const h_fixedbugs170variants32deepbuild_R4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_c_a_eq(const h_fixedbugs170variants32deepbuild_0R5_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R5_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_eq(const h_fixedbugs170variants32deepbuild_R5 *hero_a, const h_fixedbugs170variants32deepbuild_R5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_c_a_eq(const h_fixedbugs170variants32deepbuild_0R6_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R6_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_eq(const h_fixedbugs170variants32deepbuild_R6 *hero_a, const h_fixedbugs170variants32deepbuild_R6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_c_a_eq(const h_fixedbugs170variants32deepbuild_0R7_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R7_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_eq(const h_fixedbugs170variants32deepbuild_R7 *hero_a, const h_fixedbugs170variants32deepbuild_R7 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_c_a_eq(const h_fixedbugs170variants32deepbuild_0R8_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R8_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_eq(const h_fixedbugs170variants32deepbuild_R8 *hero_a, const h_fixedbugs170variants32deepbuild_R8 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_c_a_eq(const h_fixedbugs170variants32deepbuild_0R9_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R9_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_eq(const h_fixedbugs170variants32deepbuild_R9 *hero_a, const h_fixedbugs170variants32deepbuild_R9 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_c_a_eq(const h_fixedbugs170variants32deepbuild_0R10_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R10_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_eq(const h_fixedbugs170variants32deepbuild_R10 *hero_a, const h_fixedbugs170variants32deepbuild_R10 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_c_a_eq(const h_fixedbugs170variants32deepbuild_0R11_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R11_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_eq(const h_fixedbugs170variants32deepbuild_R11 *hero_a, const h_fixedbugs170variants32deepbuild_R11 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_c_a_eq(const h_fixedbugs170variants32deepbuild_0R12_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R12_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_eq(const h_fixedbugs170variants32deepbuild_R12 *hero_a, const h_fixedbugs170variants32deepbuild_R12 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_c_a_eq(const h_fixedbugs170variants32deepbuild_0R13_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R13_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_eq(const h_fixedbugs170variants32deepbuild_R13 *hero_a, const h_fixedbugs170variants32deepbuild_R13 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_c_a_eq(const h_fixedbugs170variants32deepbuild_0R14_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R14_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_eq(const h_fixedbugs170variants32deepbuild_R14 *hero_a, const h_fixedbugs170variants32deepbuild_R14 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_c_a_eq(const h_fixedbugs170variants32deepbuild_0R15_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R15_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_eq(const h_fixedbugs170variants32deepbuild_R15 *hero_a, const h_fixedbugs170variants32deepbuild_R15 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_c_a_eq(const h_fixedbugs170variants32deepbuild_0R16_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R16_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_eq(const h_fixedbugs170variants32deepbuild_R16 *hero_a, const h_fixedbugs170variants32deepbuild_R16 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_c_a_eq(const h_fixedbugs170variants32deepbuild_0R17_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R17_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_eq(const h_fixedbugs170variants32deepbuild_R17 *hero_a, const h_fixedbugs170variants32deepbuild_R17 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_c_a_eq(const h_fixedbugs170variants32deepbuild_0R18_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R18_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_eq(const h_fixedbugs170variants32deepbuild_R18 *hero_a, const h_fixedbugs170variants32deepbuild_R18 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_c_a_eq(const h_fixedbugs170variants32deepbuild_0R19_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R19_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_eq(const h_fixedbugs170variants32deepbuild_R19 *hero_a, const h_fixedbugs170variants32deepbuild_R19 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_c_a_eq(const h_fixedbugs170variants32deepbuild_0R20_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R20_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_eq(const h_fixedbugs170variants32deepbuild_R20 *hero_a, const h_fixedbugs170variants32deepbuild_R20 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_c_a_eq(const h_fixedbugs170variants32deepbuild_0R21_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R21_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_eq(const h_fixedbugs170variants32deepbuild_R21 *hero_a, const h_fixedbugs170variants32deepbuild_R21 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_c_a_eq(const h_fixedbugs170variants32deepbuild_0R22_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R22_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_eq(const h_fixedbugs170variants32deepbuild_R22 *hero_a, const h_fixedbugs170variants32deepbuild_R22 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_c_a_eq(const h_fixedbugs170variants32deepbuild_0R23_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R23_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_eq(const h_fixedbugs170variants32deepbuild_R23 *hero_a, const h_fixedbugs170variants32deepbuild_R23 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_c_a_eq(const h_fixedbugs170variants32deepbuild_0R24_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R24_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_eq(const h_fixedbugs170variants32deepbuild_R24 *hero_a, const h_fixedbugs170variants32deepbuild_R24 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_c_a_eq(const h_fixedbugs170variants32deepbuild_0R25_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R25_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_eq(const h_fixedbugs170variants32deepbuild_R25 *hero_a, const h_fixedbugs170variants32deepbuild_R25 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_c_a_eq(const h_fixedbugs170variants32deepbuild_0R26_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R26_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_eq(const h_fixedbugs170variants32deepbuild_R26 *hero_a, const h_fixedbugs170variants32deepbuild_R26 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_c_a_eq(const h_fixedbugs170variants32deepbuild_0R27_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R27_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_eq(const h_fixedbugs170variants32deepbuild_R27 *hero_a, const h_fixedbugs170variants32deepbuild_R27 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_c_a_eq(const h_fixedbugs170variants32deepbuild_0R28_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R28_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_eq(const h_fixedbugs170variants32deepbuild_R28 *hero_a, const h_fixedbugs170variants32deepbuild_R28 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_c_a_eq(const h_fixedbugs170variants32deepbuild_0R29_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R29_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_eq(const h_fixedbugs170variants32deepbuild_R29 *hero_a, const h_fixedbugs170variants32deepbuild_R29 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_c_a_eq(const h_fixedbugs170variants32deepbuild_0R30_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R30_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_eq(const h_fixedbugs170variants32deepbuild_R30 *hero_a, const h_fixedbugs170variants32deepbuild_R30 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_c_a_eq(const h_fixedbugs170variants32deepbuild_0R31_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R31_c_a *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_c_a_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_eq(const h_fixedbugs170variants32deepbuild_R31 *hero_a, const h_fixedbugs170variants32deepbuild_R31 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_fixedbugs170variants32deepbuild_0R31_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_fixedbugs170variants32deepbuild_R31));
+static void h_fixedbugs170variants32deepbuild_0R31_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_fixedbugs170variants32deepbuild_R31));
 }
-static void h_fixedbugs170variants32deepbuild_0R31_desc_drop(void *elem) {
-    (void)elem;
+static void h_fixedbugs170variants32deepbuild_0R31_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_fixedbugs170variants32deepbuild_0R31_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs170variants32deepbuild_0R31_eq((const h_fixedbugs170variants32deepbuild_R31 *)a, (const h_fixedbugs170variants32deepbuild_R31 *)b);
+static bool h_fixedbugs170variants32deepbuild_0R31_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs170variants32deepbuild_0R31_eq((const h_fixedbugs170variants32deepbuild_R31 *)hero_a, (const h_fixedbugs170variants32deepbuild_R31 *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs170variants32deepbuild_0R31_desc = {
     sizeof(h_fixedbugs170variants32deepbuild_R31),
@@ -763,7 +763,7 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs170variants32deepbuild_0R31_desc 
 void h_fixedbugs170variants32deepbuild_main(void);
 
 #line 170 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
-void h_fixedbugs170variants32deepbuild_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5, *t7, *t8; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs170variants32deepbuild_main(void) { HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5, *t7, *t8; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&h_fixedbugs170variants32deepbuild_0R31_desc, 1); t7 = h1_own1; h1_own1 = t1; hero_array_decref(t7); t8 = h0_xs; hero_array_incref(t1); h0_xs = t1; hero_array_decref(t8);
     t2 = h0_xs; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); hero_print_int(t3); hero_print_end();
     t4 = h0_xs; t5 = h0_xs; t6 = hero_array_eq(t4, t5); hero_print_bool(t6); hero_print_end();
@@ -772,1130 +772,1130 @@ void h_fixedbugs170variants32deepbuild_main(void) { HeroArrayHeader * h0_xs = {0
     hero_array_release_at(&h1_own1);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_c_a_eq(const h_fixedbugs170variants32deepbuild_0R0_c_a *a, const h_fixedbugs170variants32deepbuild_0R0_c_a *b) {
-    if (!(a->f_v == b->f_v)) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_c_a_eq(const h_fixedbugs170variants32deepbuild_0R0_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R0_c_a *hero_b) {
+    if (!(hero_a->f_v == hero_b->f_v)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R0_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_v)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R0_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_v)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_eq(const h_fixedbugs170variants32deepbuild_R0 *a, const h_fixedbugs170variants32deepbuild_R0 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R0_tag_a: return h_fixedbugs170variants32deepbuild_0R0_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R0_eq(const h_fixedbugs170variants32deepbuild_R0 *hero_a, const h_fixedbugs170variants32deepbuild_R0 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R0_tag_a: return h_fixedbugs170variants32deepbuild_0R0_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R0_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R0 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R0_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R0 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R0_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R0_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R0_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R0_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R0_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R0_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_c_a_eq(const h_fixedbugs170variants32deepbuild_0R1_c_a *a, const h_fixedbugs170variants32deepbuild_0R1_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R0_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_c_a_eq(const h_fixedbugs170variants32deepbuild_0R1_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R1_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R0_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R1_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R0_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R1_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R0_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_eq(const h_fixedbugs170variants32deepbuild_R1 *a, const h_fixedbugs170variants32deepbuild_R1 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R1_tag_a: return h_fixedbugs170variants32deepbuild_0R1_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R1_eq(const h_fixedbugs170variants32deepbuild_R1 *hero_a, const h_fixedbugs170variants32deepbuild_R1 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R1_tag_a: return h_fixedbugs170variants32deepbuild_0R1_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R1_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R1 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R1_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R1 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R1_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R1_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R1_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R1_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R1_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R1_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_c_a_eq(const h_fixedbugs170variants32deepbuild_0R2_c_a *a, const h_fixedbugs170variants32deepbuild_0R2_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R1_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_c_a_eq(const h_fixedbugs170variants32deepbuild_0R2_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R2_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R1_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R2_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R1_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R2_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R1_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_eq(const h_fixedbugs170variants32deepbuild_R2 *a, const h_fixedbugs170variants32deepbuild_R2 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R2_tag_a: return h_fixedbugs170variants32deepbuild_0R2_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R2_eq(const h_fixedbugs170variants32deepbuild_R2 *hero_a, const h_fixedbugs170variants32deepbuild_R2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R2_tag_a: return h_fixedbugs170variants32deepbuild_0R2_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R2_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R2_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R2_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R2_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R2_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R2_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R2_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R2_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_c_a_eq(const h_fixedbugs170variants32deepbuild_0R3_c_a *a, const h_fixedbugs170variants32deepbuild_0R3_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R2_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_c_a_eq(const h_fixedbugs170variants32deepbuild_0R3_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R3_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R2_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R3_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R2_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R3_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R2_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_eq(const h_fixedbugs170variants32deepbuild_R3 *a, const h_fixedbugs170variants32deepbuild_R3 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R3_tag_a: return h_fixedbugs170variants32deepbuild_0R3_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R3_eq(const h_fixedbugs170variants32deepbuild_R3 *hero_a, const h_fixedbugs170variants32deepbuild_R3 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R3_tag_a: return h_fixedbugs170variants32deepbuild_0R3_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R3_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R3 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R3_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R3 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R3_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R3_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R3_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R3_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R3_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R3_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_c_a_eq(const h_fixedbugs170variants32deepbuild_0R4_c_a *a, const h_fixedbugs170variants32deepbuild_0R4_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R3_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_c_a_eq(const h_fixedbugs170variants32deepbuild_0R4_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R4_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R3_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R4_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R3_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R4_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R3_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_eq(const h_fixedbugs170variants32deepbuild_R4 *a, const h_fixedbugs170variants32deepbuild_R4 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R4_tag_a: return h_fixedbugs170variants32deepbuild_0R4_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R4_eq(const h_fixedbugs170variants32deepbuild_R4 *hero_a, const h_fixedbugs170variants32deepbuild_R4 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R4_tag_a: return h_fixedbugs170variants32deepbuild_0R4_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R4_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R4 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R4_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R4 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R4_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R4_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R4_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R4_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R4_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R4_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_c_a_eq(const h_fixedbugs170variants32deepbuild_0R5_c_a *a, const h_fixedbugs170variants32deepbuild_0R5_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R4_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_c_a_eq(const h_fixedbugs170variants32deepbuild_0R5_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R5_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R4_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R5_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R4_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R5_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R4_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_eq(const h_fixedbugs170variants32deepbuild_R5 *a, const h_fixedbugs170variants32deepbuild_R5 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R5_tag_a: return h_fixedbugs170variants32deepbuild_0R5_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R5_eq(const h_fixedbugs170variants32deepbuild_R5 *hero_a, const h_fixedbugs170variants32deepbuild_R5 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R5_tag_a: return h_fixedbugs170variants32deepbuild_0R5_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R5_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R5 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R5_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R5 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R5_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R5_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R5_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R5_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R5_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R5_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_c_a_eq(const h_fixedbugs170variants32deepbuild_0R6_c_a *a, const h_fixedbugs170variants32deepbuild_0R6_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R5_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_c_a_eq(const h_fixedbugs170variants32deepbuild_0R6_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R6_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R5_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R6_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R5_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R6_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R5_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_eq(const h_fixedbugs170variants32deepbuild_R6 *a, const h_fixedbugs170variants32deepbuild_R6 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R6_tag_a: return h_fixedbugs170variants32deepbuild_0R6_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R6_eq(const h_fixedbugs170variants32deepbuild_R6 *hero_a, const h_fixedbugs170variants32deepbuild_R6 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R6_tag_a: return h_fixedbugs170variants32deepbuild_0R6_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R6_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R6 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R6_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R6 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R6_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R6_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R6_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R6_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R6_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R6_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_c_a_eq(const h_fixedbugs170variants32deepbuild_0R7_c_a *a, const h_fixedbugs170variants32deepbuild_0R7_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R6_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_c_a_eq(const h_fixedbugs170variants32deepbuild_0R7_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R7_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R6_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R7_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R6_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R7_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R6_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_eq(const h_fixedbugs170variants32deepbuild_R7 *a, const h_fixedbugs170variants32deepbuild_R7 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R7_tag_a: return h_fixedbugs170variants32deepbuild_0R7_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R7_eq(const h_fixedbugs170variants32deepbuild_R7 *hero_a, const h_fixedbugs170variants32deepbuild_R7 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R7_tag_a: return h_fixedbugs170variants32deepbuild_0R7_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R7_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R7 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R7_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R7 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R7_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R7_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R7_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R7_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R7_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R7_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_c_a_eq(const h_fixedbugs170variants32deepbuild_0R8_c_a *a, const h_fixedbugs170variants32deepbuild_0R8_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R7_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_c_a_eq(const h_fixedbugs170variants32deepbuild_0R8_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R8_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R7_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R8_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R7_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R8_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R7_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_eq(const h_fixedbugs170variants32deepbuild_R8 *a, const h_fixedbugs170variants32deepbuild_R8 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R8_tag_a: return h_fixedbugs170variants32deepbuild_0R8_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R8_eq(const h_fixedbugs170variants32deepbuild_R8 *hero_a, const h_fixedbugs170variants32deepbuild_R8 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R8_tag_a: return h_fixedbugs170variants32deepbuild_0R8_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R8_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R8 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R8_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R8 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R8_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R8_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R8_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R8_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R8_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R8_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_c_a_eq(const h_fixedbugs170variants32deepbuild_0R9_c_a *a, const h_fixedbugs170variants32deepbuild_0R9_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R8_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_c_a_eq(const h_fixedbugs170variants32deepbuild_0R9_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R9_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R8_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R9_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R8_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R9_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R8_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_eq(const h_fixedbugs170variants32deepbuild_R9 *a, const h_fixedbugs170variants32deepbuild_R9 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R9_tag_a: return h_fixedbugs170variants32deepbuild_0R9_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R9_eq(const h_fixedbugs170variants32deepbuild_R9 *hero_a, const h_fixedbugs170variants32deepbuild_R9 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R9_tag_a: return h_fixedbugs170variants32deepbuild_0R9_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R9_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R9 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R9_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R9 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R9_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R9_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R9_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R9_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R9_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R9_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_c_a_eq(const h_fixedbugs170variants32deepbuild_0R10_c_a *a, const h_fixedbugs170variants32deepbuild_0R10_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R9_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_c_a_eq(const h_fixedbugs170variants32deepbuild_0R10_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R10_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R9_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R10_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R9_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R10_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R9_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_eq(const h_fixedbugs170variants32deepbuild_R10 *a, const h_fixedbugs170variants32deepbuild_R10 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R10_tag_a: return h_fixedbugs170variants32deepbuild_0R10_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R10_eq(const h_fixedbugs170variants32deepbuild_R10 *hero_a, const h_fixedbugs170variants32deepbuild_R10 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R10_tag_a: return h_fixedbugs170variants32deepbuild_0R10_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R10_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R10 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R10_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R10 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R10_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R10_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R10_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R10_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R10_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R10_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_c_a_eq(const h_fixedbugs170variants32deepbuild_0R11_c_a *a, const h_fixedbugs170variants32deepbuild_0R11_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R10_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_c_a_eq(const h_fixedbugs170variants32deepbuild_0R11_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R11_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R10_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R11_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R10_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R11_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R10_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_eq(const h_fixedbugs170variants32deepbuild_R11 *a, const h_fixedbugs170variants32deepbuild_R11 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R11_tag_a: return h_fixedbugs170variants32deepbuild_0R11_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R11_eq(const h_fixedbugs170variants32deepbuild_R11 *hero_a, const h_fixedbugs170variants32deepbuild_R11 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R11_tag_a: return h_fixedbugs170variants32deepbuild_0R11_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R11_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R11 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R11_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R11 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R11_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R11_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R11_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R11_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R11_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R11_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_c_a_eq(const h_fixedbugs170variants32deepbuild_0R12_c_a *a, const h_fixedbugs170variants32deepbuild_0R12_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R11_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_c_a_eq(const h_fixedbugs170variants32deepbuild_0R12_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R12_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R11_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R12_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R11_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R12_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R11_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_eq(const h_fixedbugs170variants32deepbuild_R12 *a, const h_fixedbugs170variants32deepbuild_R12 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R12_tag_a: return h_fixedbugs170variants32deepbuild_0R12_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R12_eq(const h_fixedbugs170variants32deepbuild_R12 *hero_a, const h_fixedbugs170variants32deepbuild_R12 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R12_tag_a: return h_fixedbugs170variants32deepbuild_0R12_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R12_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R12 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R12_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R12 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R12_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R12_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R12_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R12_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R12_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R12_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_c_a_eq(const h_fixedbugs170variants32deepbuild_0R13_c_a *a, const h_fixedbugs170variants32deepbuild_0R13_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R12_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_c_a_eq(const h_fixedbugs170variants32deepbuild_0R13_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R13_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R12_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R13_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R12_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R13_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R12_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_eq(const h_fixedbugs170variants32deepbuild_R13 *a, const h_fixedbugs170variants32deepbuild_R13 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R13_tag_a: return h_fixedbugs170variants32deepbuild_0R13_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R13_eq(const h_fixedbugs170variants32deepbuild_R13 *hero_a, const h_fixedbugs170variants32deepbuild_R13 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R13_tag_a: return h_fixedbugs170variants32deepbuild_0R13_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R13_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R13 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R13_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R13 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R13_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R13_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R13_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R13_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R13_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R13_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_c_a_eq(const h_fixedbugs170variants32deepbuild_0R14_c_a *a, const h_fixedbugs170variants32deepbuild_0R14_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R13_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_c_a_eq(const h_fixedbugs170variants32deepbuild_0R14_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R14_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R13_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R14_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R13_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R14_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R13_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_eq(const h_fixedbugs170variants32deepbuild_R14 *a, const h_fixedbugs170variants32deepbuild_R14 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R14_tag_a: return h_fixedbugs170variants32deepbuild_0R14_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R14_eq(const h_fixedbugs170variants32deepbuild_R14 *hero_a, const h_fixedbugs170variants32deepbuild_R14 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R14_tag_a: return h_fixedbugs170variants32deepbuild_0R14_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R14_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R14 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R14_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R14 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R14_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R14_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R14_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R14_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R14_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R14_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_c_a_eq(const h_fixedbugs170variants32deepbuild_0R15_c_a *a, const h_fixedbugs170variants32deepbuild_0R15_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R14_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_c_a_eq(const h_fixedbugs170variants32deepbuild_0R15_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R15_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R14_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R15_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R14_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R15_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R14_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_eq(const h_fixedbugs170variants32deepbuild_R15 *a, const h_fixedbugs170variants32deepbuild_R15 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R15_tag_a: return h_fixedbugs170variants32deepbuild_0R15_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R15_eq(const h_fixedbugs170variants32deepbuild_R15 *hero_a, const h_fixedbugs170variants32deepbuild_R15 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R15_tag_a: return h_fixedbugs170variants32deepbuild_0R15_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R15_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R15 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R15_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R15 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R15_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R15_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R15_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R15_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R15_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R15_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_c_a_eq(const h_fixedbugs170variants32deepbuild_0R16_c_a *a, const h_fixedbugs170variants32deepbuild_0R16_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R15_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_c_a_eq(const h_fixedbugs170variants32deepbuild_0R16_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R16_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R15_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R16_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R15_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R16_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R15_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_eq(const h_fixedbugs170variants32deepbuild_R16 *a, const h_fixedbugs170variants32deepbuild_R16 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R16_tag_a: return h_fixedbugs170variants32deepbuild_0R16_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R16_eq(const h_fixedbugs170variants32deepbuild_R16 *hero_a, const h_fixedbugs170variants32deepbuild_R16 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R16_tag_a: return h_fixedbugs170variants32deepbuild_0R16_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R16_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R16 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R16_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R16 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R16_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R16_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R16_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R16_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R16_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R16_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_c_a_eq(const h_fixedbugs170variants32deepbuild_0R17_c_a *a, const h_fixedbugs170variants32deepbuild_0R17_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R16_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_c_a_eq(const h_fixedbugs170variants32deepbuild_0R17_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R17_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R16_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R17_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R16_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R17_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R16_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_eq(const h_fixedbugs170variants32deepbuild_R17 *a, const h_fixedbugs170variants32deepbuild_R17 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R17_tag_a: return h_fixedbugs170variants32deepbuild_0R17_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R17_eq(const h_fixedbugs170variants32deepbuild_R17 *hero_a, const h_fixedbugs170variants32deepbuild_R17 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R17_tag_a: return h_fixedbugs170variants32deepbuild_0R17_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R17_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R17 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R17_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R17 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R17_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R17_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R17_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R17_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R17_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R17_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_c_a_eq(const h_fixedbugs170variants32deepbuild_0R18_c_a *a, const h_fixedbugs170variants32deepbuild_0R18_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R17_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_c_a_eq(const h_fixedbugs170variants32deepbuild_0R18_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R18_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R17_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R18_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R17_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R18_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R17_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_eq(const h_fixedbugs170variants32deepbuild_R18 *a, const h_fixedbugs170variants32deepbuild_R18 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R18_tag_a: return h_fixedbugs170variants32deepbuild_0R18_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R18_eq(const h_fixedbugs170variants32deepbuild_R18 *hero_a, const h_fixedbugs170variants32deepbuild_R18 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R18_tag_a: return h_fixedbugs170variants32deepbuild_0R18_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R18_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R18 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R18_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R18 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R18_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R18_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R18_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R18_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R18_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R18_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_c_a_eq(const h_fixedbugs170variants32deepbuild_0R19_c_a *a, const h_fixedbugs170variants32deepbuild_0R19_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R18_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_c_a_eq(const h_fixedbugs170variants32deepbuild_0R19_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R19_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R18_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R19_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R18_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R19_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R18_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_eq(const h_fixedbugs170variants32deepbuild_R19 *a, const h_fixedbugs170variants32deepbuild_R19 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R19_tag_a: return h_fixedbugs170variants32deepbuild_0R19_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R19_eq(const h_fixedbugs170variants32deepbuild_R19 *hero_a, const h_fixedbugs170variants32deepbuild_R19 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R19_tag_a: return h_fixedbugs170variants32deepbuild_0R19_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R19_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R19 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R19_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R19 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R19_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R19_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R19_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R19_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R19_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R19_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_c_a_eq(const h_fixedbugs170variants32deepbuild_0R20_c_a *a, const h_fixedbugs170variants32deepbuild_0R20_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R19_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_c_a_eq(const h_fixedbugs170variants32deepbuild_0R20_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R20_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R19_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R20_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R19_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R20_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R19_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_eq(const h_fixedbugs170variants32deepbuild_R20 *a, const h_fixedbugs170variants32deepbuild_R20 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R20_tag_a: return h_fixedbugs170variants32deepbuild_0R20_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R20_eq(const h_fixedbugs170variants32deepbuild_R20 *hero_a, const h_fixedbugs170variants32deepbuild_R20 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R20_tag_a: return h_fixedbugs170variants32deepbuild_0R20_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R20_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R20 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R20_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R20 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R20_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R20_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R20_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R20_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R20_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R20_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_c_a_eq(const h_fixedbugs170variants32deepbuild_0R21_c_a *a, const h_fixedbugs170variants32deepbuild_0R21_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R20_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_c_a_eq(const h_fixedbugs170variants32deepbuild_0R21_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R21_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R20_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R21_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R20_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R21_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R20_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_eq(const h_fixedbugs170variants32deepbuild_R21 *a, const h_fixedbugs170variants32deepbuild_R21 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R21_tag_a: return h_fixedbugs170variants32deepbuild_0R21_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R21_eq(const h_fixedbugs170variants32deepbuild_R21 *hero_a, const h_fixedbugs170variants32deepbuild_R21 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R21_tag_a: return h_fixedbugs170variants32deepbuild_0R21_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R21_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R21 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R21_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R21 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R21_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R21_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R21_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R21_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R21_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R21_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_c_a_eq(const h_fixedbugs170variants32deepbuild_0R22_c_a *a, const h_fixedbugs170variants32deepbuild_0R22_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R21_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_c_a_eq(const h_fixedbugs170variants32deepbuild_0R22_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R22_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R21_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R22_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R21_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R22_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R21_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_eq(const h_fixedbugs170variants32deepbuild_R22 *a, const h_fixedbugs170variants32deepbuild_R22 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R22_tag_a: return h_fixedbugs170variants32deepbuild_0R22_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R22_eq(const h_fixedbugs170variants32deepbuild_R22 *hero_a, const h_fixedbugs170variants32deepbuild_R22 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R22_tag_a: return h_fixedbugs170variants32deepbuild_0R22_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R22_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R22 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R22_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R22 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R22_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R22_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R22_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R22_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R22_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R22_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_c_a_eq(const h_fixedbugs170variants32deepbuild_0R23_c_a *a, const h_fixedbugs170variants32deepbuild_0R23_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R22_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_c_a_eq(const h_fixedbugs170variants32deepbuild_0R23_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R23_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R22_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R23_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R22_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R23_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R22_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_eq(const h_fixedbugs170variants32deepbuild_R23 *a, const h_fixedbugs170variants32deepbuild_R23 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R23_tag_a: return h_fixedbugs170variants32deepbuild_0R23_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R23_eq(const h_fixedbugs170variants32deepbuild_R23 *hero_a, const h_fixedbugs170variants32deepbuild_R23 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R23_tag_a: return h_fixedbugs170variants32deepbuild_0R23_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R23_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R23 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R23_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R23 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R23_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R23_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R23_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R23_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R23_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R23_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_c_a_eq(const h_fixedbugs170variants32deepbuild_0R24_c_a *a, const h_fixedbugs170variants32deepbuild_0R24_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R23_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_c_a_eq(const h_fixedbugs170variants32deepbuild_0R24_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R24_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R23_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R24_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R23_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R24_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R23_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_eq(const h_fixedbugs170variants32deepbuild_R24 *a, const h_fixedbugs170variants32deepbuild_R24 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R24_tag_a: return h_fixedbugs170variants32deepbuild_0R24_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R24_eq(const h_fixedbugs170variants32deepbuild_R24 *hero_a, const h_fixedbugs170variants32deepbuild_R24 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R24_tag_a: return h_fixedbugs170variants32deepbuild_0R24_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R24_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R24 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R24_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R24 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R24_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R24_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R24_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R24_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R24_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R24_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_c_a_eq(const h_fixedbugs170variants32deepbuild_0R25_c_a *a, const h_fixedbugs170variants32deepbuild_0R25_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R24_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_c_a_eq(const h_fixedbugs170variants32deepbuild_0R25_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R25_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R24_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R25_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R24_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R25_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R24_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_eq(const h_fixedbugs170variants32deepbuild_R25 *a, const h_fixedbugs170variants32deepbuild_R25 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R25_tag_a: return h_fixedbugs170variants32deepbuild_0R25_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R25_eq(const h_fixedbugs170variants32deepbuild_R25 *hero_a, const h_fixedbugs170variants32deepbuild_R25 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R25_tag_a: return h_fixedbugs170variants32deepbuild_0R25_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R25_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R25 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R25_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R25 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R25_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R25_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R25_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R25_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R25_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R25_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_c_a_eq(const h_fixedbugs170variants32deepbuild_0R26_c_a *a, const h_fixedbugs170variants32deepbuild_0R26_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R25_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_c_a_eq(const h_fixedbugs170variants32deepbuild_0R26_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R26_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R25_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R26_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R25_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R26_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R25_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_eq(const h_fixedbugs170variants32deepbuild_R26 *a, const h_fixedbugs170variants32deepbuild_R26 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R26_tag_a: return h_fixedbugs170variants32deepbuild_0R26_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R26_eq(const h_fixedbugs170variants32deepbuild_R26 *hero_a, const h_fixedbugs170variants32deepbuild_R26 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R26_tag_a: return h_fixedbugs170variants32deepbuild_0R26_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R26_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R26 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R26_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R26 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R26_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R26_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R26_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R26_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R26_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R26_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_c_a_eq(const h_fixedbugs170variants32deepbuild_0R27_c_a *a, const h_fixedbugs170variants32deepbuild_0R27_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R26_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_c_a_eq(const h_fixedbugs170variants32deepbuild_0R27_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R27_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R26_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R27_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R26_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R27_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R26_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_eq(const h_fixedbugs170variants32deepbuild_R27 *a, const h_fixedbugs170variants32deepbuild_R27 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R27_tag_a: return h_fixedbugs170variants32deepbuild_0R27_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R27_eq(const h_fixedbugs170variants32deepbuild_R27 *hero_a, const h_fixedbugs170variants32deepbuild_R27 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R27_tag_a: return h_fixedbugs170variants32deepbuild_0R27_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R27_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R27 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R27_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R27 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R27_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R27_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R27_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R27_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R27_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R27_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_c_a_eq(const h_fixedbugs170variants32deepbuild_0R28_c_a *a, const h_fixedbugs170variants32deepbuild_0R28_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R27_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_c_a_eq(const h_fixedbugs170variants32deepbuild_0R28_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R28_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R27_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R28_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R27_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R28_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R27_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_eq(const h_fixedbugs170variants32deepbuild_R28 *a, const h_fixedbugs170variants32deepbuild_R28 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R28_tag_a: return h_fixedbugs170variants32deepbuild_0R28_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R28_eq(const h_fixedbugs170variants32deepbuild_R28 *hero_a, const h_fixedbugs170variants32deepbuild_R28 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R28_tag_a: return h_fixedbugs170variants32deepbuild_0R28_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R28_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R28 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R28_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R28 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R28_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R28_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R28_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R28_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R28_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R28_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_c_a_eq(const h_fixedbugs170variants32deepbuild_0R29_c_a *a, const h_fixedbugs170variants32deepbuild_0R29_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R28_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_c_a_eq(const h_fixedbugs170variants32deepbuild_0R29_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R29_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R28_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R29_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R28_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R29_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R28_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_eq(const h_fixedbugs170variants32deepbuild_R29 *a, const h_fixedbugs170variants32deepbuild_R29 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R29_tag_a: return h_fixedbugs170variants32deepbuild_0R29_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R29_eq(const h_fixedbugs170variants32deepbuild_R29 *hero_a, const h_fixedbugs170variants32deepbuild_R29 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R29_tag_a: return h_fixedbugs170variants32deepbuild_0R29_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R29_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R29 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R29_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R29 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R29_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R29_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R29_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R29_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R29_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R29_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_c_a_eq(const h_fixedbugs170variants32deepbuild_0R30_c_a *a, const h_fixedbugs170variants32deepbuild_0R30_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R29_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_c_a_eq(const h_fixedbugs170variants32deepbuild_0R30_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R30_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R29_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R30_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R29_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R30_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R29_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_eq(const h_fixedbugs170variants32deepbuild_R30 *a, const h_fixedbugs170variants32deepbuild_R30 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R30_tag_a: return h_fixedbugs170variants32deepbuild_0R30_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R30_eq(const h_fixedbugs170variants32deepbuild_R30 *hero_a, const h_fixedbugs170variants32deepbuild_R30 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R30_tag_a: return h_fixedbugs170variants32deepbuild_0R30_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R30_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R30 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R30_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R30 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R30_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R30_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R30_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R30_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R30_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R30_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_c_a_eq(const h_fixedbugs170variants32deepbuild_0R31_c_a *a, const h_fixedbugs170variants32deepbuild_0R31_c_a *b) {
-    if (!(h_fixedbugs170variants32deepbuild_0R30_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_c_a_eq(const h_fixedbugs170variants32deepbuild_0R31_c_a *hero_a, const h_fixedbugs170variants32deepbuild_0R31_c_a *hero_b) {
+    if (!(h_fixedbugs170variants32deepbuild_0R30_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_c_a_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_0R31_c_a *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs170variants32deepbuild_0R30_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_c_a_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_0R31_c_a *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs170variants32deepbuild_0R30_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_eq(const h_fixedbugs170variants32deepbuild_R31 *a, const h_fixedbugs170variants32deepbuild_R31 *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_fixedbugs170variants32deepbuild_0R31_tag_a: return h_fixedbugs170variants32deepbuild_0R31_c_a_eq(&a->as.c_a, &b->as.c_a);
+HERO_TU_LOCAL bool h_fixedbugs170variants32deepbuild_0R31_eq(const h_fixedbugs170variants32deepbuild_R31 *hero_a, const h_fixedbugs170variants32deepbuild_R31 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R31_tag_a: return h_fixedbugs170variants32deepbuild_0R31_c_a_eq(&hero_a->hero_as.hero_c_a, &hero_b->hero_as.hero_c_a);
         case h_fixedbugs170variants32deepbuild_0R31_tag_b: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_hash(const void *elem) {
-    const h_fixedbugs170variants32deepbuild_R31 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs170variants32deepbuild_0R31_hash(const void *hero_elem) {
+    const h_fixedbugs170variants32deepbuild_R31 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs170variants32deepbuild_0R31_tag_a: return (h ^ h_fixedbugs170variants32deepbuild_0R31_c_a_hash(&v->as.c_a)) * UINT64_C(0x100000001b3);
-        case h_fixedbugs170variants32deepbuild_0R31_tag_b: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs170variants32deepbuild_0R31_tag_a: return (hero_h ^ h_fixedbugs170variants32deepbuild_0R31_c_a_hash(&hero_v->hero_as.hero_c_a)) * UINT64_C(0x100000001b3);
+        case h_fixedbugs170variants32deepbuild_0R31_tag_b: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("51a13dc87af4932c", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("245f13906cd746a6", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs170variants32deepbuild\tfixedbugs-170-variants-32-deep-build\n");
     h_fixedbugs170variants32deepbuild_main();
     hero_runtime_check_leaks();

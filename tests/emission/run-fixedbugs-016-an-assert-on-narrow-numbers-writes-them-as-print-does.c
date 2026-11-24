@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -60,26 +60,26 @@ typedef struct h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow
 } h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -88,179 +88,179 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 100 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *a, const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_a, const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-HERO_TU_LOCAL void h_0show_706673d(HeroShow *o, const void *p);
+HERO_TU_LOCAL void h_0show_706673d(HeroShow *hero_o, const void *hero_p);
 
 void h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does.hero"
-void h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_main(void) { h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow h0_x; h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow h1_y; HERO_NODEBUG int8_t t1, t6; HERO_NODEBUG uint16_t t2, t7; HERO_NODEBUG float t3, t8; HERO_NODEBUG uint64_t t4, t9; HERO_NODEBUG h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow t5, t10, t12, t13; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_main(void) { h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow h0_x; h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow h1_y; HERO_NODEBUG int8_t t1, t6; HERO_NODEBUG uint16_t t2, t7; HERO_NODEBUG float t3, t8; HERO_NODEBUG uint64_t t4, t9; HERO_NODEBUG h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow t5, t10, t12, t13; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(-3); t2 = UINT64_C(65535); t3 = 0x1p-2; t4 = UINT64_C(7); t5 = (h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow){.f_a = t1, .f_b = t2, .f_c = t3, .f_d = t4}; h0_x = t5;
     t6 = INT64_C(-3); t7 = UINT64_C(65535); t8 = 0x1p-1; t9 = UINT64_C(7); t10 = (h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow){.f_a = t6, .f_b = t7, .f_c = t8, .f_d = t9}; h1_y = t10;
-    t11 = HERO_STR_LIT(hero_str_1ff6b865); t12 = h0_x; t13 = h1_y; t14 = h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(&t12, &t13); if (t14) goto bb1; else goto bb2; bb1: return; bb2:
+    t11 = HERO_STR_LIT(hero_str_1ff6b865); t12 = h0_x; t13 = h1_y; t14 = h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(&t12, &t13); if (t14) goto hero_bb1; else goto hero_bb2; hero_bb1: return; hero_bb2:
 #line 127 "fixedbugs016anassertonnarrownumberswritesthemasprintdoes.c"
     hero_panic_assert_shown_at(t11, h_0show_706673d, &t12, &t13, 1, "fixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does.hero", "fixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does.main", 15, 12);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *a, const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *b) {
-    if (!(a->f_a == b->f_a)) return false;
-    if (!(a->f_b == b->f_b)) return false;
-    if (!(a->f_c == b->f_c)) return false;
-    if (!(a->f_d == b->f_d)) return false;
+HERO_TU_LOCAL bool h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_eq(const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_a, const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_b) {
+    if (!(hero_a->f_a == hero_b->f_a)) return false;
+    if (!(hero_a->f_b == hero_b->f_b)) return false;
+    if (!(hero_a->f_c == hero_b->f_c)) return false;
+    if (!(hero_a->f_d == hero_b->f_d)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_hash(const void *elem) {
-    const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i8)->hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u16)->hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u64)->hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_0Narrow_hash(const void *hero_elem) {
+    const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u16)->hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u64)->hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0show_706673d(HeroShow *o, const void *p) {
-    const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *v = p;
-    hero_show_text(o, "Narrow(");
-    hero_show_open(o);
-    hero_show_text(o, "a: ");
-    hero_show_child(o, hero_show_i8, &v->f_a);
-    hero_show_text(o, ", b: ");
-    hero_show_child(o, hero_show_u16, &v->f_b);
-    hero_show_text(o, ", c: ");
-    hero_show_child(o, hero_show_f32, &v->f_c);
-    hero_show_text(o, ", d: ");
-    hero_show_child(o, hero_show_u64, &v->f_d);
-    hero_show_close(o);
-    hero_show_text(o, ")");
+HERO_TU_LOCAL void h_0show_706673d(HeroShow *hero_o, const void *hero_p) {
+    const h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_Narrow *hero_v = hero_p;
+    hero_show_text(hero_o, "Narrow(");
+    hero_show_open(hero_o);
+    hero_show_text(hero_o, "a: ");
+    hero_show_child(hero_o, hero_show_i8, &hero_v->f_a);
+    hero_show_text(hero_o, ", b: ");
+    hero_show_child(hero_o, hero_show_u16, &hero_v->f_b);
+    hero_show_text(hero_o, ", c: ");
+    hero_show_child(hero_o, hero_show_f32, &hero_v->f_c);
+    hero_show_text(hero_o, ", d: ");
+    hero_show_child(hero_o, hero_show_u64, &hero_v->f_d);
+    hero_show_close(hero_o);
+    hero_show_text(hero_o, ")");
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e46544761743827", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77274b41744b2746", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs016anassertonnarrownumberswritesthemasprintdoes\tfixedbugs-016-an-assert-on-narrow-numbers-writes-them-as-print-does\n");
     h_fixedbugs016anassertonnarrownumberswritesthemasprintdoes_main();
     hero_runtime_check_leaks();

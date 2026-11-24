@@ -30,6 +30,44 @@
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -37,6 +75,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -64,7 +121,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -76,13 +133,13 @@ _Static_assert(__builtin_classify_type(((Sk *)0)->a) == 1 && sizeof(((Sk *)0)->a
 _Static_assert(__builtin_classify_type(((Sk *)0)->b) == 1 && sizeof(((Sk *)0)->b) == sizeof(int32_t) && (_Generic(((Sk *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Sk b");
 #line 5 "tests/golden/run/fixedbugs563/wide.hero"
 _Static_assert(__builtin_classify_type(((Wh *)0)->w) == 1 && sizeof(((Wh *)0)->w) == sizeof(int32_t) && (_Generic(((Wh *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Wh w");
-#line 80 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 137 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 
 #line 6 "tests/golden/run/fixedbugs563/narrow.hero"
 _Static_assert(__builtin_classify_type(*(Sk *)0) != 13, "heroes-ffi-union Sk a b");
-#line 84 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 141 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -122,26 +179,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -162,201 +219,201 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 6 "tests/golden/run/fixedbugs563/wide.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs563wide_wh_make(int32_t a0) { (void)(wh_make)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs563wide_wh_make(int32_t hero_a0) { (void)(wh_make)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 176 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 233 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs563narrow_0Sk_eq(const Sk *a, const Sk *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs563narrow_0Sk_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs563wide_0Wh_eq(const Wh *a, const Wh *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs563wide_0Wh_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs563narrow_0Sk_eq(const Sk *hero_a, const Sk *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs563narrow_0Sk_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs563wide_0Wh_eq(const Wh *hero_a, const Wh *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs563wide_0Wh_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void);
 int64_t h_fixedbugs563narrow_total(Wh h0_x);
 Wh h_fixedbugs563wide_make(int32_t h0_v);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Sk *)hero_pad_nowhere()) == 13 ? sizeof(Sk) : 0), __builtin_offsetof(Sk, a), sizeof(((Sk *)0)->a), __builtin_offsetof(Sk, b), sizeof(((Sk *)0)->b)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Sk *)hero_pad_nowhere()) == 13 ? sizeof(Sk) : 0), __builtin_offsetof(Sk, a), sizeof(((Sk *)0)->a), __builtin_offsetof(Sk, b), sizeof(((Sk *)0)->b)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_1 = hero_pad_gaps(sizeof(Sk), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
 }
 
 
 #line 17 "tests/golden/run/fixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record.hero"
-void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Wh t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Wh t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(4); t2 = h_fixedbugs563wide_make(t1); t3 = h_fixedbugs563narrow_total(t2); hero_print_int(t3); hero_print_end(); return;
-#line 211 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+#line 268 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs563/narrow.hero"
-int64_t h_fixedbugs563narrow_total(Wh h0_x) { Sk h1_s; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t9, t10, t14, t16, t18, t19; HERO_NODEBUG int32_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG Sk t3; HERO_NODEBUG int64_t t11, t12, t17; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs563narrow_total(Wh h0_x) { Sk h1_s; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t9, t10, t14, t16, t18, t19; HERO_NODEBUG int32_t t1, t2, t4, t5, t6, t7, t8; HERO_NODEBUG Sk t3; HERO_NODEBUG int64_t t11, t12, t17; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(1); t2 = INT64_C(2); t3 = (Sk){.a = t1, .b = t2}; h1_s = t3; hero_pad_fill(&h1_s, sizeof(Sk), 1, hero_pad_g_1, hero_pad_n_1);
-    t4 = h0_x.w; t5 = h1_s.a; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs563/narrow.hero", "narrow.total", 12, 19); t7 = h1_s.b; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs563/narrow.hero", "narrow.total", 12, 19); t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t8}; t18 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t9); h2_f0 = t9; h_0opt_e201354_release(&t19); t10 = h2_f0; t11 = t10.tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto bb1; else goto bb2; bb1: t16 = h2_f0; t17 = t16.as.ok;
-#line 218 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+    t4 = h0_x.w; t5 = h1_s.a; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs563/narrow.hero", "narrow.total", 12, 19); t7 = h1_s.b; if (__builtin_add_overflow(t6, t7, &t8)) hero_panic_overflow_at("fixedbugs563/narrow.hero", "narrow.total", 12, 19); t9 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t8}; t18 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t9); h2_f0 = t9; h_0opt_e201354_release(&t19); t10 = h2_f0; t11 = t10.hero_tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto hero_bb1; else goto hero_bb2; hero_bb1: t16 = h2_f0; t17 = t16.hero_as.hero_ok;
+#line 275 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t17;
-bb2:
+hero_bb2:
 #line 12 "tests/golden/run/fixedbugs563/narrow.hero"
-    t14 = h2_f0; t15 = t14.as.err;
-#line 225 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+    t14 = h2_f0; t15 = t14.hero_as.hero_err;
+#line 282 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
     hero_panic_must_at(t15, "fixedbugs563/narrow.hero", "narrow.total", 12, 12);
     hero_unreachable();
 }
 
 #line 8 "tests/golden/run/fixedbugs563/wide.hero"
-Wh h_fixedbugs563wide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Wh t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs563/wide.hero", "wide.make", 9, 12}; t2 = wh_make(t1); } return t2;
-#line 233 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
+Wh h_fixedbugs563wide_make(int32_t h0_v) { HERO_NODEBUG int32_t t1; HERO_NODEBUG Wh t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs563/wide.hero", "wide.make", 9, 12}; t2 = wh_make(t1); } return t2;
+#line 290 "fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs563narrow_0Sk_eq(const Sk *a, const Sk *b) {
-    if (!(a->a == b->a)) return false;
-    if (!(a->b == b->b)) return false;
+HERO_TU_LOCAL bool h_fixedbugs563narrow_0Sk_eq(const Sk *hero_a, const Sk *hero_b) {
+    if (!(hero_a->a == hero_b->a)) return false;
+    if (!(hero_a->b == hero_b->b)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs563narrow_0Sk_hash(const void *elem) {
-    const Sk *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->a)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->b)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs563narrow_0Sk_hash(const void *hero_elem) {
+    const Sk *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->b)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs563wide_0Wh_eq(const Wh *a, const Wh *b) {
-    if (!(a->w == b->w)) return false;
+HERO_TU_LOCAL bool h_fixedbugs563wide_0Wh_eq(const Wh *hero_a, const Wh *hero_b) {
+    if (!(hero_a->w == hero_b->w)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs563wide_0Wh_hash(const void *elem) {
-    const Wh *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->w)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs563wide_0Wh_hash(const void *hero_elem) {
+    const Wh *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->w)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("56ee7e1907d5a949", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("10e1cefc527e7131", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord\tfixedbugs-563-a-module-s-own-headers-come-before-another-module-s-record\nfixedbugs563narrow\tnarrow\nfixedbugs563wide\twide\n");
     h_fixedbugs563amodulesownheaderscomebeforeanothermodulesrecord_main();
     hero_runtime_check_leaks();

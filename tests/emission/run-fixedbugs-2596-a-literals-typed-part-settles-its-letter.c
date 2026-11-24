@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -56,26 +56,26 @@ HERO_STR_STATIC(hero_str_63, "c");
 
 #line 58 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -84,39 +84,39 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 96 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_0opt_f87774a_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_0opt_f87774a));
-    h_0opt_f87774a_retain((const h_0opt_f87774a *)dst);
+static void h_0opt_f87774a_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_0opt_f87774a));
+    h_0opt_f87774a_retain((const h_0opt_f87774a *)hero_dst);
 }
-static void h_0opt_f87774a_desc_drop(void *elem) {
-    h_0opt_f87774a_release((h_0opt_f87774a *)elem);
+static void h_0opt_f87774a_desc_drop(void *hero_elem) {
+    h_0opt_f87774a_release((h_0opt_f87774a *)hero_elem);
 }
-static bool h_0opt_f87774a_desc_eq(const void *a, const void *b) {
-    return h_0opt_f87774a_eq((const h_0opt_f87774a *)a, (const h_0opt_f87774a *)b);
+static bool h_0opt_f87774a_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_0opt_f87774a_eq((const h_0opt_f87774a *)hero_a, (const h_0opt_f87774a *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_0opt_f87774a_desc = {
     sizeof(h_0opt_f87774a),
@@ -138,21 +138,21 @@ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_r
 HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(HeroMapHeader * h0_graph);
 
 #line 34 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k = {0}; uint8_t h1_k8; HeroArrayHeader * h2_rows = {0}; HeroMapHeader * h3_pairs = {0}; HeroArrayHeader * h4_nested = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h35_own35 = {0}, *h36_own36 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h41_own41 = {0}, *h42_own42 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h47_own47 = {0}, *h49_own49 = {0}, *h51_own51 = {0}, *t2, *t7, *t11, *t16, *t24, *t26, *t34, *t37, *t43, *t45, *t48, *t50, *t51, *t55, *t56, *t57, *t61, *t66, *t68, *t73, *t75, *t78, *t80, *t81, *t83, *t86, *t89, *t93, *t95, *t96, *t102, *t104, *t106, *t109, *t111, *t115, *t117, *t120, *t121, *t123, *t124, *t126, *t127, *t128, *t129, *t130, *t131, *t133, *t135, *t136, *t138, *t139, *t141, *t142, *t143, *t144, *t145, *t146, *t149, *t151, *t153, *t154; HERO_NODEBUG HeroMapHeader *h6_own6 = {0}, *h8_own8 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h17_own17 = {0}, *h20_own20 = {0}, *h23_own23 = {0}, *h26_own26 = {0}, *h34_own34 = {0}, *h37_own37 = {0}, *h40_own40 = {0}, *h46_own46 = {0}, *h48_own48 = {0}, *h50_own50 = {0}, *t3, *t8, *t12, *t17, *t20, *t21, *t25, *t31, *t38, *t46, *t62, *t69, *t76, *t87, *t90, *t94, *t99, *t105, *t107, *t110, *t112, *t113, *t114, *t116, *t119, *t122, *t125, *t134, *t137, *t140, *t147, *t148, *t150, *t152; HERO_NODEBUG HeroStr h9_own9 = {0}, t1, t5, t6, t9, t14, t19, t23, t28, t29, t33, t35, t36, t40, t41, t42, t44, t49, t53, t54, t59, t60, t71, t79, t82, t84, t85, t88, t91, t92, t98, t101, t108, t132; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}, t30, t118; HERO_NODEBUG int64_t t4, t10, t13, t15, t18, t22, t27, t32, t39, t47, t52, t58, t63, t70, t77, t97, t100, t103; HERO_NODEBUG uint8_t t64, t65, t67, t72, t74; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_61); t2 = hero_array_new(&hero_desc_str, 1); t104 = h5_own5; h5_own5 = t2; hero_array_decref(t104); t3 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 35, 23}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t105 = h6_own6; h6_own6 = t3; hero_map_decref(t105); t4 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t3); t5 = HERO_STR_LIT(hero_str_20); t6 = HERO_STR_LIT(hero_str_61); t7 = hero_array_new(&hero_desc_str, 1); t106 = h7_own7; h7_own7 = t7; hero_array_decref(t106); t8 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 35, 50}; hero_map_put_at(t8, &t6, &t7, &hero_here); } t107 = h8_own8; h8_own8 = t8; hero_map_decref(t107); t9 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1e58d9(t8); t108 = h9_own9; h9_own9 = t9; hero_str_decref(t108); hero_print_int(t4); hero_print_str(t5); hero_print_str(t9); hero_print_end();
-    t10 = INT64_C(1); t11 = hero_array_new(&hero_desc_int, 1); t109 = h10_own10; h10_own10 = t11; hero_array_decref(t109); t12 = hero_map_new(&hero_desc_int, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 36, 23}; hero_map_put_at(t12, &t10, &t11, &hero_here); } t110 = h11_own11; h11_own11 = t12; hero_map_decref(t110); t13 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1b9a87(t12); t14 = HERO_STR_LIT(hero_str_20); t15 = INT64_C(1); t16 = hero_array_new(&hero_desc_int, 1); t111 = h12_own12; h12_own12 = t16; hero_array_decref(t111); t17 = hero_map_new(&hero_desc_int, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 36, 48}; hero_map_put_at(t17, &t15, &t16, &hero_here); } t112 = h13_own13; h13_own13 = t17; hero_map_decref(t112); t18 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1b9a87(t17); hero_print_int(t13); hero_print_str(t14); hero_print_int(t18); hero_print_end();
-    t19 = HERO_STR_LIT(hero_str_61); t20 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t113 = h14_own14; h14_own14 = t20; hero_map_decref(t113); t21 = hero_map_new(&hero_desc_str, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 37, 22}; hero_map_put_at(t21, &t19, &t20, &hero_here); } t114 = h15_own15; h15_own15 = t21; hero_map_decref(t114); t22 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_maps_1e58d9(t21); hero_print_int(t22); hero_print_end();
-    t23 = HERO_STR_LIT(hero_str_61); t24 = hero_array_new(&hero_desc_str, 1); t115 = h16_own16; h16_own16 = t24; hero_array_decref(t115); t25 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 38, 25}; hero_map_put_at(t25, &t23, &t24, &hero_here); } t116 = h17_own17; h17_own17 = t25; hero_map_decref(t116); t26 = hero_array_new(&hero_desc_map, 1); hero_array_push_owned(&t26, &t25); t117 = h18_own18; h18_own18 = t26; hero_array_decref(t117); t27 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_nested_1e58d9(t26); hero_print_int(t27); hero_print_end();
-    t28 = HERO_STR_LIT(hero_str_61); t29 = HERO_STR_LIT(hero_str_62); hero_str_incref(t29); t30 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t29}; t118 = h19_own19; h19_own19 = t30; h_0opt_f87774a_release(&t118); t31 = hero_map_new(&hero_desc_str, &h_0opt_f87774a_desc, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 39, 22}; hero_map_put_at(t31, &t28, &t30, &hero_here); } t119 = h20_own20; h20_own20 = t31; hero_map_decref(t119); t32 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_held_1e58d9(t31); hero_print_int(t32); hero_print_end();
-    t33 = HERO_STR_LIT(hero_str_61); t34 = hero_array_new(&hero_desc_str, 1); t120 = h21_own21; h21_own21 = t34; hero_array_decref(t120); t35 = HERO_STR_LIT(hero_str_62); t36 = HERO_STR_LIT(hero_str_63); t37 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t37, &t36); t121 = h22_own22; h22_own22 = t37; hero_array_decref(t121); t38 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 40, 23}; hero_map_put_at(t38, &t33, &t34, &hero_here); hero_map_put_at(t38, &t35, &t37, &hero_here); } t122 = h23_own23; h23_own23 = t38; hero_map_decref(t122); t39 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t38); t40 = HERO_STR_LIT(hero_str_20); t41 = HERO_STR_LIT(hero_str_62); t42 = HERO_STR_LIT(hero_str_63); t43 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t43, &t42); t123 = h24_own24; h24_own24 = t43; hero_array_decref(t123); t44 = HERO_STR_LIT(hero_str_61); t45 = hero_array_new(&hero_desc_str, 1); t124 = h25_own25; h25_own25 = t45; hero_array_decref(t124); t46 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 40, 64}; hero_map_put_at(t46, &t41, &t43, &hero_here); hero_map_put_at(t46, &t44, &t45, &hero_here); } t125 = h26_own26; h26_own26 = t46; hero_map_decref(t125); t47 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t46); hero_print_int(t39); hero_print_str(t40); hero_print_int(t47); hero_print_end();
+void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k = {0}; uint8_t h1_k8; HeroArrayHeader * h2_rows = {0}; HeroMapHeader * h3_pairs = {0}; HeroArrayHeader * h4_nested = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h7_own7 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h35_own35 = {0}, *h36_own36 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h41_own41 = {0}, *h42_own42 = {0}, *h43_own43 = {0}, *h44_own44 = {0}, *h45_own45 = {0}, *h47_own47 = {0}, *h49_own49 = {0}, *h51_own51 = {0}, *t2, *t7, *t11, *t16, *t24, *t26, *t34, *t37, *t43, *t45, *t48, *t50, *t51, *t55, *t56, *t57, *t61, *t66, *t68, *t73, *t75, *t78, *t80, *t81, *t83, *t86, *t89, *t93, *t95, *t96, *t102, *t104, *t106, *t109, *t111, *t115, *t117, *t120, *t121, *t123, *t124, *t126, *t127, *t128, *t129, *t130, *t131, *t133, *t135, *t136, *t138, *t139, *t141, *t142, *t143, *t144, *t145, *t146, *t149, *t151, *t153, *t154; HERO_NODEBUG HeroMapHeader *h6_own6 = {0}, *h8_own8 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h17_own17 = {0}, *h20_own20 = {0}, *h23_own23 = {0}, *h26_own26 = {0}, *h34_own34 = {0}, *h37_own37 = {0}, *h40_own40 = {0}, *h46_own46 = {0}, *h48_own48 = {0}, *h50_own50 = {0}, *t3, *t8, *t12, *t17, *t20, *t21, *t25, *t31, *t38, *t46, *t62, *t69, *t76, *t87, *t90, *t94, *t99, *t105, *t107, *t110, *t112, *t113, *t114, *t116, *t119, *t122, *t125, *t134, *t137, *t140, *t147, *t148, *t150, *t152; HERO_NODEBUG HeroStr h9_own9 = {0}, t1, t5, t6, t9, t14, t19, t23, t28, t29, t33, t35, t36, t40, t41, t42, t44, t49, t53, t54, t59, t60, t71, t79, t82, t84, t85, t88, t91, t92, t98, t101, t108, t132; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}, t30, t118; HERO_NODEBUG int64_t t4, t10, t13, t15, t18, t22, t27, t32, t39, t47, t52, t58, t63, t70, t77, t97, t100, t103; HERO_NODEBUG uint8_t t64, t65, t67, t72, t74; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_61); t2 = hero_array_new(&hero_desc_str, 1); t104 = h5_own5; h5_own5 = t2; hero_array_decref(t104); t3 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 35, 23}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t105 = h6_own6; h6_own6 = t3; hero_map_decref(t105); t4 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t3); t5 = HERO_STR_LIT(hero_str_20); t6 = HERO_STR_LIT(hero_str_61); t7 = hero_array_new(&hero_desc_str, 1); t106 = h7_own7; h7_own7 = t7; hero_array_decref(t106); t8 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 35, 50}; hero_map_put_at(t8, &t6, &t7, &hero_here); } t107 = h8_own8; h8_own8 = t8; hero_map_decref(t107); t9 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1e58d9(t8); t108 = h9_own9; h9_own9 = t9; hero_str_decref(t108); hero_print_int(t4); hero_print_str(t5); hero_print_str(t9); hero_print_end();
+    t10 = INT64_C(1); t11 = hero_array_new(&hero_desc_int, 1); t109 = h10_own10; h10_own10 = t11; hero_array_decref(t109); t12 = hero_map_new(&hero_desc_int, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 36, 23}; hero_map_put_at(t12, &t10, &t11, &hero_here); } t110 = h11_own11; h11_own11 = t12; hero_map_decref(t110); t13 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1b9a87(t12); t14 = HERO_STR_LIT(hero_str_20); t15 = INT64_C(1); t16 = hero_array_new(&hero_desc_int, 1); t111 = h12_own12; h12_own12 = t16; hero_array_decref(t111); t17 = hero_map_new(&hero_desc_int, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 36, 48}; hero_map_put_at(t17, &t15, &t16, &hero_here); } t112 = h13_own13; h13_own13 = t17; hero_map_decref(t112); t18 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1b9a87(t17); hero_print_int(t13); hero_print_str(t14); hero_print_int(t18); hero_print_end();
+    t19 = HERO_STR_LIT(hero_str_61); t20 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t113 = h14_own14; h14_own14 = t20; hero_map_decref(t113); t21 = hero_map_new(&hero_desc_str, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 37, 22}; hero_map_put_at(t21, &t19, &t20, &hero_here); } t114 = h15_own15; h15_own15 = t21; hero_map_decref(t114); t22 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_maps_1e58d9(t21); hero_print_int(t22); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_61); t24 = hero_array_new(&hero_desc_str, 1); t115 = h16_own16; h16_own16 = t24; hero_array_decref(t115); t25 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 38, 25}; hero_map_put_at(t25, &t23, &t24, &hero_here); } t116 = h17_own17; h17_own17 = t25; hero_map_decref(t116); t26 = hero_array_new(&hero_desc_map, 1); hero_array_push_owned(&t26, &t25); t117 = h18_own18; h18_own18 = t26; hero_array_decref(t117); t27 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_nested_1e58d9(t26); hero_print_int(t27); hero_print_end();
+    t28 = HERO_STR_LIT(hero_str_61); t29 = HERO_STR_LIT(hero_str_62); hero_str_incref(t29); t30 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t29}; t118 = h19_own19; h19_own19 = t30; h_0opt_f87774a_release(&t118); t31 = hero_map_new(&hero_desc_str, &h_0opt_f87774a_desc, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 39, 22}; hero_map_put_at(t31, &t28, &t30, &hero_here); } t119 = h20_own20; h20_own20 = t31; hero_map_decref(t119); t32 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_held_1e58d9(t31); hero_print_int(t32); hero_print_end();
+    t33 = HERO_STR_LIT(hero_str_61); t34 = hero_array_new(&hero_desc_str, 1); t120 = h21_own21; h21_own21 = t34; hero_array_decref(t120); t35 = HERO_STR_LIT(hero_str_62); t36 = HERO_STR_LIT(hero_str_63); t37 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t37, &t36); t121 = h22_own22; h22_own22 = t37; hero_array_decref(t121); t38 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 40, 23}; hero_map_put_at(t38, &t33, &t34, &hero_here); hero_map_put_at(t38, &t35, &t37, &hero_here); } t122 = h23_own23; h23_own23 = t38; hero_map_decref(t122); t39 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t38); t40 = HERO_STR_LIT(hero_str_20); t41 = HERO_STR_LIT(hero_str_62); t42 = HERO_STR_LIT(hero_str_63); t43 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t43, &t42); t123 = h24_own24; h24_own24 = t43; hero_array_decref(t123); t44 = HERO_STR_LIT(hero_str_61); t45 = hero_array_new(&hero_desc_str, 1); t124 = h25_own25; h25_own25 = t45; hero_array_decref(t124); t46 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 40, 64}; hero_map_put_at(t46, &t41, &t43, &hero_here); hero_map_put_at(t46, &t44, &t45, &hero_here); } t125 = h26_own26; h26_own26 = t46; hero_map_decref(t125); t47 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t46); hero_print_int(t39); hero_print_str(t40); hero_print_int(t47); hero_print_end();
     t48 = hero_array_new(&hero_desc_str, 1); t126 = h27_own27; h27_own27 = t48; hero_array_decref(t126); t49 = HERO_STR_LIT(hero_str_61); t50 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t50, &t49); t127 = h28_own28; h28_own28 = t50; hero_array_decref(t127); t51 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t51, &t48); hero_array_push_owned(&t51, &t50); t128 = h29_own29; h29_own29 = t51; hero_array_decref(t128); t52 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_rows_1e58d9(t51); t53 = HERO_STR_LIT(hero_str_20); t54 = HERO_STR_LIT(hero_str_61); t55 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t55, &t54); t129 = h30_own30; h30_own30 = t55; hero_array_decref(t129); t56 = hero_array_new(&hero_desc_str, 1); t130 = h31_own31; h31_own31 = t56; hero_array_decref(t130); t57 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t57, &t55); hero_array_push_owned(&t57, &t56); t131 = h32_own32; h32_own32 = t57; hero_array_decref(t131); t58 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_rows_1e58d9(t57); hero_print_int(t52); hero_print_str(t53); hero_print_int(t58); hero_print_end();
     t59 = HERO_STR_LIT(hero_str_61); t132 = h0_k; hero_str_incref(t59); h0_k = t59; hero_str_decref(t132);
-    t60 = h0_k; t61 = hero_array_new(&hero_desc_str, 1); t133 = h33_own33; h33_own33 = t61; hero_array_decref(t133); t62 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 43, 23}; hero_map_put_at(t62, &t60, &t61, &hero_here); } t134 = h34_own34; h34_own34 = t62; hero_map_decref(t134); t63 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t62); hero_print_int(t63); hero_print_end();
+    t60 = h0_k; t61 = hero_array_new(&hero_desc_str, 1); t133 = h33_own33; h33_own33 = t61; hero_array_decref(t133); t62 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 43, 23}; hero_map_put_at(t62, &t60, &t61, &hero_here); } t134 = h34_own34; h34_own34 = t62; hero_map_decref(t134); t63 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(t62); hero_print_int(t63); hero_print_end();
     t64 = UINT64_C(7); h1_k8 = t64;
-    t65 = UINT64_C(1); t66 = hero_array_new(&hero_desc_u8, 1); t135 = h35_own35; h35_own35 = t66; hero_array_decref(t135); t67 = h1_k8; t68 = hero_array_new(&hero_desc_u8, 1); t136 = h36_own36; h36_own36 = t68; hero_array_decref(t136); t69 = hero_map_new(&hero_desc_u8, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 45, 23}; hero_map_put_at(t69, &t65, &t66, &hero_here); hero_map_put_at(t69, &t67, &t68, &hero_here); } t137 = h37_own37; h37_own37 = t69; hero_map_decref(t137); t70 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(t69); t71 = HERO_STR_LIT(hero_str_20); t72 = h1_k8; t73 = hero_array_new(&hero_desc_u8, 1); t138 = h38_own38; h38_own38 = t73; hero_array_decref(t138); t74 = UINT64_C(1); t75 = hero_array_new(&hero_desc_u8, 1); t139 = h39_own39; h39_own39 = t75; hero_array_decref(t139); t76 = hero_map_new(&hero_desc_u8, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 45, 58}; hero_map_put_at(t76, &t72, &t73, &hero_here); hero_map_put_at(t76, &t74, &t75, &hero_here); } t140 = h40_own40; h40_own40 = t76; hero_map_decref(t140); t77 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(t76); hero_print_int(t70); hero_print_str(t71); hero_print_int(t77); hero_print_end();
+    t65 = UINT64_C(1); t66 = hero_array_new(&hero_desc_u8, 1); t135 = h35_own35; h35_own35 = t66; hero_array_decref(t135); t67 = h1_k8; t68 = hero_array_new(&hero_desc_u8, 1); t136 = h36_own36; h36_own36 = t68; hero_array_decref(t136); t69 = hero_map_new(&hero_desc_u8, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 45, 23}; hero_map_put_at(t69, &t65, &t66, &hero_here); hero_map_put_at(t69, &t67, &t68, &hero_here); } t137 = h37_own37; h37_own37 = t69; hero_map_decref(t137); t70 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(t69); t71 = HERO_STR_LIT(hero_str_20); t72 = h1_k8; t73 = hero_array_new(&hero_desc_u8, 1); t138 = h38_own38; h38_own38 = t73; hero_array_decref(t138); t74 = UINT64_C(1); t75 = hero_array_new(&hero_desc_u8, 1); t139 = h39_own39; h39_own39 = t75; hero_array_decref(t139); t76 = hero_map_new(&hero_desc_u8, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 45, 58}; hero_map_put_at(t76, &t72, &t73, &hero_here); hero_map_put_at(t76, &t74, &t75, &hero_here); } t140 = h40_own40; h40_own40 = t76; hero_map_decref(t140); t77 = h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(t76); hero_print_int(t70); hero_print_str(t71); hero_print_int(t77); hero_print_end();
     t78 = hero_array_new(&hero_desc_str, 1); t141 = h41_own41; h41_own41 = t78; hero_array_decref(t141); t79 = HERO_STR_LIT(hero_str_61); t80 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t80, &t79); t142 = h42_own42; h42_own42 = t80; hero_array_decref(t142); t81 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t81, &t78); hero_array_push_owned(&t81, &t80); t143 = h43_own43; h43_own43 = t81; hero_array_decref(t143); t144 = h2_rows; hero_array_incref(t81); h2_rows = t81; hero_array_decref(t144);
-    t82 = HERO_STR_LIT(hero_str_61); t83 = hero_array_new(&hero_desc_str, 1); t145 = h44_own44; h44_own44 = t83; hero_array_decref(t145); t84 = HERO_STR_LIT(hero_str_62); t85 = HERO_STR_LIT(hero_str_63); t86 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t86, &t85); t146 = h45_own45; h45_own45 = t86; hero_array_decref(t146); t87 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 47, 13}; hero_map_put_at(t87, &t82, &t83, &hero_here); hero_map_put_at(t87, &t84, &t86, &hero_here); } t147 = h46_own46; h46_own46 = t87; hero_map_decref(t147); t148 = h3_pairs; hero_map_incref(t87); h3_pairs = t87; hero_map_decref(t148);
-    t88 = HERO_STR_LIT(hero_str_61); t89 = hero_array_new(&hero_desc_str, 1); t149 = h47_own47; h47_own47 = t89; hero_array_decref(t149); t90 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 48, 15}; hero_map_put_at(t90, &t88, &t89, &hero_here); } t150 = h48_own48; h48_own48 = t90; hero_map_decref(t150); t91 = HERO_STR_LIT(hero_str_62); t92 = HERO_STR_LIT(hero_str_63); t93 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t93, &t92); t151 = h49_own49; h49_own49 = t93; hero_array_decref(t151); t94 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 48, 26}; hero_map_put_at(t94, &t91, &t93, &hero_here); } t152 = h50_own50; h50_own50 = t94; hero_map_decref(t152); t95 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t95, &t90); hero_array_push_owned(&t95, &t94); t153 = h51_own51; h51_own51 = t95; hero_array_decref(t153); t154 = h4_nested; hero_array_incref(t95); h4_nested = t95; hero_array_decref(t154);
+    t82 = HERO_STR_LIT(hero_str_61); t83 = hero_array_new(&hero_desc_str, 1); t145 = h44_own44; h44_own44 = t83; hero_array_decref(t145); t84 = HERO_STR_LIT(hero_str_62); t85 = HERO_STR_LIT(hero_str_63); t86 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t86, &t85); t146 = h45_own45; h45_own45 = t86; hero_array_decref(t146); t87 = hero_map_new(&hero_desc_str, &hero_desc_array, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 47, 13}; hero_map_put_at(t87, &t82, &t83, &hero_here); hero_map_put_at(t87, &t84, &t86, &hero_here); } t147 = h46_own46; h46_own46 = t87; hero_map_decref(t147); t148 = h3_pairs; hero_map_incref(t87); h3_pairs = t87; hero_map_decref(t148);
+    t88 = HERO_STR_LIT(hero_str_61); t89 = hero_array_new(&hero_desc_str, 1); t149 = h47_own47; h47_own47 = t89; hero_array_decref(t149); t90 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 48, 15}; hero_map_put_at(t90, &t88, &t89, &hero_here); } t150 = h48_own48; h48_own48 = t90; hero_map_decref(t150); t91 = HERO_STR_LIT(hero_str_62); t92 = HERO_STR_LIT(hero_str_63); t93 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t93, &t92); t151 = h49_own49; h49_own49 = t93; hero_array_decref(t151); t94 = hero_map_new(&hero_desc_str, &hero_desc_array, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.main", 48, 26}; hero_map_put_at(t94, &t91, &t93, &hero_here); } t152 = h50_own50; h50_own50 = t94; hero_map_decref(t152); t95 = hero_array_new(&hero_desc_map, 2); hero_array_push_owned(&t95, &t90); hero_array_push_owned(&t95, &t94); t153 = h51_own51; h51_own51 = t95; hero_array_decref(t153); t154 = h4_nested; hero_array_incref(t95); h4_nested = t95; hero_array_decref(t154);
     t96 = h2_rows; t97 = ((void)(t96 == NULL ? ((void)hero_array_len(t96), hero_unreachable()) : (void)0), t96->len); t98 = HERO_STR_LIT(hero_str_20); t99 = h3_pairs; t100 = hero_map_len(t99); t101 = HERO_STR_LIT(hero_str_20); t102 = h4_nested; t103 = ((void)(t102 == NULL ? ((void)hero_array_len(t102), hero_unreachable()) : (void)0), t102->len); hero_print_int(t97); hero_print_str(t98); hero_print_int(t100); hero_print_str(t101); hero_print_int(t103); hero_print_end();
 #line 158 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_str_release_at(&h0_k);
@@ -210,7 +210,7 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 16 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_lists<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_lists<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1e58d9(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_graph; t2 = hero_map_keys(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 216 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
@@ -218,7 +218,7 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 19 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* first_key<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1e58d9(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t5; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first_key<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1e58d9(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t5; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_graph; t2 = hero_map_keys(t1); t5 = h1_own1; h1_own1 = t2; hero_array_decref(t5); t3 = INT64_C(0); t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, "fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.first_key", 20, 12) : (void)0), (void)(t2->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t2 + 1))[t3]);
 #line 224 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_str_incref(t4);
@@ -227,7 +227,7 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 16 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_lists<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1b9a87(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_lists<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_1b9a87(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_graph; t2 = hero_map_keys(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 233 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
@@ -235,7 +235,7 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 19 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* first_key<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1b9a87(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t5; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first_key<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0first_key_1b9a87(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t5; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_graph; t2 = hero_map_keys(t1); t5 = h1_own1; h1_own1 = t2; hero_array_decref(t5); t3 = INT64_C(0); t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, "fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero", "fixedbugs-2596-a-literals-typed-part-settles-its-letter.first_key", 20, 12) : (void)0), (void)(t2->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t2 + 1))[t3]);
 #line 241 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
@@ -243,7 +243,7 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 22 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_maps<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_maps_1e58d9(HeroMapHeader * h0_m) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_maps<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_maps_1e58d9(HeroMapHeader * h0_m) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_m; t2 = hero_map_keys(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 249 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
@@ -251,13 +251,13 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 25 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_nested<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_nested_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_nested<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_nested_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); return t2;
 #line 257 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_held<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_held_1e58d9(HeroMapHeader * h0_m) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_held<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_held_1e58d9(HeroMapHeader * h0_m) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_m; t2 = hero_map_keys(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 263 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
@@ -265,118 +265,118 @@ void h_fixedbugs2596aliteralstypedpartsettlesitsletter_main(void) { HeroStr h0_k
 }
 
 #line 31 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_rows<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_rows_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_rows<str> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_rows_1e58d9(HeroArrayHeader * h0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_xs; t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); return t2;
 #line 271 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-2596-a-literals-typed-part-settles-its-letter.hero"
-/* count_lists<u8> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* count_lists<u8> */ HERO_TU_LOCAL int64_t h_fixedbugs2596aliteralstypedpartsettlesitsletter_0count_lists_3c17(HeroMapHeader * h0_graph) { HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_graph; t2 = hero_map_keys(t1); t4 = h1_own1; h1_own1 = t2; hero_array_decref(t4); t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 277 "fixedbugs2596aliteralstypedpartsettlesitsletter.c"
     hero_array_release_at(&h1_own1);
     return t3;
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("550c327e1b027a14", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("102de1df1c18d4c4", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2596aliteralstypedpartsettlesitsletter\tfixedbugs-2596-a-literals-typed-part-settles-its-letter\n");
     h_fixedbugs2596aliteralstypedpartsettlesitsletter_main();
     hero_runtime_check_leaks();

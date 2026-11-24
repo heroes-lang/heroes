@@ -69,7 +69,7 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 
         if !held.is_err()
             spans_at = padding.table_of(decl)
-            line = "__attribute__((unused)) static const size_t " + spans_at + "[] = {" + held.must().spans.join(", ") + "};"
+            line = "__attribute__((__unused__)) static const size_t " + spans_at + "[] = {" + held.must().spans.join(", ") + "};"
 
             for text in membership.guarded(names: held.must().bare, line: line)
                 writer.line(@w, text: text)
@@ -84,9 +84,9 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
                 more @ (2 + 2 * held.must().room).to_str()
             writer.line(
                 @w,
-                text: "__attribute__((unused)) static size_t " + padding.gaps_of(decl) + "[sizeof " + spans_at + " / sizeof(size_t) + " + more + "];"
+                text: "__attribute__((__unused__)) static size_t " + padding.gaps_of(decl) + "[sizeof " + spans_at + " / sizeof(size_t) + " + more + "];"
             )
-            writer.line(@w, text: "__attribute__((unused)) static size_t " + padding.count_of(decl) + ";")
+            writer.line(@w, text: "__attribute__((__unused__)) static size_t " + padding.count_of(decl) + ";")
 
             if held.must().bits.len() > 0
                 for step in bit_tables(@w, decl: decl, held: held.must(), t: ctype.of(names, decl: decl))
@@ -97,7 +97,7 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
     # A type's gaps never change, so they are found once, before `main` and
     # before any thread, and a lend only writes.
     if gapped.len() + masked.len() > 0
-        writer.line(@w, text: "__attribute__((constructor)) static void hero_pad_init(void) {")
+        writer.line(@w, text: "__attribute__((__constructor__)) static void hero_pad_init(void) {")
 
         for decl in gapped
             spans_at = padding.table_of(decl)
@@ -146,8 +146,8 @@ function tables(@w: writer.Writer, p: containers.Program, at: [i64], c: state.Ch
 function bit_tables(@w: writer.Writer, decl: i64, held: padding.Held, t: str) -> [str]
     m = padding.bit_table("m", decl: decl)
     mn = padding.bit_table("mn", decl: decl)
-    writer.line(@w, text: "__attribute__((unused)) static size_t " + m + "[" + (2 * held.room).to_str() + "];")
-    writer.line(@w, text: "__attribute__((unused)) static size_t " + mn + ";")
+    writer.line(@w, text: "__attribute__((__unused__)) static size_t " + m + "[" + (2 * held.room).to_str() + "];")
+    writer.line(@w, text: "__attribute__((__unused__)) static size_t " + mn + ";")
     spelled: {str: bool} @= {}
     steps: [str] @= []
 

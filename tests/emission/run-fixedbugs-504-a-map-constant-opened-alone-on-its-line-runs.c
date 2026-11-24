@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -58,34 +58,34 @@ HERO_STR_STATIC(hero_str_79, "y");
 
 #line 60 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_7e3a44cc {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroMapHeader * ok;
-        HeroFailure err;
-    } as;
+        HeroMapHeader * hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_7e3a44cc;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -94,33 +94,33 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 106 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_7e3a44cc_retain(const h_0opt_7e3a44cc *v);
-HERO_TU_LOCAL void h_0opt_7e3a44cc_release(h_0opt_7e3a44cc *v);
-HERO_TU_LOCAL bool h_0opt_7e3a44cc_eq(const h_0opt_7e3a44cc *a, const h_0opt_7e3a44cc *b);
-HERO_TU_LOCAL uint64_t h_0opt_7e3a44cc_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_7e3a44cc_retain(const h_0opt_7e3a44cc *hero_v);
+HERO_TU_LOCAL void h_0opt_7e3a44cc_release(h_0opt_7e3a44cc *hero_v);
+HERO_TU_LOCAL bool h_0opt_7e3a44cc_eq(const h_0opt_7e3a44cc *hero_a, const h_0opt_7e3a44cc *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_7e3a44cc_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(void);
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(void);
@@ -136,12 +136,12 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(int
 void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void);
 
 #line 22 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 24
     t1 = HERO_STR_LIT(hero_str_6bb5e50a); t2 = INT64_C(42);
     t3 = HERO_STR_LIT(hero_str_eb4ac31); t4 = INT64_C(7);
 #line 23
-    t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.AGES", 23, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t6 = h0_own0; h0_own0 = t5; hero_map_decref(t6);
+    t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.AGES", 23, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t6 = h0_own0; h0_own0 = t5; hero_map_decref(t6);
 #line 146 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
@@ -149,11 +149,11 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(void) { 
 }
 
 #line 28 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *h1_own1 = {0}, *t4, *t5, *t6, *t7; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *h1_own1 = {0}, *t4, *t5, *t6, *t7; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 30
-    t1 = HERO_STR_LIT(hero_str_61); t2 = HERO_STR_LIT(hero_str_62); t3 = INT64_C(1); t4 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NESTED", 30, 14}; hero_map_put_at(t4, &t2, &t3, &hero_here); } t6 = h0_own0; h0_own0 = t4; hero_map_decref(t6);
+    t1 = HERO_STR_LIT(hero_str_61); t2 = HERO_STR_LIT(hero_str_62); t3 = INT64_C(1); t4 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NESTED", 30, 14}; hero_map_put_at(t4, &t2, &t3, &hero_here); } t6 = h0_own0; h0_own0 = t4; hero_map_decref(t6);
 #line 29
-    t5 = hero_map_new(&hero_desc_str, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NESTED", 29, 5}; hero_map_put_at(t5, &t1, &t4, &hero_here); } t7 = h1_own1; h1_own1 = t5; hero_map_decref(t7);
+    t5 = hero_map_new(&hero_desc_str, &hero_desc_map, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NESTED", 29, 5}; hero_map_put_at(t5, &t1, &t4, &hero_here); } t7 = h1_own1; h1_own1 = t5; hero_map_decref(t7);
 #line 158 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
@@ -162,7 +162,7 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(void) 
 }
 
 #line 33 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_EMPTY(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t1, *t2; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_EMPTY(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t1, *t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t2 = h0_own0; h0_own0 = t1; hero_map_decref(t2);
 #line 168 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t1);
@@ -171,11 +171,11 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_EMPTY(void) {
 }
 
 #line 36 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 39
     t1 = HERO_STR_LIT(hero_str_78); t2 = INT64_C(3);
 #line 38
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NOTED", 38, 5}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t4 = h0_own0; h0_own0 = t3; hero_map_decref(t4);
+    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NOTED", 38, 5}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t4 = h0_own0; h0_own0 = t3; hero_map_decref(t4);
 #line 180 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t3);
     hero_map_release_at(&h0_own0);
@@ -183,11 +183,11 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(void) {
 }
 
 #line 42 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 45
     t1 = HERO_STR_LIT(hero_str_79); t2 = INT64_C(4);
 #line 43
-    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.FIRST", 43, 5}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t4 = h0_own0; h0_own0 = t3; hero_map_decref(t4);
+    t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.FIRST", 43, 5}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t4 = h0_own0; h0_own0 = t3; hero_map_decref(t4);
 #line 192 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t3);
     hero_map_release_at(&h0_own0);
@@ -195,7 +195,7 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(void) {
 }
 
 #line 48 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_K(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_K(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 201 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_str_incref(t1);
@@ -203,12 +203,12 @@ HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_K(void) { HERO_NODEBU
 }
 
 #line 51 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t6; HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t5, *t7; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t6; HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t5, *t7; HERO_NODEBUG int64_t t2, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 53
     t1 = h_fixedbugs504amapconstantopenedaloneonitslineruns_K(); t6 = h0_own0; h0_own0 = t1; hero_str_decref(t6); t2 = INT64_C(5);
     t3 = HERO_STR_LIT(hero_str_eb4ac31); t4 = INT64_C(7);
 #line 52
-    t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.BY_NAME", 52, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t7 = h1_own1; h1_own1 = t5; hero_map_decref(t7);
+    t5 = hero_map_new(&hero_desc_str, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.BY_NAME", 52, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t7 = h1_own1; h1_own1 = t5; hero_map_decref(t7);
 #line 213 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_str_release_at(&h0_own0);
@@ -217,12 +217,12 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(void)
 }
 
 #line 57 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(void) { HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 59
     t1 = INT64_C(-1); t2 = INT64_C(6);
     t3 = INT64_C(2); t4 = INT64_C(7);
 #line 58
-    t5 = hero_map_new(&hero_desc_int, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NEGATIVE", 58, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t6 = h0_own0; h0_own0 = t5; hero_map_decref(t6);
+    t5 = hero_map_new(&hero_desc_int, &hero_desc_int, 2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.NEGATIVE", 58, 5}; hero_map_put_at(t5, &t1, &t2, &hero_here); hero_map_put_at(t5, &t3, &t4, &hero_here); } t6 = h0_own0; h0_own0 = t5; hero_map_decref(t6);
 #line 227 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
@@ -230,7 +230,7 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(void
 }
 
 #line 63 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_name(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_name(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
 #line 236 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_str_incref(t1);
@@ -238,11 +238,11 @@ HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_name(void) { HERO_NOD
 }
 
 #line 66 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(int64_t h0_n) { HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6, t9, t12, t15; HERO_NODEBUG HeroMapHeader *h2_r0 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *t10, *t13, *t16, *t17, *t18, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG bool t4, t7; HERO_NODEBUG HeroStr t8, t11, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(int64_t h0_n) { HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6, t9, t12, t15; HERO_NODEBUG HeroMapHeader *h2_r0 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *t10, *t13, *t16, *t17, *t18, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG bool t4, t7; HERO_NODEBUG HeroStr t8, t11, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h1_s0 = t1; t2 = h1_s0;
     t3 = INT64_C(1);
 #line 67
-    t4 = t2 == t3; if (t4) goto bb2; else goto bb3; bb1: t17 = h2_r0;
+    t4 = t2 == t3; if (t4) goto hero_bb2; else goto hero_bb3; hero_bb1: t17 = h2_r0;
 #line 247 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t17);
     hero_map_release_at(&h2_r0);
@@ -250,33 +250,33 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(int64_
     hero_map_release_at(&h4_own4);
     hero_map_release_at(&h5_own5);
     return t17;
-bb2:
+hero_bb2:
 #line 70 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     t8 = HERO_STR_LIT(hero_str_6bb5e50a); t9 = INT64_C(9);
 #line 69
-    t10 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 69, 13}; hero_map_put_at(t10, &t8, &t9, &hero_here); } t18 = h3_own3; h3_own3 = t10; hero_map_decref(t18);
+    t10 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 69, 13}; hero_map_put_at(t10, &t8, &t9, &hero_here); } t18 = h3_own3; h3_own3 = t10; hero_map_decref(t18);
 #line 67
-    t19 = h2_r0; hero_map_incref(t10); h2_r0 = t10; hero_map_decref(t19); goto bb1; bb3: t5 = h1_s0;
+    t19 = h2_r0; hero_map_incref(t10); h2_r0 = t10; hero_map_decref(t19); goto hero_bb1; hero_bb3: t5 = h1_s0;
 #line 72
     t6 = INT64_C(2);
 #line 67
-    t7 = t5 == t6; if (t7) goto bb4; else goto bb5; bb4:
+    t7 = t5 == t6; if (t7) goto hero_bb4; else goto hero_bb5; hero_bb4:
 #line 75
     t11 = HERO_STR_LIT(hero_str_6bb5e50a); t12 = INT64_C(10);
 #line 74
-    t13 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 74, 13}; hero_map_put_at(t13, &t11, &t12, &hero_here); } t20 = h4_own4; h4_own4 = t13; hero_map_decref(t20);
+    t13 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 74, 13}; hero_map_put_at(t13, &t11, &t12, &hero_here); } t20 = h4_own4; h4_own4 = t13; hero_map_decref(t20);
 #line 67
-    t21 = h2_r0; hero_map_incref(t13); h2_r0 = t13; hero_map_decref(t21); goto bb1; bb5: goto bb6; bb6:
+    t21 = h2_r0; hero_map_incref(t13); h2_r0 = t13; hero_map_decref(t21); goto hero_bb1; hero_bb5: goto hero_bb6; hero_bb6:
 #line 77
-    t14 = HERO_STR_LIT(hero_str_eb4ac31); t15 = INT64_C(7); t16 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 77, 14}; hero_map_put_at(t16, &t14, &t15, &hero_here); } t22 = h5_own5; h5_own5 = t16; hero_map_decref(t22);
+    t14 = HERO_STR_LIT(hero_str_eb4ac31); t15 = INT64_C(7); t16 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_arm", 77, 14}; hero_map_put_at(t16, &t14, &t15, &hero_here); } t22 = h5_own5; h5_own5 = t16; hero_map_decref(t22);
 #line 67
-    t23 = h2_r0; hero_map_incref(t16); h2_r0 = t16; hero_map_decref(t23); goto bb1;
+    t23 = h2_r0; hero_map_incref(t16); h2_r0 = t16; hero_map_decref(t23); goto hero_bb1;
 #line 275 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(int64_t h0_n) { HERO_NODEBUG HeroMapHeader *h1_r0 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *t6, *t9, *t10, *t12, *t13, *t14, *t15; HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t7, t11; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(1); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1: t10 = h1_r0;
+HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(int64_t h0_n) { HERO_NODEBUG HeroMapHeader *h1_r0 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *t6, *t9, *t10, *t12, *t13, *t14, *t15; HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t7, t11; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = INT64_C(1); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1: t10 = h1_r0;
 #line 281 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t10);
     hero_map_release_at(&h1_r0);
@@ -284,32 +284,32 @@ HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(int
     hero_map_release_at(&h3_own3);
     hero_map_release_at(&h4_own4);
     return t10;
-bb2:
+hero_bb2:
 #line 82 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     t4 = h_fixedbugs504amapconstantopenedaloneonitslineruns_name(); t11 = h2_own2; h2_own2 = t4; hero_str_decref(t11); t5 = INT64_C(11);
 #line 81
-    t6 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_branch", 81, 9}; hero_map_put_at(t6, &t4, &t5, &hero_here); } t12 = h3_own3; h3_own3 = t6; hero_map_decref(t12);
+    t6 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_branch", 81, 9}; hero_map_put_at(t6, &t4, &t5, &hero_here); } t12 = h3_own3; h3_own3 = t6; hero_map_decref(t12);
 #line 80
-    t13 = h1_r0; hero_map_incref(t6); h1_r0 = t6; hero_map_decref(t13); goto bb1; bb3:
+    t13 = h1_r0; hero_map_incref(t6); h1_r0 = t6; hero_map_decref(t13); goto hero_bb1; hero_bb3:
 #line 85
-    t7 = HERO_STR_LIT(hero_str_eb4ac31); t8 = INT64_C(7); t9 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_branch", 85, 9}; hero_map_put_at(t9, &t7, &t8, &hero_here); } t14 = h4_own4; h4_own4 = t9; hero_map_decref(t14);
+    t7 = HERO_STR_LIT(hero_str_eb4ac31); t8 = INT64_C(7); t9 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.by_branch", 85, 9}; hero_map_put_at(t9, &t7, &t8, &hero_here); } t14 = h4_own4; h4_own4 = t9; hero_map_decref(t14);
 #line 80
-    t15 = h1_r0; hero_map_incref(t9); h1_r0 = t9; hero_map_decref(t15); goto bb1;
+    t15 = h1_r0; hero_map_incref(t9); h1_r0 = t9; hero_map_decref(t15); goto hero_bb1;
 #line 299 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 }
 
 #line 87 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h4_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h12_f6 = {0}, h14_f7 = {0}, h16_f8 = {0}, h18_f9 = {0}, h21_own21 = {0}, h25_own25 = {0}, h28_own28 = {0}, h30_own30 = {0}, h32_own32 = {0}, h34_own34 = {0}, h36_own36 = {0}, h38_own38 = {0}, h40_own40 = {0}, t3, t4, t8, t24, t25, t29, t37, t38, t42, t48, t49, t53, t59, t60, t64, t70, t71, t75, t82, t83, t87, t94, t95, t99, t106, t107, t111, t116, t117, t124, t125, t128, t129, t131, t132, t134, t135, t137, t138, t140, t141, t143, t144, t146, t147; HERO_NODEBUG int64_t h1_r0, h5_r2, h7_r3, h9_r4, h11_r5, h13_r6, h15_r7, h17_r8, h19_r9, t5, t6, t9, t10, t11, t16, t17, t26, t27, t30, t31, t32, t34, t39, t40, t43, t44, t45, t50, t51, t54, t55, t56, t61, t62, t65, t66, t67, t69, t72, t73, t76, t77, t78, t79, t84, t85, t88, t89, t90, t91, t96, t97, t100, t101, t102, t103, t108, t109, t112, t113, t114; HERO_NODEBUG h_0opt_7e3a44cc h2_f1 = {0}, h23_own23 = {0}, t14, t15, t19, t119, t120; HERO_NODEBUG HeroMapHeader *h3_r1 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h24_own24 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h29_own29 = {0}, *h31_own31 = {0}, *h33_own33 = {0}, *h35_own35 = {0}, *h37_own37 = {0}, *h39_own39 = {0}, *t1, *t12, *t20, *t21, *t22, *t33, *t35, *t46, *t57, *t68, *t80, *t92, *t104, *t115, *t118, *t121, *t122, *t123, *t126, *t127, *t130, *t133, *t136, *t139, *t142, *t145; HERO_NODEBUG HeroStr t2, t13, t23, t36, t47, t58, t81, t93, t105; HERO_NODEBUG bool t7, t18, t28, t41, t52, t63, t74, t86, t98, t110; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(); t115 = h20_own20; h20_own20 = t1; hero_map_decref(t115); t2 = HERO_STR_LIT(hero_str_eb4ac31); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 88, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t1, &t2, &hero_here); if (found == NULL) { t3 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t3 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t3.as.ok, found); } } t116 = h21_own21; h21_own21 = t3; h_0opt_e201354_release(&t116); t117 = h0_f0; h_0opt_e201354_retain(&t3); h0_f0 = t3; h_0opt_e201354_release(&t117); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h0_f0; t9 = t8.as.ok; h1_r0 = t9; goto bb3; bb2: t10 = INT64_C(0); h1_r0 = t10; goto bb3; bb3: t11 = h1_r0; hero_print_int(t11); hero_print_end();
-    t12 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(); t118 = h22_own22; h22_own22 = t12; hero_map_decref(t118); t13 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 89, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t12, &t13, &hero_here); if (found == NULL) { t14 = (h_0opt_7e3a44cc){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t14 = (h_0opt_7e3a44cc){.tag = INT64_C(0)}; (&hero_desc_map)->copy(&t14.as.ok, found); } } t119 = h23_own23; h23_own23 = t14; h_0opt_7e3a44cc_release(&t119); t120 = h2_f1; h_0opt_7e3a44cc_retain(&t14); h2_f1 = t14; h_0opt_7e3a44cc_release(&t120); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb4; else goto bb5; bb4: t19 = h2_f1; t20 = t19.as.ok; t121 = h3_r1; hero_map_incref(t20); h3_r1 = t20; hero_map_decref(t121); goto bb6; bb5: t21 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t122 = h24_own24; h24_own24 = t21; hero_map_decref(t122); t123 = h3_r1; hero_map_incref(t21); h3_r1 = t21; hero_map_decref(t123); goto bb6; bb6: t22 = h3_r1; t23 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 89, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t22, &t23, &hero_here); if (found == NULL) { t24 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t24 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t24.as.ok, found); } } t124 = h25_own25; h25_own25 = t24; h_0opt_e201354_release(&t124); t125 = h4_f2; h_0opt_e201354_retain(&t24); h4_f2 = t24; h_0opt_e201354_release(&t125); t25 = h4_f2; t26 = t25.tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto bb7; else goto bb8; bb7: t29 = h4_f2; t30 = t29.as.ok; h5_r2 = t30; goto bb9; bb8: t31 = INT64_C(0); h5_r2 = t31; goto bb9; bb9: t32 = h5_r2; hero_print_int(t32); hero_print_end();
+void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void) { HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h4_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h12_f6 = {0}, h14_f7 = {0}, h16_f8 = {0}, h18_f9 = {0}, h21_own21 = {0}, h25_own25 = {0}, h28_own28 = {0}, h30_own30 = {0}, h32_own32 = {0}, h34_own34 = {0}, h36_own36 = {0}, h38_own38 = {0}, h40_own40 = {0}, t3, t4, t8, t24, t25, t29, t37, t38, t42, t48, t49, t53, t59, t60, t64, t70, t71, t75, t82, t83, t87, t94, t95, t99, t106, t107, t111, t116, t117, t124, t125, t128, t129, t131, t132, t134, t135, t137, t138, t140, t141, t143, t144, t146, t147; HERO_NODEBUG int64_t h1_r0, h5_r2, h7_r3, h9_r4, h11_r5, h13_r6, h15_r7, h17_r8, h19_r9, t5, t6, t9, t10, t11, t16, t17, t26, t27, t30, t31, t32, t34, t39, t40, t43, t44, t45, t50, t51, t54, t55, t56, t61, t62, t65, t66, t67, t69, t72, t73, t76, t77, t78, t79, t84, t85, t88, t89, t90, t91, t96, t97, t100, t101, t102, t103, t108, t109, t112, t113, t114; HERO_NODEBUG h_0opt_7e3a44cc h2_f1 = {0}, h23_own23 = {0}, t14, t15, t19, t119, t120; HERO_NODEBUG HeroMapHeader *h3_r1 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h24_own24 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h29_own29 = {0}, *h31_own31 = {0}, *h33_own33 = {0}, *h35_own35 = {0}, *h37_own37 = {0}, *h39_own39 = {0}, *t1, *t12, *t20, *t21, *t22, *t33, *t35, *t46, *t57, *t68, *t80, *t92, *t104, *t115, *t118, *t121, *t122, *t123, *t126, *t127, *t130, *t133, *t136, *t139, *t142, *t145; HERO_NODEBUG HeroStr t2, t13, t23, t36, t47, t58, t81, t93, t105; HERO_NODEBUG bool t7, t18, t28, t41, t52, t63, t74, t86, t98, t110; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(); t115 = h20_own20; h20_own20 = t1; hero_map_decref(t115); t2 = HERO_STR_LIT(hero_str_eb4ac31); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 88, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t1, &t2, &hero_here); if (hero_found == NULL) { t3 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t3 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t3.hero_as.hero_ok, hero_found); } } t116 = h21_own21; h21_own21 = t3; h_0opt_e201354_release(&t116); t117 = h0_f0; h_0opt_e201354_retain(&t3); h0_f0 = t3; h_0opt_e201354_release(&t117); t4 = h0_f0; t5 = t4.hero_tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t8 = h0_f0; t9 = t8.hero_as.hero_ok; h1_r0 = t9; goto hero_bb3; hero_bb2: t10 = INT64_C(0); h1_r0 = t10; goto hero_bb3; hero_bb3: t11 = h1_r0; hero_print_int(t11); hero_print_end();
+    t12 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(); t118 = h22_own22; h22_own22 = t12; hero_map_decref(t118); t13 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 89, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t12, &t13, &hero_here); if (hero_found == NULL) { t14 = (h_0opt_7e3a44cc){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t14 = (h_0opt_7e3a44cc){.hero_tag = INT64_C(0)}; (&hero_desc_map)->copy(&t14.hero_as.hero_ok, hero_found); } } t119 = h23_own23; h23_own23 = t14; h_0opt_7e3a44cc_release(&t119); t120 = h2_f1; h_0opt_7e3a44cc_retain(&t14); h2_f1 = t14; h_0opt_7e3a44cc_release(&t120); t15 = h2_f1; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb4; else goto hero_bb5; hero_bb4: t19 = h2_f1; t20 = t19.hero_as.hero_ok; t121 = h3_r1; hero_map_incref(t20); h3_r1 = t20; hero_map_decref(t121); goto hero_bb6; hero_bb5: t21 = hero_map_new(&hero_desc_str, &hero_desc_int, 0); t122 = h24_own24; h24_own24 = t21; hero_map_decref(t122); t123 = h3_r1; hero_map_incref(t21); h3_r1 = t21; hero_map_decref(t123); goto hero_bb6; hero_bb6: t22 = h3_r1; t23 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 89, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t22, &t23, &hero_here); if (hero_found == NULL) { t24 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t24 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t24.hero_as.hero_ok, hero_found); } } t124 = h25_own25; h25_own25 = t24; h_0opt_e201354_release(&t124); t125 = h4_f2; h_0opt_e201354_retain(&t24); h4_f2 = t24; h_0opt_e201354_release(&t125); t25 = h4_f2; t26 = t25.hero_tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto hero_bb7; else goto hero_bb8; hero_bb7: t29 = h4_f2; t30 = t29.hero_as.hero_ok; h5_r2 = t30; goto hero_bb9; hero_bb8: t31 = INT64_C(0); h5_r2 = t31; goto hero_bb9; hero_bb9: t32 = h5_r2; hero_print_int(t32); hero_print_end();
     t33 = h_fixedbugs504amapconstantopenedaloneonitslineruns_EMPTY(); t126 = h26_own26; h26_own26 = t33; hero_map_decref(t126); t34 = hero_map_len(t33); hero_print_int(t34); hero_print_end();
-    t35 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(); t127 = h27_own27; h27_own27 = t35; hero_map_decref(t127); t36 = HERO_STR_LIT(hero_str_78); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 91, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t35, &t36, &hero_here); if (found == NULL) { t37 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t37 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t37.as.ok, found); } } t128 = h28_own28; h28_own28 = t37; h_0opt_e201354_release(&t128); t129 = h6_f3; h_0opt_e201354_retain(&t37); h6_f3 = t37; h_0opt_e201354_release(&t129); t38 = h6_f3; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb10; else goto bb11; bb10: t42 = h6_f3; t43 = t42.as.ok; h7_r3 = t43; goto bb12; bb11: t44 = INT64_C(0); h7_r3 = t44; goto bb12; bb12: t45 = h7_r3; hero_print_int(t45); hero_print_end();
-    t46 = h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(); t130 = h29_own29; h29_own29 = t46; hero_map_decref(t130); t47 = HERO_STR_LIT(hero_str_79); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 92, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t46, &t47, &hero_here); if (found == NULL) { t48 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t48 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t48.as.ok, found); } } t131 = h30_own30; h30_own30 = t48; h_0opt_e201354_release(&t131); t132 = h8_f4; h_0opt_e201354_retain(&t48); h8_f4 = t48; h_0opt_e201354_release(&t132); t49 = h8_f4; t50 = t49.tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto bb13; else goto bb14; bb13: t53 = h8_f4; t54 = t53.as.ok; h9_r4 = t54; goto bb15; bb14: t55 = INT64_C(0); h9_r4 = t55; goto bb15; bb15: t56 = h9_r4; hero_print_int(t56); hero_print_end();
-    t57 = h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(); t133 = h31_own31; h31_own31 = t57; hero_map_decref(t133); t58 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 93, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t57, &t58, &hero_here); if (found == NULL) { t59 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t59 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t59.as.ok, found); } } t134 = h32_own32; h32_own32 = t59; h_0opt_e201354_release(&t134); t135 = h10_f5; h_0opt_e201354_retain(&t59); h10_f5 = t59; h_0opt_e201354_release(&t135); t60 = h10_f5; t61 = t60.tag; t62 = INT64_C(0); t63 = t61 == t62; if (t63) goto bb16; else goto bb17; bb16: t64 = h10_f5; t65 = t64.as.ok; h11_r5 = t65; goto bb18; bb17: t66 = INT64_C(0); h11_r5 = t66; goto bb18; bb18: t67 = h11_r5; hero_print_int(t67); hero_print_end();
-    t68 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(); t136 = h33_own33; h33_own33 = t68; hero_map_decref(t136); t69 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 94, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t68, &t69, &hero_here); if (found == NULL) { t70 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t70 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t70.as.ok, found); } } t137 = h34_own34; h34_own34 = t70; h_0opt_e201354_release(&t137); t138 = h12_f6; h_0opt_e201354_retain(&t70); h12_f6 = t70; h_0opt_e201354_release(&t138); t71 = h12_f6; t72 = t71.tag; t73 = INT64_C(0); t74 = t72 == t73; if (t74) goto bb19; else goto bb20; bb19: t75 = h12_f6; t76 = t75.as.ok; h13_r6 = t76; goto bb21; bb20: t77 = INT64_C(0); h13_r6 = t77; goto bb21; bb21: t78 = h13_r6; hero_print_int(t78); hero_print_end();
-    t79 = INT64_C(1); t80 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(t79); t139 = h35_own35; h35_own35 = t80; hero_map_decref(t139); t81 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 95, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t80, &t81, &hero_here); if (found == NULL) { t82 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t82 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t82.as.ok, found); } } t140 = h36_own36; h36_own36 = t82; h_0opt_e201354_release(&t140); t141 = h14_f7; h_0opt_e201354_retain(&t82); h14_f7 = t82; h_0opt_e201354_release(&t141); t83 = h14_f7; t84 = t83.tag; t85 = INT64_C(0); t86 = t84 == t85; if (t86) goto bb22; else goto bb23; bb22: t87 = h14_f7; t88 = t87.as.ok; h15_r7 = t88; goto bb24; bb23: t89 = INT64_C(0); h15_r7 = t89; goto bb24; bb24: t90 = h15_r7; hero_print_int(t90); hero_print_end();
-    t91 = INT64_C(2); t92 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(t91); t142 = h37_own37; h37_own37 = t92; hero_map_decref(t142); t93 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 96, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t92, &t93, &hero_here); if (found == NULL) { t94 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t94 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t94.as.ok, found); } } t143 = h38_own38; h38_own38 = t94; h_0opt_e201354_release(&t143); t144 = h16_f8; h_0opt_e201354_retain(&t94); h16_f8 = t94; h_0opt_e201354_release(&t144); t95 = h16_f8; t96 = t95.tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto bb25; else goto bb26; bb25: t99 = h16_f8; t100 = t99.as.ok; h17_r8 = t100; goto bb27; bb26: t101 = INT64_C(0); h17_r8 = t101; goto bb27; bb27: t102 = h17_r8; hero_print_int(t102); hero_print_end();
-    t103 = INT64_C(1); t104 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(t103); t145 = h39_own39; h39_own39 = t104; hero_map_decref(t145); t105 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 97, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t104, &t105, &hero_here); if (found == NULL) { t106 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t106 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t106.as.ok, found); } } t146 = h40_own40; h40_own40 = t106; h_0opt_e201354_release(&t146); t147 = h18_f9; h_0opt_e201354_retain(&t106); h18_f9 = t106; h_0opt_e201354_release(&t147); t107 = h18_f9; t108 = t107.tag; t109 = INT64_C(0); t110 = t108 == t109; if (t110) goto bb28; else goto bb29; bb28: t111 = h18_f9; t112 = t111.as.ok; h19_r9 = t112; goto bb30; bb29: t113 = INT64_C(0); h19_r9 = t113; goto bb30; bb30: t114 = h19_r9; hero_print_int(t114); hero_print_end();
+    t35 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(); t127 = h27_own27; h27_own27 = t35; hero_map_decref(t127); t36 = HERO_STR_LIT(hero_str_78); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 91, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t35, &t36, &hero_here); if (hero_found == NULL) { t37 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t37 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t37.hero_as.hero_ok, hero_found); } } t128 = h28_own28; h28_own28 = t37; h_0opt_e201354_release(&t128); t129 = h6_f3; h_0opt_e201354_retain(&t37); h6_f3 = t37; h_0opt_e201354_release(&t129); t38 = h6_f3; t39 = t38.hero_tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto hero_bb10; else goto hero_bb11; hero_bb10: t42 = h6_f3; t43 = t42.hero_as.hero_ok; h7_r3 = t43; goto hero_bb12; hero_bb11: t44 = INT64_C(0); h7_r3 = t44; goto hero_bb12; hero_bb12: t45 = h7_r3; hero_print_int(t45); hero_print_end();
+    t46 = h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(); t130 = h29_own29; h29_own29 = t46; hero_map_decref(t130); t47 = HERO_STR_LIT(hero_str_79); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 92, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t46, &t47, &hero_here); if (hero_found == NULL) { t48 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t48 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t48.hero_as.hero_ok, hero_found); } } t131 = h30_own30; h30_own30 = t48; h_0opt_e201354_release(&t131); t132 = h8_f4; h_0opt_e201354_retain(&t48); h8_f4 = t48; h_0opt_e201354_release(&t132); t49 = h8_f4; t50 = t49.hero_tag; t51 = INT64_C(0); t52 = t50 == t51; if (t52) goto hero_bb13; else goto hero_bb14; hero_bb13: t53 = h8_f4; t54 = t53.hero_as.hero_ok; h9_r4 = t54; goto hero_bb15; hero_bb14: t55 = INT64_C(0); h9_r4 = t55; goto hero_bb15; hero_bb15: t56 = h9_r4; hero_print_int(t56); hero_print_end();
+    t57 = h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(); t133 = h31_own31; h31_own31 = t57; hero_map_decref(t133); t58 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 93, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t57, &t58, &hero_here); if (hero_found == NULL) { t59 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t59 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t59.hero_as.hero_ok, hero_found); } } t134 = h32_own32; h32_own32 = t59; h_0opt_e201354_release(&t134); t135 = h10_f5; h_0opt_e201354_retain(&t59); h10_f5 = t59; h_0opt_e201354_release(&t135); t60 = h10_f5; t61 = t60.hero_tag; t62 = INT64_C(0); t63 = t61 == t62; if (t63) goto hero_bb16; else goto hero_bb17; hero_bb16: t64 = h10_f5; t65 = t64.hero_as.hero_ok; h11_r5 = t65; goto hero_bb18; hero_bb17: t66 = INT64_C(0); h11_r5 = t66; goto hero_bb18; hero_bb18: t67 = h11_r5; hero_print_int(t67); hero_print_end();
+    t68 = h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(); t136 = h33_own33; h33_own33 = t68; hero_map_decref(t136); t69 = INT64_C(-1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 94, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t68, &t69, &hero_here); if (hero_found == NULL) { t70 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t70 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t70.hero_as.hero_ok, hero_found); } } t137 = h34_own34; h34_own34 = t70; h_0opt_e201354_release(&t137); t138 = h12_f6; h_0opt_e201354_retain(&t70); h12_f6 = t70; h_0opt_e201354_release(&t138); t71 = h12_f6; t72 = t71.hero_tag; t73 = INT64_C(0); t74 = t72 == t73; if (t74) goto hero_bb19; else goto hero_bb20; hero_bb19: t75 = h12_f6; t76 = t75.hero_as.hero_ok; h13_r6 = t76; goto hero_bb21; hero_bb20: t77 = INT64_C(0); h13_r6 = t77; goto hero_bb21; hero_bb21: t78 = h13_r6; hero_print_int(t78); hero_print_end();
+    t79 = INT64_C(1); t80 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(t79); t139 = h35_own35; h35_own35 = t80; hero_map_decref(t139); t81 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 95, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t80, &t81, &hero_here); if (hero_found == NULL) { t82 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t82 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t82.hero_as.hero_ok, hero_found); } } t140 = h36_own36; h36_own36 = t82; h_0opt_e201354_release(&t140); t141 = h14_f7; h_0opt_e201354_retain(&t82); h14_f7 = t82; h_0opt_e201354_release(&t141); t83 = h14_f7; t84 = t83.hero_tag; t85 = INT64_C(0); t86 = t84 == t85; if (t86) goto hero_bb22; else goto hero_bb23; hero_bb22: t87 = h14_f7; t88 = t87.hero_as.hero_ok; h15_r7 = t88; goto hero_bb24; hero_bb23: t89 = INT64_C(0); h15_r7 = t89; goto hero_bb24; hero_bb24: t90 = h15_r7; hero_print_int(t90); hero_print_end();
+    t91 = INT64_C(2); t92 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(t91); t142 = h37_own37; h37_own37 = t92; hero_map_decref(t142); t93 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 96, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t92, &t93, &hero_here); if (hero_found == NULL) { t94 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t94 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t94.hero_as.hero_ok, hero_found); } } t143 = h38_own38; h38_own38 = t94; h_0opt_e201354_release(&t143); t144 = h16_f8; h_0opt_e201354_retain(&t94); h16_f8 = t94; h_0opt_e201354_release(&t144); t95 = h16_f8; t96 = t95.hero_tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto hero_bb25; else goto hero_bb26; hero_bb25: t99 = h16_f8; t100 = t99.hero_as.hero_ok; h17_r8 = t100; goto hero_bb27; hero_bb26: t101 = INT64_C(0); h17_r8 = t101; goto hero_bb27; hero_bb27: t102 = h17_r8; hero_print_int(t102); hero_print_end();
+    t103 = INT64_C(1); t104 = h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(t103); t145 = h39_own39; h39_own39 = t104; hero_map_decref(t145); t105 = HERO_STR_LIT(hero_str_6bb5e50a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero", "fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.main", 97, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t104, &t105, &hero_here); if (hero_found == NULL) { t106 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t106 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t106.hero_as.hero_ok, hero_found); } } t146 = h40_own40; h40_own40 = t106; h_0opt_e201354_release(&t146); t147 = h18_f9; h_0opt_e201354_retain(&t106); h18_f9 = t106; h_0opt_e201354_release(&t147); t107 = h18_f9; t108 = t107.hero_tag; t109 = INT64_C(0); t110 = t108 == t109; if (t110) goto hero_bb28; else goto hero_bb29; hero_bb28: t111 = h18_f9; t112 = t111.hero_as.hero_ok; h19_r9 = t112; goto hero_bb30; hero_bb29: t113 = INT64_C(0); h19_r9 = t113; goto hero_bb30; hero_bb30: t114 = h19_r9; hero_print_int(t114); hero_print_end();
 #line 314 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_7e3a44cc_release(hero_slot_escape(&h2_f1));
@@ -345,138 +345,138 @@ void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void) { HERO_NODEBU
     h_0opt_e201354_release(hero_slot_escape(&h40_own40));
     return;
 }
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_7e3a44cc_retain(const h_0opt_7e3a44cc *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_map_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_7e3a44cc_retain(const h_0opt_7e3a44cc *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_map_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_7e3a44cc_release(h_0opt_7e3a44cc *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_map_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_7e3a44cc_release(h_0opt_7e3a44cc *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_map_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_7e3a44cc_eq(const h_0opt_7e3a44cc *a, const h_0opt_7e3a44cc *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_map)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_7e3a44cc_eq(const h_0opt_7e3a44cc *hero_a, const h_0opt_7e3a44cc *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_map)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_7e3a44cc_hash(const void *elem) {
-    const h_0opt_7e3a44cc *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_7e3a44cc_hash(const void *hero_elem) {
+    const h_0opt_7e3a44cc *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_map)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_map)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7331a60b31c153c3", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("139080273f452ea1", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs504amapconstantopenedaloneonitslineruns\tfixedbugs-504-a-map-constant-opened-alone-on-its-line-runs\n");
     h_fixedbugs504amapconstantopenedaloneonitslineruns_main();
     hero_runtime_check_leaks();

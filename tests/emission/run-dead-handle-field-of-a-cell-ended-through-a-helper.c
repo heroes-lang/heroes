@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <dead-handle-field-of-a-cell-ended-through-a-helper.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -104,40 +161,40 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_2cb37c54, "cannot_open");
 HERO_STR_STATIC(hero_str_38b9, "no");
 
-#line 108 "deadhandlefieldofacellendedthroughahelper.c"
+#line 165 "deadhandlefieldofacellendedthroughahelper.c"
 typedef struct h_deadhandlefieldofacellendedthroughahelper_Db {
     cdb * f_handle;
 } h_deadhandlefieldofacellendedthroughahelper_Db;
 
 typedef struct h_0opt_2436b697 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        h_deadhandlefieldofacellendedthroughahelper_Db ok;
-        HeroFailure err;
-    } as;
+        h_deadhandlefieldofacellendedthroughahelper_Db hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_2436b697;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -158,50 +215,50 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_open(const char * a0, cdb * * a1) { (void)(db_open)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_close(cdb * a0) { (void)(db_close)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_changes(cdb * a0) { (void)(db_changes)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_open(const char * hero_a0, cdb * * hero_a1) { (void)(db_open)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_close(cdb * hero_a0) { (void)(db_close)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_deadhandlefieldofacellendedthroughahelper_db_changes(cdb * hero_a0) { (void)(db_changes)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 174 "deadhandlefieldofacellendedthroughahelper.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 231 "deadhandlefieldofacellendedthroughahelper.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(cdb * const *a, cdb * const *b);
-HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(const void *elem);
-HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0Db_eq(const h_deadhandlefieldofacellendedthroughahelper_Db *a, const h_deadhandlefieldofacellendedthroughahelper_Db *b);
-HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0Db_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_2436b697_retain(const h_0opt_2436b697 *v);
-HERO_TU_LOCAL void h_0opt_2436b697_release(h_0opt_2436b697 *v);
-HERO_TU_LOCAL bool h_0opt_2436b697_eq(const h_0opt_2436b697 *a, const h_0opt_2436b697 *b);
-HERO_TU_LOCAL uint64_t h_0opt_2436b697_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(cdb * const *hero_a, cdb * const *hero_b);
+HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0Db_eq(const h_deadhandlefieldofacellendedthroughahelper_Db *hero_a, const h_deadhandlefieldofacellendedthroughahelper_Db *hero_b);
+HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0Db_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_2436b697_retain(const h_0opt_2436b697 *hero_v);
+HERO_TU_LOCAL void h_0opt_2436b697_release(h_0opt_2436b697 *hero_v);
+HERO_TU_LOCAL bool h_0opt_2436b697_eq(const h_0opt_2436b697 *hero_a, const h_0opt_2436b697 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_2436b697_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_deadhandlefieldofacellendedthroughahelper_0Db_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_deadhandlefieldofacellendedthroughahelper_Db));
+static void h_deadhandlefieldofacellendedthroughahelper_0Db_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_deadhandlefieldofacellendedthroughahelper_Db));
 }
-static void h_deadhandlefieldofacellendedthroughahelper_0Db_desc_drop(void *elem) {
-    (void)elem;
+static void h_deadhandlefieldofacellendedthroughahelper_0Db_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_deadhandlefieldofacellendedthroughahelper_0Db_desc_eq(const void *a, const void *b) {
-    return h_deadhandlefieldofacellendedthroughahelper_0Db_eq((const h_deadhandlefieldofacellendedthroughahelper_Db *)a, (const h_deadhandlefieldofacellendedthroughahelper_Db *)b);
+static bool h_deadhandlefieldofacellendedthroughahelper_0Db_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_deadhandlefieldofacellendedthroughahelper_0Db_eq((const h_deadhandlefieldofacellendedthroughahelper_Db *)hero_a, (const h_deadhandlefieldofacellendedthroughahelper_Db *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_deadhandlefieldofacellendedthroughahelper_0Db_desc = {
     sizeof(h_deadhandlefieldofacellendedthroughahelper_Db),
@@ -220,15 +277,15 @@ h_0opt_2436b697 h_deadhandlefieldofacellendedthroughahelper_opened(void) {
 #line 20
 #define h0_db (*hero_lend_h0_db)
 #line 20
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadhandlefieldofacellendedthroughahelper.opened", "db"); HERO_NODEBUG h_0opt_2436b697 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t11; HERO_ENTRY_STOP; goto bb0; bb0:
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadhandlefieldofacellendedthroughahelper.opened", "db"); HERO_NODEBUG h_0opt_2436b697 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = ((void *)0); h0_db = t1;
 #line 23
-    t2 = HERO_STR_LIT(hero_str_41b4cad0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.opened", 23, 22}; t3 = hero_str_lend_at(t2, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.opened", 23, 8}; hero_lend_local_name(hero_lend_h0_db, "db_open", "out"); t4 = db_open(hero_cstr_nonnull_at(t3, &hero_here), &h0_db); hero_handle_acquired_at(h0_db, "db_close", &hero_here); } t5 = INT64_C(0); t6 = t4 != t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = HERO_STR_LIT(hero_str_41b4cad0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.opened", 23, 22}; t3 = hero_str_lend_at(t2, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.opened", 23, 8}; hero_lend_local_name(hero_lend_h0_db, "db_open", "out"); t4 = db_open(hero_cstr_nonnull_at(t3, &hero_here), &h0_db); hero_handle_acquired_at(h0_db, "db_close", &hero_here); } t5 = INT64_C(0); t6 = t4 != t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 25
-    t10 = h0_db; t11 = (h_deadhandlefieldofacellendedthroughahelper_Db){.f_handle = t10}; t12 = (h_0opt_2436b697){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_2436b697_release(&t14); h1_ret0 = t12; goto bb4; bb2:
+    t10 = h0_db; t11 = (h_deadhandlefieldofacellendedthroughahelper_Db){.f_handle = t10}; t12 = (h_0opt_2436b697){.hero_tag = INT64_C(0), .hero_as.hero_ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_2436b697_release(&t14); h1_ret0 = t12; goto hero_bb4; hero_bb2:
 #line 24
-    t7 = HERO_STR_LIT(hero_str_2cb37c54); t8 = HERO_STR_LIT(hero_str_38b9); hero_str_incref(t7); hero_str_incref(t8); t9 = (h_0opt_2436b697){.tag = INT64_C(1), .as.err = {.code = t7, .msg = t8}}; t15 = h3_own3; h3_own3 = t9; h_0opt_2436b697_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
-#line 232 "deadhandlefieldofacellendedthroughahelper.c"
+    t7 = HERO_STR_LIT(hero_str_2cb37c54); t8 = HERO_STR_LIT(hero_str_38b9); hero_str_incref(t7); hero_str_incref(t8); t9 = (h_0opt_2436b697){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t7, .msg = t8}}; t15 = h3_own3; h3_own3 = t9; h_0opt_2436b697_release(&t15); h1_ret0 = t9; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+#line 289 "deadhandlefieldofacellendedthroughahelper.c"
     t13 = h1_ret0;
     h_0opt_2436b697_retain(&t13);
     h_0opt_2436b697_release(hero_slot_escape(&h2_own2));
@@ -239,182 +296,182 @@ h_0opt_2436b697 h_deadhandlefieldofacellendedthroughahelper_opened(void) {
 #undef h0_db
 
 #line 27 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-int64_t h_deadhandlefieldofacellendedthroughahelper_closed(h_deadhandlefieldofacellendedthroughahelper_Db *ph0_db) { HERO_NODEBUG cdb *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_db).f_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.closed", 28, 12}; { hero_handle_alive_at(t1, "the argument `db` of `db_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "db_close", NULL, &hero_here); t2 = db_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_db).f_handle == t1) (*ph0_db).f_handle = hero_handle_dead(); } } return t2;
-#line 245 "deadhandlefieldofacellendedthroughahelper.c"
+int64_t h_deadhandlefieldofacellendedthroughahelper_closed(h_deadhandlefieldofacellendedthroughahelper_Db *ph0_db) { HERO_NODEBUG cdb *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (*ph0_db).f_handle; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.closed", 28, 12}; { hero_handle_alive_at(t1, "the argument `db` of `db_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t1, "db_close", NULL, &hero_here); t2 = db_close(t1); if (hero_handle_ended(t1, hero_life_0_0) && (*ph0_db).f_handle == t1) (*ph0_db).f_handle = hero_handle_dead(); } } return t2;
+#line 302 "deadhandlefieldofacellendedthroughahelper.c"
 }
 
 #line 30 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-void h_deadhandlefieldofacellendedthroughahelper_main(void) { HERO_NODEBUG h_0opt_2436b697 h0_f0 = {0}, h2_own2 = {0}, t1, t2, t6, t8, t13, t14; h_deadhandlefieldofacellendedthroughahelper_Db h1_db; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t9; HERO_NODEBUG cdb *t11; HERO_NODEBUG int32_t t12; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_deadhandlefieldofacellendedthroughahelper_opened(); t13 = h2_own2; h2_own2 = t1; h_0opt_2436b697_release(&t13); t14 = h0_f0; h_0opt_2436b697_retain(&t1); h0_f0 = t1; h_0opt_2436b697_release(&t14); t2 = h0_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t8 = h0_f0; t9 = t8.as.ok; h1_db = t9;
+void h_deadhandlefieldofacellendedthroughahelper_main(void) { HERO_NODEBUG h_0opt_2436b697 h0_f0 = {0}, h2_own2 = {0}, t1, t2, t6, t8, t13, t14; h_deadhandlefieldofacellendedthroughahelper_Db h1_db; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t9; HERO_NODEBUG cdb *t11; HERO_NODEBUG int32_t t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_deadhandlefieldofacellendedthroughahelper_opened(); t13 = h2_own2; h2_own2 = t1; h_0opt_2436b697_release(&t13); t14 = h0_f0; h_0opt_2436b697_retain(&t1); h0_f0 = t1; h_0opt_2436b697_release(&t14); t2 = h0_f0; t3 = t2.hero_tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto hero_bb1; else goto hero_bb2; hero_bb1: t8 = h0_f0; t9 = t8.hero_as.hero_ok; h1_db = t9;
     h_deadhandlefieldofacellendedthroughahelper_closed(&h1_db);
-    t11 = h1_db.f_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.main", 33, 11}; hero_handle_alive_at(t11, "the argument `db` of `db_changes`", &hero_here); t12 = db_changes(t11); } hero_print_int(t12); hero_print_end();
-#line 253 "deadhandlefieldofacellendedthroughahelper.c"
+    t11 = h1_db.f_handle; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.main", 33, 11}; hero_handle_alive_at(t11, "the argument `db` of `db_changes`", &hero_here); t12 = db_changes(t11); } hero_print_int(t12); hero_print_end();
+#line 310 "deadhandlefieldofacellendedthroughahelper.c"
     h_0opt_2436b697_release(hero_slot_escape(&h0_f0));
     h_0opt_2436b697_release(hero_slot_escape(&h2_own2));
     return;
-bb2:
+hero_bb2:
 #line 31 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    t6 = h0_f0; t7 = t6.as.err;
-#line 260 "deadhandlefieldofacellendedthroughahelper.c"
+    t6 = h0_f0; t7 = t6.hero_as.hero_err;
+#line 317 "deadhandlefieldofacellendedthroughahelper.c"
     hero_panic_must_at(t7, "dead-handle-field-of-a-cell-ended-through-a-helper.hero", "dead-handle-field-of-a-cell-ended-through-a-helper.main", 31, 15);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(cdb * const *a, cdb * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(cdb * const *hero_a, cdb * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(const void *elem) {
-    cdb * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(const void *hero_elem) {
+    cdb * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0Db_eq(const h_deadhandlefieldofacellendedthroughahelper_Db *a, const h_deadhandlefieldofacellendedthroughahelper_Db *b) {
-    if (!(h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(&a->f_handle, &b->f_handle))) return false;
+HERO_TU_LOCAL bool h_deadhandlefieldofacellendedthroughahelper_0Db_eq(const h_deadhandlefieldofacellendedthroughahelper_Db *hero_a, const h_deadhandlefieldofacellendedthroughahelper_Db *hero_b) {
+    if (!(h_deadhandlefieldofacellendedthroughahelper_0CDb_eq(&hero_a->f_handle, &hero_b->f_handle))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0Db_hash(const void *elem) {
-    const h_deadhandlefieldofacellendedthroughahelper_Db *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(&v->f_handle)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_deadhandlefieldofacellendedthroughahelper_0Db_hash(const void *hero_elem) {
+    const h_deadhandlefieldofacellendedthroughahelper_Db *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_deadhandlefieldofacellendedthroughahelper_0CDb_hash(&hero_v->f_handle)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_2436b697_retain(const h_0opt_2436b697 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_2436b697_retain(const h_0opt_2436b697 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_2436b697_release(h_0opt_2436b697 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_2436b697_release(h_0opt_2436b697 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_2436b697_eq(const h_0opt_2436b697 *a, const h_0opt_2436b697 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_deadhandlefieldofacellendedthroughahelper_0Db_desc)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_2436b697_eq(const h_0opt_2436b697 *hero_a, const h_0opt_2436b697 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&h_deadhandlefieldofacellendedthroughahelper_0Db_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_2436b697_hash(const void *elem) {
-    const h_0opt_2436b697 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_2436b697_hash(const void *hero_elem) {
+    const h_0opt_2436b697 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_deadhandlefieldofacellendedthroughahelper_0Db_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&h_deadhandlefieldofacellendedthroughahelper_0Db_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d4cade41288a926", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0445b6453051d1de", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("deadhandlefieldofacellendedthroughahelper\tdead-handle-field-of-a-cell-ended-through-a-helper\n");
     h_deadhandlefieldofacellendedthroughahelper_main();
     hero_runtime_check_leaks();

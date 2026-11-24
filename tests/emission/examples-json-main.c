@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <stdlib.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -98,6 +155,8 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
+HERO_STR_STATIC(hero_str_39de35d5, "json: argument ");
+HERO_STR_STATIC(hero_str_5cf4fc9f, " is not UTF-8");
 HERO_STR_STATIC(hero_str_5b00a8bf, "usage: json <file> [key]");
 HERO_STR_STATIC(hero_str_2d78c599, "cannot read ");
 HERO_STR_STATIC(hero_str_1dce, ": ");
@@ -166,12 +225,10 @@ HERO_STR_STATIC(hero_str_2ae119c5, "no file at ");
 HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
-HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
-HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
-#line 175 "main.c"
+#line 232 "main.c"
 typedef enum h_json_0Value_tag {
     h_json_0Value_tag_nothing = 0,
     h_json_0Value_tag_boolean = 1,
@@ -202,14 +259,14 @@ typedef struct h_json_0Value_c_object {
 } h_json_0Value_c_object;
 
 typedef struct h_json_Value {
-    h_json_0Value_tag tag;
+    h_json_0Value_tag hero_tag;
     union {
-        h_json_0Value_c_boolean c_boolean;
-        h_json_0Value_c_number c_number;
-        h_json_0Value_c_string c_string;
-        h_json_0Value_c_array c_array;
-        h_json_0Value_c_object c_object;
-    } as;
+        h_json_0Value_c_boolean hero_c_boolean;
+        h_json_0Value_c_number hero_c_number;
+        h_json_0Value_c_string hero_c_string;
+        h_json_0Value_c_array hero_c_array;
+        h_json_0Value_c_object hero_c_object;
+    } hero_as;
 } h_json_Value;
 
 typedef struct h_json_Reader {
@@ -218,50 +275,50 @@ typedef struct h_json_Reader {
 } h_json_Reader;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_2b821190 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        h_json_Value ok;
-        HeroFailure err;
-    } as;
+        h_json_Value hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_2b821190;
 
 typedef struct h_0opt_db92a83 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        double ok;
-        HeroFailure err;
-    } as;
+        double hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_db92a83;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_1ec004 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint8_t ok;
-        HeroFailure err;
-    } as;
+        uint8_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_1ec004;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -282,77 +339,77 @@ typedef struct h_0opt_1ec004 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 28 "examples/json/json.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_json_strtod(const char * a0, void * a1) { (void)(strtod)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_json_strtod(const char * hero_a0, void * hero_a1) { (void)(strtod)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 296 "main.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 353 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_json_0Value_c_boolean_eq(const h_json_0Value_c_boolean *a, const h_json_0Value_c_boolean *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_c_boolean_hash(const void *elem);
-HERO_TU_LOCAL bool h_json_0Value_c_number_eq(const h_json_0Value_c_number *a, const h_json_0Value_c_number *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_c_number_hash(const void *elem);
-HERO_TU_LOCAL void h_json_0Value_c_string_retain(const h_json_0Value_c_string *v);
-HERO_TU_LOCAL void h_json_0Value_c_string_release(h_json_0Value_c_string *v);
-HERO_TU_LOCAL bool h_json_0Value_c_string_eq(const h_json_0Value_c_string *a, const h_json_0Value_c_string *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_c_string_hash(const void *elem);
-HERO_TU_LOCAL void h_json_0Value_c_array_retain(const h_json_0Value_c_array *v);
-HERO_TU_LOCAL void h_json_0Value_c_array_release(h_json_0Value_c_array *v);
-HERO_TU_LOCAL bool h_json_0Value_c_array_eq(const h_json_0Value_c_array *a, const h_json_0Value_c_array *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_c_array_hash(const void *elem);
-HERO_TU_LOCAL void h_json_0Value_c_object_retain(const h_json_0Value_c_object *v);
-HERO_TU_LOCAL void h_json_0Value_c_object_release(h_json_0Value_c_object *v);
-HERO_TU_LOCAL bool h_json_0Value_c_object_eq(const h_json_0Value_c_object *a, const h_json_0Value_c_object *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_c_object_hash(const void *elem);
-HERO_TU_LOCAL void h_json_0Value_retain(const h_json_Value *v);
-HERO_TU_LOCAL void h_json_0Value_release(h_json_Value *v);
-HERO_TU_LOCAL bool h_json_0Value_eq(const h_json_Value *a, const h_json_Value *b);
-HERO_TU_LOCAL uint64_t h_json_0Value_hash(const void *elem);
-HERO_TU_LOCAL void h_json_0Reader_retain(const h_json_Reader *v);
-HERO_TU_LOCAL void h_json_0Reader_release(h_json_Reader *v);
-HERO_TU_LOCAL bool h_json_0Reader_eq(const h_json_Reader *a, const h_json_Reader *b);
-HERO_TU_LOCAL uint64_t h_json_0Reader_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_2b821190_retain(const h_0opt_2b821190 *v);
-HERO_TU_LOCAL void h_0opt_2b821190_release(h_0opt_2b821190 *v);
-HERO_TU_LOCAL bool h_0opt_2b821190_eq(const h_0opt_2b821190 *a, const h_0opt_2b821190 *b);
-HERO_TU_LOCAL uint64_t h_0opt_2b821190_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v);
-HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v);
-HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b);
-HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v);
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v);
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem);
+HERO_TU_LOCAL bool h_json_0Value_c_boolean_eq(const h_json_0Value_c_boolean *hero_a, const h_json_0Value_c_boolean *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_c_boolean_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_json_0Value_c_number_eq(const h_json_0Value_c_number *hero_a, const h_json_0Value_c_number *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_c_number_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_json_0Value_c_string_retain(const h_json_0Value_c_string *hero_v);
+HERO_TU_LOCAL void h_json_0Value_c_string_release(h_json_0Value_c_string *hero_v);
+HERO_TU_LOCAL bool h_json_0Value_c_string_eq(const h_json_0Value_c_string *hero_a, const h_json_0Value_c_string *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_c_string_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_json_0Value_c_array_retain(const h_json_0Value_c_array *hero_v);
+HERO_TU_LOCAL void h_json_0Value_c_array_release(h_json_0Value_c_array *hero_v);
+HERO_TU_LOCAL bool h_json_0Value_c_array_eq(const h_json_0Value_c_array *hero_a, const h_json_0Value_c_array *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_c_array_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_json_0Value_c_object_retain(const h_json_0Value_c_object *hero_v);
+HERO_TU_LOCAL void h_json_0Value_c_object_release(h_json_0Value_c_object *hero_v);
+HERO_TU_LOCAL bool h_json_0Value_c_object_eq(const h_json_0Value_c_object *hero_a, const h_json_0Value_c_object *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_c_object_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_json_0Value_retain(const h_json_Value *hero_v);
+HERO_TU_LOCAL void h_json_0Value_release(h_json_Value *hero_v);
+HERO_TU_LOCAL bool h_json_0Value_eq(const h_json_Value *hero_a, const h_json_Value *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Value_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_json_0Reader_retain(const h_json_Reader *hero_v);
+HERO_TU_LOCAL void h_json_0Reader_release(h_json_Reader *hero_v);
+HERO_TU_LOCAL bool h_json_0Reader_eq(const h_json_Reader *hero_a, const h_json_Reader *hero_b);
+HERO_TU_LOCAL uint64_t h_json_0Reader_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_2b821190_retain(const h_0opt_2b821190 *hero_v);
+HERO_TU_LOCAL void h_0opt_2b821190_release(h_0opt_2b821190 *hero_v);
+HERO_TU_LOCAL bool h_0opt_2b821190_eq(const h_0opt_2b821190 *hero_a, const h_0opt_2b821190 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_2b821190_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *hero_v);
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *hero_v);
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *hero_a, const h_0opt_db92a83 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v);
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem);
 
-static void h_json_0Value_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_json_Value));
-    h_json_0Value_retain((const h_json_Value *)dst);
+static void h_json_0Value_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_json_Value));
+    h_json_0Value_retain((const h_json_Value *)hero_dst);
 }
-static void h_json_0Value_desc_drop(void *elem) {
-    h_json_0Value_release((h_json_Value *)elem);
+static void h_json_0Value_desc_drop(void *hero_elem) {
+    h_json_0Value_release((h_json_Value *)hero_elem);
 }
-static bool h_json_0Value_desc_eq(const void *a, const void *b) {
-    return h_json_0Value_eq((const h_json_Value *)a, (const h_json_Value *)b);
+static bool h_json_0Value_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_json_0Value_eq((const h_json_Value *)hero_a, (const h_json_Value *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_json_0Value_desc = {
     sizeof(h_json_Value),
@@ -362,6 +419,25 @@ HERO_TU_QUIET static const HeroDesc h_json_0Value_desc = {
     h_json_0Value_hash,
 };
 
+static void h_0opt_f87774a_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_0opt_f87774a));
+    h_0opt_f87774a_retain((const h_0opt_f87774a *)hero_dst);
+}
+static void h_0opt_f87774a_desc_drop(void *hero_elem) {
+    h_0opt_f87774a_release((h_0opt_f87774a *)hero_elem);
+}
+static bool h_0opt_f87774a_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_0opt_f87774a_eq((const h_0opt_f87774a *)hero_a, (const h_0opt_f87774a *)hero_b);
+}
+HERO_TU_QUIET static const HeroDesc h_0opt_f87774a_desc = {
+    sizeof(h_0opt_f87774a),
+    h_0opt_f87774a_desc_copy,
+    h_0opt_f87774a_desc_drop,
+    h_0opt_f87774a_desc_eq,
+    h_0opt_f87774a_hash,
+};
+
+HeroArrayHeader * h_main_text_arguments(void);
 void h_main_main(void);
 void h_main_stop(HeroStr h0_message);
 void h_main_report(HeroStr h0_text, HeroArrayHeader * h1_given);
@@ -400,37 +476,71 @@ HeroStr h_json_quoted(HeroStr h0_s);
 HeroStr h_json_escape_of(uint8_t h0_c);
 HeroStr h_json_HEX(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args_checked(void);
 void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller);
-__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
+__attribute__((__unused__)) void hero_value_h_library_exit(int64_t h0_code);
 HERO_TU_LOCAL h_0opt_2b821190 h_json_0refused_1d7a8246(h_json_Reader h0_r, HeroStr h1_why);
 HERO_TU_LOCAL h_0opt_f87774a h_json_0refused_1e58d9(h_json_Reader h0_r, HeroStr h1_why);
 HERO_TU_LOCAL h_0opt_a8ea2 h_json_0refused_14a1(h_json_Reader h0_r, HeroStr h1_why);
 HERO_TU_LOCAL h_0opt_e201354 h_json_0refused_1b9a87(h_json_Reader h0_r, HeroStr h1_why);
 HERO_TU_LOCAL h_0opt_db92a83 h_json_0refused_1ad16c(h_json_Reader h0_r, HeroStr h1_why);
 
-#line 19 "examples/json/main.hero"
-void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t25, t31, t32; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t28, *t29, *t30; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t23, t24, t26, t27, t34, t35, t36, t37; HERO_NODEBUG int64_t t3, t4, t7, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t15, t33; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 20, 13}; t1 = h_library_args(&hero_here); } t29 = h4_own4; h4_own4 = t1; hero_array_decref(t29); t30 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t30);
-#line 22
-    t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
-#line 26
-    t8 = h0_given; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.main", 26, 21) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 26, 11}; t11 = h_library_read_file(t10, &hero_here); } t31 = h5_own5; h5_own5 = t11; h_0opt_f87774a_release(&t31); t32 = h1_s0; h_0opt_f87774a_retain(&t11); h1_s0 = t11; h_0opt_f87774a_release(&t32); t12 = h1_s0; t13 = t12.tag; switch (t13) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb2:
-#line 23
+#line 22 "examples/json/main.hero"
+HeroArrayHeader * h_main_text_arguments(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t2, *t5, *t8, *t19, *t32, *t33, *t34, *t35, *t36; HERO_NODEBUG int64_t h2_i0, t3, t4, t6, t9, t13, t20, t21, t22, t28, t29, t30, t31; h_0opt_f87774a h3_one = {0}; HERO_NODEBUG h_0opt_f87774a h4_s0 = {0}, t10, t11, t12, t14, t37, t38; HeroStr h5_text = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t15, t17, t23, t24, t25, t26, t27, t39, t40, t41, t42; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = hero_array_new(&hero_desc_str, 1); t33 = h6_own6; h6_own6 = t1; hero_array_decref(t33); t34 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t34);
+#line 25
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.text_arguments", 25, 16}; t2 = h_library_args_checked(&hero_here); } t35 = h7_own7; h7_own7 = t2; hero_array_decref(t35); t36 = h1_xs0; hero_array_incref(t2); h1_xs0 = t2; hero_array_decref(t36); t3 = INT64_C(0); h2_i0 = t3; goto hero_bb1; hero_bb1: t4 = h2_i0; t5 = h1_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h1_xs0; t9 = h2_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.text_arguments", 25, 9) : (void)0), (void)(t8->elem->size != sizeof(h_0opt_f87774a) ? hero_unreachable() : (void)0), ((h_0opt_f87774a const *)(const void *)(t8 + 1))[t9]); t37 = h3_one; h_0opt_f87774a_retain(&t10); h3_one = t10; h_0opt_f87774a_release(&t37);
+    t11 = h3_one; t38 = h4_s0; h_0opt_f87774a_retain(&t11); h4_s0 = t11; h_0opt_f87774a_release(&t38); t12 = h4_s0; t13 = t12.hero_tag; switch (t13) { case 0: goto hero_bb6; case 1: goto hero_bb7; default: hero_unreachable(); } hero_bb3:
+#line 25
+    t29 = h2_i0; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("main.hero", "main.text_arguments", 25, 9); h2_i0 = t31; goto hero_bb1; hero_bb4:
+#line 32
+    t32 = h0_given;
+#line 510 "main.c"
+    hero_array_incref(t32);
+    hero_array_release_at(&h0_given);
+    hero_array_release_at(&h1_xs0);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_one));
+    h_0opt_f87774a_release(hero_slot_escape(&h4_s0));
+    hero_str_release_at(&h5_text);
+    hero_array_release_at(&h6_own6);
+    hero_array_release_at(&h7_own7);
+    hero_str_release_at(&h8_own8);
+    hero_str_release_at(&h9_own9);
+    hero_str_release_at(&h10_own10);
+    return t32;
+hero_bb5:
+    goto hero_bb3;
+hero_bb6:
+#line 27 "examples/json/main.hero"
+    t14 = h4_s0; t15 = t14.hero_as.hero_ok; t39 = h5_text; hero_str_incref(t15); h5_text = t15; hero_str_decref(t39); t17 = h5_text; hero_array_push_owned(&h0_given, &t17); goto hero_bb5; hero_bb7:
+#line 29
+    t19 = h0_given; t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len); t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("main.hero", "main.text_arguments", 29, 41); t23 = HERO_STR_LIT(hero_str_39de35d5); t24 = hero_int_to_str(t22); t40 = h8_own8; h8_own8 = t24; hero_str_decref(t40); t25 = HERO_STR_LIT(hero_str_5cf4fc9f); t26 = hero_str_concat(t23, t24); t41 = h9_own9; h9_own9 = t26; hero_str_decref(t41); t27 = hero_str_concat(t26, t25); t42 = h10_own10; h10_own10 = t27; hero_str_decref(t42); hero_print_str(t27); hero_print_end();
+    t28 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.text_arguments", 30, 17}; h_library_exit(t28, &hero_here); } hero_unreachable(); goto hero_bb5;
+#line 531 "main.c"
+}
+
+#line 34 "examples/json/main.hero"
+void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t11, t12, t14, t25, t31, t32; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t2, *t8, *t17, *t28, *t29, *t30; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t6, t10, t16, t19, t20, t21, t22, t23, t24, t26, t27, t34, t35, t36, t37; HERO_NODEBUG int64_t t3, t4, t7, t9, t13, t18; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t15, t33; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_main_text_arguments(); t29 = h4_own4; h4_own4 = t1; hero_array_decref(t29); t30 = h0_given; hero_array_incref(t1); h0_given = t1; hero_array_decref(t30);
+#line 37
+    t2 = h0_given; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
+#line 41
+    t8 = h0_given; t9 = INT64_C(0); t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.main", 41, 21) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 41, 11}; t11 = h_library_read_file(t10, &hero_here); } t31 = h5_own5; h5_own5 = t11; h_0opt_f87774a_release(&t31); t32 = h1_s0; h_0opt_f87774a_retain(&t11); h1_s0 = t11; h_0opt_f87774a_release(&t32); t12 = h1_s0; t13 = t12.hero_tag; switch (t13) { case 0: goto hero_bb6; case 1: goto hero_bb5; default: hero_unreachable(); } hero_bb2:
+#line 38
     t6 = HERO_STR_LIT(hero_str_5b00a8bf); hero_print_str(t6); hero_print_end();
-    t7 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 24, 9}; h_library_exit(t7, &hero_here); } hero_unreachable(); goto bb1; bb3: goto bb1; bb4:
-#line 434 "main.c"
+    t7 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 39, 9}; h_library_exit(t7, &hero_here); } hero_unreachable(); goto hero_bb1; hero_bb3: goto hero_bb1; hero_bb4:
+#line 544 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -441,24 +551,24 @@ void h_main_main(void) { HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f
     hero_str_release_at(&h7_own7);
     hero_str_release_at(&h8_own8);
     return;
-bb5:
-#line 27 "examples/json/main.hero"
-    t14 = h1_s0; t15 = t14.as.err; t33 = h2_e; hero_failure_retain(&t15); h2_e = t15; hero_failure_release(&t33); t16 = HERO_STR_LIT(hero_str_2d78c599); t17 = h0_given; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "main.hero", "main.main", 27, 43) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t34 = h6_own6; h6_own6 = t20; hero_str_decref(t34); t21 = HERO_STR_LIT(hero_str_1dce); t22 = hero_str_concat(t20, t21); t35 = h7_own7; h7_own7 = t22; hero_str_decref(t35); t23 = h2_e.code; t24 = hero_str_concat(t22, t23); t36 = h8_own8; h8_own8 = t24; hero_str_decref(t36); h_main_stop(t24); goto bb4; bb6:
-    t25 = h1_s0; t26 = t25.as.ok; t37 = h3_text; hero_str_incref(t26); h3_text = t26; hero_str_decref(t37); t27 = h3_text; t28 = h0_given; h_main_report(t27, t28); goto bb4;
-#line 449 "main.c"
+hero_bb5:
+#line 42 "examples/json/main.hero"
+    t14 = h1_s0; t15 = t14.hero_as.hero_err; t33 = h2_e; hero_failure_retain(&t15); h2_e = t15; hero_failure_release(&t33); t16 = HERO_STR_LIT(hero_str_2d78c599); t17 = h0_given; t18 = INT64_C(0); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "main.hero", "main.main", 42, 43) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); t20 = hero_str_concat(t16, t19); t34 = h6_own6; h6_own6 = t20; hero_str_decref(t34); t21 = HERO_STR_LIT(hero_str_1dce); t22 = hero_str_concat(t20, t21); t35 = h7_own7; h7_own7 = t22; hero_str_decref(t35); t23 = h2_e.code; t24 = hero_str_concat(t22, t23); t36 = h8_own8; h8_own8 = t24; hero_str_decref(t36); h_main_stop(t24); goto hero_bb4; hero_bb6:
+    t25 = h1_s0; t26 = t25.hero_as.hero_ok; t37 = h3_text; hero_str_incref(t26); h3_text = t26; hero_str_decref(t37); t27 = h3_text; t28 = h0_given; h_main_report(t27, t28); goto hero_bb4;
+#line 559 "main.c"
 }
 
-#line 31 "examples/json/main.hero"
-void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 46 "examples/json/main.hero"
+void h_main_stop(HeroStr h0_message) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_message; hero_print_str(t1); hero_print_end();
-    t2 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.stop", 33, 5}; h_library_exit(t2, &hero_here); } hero_unreachable(); return;
-#line 456 "main.c"
+    t2 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.stop", 48, 5}; h_library_exit(t2, &hero_here); } hero_unreachable(); return;
+#line 566 "main.c"
 }
 
-#line 35 "examples/json/main.hero"
-void h_main_report(HeroStr h0_text, HeroArrayHeader * h1_given) { HERO_NODEBUG h_0opt_2b821190 h2_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t12, t16, t17; HeroFailure h3_e = {0}; h_json_Value h4_doc = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, t1, t7, t8, t9, t10, t11, t19, t20; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t18; HERO_NODEBUG h_json_Value t13, t14, t21; HERO_NODEBUG HeroArrayHeader *t15; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; t2 = h_json_parse(t1); t16 = h5_own5; h5_own5 = t2; h_0opt_2b821190_release(&t16); t17 = h2_s0; h_0opt_2b821190_retain(&t2); h2_s0 = t2; h_0opt_2b821190_release(&t17); t3 = h2_s0; t4 = t3.tag; switch (t4) { case 0: goto bb3; case 1: goto bb2; default: hero_unreachable(); } bb1:
-#line 462 "main.c"
+#line 50 "examples/json/main.hero"
+void h_main_report(HeroStr h0_text, HeroArrayHeader * h1_given) { HERO_NODEBUG h_0opt_2b821190 h2_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t12, t16, t17; HeroFailure h3_e = {0}; h_json_Value h4_doc = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, t1, t7, t8, t9, t10, t11, t19, t20; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t6, t18; HERO_NODEBUG h_json_Value t13, t14, t21; HERO_NODEBUG HeroArrayHeader *t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_text; t2 = h_json_parse(t1); t16 = h5_own5; h5_own5 = t2; h_0opt_2b821190_release(&t16); t17 = h2_s0; h_0opt_2b821190_retain(&t2); h2_s0 = t2; h_0opt_2b821190_release(&t17); t3 = h2_s0; t4 = t3.hero_tag; switch (t4) { case 0: goto hero_bb3; case 1: goto hero_bb2; default: hero_unreachable(); } hero_bb1:
+#line 572 "main.c"
     h_0opt_2b821190_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     h_json_0Value_release(hero_slot_escape(&h4_doc));
@@ -466,21 +576,21 @@ void h_main_report(HeroStr h0_text, HeroArrayHeader * h1_given) { HERO_NODEBUG h
     hero_str_release_at(&h6_own6);
     hero_str_release_at(&h7_own7);
     return;
-bb2:
-#line 37 "examples/json/main.hero"
-    t5 = h2_s0; t6 = t5.as.err; t18 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t18); t7 = h3_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t19 = h6_own6; h6_own6 = t9; hero_str_decref(t19); t10 = h3_e.msg; t11 = hero_str_concat(t9, t10); t20 = h7_own7; h7_own7 = t11; hero_str_decref(t20); h_main_stop(t11); goto bb1; bb3:
-    t12 = h2_s0; t13 = t12.as.ok; t21 = h4_doc; h_json_0Value_retain(&t13); h4_doc = t13; h_json_0Value_release(&t21); t14 = h4_doc; t15 = h1_given; h_main_describe(t14, t15); goto bb1;
-#line 474 "main.c"
+hero_bb2:
+#line 52 "examples/json/main.hero"
+    t5 = h2_s0; t6 = t5.hero_as.hero_err; t18 = h3_e; hero_failure_retain(&t6); h3_e = t6; hero_failure_release(&t18); t7 = h3_e.code; t8 = HERO_STR_LIT(hero_str_1dce); t9 = hero_str_concat(t7, t8); t19 = h6_own6; h6_own6 = t9; hero_str_decref(t19); t10 = h3_e.msg; t11 = hero_str_concat(t9, t10); t20 = h7_own7; h7_own7 = t11; hero_str_decref(t20); h_main_stop(t11); goto hero_bb1; hero_bb3:
+    t12 = h2_s0; t13 = t12.hero_as.hero_ok; t21 = h4_doc; h_json_0Value_retain(&t13); h4_doc = t13; h_json_0Value_release(&t21); t14 = h4_doc; t15 = h1_given; h_main_describe(t14, t15); goto hero_bb1;
+#line 584 "main.c"
 }
 
-#line 40 "examples/json/main.hero"
-void h_main_describe(h_json_Value h0_doc, HeroArrayHeader * h1_given) { HERO_NODEBUG h_0opt_2b821190 h2_s0 = {0}, h6_own6 = {0}, t17, t18, t20, t28, t38, t39; HeroFailure h3_e = {0}; h_json_Value h4_got = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h7_own7 = {0}, t1, t4, t8, t16, t22, t25, t26, t27, t30, t33, t34, t36, t37, t42; HERO_NODEBUG h_json_Value t2, t5, t7, t13, t29, t35, t41; HERO_NODEBUG int64_t t3, t6, t10, t11, t15, t19, t24, t32; HERO_NODEBUG HeroArrayHeader *t9, *t14, *t23, *t31; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t21, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 55 "examples/json/main.hero"
+void h_main_describe(h_json_Value h0_doc, HeroArrayHeader * h1_given) { HERO_NODEBUG h_0opt_2b821190 h2_s0 = {0}, h6_own6 = {0}, t17, t18, t20, t28, t38, t39; HeroFailure h3_e = {0}; h_json_Value h4_got = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}, h7_own7 = {0}, t1, t4, t8, t16, t22, t25, t26, t27, t30, t33, t34, t36, t37, t42; HERO_NODEBUG h_json_Value t2, t5, t7, t13, t29, t35, t41; HERO_NODEBUG int64_t t3, t6, t10, t11, t15, t19, t24, t32; HERO_NODEBUG HeroArrayHeader *t9, *t14, *t23, *t31; HERO_NODEBUG bool t12; HERO_NODEBUG HeroFailure t21, t40; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_31fd2fcf); t2 = h0_doc; t3 = h_main_size(t2); hero_print_str(t1); hero_print_int(t3); hero_print_end();
     t4 = HERO_STR_LIT(hero_str_ea08ab8); t5 = h0_doc; t6 = h_main_depth(t5); hero_print_str(t4); hero_print_int(t6); hero_print_end();
     t7 = h0_doc; t8 = h_main_shown(t7); t37 = h5_own5; h5_own5 = t8; hero_str_decref(t37); hero_print_str(t8); hero_print_end();
-#line 45
-    t9 = h1_given; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(1); t12 = t10 > t11; if (t12) goto bb2; else goto bb3; bb1:
-#line 484 "main.c"
+#line 60
+    t9 = h1_given; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = INT64_C(1); t12 = t10 > t11; if (t12) goto hero_bb2; else goto hero_bb3; hero_bb1:
+#line 594 "main.c"
     h_0opt_2b821190_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     h_json_0Value_release(hero_slot_escape(&h4_got));
@@ -488,18 +598,18 @@ void h_main_describe(h_json_Value h0_doc, HeroArrayHeader * h1_given) { HERO_NOD
     h_0opt_2b821190_release(hero_slot_escape(&h6_own6));
     hero_str_release_at(&h7_own7);
     return;
-bb2:
-#line 46 "examples/json/main.hero"
-    t13 = h0_doc; t14 = h1_given; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "main.hero", "main.describe", 46, 31) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]); t17 = h_json_field(t13, t16); t38 = h6_own6; h6_own6 = t17; h_0opt_2b821190_release(&t38); t39 = h2_s0; h_0opt_2b821190_retain(&t17); h2_s0 = t17; h_0opt_2b821190_release(&t39); t18 = h2_s0; t19 = t18.tag; switch (t19) { case 0: goto bb6; case 1: goto bb5; default: hero_unreachable(); } bb3: goto bb1; bb4: goto bb1; bb5:
-    t20 = h2_s0; t21 = t20.as.err; t40 = h3_e; hero_failure_retain(&t21); h3_e = t21; hero_failure_release(&t40); t22 = HERO_STR_LIT(hero_str_777af780); t23 = h1_given; t24 = INT64_C(1); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "main.hero", "main.describe", 47, 40) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_1dce); t27 = h3_e.code; hero_print_str(t22); hero_print_str(t25); hero_print_str(t26); hero_print_str(t27); hero_print_end(); goto bb4; bb6:
-    t28 = h2_s0; t29 = t28.as.ok; t41 = h4_got; h_json_0Value_retain(&t29); h4_got = t29; h_json_0Value_release(&t41); t30 = HERO_STR_LIT(hero_str_777af780); t31 = h1_given; t32 = INT64_C(1); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "main.hero", "main.describe", 48, 40) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]); t34 = HERO_STR_LIT(hero_str_1dce); t35 = h4_got; t36 = h_main_shown(t35); t42 = h7_own7; h7_own7 = t36; hero_str_decref(t42); hero_print_str(t30); hero_print_str(t33); hero_print_str(t34); hero_print_str(t36); hero_print_end(); goto bb4;
-#line 497 "main.c"
+hero_bb2:
+#line 61 "examples/json/main.hero"
+    t13 = h0_doc; t14 = h1_given; t15 = INT64_C(1); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "main.hero", "main.describe", 61, 31) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]); t17 = h_json_field(t13, t16); t38 = h6_own6; h6_own6 = t17; h_0opt_2b821190_release(&t38); t39 = h2_s0; h_0opt_2b821190_retain(&t17); h2_s0 = t17; h_0opt_2b821190_release(&t39); t18 = h2_s0; t19 = t18.hero_tag; switch (t19) { case 0: goto hero_bb6; case 1: goto hero_bb5; default: hero_unreachable(); } hero_bb3: goto hero_bb1; hero_bb4: goto hero_bb1; hero_bb5:
+    t20 = h2_s0; t21 = t20.hero_as.hero_err; t40 = h3_e; hero_failure_retain(&t21); h3_e = t21; hero_failure_release(&t40); t22 = HERO_STR_LIT(hero_str_777af780); t23 = h1_given; t24 = INT64_C(1); t25 = ((void)((t23 == NULL || t24 < 0 || t24 >= t23->len) ? hero_panic_index_at(t23, t24, "main.hero", "main.describe", 62, 40) : (void)0), (void)(t23->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t23 + 1))[t24]); t26 = HERO_STR_LIT(hero_str_1dce); t27 = h3_e.code; hero_print_str(t22); hero_print_str(t25); hero_print_str(t26); hero_print_str(t27); hero_print_end(); goto hero_bb4; hero_bb6:
+    t28 = h2_s0; t29 = t28.hero_as.hero_ok; t41 = h4_got; h_json_0Value_retain(&t29); h4_got = t29; h_json_0Value_release(&t41); t30 = HERO_STR_LIT(hero_str_777af780); t31 = h1_given; t32 = INT64_C(1); t33 = ((void)((t31 == NULL || t32 < 0 || t32 >= t31->len) ? hero_panic_index_at(t31, t32, "main.hero", "main.describe", 63, 40) : (void)0), (void)(t31->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t31 + 1))[t32]); t34 = HERO_STR_LIT(hero_str_1dce); t35 = h4_got; t36 = h_main_shown(t35); t42 = h7_own7; h7_own7 = t36; hero_str_decref(t42); hero_print_str(t30); hero_print_str(t33); hero_print_str(t34); hero_print_str(t36); hero_print_end(); goto hero_bb4;
+#line 607 "main.c"
 }
 
-#line 53 "examples/json/main.hero"
-HeroStr h_main_shown(h_json_Value h0_v) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t8, t16, t17; HERO_NODEBUG HeroStr h2_r0 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t7, t10, t11, t12, t13, t14, t15, t18, t19, t21, t22, t23; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_json_Value t1; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t9, t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t2 = h_json_render(t1); t16 = h5_own5; h5_own5 = t2; h_0opt_f87774a_release(&t16); t17 = h1_s0; h_0opt_f87774a_retain(&t2); h1_s0 = t2; h_0opt_f87774a_release(&t17); t3 = h1_s0; t4 = t3.tag; switch (t4) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb1: t15 = h2_r0;
-#line 503 "main.c"
+#line 68 "examples/json/main.hero"
+HeroStr h_main_shown(h_json_Value h0_v) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}, h5_own5 = {0}, t2, t3, t5, t8, t16, t17; HERO_NODEBUG HeroStr h2_r0 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t7, t10, t11, t12, t13, t14, t15, t18, t19, t21, t22, t23; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_json_Value t1; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroFailure t9, t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; t2 = h_json_render(t1); t16 = h5_own5; h5_own5 = t2; h_0opt_f87774a_release(&t16); t17 = h1_s0; h_0opt_f87774a_retain(&t2); h1_s0 = t2; h_0opt_f87774a_release(&t17); t3 = h1_s0; t4 = t3.hero_tag; switch (t4) { case 0: goto hero_bb2; case 1: goto hero_bb3; default: hero_unreachable(); } hero_bb1: t15 = h2_r0;
+#line 613 "main.c"
     hero_str_incref(t15);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -509,119 +619,119 @@ HeroStr h_main_shown(h_json_Value h0_v) { HERO_NODEBUG h_0opt_f87774a h1_s0 = {0
     hero_str_release_at(&h6_own6);
     hero_str_release_at(&h7_own7);
     return t15;
-bb2:
-#line 55 "examples/json/main.hero"
-    t5 = h1_s0; t6 = t5.as.ok; t18 = h3_text; hero_str_incref(t6); h3_text = t6; hero_str_decref(t18); t7 = h3_text;
-#line 54
-    t19 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t19); goto bb1; bb3:
-#line 56
-    t8 = h1_s0; t9 = t8.as.err; t20 = h4_e; hero_failure_retain(&t9); h4_e = t9; hero_failure_release(&t20); t10 = HERO_STR_LIT(hero_str_28); t11 = h4_e.code; t12 = hero_str_concat(t10, t11); t21 = h6_own6; h6_own6 = t12; hero_str_decref(t21); t13 = HERO_STR_LIT(hero_str_29); t14 = hero_str_concat(t12, t13); t22 = h7_own7; h7_own7 = t14; hero_str_decref(t22);
-#line 54
-    t23 = h2_r0; hero_str_incref(t14); h2_r0 = t14; hero_str_decref(t23); goto bb1;
-#line 522 "main.c"
-}
-
-#line 59 "examples/json/main.hero"
-int64_t h_main_size(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t5, t11, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t10, t13, t16, t17, t18; h_json_0Value_c_array h3_a = {0}; h_json_0Value_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t8, *t15, *t22; HERO_NODEBUG h_json_0Value_c_array t6, t20; HERO_NODEBUG h_json_0Value_c_object t12, t21; HERO_NODEBUG HeroMapHeader *t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t19 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t19); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb2; case 2: goto bb2; case 3: goto bb2; case 4: goto bb3; case 5: goto bb4; default: hero_unreachable(); } bb1: t18 = h2_r0;
-#line 528 "main.c"
-    h_json_0Value_release(hero_slot_escape(&h1_s0));
-    h_json_0Value_c_array_release(hero_slot_escape(&h3_a));
-    h_json_0Value_c_object_release(hero_slot_escape(&h4_o));
-    hero_array_release_at(&h5_own5);
-    return t18;
-bb2:
-#line 61 "examples/json/main.hero"
-    t4 = INT64_C(1);
-#line 60
-    h2_r0 = t4; goto bb1; bb3:
-#line 62
-    t5 = h1_s0; t6 = t5.as.c_array; t20 = h3_a; h_json_0Value_c_array_retain(&t6); h3_a = t6; h_json_0Value_c_array_release(&t20); t7 = INT64_C(1); t8 = h3_a.f_items; t9 = h_main_size_of_all(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("main.hero", "main.size", 62, 58);
-#line 60
-    h2_r0 = t10; goto bb1; bb4:
-#line 63
-    t11 = h1_s0; t12 = t11.as.c_object; t21 = h4_o; h_json_0Value_c_object_retain(&t12); h4_o = t12; h_json_0Value_c_object_release(&t21); t13 = INT64_C(1); t14 = h4_o.f_fields; t15 = h_main_values_of(t14); t22 = h5_own5; h5_own5 = t15; hero_array_decref(t22); t16 = h_main_size_of_all(t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("main.hero", "main.size", 63, 58);
-#line 60
-    h2_r0 = t17; goto bb1;
-#line 547 "main.c"
-}
-
-#line 65 "examples/json/main.hero"
-int64_t h_main_size_of_all(HeroArrayHeader * h0_items) { int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18; h_json_Value h4_item = {0}; HERO_NODEBUG bool t7; HERO_NODEBUG h_json_Value t10, t12, t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); h1_total = t1;
-#line 68
-    t2 = h0_items; t19 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t19); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.size_of_all", 68, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t20 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t20);
-    t11 = h1_total; t12 = h4_item; t13 = h_main_size(t12); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("main.hero", "main.size_of_all", 69, 17); h1_total = t14; goto bb3; bb3:
-#line 68
-    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.size_of_all", 68, 9); h3_i0 = t17; goto bb1; bb4:
+hero_bb2:
+#line 70 "examples/json/main.hero"
+    t5 = h1_s0; t6 = t5.hero_as.hero_ok; t18 = h3_text; hero_str_incref(t6); h3_text = t6; hero_str_decref(t18); t7 = h3_text;
+#line 69
+    t19 = h2_r0; hero_str_incref(t7); h2_r0 = t7; hero_str_decref(t19); goto hero_bb1; hero_bb3:
 #line 71
-    t18 = h1_total;
-#line 560 "main.c"
-    hero_array_release_at(&h2_xs0);
-    h_json_0Value_release(hero_slot_escape(&h4_item));
-    return t18;
+    t8 = h1_s0; t9 = t8.hero_as.hero_err; t20 = h4_e; hero_failure_retain(&t9); h4_e = t9; hero_failure_release(&t20); t10 = HERO_STR_LIT(hero_str_28); t11 = h4_e.code; t12 = hero_str_concat(t10, t11); t21 = h6_own6; h6_own6 = t12; hero_str_decref(t21); t13 = HERO_STR_LIT(hero_str_29); t14 = hero_str_concat(t12, t13); t22 = h7_own7; h7_own7 = t14; hero_str_decref(t22);
+#line 69
+    t23 = h2_r0; hero_str_incref(t14); h2_r0 = t14; hero_str_decref(t23); goto hero_bb1;
+#line 632 "main.c"
 }
 
 #line 74 "examples/json/main.hero"
-int64_t h_main_depth(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t5, t11, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t10, t13, t16, t17, t18; h_json_0Value_c_array h3_a = {0}; h_json_0Value_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t8, *t15, *t22; HERO_NODEBUG h_json_0Value_c_array t6, t20; HERO_NODEBUG h_json_0Value_c_object t12, t21; HERO_NODEBUG HeroMapHeader *t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t19 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t19); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb2; case 2: goto bb2; case 3: goto bb2; case 4: goto bb3; case 5: goto bb4; default: hero_unreachable(); } bb1: t18 = h2_r0;
-#line 569 "main.c"
+int64_t h_main_size(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t5, t11, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t10, t13, t16, t17, t18; h_json_0Value_c_array h3_a = {0}; h_json_0Value_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t8, *t15, *t22; HERO_NODEBUG h_json_0Value_c_array t6, t20; HERO_NODEBUG h_json_0Value_c_object t12, t21; HERO_NODEBUG HeroMapHeader *t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; t19 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t19); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb2; case 2: goto hero_bb2; case 3: goto hero_bb2; case 4: goto hero_bb3; case 5: goto hero_bb4; default: hero_unreachable(); } hero_bb1: t18 = h2_r0;
+#line 638 "main.c"
     h_json_0Value_release(hero_slot_escape(&h1_s0));
     h_json_0Value_c_array_release(hero_slot_escape(&h3_a));
     h_json_0Value_c_object_release(hero_slot_escape(&h4_o));
     hero_array_release_at(&h5_own5);
     return t18;
-bb2:
+hero_bb2:
 #line 76 "examples/json/main.hero"
     t4 = INT64_C(1);
 #line 75
-    h2_r0 = t4; goto bb1; bb3:
+    h2_r0 = t4; goto hero_bb1; hero_bb3:
 #line 77
-    t5 = h1_s0; t6 = t5.as.c_array; t20 = h3_a; h_json_0Value_c_array_retain(&t6); h3_a = t6; h_json_0Value_c_array_release(&t20); t7 = INT64_C(1); t8 = h3_a.f_items; t9 = h_main_deepest(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("main.hero", "main.depth", 77, 58);
+    t5 = h1_s0; t6 = t5.hero_as.hero_c_array; t20 = h3_a; h_json_0Value_c_array_retain(&t6); h3_a = t6; h_json_0Value_c_array_release(&t20); t7 = INT64_C(1); t8 = h3_a.f_items; t9 = h_main_size_of_all(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("main.hero", "main.size", 77, 58);
 #line 75
-    h2_r0 = t10; goto bb1; bb4:
+    h2_r0 = t10; goto hero_bb1; hero_bb4:
 #line 78
-    t11 = h1_s0; t12 = t11.as.c_object; t21 = h4_o; h_json_0Value_c_object_retain(&t12); h4_o = t12; h_json_0Value_c_object_release(&t21); t13 = INT64_C(1); t14 = h4_o.f_fields; t15 = h_main_values_of(t14); t22 = h5_own5; h5_own5 = t15; hero_array_decref(t22); t16 = h_main_deepest(t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("main.hero", "main.depth", 78, 58);
+    t11 = h1_s0; t12 = t11.hero_as.hero_c_object; t21 = h4_o; h_json_0Value_c_object_retain(&t12); h4_o = t12; h_json_0Value_c_object_release(&t21); t13 = INT64_C(1); t14 = h4_o.f_fields; t15 = h_main_values_of(t14); t22 = h5_own5; h5_own5 = t15; hero_array_decref(t22); t16 = h_main_size_of_all(t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("main.hero", "main.size", 78, 58);
 #line 75
-    h2_r0 = t17; goto bb1;
-#line 588 "main.c"
+    h2_r0 = t17; goto hero_bb1;
+#line 657 "main.c"
 }
 
 #line 80 "examples/json/main.hero"
-int64_t h_main_deepest(HeroArrayHeader * h0_items) { int64_t h1_best; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t21; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t12, t13, t14, t16, t17, t18, t19, t20; h_json_Value h4_item = {0}; int64_t h5_d; HERO_NODEBUG bool t7, t15; HERO_NODEBUG h_json_Value t10, t11, t22; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); h1_best = t1;
+int64_t h_main_size_of_all(HeroArrayHeader * h0_items) { int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18; h_json_Value h4_item = {0}; HERO_NODEBUG bool t7; HERO_NODEBUG h_json_Value t10, t12, t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(0); h1_total = t1;
 #line 83
-    t2 = h0_items; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.deepest", 83, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t22 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t22);
-    t11 = h4_item; t12 = h_main_depth(t11); h5_d = t12;
+    t2 = h0_items; t19 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t19); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.size_of_all", 83, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t20 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t20);
+    t11 = h1_total; t12 = h4_item; t13 = h_main_size(t12); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("main.hero", "main.size_of_all", 84, 17); h1_total = t14; goto hero_bb3; hero_bb3:
+#line 83
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("main.hero", "main.size_of_all", 83, 9); h3_i0 = t17; goto hero_bb1; hero_bb4:
 #line 86
-    t13 = h5_d; t14 = h1_best; t15 = t13 > t14; if (t15) goto bb6; else goto bb7; bb3:
-#line 83
-    t17 = h3_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.deepest", 83, 9); h3_i0 = t19; goto bb1; bb4:
-#line 89
+    t18 = h1_total;
+#line 670 "main.c"
+    hero_array_release_at(&h2_xs0);
+    h_json_0Value_release(hero_slot_escape(&h4_item));
+    return t18;
+}
+
+#line 89 "examples/json/main.hero"
+int64_t h_main_depth(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t5, t11, t19; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t9, t10, t13, t16, t17, t18; h_json_0Value_c_array h3_a = {0}; h_json_0Value_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t8, *t15, *t22; HERO_NODEBUG h_json_0Value_c_array t6, t20; HERO_NODEBUG h_json_0Value_c_object t12, t21; HERO_NODEBUG HeroMapHeader *t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; t19 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t19); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb2; case 2: goto hero_bb2; case 3: goto hero_bb2; case 4: goto hero_bb3; case 5: goto hero_bb4; default: hero_unreachable(); } hero_bb1: t18 = h2_r0;
+#line 679 "main.c"
+    h_json_0Value_release(hero_slot_escape(&h1_s0));
+    h_json_0Value_c_array_release(hero_slot_escape(&h3_a));
+    h_json_0Value_c_object_release(hero_slot_escape(&h4_o));
+    hero_array_release_at(&h5_own5);
+    return t18;
+hero_bb2:
+#line 91 "examples/json/main.hero"
+    t4 = INT64_C(1);
+#line 90
+    h2_r0 = t4; goto hero_bb1; hero_bb3:
+#line 92
+    t5 = h1_s0; t6 = t5.hero_as.hero_c_array; t20 = h3_a; h_json_0Value_c_array_retain(&t6); h3_a = t6; h_json_0Value_c_array_release(&t20); t7 = INT64_C(1); t8 = h3_a.f_items; t9 = h_main_deepest(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("main.hero", "main.depth", 92, 58);
+#line 90
+    h2_r0 = t10; goto hero_bb1; hero_bb4:
+#line 93
+    t11 = h1_s0; t12 = t11.hero_as.hero_c_object; t21 = h4_o; h_json_0Value_c_object_retain(&t12); h4_o = t12; h_json_0Value_c_object_release(&t21); t13 = INT64_C(1); t14 = h4_o.f_fields; t15 = h_main_values_of(t14); t22 = h5_own5; h5_own5 = t15; hero_array_decref(t22); t16 = h_main_deepest(t15); if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("main.hero", "main.depth", 93, 58);
+#line 90
+    h2_r0 = t17; goto hero_bb1;
+#line 698 "main.c"
+}
+
+#line 95 "examples/json/main.hero"
+int64_t h_main_deepest(HeroArrayHeader * h0_items) { int64_t h1_best; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t21; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t12, t13, t14, t16, t17, t18, t19, t20; h_json_Value h4_item = {0}; int64_t h5_d; HERO_NODEBUG bool t7, t15; HERO_NODEBUG h_json_Value t10, t11, t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(0); h1_best = t1;
+#line 98
+    t2 = h0_items; t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "main.hero", "main.deepest", 98, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t22 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t22);
+    t11 = h4_item; t12 = h_main_depth(t11); h5_d = t12;
+#line 101
+    t13 = h5_d; t14 = h1_best; t15 = t13 > t14; if (t15) goto hero_bb6; else goto hero_bb7; hero_bb3:
+#line 98
+    t17 = h3_i0; t18 = INT64_C(1); if (__builtin_add_overflow(t17, t18, &t19)) hero_panic_overflow_at("main.hero", "main.deepest", 98, 9); h3_i0 = t19; goto hero_bb1; hero_bb4:
+#line 104
     t20 = h1_best;
-#line 603 "main.c"
+#line 713 "main.c"
     hero_array_release_at(&h2_xs0);
     h_json_0Value_release(hero_slot_escape(&h4_item));
     return t20;
-bb5:
-    goto bb3;
-bb6:
-#line 87 "examples/json/main.hero"
-    t16 = h5_d; h1_best = t16; goto bb5; bb7: goto bb5;
-#line 612 "main.c"
+hero_bb5:
+    goto hero_bb3;
+hero_bb6:
+#line 102 "examples/json/main.hero"
+    t16 = h5_d; h1_best = t16; goto hero_bb5; hero_bb7: goto hero_bb5;
+#line 722 "main.c"
 }
 
-#line 93 "examples/json/main.hero"
-HeroArrayHeader * h_main_values_of(HeroMapHeader * h0_fields) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t3, *t6, *t9, *t28, *t29, *t30, *t31, *t32; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t17, t18, t25, t26, t27; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f0 = {0}, h8_own8 = {0}, t15, t16, t20, t22, t34, t35; HERO_NODEBUG HeroMapHeader *t2, *t13; HERO_NODEBUG bool t8, t19; HERO_NODEBUG HeroStr t11, t14, t33; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_json_Value t23; HERO_ENTRY_STOP; goto bb0; bb0:
+#line 108 "examples/json/main.hero"
+HeroArrayHeader * h_main_values_of(HeroMapHeader * h0_fields) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t1, *t3, *t6, *t9, *t28, *t29, *t30, *t31, *t32; HERO_NODEBUG int64_t h3_i0, t4, t5, t7, t10, t17, t18, t25, t26, t27; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f0 = {0}, h8_own8 = {0}, t15, t16, t20, t22, t34, t35; HERO_NODEBUG HeroMapHeader *t2, *t13; HERO_NODEBUG bool t8, t19; HERO_NODEBUG HeroStr t11, t14, t33; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_json_Value t23; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&h_json_0Value_desc, 1); t29 = h6_own6; h6_own6 = t1; hero_array_decref(t29); t30 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t30);
-#line 96
-    t2 = h0_fields; t3 = hero_map_keys(t2); t31 = h7_own7; h7_own7 = t3; hero_array_decref(t31); t32 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t32); t4 = INT64_C(0); h3_i0 = t4; goto bb1; bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto bb2; else goto bb4; bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.values_of", 96, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t33 = h4_k; hero_str_incref(t11); h4_k = t11; hero_str_decref(t33);
-    t13 = h0_fields; t14 = h4_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.values_of", 97, 24}; HERO_NODEBUG const void *found = hero_map_find_at(t13, &t14, &hero_here); if (found == NULL) { t15 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t15 = (h_0opt_2b821190){.tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t15.as.ok, found); } } t34 = h8_own8; h8_own8 = t15; h_0opt_2b821190_release(&t34); t35 = h5_f0; h_0opt_2b821190_retain(&t15); h5_f0 = t15; h_0opt_2b821190_release(&t35); t16 = h5_f0; t17 = t16.tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb3:
-#line 96
-    t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("main.hero", "main.values_of", 96, 9); h3_i0 = t27; goto bb1; bb4:
-#line 99
+#line 111
+    t2 = h0_fields; t3 = hero_map_keys(t2); t31 = h7_own7; h7_own7 = t3; hero_array_decref(t31); t32 = h2_xs0; hero_array_incref(t3); h2_xs0 = t3; hero_array_decref(t32); t4 = INT64_C(0); h3_i0 = t4; goto hero_bb1; hero_bb1: t5 = h3_i0; t6 = h2_xs0; t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len); t8 = t5 < t7; if (t8) goto hero_bb2; else goto hero_bb4; hero_bb2: t9 = h2_xs0; t10 = h3_i0; t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? hero_panic_index_at(t9, t10, "main.hero", "main.values_of", 111, 9) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]); t33 = h4_k; hero_str_incref(t11); h4_k = t11; hero_str_decref(t33);
+    t13 = h0_fields; t14 = h4_k; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.values_of", 112, 24}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t13, &t14, &hero_here); if (hero_found == NULL) { t15 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t15 = (h_0opt_2b821190){.hero_tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t15.hero_as.hero_ok, hero_found); } } t34 = h8_own8; h8_own8 = t15; h_0opt_2b821190_release(&t34); t35 = h5_f0; h_0opt_2b821190_retain(&t15); h5_f0 = t15; h_0opt_2b821190_release(&t35); t16 = h5_f0; t17 = t16.hero_tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto hero_bb5; else goto hero_bb6; hero_bb3:
+#line 111
+    t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("main.hero", "main.values_of", 111, 9); h3_i0 = t27; goto hero_bb1; hero_bb4:
+#line 114
     t28 = h1_out;
-#line 625 "main.c"
+#line 735 "main.c"
     hero_array_incref(t28);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -631,57 +741,57 @@ HeroArrayHeader * h_main_values_of(HeroMapHeader * h0_fields) { HeroArrayHeader 
     hero_array_release_at(&h7_own7);
     h_0opt_2b821190_release(hero_slot_escape(&h8_own8));
     return t28;
-bb5:
-#line 97 "examples/json/main.hero"
-    t22 = h5_f0; t23 = t22.as.ok; hero_array_push_owned(&h1_out, &t23); goto bb3; bb6: t20 = h5_f0; t21 = t20.as.err;
-#line 638 "main.c"
-    hero_panic_must_at(t21, "main.hero", "main.values_of", 97, 24);
+hero_bb5:
+#line 112 "examples/json/main.hero"
+    t22 = h5_f0; t23 = t22.hero_as.hero_ok; hero_array_push_owned(&h1_out, &t23); goto hero_bb3; hero_bb6: t20 = h5_f0; t21 = t20.hero_as.hero_err;
+#line 748 "main.c"
+    hero_panic_must_at(t21, "main.hero", "main.values_of", 112, 24);
     hero_unreachable();
 }
 
 #line 46 "examples/json/json.hero"
-HeroStr h_json_NOT_JSON(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_json_NOT_JSON(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_330ee464);
-#line 646 "main.c"
+#line 756 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 51 "examples/json/json.hero"
-HeroStr h_json_NO_FIELD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_json_NO_FIELD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_beeb508);
-#line 654 "main.c"
+#line 764 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 55 "examples/json/json.hero"
-int64_t h_json_DEEPEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_json_DEEPEST(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(512); return t1;
-#line 662 "main.c"
+#line 772 "main.c"
 }
 
 #line 60 "examples/json/json.hero"
-double h_json_EXACT(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto bb0; bb0:
+double h_json_EXACT(void) { HERO_NODEBUG double t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = 0x1p+53; return t1;
-#line 668 "main.c"
+#line 778 "main.c"
 }
 
 #line 71 "examples/json/json.hero"
-h_0opt_2b821190 h_json_parse(HeroStr h0_s) { h_json_Reader h1_r = {0}; HERO_NODEBUG h_0opt_2b821190 h2_f0 = {0}, h4_ret0 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t5, t6, t10, t12, t13, t21, t23, t24, t27, t28, t30, t31, t32; h_json_Value h3_v = {0}; HERO_NODEBUG h_json_Reader h5_own5 = {0}, t3, t19, t25, t26; HERO_NODEBUG HeroStr t1, t16, t20; HERO_NODEBUG int64_t t2, t4, t7, t8, t15, t17; HERO_NODEBUG bool t9, t18; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_json_Value t14, t22, t29; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_2b821190 h_json_parse(HeroStr h0_s) { h_json_Reader h1_r = {0}; HERO_NODEBUG h_0opt_2b821190 h2_f0 = {0}, h4_ret0 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t5, t6, t10, t12, t13, t21, t23, t24, t27, t28, t30, t31, t32; h_json_Value h3_v = {0}; HERO_NODEBUG h_json_Reader h5_own5 = {0}, t3, t19, t25, t26; HERO_NODEBUG HeroStr t1, t16, t20; HERO_NODEBUG int64_t t2, t4, t7, t8, t15, t17; HERO_NODEBUG bool t9, t18; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_json_Value t14, t22, t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_s; t2 = INT64_C(0); hero_str_incref(t1); t3 = (h_json_Reader){.f_text = t1, .f_at = t2}; t25 = h5_own5; h5_own5 = t3; h_json_0Reader_release(&t25); t26 = h1_r; h_json_0Reader_retain(&t3); h1_r = t3; h_json_0Reader_release(&t26);
     h_json_skip_space(&h1_r);
-    t4 = INT64_C(0); t5 = h_json_value(&h1_r, t4); t27 = h6_own6; h6_own6 = t5; h_0opt_2b821190_release(&t27); t28 = h2_f0; h_0opt_2b821190_retain(&t5); h2_f0 = t5; h_0opt_2b821190_release(&t28); t6 = h2_f0; t7 = t6.tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto bb1; else goto bb2; bb1: t13 = h2_f0; t14 = t13.as.ok; t29 = h3_v; h_json_0Value_retain(&t14); h3_v = t14; h_json_0Value_release(&t29);
+    t4 = INT64_C(0); t5 = h_json_value(&h1_r, t4); t27 = h6_own6; h6_own6 = t5; h_0opt_2b821190_release(&t27); t28 = h2_f0; h_0opt_2b821190_retain(&t5); h2_f0 = t5; h_0opt_2b821190_release(&t28); t6 = h2_f0; t7 = t6.hero_tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1: t13 = h2_f0; t14 = t13.hero_as.hero_ok; t29 = h3_v; h_json_0Value_retain(&t14); h3_v = t14; h_json_0Value_release(&t29);
     h_json_skip_space(&h1_r);
 #line 77
-    t15 = h1_r.f_at; t16 = h0_s; t17 = hero_str_len(t16); t18 = t15 < t17; if (t18) goto bb4; else goto bb5; bb2:
+    t15 = h1_r.f_at; t16 = h0_s; t17 = hero_str_len(t16); t18 = t15 < t17; if (t18) goto hero_bb4; else goto hero_bb5; hero_bb2:
 #line 74
-    t10 = h2_f0; t11 = t10.as.err; hero_failure_retain(&t11); t12 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t11}; t30 = h7_own7; h7_own7 = t12; h_0opt_2b821190_release(&t30); h4_ret0 = t12; goto bb6; bb3:
+    t10 = h2_f0; t11 = t10.hero_as.hero_err; hero_failure_retain(&t11); t12 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t11}; t30 = h7_own7; h7_own7 = t12; h_0opt_2b821190_release(&t30); h4_ret0 = t12; goto hero_bb6; hero_bb3:
 #line 79
-    t22 = h3_v; h_json_0Value_retain(&t22); t23 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t22}; t31 = h8_own8; h8_own8 = t23; h_0opt_2b821190_release(&t31); h4_ret0 = t23; goto bb6; bb4:
+    t22 = h3_v; h_json_0Value_retain(&t22); t23 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t22}; t31 = h8_own8; h8_own8 = t23; h_0opt_2b821190_release(&t31); h4_ret0 = t23; goto hero_bb6; hero_bb4:
 #line 78
-    t19 = h1_r; t20 = HERO_STR_LIT(hero_str_7638802b); t21 = h_json_0refused_1d7a8246(t19, t20); t32 = h9_own9; h9_own9 = t21; h_0opt_2b821190_release(&t32); h4_ret0 = t21; goto bb6; bb5: goto bb3; bb6:
-#line 685 "main.c"
+    t19 = h1_r; t20 = HERO_STR_LIT(hero_str_7638802b); t21 = h_json_0refused_1d7a8246(t19, t20); t32 = h9_own9; h9_own9 = t21; h_0opt_2b821190_release(&t32); h4_ret0 = t21; goto hero_bb6; hero_bb5: goto hero_bb3; hero_bb6:
+#line 795 "main.c"
     t24 = h4_ret0;
     h_0opt_2b821190_retain(&t24);
     h_json_0Reader_release(hero_slot_escape(&h1_r));
@@ -696,49 +806,49 @@ h_0opt_2b821190 h_json_parse(HeroStr h0_s) { h_json_Reader h1_r = {0}; HERO_NODE
 }
 
 #line 82 "examples/json/json.hero"
-h_0opt_2b821190 h_json_value(h_json_Reader *ph0_r, int64_t h1_depth) { uint8_t h2_c; HERO_NODEBUG bool h3_b0, h5_b1, h6_b2, t4, t13, t16, t17, t20, t29, t40, t45, t55, t58, t61, t62, t63, t68, t77, t78, t82, t83, t87; HERO_NODEBUG h_0opt_f87774a h4_f0 = {0}, h15_own15 = {0}, t41, t42, t46, t49, t100, t101; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}, h19_own19 = {0}, t64, t65, t69, t72, t105, t106; HERO_NODEBUG h_0opt_2b821190 h8_ret0 = {0}, h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t7, t26, t33, t37, t48, t52, t71, t75, t80, t85, t89, t92, t93, t94, t97, t98, t99, t103, t104, t108, t109, t111, t113, t114, t116; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, t2, t6, t8, t23, t24, t25, t50, t76, t81, t86, t91, t95, t96; HERO_NODEBUG h_json_Value h16_own16 = {0}, h20_own20 = {0}, h23_own23 = {0}, h25_own25 = {0}, h28_own28 = {0}, t51, t74, t79, t84, t88, t102, t107, t110, t112, t115; HERO_NODEBUG int64_t t1, t3, t9, t18, t19, t22, t30, t31, t32, t34, t35, t36, t43, t44, t66, t67; HERO_NODEBUG h_json_Reader t5, t21, t90; HERO_NODEBUG uint8_t t10, t11, t12, t14, t15, t27, t28, t38, t39, t53, t54, t56, t57, t59, t60; HERO_NODEBUG HeroFailure t47, t70; HERO_NODEBUG double t73; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_r).f_at; t2 = (*ph0_r).f_text; t3 = hero_str_len(t2); t4 = t1 >= t3; if (t4) goto bb2; else goto bb3; bb1:
+h_0opt_2b821190 h_json_value(h_json_Reader *ph0_r, int64_t h1_depth) { uint8_t h2_c; HERO_NODEBUG bool h3_b0, h5_b1, h6_b2, t4, t13, t16, t17, t20, t29, t40, t45, t55, t58, t61, t62, t63, t68, t77, t78, t82, t83, t87; HERO_NODEBUG h_0opt_f87774a h4_f0 = {0}, h15_own15 = {0}, t41, t42, t46, t49, t100, t101; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}, h19_own19 = {0}, t64, t65, t69, t72, t105, t106; HERO_NODEBUG h_0opt_2b821190 h8_ret0 = {0}, h9_own9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t7, t26, t33, t37, t48, t52, t71, t75, t80, t85, t89, t92, t93, t94, t97, t98, t99, t103, t104, t108, t109, t111, t113, t114, t116; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, t2, t6, t8, t23, t24, t25, t50, t76, t81, t86, t91, t95, t96; HERO_NODEBUG h_json_Value h16_own16 = {0}, h20_own20 = {0}, h23_own23 = {0}, h25_own25 = {0}, h28_own28 = {0}, t51, t74, t79, t84, t88, t102, t107, t110, t112, t115; HERO_NODEBUG int64_t t1, t3, t9, t18, t19, t22, t30, t31, t32, t34, t35, t36, t43, t44, t66, t67; HERO_NODEBUG h_json_Reader t5, t21, t90; HERO_NODEBUG uint8_t t10, t11, t12, t14, t15, t27, t28, t38, t39, t53, t54, t56, t57, t59, t60; HERO_NODEBUG HeroFailure t47, t70; HERO_NODEBUG double t73; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (*ph0_r).f_at; t2 = (*ph0_r).f_text; t3 = hero_str_len(t2); t4 = t1 >= t3; if (t4) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 85
     t8 = (*ph0_r).f_text; t9 = (*ph0_r).f_at; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "json.hero", "json.value", 85, 9) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); h2_c = t10;
 #line 87
-    t11 = h2_c; t12 = UINT64_C(123); t13 = t11 == t12; h3_b0 = t13; if (t13) goto bb6; else goto bb5; bb2:
+    t11 = h2_c; t12 = UINT64_C(123); t13 = t11 == t12; h3_b0 = t13; if (t13) goto hero_bb6; else goto hero_bb5; hero_bb2:
 #line 84
-    t5 = (*ph0_r); t6 = HERO_STR_LIT(hero_str_ef032f4); t7 = h_json_0refused_1d7a8246(t5, t6); t94 = h9_own9; h9_own9 = t7; h_0opt_2b821190_release(&t94); h8_ret0 = t7; goto bb38; bb3: goto bb1; bb4:
+    t5 = (*ph0_r); t6 = HERO_STR_LIT(hero_str_ef032f4); t7 = h_json_0refused_1d7a8246(t5, t6); t94 = h9_own9; h9_own9 = t7; h_0opt_2b821190_release(&t94); h8_ret0 = t7; goto hero_bb38; hero_bb3: goto hero_bb1; hero_bb4:
 #line 95
-    t38 = h2_c; t39 = UINT64_C(34); t40 = t38 == t39; if (t40) goto bb16; else goto bb17; bb5:
+    t38 = h2_c; t39 = UINT64_C(34); t40 = t38 == t39; if (t40) goto hero_bb16; else goto hero_bb17; hero_bb5:
 #line 87
-    t14 = h2_c; t15 = UINT64_C(91); t16 = t14 == t15; h3_b0 = t16; goto bb6; bb6: t17 = h3_b0; if (t17) goto bb7; else goto bb8; bb7:
-    t18 = h1_depth; t19 = h_json_DEEPEST(); t20 = t18 >= t19; if (t20) goto bb10; else goto bb11; bb8: goto bb4; bb9:
+    t14 = h2_c; t15 = UINT64_C(91); t16 = t14 == t15; h3_b0 = t16; goto hero_bb6; hero_bb6: t17 = h3_b0; if (t17) goto hero_bb7; else goto hero_bb8; hero_bb7:
+    t18 = h1_depth; t19 = h_json_DEEPEST(); t20 = t18 >= t19; if (t20) goto hero_bb10; else goto hero_bb11; hero_bb8: goto hero_bb4; hero_bb9:
 #line 91
-    t27 = h2_c; t28 = UINT64_C(123); t29 = t27 == t28; if (t29) goto bb13; else goto bb14; bb10:
+    t27 = h2_c; t28 = UINT64_C(123); t29 = t27 == t28; if (t29) goto hero_bb13; else goto hero_bb14; hero_bb10:
 #line 89
-    t21 = (*ph0_r); t22 = h_json_DEEPEST(); t23 = HERO_STR_LIT(hero_str_3534c551); t24 = hero_int_to_str(t22); t95 = h10_own10; h10_own10 = t24; hero_str_decref(t95); t25 = hero_str_concat(t23, t24); t96 = h11_own11; h11_own11 = t25; hero_str_decref(t96); t26 = h_json_0refused_1d7a8246(t21, t25); t97 = h12_own12; h12_own12 = t26; h_0opt_2b821190_release(&t97); h8_ret0 = t26; goto bb38; bb11: goto bb9; bb12:
+    t21 = (*ph0_r); t22 = h_json_DEEPEST(); t23 = HERO_STR_LIT(hero_str_3534c551); t24 = hero_int_to_str(t22); t95 = h10_own10; h10_own10 = t24; hero_str_decref(t95); t25 = hero_str_concat(t23, t24); t96 = h11_own11; h11_own11 = t25; hero_str_decref(t96); t26 = h_json_0refused_1d7a8246(t21, t25); t97 = h12_own12; h12_own12 = t26; h_0opt_2b821190_release(&t97); h8_ret0 = t26; goto hero_bb38; hero_bb11: goto hero_bb9; hero_bb12:
 #line 93
-    t34 = h1_depth; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("json.hero", "json.value", 93, 33); t37 = h_json_array(&(*ph0_r), t36); t98 = h13_own13; h13_own13 = t37; h_0opt_2b821190_release(&t98); h8_ret0 = t37; goto bb38; bb13:
+    t34 = h1_depth; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("json.hero", "json.value", 93, 33); t37 = h_json_array(&(*ph0_r), t36); t98 = h13_own13; h13_own13 = t37; h_0opt_2b821190_release(&t98); h8_ret0 = t37; goto hero_bb38; hero_bb13:
 #line 92
-    t30 = h1_depth; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("json.hero", "json.value", 92, 38); t33 = h_json_object(&(*ph0_r), t32); t99 = h14_own14; h14_own14 = t33; h_0opt_2b821190_release(&t99); h8_ret0 = t33; goto bb38; bb14: goto bb12; bb15:
+    t30 = h1_depth; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("json.hero", "json.value", 92, 38); t33 = h_json_object(&(*ph0_r), t32); t99 = h14_own14; h14_own14 = t33; h_0opt_2b821190_release(&t99); h8_ret0 = t33; goto hero_bb38; hero_bb14: goto hero_bb12; hero_bb15:
 #line 98
-    t53 = h2_c; t54 = UINT64_C(45); t55 = t53 == t54; h5_b1 = t55; if (t55) goto bb22; else goto bb21; bb16:
+    t53 = h2_c; t54 = UINT64_C(45); t55 = t53 == t54; h5_b1 = t55; if (t55) goto hero_bb22; else goto hero_bb21; hero_bb16:
 #line 96
-    t41 = h_json_string(&(*ph0_r)); t100 = h15_own15; h15_own15 = t41; h_0opt_f87774a_release(&t100); t101 = h4_f0; h_0opt_f87774a_retain(&t41); h4_f0 = t41; h_0opt_f87774a_release(&t101); t42 = h4_f0; t43 = t42.tag; t44 = INT64_C(0); t45 = t43 == t44; if (t45) goto bb18; else goto bb19; bb17: goto bb15; bb18: t49 = h4_f0; t50 = t49.as.ok; hero_str_incref(t50); t51 = (h_json_Value){.tag = h_json_0Value_tag_string, .as.c_string = {.f_value = t50}}; t102 = h16_own16; h16_own16 = t51; h_json_0Value_release(&t102); h_json_0Value_retain(&t51); t52 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t51}; t103 = h17_own17; h17_own17 = t52; h_0opt_2b821190_release(&t103); h8_ret0 = t52; goto bb38; bb19: t46 = h4_f0; t47 = t46.as.err; hero_failure_retain(&t47); t48 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t47}; t104 = h18_own18; h18_own18 = t48; h_0opt_2b821190_release(&t104); h8_ret0 = t48; goto bb38; bb20:
+    t41 = h_json_string(&(*ph0_r)); t100 = h15_own15; h15_own15 = t41; h_0opt_f87774a_release(&t100); t101 = h4_f0; h_0opt_f87774a_retain(&t41); h4_f0 = t41; h_0opt_f87774a_release(&t101); t42 = h4_f0; t43 = t42.hero_tag; t44 = INT64_C(0); t45 = t43 == t44; if (t45) goto hero_bb18; else goto hero_bb19; hero_bb17: goto hero_bb15; hero_bb18: t49 = h4_f0; t50 = t49.hero_as.hero_ok; hero_str_incref(t50); t51 = (h_json_Value){.hero_tag = h_json_0Value_tag_string, .hero_as.hero_c_string = {.f_value = t50}}; t102 = h16_own16; h16_own16 = t51; h_json_0Value_release(&t102); h_json_0Value_retain(&t51); t52 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t51}; t103 = h17_own17; h17_own17 = t52; h_0opt_2b821190_release(&t103); h8_ret0 = t52; goto hero_bb38; hero_bb19: t46 = h4_f0; t47 = t46.hero_as.hero_err; hero_failure_retain(&t47); t48 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t47}; t104 = h18_own18; h18_own18 = t48; h_0opt_2b821190_release(&t104); h8_ret0 = t48; goto hero_bb38; hero_bb20:
 #line 101
-    t76 = HERO_STR_LIT(hero_str_fa94082); t77 = h_json_word(&(*ph0_r), t76); if (t77) goto bb30; else goto bb31; bb21:
+    t76 = HERO_STR_LIT(hero_str_fa94082); t77 = h_json_word(&(*ph0_r), t76); if (t77) goto hero_bb30; else goto hero_bb31; hero_bb21:
 #line 98
-    t56 = h2_c; t57 = UINT64_C(48); t58 = t56 >= t57; h6_b2 = t58; if (t58) goto bb23; else goto bb24; bb22: t63 = h5_b1; if (t63) goto bb25; else goto bb26; bb23: t59 = h2_c; t60 = UINT64_C(57); t61 = t59 <= t60; h6_b2 = t61; goto bb24; bb24: t62 = h6_b2; h5_b1 = t62; goto bb22; bb25:
-    t64 = h_json_number(&(*ph0_r)); t105 = h19_own19; h19_own19 = t64; h_0opt_db92a83_release(&t105); t106 = h7_f1; h_0opt_db92a83_retain(&t64); h7_f1 = t64; h_0opt_db92a83_release(&t106); t65 = h7_f1; t66 = t65.tag; t67 = INT64_C(0); t68 = t66 == t67; if (t68) goto bb27; else goto bb28; bb26: goto bb20; bb27: t72 = h7_f1; t73 = t72.as.ok; t74 = (h_json_Value){.tag = h_json_0Value_tag_number, .as.c_number = {.f_value = t73}}; t107 = h20_own20; h20_own20 = t74; h_json_0Value_release(&t107); h_json_0Value_retain(&t74); t75 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t74}; t108 = h21_own21; h21_own21 = t75; h_0opt_2b821190_release(&t108); h8_ret0 = t75; goto bb38; bb28: t69 = h7_f1; t70 = t69.as.err; hero_failure_retain(&t70); t71 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t70}; t109 = h22_own22; h22_own22 = t71; h_0opt_2b821190_release(&t109); h8_ret0 = t71; goto bb38; bb29:
+    t56 = h2_c; t57 = UINT64_C(48); t58 = t56 >= t57; h6_b2 = t58; if (t58) goto hero_bb23; else goto hero_bb24; hero_bb22: t63 = h5_b1; if (t63) goto hero_bb25; else goto hero_bb26; hero_bb23: t59 = h2_c; t60 = UINT64_C(57); t61 = t59 <= t60; h6_b2 = t61; goto hero_bb24; hero_bb24: t62 = h6_b2; h5_b1 = t62; goto hero_bb22; hero_bb25:
+    t64 = h_json_number(&(*ph0_r)); t105 = h19_own19; h19_own19 = t64; h_0opt_db92a83_release(&t105); t106 = h7_f1; h_0opt_db92a83_retain(&t64); h7_f1 = t64; h_0opt_db92a83_release(&t106); t65 = h7_f1; t66 = t65.hero_tag; t67 = INT64_C(0); t68 = t66 == t67; if (t68) goto hero_bb27; else goto hero_bb28; hero_bb26: goto hero_bb20; hero_bb27: t72 = h7_f1; t73 = t72.hero_as.hero_ok; t74 = (h_json_Value){.hero_tag = h_json_0Value_tag_number, .hero_as.hero_c_number = {.f_value = t73}}; t107 = h20_own20; h20_own20 = t74; h_json_0Value_release(&t107); h_json_0Value_retain(&t74); t75 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t74}; t108 = h21_own21; h21_own21 = t75; h_0opt_2b821190_release(&t108); h8_ret0 = t75; goto hero_bb38; hero_bb28: t69 = h7_f1; t70 = t69.hero_as.hero_err; hero_failure_retain(&t70); t71 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t70}; t109 = h22_own22; h22_own22 = t71; h_0opt_2b821190_release(&t109); h8_ret0 = t71; goto hero_bb38; hero_bb29:
 #line 104
-    t81 = HERO_STR_LIT(hero_str_b928f19); t82 = h_json_word(&(*ph0_r), t81); if (t82) goto bb33; else goto bb34; bb30:
+    t81 = HERO_STR_LIT(hero_str_b928f19); t82 = h_json_word(&(*ph0_r), t81); if (t82) goto hero_bb33; else goto hero_bb34; hero_bb30:
 #line 102
-    t78 = true; t79 = (h_json_Value){.tag = h_json_0Value_tag_boolean, .as.c_boolean = {.f_value = t78}}; t110 = h23_own23; h23_own23 = t79; h_json_0Value_release(&t110); h_json_0Value_retain(&t79); t80 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t79}; t111 = h24_own24; h24_own24 = t80; h_0opt_2b821190_release(&t111); h8_ret0 = t80; goto bb38; bb31: goto bb29; bb32:
+    t78 = true; t79 = (h_json_Value){.hero_tag = h_json_0Value_tag_boolean, .hero_as.hero_c_boolean = {.f_value = t78}}; t110 = h23_own23; h23_own23 = t79; h_json_0Value_release(&t110); h_json_0Value_retain(&t79); t80 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t79}; t111 = h24_own24; h24_own24 = t80; h_0opt_2b821190_release(&t111); h8_ret0 = t80; goto hero_bb38; hero_bb31: goto hero_bb29; hero_bb32:
 #line 107
-    t86 = HERO_STR_LIT(hero_str_edc3367); t87 = h_json_word(&(*ph0_r), t86); if (t87) goto bb36; else goto bb37; bb33:
+    t86 = HERO_STR_LIT(hero_str_edc3367); t87 = h_json_word(&(*ph0_r), t86); if (t87) goto hero_bb36; else goto hero_bb37; hero_bb33:
 #line 105
-    t83 = false; t84 = (h_json_Value){.tag = h_json_0Value_tag_boolean, .as.c_boolean = {.f_value = t83}}; t112 = h25_own25; h25_own25 = t84; h_json_0Value_release(&t112); h_json_0Value_retain(&t84); t85 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t84}; t113 = h26_own26; h26_own26 = t85; h_0opt_2b821190_release(&t113); h8_ret0 = t85; goto bb38; bb34: goto bb32; bb35:
+    t83 = false; t84 = (h_json_Value){.hero_tag = h_json_0Value_tag_boolean, .hero_as.hero_c_boolean = {.f_value = t83}}; t112 = h25_own25; h25_own25 = t84; h_json_0Value_release(&t112); h_json_0Value_retain(&t84); t85 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t84}; t113 = h26_own26; h26_own26 = t85; h_0opt_2b821190_release(&t113); h8_ret0 = t85; goto hero_bb38; hero_bb34: goto hero_bb32; hero_bb35:
 #line 109
-    t90 = (*ph0_r); t91 = HERO_STR_LIT(hero_str_2f070c9a); t92 = h_json_0refused_1d7a8246(t90, t91); t114 = h27_own27; h27_own27 = t92; h_0opt_2b821190_release(&t114); h8_ret0 = t92; goto bb38; bb36:
+    t90 = (*ph0_r); t91 = HERO_STR_LIT(hero_str_2f070c9a); t92 = h_json_0refused_1d7a8246(t90, t91); t114 = h27_own27; h27_own27 = t92; h_0opt_2b821190_release(&t114); h8_ret0 = t92; goto hero_bb38; hero_bb36:
 #line 108
-    t88 = (h_json_Value){.tag = h_json_0Value_tag_nothing}; t115 = h28_own28; h28_own28 = t88; h_json_0Value_release(&t115); h_json_0Value_retain(&t88); t89 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t88}; t116 = h29_own29; h29_own29 = t89; h_0opt_2b821190_release(&t116); h8_ret0 = t89; goto bb38; bb37: goto bb35; bb38:
-#line 742 "main.c"
+    t88 = (h_json_Value){.hero_tag = h_json_0Value_tag_nothing}; t115 = h28_own28; h28_own28 = t88; h_json_0Value_release(&t115); h_json_0Value_retain(&t88); t89 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t88}; t116 = h29_own29; h29_own29 = t89; h_0opt_2b821190_release(&t116); h8_ret0 = t89; goto hero_bb38; hero_bb37: goto hero_bb35; hero_bb38:
+#line 852 "main.c"
     t93 = h8_ret0;
     h_0opt_2b821190_retain(&t93);
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -768,54 +878,54 @@ h_0opt_2b821190 h_json_value(h_json_Reader *ph0_r, int64_t h1_depth) { uint8_t h
 }
 
 #line 112 "examples/json/json.hero"
-h_0opt_2b821190 h_json_object(h_json_Reader *ph0_r, int64_t h1_depth) { HeroMapHeader * h2_fields = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h11_own11 = {0}, t22, t23, t27, t30, t82, t83; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f1 = {0}, h6_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, t13, t21, t29, t38, t44, t45, t49, t51, t52, t62, t69, t75, t76, t80, t81, t84, t86, t87, t88, t89, t90, t92, t93; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t1, *t11, *t60, *t77, *t78; HERO_NODEBUG h_json_Value h8_own8 = {0}, h17_own17 = {0}, t12, t53, t61, t79, t91; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t24, t25, t39, t40, t41, t43, t46, t47, t57, t58, t59, t70, t71, t72; HERO_NODEBUG h_json_Reader t5, t15, t19, t32, t36, t54, t63, t67, t73; HERO_NODEBUG uint8_t t6, t16, t33, t55, t64; HERO_NODEBUG bool t7, t14, t17, t18, t26, t34, t35, t48, t56, t65, t66; HERO_NODEBUG HeroStr t20, t31, t37, t42, t68, t74, t85; HERO_NODEBUG HeroFailure t28, t50; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_2b821190 h_json_object(h_json_Reader *ph0_r, int64_t h1_depth) { HeroMapHeader * h2_fields = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h11_own11 = {0}, t22, t23, t27, t30, t82, t83; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f1 = {0}, h6_ret0 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h18_own18 = {0}, h19_own19 = {0}, t13, t21, t29, t38, t44, t45, t49, t51, t52, t62, t69, t75, t76, t80, t81, t84, t86, t87, t88, t89, t90, t92, t93; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t1, *t11, *t60, *t77, *t78; HERO_NODEBUG h_json_Value h8_own8 = {0}, h17_own17 = {0}, t12, t53, t61, t79, t91; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t24, t25, t39, t40, t41, t43, t46, t47, t57, t58, t59, t70, t71, t72; HERO_NODEBUG h_json_Reader t5, t15, t19, t32, t36, t54, t63, t67, t73; HERO_NODEBUG uint8_t t6, t16, t33, t55, t64; HERO_NODEBUG bool t7, t14, t17, t18, t26, t34, t35, t48, t56, t65, t66; HERO_NODEBUG HeroStr t20, t31, t37, t42, t68, t74, t85; HERO_NODEBUG HeroFailure t28, t50; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_map_new(&hero_desc_str, &h_json_0Value_desc, 0); t77 = h7_own7; h7_own7 = t1; hero_map_decref(t77); t78 = h2_fields; hero_map_incref(t1); h2_fields = t1; hero_map_decref(t78);
     t2 = (*ph0_r).f_at; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("json.hero", "json.object", 114, 12); (*ph0_r).f_at = t4;
     h_json_skip_space(&(*ph0_r));
 #line 117
-    t5 = (*ph0_r); t6 = UINT64_C(125); t7 = h_json_at_byte(t5, t6); if (t7) goto bb2; else goto bb3; bb1: goto bb4; bb2:
+    t5 = (*ph0_r); t6 = UINT64_C(125); t7 = h_json_at_byte(t5, t6); if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1: goto hero_bb4; hero_bb2:
     t8 = (*ph0_r).f_at; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("json.hero", "json.object", 118, 16); (*ph0_r).f_at = t10;
-    t11 = h2_fields; hero_map_incref(t11); t12 = (h_json_Value){.tag = h_json_0Value_tag_object, .as.c_object = {.f_fields = t11}}; t79 = h8_own8; h8_own8 = t12; h_json_0Value_release(&t79); h_json_0Value_retain(&t12); t13 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t12}; t80 = h9_own9; h9_own9 = t13; h_0opt_2b821190_release(&t80); h6_ret0 = t13; goto bb23; bb3: goto bb1; bb4:
+    t11 = h2_fields; hero_map_incref(t11); t12 = (h_json_Value){.hero_tag = h_json_0Value_tag_object, .hero_as.hero_c_object = {.f_fields = t11}}; t79 = h8_own8; h8_own8 = t12; h_json_0Value_release(&t79); h_json_0Value_retain(&t12); t13 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t12}; t80 = h9_own9; h9_own9 = t13; h_0opt_2b821190_release(&t80); h6_ret0 = t13; goto hero_bb23; hero_bb3: goto hero_bb1; hero_bb4:
 #line 121
-    t14 = true; if (t14) goto bb5; else goto bb6; bb5:
+    t14 = true; if (t14) goto hero_bb5; else goto hero_bb6; hero_bb5:
     h_json_skip_space(&(*ph0_r));
 #line 124
-    t15 = (*ph0_r); t16 = UINT64_C(34); t17 = h_json_at_byte(t15, t16); t18 = !t17; if (t18) goto bb8; else goto bb9; bb6:
+    t15 = (*ph0_r); t16 = UINT64_C(34); t17 = h_json_at_byte(t15, t16); t18 = !t17; if (t18) goto hero_bb8; else goto hero_bb9; hero_bb6:
 #line 144
-    t73 = (*ph0_r); t74 = HERO_STR_LIT(hero_str_3a0219a0); t75 = h_json_0refused_1d7a8246(t73, t74); t81 = h10_own10; h10_own10 = t75; h_0opt_2b821190_release(&t81); h6_ret0 = t75; goto bb23; bb7:
+    t73 = (*ph0_r); t74 = HERO_STR_LIT(hero_str_3a0219a0); t75 = h_json_0refused_1d7a8246(t73, t74); t81 = h10_own10; h10_own10 = t75; h_0opt_2b821190_release(&t81); h6_ret0 = t75; goto hero_bb23; hero_bb7:
 #line 126
-    t22 = h_json_string(&(*ph0_r)); t82 = h11_own11; h11_own11 = t22; h_0opt_f87774a_release(&t82); t83 = h3_f0; h_0opt_f87774a_retain(&t22); h3_f0 = t22; h_0opt_f87774a_release(&t83); t23 = h3_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb10; else goto bb11; bb8:
+    t22 = h_json_string(&(*ph0_r)); t82 = h11_own11; h11_own11 = t22; h_0opt_f87774a_release(&t82); t83 = h3_f0; h_0opt_f87774a_retain(&t22); h3_f0 = t22; h_0opt_f87774a_release(&t83); t23 = h3_f0; t24 = t23.hero_tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto hero_bb10; else goto hero_bb11; hero_bb8:
 #line 125
-    t19 = (*ph0_r); t20 = HERO_STR_LIT(hero_str_eb22135); t21 = h_json_0refused_1d7a8246(t19, t20); t84 = h12_own12; h12_own12 = t21; h_0opt_2b821190_release(&t84); h6_ret0 = t21; goto bb23; bb9: goto bb7; bb10:
-    t30 = h3_f0; t31 = t30.as.ok; t85 = h4_name; hero_str_incref(t31); h4_name = t31; hero_str_decref(t85);
+    t19 = (*ph0_r); t20 = HERO_STR_LIT(hero_str_eb22135); t21 = h_json_0refused_1d7a8246(t19, t20); t84 = h12_own12; h12_own12 = t21; h_0opt_2b821190_release(&t84); h6_ret0 = t21; goto hero_bb23; hero_bb9: goto hero_bb7; hero_bb10:
+    t30 = h3_f0; t31 = t30.hero_as.hero_ok; t85 = h4_name; hero_str_incref(t31); h4_name = t31; hero_str_decref(t85);
     h_json_skip_space(&(*ph0_r));
 #line 129
-    t32 = (*ph0_r); t33 = UINT64_C(58); t34 = h_json_at_byte(t32, t33); t35 = !t34; if (t35) goto bb13; else goto bb14; bb11:
+    t32 = (*ph0_r); t33 = UINT64_C(58); t34 = h_json_at_byte(t32, t33); t35 = !t34; if (t35) goto hero_bb13; else goto hero_bb14; hero_bb11:
 #line 126
-    t27 = h3_f0; t28 = t27.as.err; hero_failure_retain(&t28); t29 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t28}; t86 = h13_own13; h13_own13 = t29; h_0opt_2b821190_release(&t86); h6_ret0 = t29; goto bb23; bb12:
+    t27 = h3_f0; t28 = t27.hero_as.hero_err; hero_failure_retain(&t28); t29 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t28}; t86 = h13_own13; h13_own13 = t29; h_0opt_2b821190_release(&t86); h6_ret0 = t29; goto hero_bb23; hero_bb12:
 #line 131
     t39 = (*ph0_r).f_at; t40 = INT64_C(1); if (__builtin_add_overflow(t39, t40, &t41)) hero_panic_overflow_at("json.hero", "json.object", 131, 16); (*ph0_r).f_at = t41;
     h_json_skip_space(&(*ph0_r));
-    t42 = h4_name; t43 = h1_depth; t44 = h_json_value(&(*ph0_r), t43); t87 = h14_own14; h14_own14 = t44; h_0opt_2b821190_release(&t87); t88 = h5_f1; h_0opt_2b821190_retain(&t44); h5_f1 = t44; h_0opt_2b821190_release(&t88); t45 = h5_f1; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb15; else goto bb16; bb13:
+    t42 = h4_name; t43 = h1_depth; t44 = h_json_value(&(*ph0_r), t43); t87 = h14_own14; h14_own14 = t44; h_0opt_2b821190_release(&t87); t88 = h5_f1; h_0opt_2b821190_retain(&t44); h5_f1 = t44; h_0opt_2b821190_release(&t88); t45 = h5_f1; t46 = t45.hero_tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto hero_bb15; else goto hero_bb16; hero_bb13:
 #line 130
-    t36 = (*ph0_r); t37 = HERO_STR_LIT(hero_str_3cf27f4d); t38 = h_json_0refused_1d7a8246(t36, t37); t89 = h15_own15; h15_own15 = t38; h_0opt_2b821190_release(&t89); h6_ret0 = t38; goto bb23; bb14: goto bb12; bb15:
+    t36 = (*ph0_r); t37 = HERO_STR_LIT(hero_str_3cf27f4d); t38 = h_json_0refused_1d7a8246(t36, t37); t89 = h15_own15; h15_own15 = t38; h_0opt_2b821190_release(&t89); h6_ret0 = t38; goto hero_bb23; hero_bb14: goto hero_bb12; hero_bb15:
 #line 133
-    t52 = h5_f1; t53 = t52.as.ok; h_json_0Value_retain(&t53); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.object", 133, 9}; hero_map_set_at(&(h2_fields), &t42, &t53, &hero_here); }
+    t52 = h5_f1; t53 = t52.hero_as.hero_ok; h_json_0Value_retain(&t53); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.object", 133, 9}; hero_map_set_at(&(h2_fields), &t42, &t53, &hero_here); }
     h_json_skip_space(&(*ph0_r));
 #line 136
-    t54 = (*ph0_r); t55 = UINT64_C(125); t56 = h_json_at_byte(t54, t55); if (t56) goto bb18; else goto bb19; bb16:
+    t54 = (*ph0_r); t55 = UINT64_C(125); t56 = h_json_at_byte(t54, t55); if (t56) goto hero_bb18; else goto hero_bb19; hero_bb16:
 #line 133
-    t49 = h5_f1; t50 = t49.as.err; hero_failure_retain(&t50); t51 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t50}; t90 = h16_own16; h16_own16 = t51; h_0opt_2b821190_release(&t90); h6_ret0 = t51; goto bb23; bb17:
+    t49 = h5_f1; t50 = t49.hero_as.hero_err; hero_failure_retain(&t50); t51 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t50}; t90 = h16_own16; h16_own16 = t51; h_0opt_2b821190_release(&t90); h6_ret0 = t51; goto hero_bb23; hero_bb17:
 #line 140
-    t63 = (*ph0_r); t64 = UINT64_C(44); t65 = h_json_at_byte(t63, t64); t66 = !t65; if (t66) goto bb21; else goto bb22; bb18:
+    t63 = (*ph0_r); t64 = UINT64_C(44); t65 = h_json_at_byte(t63, t64); t66 = !t65; if (t66) goto hero_bb21; else goto hero_bb22; hero_bb18:
 #line 137
     t57 = (*ph0_r).f_at; t58 = INT64_C(1); if (__builtin_add_overflow(t57, t58, &t59)) hero_panic_overflow_at("json.hero", "json.object", 137, 20); (*ph0_r).f_at = t59;
-    t60 = h2_fields; hero_map_incref(t60); t61 = (h_json_Value){.tag = h_json_0Value_tag_object, .as.c_object = {.f_fields = t60}}; t91 = h17_own17; h17_own17 = t61; h_json_0Value_release(&t91); h_json_0Value_retain(&t61); t62 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t61}; t92 = h18_own18; h18_own18 = t62; h_0opt_2b821190_release(&t92); h6_ret0 = t62; goto bb23; bb19: goto bb17; bb20:
+    t60 = h2_fields; hero_map_incref(t60); t61 = (h_json_Value){.hero_tag = h_json_0Value_tag_object, .hero_as.hero_c_object = {.f_fields = t60}}; t91 = h17_own17; h17_own17 = t61; h_json_0Value_release(&t91); h_json_0Value_retain(&t61); t62 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t61}; t92 = h18_own18; h18_own18 = t62; h_0opt_2b821190_release(&t92); h6_ret0 = t62; goto hero_bb23; hero_bb19: goto hero_bb17; hero_bb20:
 #line 142
-    t70 = (*ph0_r).f_at; t71 = INT64_C(1); if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("json.hero", "json.object", 142, 16); (*ph0_r).f_at = t72; goto bb4; bb21:
+    t70 = (*ph0_r).f_at; t71 = INT64_C(1); if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow_at("json.hero", "json.object", 142, 16); (*ph0_r).f_at = t72; goto hero_bb4; hero_bb21:
 #line 141
-    t67 = (*ph0_r); t68 = HERO_STR_LIT(hero_str_7d71fd66); t69 = h_json_0refused_1d7a8246(t67, t68); t93 = h19_own19; h19_own19 = t69; h_0opt_2b821190_release(&t93); h6_ret0 = t69; goto bb23; bb22: goto bb20; bb23:
-#line 819 "main.c"
+    t67 = (*ph0_r); t68 = HERO_STR_LIT(hero_str_7d71fd66); t69 = h_json_0refused_1d7a8246(t67, t68); t93 = h19_own19; h19_own19 = t69; h_0opt_2b821190_release(&t93); h6_ret0 = t69; goto hero_bb23; hero_bb22: goto hero_bb20; hero_bb23:
+#line 929 "main.c"
     t76 = h6_ret0;
     h_0opt_2b821190_retain(&t76);
     hero_map_release_at(&h2_fields);
@@ -839,37 +949,37 @@ h_0opt_2b821190 h_json_object(h_json_Reader *ph0_r, int64_t h1_depth) { HeroMapH
 }
 
 #line 147 "examples/json/json.hero"
-h_0opt_2b821190 h_json_array(h_json_Reader *ph0_r, int64_t h1_depth) { HeroArrayHeader * h2_items = {0}; HERO_NODEBUG h_0opt_2b821190 h3_f0 = {0}, h4_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, t13, t17, t18, t22, t24, t25, t36, t43, t49, t50, t54, t55, t56, t57, t58, t60, t61; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t11, *t34, *t51, *t52; HERO_NODEBUG h_json_Value h6_own6 = {0}, h11_own11 = {0}, t12, t26, t35, t53, t59; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t16, t19, t20, t31, t32, t33, t44, t45, t46; HERO_NODEBUG h_json_Reader t5, t28, t37, t41, t47; HERO_NODEBUG uint8_t t6, t29, t38; HERO_NODEBUG bool t7, t14, t21, t30, t39, t40; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t42, t48; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_2b821190 h_json_array(h_json_Reader *ph0_r, int64_t h1_depth) { HeroArrayHeader * h2_items = {0}; HERO_NODEBUG h_0opt_2b821190 h3_f0 = {0}, h4_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, h13_own13 = {0}, t13, t17, t18, t22, t24, t25, t36, t43, t49, t50, t54, t55, t56, t57, t58, t60, t61; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t11, *t34, *t51, *t52; HERO_NODEBUG h_json_Value h6_own6 = {0}, h11_own11 = {0}, t12, t26, t35, t53, t59; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t16, t19, t20, t31, t32, t33, t44, t45, t46; HERO_NODEBUG h_json_Reader t5, t28, t37, t41, t47; HERO_NODEBUG uint8_t t6, t29, t38; HERO_NODEBUG bool t7, t14, t21, t30, t39, t40; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t42, t48; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&h_json_0Value_desc, 1); t51 = h5_own5; h5_own5 = t1; hero_array_decref(t51); t52 = h2_items; hero_array_incref(t1); h2_items = t1; hero_array_decref(t52);
     t2 = (*ph0_r).f_at; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("json.hero", "json.array", 149, 12); (*ph0_r).f_at = t4;
     h_json_skip_space(&(*ph0_r));
 #line 152
-    t5 = (*ph0_r); t6 = UINT64_C(93); t7 = h_json_at_byte(t5, t6); if (t7) goto bb2; else goto bb3; bb1: goto bb4; bb2:
+    t5 = (*ph0_r); t6 = UINT64_C(93); t7 = h_json_at_byte(t5, t6); if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1: goto hero_bb4; hero_bb2:
     t8 = (*ph0_r).f_at; t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("json.hero", "json.array", 153, 16); (*ph0_r).f_at = t10;
-    t11 = h2_items; hero_array_incref(t11); t12 = (h_json_Value){.tag = h_json_0Value_tag_array, .as.c_array = {.f_items = t11}}; t53 = h6_own6; h6_own6 = t12; h_json_0Value_release(&t53); h_json_0Value_retain(&t12); t13 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t12}; t54 = h7_own7; h7_own7 = t13; h_0opt_2b821190_release(&t54); h4_ret0 = t13; goto bb15; bb3: goto bb1; bb4:
+    t11 = h2_items; hero_array_incref(t11); t12 = (h_json_Value){.hero_tag = h_json_0Value_tag_array, .hero_as.hero_c_array = {.f_items = t11}}; t53 = h6_own6; h6_own6 = t12; h_json_0Value_release(&t53); h_json_0Value_retain(&t12); t13 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t12}; t54 = h7_own7; h7_own7 = t13; h_0opt_2b821190_release(&t54); h4_ret0 = t13; goto hero_bb15; hero_bb3: goto hero_bb1; hero_bb4:
 #line 156
-    t14 = true; if (t14) goto bb5; else goto bb6; bb5:
+    t14 = true; if (t14) goto hero_bb5; else goto hero_bb6; hero_bb5:
     h_json_skip_space(&(*ph0_r));
-    t16 = h1_depth; t17 = h_json_value(&(*ph0_r), t16); t55 = h8_own8; h8_own8 = t17; h_0opt_2b821190_release(&t55); t56 = h3_f0; h_0opt_2b821190_retain(&t17); h3_f0 = t17; h_0opt_2b821190_release(&t56); t18 = h3_f0; t19 = t18.tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto bb7; else goto bb8; bb6:
+    t16 = h1_depth; t17 = h_json_value(&(*ph0_r), t16); t55 = h8_own8; h8_own8 = t17; h_0opt_2b821190_release(&t55); t56 = h3_f0; h_0opt_2b821190_retain(&t17); h3_f0 = t17; h_0opt_2b821190_release(&t56); t18 = h3_f0; t19 = t18.hero_tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 169
-    t47 = (*ph0_r); t48 = HERO_STR_LIT(hero_str_27451f98); t49 = h_json_0refused_1d7a8246(t47, t48); t57 = h9_own9; h9_own9 = t49; h_0opt_2b821190_release(&t57); h4_ret0 = t49; goto bb15; bb7:
+    t47 = (*ph0_r); t48 = HERO_STR_LIT(hero_str_27451f98); t49 = h_json_0refused_1d7a8246(t47, t48); t57 = h9_own9; h9_own9 = t49; h_0opt_2b821190_release(&t57); h4_ret0 = t49; goto hero_bb15; hero_bb7:
 #line 158
-    t25 = h3_f0; t26 = t25.as.ok; hero_array_push_owned(&h2_items, &t26);
+    t25 = h3_f0; t26 = t25.hero_as.hero_ok; hero_array_push_owned(&h2_items, &t26);
     h_json_skip_space(&(*ph0_r));
 #line 161
-    t28 = (*ph0_r); t29 = UINT64_C(93); t30 = h_json_at_byte(t28, t29); if (t30) goto bb10; else goto bb11; bb8:
+    t28 = (*ph0_r); t29 = UINT64_C(93); t30 = h_json_at_byte(t28, t29); if (t30) goto hero_bb10; else goto hero_bb11; hero_bb8:
 #line 158
-    t22 = h3_f0; t23 = t22.as.err; hero_failure_retain(&t23); t24 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = t23}; t58 = h10_own10; h10_own10 = t24; h_0opt_2b821190_release(&t58); h4_ret0 = t24; goto bb15; bb9:
+    t22 = h3_f0; t23 = t22.hero_as.hero_err; hero_failure_retain(&t23); t24 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = t23}; t58 = h10_own10; h10_own10 = t24; h_0opt_2b821190_release(&t58); h4_ret0 = t24; goto hero_bb15; hero_bb9:
 #line 165
-    t37 = (*ph0_r); t38 = UINT64_C(44); t39 = h_json_at_byte(t37, t38); t40 = !t39; if (t40) goto bb13; else goto bb14; bb10:
+    t37 = (*ph0_r); t38 = UINT64_C(44); t39 = h_json_at_byte(t37, t38); t40 = !t39; if (t40) goto hero_bb13; else goto hero_bb14; hero_bb10:
 #line 162
     t31 = (*ph0_r).f_at; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("json.hero", "json.array", 162, 20); (*ph0_r).f_at = t33;
-    t34 = h2_items; hero_array_incref(t34); t35 = (h_json_Value){.tag = h_json_0Value_tag_array, .as.c_array = {.f_items = t34}}; t59 = h11_own11; h11_own11 = t35; h_json_0Value_release(&t59); h_json_0Value_retain(&t35); t36 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t35}; t60 = h12_own12; h12_own12 = t36; h_0opt_2b821190_release(&t60); h4_ret0 = t36; goto bb15; bb11: goto bb9; bb12:
+    t34 = h2_items; hero_array_incref(t34); t35 = (h_json_Value){.hero_tag = h_json_0Value_tag_array, .hero_as.hero_c_array = {.f_items = t34}}; t59 = h11_own11; h11_own11 = t35; h_json_0Value_release(&t59); h_json_0Value_retain(&t35); t36 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t35}; t60 = h12_own12; h12_own12 = t36; h_0opt_2b821190_release(&t60); h4_ret0 = t36; goto hero_bb15; hero_bb11: goto hero_bb9; hero_bb12:
 #line 167
-    t44 = (*ph0_r).f_at; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("json.hero", "json.array", 167, 16); (*ph0_r).f_at = t46; goto bb4; bb13:
+    t44 = (*ph0_r).f_at; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("json.hero", "json.array", 167, 16); (*ph0_r).f_at = t46; goto hero_bb4; hero_bb13:
 #line 166
-    t41 = (*ph0_r); t42 = HERO_STR_LIT(hero_str_790bc311); t43 = h_json_0refused_1d7a8246(t41, t42); t61 = h13_own13; h13_own13 = t43; h_0opt_2b821190_release(&t61); h4_ret0 = t43; goto bb15; bb14: goto bb12; bb15:
-#line 873 "main.c"
+    t41 = (*ph0_r); t42 = HERO_STR_LIT(hero_str_790bc311); t43 = h_json_0refused_1d7a8246(t41, t42); t61 = h13_own13; h13_own13 = t43; h_0opt_2b821190_release(&t61); h4_ret0 = t43; goto hero_bb15; hero_bb14: goto hero_bb12; hero_bb15:
+#line 983 "main.c"
     t50 = h4_ret0;
     h_0opt_2b821190_retain(&t50);
     hero_array_release_at(&h2_items);
@@ -887,35 +997,35 @@ h_0opt_2b821190 h_json_array(h_json_Reader *ph0_r, int64_t h1_depth) { HeroArray
 }
 
 #line 174 "examples/json/json.hero"
-h_0opt_f87774a h_json_string(h_json_Reader *ph0_r) { HeroArrayHeader * h1_bytes = {0}; uint8_t h2_c; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, t19, t20, t24, t26, t28, t34, t51, t56, t57, t60, t61, t62, t63, t64, t67; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h11_own11 = {0}, t44, t45, t49, t65, t66; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t18, *t58, *t59; HERO_NODEBUG int64_t t2, t3, t4, t5, t7, t10, t15, t16, t17, t21, t22, t41, t42, t43, t46, t47; HERO_NODEBUG HeroStr t6, t9, t27, t33, t55; HERO_NODEBUG bool t8, t14, t23, t31, t37, t48; HERO_NODEBUG uint8_t t11, t12, t13, t29, t30, t35, t36, t39; HERO_NODEBUG HeroFailure t25, t50; HERO_NODEBUG h_json_Reader t32, t54; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_f87774a h_json_string(h_json_Reader *ph0_r) { HeroArrayHeader * h1_bytes = {0}; uint8_t h2_c; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h12_own12 = {0}, t19, t20, t24, t26, t28, t34, t51, t56, t57, t60, t61, t62, t63, t64, t67; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h11_own11 = {0}, t44, t45, t49, t65, t66; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t18, *t58, *t59; HERO_NODEBUG int64_t t2, t3, t4, t5, t7, t10, t15, t16, t17, t21, t22, t41, t42, t43, t46, t47; HERO_NODEBUG HeroStr t6, t9, t27, t33, t55; HERO_NODEBUG bool t8, t14, t23, t31, t37, t48; HERO_NODEBUG uint8_t t11, t12, t13, t29, t30, t35, t36, t39; HERO_NODEBUG HeroFailure t25, t50; HERO_NODEBUG h_json_Reader t32, t54; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t58 = h6_own6; h6_own6 = t1; hero_array_decref(t58); t59 = h1_bytes; hero_array_incref(t1); h1_bytes = t1; hero_array_decref(t59);
-    t2 = (*ph0_r).f_at; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("json.hero", "json.string", 176, 12); (*ph0_r).f_at = t4; goto bb1; bb1:
+    t2 = (*ph0_r).f_at; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("json.hero", "json.string", 176, 12); (*ph0_r).f_at = t4; goto hero_bb1; hero_bb1:
 #line 178
-    t5 = (*ph0_r).f_at; t6 = (*ph0_r).f_text; t7 = hero_str_len(t6); t8 = t5 < t7; if (t8) goto bb2; else goto bb3; bb2:
+    t5 = (*ph0_r).f_at; t6 = (*ph0_r).f_text; t7 = hero_str_len(t6); t8 = t5 < t7; if (t8) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t9 = (*ph0_r).f_text; t10 = (*ph0_r).f_at; t11 = ((void)((t9.ptr == NULL || t10 < 0 || t10 >= t9.len) ? hero_panic_byte_at(t9, t10, "json.hero", "json.string", 179, 13) : (void)0), (int64_t)(unsigned char)t9.ptr[t10]); h2_c = t11;
 #line 181
-    t12 = h2_c; t13 = UINT64_C(34); t14 = t12 == t13; if (t14) goto bb5; else goto bb6; bb3:
+    t12 = h2_c; t13 = UINT64_C(34); t14 = t12 == t13; if (t14) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 194
-    t54 = (*ph0_r); t55 = HERO_STR_LIT(hero_str_2b1f7336); t56 = h_json_0refused_1e58d9(t54, t55); t60 = h7_own7; h7_own7 = t56; h_0opt_f87774a_release(&t60); h5_ret0 = t56; goto bb17; bb4:
+    t54 = (*ph0_r); t55 = HERO_STR_LIT(hero_str_2b1f7336); t56 = h_json_0refused_1e58d9(t54, t55); t60 = h7_own7; h7_own7 = t56; h_0opt_f87774a_release(&t60); h5_ret0 = t56; goto hero_bb17; hero_bb4:
 #line 185
-    t29 = h2_c; t30 = UINT64_C(32); t31 = t29 < t30; if (t31) goto bb10; else goto bb11; bb5:
+    t29 = h2_c; t30 = UINT64_C(32); t31 = t29 < t30; if (t31) goto hero_bb10; else goto hero_bb11; hero_bb5:
 #line 182
     t15 = (*ph0_r).f_at; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("json.hero", "json.string", 182, 20); (*ph0_r).f_at = t17;
-    t18 = h1_bytes; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t18, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t19 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t19 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t61 = h8_own8; h8_own8 = t19; h_0opt_f87774a_release(&t61); t62 = h3_f0; h_0opt_f87774a_retain(&t19); h3_f0 = t19; h_0opt_f87774a_release(&t62); t20 = h3_f0; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb7; else goto bb8; bb6: goto bb4; bb7: t26 = h3_f0; t27 = t26.as.ok; hero_str_incref(t27); t28 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t27}; t63 = h9_own9; h9_own9 = t28; h_0opt_f87774a_release(&t63); h5_ret0 = t28; goto bb17; bb8: t24 = h3_f0; t25 = t24.as.err;
-#line 906 "main.c"
+    t18 = h1_bytes; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t18, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t19 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_vb_text}; } else { t19 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_not_text()}; } } t61 = h8_own8; h8_own8 = t19; h_0opt_f87774a_release(&t61); t62 = h3_f0; h_0opt_f87774a_retain(&t19); h3_f0 = t19; h_0opt_f87774a_release(&t62); t20 = h3_f0; t21 = t20.hero_tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto hero_bb7; else goto hero_bb8; hero_bb6: goto hero_bb4; hero_bb7: t26 = h3_f0; t27 = t26.hero_as.hero_ok; hero_str_incref(t27); t28 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t27}; t63 = h9_own9; h9_own9 = t28; h_0opt_f87774a_release(&t63); h5_ret0 = t28; goto hero_bb17; hero_bb8: t24 = h3_f0; t25 = t24.hero_as.hero_err;
+#line 1016 "main.c"
     hero_panic_must_at(t25, "json.hero", "json.string", 183, 23);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 188 "examples/json/json.hero"
-    t35 = h2_c; t36 = UINT64_C(92); t37 = t35 != t36; if (t37) goto bb13; else goto bb14; bb10:
+    t35 = h2_c; t36 = UINT64_C(92); t37 = t35 != t36; if (t37) goto hero_bb13; else goto hero_bb14; hero_bb10:
 #line 186
-    t32 = (*ph0_r); t33 = HERO_STR_LIT(hero_str_115c68c8); t34 = h_json_0refused_1e58d9(t32, t33); t64 = h10_own10; h10_own10 = t34; h_0opt_f87774a_release(&t64); h5_ret0 = t34; goto bb17; bb11: goto bb9; bb12: goto bb1; bb13:
+    t32 = (*ph0_r); t33 = HERO_STR_LIT(hero_str_115c68c8); t34 = h_json_0refused_1e58d9(t32, t33); t64 = h10_own10; h10_own10 = t34; h_0opt_f87774a_release(&t64); h5_ret0 = t34; goto hero_bb17; hero_bb11: goto hero_bb9; hero_bb12: goto hero_bb1; hero_bb13:
 #line 189
     t39 = h2_c; hero_array_push_owned(&h1_bytes, &t39);
-    t41 = (*ph0_r).f_at; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("json.hero", "json.string", 190, 20); (*ph0_r).f_at = t43; goto bb12; bb14:
+    t41 = (*ph0_r).f_at; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("json.hero", "json.string", 190, 20); (*ph0_r).f_at = t43; goto hero_bb12; hero_bb14:
 #line 192
-    t44 = h_json_escaped(&(*ph0_r), &h1_bytes); t65 = h11_own11; h11_own11 = t44; h_0opt_a8ea2_release(&t65); t66 = h4_f1; h_0opt_a8ea2_retain(&t44); h4_f1 = t44; h_0opt_a8ea2_release(&t66); t45 = h4_f1; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb15; else goto bb16; bb15: goto bb12; bb16: t49 = h4_f1; t50 = t49.as.err; hero_failure_retain(&t50); t51 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t50}; t67 = h12_own12; h12_own12 = t51; h_0opt_f87774a_release(&t67); h5_ret0 = t51; goto bb17; bb17:
-#line 919 "main.c"
+    t44 = h_json_escaped(&(*ph0_r), &h1_bytes); t65 = h11_own11; h11_own11 = t44; h_0opt_a8ea2_release(&t65); t66 = h4_f1; h_0opt_a8ea2_retain(&t44); h4_f1 = t44; h_0opt_a8ea2_release(&t66); t45 = h4_f1; t46 = t45.hero_tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto hero_bb15; else goto hero_bb16; hero_bb15: goto hero_bb12; hero_bb16: t49 = h4_f1; t50 = t49.hero_as.hero_err; hero_failure_retain(&t50); t51 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t50}; t67 = h12_own12; h12_own12 = t51; h_0opt_f87774a_release(&t67); h5_ret0 = t51; goto hero_bb17; hero_bb17:
+#line 1029 "main.c"
     t57 = h5_ret0;
     h_0opt_f87774a_retain(&t57);
     hero_array_release_at(&h1_bytes);
@@ -932,41 +1042,41 @@ bb9:
 }
 
 #line 197 "examples/json/json.hero"
-h_0opt_a8ea2 h_json_escaped(h_json_Reader *ph0_r, HeroArrayHeader * *ph1_bytes) { uint8_t h2_c; HERO_NODEBUG bool h3_b0, h4_b1, t6, t20, t23, t24, t27, t28, t34, t40, t46, t52, t58, t64, t69; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h10_own10 = {0}, t65, t66, t70, t73, t86, t87; int64_t h6_point; HERO_NODEBUG h_0opt_a8ea2 h7_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t9, t72, t81, t82, t83, t84, t85, t88, t89; HERO_NODEBUG int64_t t1, t2, t3, t5, t11, t12, t13, t15, t16, t17, t67, t68, t74, t75, t76, t77, t78; HERO_NODEBUG HeroStr t4, t8, t10, t80; HERO_NODEBUG h_json_Reader t7, t79; HERO_NODEBUG uint8_t t14, t18, t19, t21, t22, t25, t26, t30, t32, t33, t36, t38, t39, t42, t44, t45, t48, t50, t51, t54, t56, t57, t60, t62, t63; HERO_NODEBUG HeroFailure t71; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_r).f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("json.hero", "json.escaped", 198, 8); t4 = (*ph0_r).f_text; t5 = hero_str_len(t4); t6 = t3 >= t5; if (t6) goto bb2; else goto bb3; bb1:
+h_0opt_a8ea2 h_json_escaped(h_json_Reader *ph0_r, HeroArrayHeader * *ph1_bytes) { uint8_t h2_c; HERO_NODEBUG bool h3_b0, h4_b1, t6, t20, t23, t24, t27, t28, t34, t40, t46, t52, t58, t64, t69; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h10_own10 = {0}, t65, t66, t70, t73, t86, t87; int64_t h6_point; HERO_NODEBUG h_0opt_a8ea2 h7_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t9, t72, t81, t82, t83, t84, t85, t88, t89; HERO_NODEBUG int64_t t1, t2, t3, t5, t11, t12, t13, t15, t16, t17, t67, t68, t74, t75, t76, t77, t78; HERO_NODEBUG HeroStr t4, t8, t10, t80; HERO_NODEBUG h_json_Reader t7, t79; HERO_NODEBUG uint8_t t14, t18, t19, t21, t22, t25, t26, t30, t32, t33, t36, t38, t39, t42, t44, t45, t48, t50, t51, t54, t56, t57, t60, t62, t63; HERO_NODEBUG HeroFailure t71; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (*ph0_r).f_at; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("json.hero", "json.escaped", 198, 8); t4 = (*ph0_r).f_text; t5 = hero_str_len(t4); t6 = t3 >= t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 200
     t10 = (*ph0_r).f_text; t11 = (*ph0_r).f_at; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("json.hero", "json.escaped", 200, 16); t14 = ((void)((t10.ptr == NULL || t13 < 0 || t13 >= t10.len) ? hero_panic_byte_at(t10, t13, "json.hero", "json.escaped", 200, 9) : (void)0), (int64_t)(unsigned char)t10.ptr[t13]); h2_c = t14;
     t15 = (*ph0_r).f_at; t16 = INT64_C(2); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("json.hero", "json.escaped", 201, 12); (*ph0_r).f_at = t17;
 #line 203
-    t18 = h2_c; t19 = UINT64_C(34); t20 = t18 == t19; h4_b1 = t20; if (t20) goto bb6; else goto bb5; bb2:
+    t18 = h2_c; t19 = UINT64_C(34); t20 = t18 == t19; h4_b1 = t20; if (t20) goto hero_bb6; else goto hero_bb5; hero_bb2:
 #line 199
-    t7 = (*ph0_r); t8 = HERO_STR_LIT(hero_str_483a33b); t9 = h_json_0refused_14a1(t7, t8); t84 = h8_own8; h8_own8 = t9; h_0opt_a8ea2_release(&t84); h7_ret0 = t9; goto bb25; bb3: goto bb1; bb4:
+    t7 = (*ph0_r); t8 = HERO_STR_LIT(hero_str_483a33b); t9 = h_json_0refused_14a1(t7, t8); t84 = h8_own8; h8_own8 = t9; h_0opt_a8ea2_release(&t84); h7_ret0 = t9; goto hero_bb25; hero_bb3: goto hero_bb1; hero_bb4:
 #line 221
-    t82 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t85 = h9_own9; h9_own9 = t82; h_0opt_a8ea2_release(&t85); h7_ret0 = t82; goto bb25; bb5:
+    t82 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t85 = h9_own9; h9_own9 = t82; h_0opt_a8ea2_release(&t85); h7_ret0 = t82; goto hero_bb25; hero_bb5:
 #line 203
-    t21 = h2_c; t22 = UINT64_C(92); t23 = t21 == t22; h4_b1 = t23; goto bb6; bb6: t24 = h4_b1; h3_b0 = t24; if (t24) goto bb8; else goto bb7; bb7: t25 = h2_c; t26 = UINT64_C(47); t27 = t25 == t26; h3_b0 = t27; goto bb8; bb8: t28 = h3_b0; if (t28) goto bb9; else goto bb10; bb9:
-    t30 = h2_c; hero_array_push_owned(&(*ph1_bytes), &t30); goto bb4; bb10:
-    t32 = h2_c; t33 = UINT64_C(98); t34 = t32 == t33; if (t34) goto bb11; else goto bb12; bb11:
-    t36 = UINT64_C(8); hero_array_push_owned(&(*ph1_bytes), &t36); goto bb4; bb12:
-    t38 = h2_c; t39 = UINT64_C(102); t40 = t38 == t39; if (t40) goto bb13; else goto bb14; bb13:
-    t42 = UINT64_C(12); hero_array_push_owned(&(*ph1_bytes), &t42); goto bb4; bb14:
-    t44 = h2_c; t45 = UINT64_C(110); t46 = t44 == t45; if (t46) goto bb15; else goto bb16; bb15:
-    t48 = UINT64_C(10); hero_array_push_owned(&(*ph1_bytes), &t48); goto bb4; bb16:
-    t50 = h2_c; t51 = UINT64_C(114); t52 = t50 == t51; if (t52) goto bb17; else goto bb18; bb17:
-    t54 = UINT64_C(13); hero_array_push_owned(&(*ph1_bytes), &t54); goto bb4; bb18:
-    t56 = h2_c; t57 = UINT64_C(116); t58 = t56 == t57; if (t58) goto bb19; else goto bb20; bb19:
-    t60 = UINT64_C(9); hero_array_push_owned(&(*ph1_bytes), &t60); goto bb4; bb20:
-    t62 = h2_c; t63 = UINT64_C(117); t64 = t62 == t63; if (t64) goto bb21; else goto bb22; bb21:
-    t65 = h_json_code_point(&(*ph0_r)); t86 = h10_own10; h10_own10 = t65; h_0opt_e201354_release(&t86); t87 = h5_f0; h_0opt_e201354_retain(&t65); h5_f0 = t65; h_0opt_e201354_release(&t87); t66 = h5_f0; t67 = t66.tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto bb23; else goto bb24; bb22:
+    t21 = h2_c; t22 = UINT64_C(92); t23 = t21 == t22; h4_b1 = t23; goto hero_bb6; hero_bb6: t24 = h4_b1; h3_b0 = t24; if (t24) goto hero_bb8; else goto hero_bb7; hero_bb7: t25 = h2_c; t26 = UINT64_C(47); t27 = t25 == t26; h3_b0 = t27; goto hero_bb8; hero_bb8: t28 = h3_b0; if (t28) goto hero_bb9; else goto hero_bb10; hero_bb9:
+    t30 = h2_c; hero_array_push_owned(&(*ph1_bytes), &t30); goto hero_bb4; hero_bb10:
+    t32 = h2_c; t33 = UINT64_C(98); t34 = t32 == t33; if (t34) goto hero_bb11; else goto hero_bb12; hero_bb11:
+    t36 = UINT64_C(8); hero_array_push_owned(&(*ph1_bytes), &t36); goto hero_bb4; hero_bb12:
+    t38 = h2_c; t39 = UINT64_C(102); t40 = t38 == t39; if (t40) goto hero_bb13; else goto hero_bb14; hero_bb13:
+    t42 = UINT64_C(12); hero_array_push_owned(&(*ph1_bytes), &t42); goto hero_bb4; hero_bb14:
+    t44 = h2_c; t45 = UINT64_C(110); t46 = t44 == t45; if (t46) goto hero_bb15; else goto hero_bb16; hero_bb15:
+    t48 = UINT64_C(10); hero_array_push_owned(&(*ph1_bytes), &t48); goto hero_bb4; hero_bb16:
+    t50 = h2_c; t51 = UINT64_C(114); t52 = t50 == t51; if (t52) goto hero_bb17; else goto hero_bb18; hero_bb17:
+    t54 = UINT64_C(13); hero_array_push_owned(&(*ph1_bytes), &t54); goto hero_bb4; hero_bb18:
+    t56 = h2_c; t57 = UINT64_C(116); t58 = t56 == t57; if (t58) goto hero_bb19; else goto hero_bb20; hero_bb19:
+    t60 = UINT64_C(9); hero_array_push_owned(&(*ph1_bytes), &t60); goto hero_bb4; hero_bb20:
+    t62 = h2_c; t63 = UINT64_C(117); t64 = t62 == t63; if (t64) goto hero_bb21; else goto hero_bb22; hero_bb21:
+    t65 = h_json_code_point(&(*ph0_r)); t86 = h10_own10; h10_own10 = t65; h_0opt_e201354_release(&t86); t87 = h5_f0; h_0opt_e201354_retain(&t65); h5_f0 = t65; h_0opt_e201354_release(&t87); t66 = h5_f0; t67 = t66.hero_tag; t68 = INT64_C(0); t69 = t67 == t68; if (t69) goto hero_bb23; else goto hero_bb24; hero_bb22:
 #line 219
     t76 = (*ph0_r).f_at; t77 = INT64_C(2); if (__builtin_sub_overflow(t76, t77, &t78)) hero_panic_overflow_at("json.hero", "json.escaped", 219, 16); (*ph0_r).f_at = t78;
-    t79 = (*ph0_r); t80 = HERO_STR_LIT(hero_str_2ac2398c); t81 = h_json_0refused_14a1(t79, t80); t88 = h11_own11; h11_own11 = t81; h_0opt_a8ea2_release(&t88); h7_ret0 = t81; goto bb25; bb23:
+    t79 = (*ph0_r); t80 = HERO_STR_LIT(hero_str_2ac2398c); t81 = h_json_0refused_14a1(t79, t80); t88 = h11_own11; h11_own11 = t81; h_0opt_a8ea2_release(&t88); h7_ret0 = t81; goto hero_bb25; hero_bb23:
 #line 216
-    t73 = h5_f0; t74 = t73.as.ok; h6_point = t74;
-    t75 = h6_point; h_json_utf8(&(*ph1_bytes), t75); goto bb4; bb24:
+    t73 = h5_f0; t74 = t73.hero_as.hero_ok; h6_point = t74;
+    t75 = h6_point; h_json_utf8(&(*ph1_bytes), t75); goto hero_bb4; hero_bb24:
 #line 216
-    t70 = h5_f0; t71 = t70.as.err; hero_failure_retain(&t71); t72 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = t71}; t89 = h12_own12; h12_own12 = t72; h_0opt_a8ea2_release(&t89); h7_ret0 = t72; goto bb25; bb25:
-#line 970 "main.c"
+    t70 = h5_f0; t71 = t70.hero_as.hero_err; hero_failure_retain(&t71); t72 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = t71}; t89 = h12_own12; h12_own12 = t72; h_0opt_a8ea2_release(&t89); h7_ret0 = t72; goto hero_bb25; hero_bb25:
+#line 1080 "main.c"
     t83 = h7_ret0;
     h_0opt_a8ea2_retain(&t83);
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
@@ -979,40 +1089,40 @@ h_0opt_a8ea2 h_json_escaped(h_json_Reader *ph0_r, HeroArrayHeader * *ph1_bytes) 
 }
 
 #line 227 "examples/json/json.hero"
-h_0opt_e201354 h_json_code_point(h_json_Reader *ph0_r) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h7_f1 = {0}, h10_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t1, t2, t6, t8, t9, t20, t29, t52, t56, t57, t61, t63, t64, t75, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99; int64_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, t5, t13, t16, t17, t23, t26, t27, t35, t40, t41, t48, t49, t60, t68, t71, t72; int64_t h8_second; HERO_NODEBUG int64_t t3, t4, t10, t11, t12, t14, t15, t21, t22, t24, t25, t28, t30, t31, t32, t34, t37, t43, t44, t45, t53, t54, t55, t58, t59, t65, t66, t67, t69, t70, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG HeroFailure t7, t62; HERO_NODEBUG h_json_Reader t18, t50, t73; HERO_NODEBUG HeroStr t19, t33, t36, t42, t51, t74; HERO_NODEBUG uint8_t t38, t39, t46, t47; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_hex4(&(*ph0_r)); t89 = h11_own11; h11_own11 = t1; h_0opt_e201354_release(&t89); t90 = h1_f0; h_0opt_e201354_retain(&t1); h1_f0 = t1; h_0opt_e201354_release(&t90); t2 = h1_f0; t3 = t2.tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb1; else goto bb2; bb1: t9 = h1_f0; t10 = t9.as.ok; h2_first = t10;
+h_0opt_e201354 h_json_code_point(h_json_Reader *ph0_r) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h7_f1 = {0}, h10_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t1, t2, t6, t8, t9, t20, t29, t52, t56, t57, t61, t63, t64, t75, t87, t88, t89, t90, t91, t92, t93, t94, t95, t96, t97, t98, t99; int64_t h2_first; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h9_b4, t5, t13, t16, t17, t23, t26, t27, t35, t40, t41, t48, t49, t60, t68, t71, t72; int64_t h8_second; HERO_NODEBUG int64_t t3, t4, t10, t11, t12, t14, t15, t21, t22, t24, t25, t28, t30, t31, t32, t34, t37, t43, t44, t45, t53, t54, t55, t58, t59, t65, t66, t67, t69, t70, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86; HERO_NODEBUG HeroFailure t7, t62; HERO_NODEBUG h_json_Reader t18, t50, t73; HERO_NODEBUG HeroStr t19, t33, t36, t42, t51, t74; HERO_NODEBUG uint8_t t38, t39, t46, t47; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_hex4(&(*ph0_r)); t89 = h11_own11; h11_own11 = t1; h_0opt_e201354_release(&t89); t90 = h1_f0; h_0opt_e201354_retain(&t1); h1_f0 = t1; h_0opt_e201354_release(&t90); t2 = h1_f0; t3 = t2.hero_tag; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto hero_bb1; else goto hero_bb2; hero_bb1: t9 = h1_f0; t10 = t9.hero_as.hero_ok; h2_first = t10;
 #line 230
-    t11 = h2_first; t12 = INT64_C(56320); t13 = t11 >= t12; h3_b0 = t13; if (t13) goto bb4; else goto bb5; bb2:
+    t11 = h2_first; t12 = INT64_C(56320); t13 = t11 >= t12; h3_b0 = t13; if (t13) goto hero_bb4; else goto hero_bb5; hero_bb2:
 #line 228
-    t6 = h1_f0; t7 = t6.as.err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t7}; t91 = h12_own12; h12_own12 = t8; h_0opt_e201354_release(&t91); h10_ret0 = t8; goto bb27; bb3:
+    t6 = h1_f0; t7 = t6.hero_as.hero_err; hero_failure_retain(&t7); t8 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = t7}; t91 = h12_own12; h12_own12 = t8; h_0opt_e201354_release(&t91); h10_ret0 = t8; goto hero_bb27; hero_bb3:
 #line 233
-    t21 = h2_first; t22 = INT64_C(55296); t23 = t21 < t22; h4_b1 = t23; if (t23) goto bb10; else goto bb9; bb4:
+    t21 = h2_first; t22 = INT64_C(55296); t23 = t21 < t22; h4_b1 = t23; if (t23) goto hero_bb10; else goto hero_bb9; hero_bb4:
 #line 230
-    t14 = h2_first; t15 = INT64_C(57343); t16 = t14 <= t15; h3_b0 = t16; goto bb5; bb5: t17 = h3_b0; if (t17) goto bb6; else goto bb7; bb6:
-    t18 = (*ph0_r); t19 = HERO_STR_LIT(hero_str_1345edf9); t20 = h_json_0refused_1b9a87(t18, t19); t92 = h13_own13; h13_own13 = t20; h_0opt_e201354_release(&t92); h10_ret0 = t20; goto bb27; bb7: goto bb3; bb8:
+    t14 = h2_first; t15 = INT64_C(57343); t16 = t14 <= t15; h3_b0 = t16; goto hero_bb5; hero_bb5: t17 = h3_b0; if (t17) goto hero_bb6; else goto hero_bb7; hero_bb6:
+    t18 = (*ph0_r); t19 = HERO_STR_LIT(hero_str_1345edf9); t20 = h_json_0refused_1b9a87(t18, t19); t92 = h13_own13; h13_own13 = t20; h_0opt_e201354_release(&t92); h10_ret0 = t20; goto hero_bb27; hero_bb7: goto hero_bb3; hero_bb8:
 #line 236
-    t30 = (*ph0_r).f_at; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("json.hero", "json.code_point", 236, 8); t33 = (*ph0_r).f_text; t34 = hero_str_len(t33); t35 = t32 >= t34; h6_b3 = t35; if (t35) goto bb15; else goto bb14; bb9:
+    t30 = (*ph0_r).f_at; t31 = INT64_C(1); if (__builtin_add_overflow(t30, t31, &t32)) hero_panic_overflow_at("json.hero", "json.code_point", 236, 8); t33 = (*ph0_r).f_text; t34 = hero_str_len(t33); t35 = t32 >= t34; h6_b3 = t35; if (t35) goto hero_bb15; else goto hero_bb14; hero_bb9:
 #line 233
-    t24 = h2_first; t25 = INT64_C(56319); t26 = t24 > t25; h4_b1 = t26; goto bb10; bb10: t27 = h4_b1; if (t27) goto bb11; else goto bb12; bb11:
-    t28 = h2_first; t29 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t28}; t93 = h14_own14; h14_own14 = t29; h_0opt_e201354_release(&t93); h10_ret0 = t29; goto bb27; bb12: goto bb8; bb13:
+    t24 = h2_first; t25 = INT64_C(56319); t26 = t24 > t25; h4_b1 = t26; goto hero_bb10; hero_bb10: t27 = h4_b1; if (t27) goto hero_bb11; else goto hero_bb12; hero_bb11:
+    t28 = h2_first; t29 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t28}; t93 = h14_own14; h14_own14 = t29; h_0opt_e201354_release(&t93); h10_ret0 = t29; goto hero_bb27; hero_bb12: goto hero_bb8; hero_bb13:
 #line 238
     t53 = (*ph0_r).f_at; t54 = INT64_C(2); if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow_at("json.hero", "json.code_point", 238, 12); (*ph0_r).f_at = t55;
-    t56 = h_json_hex4(&(*ph0_r)); t94 = h15_own15; h15_own15 = t56; h_0opt_e201354_release(&t94); t95 = h7_f1; h_0opt_e201354_retain(&t56); h7_f1 = t56; h_0opt_e201354_release(&t95); t57 = h7_f1; t58 = t57.tag; t59 = INT64_C(0); t60 = t58 == t59; if (t60) goto bb20; else goto bb21; bb14:
+    t56 = h_json_hex4(&(*ph0_r)); t94 = h15_own15; h15_own15 = t56; h_0opt_e201354_release(&t94); t95 = h7_f1; h_0opt_e201354_retain(&t56); h7_f1 = t56; h_0opt_e201354_release(&t95); t57 = h7_f1; t58 = t57.hero_tag; t59 = INT64_C(0); t60 = t58 == t59; if (t60) goto hero_bb20; else goto hero_bb21; hero_bb14:
 #line 236
-    t36 = (*ph0_r).f_text; t37 = (*ph0_r).f_at; t38 = ((void)((t36.ptr == NULL || t37 < 0 || t37 >= t36.len) ? hero_panic_byte_at(t36, t37, "json.hero", "json.code_point", 236, 36) : (void)0), (int64_t)(unsigned char)t36.ptr[t37]); t39 = UINT64_C(92); t40 = t38 != t39; h6_b3 = t40; goto bb15; bb15: t41 = h6_b3; h5_b2 = t41; if (t41) goto bb17; else goto bb16; bb16: t42 = (*ph0_r).f_text; t43 = (*ph0_r).f_at; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("json.hero", "json.code_point", 236, 67); t46 = ((void)((t42.ptr == NULL || t45 < 0 || t45 >= t42.len) ? hero_panic_byte_at(t42, t45, "json.hero", "json.code_point", 236, 60) : (void)0), (int64_t)(unsigned char)t42.ptr[t45]); t47 = UINT64_C(117); t48 = t46 != t47; h5_b2 = t48; goto bb17; bb17: t49 = h5_b2; if (t49) goto bb18; else goto bb19; bb18:
-    t50 = (*ph0_r); t51 = HERO_STR_LIT(hero_str_48b5929a); t52 = h_json_0refused_1b9a87(t50, t51); t96 = h16_own16; h16_own16 = t52; h_0opt_e201354_release(&t96); h10_ret0 = t52; goto bb27; bb19: goto bb13; bb20:
+    t36 = (*ph0_r).f_text; t37 = (*ph0_r).f_at; t38 = ((void)((t36.ptr == NULL || t37 < 0 || t37 >= t36.len) ? hero_panic_byte_at(t36, t37, "json.hero", "json.code_point", 236, 36) : (void)0), (int64_t)(unsigned char)t36.ptr[t37]); t39 = UINT64_C(92); t40 = t38 != t39; h6_b3 = t40; goto hero_bb15; hero_bb15: t41 = h6_b3; h5_b2 = t41; if (t41) goto hero_bb17; else goto hero_bb16; hero_bb16: t42 = (*ph0_r).f_text; t43 = (*ph0_r).f_at; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("json.hero", "json.code_point", 236, 67); t46 = ((void)((t42.ptr == NULL || t45 < 0 || t45 >= t42.len) ? hero_panic_byte_at(t42, t45, "json.hero", "json.code_point", 236, 60) : (void)0), (int64_t)(unsigned char)t42.ptr[t45]); t47 = UINT64_C(117); t48 = t46 != t47; h5_b2 = t48; goto hero_bb17; hero_bb17: t49 = h5_b2; if (t49) goto hero_bb18; else goto hero_bb19; hero_bb18:
+    t50 = (*ph0_r); t51 = HERO_STR_LIT(hero_str_48b5929a); t52 = h_json_0refused_1b9a87(t50, t51); t96 = h16_own16; h16_own16 = t52; h_0opt_e201354_release(&t96); h10_ret0 = t52; goto hero_bb27; hero_bb19: goto hero_bb13; hero_bb20:
 #line 239
-    t64 = h7_f1; t65 = t64.as.ok; h8_second = t65;
+    t64 = h7_f1; t65 = t64.hero_as.hero_ok; h8_second = t65;
 #line 241
-    t66 = h8_second; t67 = INT64_C(56320); t68 = t66 < t67; h9_b4 = t68; if (t68) goto bb24; else goto bb23; bb21:
+    t66 = h8_second; t67 = INT64_C(56320); t68 = t66 < t67; h9_b4 = t68; if (t68) goto hero_bb24; else goto hero_bb23; hero_bb21:
 #line 239
-    t61 = h7_f1; t62 = t61.as.err; hero_failure_retain(&t62); t63 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t62}; t97 = h17_own17; h17_own17 = t63; h_0opt_e201354_release(&t97); h10_ret0 = t63; goto bb27; bb22:
+    t61 = h7_f1; t62 = t61.hero_as.hero_err; hero_failure_retain(&t62); t63 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = t62}; t97 = h17_own17; h17_own17 = t63; h_0opt_e201354_release(&t97); h10_ret0 = t63; goto hero_bb27; hero_bb22:
 #line 243
-    t76 = INT64_C(65536); t77 = h2_first; t78 = INT64_C(55296); if (__builtin_sub_overflow(t77, t78, &t79)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 26); t80 = INT64_C(1024); if (__builtin_mul_overflow(t79, t80, &t81)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 25); if (__builtin_add_overflow(t76, t81, &t82)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 15); t83 = h8_second; t84 = INT64_C(56320); if (__builtin_sub_overflow(t83, t84, &t85)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 53); if (__builtin_add_overflow(t82, t85, &t86)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 15); t87 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t86}; t98 = h18_own18; h18_own18 = t87; h_0opt_e201354_release(&t98); h10_ret0 = t87; goto bb27; bb23:
+    t76 = INT64_C(65536); t77 = h2_first; t78 = INT64_C(55296); if (__builtin_sub_overflow(t77, t78, &t79)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 26); t80 = INT64_C(1024); if (__builtin_mul_overflow(t79, t80, &t81)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 25); if (__builtin_add_overflow(t76, t81, &t82)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 15); t83 = h8_second; t84 = INT64_C(56320); if (__builtin_sub_overflow(t83, t84, &t85)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 53); if (__builtin_add_overflow(t82, t85, &t86)) hero_panic_overflow_at("json.hero", "json.code_point", 243, 15); t87 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t86}; t98 = h18_own18; h18_own18 = t87; h_0opt_e201354_release(&t98); h10_ret0 = t87; goto hero_bb27; hero_bb23:
 #line 241
-    t69 = h8_second; t70 = INT64_C(57343); t71 = t69 > t70; h9_b4 = t71; goto bb24; bb24: t72 = h9_b4; if (t72) goto bb25; else goto bb26; bb25:
-    t73 = (*ph0_r); t74 = HERO_STR_LIT(hero_str_66e81768); t75 = h_json_0refused_1b9a87(t73, t74); t99 = h19_own19; h19_own19 = t75; h_0opt_e201354_release(&t99); h10_ret0 = t75; goto bb27; bb26: goto bb22; bb27:
-#line 1016 "main.c"
+    t69 = h8_second; t70 = INT64_C(57343); t71 = t69 > t70; h9_b4 = t71; goto hero_bb24; hero_bb24: t72 = h9_b4; if (t72) goto hero_bb25; else goto hero_bb26; hero_bb25:
+    t73 = (*ph0_r); t74 = HERO_STR_LIT(hero_str_66e81768); t75 = h_json_0refused_1b9a87(t73, t74); t99 = h19_own19; h19_own19 = t75; h_0opt_e201354_release(&t99); h10_ret0 = t75; goto hero_bb27; hero_bb26: goto hero_bb22; hero_bb27:
+#line 1126 "main.c"
     t88 = h10_ret0;
     h_0opt_e201354_retain(&t88);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -1030,27 +1140,27 @@ h_0opt_e201354 h_json_code_point(h_json_Reader *ph0_r) { HERO_NODEBUG h_0opt_e20
 }
 
 #line 246 "examples/json/json.hero"
-h_0opt_e201354 h_json_hex4(h_json_Reader *ph0_r) { int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t4, *t7, *t41, *t42; HERO_NODEBUG int64_t h3_i0, t1, t2, t3, t5, t6, t8, t10, t12, t18, t20, t21, t22, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38; int64_t h4_digit; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t16, t26, t39, t40, t43, t44, t45; HERO_NODEBUG bool t9, t13, t23; HERO_NODEBUG HeroStr t11, t15, t17, t25; HERO_NODEBUG h_json_Reader t14, t24; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_e201354 h_json_hex4(h_json_Reader *ph0_r) { int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t4, *t7, *t41, *t42; HERO_NODEBUG int64_t h3_i0, t1, t2, t3, t5, t6, t8, t10, t12, t18, t20, t21, t22, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38; int64_t h4_digit; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t16, t26, t39, t40, t43, t44, t45; HERO_NODEBUG bool t9, t13, t23; HERO_NODEBUG HeroStr t11, t15, t17, t25; HERO_NODEBUG h_json_Reader t14, t24; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_total = t1;
 #line 249
-    t2 = INT64_C(0); t3 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.hex4", 249, 14}; t4 = h_library_range(t2, t3, &hero_here); } t41 = h6_own6; h6_own6 = t4; hero_array_decref(t41); t42 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t42); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2:
-    t10 = (*ph0_r).f_at; t11 = (*ph0_r).f_text; t12 = hero_str_len(t11); t13 = t10 >= t12; if (t13) goto bb6; else goto bb7; bb3:
+    t2 = INT64_C(0); t3 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.hex4", 249, 14}; t4 = h_library_range(t2, t3, &hero_here); } t41 = h6_own6; h6_own6 = t4; hero_array_decref(t41); t42 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t42); t5 = INT64_C(0); h3_i0 = t5; goto hero_bb1; hero_bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2:
+    t10 = (*ph0_r).f_at; t11 = (*ph0_r).f_text; t12 = hero_str_len(t11); t13 = t10 >= t12; if (t13) goto hero_bb6; else goto hero_bb7; hero_bb3:
 #line 249
-    t35 = h3_i0; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("json.hero", "json.hex4", 249, 9); h3_i0 = t37; goto bb1; bb4:
+    t35 = h3_i0; t36 = INT64_C(1); if (__builtin_add_overflow(t35, t36, &t37)) hero_panic_overflow_at("json.hero", "json.hex4", 249, 9); h3_i0 = t37; goto hero_bb1; hero_bb4:
 #line 259
-    t38 = h1_total; t39 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t38}; t43 = h7_own7; h7_own7 = t39; h_0opt_e201354_release(&t43); h5_ret0 = t39; goto bb11; bb5:
+    t38 = h1_total; t39 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t38}; t43 = h7_own7; h7_own7 = t39; h_0opt_e201354_release(&t43); h5_ret0 = t39; goto hero_bb11; hero_bb5:
 #line 252
     t17 = (*ph0_r).f_text; t18 = (*ph0_r).f_at; t19 = ((void)((t17.ptr == NULL || t18 < 0 || t18 >= t17.len) ? hero_panic_byte_at(t17, t18, "json.hero", "json.hex4", 252, 27) : (void)0), (int64_t)(unsigned char)t17.ptr[t18]); t20 = h_json_hex_digit(t19); h4_digit = t20;
 #line 254
-    t21 = h4_digit; t22 = INT64_C(0); t23 = t21 < t22; if (t23) goto bb9; else goto bb10; bb6:
+    t21 = h4_digit; t22 = INT64_C(0); t23 = t21 < t22; if (t23) goto hero_bb9; else goto hero_bb10; hero_bb6:
 #line 251
-    t14 = (*ph0_r); t15 = HERO_STR_LIT(hero_str_55377e40); t16 = h_json_0refused_1b9a87(t14, t15); t44 = h8_own8; h8_own8 = t16; h_0opt_e201354_release(&t44); h5_ret0 = t16; goto bb11; bb7: goto bb5; bb8:
+    t14 = (*ph0_r); t15 = HERO_STR_LIT(hero_str_55377e40); t16 = h_json_0refused_1b9a87(t14, t15); t44 = h8_own8; h8_own8 = t16; h_0opt_e201354_release(&t44); h5_ret0 = t16; goto hero_bb11; hero_bb7: goto hero_bb5; hero_bb8:
 #line 256
     t27 = h1_total; t28 = INT64_C(16); if (__builtin_mul_overflow(t27, t28, &t29)) hero_panic_overflow_at("json.hero", "json.hex4", 256, 17); t30 = h4_digit; if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("json.hero", "json.hex4", 256, 17); h1_total = t31;
-    t32 = (*ph0_r).f_at; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("json.hero", "json.hex4", 257, 16); (*ph0_r).f_at = t34; goto bb3; bb9:
+    t32 = (*ph0_r).f_at; t33 = INT64_C(1); if (__builtin_add_overflow(t32, t33, &t34)) hero_panic_overflow_at("json.hero", "json.hex4", 257, 16); (*ph0_r).f_at = t34; goto hero_bb3; hero_bb9:
 #line 255
-    t24 = (*ph0_r); t25 = HERO_STR_LIT(hero_str_2d048e80); t26 = h_json_0refused_1b9a87(t24, t25); t45 = h9_own9; h9_own9 = t26; h_0opt_e201354_release(&t45); h5_ret0 = t26; goto bb11; bb10: goto bb8; bb11:
-#line 1054 "main.c"
+    t24 = (*ph0_r); t25 = HERO_STR_LIT(hero_str_2d048e80); t26 = h_json_0refused_1b9a87(t24, t25); t45 = h9_own9; h9_own9 = t26; h_0opt_e201354_release(&t45); h5_ret0 = t26; goto hero_bb11; hero_bb10: goto hero_bb8; hero_bb11:
+#line 1164 "main.c"
     t40 = h5_ret0;
     h_0opt_e201354_retain(&t40);
     hero_array_release_at(&h2_xs0);
@@ -1062,35 +1172,35 @@ h_0opt_e201354 h_json_hex4(h_json_Reader *ph0_r) { int64_t h1_total; HERO_NODEBU
 }
 
 #line 262 "examples/json/json.hero"
-int64_t h_json_hex_digit(uint8_t h0_c) { HERO_NODEBUG bool h1_b0, h3_b1, h5_b2, t3, t6, t7, t15, t22, t25, t26, t34, t43, t46, t47, t55; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t11, t12, t16, t18, t30, t31, t35, t37, t51, t52, t56, t58, t64, t65, t66, t67, t68, t69; HERO_NODEBUG int64_t h7_ret0, t13, t14, t19, t32, t33, t38, t39, t40, t53, t54, t59, t60, t61, t62, t63; HERO_NODEBUG uint8_t t1, t2, t4, t5, t8, t9, t10, t20, t21, t23, t24, t27, t28, t29, t41, t42, t44, t45, t48, t49, t50; HERO_NODEBUG HeroFailure t17, t36, t57; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto bb2; else goto bb3; bb1:
+int64_t h_json_hex_digit(uint8_t h0_c) { HERO_NODEBUG bool h1_b0, h3_b1, h5_b2, t3, t6, t7, t15, t22, t25, t26, t34, t43, t46, t47, t55; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t11, t12, t16, t18, t30, t31, t35, t37, t51, t52, t56, t58, t64, t65, t66, t67, t68, t69; HERO_NODEBUG int64_t h7_ret0, t13, t14, t19, t32, t33, t38, t39, t40, t53, t54, t59, t60, t61, t62, t63; HERO_NODEBUG uint8_t t1, t2, t4, t5, t8, t9, t10, t20, t21, t23, t24, t27, t28, t29, t41, t42, t44, t45, t48, t49, t50; HERO_NODEBUG HeroFailure t17, t36, t57; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = UINT64_C(48); t3 = t1 >= t2; h1_b0 = t3; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 266
-    t20 = h0_c; t21 = UINT64_C(97); t22 = t20 >= t21; h3_b1 = t22; if (t22) goto bb9; else goto bb10; bb2:
+    t20 = h0_c; t21 = UINT64_C(97); t22 = t20 >= t21; h3_b1 = t22; if (t22) goto hero_bb9; else goto hero_bb10; hero_bb2:
 #line 263
-    t4 = h0_c; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
-    t8 = h0_c; t9 = UINT64_C(48); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("json.hero", "json.hex_digit", 264, 23); t11 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t10}; t64 = h8_own8; h8_own8 = t11; h_0opt_e201354_release(&t64); t65 = h2_f0; h_0opt_e201354_retain(&t11); h2_f0 = t11; h_0opt_e201354_release(&t65); t12 = h2_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb6; else goto bb7; bb5: goto bb1; bb6: t18 = h2_f0; t19 = t18.as.ok; h7_ret0 = t19; goto bb22; bb7: t16 = h2_f0; t17 = t16.as.err;
-#line 1073 "main.c"
+    t4 = h0_c; t5 = UINT64_C(57); t6 = t4 <= t5; h1_b0 = t6; goto hero_bb3; hero_bb3: t7 = h1_b0; if (t7) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t8 = h0_c; t9 = UINT64_C(48); if (__builtin_sub_overflow(t8, t9, &t10)) hero_panic_overflow_at("json.hero", "json.hex_digit", 264, 23); t11 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t10}; t64 = h8_own8; h8_own8 = t11; h_0opt_e201354_release(&t64); t65 = h2_f0; h_0opt_e201354_retain(&t11); h2_f0 = t11; h_0opt_e201354_release(&t65); t12 = h2_f0; t13 = t12.hero_tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto hero_bb6; else goto hero_bb7; hero_bb5: goto hero_bb1; hero_bb6: t18 = h2_f0; t19 = t18.hero_as.hero_ok; h7_ret0 = t19; goto hero_bb22; hero_bb7: t16 = h2_f0; t17 = t16.hero_as.hero_err;
+#line 1183 "main.c"
     hero_panic_must_at(t17, "json.hero", "json.hex_digit", 264, 16);
     hero_unreachable();
-bb8:
+hero_bb8:
 #line 269 "examples/json/json.hero"
-    t41 = h0_c; t42 = UINT64_C(65); t43 = t41 >= t42; h5_b2 = t43; if (t43) goto bb16; else goto bb17; bb9:
+    t41 = h0_c; t42 = UINT64_C(65); t43 = t41 >= t42; h5_b2 = t43; if (t43) goto hero_bb16; else goto hero_bb17; hero_bb9:
 #line 266
-    t23 = h0_c; t24 = UINT64_C(102); t25 = t23 <= t24; h3_b1 = t25; goto bb10; bb10: t26 = h3_b1; if (t26) goto bb11; else goto bb12; bb11:
-    t27 = h0_c; t28 = UINT64_C(97); if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow_at("json.hero", "json.hex_digit", 267, 23); t30 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t29}; t66 = h9_own9; h9_own9 = t30; h_0opt_e201354_release(&t66); t67 = h4_f1; h_0opt_e201354_retain(&t30); h4_f1 = t30; h_0opt_e201354_release(&t67); t31 = h4_f1; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb13; else goto bb14; bb12: goto bb8; bb13: t37 = h4_f1; t38 = t37.as.ok; t39 = INT64_C(10); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("json.hero", "json.hex_digit", 267, 16); h7_ret0 = t40; goto bb22; bb14: t35 = h4_f1; t36 = t35.as.err;
-#line 1082 "main.c"
+    t23 = h0_c; t24 = UINT64_C(102); t25 = t23 <= t24; h3_b1 = t25; goto hero_bb10; hero_bb10: t26 = h3_b1; if (t26) goto hero_bb11; else goto hero_bb12; hero_bb11:
+    t27 = h0_c; t28 = UINT64_C(97); if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow_at("json.hero", "json.hex_digit", 267, 23); t30 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t29}; t66 = h9_own9; h9_own9 = t30; h_0opt_e201354_release(&t66); t67 = h4_f1; h_0opt_e201354_retain(&t30); h4_f1 = t30; h_0opt_e201354_release(&t67); t31 = h4_f1; t32 = t31.hero_tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto hero_bb13; else goto hero_bb14; hero_bb12: goto hero_bb8; hero_bb13: t37 = h4_f1; t38 = t37.hero_as.hero_ok; t39 = INT64_C(10); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("json.hero", "json.hex_digit", 267, 16); h7_ret0 = t40; goto hero_bb22; hero_bb14: t35 = h4_f1; t36 = t35.hero_as.hero_err;
+#line 1192 "main.c"
     hero_panic_must_at(t36, "json.hero", "json.hex_digit", 267, 16);
     hero_unreachable();
-bb15:
+hero_bb15:
 #line 271 "examples/json/json.hero"
-    t62 = INT64_C(-1); h7_ret0 = t62; goto bb22; bb16:
+    t62 = INT64_C(-1); h7_ret0 = t62; goto hero_bb22; hero_bb16:
 #line 269
-    t44 = h0_c; t45 = UINT64_C(70); t46 = t44 <= t45; h5_b2 = t46; goto bb17; bb17: t47 = h5_b2; if (t47) goto bb18; else goto bb19; bb18:
-    t48 = h0_c; t49 = UINT64_C(65); if (__builtin_sub_overflow(t48, t49, &t50)) hero_panic_overflow_at("json.hero", "json.hex_digit", 270, 23); t51 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t50}; t68 = h10_own10; h10_own10 = t51; h_0opt_e201354_release(&t68); t69 = h6_f2; h_0opt_e201354_retain(&t51); h6_f2 = t51; h_0opt_e201354_release(&t69); t52 = h6_f2; t53 = t52.tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto bb20; else goto bb21; bb19: goto bb15; bb20: t58 = h6_f2; t59 = t58.as.ok; t60 = INT64_C(10); if (__builtin_add_overflow(t59, t60, &t61)) hero_panic_overflow_at("json.hero", "json.hex_digit", 270, 16); h7_ret0 = t61; goto bb22; bb21: t56 = h6_f2; t57 = t56.as.err;
-#line 1091 "main.c"
+    t44 = h0_c; t45 = UINT64_C(70); t46 = t44 <= t45; h5_b2 = t46; goto hero_bb17; hero_bb17: t47 = h5_b2; if (t47) goto hero_bb18; else goto hero_bb19; hero_bb18:
+    t48 = h0_c; t49 = UINT64_C(65); if (__builtin_sub_overflow(t48, t49, &t50)) hero_panic_overflow_at("json.hero", "json.hex_digit", 270, 23); t51 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t50}; t68 = h10_own10; h10_own10 = t51; h_0opt_e201354_release(&t68); t69 = h6_f2; h_0opt_e201354_retain(&t51); h6_f2 = t51; h_0opt_e201354_release(&t69); t52 = h6_f2; t53 = t52.hero_tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto hero_bb20; else goto hero_bb21; hero_bb19: goto hero_bb15; hero_bb20: t58 = h6_f2; t59 = t58.hero_as.hero_ok; t60 = INT64_C(10); if (__builtin_add_overflow(t59, t60, &t61)) hero_panic_overflow_at("json.hero", "json.hex_digit", 270, 16); h7_ret0 = t61; goto hero_bb22; hero_bb21: t56 = h6_f2; t57 = t56.hero_as.hero_err;
+#line 1201 "main.c"
     hero_panic_must_at(t57, "json.hero", "json.hex_digit", 270, 16);
     hero_unreachable();
-bb22:
+hero_bb22:
     t63 = h7_ret0;
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_f1));
@@ -1102,9 +1212,9 @@ bb22:
 }
 
 #line 274 "examples/json/json.hero"
-void h_json_utf8(HeroArrayHeader * *ph0_bytes, int64_t h1_point) { HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h6_f4 = {0}, h7_f5 = {0}, h8_f6 = {0}, h9_f7 = {0}, h10_f8 = {0}, h11_f9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t6, t7, t11, t13, t25, t26, t30, t32, t41, t42, t46, t48, t60, t61, t65, t67, t78, t79, t83, t85, t94, t95, t99, t101, t110, t111, t115, t117, t128, t129, t133, t135, t146, t147, t151, t153, t162, t163, t167, t169, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191; HERO_NODEBUG int64_t t1, t2, t5, t8, t9, t16, t17, t20, t21, t22, t23, t24, t27, t28, t36, t37, t38, t39, t40, t43, t44, t51, t52, t55, t56, t57, t58, t59, t62, t63, t71, t72, t73, t74, t75, t76, t77, t80, t81, t89, t90, t91, t92, t93, t96, t97, t105, t106, t107, t108, t109, t112, t113, t121, t122, t123, t124, t125, t126, t127, t130, t131, t139, t140, t141, t142, t143, t144, t145, t148, t149, t157, t158, t159, t160, t161, t164, t165; HERO_NODEBUG bool t3, t10, t18, t29, t45, t53, t64, t82, t98, t114, t132, t150, t166; HERO_NODEBUG HeroFailure t12, t31, t47, t66, t84, t100, t116, t134, t152, t168; HERO_NODEBUG uint8_t t14, t33, t49, t68, t86, t102, t118, t136, t154, t170; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_point; t2 = INT64_C(128); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
-#line 1108 "main.c"
+void h_json_utf8(HeroArrayHeader * *ph0_bytes, int64_t h1_point) { HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_f1 = {0}, h4_f2 = {0}, h5_f3 = {0}, h6_f4 = {0}, h7_f5 = {0}, h8_f6 = {0}, h9_f7 = {0}, h10_f8 = {0}, h11_f9 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t6, t7, t11, t13, t25, t26, t30, t32, t41, t42, t46, t48, t60, t61, t65, t67, t78, t79, t83, t85, t94, t95, t99, t101, t110, t111, t115, t117, t128, t129, t133, t135, t146, t147, t151, t153, t162, t163, t167, t169, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191; HERO_NODEBUG int64_t t1, t2, t5, t8, t9, t16, t17, t20, t21, t22, t23, t24, t27, t28, t36, t37, t38, t39, t40, t43, t44, t51, t52, t55, t56, t57, t58, t59, t62, t63, t71, t72, t73, t74, t75, t76, t77, t80, t81, t89, t90, t91, t92, t93, t96, t97, t105, t106, t107, t108, t109, t112, t113, t121, t122, t123, t124, t125, t126, t127, t130, t131, t139, t140, t141, t142, t143, t144, t145, t148, t149, t157, t158, t159, t160, t161, t164, t165; HERO_NODEBUG bool t3, t10, t18, t29, t45, t53, t64, t82, t98, t114, t132, t150, t166; HERO_NODEBUG HeroFailure t12, t31, t47, t66, t84, t100, t116, t134, t152, t168; HERO_NODEBUG uint8_t t14, t33, t49, t68, t86, t102, t118, t136, t154, t170; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_point; t2 = INT64_C(128); t3 = t1 < t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
+#line 1218 "main.c"
     h_0opt_1ec004_release(hero_slot_escape(&h2_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h3_f1));
     h_0opt_1ec004_release(hero_slot_escape(&h4_f2));
@@ -1126,145 +1236,145 @@ void h_json_utf8(HeroArrayHeader * *ph0_bytes, int64_t h1_point) { HERO_NODEBUG 
     h_0opt_1ec004_release(hero_slot_escape(&h20_own20));
     h_0opt_1ec004_release(hero_slot_escape(&h21_own21));
     return;
-bb2:
+hero_bb2:
 #line 276 "examples/json/json.hero"
-    t5 = h1_point; if (t5 >= 0LL && t5 <= 255LL) { t6 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t5}; } else { t6 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t172 = h12_own12; h12_own12 = t6; h_0opt_1ec004_release(&t172); t173 = h2_f0; h_0opt_1ec004_retain(&t6); h2_f0 = t6; h_0opt_1ec004_release(&t173); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb4; else goto bb5; bb3:
-    t16 = h1_point; t17 = INT64_C(2048); t18 = t16 < t17; if (t18) goto bb6; else goto bb7; bb4:
+    t5 = h1_point; if (t5 >= 0LL && t5 <= 255LL) { t6 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t5}; } else { t6 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t172 = h12_own12; h12_own12 = t6; h_0opt_1ec004_release(&t172); t173 = h2_f0; h_0opt_1ec004_retain(&t6); h2_f0 = t6; h_0opt_1ec004_release(&t173); t7 = h2_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb4; else goto hero_bb5; hero_bb3:
+    t16 = h1_point; t17 = INT64_C(2048); t18 = t16 < t17; if (t18) goto hero_bb6; else goto hero_bb7; hero_bb4:
 #line 276
-    t13 = h2_f0; t14 = t13.as.ok; hero_array_push_owned(&(*ph0_bytes), &t14); goto bb1; bb5: t11 = h2_f0; t12 = t11.as.err;
-#line 1136 "main.c"
+    t13 = h2_f0; t14 = t13.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t14); goto hero_bb1; hero_bb5: t11 = h2_f0; t12 = t11.hero_as.hero_err;
+#line 1246 "main.c"
     hero_panic_must_at(t12, "json.hero", "json.utf8", 276, 28);
     hero_unreachable();
-bb6:
+hero_bb6:
 #line 278 "examples/json/json.hero"
-    t20 = INT64_C(192); t21 = h1_point; t22 = INT64_C(6); if (t22 < 0 || t22 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 278, 41); t23 = (t21 < 0) ? ~(int64_t)((~(uint64_t)t21) >> (uint64_t)t22) : (int64_t)((uint64_t)t21 >> (uint64_t)t22); t24 = t20 | t23; if (t24 >= 0LL && t24 <= 255LL) { t25 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t24}; } else { t25 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t174 = h13_own13; h13_own13 = t25; h_0opt_1ec004_release(&t174); t175 = h3_f1; h_0opt_1ec004_retain(&t25); h3_f1 = t25; h_0opt_1ec004_release(&t175); t26 = h3_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb8; else goto bb9; bb7:
+    t20 = INT64_C(192); t21 = h1_point; t22 = INT64_C(6); if (t22 < 0 || t22 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 278, 41); t23 = (t21 < 0) ? ~(int64_t)((~(uint64_t)t21) >> (uint64_t)t22) : (int64_t)((uint64_t)t21 >> (uint64_t)t22); t24 = t20 | t23; if (t24 >= 0LL && t24 <= 255LL) { t25 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t24}; } else { t25 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t174 = h13_own13; h13_own13 = t25; h_0opt_1ec004_release(&t174); t175 = h3_f1; h_0opt_1ec004_retain(&t25); h3_f1 = t25; h_0opt_1ec004_release(&t175); t26 = h3_f1; t27 = t26.hero_tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto hero_bb8; else goto hero_bb9; hero_bb7:
 #line 280
-    t51 = h1_point; t52 = INT64_C(65536); t53 = t51 < t52; if (t53) goto bb12; else goto bb13; bb8:
+    t51 = h1_point; t52 = INT64_C(65536); t53 = t51 < t52; if (t53) goto hero_bb12; else goto hero_bb13; hero_bb8:
 #line 278
-    t32 = h3_f1; t33 = t32.as.ok; hero_array_push_owned(&(*ph0_bytes), &t33);
-    t36 = INT64_C(128); t37 = h1_point; t38 = INT64_C(63); t39 = t37 & t38; t40 = t36 | t39; if (t40 >= 0LL && t40 <= 255LL) { t41 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t40}; } else { t41 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t176 = h14_own14; h14_own14 = t41; h_0opt_1ec004_release(&t176); t177 = h4_f2; h_0opt_1ec004_retain(&t41); h4_f2 = t41; h_0opt_1ec004_release(&t177); t42 = h4_f2; t43 = t42.tag; t44 = INT64_C(0); t45 = t43 == t44; if (t45) goto bb10; else goto bb11; bb9:
+    t32 = h3_f1; t33 = t32.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t33);
+    t36 = INT64_C(128); t37 = h1_point; t38 = INT64_C(63); t39 = t37 & t38; t40 = t36 | t39; if (t40 >= 0LL && t40 <= 255LL) { t41 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t40}; } else { t41 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t176 = h14_own14; h14_own14 = t41; h_0opt_1ec004_release(&t176); t177 = h4_f2; h_0opt_1ec004_retain(&t41); h4_f2 = t41; h_0opt_1ec004_release(&t177); t42 = h4_f2; t43 = t42.hero_tag; t44 = INT64_C(0); t45 = t43 == t44; if (t45) goto hero_bb10; else goto hero_bb11; hero_bb9:
 #line 278
-    t30 = h3_f1; t31 = t30.as.err;
-#line 1149 "main.c"
+    t30 = h3_f1; t31 = t30.hero_as.hero_err;
+#line 1259 "main.c"
     hero_panic_must_at(t31, "json.hero", "json.utf8", 278, 28);
     hero_unreachable();
-bb10:
+hero_bb10:
 #line 279 "examples/json/json.hero"
-    t48 = h4_f2; t49 = t48.as.ok; hero_array_push_owned(&(*ph0_bytes), &t49); goto bb1; bb11: t46 = h4_f2; t47 = t46.as.err;
-#line 1155 "main.c"
+    t48 = h4_f2; t49 = t48.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t49); goto hero_bb1; hero_bb11: t46 = h4_f2; t47 = t46.hero_as.hero_err;
+#line 1265 "main.c"
     hero_panic_must_at(t47, "json.hero", "json.utf8", 279, 28);
     hero_unreachable();
-bb12:
+hero_bb12:
 #line 281 "examples/json/json.hero"
-    t55 = INT64_C(224); t56 = h1_point; t57 = INT64_C(12); if (t57 < 0 || t57 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 281, 41); t58 = (t56 < 0) ? ~(int64_t)((~(uint64_t)t56) >> (uint64_t)t57) : (int64_t)((uint64_t)t56 >> (uint64_t)t57); t59 = t55 | t58; if (t59 >= 0LL && t59 <= 255LL) { t60 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t59}; } else { t60 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t178 = h15_own15; h15_own15 = t60; h_0opt_1ec004_release(&t178); t179 = h5_f3; h_0opt_1ec004_retain(&t60); h5_f3 = t60; h_0opt_1ec004_release(&t179); t61 = h5_f3; t62 = t61.tag; t63 = INT64_C(0); t64 = t62 == t63; if (t64) goto bb14; else goto bb15; bb13:
+    t55 = INT64_C(224); t56 = h1_point; t57 = INT64_C(12); if (t57 < 0 || t57 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 281, 41); t58 = (t56 < 0) ? ~(int64_t)((~(uint64_t)t56) >> (uint64_t)t57) : (int64_t)((uint64_t)t56 >> (uint64_t)t57); t59 = t55 | t58; if (t59 >= 0LL && t59 <= 255LL) { t60 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t59}; } else { t60 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t178 = h15_own15; h15_own15 = t60; h_0opt_1ec004_release(&t178); t179 = h5_f3; h_0opt_1ec004_retain(&t60); h5_f3 = t60; h_0opt_1ec004_release(&t179); t61 = h5_f3; t62 = t61.hero_tag; t63 = INT64_C(0); t64 = t62 == t63; if (t64) goto hero_bb14; else goto hero_bb15; hero_bb13:
 #line 285
-    t105 = INT64_C(240); t106 = h1_point; t107 = INT64_C(18); if (t107 < 0 || t107 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 285, 41); t108 = (t106 < 0) ? ~(int64_t)((~(uint64_t)t106) >> (uint64_t)t107) : (int64_t)((uint64_t)t106 >> (uint64_t)t107); t109 = t105 | t108; if (t109 >= 0LL && t109 <= 255LL) { t110 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t109}; } else { t110 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t180 = h16_own16; h16_own16 = t110; h_0opt_1ec004_release(&t180); t181 = h8_f6; h_0opt_1ec004_retain(&t110); h8_f6 = t110; h_0opt_1ec004_release(&t181); t111 = h8_f6; t112 = t111.tag; t113 = INT64_C(0); t114 = t112 == t113; if (t114) goto bb20; else goto bb21; bb14:
+    t105 = INT64_C(240); t106 = h1_point; t107 = INT64_C(18); if (t107 < 0 || t107 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 285, 41); t108 = (t106 < 0) ? ~(int64_t)((~(uint64_t)t106) >> (uint64_t)t107) : (int64_t)((uint64_t)t106 >> (uint64_t)t107); t109 = t105 | t108; if (t109 >= 0LL && t109 <= 255LL) { t110 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t109}; } else { t110 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t180 = h16_own16; h16_own16 = t110; h_0opt_1ec004_release(&t180); t181 = h8_f6; h_0opt_1ec004_retain(&t110); h8_f6 = t110; h_0opt_1ec004_release(&t181); t111 = h8_f6; t112 = t111.hero_tag; t113 = INT64_C(0); t114 = t112 == t113; if (t114) goto hero_bb20; else goto hero_bb21; hero_bb14:
 #line 281
-    t67 = h5_f3; t68 = t67.as.ok; hero_array_push_owned(&(*ph0_bytes), &t68);
-    t71 = INT64_C(128); t72 = h1_point; t73 = INT64_C(6); if (t73 < 0 || t73 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 282, 41); t74 = (t72 < 0) ? ~(int64_t)((~(uint64_t)t72) >> (uint64_t)t73) : (int64_t)((uint64_t)t72 >> (uint64_t)t73); t75 = INT64_C(63); t76 = t74 & t75; t77 = t71 | t76; if (t77 >= 0LL && t77 <= 255LL) { t78 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t77}; } else { t78 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t182 = h17_own17; h17_own17 = t78; h_0opt_1ec004_release(&t182); t183 = h6_f4; h_0opt_1ec004_retain(&t78); h6_f4 = t78; h_0opt_1ec004_release(&t183); t79 = h6_f4; t80 = t79.tag; t81 = INT64_C(0); t82 = t80 == t81; if (t82) goto bb16; else goto bb17; bb15:
+    t67 = h5_f3; t68 = t67.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t68);
+    t71 = INT64_C(128); t72 = h1_point; t73 = INT64_C(6); if (t73 < 0 || t73 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 282, 41); t74 = (t72 < 0) ? ~(int64_t)((~(uint64_t)t72) >> (uint64_t)t73) : (int64_t)((uint64_t)t72 >> (uint64_t)t73); t75 = INT64_C(63); t76 = t74 & t75; t77 = t71 | t76; if (t77 >= 0LL && t77 <= 255LL) { t78 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t77}; } else { t78 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t182 = h17_own17; h17_own17 = t78; h_0opt_1ec004_release(&t182); t183 = h6_f4; h_0opt_1ec004_retain(&t78); h6_f4 = t78; h_0opt_1ec004_release(&t183); t79 = h6_f4; t80 = t79.hero_tag; t81 = INT64_C(0); t82 = t80 == t81; if (t82) goto hero_bb16; else goto hero_bb17; hero_bb15:
 #line 281
-    t65 = h5_f3; t66 = t65.as.err;
-#line 1168 "main.c"
+    t65 = h5_f3; t66 = t65.hero_as.hero_err;
+#line 1278 "main.c"
     hero_panic_must_at(t66, "json.hero", "json.utf8", 281, 28);
     hero_unreachable();
-bb16:
+hero_bb16:
 #line 282 "examples/json/json.hero"
-    t85 = h6_f4; t86 = t85.as.ok; hero_array_push_owned(&(*ph0_bytes), &t86);
-    t89 = INT64_C(128); t90 = h1_point; t91 = INT64_C(63); t92 = t90 & t91; t93 = t89 | t92; if (t93 >= 0LL && t93 <= 255LL) { t94 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t93}; } else { t94 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t184 = h18_own18; h18_own18 = t94; h_0opt_1ec004_release(&t184); t185 = h7_f5; h_0opt_1ec004_retain(&t94); h7_f5 = t94; h_0opt_1ec004_release(&t185); t95 = h7_f5; t96 = t95.tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto bb18; else goto bb19; bb17:
+    t85 = h6_f4; t86 = t85.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t86);
+    t89 = INT64_C(128); t90 = h1_point; t91 = INT64_C(63); t92 = t90 & t91; t93 = t89 | t92; if (t93 >= 0LL && t93 <= 255LL) { t94 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t93}; } else { t94 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t184 = h18_own18; h18_own18 = t94; h_0opt_1ec004_release(&t184); t185 = h7_f5; h_0opt_1ec004_retain(&t94); h7_f5 = t94; h_0opt_1ec004_release(&t185); t95 = h7_f5; t96 = t95.hero_tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto hero_bb18; else goto hero_bb19; hero_bb17:
 #line 282
-    t83 = h6_f4; t84 = t83.as.err;
-#line 1177 "main.c"
+    t83 = h6_f4; t84 = t83.hero_as.hero_err;
+#line 1287 "main.c"
     hero_panic_must_at(t84, "json.hero", "json.utf8", 282, 28);
     hero_unreachable();
-bb18:
+hero_bb18:
 #line 283 "examples/json/json.hero"
-    t101 = h7_f5; t102 = t101.as.ok; hero_array_push_owned(&(*ph0_bytes), &t102); goto bb1; bb19: t99 = h7_f5; t100 = t99.as.err;
-#line 1183 "main.c"
+    t101 = h7_f5; t102 = t101.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t102); goto hero_bb1; hero_bb19: t99 = h7_f5; t100 = t99.hero_as.hero_err;
+#line 1293 "main.c"
     hero_panic_must_at(t100, "json.hero", "json.utf8", 283, 28);
     hero_unreachable();
-bb20:
+hero_bb20:
 #line 285 "examples/json/json.hero"
-    t117 = h8_f6; t118 = t117.as.ok; hero_array_push_owned(&(*ph0_bytes), &t118);
-    t121 = INT64_C(128); t122 = h1_point; t123 = INT64_C(12); if (t123 < 0 || t123 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 286, 41); t124 = (t122 < 0) ? ~(int64_t)((~(uint64_t)t122) >> (uint64_t)t123) : (int64_t)((uint64_t)t122 >> (uint64_t)t123); t125 = INT64_C(63); t126 = t124 & t125; t127 = t121 | t126; if (t127 >= 0LL && t127 <= 255LL) { t128 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t127}; } else { t128 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t186 = h19_own19; h19_own19 = t128; h_0opt_1ec004_release(&t186); t187 = h9_f7; h_0opt_1ec004_retain(&t128); h9_f7 = t128; h_0opt_1ec004_release(&t187); t129 = h9_f7; t130 = t129.tag; t131 = INT64_C(0); t132 = t130 == t131; if (t132) goto bb22; else goto bb23; bb21:
+    t117 = h8_f6; t118 = t117.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t118);
+    t121 = INT64_C(128); t122 = h1_point; t123 = INT64_C(12); if (t123 < 0 || t123 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 286, 41); t124 = (t122 < 0) ? ~(int64_t)((~(uint64_t)t122) >> (uint64_t)t123) : (int64_t)((uint64_t)t122 >> (uint64_t)t123); t125 = INT64_C(63); t126 = t124 & t125; t127 = t121 | t126; if (t127 >= 0LL && t127 <= 255LL) { t128 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t127}; } else { t128 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t186 = h19_own19; h19_own19 = t128; h_0opt_1ec004_release(&t186); t187 = h9_f7; h_0opt_1ec004_retain(&t128); h9_f7 = t128; h_0opt_1ec004_release(&t187); t129 = h9_f7; t130 = t129.hero_tag; t131 = INT64_C(0); t132 = t130 == t131; if (t132) goto hero_bb22; else goto hero_bb23; hero_bb21:
 #line 285
-    t115 = h8_f6; t116 = t115.as.err;
-#line 1192 "main.c"
+    t115 = h8_f6; t116 = t115.hero_as.hero_err;
+#line 1302 "main.c"
     hero_panic_must_at(t116, "json.hero", "json.utf8", 285, 28);
     hero_unreachable();
-bb22:
+hero_bb22:
 #line 286 "examples/json/json.hero"
-    t135 = h9_f7; t136 = t135.as.ok; hero_array_push_owned(&(*ph0_bytes), &t136);
-    t139 = INT64_C(128); t140 = h1_point; t141 = INT64_C(6); if (t141 < 0 || t141 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 287, 41); t142 = (t140 < 0) ? ~(int64_t)((~(uint64_t)t140) >> (uint64_t)t141) : (int64_t)((uint64_t)t140 >> (uint64_t)t141); t143 = INT64_C(63); t144 = t142 & t143; t145 = t139 | t144; if (t145 >= 0LL && t145 <= 255LL) { t146 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t145}; } else { t146 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t188 = h20_own20; h20_own20 = t146; h_0opt_1ec004_release(&t188); t189 = h10_f8; h_0opt_1ec004_retain(&t146); h10_f8 = t146; h_0opt_1ec004_release(&t189); t147 = h10_f8; t148 = t147.tag; t149 = INT64_C(0); t150 = t148 == t149; if (t150) goto bb24; else goto bb25; bb23:
+    t135 = h9_f7; t136 = t135.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t136);
+    t139 = INT64_C(128); t140 = h1_point; t141 = INT64_C(6); if (t141 < 0 || t141 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.utf8", 287, 41); t142 = (t140 < 0) ? ~(int64_t)((~(uint64_t)t140) >> (uint64_t)t141) : (int64_t)((uint64_t)t140 >> (uint64_t)t141); t143 = INT64_C(63); t144 = t142 & t143; t145 = t139 | t144; if (t145 >= 0LL && t145 <= 255LL) { t146 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t145}; } else { t146 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t188 = h20_own20; h20_own20 = t146; h_0opt_1ec004_release(&t188); t189 = h10_f8; h_0opt_1ec004_retain(&t146); h10_f8 = t146; h_0opt_1ec004_release(&t189); t147 = h10_f8; t148 = t147.hero_tag; t149 = INT64_C(0); t150 = t148 == t149; if (t150) goto hero_bb24; else goto hero_bb25; hero_bb23:
 #line 286
-    t133 = h9_f7; t134 = t133.as.err;
-#line 1201 "main.c"
+    t133 = h9_f7; t134 = t133.hero_as.hero_err;
+#line 1311 "main.c"
     hero_panic_must_at(t134, "json.hero", "json.utf8", 286, 28);
     hero_unreachable();
-bb24:
+hero_bb24:
 #line 287 "examples/json/json.hero"
-    t153 = h10_f8; t154 = t153.as.ok; hero_array_push_owned(&(*ph0_bytes), &t154);
-    t157 = INT64_C(128); t158 = h1_point; t159 = INT64_C(63); t160 = t158 & t159; t161 = t157 | t160; if (t161 >= 0LL && t161 <= 255LL) { t162 = (h_0opt_1ec004){.tag = INT64_C(0), .as.ok = (uint8_t)t161}; } else { t162 = (h_0opt_1ec004){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t190 = h21_own21; h21_own21 = t162; h_0opt_1ec004_release(&t190); t191 = h11_f9; h_0opt_1ec004_retain(&t162); h11_f9 = t162; h_0opt_1ec004_release(&t191); t163 = h11_f9; t164 = t163.tag; t165 = INT64_C(0); t166 = t164 == t165; if (t166) goto bb26; else goto bb27; bb25:
+    t153 = h10_f8; t154 = t153.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t154);
+    t157 = INT64_C(128); t158 = h1_point; t159 = INT64_C(63); t160 = t158 & t159; t161 = t157 | t160; if (t161 >= 0LL && t161 <= 255LL) { t162 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t161}; } else { t162 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t190 = h21_own21; h21_own21 = t162; h_0opt_1ec004_release(&t190); t191 = h11_f9; h_0opt_1ec004_retain(&t162); h11_f9 = t162; h_0opt_1ec004_release(&t191); t163 = h11_f9; t164 = t163.hero_tag; t165 = INT64_C(0); t166 = t164 == t165; if (t166) goto hero_bb26; else goto hero_bb27; hero_bb25:
 #line 287
-    t151 = h10_f8; t152 = t151.as.err;
-#line 1210 "main.c"
+    t151 = h10_f8; t152 = t151.hero_as.hero_err;
+#line 1320 "main.c"
     hero_panic_must_at(t152, "json.hero", "json.utf8", 287, 28);
     hero_unreachable();
-bb26:
+hero_bb26:
 #line 288 "examples/json/json.hero"
-    t169 = h11_f9; t170 = t169.as.ok; hero_array_push_owned(&(*ph0_bytes), &t170); goto bb1; bb27: t167 = h11_f9; t168 = t167.as.err;
-#line 1216 "main.c"
+    t169 = h11_f9; t170 = t169.hero_as.hero_ok; hero_array_push_owned(&(*ph0_bytes), &t170); goto hero_bb1; hero_bb27: t167 = h11_f9; t168 = t167.hero_as.hero_err;
+#line 1326 "main.c"
     hero_panic_must_at(t168, "json.hero", "json.utf8", 288, 28);
     hero_unreachable();
 }
 
 #line 293 "examples/json/json.hero"
-h_0opt_db92a83 h_json_number(h_json_Reader *ph0_r) { int64_t h1_start; int64_t h2_whole; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h7_b4, h8_b5, t4, t11, t17, t22, t23, t26, t31, t32, t39, t40, t41, t47, t53, t59, t62, t63, t69, t72, t73, t79, t94; double h9_v; HERO_NODEBUG h_0opt_db92a83 h10_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t14, t44, t56, t82, t97, t99, t100, t101, t102, t103, t105, t106, t107; HERO_NODEBUG HeroStr h14_own14 = {0}, t13, t18, t27, t33, t43, t55, t81, t83, t86, t96, t104; HERO_NODEBUG int64_t t1, t5, t6, t7, t8, t9, t10, t15, t16, t19, t24, t25, t28, t34, t35, t36, t48, t49, t50, t51, t52, t64, t65, t66, t74, t75, t76, t77, t78, t84, t85; HERO_NODEBUG h_json_Reader t2, t12, t42, t45, t54, t57, t60, t67, t70, t80, t95; HERO_NODEBUG uint8_t t3, t20, t21, t29, t30, t37, t38, t46, t58, t61, t68, t71; HERO_NODEBUG const char *t87; HERO_NODEBUG void *t88; HERO_NODEBUG double t89, t90, t91, t92, t93, t98; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_db92a83 h_json_number(h_json_Reader *ph0_r) { int64_t h1_start; int64_t h2_whole; HERO_NODEBUG bool h3_b0, h4_b1, h5_b2, h6_b3, h7_b4, h8_b5, t4, t11, t17, t22, t23, t26, t31, t32, t39, t40, t41, t47, t53, t59, t62, t63, t69, t72, t73, t79, t94; double h9_v; HERO_NODEBUG h_0opt_db92a83 h10_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, t14, t44, t56, t82, t97, t99, t100, t101, t102, t103, t105, t106, t107; HERO_NODEBUG HeroStr h14_own14 = {0}, t13, t18, t27, t33, t43, t55, t81, t83, t86, t96, t104; HERO_NODEBUG int64_t t1, t5, t6, t7, t8, t9, t10, t15, t16, t19, t24, t25, t28, t34, t35, t36, t48, t49, t50, t51, t52, t64, t65, t66, t74, t75, t76, t77, t78, t84, t85; HERO_NODEBUG h_json_Reader t2, t12, t42, t45, t54, t57, t60, t67, t70, t80, t95; HERO_NODEBUG uint8_t t3, t20, t21, t29, t30, t37, t38, t46, t58, t61, t68, t71; HERO_NODEBUG const char *t87; HERO_NODEBUG void *t88; HERO_NODEBUG double t89, t90, t91, t92, t93, t98; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_r).f_at; h1_start = t1;
 #line 296
-    t2 = (*ph0_r); t3 = UINT64_C(45); t4 = h_json_at_byte(t2, t3); if (t4) goto bb2; else goto bb3; bb1:
+    t2 = (*ph0_r); t3 = UINT64_C(45); t4 = h_json_at_byte(t2, t3); if (t4) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 298
     t8 = h_json_digits(&(*ph0_r)); h2_whole = t8;
 #line 300
-    t9 = h2_whole; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h2_whole; t10 = INT64_C(0); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 297
-    t5 = (*ph0_r).f_at; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("json.hero", "json.number", 297, 16); (*ph0_r).f_at = t7; goto bb1; bb3: goto bb1; bb4:
+    t5 = (*ph0_r).f_at; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("json.hero", "json.number", 297, 16); (*ph0_r).f_at = t7; goto hero_bb1; hero_bb3: goto hero_bb1; hero_bb4:
 #line 303
-    t15 = h2_whole; t16 = INT64_C(1); t17 = t15 > t16; h4_b1 = t17; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h2_whole; t16 = INT64_C(1); t17 = t15 > t16; h4_b1 = t17; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 301
-    t12 = (*ph0_r); t13 = HERO_STR_LIT(hero_str_7a3df0d8); t14 = h_json_0refused_1ad16c(t12, t13); t101 = h11_own11; h11_own11 = t14; h_0opt_db92a83_release(&t101); h10_ret0 = t14; goto bb40; bb6: goto bb4; bb7:
+    t12 = (*ph0_r); t13 = HERO_STR_LIT(hero_str_7a3df0d8); t14 = h_json_0refused_1ad16c(t12, t13); t101 = h11_own11; h11_own11 = t14; h_0opt_db92a83_release(&t101); h10_ret0 = t14; goto hero_bb40; hero_bb6: goto hero_bb4; hero_bb7:
 #line 306
-    t45 = (*ph0_r); t46 = UINT64_C(46); t47 = h_json_at_byte(t45, t46); if (t47) goto bb19; else goto bb20; bb8:
+    t45 = (*ph0_r); t46 = UINT64_C(46); t47 = h_json_at_byte(t45, t46); if (t47) goto hero_bb19; else goto hero_bb20; hero_bb8:
 #line 303
-    t18 = (*ph0_r).f_text; t19 = h1_start; t20 = ((void)((t18.ptr == NULL || t19 < 0 || t19 >= t18.len) ? hero_panic_byte_at(t18, t19, "json.hero", "json.number", 303, 21) : (void)0), (int64_t)(unsigned char)t18.ptr[t19]); t21 = UINT64_C(48); t22 = t20 == t21; h4_b1 = t22; goto bb9; bb9: t23 = h4_b1; h3_b0 = t23; if (t23) goto bb11; else goto bb10; bb10: t24 = h2_whole; t25 = INT64_C(1); t26 = t24 > t25; h6_b3 = t26; if (t26) goto bb12; else goto bb13; bb11: t41 = h3_b0; if (t41) goto bb16; else goto bb17; bb12: t27 = (*ph0_r).f_text; t28 = h1_start; t29 = ((void)((t27.ptr == NULL || t28 < 0 || t28 >= t27.len) ? hero_panic_byte_at(t27, t28, "json.hero", "json.number", 303, 58) : (void)0), (int64_t)(unsigned char)t27.ptr[t28]); t30 = UINT64_C(45); t31 = t29 == t30; h6_b3 = t31; goto bb13; bb13: t32 = h6_b3; h5_b2 = t32; if (t32) goto bb14; else goto bb15; bb14: t33 = (*ph0_r).f_text; t34 = h1_start; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("json.hero", "json.number", 303, 89); t37 = ((void)((t33.ptr == NULL || t36 < 0 || t36 >= t33.len) ? hero_panic_byte_at(t33, t36, "json.hero", "json.number", 303, 82) : (void)0), (int64_t)(unsigned char)t33.ptr[t36]); t38 = UINT64_C(48); t39 = t37 == t38; h5_b2 = t39; goto bb15; bb15: t40 = h5_b2; h3_b0 = t40; goto bb11; bb16:
-    t42 = (*ph0_r); t43 = HERO_STR_LIT(hero_str_760eb838); t44 = h_json_0refused_1ad16c(t42, t43); t102 = h12_own12; h12_own12 = t44; h_0opt_db92a83_release(&t102); h10_ret0 = t44; goto bb40; bb17: goto bb7; bb18:
+    t18 = (*ph0_r).f_text; t19 = h1_start; t20 = ((void)((t18.ptr == NULL || t19 < 0 || t19 >= t18.len) ? hero_panic_byte_at(t18, t19, "json.hero", "json.number", 303, 21) : (void)0), (int64_t)(unsigned char)t18.ptr[t19]); t21 = UINT64_C(48); t22 = t20 == t21; h4_b1 = t22; goto hero_bb9; hero_bb9: t23 = h4_b1; h3_b0 = t23; if (t23) goto hero_bb11; else goto hero_bb10; hero_bb10: t24 = h2_whole; t25 = INT64_C(1); t26 = t24 > t25; h6_b3 = t26; if (t26) goto hero_bb12; else goto hero_bb13; hero_bb11: t41 = h3_b0; if (t41) goto hero_bb16; else goto hero_bb17; hero_bb12: t27 = (*ph0_r).f_text; t28 = h1_start; t29 = ((void)((t27.ptr == NULL || t28 < 0 || t28 >= t27.len) ? hero_panic_byte_at(t27, t28, "json.hero", "json.number", 303, 58) : (void)0), (int64_t)(unsigned char)t27.ptr[t28]); t30 = UINT64_C(45); t31 = t29 == t30; h6_b3 = t31; goto hero_bb13; hero_bb13: t32 = h6_b3; h5_b2 = t32; if (t32) goto hero_bb14; else goto hero_bb15; hero_bb14: t33 = (*ph0_r).f_text; t34 = h1_start; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("json.hero", "json.number", 303, 89); t37 = ((void)((t33.ptr == NULL || t36 < 0 || t36 >= t33.len) ? hero_panic_byte_at(t33, t36, "json.hero", "json.number", 303, 82) : (void)0), (int64_t)(unsigned char)t33.ptr[t36]); t38 = UINT64_C(48); t39 = t37 == t38; h5_b2 = t39; goto hero_bb15; hero_bb15: t40 = h5_b2; h3_b0 = t40; goto hero_bb11; hero_bb16:
+    t42 = (*ph0_r); t43 = HERO_STR_LIT(hero_str_760eb838); t44 = h_json_0refused_1ad16c(t42, t43); t102 = h12_own12; h12_own12 = t44; h_0opt_db92a83_release(&t102); h10_ret0 = t44; goto hero_bb40; hero_bb17: goto hero_bb7; hero_bb18:
 #line 312
-    t57 = (*ph0_r); t58 = UINT64_C(101); t59 = h_json_at_byte(t57, t58); h7_b4 = t59; if (t59) goto bb26; else goto bb25; bb19:
+    t57 = (*ph0_r); t58 = UINT64_C(101); t59 = h_json_at_byte(t57, t58); h7_b4 = t59; if (t59) goto hero_bb26; else goto hero_bb25; hero_bb19:
 #line 307
     t48 = (*ph0_r).f_at; t49 = INT64_C(1); if (__builtin_add_overflow(t48, t49, &t50)) hero_panic_overflow_at("json.hero", "json.number", 307, 16); (*ph0_r).f_at = t50;
 #line 309
-    t51 = h_json_digits(&(*ph0_r)); t52 = INT64_C(0); t53 = t51 == t52; if (t53) goto bb22; else goto bb23; bb20: goto bb18; bb21: goto bb18; bb22:
-    t54 = (*ph0_r); t55 = HERO_STR_LIT(hero_str_40bc17f); t56 = h_json_0refused_1ad16c(t54, t55); t103 = h13_own13; h13_own13 = t56; h_0opt_db92a83_release(&t103); h10_ret0 = t56; goto bb40; bb23: goto bb21; bb24:
+    t51 = h_json_digits(&(*ph0_r)); t52 = INT64_C(0); t53 = t51 == t52; if (t53) goto hero_bb22; else goto hero_bb23; hero_bb20: goto hero_bb18; hero_bb21: goto hero_bb18; hero_bb22:
+    t54 = (*ph0_r); t55 = HERO_STR_LIT(hero_str_40bc17f); t56 = h_json_0refused_1ad16c(t54, t55); t103 = h13_own13; h13_own13 = t56; h_0opt_db92a83_release(&t103); h10_ret0 = t56; goto hero_bb40; hero_bb23: goto hero_bb21; hero_bb24:
 #line 320
-    t83 = (*ph0_r).f_text; t84 = h1_start; t85 = (*ph0_r).f_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 22}; t86 = hero_str_slice_at(t83, t84, t85, &hero_here); } t104 = h14_own14; h14_own14 = t86; hero_str_decref(t104); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 22}; t87 = hero_str_lend_at(t86, &hero_here); } t88 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 9}; t89 = strtod(hero_cstr_nonnull_at(t87, &hero_here), t88); } h9_v = t89;
+    t83 = (*ph0_r).f_text; t84 = h1_start; t85 = (*ph0_r).f_at; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 22}; t86 = hero_str_slice_at(t83, t84, t85, &hero_here); } t104 = h14_own14; h14_own14 = t86; hero_str_decref(t104); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 22}; t87 = hero_str_lend_at(t86, &hero_here); } t88 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.number", 320, 9}; t89 = strtod(hero_cstr_nonnull_at(t87, &hero_here), t88); } h9_v = t89;
 #line 324
-    t90 = h9_v; t91 = h9_v; t92 = t90 - t91; t93 = 0x0p+0; t94 = t92 != t93; if (t94) goto bb38; else goto bb39; bb25:
+    t90 = h9_v; t91 = h9_v; t92 = t90 - t91; t93 = 0x0p+0; t94 = t92 != t93; if (t94) goto hero_bb38; else goto hero_bb39; hero_bb25:
 #line 312
-    t60 = (*ph0_r); t61 = UINT64_C(69); t62 = h_json_at_byte(t60, t61); h7_b4 = t62; goto bb26; bb26: t63 = h7_b4; if (t63) goto bb27; else goto bb28; bb27:
+    t60 = (*ph0_r); t61 = UINT64_C(69); t62 = h_json_at_byte(t60, t61); h7_b4 = t62; goto hero_bb26; hero_bb26: t63 = h7_b4; if (t63) goto hero_bb27; else goto hero_bb28; hero_bb27:
     t64 = (*ph0_r).f_at; t65 = INT64_C(1); if (__builtin_add_overflow(t64, t65, &t66)) hero_panic_overflow_at("json.hero", "json.number", 313, 16); (*ph0_r).f_at = t66;
 #line 315
-    t67 = (*ph0_r); t68 = UINT64_C(43); t69 = h_json_at_byte(t67, t68); h8_b5 = t69; if (t69) goto bb31; else goto bb30; bb28: goto bb24; bb29:
+    t67 = (*ph0_r); t68 = UINT64_C(43); t69 = h_json_at_byte(t67, t68); h8_b5 = t69; if (t69) goto hero_bb31; else goto hero_bb30; hero_bb28: goto hero_bb24; hero_bb29:
 #line 318
-    t77 = h_json_digits(&(*ph0_r)); t78 = INT64_C(0); t79 = t77 == t78; if (t79) goto bb35; else goto bb36; bb30:
+    t77 = h_json_digits(&(*ph0_r)); t78 = INT64_C(0); t79 = t77 == t78; if (t79) goto hero_bb35; else goto hero_bb36; hero_bb30:
 #line 315
-    t70 = (*ph0_r); t71 = UINT64_C(45); t72 = h_json_at_byte(t70, t71); h8_b5 = t72; goto bb31; bb31: t73 = h8_b5; if (t73) goto bb32; else goto bb33; bb32:
-    t74 = (*ph0_r).f_at; t75 = INT64_C(1); if (__builtin_add_overflow(t74, t75, &t76)) hero_panic_overflow_at("json.hero", "json.number", 316, 20); (*ph0_r).f_at = t76; goto bb29; bb33: goto bb29; bb34: goto bb24; bb35:
+    t70 = (*ph0_r); t71 = UINT64_C(45); t72 = h_json_at_byte(t70, t71); h8_b5 = t72; goto hero_bb31; hero_bb31: t73 = h8_b5; if (t73) goto hero_bb32; else goto hero_bb33; hero_bb32:
+    t74 = (*ph0_r).f_at; t75 = INT64_C(1); if (__builtin_add_overflow(t74, t75, &t76)) hero_panic_overflow_at("json.hero", "json.number", 316, 20); (*ph0_r).f_at = t76; goto hero_bb29; hero_bb33: goto hero_bb29; hero_bb34: goto hero_bb24; hero_bb35:
 #line 319
-    t80 = (*ph0_r); t81 = HERO_STR_LIT(hero_str_36fd1311); t82 = h_json_0refused_1ad16c(t80, t81); t105 = h15_own15; h15_own15 = t82; h_0opt_db92a83_release(&t105); h10_ret0 = t82; goto bb40; bb36: goto bb34; bb37:
+    t80 = (*ph0_r); t81 = HERO_STR_LIT(hero_str_36fd1311); t82 = h_json_0refused_1ad16c(t80, t81); t105 = h15_own15; h15_own15 = t82; h_0opt_db92a83_release(&t105); h10_ret0 = t82; goto hero_bb40; hero_bb36: goto hero_bb34; hero_bb37:
 #line 326
-    t98 = h9_v; t99 = (h_0opt_db92a83){.tag = INT64_C(0), .as.ok = t98}; t106 = h16_own16; h16_own16 = t99; h_0opt_db92a83_release(&t106); h10_ret0 = t99; goto bb40; bb38:
+    t98 = h9_v; t99 = (h_0opt_db92a83){.hero_tag = INT64_C(0), .hero_as.hero_ok = t98}; t106 = h16_own16; h16_own16 = t99; h_0opt_db92a83_release(&t106); h10_ret0 = t99; goto hero_bb40; hero_bb38:
 #line 325
-    t95 = (*ph0_r); t96 = HERO_STR_LIT(hero_str_2df05290); t97 = h_json_0refused_1ad16c(t95, t96); t107 = h17_own17; h17_own17 = t97; h_0opt_db92a83_release(&t107); h10_ret0 = t97; goto bb40; bb39: goto bb37; bb40:
-#line 1268 "main.c"
+    t95 = (*ph0_r); t96 = HERO_STR_LIT(hero_str_2df05290); t97 = h_json_0refused_1ad16c(t95, t96); t107 = h17_own17; h17_own17 = t97; h_0opt_db92a83_release(&t107); h10_ret0 = t97; goto hero_bb40; hero_bb39: goto hero_bb37; hero_bb40:
+#line 1378 "main.c"
     t100 = h10_ret0;
     h_0opt_db92a83_retain(&t100);
     h_0opt_db92a83_release(hero_slot_escape(&h11_own11));
@@ -1278,36 +1388,36 @@ h_0opt_db92a83 h_json_number(h_json_Reader *ph0_r) { int64_t h1_start; int64_t h
 }
 
 #line 329 "examples/json/json.hero"
-int64_t h_json_digits(h_json_Reader *ph0_r) { int64_t h1_start; HERO_NODEBUG bool h2_b0, h3_b1, t5, t10, t11, t16, t17; HERO_NODEBUG int64_t t1, t2, t4, t7, t13, t18, t19, t20, t21, t22, t23; HERO_NODEBUG HeroStr t3, t6, t12; HERO_NODEBUG uint8_t t8, t9, t14, t15; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_r).f_at; h1_start = t1; goto bb1; bb1:
+int64_t h_json_digits(h_json_Reader *ph0_r) { int64_t h1_start; HERO_NODEBUG bool h2_b0, h3_b1, t5, t10, t11, t16, t17; HERO_NODEBUG int64_t t1, t2, t4, t7, t13, t18, t19, t20, t21, t22, t23; HERO_NODEBUG HeroStr t3, t6, t12; HERO_NODEBUG uint8_t t8, t9, t14, t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (*ph0_r).f_at; h1_start = t1; goto hero_bb1; hero_bb1:
 #line 332
-    t2 = (*ph0_r).f_at; t3 = (*ph0_r).f_text; t4 = hero_str_len(t3); t5 = t2 < t4; h3_b1 = t5; if (t5) goto bb4; else goto bb5; bb2:
-    t18 = (*ph0_r).f_at; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("json.hero", "json.digits", 333, 16); (*ph0_r).f_at = t20; goto bb1; bb3:
+    t2 = (*ph0_r).f_at; t3 = (*ph0_r).f_text; t4 = hero_str_len(t3); t5 = t2 < t4; h3_b1 = t5; if (t5) goto hero_bb4; else goto hero_bb5; hero_bb2:
+    t18 = (*ph0_r).f_at; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("json.hero", "json.digits", 333, 16); (*ph0_r).f_at = t20; goto hero_bb1; hero_bb3:
 #line 335
-    t21 = (*ph0_r).f_at; t22 = h1_start; if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow_at("json.hero", "json.digits", 335, 12); return t23; bb4:
+    t21 = (*ph0_r).f_at; t22 = h1_start; if (__builtin_sub_overflow(t21, t22, &t23)) hero_panic_overflow_at("json.hero", "json.digits", 335, 12); return t23; hero_bb4:
 #line 332
-    t6 = (*ph0_r).f_text; t7 = (*ph0_r).f_at; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "json.hero", "json.digits", 332, 34) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(48); t10 = t8 >= t9; h3_b1 = t10; goto bb5; bb5: t11 = h3_b1; h2_b0 = t11; if (t11) goto bb6; else goto bb7; bb6: t12 = (*ph0_r).f_text; t13 = (*ph0_r).f_at; t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "json.hero", "json.digits", 332, 57) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = UINT64_C(57); t16 = t14 <= t15; h2_b0 = t16; goto bb7; bb7: t17 = h2_b0; if (t17) goto bb2; else goto bb3;
-#line 1291 "main.c"
+    t6 = (*ph0_r).f_text; t7 = (*ph0_r).f_at; t8 = ((void)((t6.ptr == NULL || t7 < 0 || t7 >= t6.len) ? hero_panic_byte_at(t6, t7, "json.hero", "json.digits", 332, 34) : (void)0), (int64_t)(unsigned char)t6.ptr[t7]); t9 = UINT64_C(48); t10 = t8 >= t9; h3_b1 = t10; goto hero_bb5; hero_bb5: t11 = h3_b1; h2_b0 = t11; if (t11) goto hero_bb6; else goto hero_bb7; hero_bb6: t12 = (*ph0_r).f_text; t13 = (*ph0_r).f_at; t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? hero_panic_byte_at(t12, t13, "json.hero", "json.digits", 332, 57) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]); t15 = UINT64_C(57); t16 = t14 <= t15; h2_b0 = t16; goto hero_bb7; hero_bb7: t17 = h2_b0; if (t17) goto hero_bb2; else goto hero_bb3;
+#line 1401 "main.c"
 }
 
 #line 338 "examples/json/json.hero"
-bool h_json_word(h_json_Reader *ph0_r, HeroStr h1_said) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t12, *t15, *t18, *t40, *t41; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t16, t19, t20, t22, t23, t24, t27, t31, t32, t33, t34, t36, t37; int64_t h4_i; HERO_NODEBUG bool h5_ret0, t7, t8, t17, t29, t30, t38, t39; HERO_NODEBUG HeroStr t2, t5, t10, t21, t26, t35; HERO_NODEBUG uint8_t t25, t28; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (*ph0_r).f_at; t2 = h1_said; t3 = hero_str_len(t2); if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("json.hero", "json.word", 339, 8); t5 = (*ph0_r).f_text; t6 = hero_str_len(t5); t7 = t4 > t6; if (t7) goto bb2; else goto bb3; bb1:
+bool h_json_word(h_json_Reader *ph0_r, HeroStr h1_said) { HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t12, *t15, *t18, *t40, *t41; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t16, t19, t20, t22, t23, t24, t27, t31, t32, t33, t34, t36, t37; int64_t h4_i; HERO_NODEBUG bool h5_ret0, t7, t8, t17, t29, t30, t38, t39; HERO_NODEBUG HeroStr t2, t5, t10, t21, t26, t35; HERO_NODEBUG uint8_t t25, t28; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (*ph0_r).f_at; t2 = h1_said; t3 = hero_str_len(t2); if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("json.hero", "json.word", 339, 8); t5 = (*ph0_r).f_text; t6 = hero_str_len(t5); t7 = t4 > t6; if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 342
-    t9 = INT64_C(0); t10 = h1_said; t11 = hero_str_len(t10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.word", 342, 14}; t12 = h_library_range(t9, t11, &hero_here); } t40 = h6_own6; h6_own6 = t12; hero_array_decref(t40); t41 = h2_xs0; hero_array_incref(t12); h2_xs0 = t12; hero_array_decref(t41); t13 = INT64_C(0); h3_i0 = t13; goto bb4; bb2:
+    t9 = INT64_C(0); t10 = h1_said; t11 = hero_str_len(t10); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.word", 342, 14}; t12 = h_library_range(t9, t11, &hero_here); } t40 = h6_own6; h6_own6 = t12; hero_array_decref(t40); t41 = h2_xs0; hero_array_incref(t12); h2_xs0 = t12; hero_array_decref(t41); t13 = INT64_C(0); h3_i0 = t13; goto hero_bb4; hero_bb2:
 #line 340
-    t8 = false; h5_ret0 = t8; goto bb11; bb3: goto bb1; bb4:
+    t8 = false; h5_ret0 = t8; goto hero_bb11; hero_bb3: goto hero_bb1; hero_bb4:
 #line 342
-    t14 = h3_i0; t15 = h2_xs0; t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); t17 = t14 < t16; if (t17) goto bb5; else goto bb7; bb5: t18 = h2_xs0; t19 = h3_i0; t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? hero_panic_index_at(t18, t19, "json.hero", "json.word", 342, 9) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]); h4_i = t20;
-    t21 = (*ph0_r).f_text; t22 = (*ph0_r).f_at; t23 = h4_i; if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("json.hero", "json.word", 343, 19); t25 = ((void)((t21.ptr == NULL || t24 < 0 || t24 >= t21.len) ? hero_panic_byte_at(t21, t24, "json.hero", "json.word", 343, 12) : (void)0), (int64_t)(unsigned char)t21.ptr[t24]); t26 = h1_said; t27 = h4_i; t28 = ((void)((t26.ptr == NULL || t27 < 0 || t27 >= t26.len) ? hero_panic_byte_at(t26, t27, "json.hero", "json.word", 343, 32) : (void)0), (int64_t)(unsigned char)t26.ptr[t27]); t29 = t25 != t28; if (t29) goto bb9; else goto bb10; bb6:
+    t14 = h3_i0; t15 = h2_xs0; t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); t17 = t14 < t16; if (t17) goto hero_bb5; else goto hero_bb7; hero_bb5: t18 = h2_xs0; t19 = h3_i0; t20 = ((void)((t18 == NULL || t19 < 0 || t19 >= t18->len) ? hero_panic_index_at(t18, t19, "json.hero", "json.word", 342, 9) : (void)0), (void)(t18->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t18 + 1))[t19]); h4_i = t20;
+    t21 = (*ph0_r).f_text; t22 = (*ph0_r).f_at; t23 = h4_i; if (__builtin_add_overflow(t22, t23, &t24)) hero_panic_overflow_at("json.hero", "json.word", 343, 19); t25 = ((void)((t21.ptr == NULL || t24 < 0 || t24 >= t21.len) ? hero_panic_byte_at(t21, t24, "json.hero", "json.word", 343, 12) : (void)0), (int64_t)(unsigned char)t21.ptr[t24]); t26 = h1_said; t27 = h4_i; t28 = ((void)((t26.ptr == NULL || t27 < 0 || t27 >= t26.len) ? hero_panic_byte_at(t26, t27, "json.hero", "json.word", 343, 32) : (void)0), (int64_t)(unsigned char)t26.ptr[t27]); t29 = t25 != t28; if (t29) goto hero_bb9; else goto hero_bb10; hero_bb6:
 #line 342
-    t31 = h3_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("json.hero", "json.word", 342, 9); h3_i0 = t33; goto bb4; bb7:
+    t31 = h3_i0; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("json.hero", "json.word", 342, 9); h3_i0 = t33; goto hero_bb4; hero_bb7:
 #line 346
     t34 = (*ph0_r).f_at; t35 = h1_said; t36 = hero_str_len(t35); if (__builtin_add_overflow(t34, t36, &t37)) hero_panic_overflow_at("json.hero", "json.word", 346, 12); (*ph0_r).f_at = t37;
-    t38 = true; h5_ret0 = t38; goto bb11; bb8: goto bb6; bb9:
+    t38 = true; h5_ret0 = t38; goto hero_bb11; hero_bb8: goto hero_bb6; hero_bb9:
 #line 344
-    t30 = false; h5_ret0 = t30; goto bb11; bb10: goto bb8; bb11:
-#line 1311 "main.c"
+    t30 = false; h5_ret0 = t30; goto hero_bb11; hero_bb10: goto hero_bb8; hero_bb11:
+#line 1421 "main.c"
     t39 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h6_own6);
@@ -1315,24 +1425,24 @@ bool h_json_word(h_json_Reader *ph0_r, HeroStr h1_said) { HERO_NODEBUG HeroArray
 }
 
 #line 350 "examples/json/json.hero"
-bool h_json_at_byte(h_json_Reader h0_r, uint8_t h1_byte) { HERO_NODEBUG bool h2_b0, t4, t9, t10; HERO_NODEBUG int64_t t1, t3, t6; HERO_NODEBUG HeroStr t2, t5; HERO_NODEBUG uint8_t t7, t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_r.f_at; t2 = h0_r.f_text; t3 = hero_str_len(t2); t4 = t1 < t3; h2_b0 = t4; if (t4) goto bb1; else goto bb2; bb1: t5 = h0_r.f_text; t6 = h0_r.f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "json.hero", "json.at_byte", 351, 35) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = h1_byte; t9 = t7 == t8; h2_b0 = t9; goto bb2; bb2: t10 = h2_b0; return t10;
-#line 1321 "main.c"
+bool h_json_at_byte(h_json_Reader h0_r, uint8_t h1_byte) { HERO_NODEBUG bool h2_b0, t4, t9, t10; HERO_NODEBUG int64_t t1, t3, t6; HERO_NODEBUG HeroStr t2, t5; HERO_NODEBUG uint8_t t7, t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_r.f_at; t2 = h0_r.f_text; t3 = hero_str_len(t2); t4 = t1 < t3; h2_b0 = t4; if (t4) goto hero_bb1; else goto hero_bb2; hero_bb1: t5 = h0_r.f_text; t6 = h0_r.f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "json.hero", "json.at_byte", 351, 35) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = h1_byte; t9 = t7 == t8; h2_b0 = t9; goto hero_bb2; hero_bb2: t10 = h2_b0; return t10;
+#line 1431 "main.c"
 }
 
 #line 354 "examples/json/json.hero"
-void h_json_skip_space(h_json_Reader *ph0_r) { HERO_NODEBUG bool h1_b0, h2_b1, h3_b2, h4_b3, t4, t9, t14, t15, t20, t21, t26, t27, t28; HERO_NODEBUG int64_t t1, t3, t6, t11, t17, t23, t29, t30, t31; HERO_NODEBUG HeroStr t2, t5, t10, t16, t22; HERO_NODEBUG uint8_t t7, t8, t12, t13, t18, t19, t24, t25; HERO_ENTRY_STOP; goto bb0; bb0: goto bb1; bb1:
-    t1 = (*ph0_r).f_at; t2 = (*ph0_r).f_text; t3 = hero_str_len(t2); t4 = t1 < t3; h1_b0 = t4; if (t4) goto bb4; else goto bb5; bb2:
-    t29 = (*ph0_r).f_at; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("json.hero", "json.skip_space", 356, 16); (*ph0_r).f_at = t31; goto bb1; bb3: return; bb4:
+void h_json_skip_space(h_json_Reader *ph0_r) { HERO_NODEBUG bool h1_b0, h2_b1, h3_b2, h4_b3, t4, t9, t14, t15, t20, t21, t26, t27, t28; HERO_NODEBUG int64_t t1, t3, t6, t11, t17, t23, t29, t30, t31; HERO_NODEBUG HeroStr t2, t5, t10, t16, t22; HERO_NODEBUG uint8_t t7, t8, t12, t13, t18, t19, t24, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0: goto hero_bb1; hero_bb1:
+    t1 = (*ph0_r).f_at; t2 = (*ph0_r).f_text; t3 = hero_str_len(t2); t4 = t1 < t3; h1_b0 = t4; if (t4) goto hero_bb4; else goto hero_bb5; hero_bb2:
+    t29 = (*ph0_r).f_at; t30 = INT64_C(1); if (__builtin_add_overflow(t29, t30, &t31)) hero_panic_overflow_at("json.hero", "json.skip_space", 356, 16); (*ph0_r).f_at = t31; goto hero_bb1; hero_bb3: return; hero_bb4:
 #line 355
-    t5 = (*ph0_r).f_text; t6 = (*ph0_r).f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "json.hero", "json.skip_space", 355, 35) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = UINT64_C(32); t9 = t7 == t8; h4_b3 = t9; if (t9) goto bb7; else goto bb6; bb5: t28 = h1_b0; if (t28) goto bb2; else goto bb3; bb6: t10 = (*ph0_r).f_text; t11 = (*ph0_r).f_at; t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? hero_panic_byte_at(t10, t11, "json.hero", "json.skip_space", 355, 58) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]); t13 = UINT64_C(9); t14 = t12 == t13; h4_b3 = t14; goto bb7; bb7: t15 = h4_b3; h3_b2 = t15; if (t15) goto bb9; else goto bb8; bb8: t16 = (*ph0_r).f_text; t17 = (*ph0_r).f_at; t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? hero_panic_byte_at(t16, t17, "json.hero", "json.skip_space", 355, 82) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]); t19 = UINT64_C(10); t20 = t18 == t19; h3_b2 = t20; goto bb9; bb9: t21 = h3_b2; h2_b1 = t21; if (t21) goto bb11; else goto bb10; bb10: t22 = (*ph0_r).f_text; t23 = (*ph0_r).f_at; t24 = ((void)((t22.ptr == NULL || t23 < 0 || t23 >= t22.len) ? hero_panic_byte_at(t22, t23, "json.hero", "json.skip_space", 355, 106) : (void)0), (int64_t)(unsigned char)t22.ptr[t23]); t25 = UINT64_C(13); t26 = t24 == t25; h2_b1 = t26; goto bb11; bb11: t27 = h2_b1; h1_b0 = t27; goto bb5;
-#line 1330 "main.c"
+    t5 = (*ph0_r).f_text; t6 = (*ph0_r).f_at; t7 = ((void)((t5.ptr == NULL || t6 < 0 || t6 >= t5.len) ? hero_panic_byte_at(t5, t6, "json.hero", "json.skip_space", 355, 35) : (void)0), (int64_t)(unsigned char)t5.ptr[t6]); t8 = UINT64_C(32); t9 = t7 == t8; h4_b3 = t9; if (t9) goto hero_bb7; else goto hero_bb6; hero_bb5: t28 = h1_b0; if (t28) goto hero_bb2; else goto hero_bb3; hero_bb6: t10 = (*ph0_r).f_text; t11 = (*ph0_r).f_at; t12 = ((void)((t10.ptr == NULL || t11 < 0 || t11 >= t10.len) ? hero_panic_byte_at(t10, t11, "json.hero", "json.skip_space", 355, 58) : (void)0), (int64_t)(unsigned char)t10.ptr[t11]); t13 = UINT64_C(9); t14 = t12 == t13; h4_b3 = t14; goto hero_bb7; hero_bb7: t15 = h4_b3; h3_b2 = t15; if (t15) goto hero_bb9; else goto hero_bb8; hero_bb8: t16 = (*ph0_r).f_text; t17 = (*ph0_r).f_at; t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? hero_panic_byte_at(t16, t17, "json.hero", "json.skip_space", 355, 82) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]); t19 = UINT64_C(10); t20 = t18 == t19; h3_b2 = t20; goto hero_bb9; hero_bb9: t21 = h3_b2; h2_b1 = t21; if (t21) goto hero_bb11; else goto hero_bb10; hero_bb10: t22 = (*ph0_r).f_text; t23 = (*ph0_r).f_at; t24 = ((void)((t22.ptr == NULL || t23 < 0 || t23 >= t22.len) ? hero_panic_byte_at(t22, t23, "json.hero", "json.skip_space", 355, 106) : (void)0), (int64_t)(unsigned char)t22.ptr[t23]); t25 = UINT64_C(13); t26 = t24 == t25; h2_b1 = t26; goto hero_bb11; hero_bb11: t27 = h2_b1; h1_b0 = t27; goto hero_bb5;
+#line 1440 "main.c"
 }
 
 #line 365 "examples/json/json.hero"
-h_0opt_2b821190 h_json_field(h_json_Value h0_v, HeroStr h1_name) { HERO_NODEBUG h_json_Value h2_s0 = {0}, t1, t2, t4, t12, t13, t31, t41; HERO_NODEBUG h_0opt_2b821190 h3_r0 = {0}, h5_s1 = {0}, h6_r1 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h17_own17 = {0}, t8, t9, t11, t14, t21, t22, t29, t30, t33, t34, t38, t39, t40, t42, t43, t47, t48; h_json_0Value_c_object h4_o = {0}; h_json_Value h7_got = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t7, t15, t16, t17, t18, t19, t20, t23, t24, t25, t26, t27, t28, t35, t36, t37, t44, t45, t46; HERO_NODEBUG int64_t t3, t10; HERO_NODEBUG h_json_0Value_c_object t5, t32; HERO_NODEBUG HeroMapHeader *t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t31 = h2_s0; h_json_0Value_retain(&t1); h2_s0 = t1; h_json_0Value_release(&t31); t2 = h2_s0; t3 = t2.tag; switch (t3) { case 0: goto bb3; case 1: goto bb3; case 2: goto bb3; case 3: goto bb3; case 4: goto bb3; case 5: goto bb2; default: hero_unreachable(); } bb1: t30 = h3_r0;
-#line 1336 "main.c"
+h_0opt_2b821190 h_json_field(h_json_Value h0_v, HeroStr h1_name) { HERO_NODEBUG h_json_Value h2_s0 = {0}, t1, t2, t4, t12, t13, t31, t41; HERO_NODEBUG h_0opt_2b821190 h3_r0 = {0}, h5_s1 = {0}, h6_r1 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, h17_own17 = {0}, t8, t9, t11, t14, t21, t22, t29, t30, t33, t34, t38, t39, t40, t42, t43, t47, t48; h_json_0Value_c_object h4_o = {0}; h_json_Value h7_got = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, t7, t15, t16, t17, t18, t19, t20, t23, t24, t25, t26, t27, t28, t35, t36, t37, t44, t45, t46; HERO_NODEBUG int64_t t3, t10; HERO_NODEBUG h_json_0Value_c_object t5, t32; HERO_NODEBUG HeroMapHeader *t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; t31 = h2_s0; h_json_0Value_retain(&t1); h2_s0 = t1; h_json_0Value_release(&t31); t2 = h2_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb3; case 1: goto hero_bb3; case 2: goto hero_bb3; case 3: goto hero_bb3; case 4: goto hero_bb3; case 5: goto hero_bb2; default: hero_unreachable(); } hero_bb1: t30 = h3_r0;
+#line 1446 "main.c"
     h_0opt_2b821190_retain(&t30);
     h_json_0Value_release(hero_slot_escape(&h2_s0));
     h_0opt_2b821190_release(hero_slot_escape(&h3_r0));
@@ -1351,36 +1461,36 @@ h_0opt_2b821190 h_json_field(h_json_Value h0_v, HeroStr h1_name) { HERO_NODEBUG 
     hero_str_release_at(&h16_own16);
     h_0opt_2b821190_release(hero_slot_escape(&h17_own17));
     return t30;
-bb2:
+hero_bb2:
 #line 367 "examples/json/json.hero"
-    t4 = h2_s0; t5 = t4.as.c_object; t32 = h4_o; h_json_0Value_c_object_retain(&t5); h4_o = t5; h_json_0Value_c_object_release(&t32);
-    t6 = h4_o.f_fields; t7 = h1_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.field", 368, 19}; HERO_NODEBUG const void *found = hero_map_find_at(t6, &t7, &hero_here); if (found == NULL) { t8 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t8 = (h_0opt_2b821190){.tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t8.as.ok, found); } } t33 = h8_own8; h8_own8 = t8; h_0opt_2b821190_release(&t33); t34 = h5_s1; h_0opt_2b821190_retain(&t8); h5_s1 = t8; h_0opt_2b821190_release(&t34); t9 = h5_s1; t10 = t9.tag; switch (t10) { case 0: goto bb5; case 1: goto bb6; default: hero_unreachable(); } bb3:
+    t4 = h2_s0; t5 = t4.hero_as.hero_c_object; t32 = h4_o; h_json_0Value_c_object_retain(&t5); h4_o = t5; h_json_0Value_c_object_release(&t32);
+    t6 = h4_o.f_fields; t7 = h1_name; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.field", 368, 19}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t6, &t7, &hero_here); if (hero_found == NULL) { t8 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t8 = (h_0opt_2b821190){.hero_tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t8.hero_as.hero_ok, hero_found); } } t33 = h8_own8; h8_own8 = t8; h_0opt_2b821190_release(&t33); t34 = h5_s1; h_0opt_2b821190_retain(&t8); h5_s1 = t8; h_0opt_2b821190_release(&t34); t9 = h5_s1; t10 = t9.hero_tag; switch (t10) { case 0: goto hero_bb5; case 1: goto hero_bb6; default: hero_unreachable(); } hero_bb3:
 #line 372
     t23 = h_json_NO_FIELD(); t35 = h9_own9; h9_own9 = t23; hero_str_decref(t35);
     t24 = HERO_STR_LIT(hero_str_101c72f7); t25 = h1_name; t26 = hero_str_concat(t24, t25); t36 = h10_own10; h10_own10 = t26; hero_str_decref(t36); t27 = HERO_STR_LIT(hero_str_60); t28 = hero_str_concat(t26, t27); t37 = h11_own11; h11_own11 = t28; hero_str_decref(t37);
 #line 371
-    hero_str_incref(t23); hero_str_incref(t28); t29 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = {.code = t23, .msg = t28}}; t38 = h12_own12; h12_own12 = t29; h_0opt_2b821190_release(&t38);
+    hero_str_incref(t23); hero_str_incref(t28); t29 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t23, .msg = t28}}; t38 = h12_own12; h12_own12 = t29; h_0opt_2b821190_release(&t38);
 #line 366
-    t39 = h3_r0; h_0opt_2b821190_retain(&t29); h3_r0 = t29; h_0opt_2b821190_release(&t39); goto bb1; bb4:
+    t39 = h3_r0; h_0opt_2b821190_retain(&t29); h3_r0 = t29; h_0opt_2b821190_release(&t39); goto hero_bb1; hero_bb4:
 #line 368
     t22 = h6_r1;
 #line 366
-    t40 = h3_r0; h_0opt_2b821190_retain(&t22); h3_r0 = t22; h_0opt_2b821190_release(&t40); goto bb1; bb5:
+    t40 = h3_r0; h_0opt_2b821190_retain(&t22); h3_r0 = t22; h_0opt_2b821190_release(&t40); goto hero_bb1; hero_bb5:
 #line 369
-    t11 = h5_s1; t12 = t11.as.ok; t41 = h7_got; h_json_0Value_retain(&t12); h7_got = t12; h_json_0Value_release(&t41); t13 = h7_got; h_json_0Value_retain(&t13); t14 = (h_0opt_2b821190){.tag = INT64_C(0), .as.ok = t13}; t42 = h13_own13; h13_own13 = t14; h_0opt_2b821190_release(&t42);
+    t11 = h5_s1; t12 = t11.hero_as.hero_ok; t41 = h7_got; h_json_0Value_retain(&t12); h7_got = t12; h_json_0Value_release(&t41); t13 = h7_got; h_json_0Value_retain(&t13); t14 = (h_0opt_2b821190){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t42 = h13_own13; h13_own13 = t14; h_0opt_2b821190_release(&t42);
 #line 368
-    t43 = h6_r1; h_0opt_2b821190_retain(&t14); h6_r1 = t14; h_0opt_2b821190_release(&t43); goto bb4; bb6:
+    t43 = h6_r1; h_0opt_2b821190_retain(&t14); h6_r1 = t14; h_0opt_2b821190_release(&t43); goto hero_bb4; hero_bb6:
 #line 370
-    t15 = h_json_NO_FIELD(); t44 = h14_own14; h14_own14 = t15; hero_str_decref(t44); t16 = HERO_STR_LIT(hero_str_512ff0f1); t17 = h1_name; t18 = hero_str_concat(t16, t17); t45 = h15_own15; h15_own15 = t18; hero_str_decref(t45); t19 = HERO_STR_LIT(hero_str_60); t20 = hero_str_concat(t18, t19); t46 = h16_own16; h16_own16 = t20; hero_str_decref(t46); hero_str_incref(t15); hero_str_incref(t20); t21 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t20}}; t47 = h17_own17; h17_own17 = t21; h_0opt_2b821190_release(&t47);
+    t15 = h_json_NO_FIELD(); t44 = h14_own14; h14_own14 = t15; hero_str_decref(t44); t16 = HERO_STR_LIT(hero_str_512ff0f1); t17 = h1_name; t18 = hero_str_concat(t16, t17); t45 = h15_own15; h15_own15 = t18; hero_str_decref(t45); t19 = HERO_STR_LIT(hero_str_60); t20 = hero_str_concat(t18, t19); t46 = h16_own16; h16_own16 = t20; hero_str_decref(t46); hero_str_incref(t15); hero_str_incref(t20); t21 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t20}}; t47 = h17_own17; h17_own17 = t21; h_0opt_2b821190_release(&t47);
 #line 368
-    t48 = h6_r1; h_0opt_2b821190_retain(&t21); h6_r1 = t21; h_0opt_2b821190_release(&t48); goto bb4;
-#line 1378 "main.c"
+    t48 = h6_r1; h_0opt_2b821190_retain(&t21); h6_r1 = t21; h_0opt_2b821190_release(&t48); goto hero_bb4;
+#line 1488 "main.c"
 }
 
 #line 380 "examples/json/json.hero"
-h_0opt_f87774a h_json_render(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t6, t11, t15, t20, t24, t29; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t5, t10, t14, t19, t23, t27, t28, t30, t31, t33, t34, t35, t36, t39, t40, t42, t43, t45, t46; h_json_0Value_c_boolean h3_b; h_json_0Value_c_number h4_n; h_json_0Value_c_string h5_s = {0}; h_json_0Value_c_array h6_a = {0}; h_json_0Value_c_object h7_o = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, t4, t9, t17, t18, t32, t38; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_json_0Value_c_boolean t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_json_0Value_c_number t12; HERO_NODEBUG double t13; HERO_NODEBUG h_json_0Value_c_string t16, t37; HERO_NODEBUG h_json_0Value_c_array t21, t41; HERO_NODEBUG HeroArrayHeader *t22; HERO_NODEBUG h_json_0Value_c_object t25, t44; HERO_NODEBUG HeroMapHeader *t26; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_v; t29 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t29); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; case 3: goto bb5; case 4: goto bb6; case 5: goto bb7; default: hero_unreachable(); } bb1: t28 = h2_r0;
-#line 1384 "main.c"
+h_0opt_f87774a h_json_render(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s0 = {0}, t1, t2, t6, t11, t15, t20, t24, t29; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}, h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t5, t10, t14, t19, t23, t27, t28, t30, t31, t33, t34, t35, t36, t39, t40, t42, t43, t45, t46; h_json_0Value_c_boolean h3_b; h_json_0Value_c_number h4_n; h_json_0Value_c_string h5_s = {0}; h_json_0Value_c_array h6_a = {0}; h_json_0Value_c_object h7_o = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, t4, t9, t17, t18, t32, t38; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_json_0Value_c_boolean t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_json_0Value_c_number t12; HERO_NODEBUG double t13; HERO_NODEBUG h_json_0Value_c_string t16, t37; HERO_NODEBUG h_json_0Value_c_array t21, t41; HERO_NODEBUG HeroArrayHeader *t22; HERO_NODEBUG h_json_0Value_c_object t25, t44; HERO_NODEBUG HeroMapHeader *t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_v; t29 = h1_s0; h_json_0Value_retain(&t1); h1_s0 = t1; h_json_0Value_release(&t29); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb3; case 2: goto hero_bb4; case 3: goto hero_bb5; case 4: goto hero_bb6; case 5: goto hero_bb7; default: hero_unreachable(); } hero_bb1: t28 = h2_r0;
+#line 1494 "main.c"
     h_0opt_f87774a_retain(&t28);
     h_json_0Value_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -1396,47 +1506,47 @@ h_0opt_f87774a h_json_render(h_json_Value h0_v) { HERO_NODEBUG h_json_Value h1_s
     h_0opt_f87774a_release(hero_slot_escape(&h14_own14));
     h_0opt_f87774a_release(hero_slot_escape(&h15_own15));
     return t28;
-bb2:
+hero_bb2:
 #line 382 "examples/json/json.hero"
-    t4 = HERO_STR_LIT(hero_str_edc3367); hero_str_incref(t4); t5 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t4}; t30 = h8_own8; h8_own8 = t5; h_0opt_f87774a_release(&t30);
+    t4 = HERO_STR_LIT(hero_str_edc3367); hero_str_incref(t4); t5 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t4}; t30 = h8_own8; h8_own8 = t5; h_0opt_f87774a_release(&t30);
 #line 381
-    t31 = h2_r0; h_0opt_f87774a_retain(&t5); h2_r0 = t5; h_0opt_f87774a_release(&t31); goto bb1; bb3:
+    t31 = h2_r0; h_0opt_f87774a_retain(&t5); h2_r0 = t5; h_0opt_f87774a_release(&t31); goto hero_bb1; hero_bb3:
 #line 383
-    t6 = h1_s0; t7 = t6.as.c_boolean; h3_b = t7; t8 = h3_b.f_value; t9 = hero_bool_to_str(t8); t32 = h9_own9; h9_own9 = t9; hero_str_decref(t32); hero_str_incref(t9); t10 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t9}; t33 = h10_own10; h10_own10 = t10; h_0opt_f87774a_release(&t33);
+    t6 = h1_s0; t7 = t6.hero_as.hero_c_boolean; h3_b = t7; t8 = h3_b.f_value; t9 = hero_bool_to_str(t8); t32 = h9_own9; h9_own9 = t9; hero_str_decref(t32); hero_str_incref(t9); t10 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t9}; t33 = h10_own10; h10_own10 = t10; h_0opt_f87774a_release(&t33);
 #line 381
-    t34 = h2_r0; h_0opt_f87774a_retain(&t10); h2_r0 = t10; h_0opt_f87774a_release(&t34); goto bb1; bb4:
+    t34 = h2_r0; h_0opt_f87774a_retain(&t10); h2_r0 = t10; h_0opt_f87774a_release(&t34); goto hero_bb1; hero_bb4:
 #line 384
-    t11 = h1_s0; t12 = t11.as.c_number; h4_n = t12; t13 = h4_n.f_value; t14 = h_json_number_text(t13); t35 = h11_own11; h11_own11 = t14; h_0opt_f87774a_release(&t35);
+    t11 = h1_s0; t12 = t11.hero_as.hero_c_number; h4_n = t12; t13 = h4_n.f_value; t14 = h_json_number_text(t13); t35 = h11_own11; h11_own11 = t14; h_0opt_f87774a_release(&t35);
 #line 381
-    t36 = h2_r0; h_0opt_f87774a_retain(&t14); h2_r0 = t14; h_0opt_f87774a_release(&t36); goto bb1; bb5:
+    t36 = h2_r0; h_0opt_f87774a_retain(&t14); h2_r0 = t14; h_0opt_f87774a_release(&t36); goto hero_bb1; hero_bb5:
 #line 385
-    t15 = h1_s0; t16 = t15.as.c_string; t37 = h5_s; h_json_0Value_c_string_retain(&t16); h5_s = t16; h_json_0Value_c_string_release(&t37); t17 = h5_s.f_value; t18 = h_json_quoted(t17); t38 = h12_own12; h12_own12 = t18; hero_str_decref(t38); hero_str_incref(t18); t19 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t18}; t39 = h13_own13; h13_own13 = t19; h_0opt_f87774a_release(&t39);
+    t15 = h1_s0; t16 = t15.hero_as.hero_c_string; t37 = h5_s; h_json_0Value_c_string_retain(&t16); h5_s = t16; h_json_0Value_c_string_release(&t37); t17 = h5_s.f_value; t18 = h_json_quoted(t17); t38 = h12_own12; h12_own12 = t18; hero_str_decref(t38); hero_str_incref(t18); t19 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t18}; t39 = h13_own13; h13_own13 = t19; h_0opt_f87774a_release(&t39);
 #line 381
-    t40 = h2_r0; h_0opt_f87774a_retain(&t19); h2_r0 = t19; h_0opt_f87774a_release(&t40); goto bb1; bb6:
+    t40 = h2_r0; h_0opt_f87774a_retain(&t19); h2_r0 = t19; h_0opt_f87774a_release(&t40); goto hero_bb1; hero_bb6:
 #line 386
-    t20 = h1_s0; t21 = t20.as.c_array; t41 = h6_a; h_json_0Value_c_array_retain(&t21); h6_a = t21; h_json_0Value_c_array_release(&t41); t22 = h6_a.f_items; t23 = h_json_items_text(t22); t42 = h14_own14; h14_own14 = t23; h_0opt_f87774a_release(&t42);
+    t20 = h1_s0; t21 = t20.hero_as.hero_c_array; t41 = h6_a; h_json_0Value_c_array_retain(&t21); h6_a = t21; h_json_0Value_c_array_release(&t41); t22 = h6_a.f_items; t23 = h_json_items_text(t22); t42 = h14_own14; h14_own14 = t23; h_0opt_f87774a_release(&t42);
 #line 381
-    t43 = h2_r0; h_0opt_f87774a_retain(&t23); h2_r0 = t23; h_0opt_f87774a_release(&t43); goto bb1; bb7:
+    t43 = h2_r0; h_0opt_f87774a_retain(&t23); h2_r0 = t23; h_0opt_f87774a_release(&t43); goto hero_bb1; hero_bb7:
 #line 387
-    t24 = h1_s0; t25 = t24.as.c_object; t44 = h7_o; h_json_0Value_c_object_retain(&t25); h7_o = t25; h_json_0Value_c_object_release(&t44); t26 = h7_o.f_fields; t27 = h_json_members_text(t26); t45 = h15_own15; h15_own15 = t27; h_0opt_f87774a_release(&t45);
+    t24 = h1_s0; t25 = t24.hero_as.hero_c_object; t44 = h7_o; h_json_0Value_c_object_retain(&t25); h7_o = t25; h_json_0Value_c_object_release(&t44); t26 = h7_o.f_fields; t27 = h_json_members_text(t26); t45 = h15_own15; h15_own15 = t27; h_0opt_f87774a_release(&t45);
 #line 381
-    t46 = h2_r0; h_0opt_f87774a_retain(&t27); h2_r0 = t27; h_0opt_f87774a_release(&t46); goto bb1;
-#line 1425 "main.c"
+    t46 = h2_r0; h_0opt_f87774a_retain(&t27); h2_r0 = t27; h_0opt_f87774a_release(&t46); goto hero_bb1;
+#line 1535 "main.c"
 }
 
 #line 389 "examples/json/json.hero"
-h_0opt_f87774a h_json_items_text(HeroArrayHeader * h0_items) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t1, *t2, *t5, *t8, *t28, *t36, *t37, *t38; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t24, t25, t26; h_json_Value h4_item = {0}; HERO_NODEBUG h_0opt_f87774a h5_f0 = {0}, h6_ret0 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, t13, t14, t18, t20, t21, t34, t35, t40, t41, t45, t46; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t27, t29, t30, t31, t32, t33, t42, t43, t44; HERO_NODEBUG bool t7, t17; HERO_NODEBUG h_json_Value t10, t12, t39; HERO_NODEBUG HeroFailure t19; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_f87774a h_json_items_text(HeroArrayHeader * h0_items) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h7_own7 = {0}, *t1, *t2, *t5, *t8, *t28, *t36, *t37, *t38; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t24, t25, t26; h_json_Value h4_item = {0}; HERO_NODEBUG h_0opt_f87774a h5_f0 = {0}, h6_ret0 = {0}, h8_own8 = {0}, h12_own12 = {0}, h13_own13 = {0}, t13, t14, t18, t20, t21, t34, t35, t40, t41, t45, t46; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t27, t29, t30, t31, t32, t33, t42, t43, t44; HERO_NODEBUG bool t7, t17; HERO_NODEBUG h_json_Value t10, t12, t39; HERO_NODEBUG HeroFailure t19; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t36 = h7_own7; h7_own7 = t1; hero_array_decref(t36); t37 = h1_parts; hero_array_incref(t1); h1_parts = t1; hero_array_decref(t37);
 #line 392
-    t2 = h0_items; t38 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t38); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "json.hero", "json.items_text", 392, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t39 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t39);
-    t12 = h4_item; t13 = h_json_render(t12); t40 = h8_own8; h8_own8 = t13; h_0opt_f87774a_release(&t40); t41 = h5_f0; h_0opt_f87774a_retain(&t13); h5_f0 = t13; h_0opt_f87774a_release(&t41); t14 = h5_f0; t15 = t14.tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto bb5; else goto bb6; bb3:
+    t2 = h0_items; t38 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t38); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "json.hero", "json.items_text", 392, 9) : (void)0), (void)(t8->elem->size != sizeof(h_json_Value) ? hero_unreachable() : (void)0), ((h_json_Value const *)(const void *)(t8 + 1))[t9]); t39 = h4_item; h_json_0Value_retain(&t10); h4_item = t10; h_json_0Value_release(&t39);
+    t12 = h4_item; t13 = h_json_render(t12); t40 = h8_own8; h8_own8 = t13; h_0opt_f87774a_release(&t40); t41 = h5_f0; h_0opt_f87774a_retain(&t13); h5_f0 = t13; h_0opt_f87774a_release(&t41); t14 = h5_f0; t15 = t14.hero_tag; t16 = INT64_C(0); t17 = t15 == t16; if (t17) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 392
-    t24 = h3_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("json.hero", "json.items_text", 392, 9); h3_i0 = t26; goto bb1; bb4:
+    t24 = h3_i0; t25 = INT64_C(1); if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow_at("json.hero", "json.items_text", 392, 9); h3_i0 = t26; goto hero_bb1; hero_bb4:
 #line 395
-    t27 = HERO_STR_LIT(hero_str_5b); t28 = h1_parts; t29 = HERO_STR_LIT(hero_str_2c); t30 = hero_str_join(t28, t29); t42 = h9_own9; h9_own9 = t30; hero_str_decref(t42); t31 = hero_str_concat(t27, t30); t43 = h10_own10; h10_own10 = t31; hero_str_decref(t43); t32 = HERO_STR_LIT(hero_str_5d); t33 = hero_str_concat(t31, t32); t44 = h11_own11; h11_own11 = t33; hero_str_decref(t44); hero_str_incref(t33); t34 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t33}; t45 = h12_own12; h12_own12 = t34; h_0opt_f87774a_release(&t45); h6_ret0 = t34; goto bb7; bb5:
+    t27 = HERO_STR_LIT(hero_str_5b); t28 = h1_parts; t29 = HERO_STR_LIT(hero_str_2c); t30 = hero_str_join(t28, t29); t42 = h9_own9; h9_own9 = t30; hero_str_decref(t42); t31 = hero_str_concat(t27, t30); t43 = h10_own10; h10_own10 = t31; hero_str_decref(t43); t32 = HERO_STR_LIT(hero_str_5d); t33 = hero_str_concat(t31, t32); t44 = h11_own11; h11_own11 = t33; hero_str_decref(t44); hero_str_incref(t33); t34 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t33}; t45 = h12_own12; h12_own12 = t34; h_0opt_f87774a_release(&t45); h6_ret0 = t34; goto hero_bb7; hero_bb5:
 #line 393
-    t21 = h5_f0; t22 = t21.as.ok; hero_array_push_owned(&h1_parts, &t22); goto bb3; bb6: t18 = h5_f0; t19 = t18.as.err; hero_failure_retain(&t19); t20 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t19}; t46 = h13_own13; h13_own13 = t20; h_0opt_f87774a_release(&t46); h6_ret0 = t20; goto bb7; bb7:
-#line 1440 "main.c"
+    t21 = h5_f0; t22 = t21.hero_as.hero_ok; hero_array_push_owned(&h1_parts, &t22); goto hero_bb3; hero_bb6: t18 = h5_f0; t19 = t18.hero_as.hero_err; hero_failure_retain(&t19); t20 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t19}; t46 = h13_own13; h13_own13 = t20; h_0opt_f87774a_release(&t46); h6_ret0 = t20; goto hero_bb7; hero_bb7:
+#line 1550 "main.c"
     t35 = h6_ret0;
     h_0opt_f87774a_retain(&t35);
     hero_array_release_at(&h1_parts);
@@ -1454,24 +1564,24 @@ h_0opt_f87774a h_json_items_text(HeroArrayHeader * h0_items) { HeroArrayHeader *
 }
 
 #line 397 "examples/json/json.hero"
-h_0opt_f87774a h_json_members_text(HeroMapHeader * h0_fields) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t1, *t3, *t4, *t7, *t10, *t45, *t53, *t54, *t55, *t56, *t57; HERO_NODEBUG int64_t h3_i0, t5, t6, t8, t11, t22, t23, t31, t32, t41, t42, t43; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f0 = {0}, h13_own13 = {0}, t20, t21, t25, t27, t61, t62; HERO_NODEBUG h_0opt_f87774a h6_f1 = {0}, h7_ret0 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, t29, t30, t34, t36, t37, t51, t52, t66, t67, t68, t70; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, t12, t14, t15, t16, t17, t19, t38, t39, t44, t46, t47, t48, t49, t50, t58, t59, t60, t63, t64, t65, t69; HERO_NODEBUG HeroMapHeader *t2, *t18; HERO_NODEBUG bool t9, t24, t33; HERO_NODEBUG HeroFailure t26, t35; HERO_NODEBUG h_json_Value t28; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_f87774a h_json_members_text(HeroMapHeader * h0_fields) { HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t1, *t3, *t4, *t7, *t10, *t45, *t53, *t54, *t55, *t56, *t57; HERO_NODEBUG int64_t h3_i0, t5, t6, t8, t11, t22, t23, t31, t32, t41, t42, t43; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_2b821190 h5_f0 = {0}, h13_own13 = {0}, t20, t21, t25, t27, t61, t62; HERO_NODEBUG h_0opt_f87774a h6_f1 = {0}, h7_ret0 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, t29, t30, t34, t36, t37, t51, t52, t66, t67, t68, t70; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, t12, t14, t15, t16, t17, t19, t38, t39, t44, t46, t47, t48, t49, t50, t58, t59, t60, t63, t64, t65, t69; HERO_NODEBUG HeroMapHeader *t2, *t18; HERO_NODEBUG bool t9, t24, t33; HERO_NODEBUG HeroFailure t26, t35; HERO_NODEBUG h_json_Value t28; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t53 = h8_own8; h8_own8 = t1; hero_array_decref(t53); t54 = h1_parts; hero_array_incref(t1); h1_parts = t1; hero_array_decref(t54);
 #line 400
-    t2 = h0_fields; t3 = hero_map_keys(t2); t55 = h9_own9; h9_own9 = t3; hero_array_decref(t55); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.members_text", 400, 17}; t4 = hero_array_sort_at(t3, &hero_here); } t56 = h10_own10; h10_own10 = t4; hero_array_decref(t56); t57 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t57); t5 = INT64_C(0); h3_i0 = t5; goto bb1; bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto bb2; else goto bb4; bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "json.hero", "json.members_text", 400, 9) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t58 = h4_name; hero_str_incref(t12); h4_name = t12; hero_str_decref(t58);
-    t14 = h4_name; t15 = h_json_quoted(t14); t59 = h11_own11; h11_own11 = t15; hero_str_decref(t59); t16 = HERO_STR_LIT(hero_str_3a); t17 = hero_str_concat(t15, t16); t60 = h12_own12; h12_own12 = t17; hero_str_decref(t60); t18 = h0_fields; t19 = h4_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.members_text", 401, 56}; HERO_NODEBUG const void *found = hero_map_find_at(t18, &t19, &hero_here); if (found == NULL) { t20 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t20 = (h_0opt_2b821190){.tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t20.as.ok, found); } } t61 = h13_own13; h13_own13 = t20; h_0opt_2b821190_release(&t61); t62 = h5_f0; h_0opt_2b821190_retain(&t20); h5_f0 = t20; h_0opt_2b821190_release(&t62); t21 = h5_f0; t22 = t21.tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb5; else goto bb6; bb3:
+    t2 = h0_fields; t3 = hero_map_keys(t2); t55 = h9_own9; h9_own9 = t3; hero_array_decref(t55); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.members_text", 400, 17}; t4 = hero_array_sort_at(t3, &hero_here); } t56 = h10_own10; h10_own10 = t4; hero_array_decref(t56); t57 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t57); t5 = INT64_C(0); h3_i0 = t5; goto hero_bb1; hero_bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "json.hero", "json.members_text", 400, 9) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]); t58 = h4_name; hero_str_incref(t12); h4_name = t12; hero_str_decref(t58);
+    t14 = h4_name; t15 = h_json_quoted(t14); t59 = h11_own11; h11_own11 = t15; hero_str_decref(t59); t16 = HERO_STR_LIT(hero_str_3a); t17 = hero_str_concat(t15, t16); t60 = h12_own12; h12_own12 = t17; hero_str_decref(t60); t18 = h0_fields; t19 = h4_name; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.members_text", 401, 56}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t18, &t19, &hero_here); if (hero_found == NULL) { t20 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t20 = (h_0opt_2b821190){.hero_tag = INT64_C(0)}; (&h_json_0Value_desc)->copy(&t20.hero_as.hero_ok, hero_found); } } t61 = h13_own13; h13_own13 = t20; h_0opt_2b821190_release(&t61); t62 = h5_f0; h_0opt_2b821190_retain(&t20); h5_f0 = t20; h_0opt_2b821190_release(&t62); t21 = h5_f0; t22 = t21.hero_tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 400
-    t41 = h3_i0; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("json.hero", "json.members_text", 400, 9); h3_i0 = t43; goto bb1; bb4:
+    t41 = h3_i0; t42 = INT64_C(1); if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow_at("json.hero", "json.members_text", 400, 9); h3_i0 = t43; goto hero_bb1; hero_bb4:
 #line 403
-    t44 = HERO_STR_LIT(hero_str_7b); t45 = h1_parts; t46 = HERO_STR_LIT(hero_str_2c); t47 = hero_str_join(t45, t46); t63 = h14_own14; h14_own14 = t47; hero_str_decref(t63); t48 = hero_str_concat(t44, t47); t64 = h15_own15; h15_own15 = t48; hero_str_decref(t64); t49 = HERO_STR_LIT(hero_str_7d); t50 = hero_str_concat(t48, t49); t65 = h16_own16; h16_own16 = t50; hero_str_decref(t65); hero_str_incref(t50); t51 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t50}; t66 = h17_own17; h17_own17 = t51; h_0opt_f87774a_release(&t66); h7_ret0 = t51; goto bb9; bb5:
+    t44 = HERO_STR_LIT(hero_str_7b); t45 = h1_parts; t46 = HERO_STR_LIT(hero_str_2c); t47 = hero_str_join(t45, t46); t63 = h14_own14; h14_own14 = t47; hero_str_decref(t63); t48 = hero_str_concat(t44, t47); t64 = h15_own15; h15_own15 = t48; hero_str_decref(t64); t49 = HERO_STR_LIT(hero_str_7d); t50 = hero_str_concat(t48, t49); t65 = h16_own16; h16_own16 = t50; hero_str_decref(t65); hero_str_incref(t50); t51 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t50}; t66 = h17_own17; h17_own17 = t51; h_0opt_f87774a_release(&t66); h7_ret0 = t51; goto hero_bb9; hero_bb5:
 #line 401
-    t27 = h5_f0; t28 = t27.as.ok; t29 = h_json_render(t28); t67 = h18_own18; h18_own18 = t29; h_0opt_f87774a_release(&t67); t68 = h6_f1; h_0opt_f87774a_retain(&t29); h6_f1 = t29; h_0opt_f87774a_release(&t68); t30 = h6_f1; t31 = t30.tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto bb7; else goto bb8; bb6: t25 = h5_f0; t26 = t25.as.err;
-#line 1469 "main.c"
+    t27 = h5_f0; t28 = t27.hero_as.hero_ok; t29 = h_json_render(t28); t67 = h18_own18; h18_own18 = t29; h_0opt_f87774a_release(&t67); t68 = h6_f1; h_0opt_f87774a_retain(&t29); h6_f1 = t29; h_0opt_f87774a_release(&t68); t30 = h6_f1; t31 = t30.hero_tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto hero_bb7; else goto hero_bb8; hero_bb6: t25 = h5_f0; t26 = t25.hero_as.hero_err;
+#line 1579 "main.c"
     hero_panic_must_at(t26, "json.hero", "json.members_text", 401, 56);
     hero_unreachable();
-bb7:
+hero_bb7:
 #line 401 "examples/json/json.hero"
-    t37 = h6_f1; t38 = t37.as.ok; t39 = hero_str_concat(t17, t38); t69 = h19_own19; h19_own19 = t39; hero_str_decref(t69); hero_array_push_owned(&h1_parts, &t39); goto bb3; bb8: t34 = h6_f1; t35 = t34.as.err; hero_failure_retain(&t35); t36 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t35}; t70 = h20_own20; h20_own20 = t36; h_0opt_f87774a_release(&t70); h7_ret0 = t36; goto bb9; bb9:
-#line 1475 "main.c"
+    t37 = h6_f1; t38 = t37.hero_as.hero_ok; t39 = hero_str_concat(t17, t38); t69 = h19_own19; h19_own19 = t39; hero_str_decref(t69); hero_array_push_owned(&h1_parts, &t39); goto hero_bb3; hero_bb8: t34 = h6_f1; t35 = t34.hero_as.hero_err; hero_failure_retain(&t35); t36 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t35}; t70 = h20_own20; h20_own20 = t36; h_0opt_f87774a_release(&t70); h7_ret0 = t36; goto hero_bb9; hero_bb9:
+#line 1585 "main.c"
     t52 = h7_ret0;
     h_0opt_f87774a_retain(&t52);
     hero_array_release_at(&h1_parts);
@@ -1496,31 +1606,31 @@ bb7:
 }
 
 #line 407 "examples/json/json.hero"
-h_0opt_f87774a h_json_number_text(double h0_x) { HERO_NODEBUG bool h1_b0, h2_b1, t3, t8, t9, t19, t22, t23, t29, t37; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h12_own12 = {0}, t25, t26, t30, t32, t51, t52; int64_t h4_whole; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h9_own9 = {0}, h11_own11 = {0}, h14_own14 = {0}, t15, t40, t43, t44, t48, t50, t54; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t10, t11, t13, t14, t39, t42, t45, t46, t47, t49, t53; HERO_NODEBUG double t1, t2, t4, t5, t6, t7, t12, t16, t17, t18, t20, t21, t24, t35, t36, t41; HERO_NODEBUG int64_t t27, t28, t33, t34, t38; HERO_NODEBUG HeroFailure t31; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_x; t2 = h0_x; t3 = t1 != t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+h_0opt_f87774a h_json_number_text(double h0_x) { HERO_NODEBUG bool h1_b0, h2_b1, t3, t8, t9, t19, t22, t23, t29, t37; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h12_own12 = {0}, t25, t26, t30, t32, t51, t52; int64_t h4_whole; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h9_own9 = {0}, h11_own11 = {0}, h14_own14 = {0}, t15, t40, t43, t44, t48, t50, t54; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t10, t11, t13, t14, t39, t42, t45, t46, t47, t49, t53; HERO_NODEBUG double t1, t2, t4, t5, t6, t7, t12, t16, t17, t18, t20, t21, t24, t35, t36, t41; HERO_NODEBUG int64_t t27, t28, t33, t34, t38; HERO_NODEBUG HeroFailure t31; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_x; t2 = h0_x; t3 = t1 != t2; h1_b0 = t3; if (t3) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 411
-    t16 = h0_x; t17 = h_json_EXACT(); t18 = -t17; if (t16 != t16 || t18 != t18) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "json.hero", "json.number_text", 411, 8); t19 = t16 > t18; h2_b1 = t19; if (t19) goto bb7; else goto bb8; bb2:
+    t16 = h0_x; t17 = h_json_EXACT(); t18 = -t17; if (t16 != t16 || t18 != t18) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "json.hero", "json.number_text", 411, 8); t19 = t16 > t18; h2_b1 = t19; if (t19) goto hero_bb7; else goto hero_bb8; hero_bb2:
 #line 408
-    t4 = h0_x; t5 = h0_x; t6 = t4 - t5; t7 = 0x0p+0; t8 = t6 != t7; h1_b0 = t8; goto bb3; bb3: t9 = h1_b0; if (t9) goto bb4; else goto bb5; bb4:
-    t10 = h_json_NOT_JSON(); t45 = h6_own6; h6_own6 = t10; hero_str_decref(t45); t11 = HERO_STR_LIT(hero_str_506fd8c5); t12 = h0_x; t13 = hero_f64_to_str(t12); t46 = h7_own7; h7_own7 = t13; hero_str_decref(t46); t14 = hero_str_concat(t11, t13); t47 = h8_own8; h8_own8 = t14; hero_str_decref(t47); hero_str_incref(t10); hero_str_incref(t14); t15 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t14}}; t48 = h9_own9; h9_own9 = t15; h_0opt_f87774a_release(&t48); h5_ret0 = t15; goto bb16; bb5: goto bb1; bb6:
+    t4 = h0_x; t5 = h0_x; t6 = t4 - t5; t7 = 0x0p+0; t8 = t6 != t7; h1_b0 = t8; goto hero_bb3; hero_bb3: t9 = h1_b0; if (t9) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t10 = h_json_NOT_JSON(); t45 = h6_own6; h6_own6 = t10; hero_str_decref(t45); t11 = HERO_STR_LIT(hero_str_506fd8c5); t12 = h0_x; t13 = hero_f64_to_str(t12); t46 = h7_own7; h7_own7 = t13; hero_str_decref(t46); t14 = hero_str_concat(t11, t13); t47 = h8_own8; h8_own8 = t14; hero_str_decref(t47); hero_str_incref(t10); hero_str_incref(t14); t15 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t10, .msg = t14}}; t48 = h9_own9; h9_own9 = t15; h_0opt_f87774a_release(&t48); h5_ret0 = t15; goto hero_bb16; hero_bb5: goto hero_bb1; hero_bb6:
 #line 416
-    t41 = h0_x; t42 = hero_f64_to_str(t41); t49 = h10_own10; h10_own10 = t42; hero_str_decref(t49); hero_str_incref(t42); t43 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t42}; t50 = h11_own11; h11_own11 = t43; h_0opt_f87774a_release(&t50); h5_ret0 = t43; goto bb16; bb7:
+    t41 = h0_x; t42 = hero_f64_to_str(t41); t49 = h10_own10; h10_own10 = t42; hero_str_decref(t49); hero_str_incref(t42); t43 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t42}; t50 = h11_own11; h11_own11 = t43; h_0opt_f87774a_release(&t50); h5_ret0 = t43; goto hero_bb16; hero_bb7:
 #line 411
-    t20 = h0_x; t21 = h_json_EXACT(); if (t20 != t20 || t21 != t21) hero_panic_at("a nan in `<`: it is neither less nor greater, so both arms would be false", "json.hero", "json.number_text", 411, 22); t22 = t20 < t21; h2_b1 = t22; goto bb8; bb8: t23 = h2_b1; if (t23) goto bb9; else goto bb10; bb9:
-    t24 = h0_x; if (hero_f64_fits_int(t24)) { t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = hero_f64_to_int(t24)}; } else { t25 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t51 = h12_own12; h12_own12 = t25; h_0opt_e201354_release(&t51); t52 = h3_f0; h_0opt_e201354_retain(&t25); h3_f0 = t25; h_0opt_e201354_release(&t52); t26 = h3_f0; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb11; else goto bb12; bb10: goto bb6; bb11: t32 = h3_f0; t33 = t32.as.ok; h4_whole = t33;
+    t20 = h0_x; t21 = h_json_EXACT(); if (t20 != t20 || t21 != t21) hero_panic_at("a nan in `<`: it is neither less nor greater, so both arms would be false", "json.hero", "json.number_text", 411, 22); t22 = t20 < t21; h2_b1 = t22; goto hero_bb8; hero_bb8: t23 = h2_b1; if (t23) goto hero_bb9; else goto hero_bb10; hero_bb9:
+    t24 = h0_x; if (hero_f64_fits_int(t24)) { t25 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_f64_to_int(t24)}; } else { t25 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t51 = h12_own12; h12_own12 = t25; h_0opt_e201354_release(&t51); t52 = h3_f0; h_0opt_e201354_retain(&t25); h3_f0 = t25; h_0opt_e201354_release(&t52); t26 = h3_f0; t27 = t26.hero_tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto hero_bb11; else goto hero_bb12; hero_bb10: goto hero_bb6; hero_bb11: t32 = h3_f0; t33 = t32.hero_as.hero_ok; h4_whole = t33;
 #line 414
-    t34 = h4_whole; t35 = hero_int_to_f64(t34); t36 = h0_x; t37 = t35 == t36; if (t37) goto bb14; else goto bb15; bb12:
+    t34 = h4_whole; t35 = hero_int_to_f64(t34); t36 = h0_x; t37 = t35 == t36; if (t37) goto hero_bb14; else goto hero_bb15; hero_bb12:
 #line 412
-    t30 = h3_f0; t31 = t30.as.err;
-#line 1516 "main.c"
+    t30 = h3_f0; t31 = t30.hero_as.hero_err;
+#line 1626 "main.c"
     hero_panic_must_at(t31, "json.hero", "json.number_text", 412, 17);
     hero_unreachable();
-bb13:
-    goto bb6;
-bb14:
+hero_bb13:
+    goto hero_bb6;
+hero_bb14:
 #line 415 "examples/json/json.hero"
-    t38 = h4_whole; t39 = hero_int_to_str(t38); t53 = h13_own13; h13_own13 = t39; hero_str_decref(t53); hero_str_incref(t39); t40 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t39}; t54 = h14_own14; h14_own14 = t40; h_0opt_f87774a_release(&t54); h5_ret0 = t40; goto bb16; bb15: goto bb13; bb16:
-#line 1524 "main.c"
+    t38 = h4_whole; t39 = hero_int_to_str(t38); t53 = h13_own13; h13_own13 = t39; hero_str_decref(t53); hero_str_incref(t39); t40 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t39}; t54 = h14_own14; h14_own14 = t40; h_0opt_f87774a_release(&t54); h5_ret0 = t40; goto hero_bb16; hero_bb15: goto hero_bb13; hero_bb16:
+#line 1634 "main.c"
     t44 = h5_ret0;
     h_0opt_f87774a_retain(&t44);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1537,21 +1647,21 @@ bb14:
 }
 
 #line 419 "examples/json/json.hero"
-HeroStr h_json_quoted(HeroStr h0_s) { HeroArrayHeader * h1_parts = {0}; int64_t h2_start; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t2, *t7, *t10, *t13, *t56, *t59, *t60, *t61, *t62; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t8, t9, t11, t14, t15, t17, t32, t33, t40, t41, t42, t43, t44, t45, t48, t50; int64_t h5_at; uint8_t h6_c; HERO_NODEBUG bool h7_b0, h8_b1, t12, t21, t24, t25, t28, t29; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, t1, t5, t16, t31, t34, t38, t47, t49, t51, t54, t57, t58, t63, t64, t65, t66; HERO_NODEBUG uint8_t t18, t19, t20, t22, t23, t26, t27, t37; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_json_quoted(HeroStr h0_s) { HeroArrayHeader * h1_parts = {0}; int64_t h2_start; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *t2, *t7, *t10, *t13, *t56, *t59, *t60, *t61, *t62; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t8, t9, t11, t14, t15, t17, t32, t33, t40, t41, t42, t43, t44, t45, t48, t50; int64_t h5_at; uint8_t h6_c; HERO_NODEBUG bool h7_b0, h8_b1, t12, t21, t24, t25, t28, t29; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, t1, t5, t16, t31, t34, t38, t47, t49, t51, t54, t57, t58, t63, t64, t65, t66; HERO_NODEBUG uint8_t t18, t19, t20, t22, t23, t26, t27, t37; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_22); t2 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t2, &t1); t59 = h9_own9; h9_own9 = t2; hero_array_decref(t59); t60 = h1_parts; hero_array_incref(t2); h1_parts = t2; hero_array_decref(t60);
     t3 = INT64_C(0); h2_start = t3;
 #line 423
-    t4 = INT64_C(0); t5 = h0_s; t6 = hero_str_len(t5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 423, 15}; t7 = h_library_range(t4, t6, &hero_here); } t61 = h10_own10; h10_own10 = t7; hero_array_decref(t61); t62 = h3_xs0; hero_array_incref(t7); h3_xs0 = t7; hero_array_decref(t62); t8 = INT64_C(0); h4_i0 = t8; goto bb1; bb1: t9 = h4_i0; t10 = h3_xs0; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto bb2; else goto bb4; bb2: t13 = h3_xs0; t14 = h4_i0; t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "json.hero", "json.quoted", 423, 9) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]); h5_at = t15;
+    t4 = INT64_C(0); t5 = h0_s; t6 = hero_str_len(t5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 423, 15}; t7 = h_library_range(t4, t6, &hero_here); } t61 = h10_own10; h10_own10 = t7; hero_array_decref(t61); t62 = h3_xs0; hero_array_incref(t7); h3_xs0 = t7; hero_array_decref(t62); t8 = INT64_C(0); h4_i0 = t8; goto hero_bb1; hero_bb1: t9 = h4_i0; t10 = h3_xs0; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = t9 < t11; if (t12) goto hero_bb2; else goto hero_bb4; hero_bb2: t13 = h3_xs0; t14 = h4_i0; t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? hero_panic_index_at(t13, t14, "json.hero", "json.quoted", 423, 9) : (void)0), (void)(t13->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t13 + 1))[t14]); h5_at = t15;
     t16 = h0_s; t17 = h5_at; t18 = ((void)((t16.ptr == NULL || t17 < 0 || t17 >= t16.len) ? hero_panic_byte_at(t16, t17, "json.hero", "json.quoted", 424, 13) : (void)0), (int64_t)(unsigned char)t16.ptr[t17]); h6_c = t18;
 #line 426
-    t19 = h6_c; t20 = UINT64_C(34); t21 = t19 == t20; h8_b1 = t21; if (t21) goto bb7; else goto bb6; bb3:
+    t19 = h6_c; t20 = UINT64_C(34); t21 = t19 == t20; h8_b1 = t21; if (t21) goto hero_bb7; else goto hero_bb6; hero_bb3:
 #line 423
-    t43 = h4_i0; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("json.hero", "json.quoted", 423, 9); h4_i0 = t45; goto bb1; bb4:
+    t43 = h4_i0; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("json.hero", "json.quoted", 423, 9); h4_i0 = t45; goto hero_bb1; hero_bb4:
 #line 431
-    t47 = h0_s; t48 = h2_start; t49 = h0_s; t50 = hero_str_len(t49); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 431, 24}; t51 = hero_str_slice_at(t47, t48, t50, &hero_here); } t63 = h11_own11; h11_own11 = t51; hero_str_decref(t63); hero_array_push_owned(&h1_parts, &t51);
+    t47 = h0_s; t48 = h2_start; t49 = h0_s; t50 = hero_str_len(t49); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 431, 24}; t51 = hero_str_slice_at(t47, t48, t50, &hero_here); } t63 = h11_own11; h11_own11 = t51; hero_str_decref(t63); hero_array_push_owned(&h1_parts, &t51);
     t54 = HERO_STR_LIT(hero_str_22); hero_array_push_owned(&h1_parts, &t54);
     t56 = h1_parts; t57 = HERO_STR_LIT(hero_str_0); t58 = hero_str_join(t56, t57); t64 = h12_own12; h12_own12 = t58; hero_str_decref(t64);
-#line 1555 "main.c"
+#line 1665 "main.c"
     hero_str_incref(t58);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h3_xs0);
@@ -1562,48 +1672,48 @@ HeroStr h_json_quoted(HeroStr h0_s) { HeroArrayHeader * h1_parts = {0}; int64_t 
     hero_str_release_at(&h13_own13);
     hero_str_release_at(&h14_own14);
     return t58;
-bb5:
-    goto bb3;
-bb6:
+hero_bb5:
+    goto hero_bb3;
+hero_bb6:
 #line 426 "examples/json/json.hero"
-    t22 = h6_c; t23 = UINT64_C(92); t24 = t22 == t23; h8_b1 = t24; goto bb7; bb7: t25 = h8_b1; h7_b0 = t25; if (t25) goto bb9; else goto bb8; bb8: t26 = h6_c; t27 = UINT64_C(32); t28 = t26 < t27; h7_b0 = t28; goto bb9; bb9: t29 = h7_b0; if (t29) goto bb10; else goto bb11; bb10:
-    t31 = h0_s; t32 = h2_start; t33 = h5_at; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 427, 32}; t34 = hero_str_slice_at(t31, t32, t33, &hero_here); } t65 = h13_own13; h13_own13 = t34; hero_str_decref(t65); hero_array_push_owned(&h1_parts, &t34);
+    t22 = h6_c; t23 = UINT64_C(92); t24 = t22 == t23; h8_b1 = t24; goto hero_bb7; hero_bb7: t25 = h8_b1; h7_b0 = t25; if (t25) goto hero_bb9; else goto hero_bb8; hero_bb8: t26 = h6_c; t27 = UINT64_C(32); t28 = t26 < t27; h7_b0 = t28; goto hero_bb9; hero_bb9: t29 = h7_b0; if (t29) goto hero_bb10; else goto hero_bb11; hero_bb10:
+    t31 = h0_s; t32 = h2_start; t33 = h5_at; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.quoted", 427, 32}; t34 = hero_str_slice_at(t31, t32, t33, &hero_here); } t65 = h13_own13; h13_own13 = t34; hero_str_decref(t65); hero_array_push_owned(&h1_parts, &t34);
     t37 = h6_c; t38 = h_json_escape_of(t37); t66 = h14_own14; h14_own14 = t38; hero_str_decref(t66); hero_array_push_owned(&h1_parts, &t38);
-    t40 = h5_at; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("json.hero", "json.quoted", 429, 21); h2_start = t42; goto bb5; bb11: goto bb5;
-#line 1574 "main.c"
+    t40 = h5_at; t41 = INT64_C(1); if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow_at("json.hero", "json.quoted", 429, 21); h2_start = t42; goto hero_bb5; hero_bb11: goto hero_bb5;
+#line 1684 "main.c"
 }
 
 #line 436 "examples/json/json.hero"
-HeroStr h_json_escape_of(uint8_t h0_c) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t22, t23, t27, t29, t55, t56; int64_t h2_n; HERO_NODEBUG HeroStr h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t8, t12, t16, t20, t31, t32, t41, t42, t43, t52, t53, t54, t57, t58, t59, t60, t61, t62; HERO_NODEBUG uint8_t t1, t2, t5, t6, t9, t10, t13, t14, t17, t18, t21; HERO_NODEBUG bool t3, t7, t11, t15, t19, t26; HERO_NODEBUG int64_t t24, t25, t30, t33, t34, t35, t36, t37, t38, t39, t40, t44, t45, t46, t47, t48, t49, t50, t51; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = UINT64_C(34); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+HeroStr h_json_escape_of(uint8_t h0_c) { HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t22, t23, t27, t29, t55, t56; int64_t h2_n; HERO_NODEBUG HeroStr h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t8, t12, t16, t20, t31, t32, t41, t42, t43, t52, t53, t54, t57, t58, t59, t60, t61, t62; HERO_NODEBUG uint8_t t1, t2, t5, t6, t9, t10, t13, t14, t17, t18, t21; HERO_NODEBUG bool t3, t7, t11, t15, t19, t26; HERO_NODEBUG int64_t t24, t25, t30, t33, t34, t35, t36, t37, t38, t39, t40, t44, t45, t46, t47, t48, t49, t50, t51; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = UINT64_C(34); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 440
-    t5 = h0_c; t6 = UINT64_C(92); t7 = t5 == t6; if (t7) goto bb5; else goto bb6; bb2:
+    t5 = h0_c; t6 = UINT64_C(92); t7 = t5 == t6; if (t7) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 438
-    t4 = HERO_STR_LIT(hero_str_2f36); h3_ret0 = t4; goto bb18; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_2f36); h3_ret0 = t4; goto hero_bb18; hero_bb3: goto hero_bb1; hero_bb4:
 #line 443
-    t9 = h0_c; t10 = UINT64_C(10); t11 = t9 == t10; if (t11) goto bb8; else goto bb9; bb5:
+    t9 = h0_c; t10 = UINT64_C(10); t11 = t9 == t10; if (t11) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 441
-    t8 = HERO_STR_LIT(hero_str_2f70); h3_ret0 = t8; goto bb18; bb6: goto bb4; bb7:
+    t8 = HERO_STR_LIT(hero_str_2f70); h3_ret0 = t8; goto hero_bb18; hero_bb6: goto hero_bb4; hero_bb7:
 #line 446
-    t13 = h0_c; t14 = UINT64_C(13); t15 = t13 == t14; if (t15) goto bb11; else goto bb12; bb8:
+    t13 = h0_c; t14 = UINT64_C(13); t15 = t13 == t14; if (t15) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 444
-    t12 = HERO_STR_LIT(hero_str_2f82); h3_ret0 = t12; goto bb18; bb9: goto bb7; bb10:
+    t12 = HERO_STR_LIT(hero_str_2f82); h3_ret0 = t12; goto hero_bb18; hero_bb9: goto hero_bb7; hero_bb10:
 #line 449
-    t17 = h0_c; t18 = UINT64_C(9); t19 = t17 == t18; if (t19) goto bb14; else goto bb15; bb11:
+    t17 = h0_c; t18 = UINT64_C(9); t19 = t17 == t18; if (t19) goto hero_bb14; else goto hero_bb15; hero_bb11:
 #line 447
-    t16 = HERO_STR_LIT(hero_str_2f86); h3_ret0 = t16; goto bb18; bb12: goto bb10; bb13:
+    t16 = HERO_STR_LIT(hero_str_2f86); h3_ret0 = t16; goto hero_bb18; hero_bb12: goto hero_bb10; hero_bb13:
 #line 451
-    t21 = h0_c; t22 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t21}; t55 = h4_own4; h4_own4 = t22; h_0opt_e201354_release(&t55); t56 = h1_f0; h_0opt_e201354_retain(&t22); h1_f0 = t22; h_0opt_e201354_release(&t56); t23 = h1_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb16; else goto bb17; bb14:
+    t21 = h0_c; t22 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t21}; t55 = h4_own4; h4_own4 = t22; h_0opt_e201354_release(&t55); t56 = h1_f0; h_0opt_e201354_retain(&t22); h1_f0 = t22; h_0opt_e201354_release(&t56); t23 = h1_f0; t24 = t23.hero_tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto hero_bb16; else goto hero_bb17; hero_bb14:
 #line 450
-    t20 = HERO_STR_LIT(hero_str_2f88); h3_ret0 = t20; goto bb18; bb15: goto bb13; bb16:
-    t29 = h1_f0; t30 = t29.as.ok; h2_n = t30;
-    t31 = HERO_STR_LIT(hero_str_c729f91); t32 = h_json_HEX(); t57 = h5_own5; h5_own5 = t32; hero_str_decref(t57); t33 = h2_n; t34 = INT64_C(4); if (t34 < 0 || t34 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.escape_of", 452, 38); t35 = (t33 < 0) ? ~(int64_t)((~(uint64_t)t33) >> (uint64_t)t34) : (int64_t)((uint64_t)t33 >> (uint64_t)t34); t36 = h2_n; t37 = INT64_C(4); if (t37 < 0 || t37 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.escape_of", 452, 51); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("json.hero", "json.escape_of", 452, 50); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.escape_of", 452, 22}; t41 = hero_str_slice_at(t32, t35, t40, &hero_here); } t58 = h6_own6; h6_own6 = t41; hero_str_decref(t58); t42 = hero_str_concat(t31, t41); t59 = h7_own7; h7_own7 = t42; hero_str_decref(t59); t43 = h_json_HEX(); t60 = h8_own8; h8_own8 = t43; hero_str_decref(t60); t44 = h2_n; t45 = INT64_C(15); t46 = t44 & t45; t47 = h2_n; t48 = INT64_C(15); t49 = t47 & t48; t50 = INT64_C(1); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("json.hero", "json.escape_of", 452, 94); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"json.hero", "json.escape_of", 452, 66}; t52 = hero_str_slice_at(t43, t46, t51, &hero_here); } t61 = h9_own9; h9_own9 = t52; hero_str_decref(t61); t53 = hero_str_concat(t42, t52); t62 = h10_own10; h10_own10 = t53; hero_str_decref(t62); h3_ret0 = t53; goto bb18; bb17:
+    t20 = HERO_STR_LIT(hero_str_2f88); h3_ret0 = t20; goto hero_bb18; hero_bb15: goto hero_bb13; hero_bb16:
+    t29 = h1_f0; t30 = t29.hero_as.hero_ok; h2_n = t30;
+    t31 = HERO_STR_LIT(hero_str_c729f91); t32 = h_json_HEX(); t57 = h5_own5; h5_own5 = t32; hero_str_decref(t57); t33 = h2_n; t34 = INT64_C(4); if (t34 < 0 || t34 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.escape_of", 452, 38); t35 = (t33 < 0) ? ~(int64_t)((~(uint64_t)t33) >> (uint64_t)t34) : (int64_t)((uint64_t)t33 >> (uint64_t)t34); t36 = h2_n; t37 = INT64_C(4); if (t37 < 0 || t37 > 63) hero_panic_at("shift count outside 0..63", "json.hero", "json.escape_of", 452, 51); t38 = (t36 < 0) ? ~(int64_t)((~(uint64_t)t36) >> (uint64_t)t37) : (int64_t)((uint64_t)t36 >> (uint64_t)t37); t39 = INT64_C(1); if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow_at("json.hero", "json.escape_of", 452, 50); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.escape_of", 452, 22}; t41 = hero_str_slice_at(t32, t35, t40, &hero_here); } t58 = h6_own6; h6_own6 = t41; hero_str_decref(t58); t42 = hero_str_concat(t31, t41); t59 = h7_own7; h7_own7 = t42; hero_str_decref(t59); t43 = h_json_HEX(); t60 = h8_own8; h8_own8 = t43; hero_str_decref(t60); t44 = h2_n; t45 = INT64_C(15); t46 = t44 & t45; t47 = h2_n; t48 = INT64_C(15); t49 = t47 & t48; t50 = INT64_C(1); if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow_at("json.hero", "json.escape_of", 452, 94); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"json.hero", "json.escape_of", 452, 66}; t52 = hero_str_slice_at(t43, t46, t51, &hero_here); } t61 = h9_own9; h9_own9 = t52; hero_str_decref(t61); t53 = hero_str_concat(t42, t52); t62 = h10_own10; h10_own10 = t53; hero_str_decref(t62); h3_ret0 = t53; goto hero_bb18; hero_bb17:
 #line 451
-    t27 = h1_f0; t28 = t27.as.err;
-#line 1604 "main.c"
+    t27 = h1_f0; t28 = t27.hero_as.hero_err;
+#line 1714 "main.c"
     hero_panic_must_at(t28, "json.hero", "json.escape_of", 451, 9);
     hero_unreachable();
-bb18:
+hero_bb18:
     t54 = h3_ret0;
     hero_str_incref(t54);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -1618,55 +1728,55 @@ bb18:
 }
 
 #line 454 "examples/json/json.hero"
-HeroStr h_json_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_json_HEX(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
-#line 1624 "main.c"
+#line 1734 "main.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
-    t2 = h0_from; h3_i = t2; goto bb1; bb1:
-    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
-#line 1637 "main.c"
+#line 1747 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
     return h_library_range(h0_from, h1_to, &hero_here);
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 1650 "main.c"
+#line 1760 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 1655 "main.c"
+#line 1765 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 1660 "main.c"
+#line 1770 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 1665 "main.c"
+#line 1775 "main.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 1670 "main.c"
+#line 1780 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -1674,19 +1784,19 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 1690 "main.c"
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 1800 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -1698,7 +1808,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
@@ -1708,27 +1818,27 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 #line 166
 #define h1_status (*hero_lend_h1_status)
 #line 166
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
-    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 173
-    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 170
-    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto hero_bb13; hero_bb3: goto hero_bb1; hero_bb4:
 #line 175
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 174
-    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto hero_bb13; hero_bb6: goto hero_bb4; hero_bb7:
 #line 180
-    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 176
-    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto hero_bb13; hero_bb9: goto hero_bb7; hero_bb10:
 #line 182
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto hero_bb13; hero_bb11:
 #line 181
-    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 1732 "main.c"
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto hero_bb13; hero_bb12: goto hero_bb10; hero_bb13:
+#line 1842 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1746,90 +1856,61 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     return t38;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
 
-#line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
-    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
-#line 207
-    t47 = h0_out;
-#line 1764 "main.c"
-    hero_array_incref(t47);
+#line 221 "<heroes library>"
+HeroArrayHeader * h_library_args_checked(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t14, *t15, *t16; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}, t9, t17; HERO_NODEBUG int64_t t2, t3, t4, t7, t11, t12, t13; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = hero_array_new(&h_0opt_f87774a_desc, 1); t15 = h2_own2; h2_own2 = t1; hero_array_decref(t15); t16 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t16);
+    t2 = INT64_C(0); h1_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t7 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t8 = (const char *)hero_args_raw(t7); } t9 = h_library_validated(t8, hero_caller); t17 = h3_own3; h3_own3 = t9; h_0opt_f87774a_release(&t17); hero_array_push_owned(&h0_out, &t9);
+    t11 = h1_i; t12 = INT64_C(1); if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t13; goto hero_bb1; hero_bb3:
+    t14 = h0_out;
+#line 1873 "main.c"
+    hero_array_incref(t14);
     hero_array_release_at(&h0_out);
-    h_0opt_f87774a_release(hero_slot_escape(&h2_text));
-    h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
-    h_0opt_f87774a_release(hero_slot_escape(&h4_unread));
-    h_0opt_f87774a_release(hero_slot_escape(&h5_f1));
-    h_0opt_f87774a_release(hero_slot_escape(&h6_f2));
-    hero_array_release_at(&h7_own7);
-    h_0opt_f87774a_release(hero_slot_escape(&h8_own8));
-    hero_str_release_at(&h9_own9);
-    hero_str_release_at(&h10_own10);
-    hero_str_release_at(&h11_own11);
-    h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
-    return t47;
-bb4:
-#line 206 "<heroes library>"
-    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
-#line 202
-    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
-    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
-#line 205
-    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
-#line 203
-    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 1789 "main.c"
-    hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
-    hero_unreachable();
-bb9:
-#line 205 "<heroes library>"
-    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 1795 "main.c"
-    hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
-    hero_unreachable();
+    hero_array_release_at(&h2_own2);
+    h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
+    return t14;
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
-    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
-    return h_library_args(&hero_here);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args_checked(void) {
+    HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args_checked", 221, 1};
+    return h_library_args_checked(&hero_here);
 }
 
 #line 231 "<heroes library>"
-void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 235
-    t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 1809 "main.c"
+    t23 = h0_code; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
+#line 1890 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
-bb2:
+hero_bb2:
 #line 232 "<heroes library>"
-    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
-    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
-    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 1821 "main.c"
+    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto hero_bb3; hero_bb3: t7 = h1_b0; if (t7) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
+    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb6; else goto hero_bb7; hero_bb5: goto hero_bb1; hero_bb6: goto hero_bb1; hero_bb7: t19 = h3_f0; t20 = t19.hero_as.hero_err;
+#line 1902 "main.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
+__attribute__((__unused__)) void hero_value_h_library_exit(int64_t h0_code) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 231, 1};
     h_library_exit(h0_code, &hero_here);
 }
 
 #line 359 "examples/json/json.hero"
-/* refused<Value> */ HERO_TU_LOCAL h_0opt_2b821190 h_json_0refused_1d7a8246(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_2b821190 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_2b821190){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_2b821190_release(&t16);
-#line 1833 "main.c"
+/* refused<Value> */ HERO_TU_LOCAL h_0opt_2b821190 h_json_0refused_1d7a8246(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_2b821190 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_2b821190){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_2b821190_release(&t16);
+#line 1914 "main.c"
     h_0opt_2b821190_retain(&t10);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -1841,9 +1922,9 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
 }
 
 #line 359 "examples/json/json.hero"
-/* refused<str> */ HERO_TU_LOCAL h_0opt_f87774a h_json_0refused_1e58d9(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_f87774a_release(&t16);
-#line 1847 "main.c"
+/* refused<str> */ HERO_TU_LOCAL h_0opt_f87774a h_json_0refused_1e58d9(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_f87774a_release(&t16);
+#line 1928 "main.c"
     h_0opt_f87774a_retain(&t10);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -1855,9 +1936,9 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
 }
 
 #line 359 "examples/json/json.hero"
-/* refused<()> */ HERO_TU_LOCAL h_0opt_a8ea2 h_json_0refused_14a1(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_a8ea2_release(&t16);
-#line 1861 "main.c"
+/* refused<()> */ HERO_TU_LOCAL h_0opt_a8ea2 h_json_0refused_14a1(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_a8ea2_release(&t16);
+#line 1942 "main.c"
     h_0opt_a8ea2_retain(&t10);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -1869,9 +1950,9 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
 }
 
 #line 359 "examples/json/json.hero"
-/* refused<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_json_0refused_1b9a87(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_e201354_release(&t16);
-#line 1875 "main.c"
+/* refused<i64> */ HERO_TU_LOCAL h_0opt_e201354 h_json_0refused_1b9a87(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_e201354_release(&t16);
+#line 1956 "main.c"
     h_0opt_e201354_retain(&t10);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -1883,9 +1964,9 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
 }
 
 #line 359 "examples/json/json.hero"
-/* refused<f64> */ HERO_TU_LOCAL h_0opt_db92a83 h_json_0refused_1ad16c(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_db92a83 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_db92a83){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_db92a83_release(&t16);
-#line 1889 "main.c"
+/* refused<f64> */ HERO_TU_LOCAL h_0opt_db92a83 h_json_0refused_1ad16c(h_json_Reader h0_r, HeroStr h1_why) { HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG h_0opt_db92a83 h7_own7 = {0}, t10, t16; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_json_NOT_JSON(); t11 = h2_own2; h2_own2 = t1; hero_str_decref(t11); t2 = h0_r.f_at; t3 = h1_why; t4 = HERO_STR_LIT(hero_str_48950d35); t5 = hero_int_to_str(t2); t12 = h3_own3; h3_own3 = t5; hero_str_decref(t12); t6 = HERO_STR_LIT(hero_str_1dce); t7 = hero_str_concat(t4, t5); t13 = h4_own4; h4_own4 = t7; hero_str_decref(t13); t8 = hero_str_concat(t7, t6); t14 = h5_own5; h5_own5 = t8; hero_str_decref(t14); t9 = hero_str_concat(t8, t3); t15 = h6_own6; h6_own6 = t9; hero_str_decref(t15); hero_str_incref(t1); hero_str_incref(t9); t10 = (h_0opt_db92a83){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t9}}; t16 = h7_own7; h7_own7 = t10; h_0opt_db92a83_release(&t16);
+#line 1970 "main.c"
     h_0opt_db92a83_retain(&t10);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -1895,354 +1976,354 @@ __attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
     h_0opt_db92a83_release(hero_slot_escape(&h7_own7));
     return t10;
 }
-HERO_TU_LOCAL bool h_json_0Value_c_boolean_eq(const h_json_0Value_c_boolean *a, const h_json_0Value_c_boolean *b) {
-    if (!(a->f_value == b->f_value)) return false;
+HERO_TU_LOCAL bool h_json_0Value_c_boolean_eq(const h_json_0Value_c_boolean *hero_a, const h_json_0Value_c_boolean *hero_b) {
+    if (!(hero_a->f_value == hero_b->f_value)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_c_boolean_hash(const void *elem) {
-    const h_json_0Value_c_boolean *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_bool)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Value_c_boolean_hash(const void *hero_elem) {
+    const h_json_0Value_c_boolean *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_bool)->hash(&hero_v->f_value)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_json_0Value_c_number_eq(const h_json_0Value_c_number *a, const h_json_0Value_c_number *b) {
-    if (!(a->f_value == b->f_value)) return false;
+HERO_TU_LOCAL bool h_json_0Value_c_number_eq(const h_json_0Value_c_number *hero_a, const h_json_0Value_c_number *hero_b) {
+    if (!(hero_a->f_value == hero_b->f_value)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_c_number_hash(const void *elem) {
-    const h_json_0Value_c_number *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_f64)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Value_c_number_hash(const void *hero_elem) {
+    const h_json_0Value_c_number *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_f64)->hash(&hero_v->f_value)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_string_retain(const h_json_0Value_c_string *v) {
-    hero_str_incref(v->f_value);
+HERO_TU_LOCAL void h_json_0Value_c_string_retain(const h_json_0Value_c_string *hero_v) {
+    hero_str_incref(hero_v->f_value);
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_string_release(h_json_0Value_c_string *v) {
-    hero_str_decref(v->f_value);
+HERO_TU_LOCAL void h_json_0Value_c_string_release(h_json_0Value_c_string *hero_v) {
+    hero_str_decref(hero_v->f_value);
 }
 
-HERO_TU_LOCAL bool h_json_0Value_c_string_eq(const h_json_0Value_c_string *a, const h_json_0Value_c_string *b) {
-    if (!(hero_str_eq(a->f_value, b->f_value))) return false;
+HERO_TU_LOCAL bool h_json_0Value_c_string_eq(const h_json_0Value_c_string *hero_a, const h_json_0Value_c_string *hero_b) {
+    if (!(hero_str_eq(hero_a->f_value, hero_b->f_value))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_c_string_hash(const void *elem) {
-    const h_json_0Value_c_string *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Value_c_string_hash(const void *hero_elem) {
+    const h_json_0Value_c_string *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_value)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_array_retain(const h_json_0Value_c_array *v) {
-    hero_array_incref(v->f_items);
+HERO_TU_LOCAL void h_json_0Value_c_array_retain(const h_json_0Value_c_array *hero_v) {
+    hero_array_incref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_array_release(h_json_0Value_c_array *v) {
-    hero_array_decref(v->f_items);
+HERO_TU_LOCAL void h_json_0Value_c_array_release(h_json_0Value_c_array *hero_v) {
+    hero_array_decref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL bool h_json_0Value_c_array_eq(const h_json_0Value_c_array *a, const h_json_0Value_c_array *b) {
-    if (!(hero_array_eq(a->f_items, b->f_items))) return false;
+HERO_TU_LOCAL bool h_json_0Value_c_array_eq(const h_json_0Value_c_array *hero_a, const h_json_0Value_c_array *hero_b) {
+    if (!(hero_array_eq(hero_a->f_items, hero_b->f_items))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_c_array_hash(const void *elem) {
-    const h_json_0Value_c_array *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_items)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Value_c_array_hash(const void *hero_elem) {
+    const h_json_0Value_c_array *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_items)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_object_retain(const h_json_0Value_c_object *v) {
-    hero_map_incref(v->f_fields);
+HERO_TU_LOCAL void h_json_0Value_c_object_retain(const h_json_0Value_c_object *hero_v) {
+    hero_map_incref(hero_v->f_fields);
 }
 
-HERO_TU_LOCAL void h_json_0Value_c_object_release(h_json_0Value_c_object *v) {
-    hero_map_decref(v->f_fields);
+HERO_TU_LOCAL void h_json_0Value_c_object_release(h_json_0Value_c_object *hero_v) {
+    hero_map_decref(hero_v->f_fields);
 }
 
-HERO_TU_LOCAL bool h_json_0Value_c_object_eq(const h_json_0Value_c_object *a, const h_json_0Value_c_object *b) {
-    if (!(hero_map_eq(a->f_fields, b->f_fields))) return false;
+HERO_TU_LOCAL bool h_json_0Value_c_object_eq(const h_json_0Value_c_object *hero_a, const h_json_0Value_c_object *hero_b) {
+    if (!(hero_map_eq(hero_a->f_fields, hero_b->f_fields))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_c_object_hash(const void *elem) {
-    const h_json_0Value_c_object *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_map)->hash(&v->f_fields)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Value_c_object_hash(const void *hero_elem) {
+    const h_json_0Value_c_object *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_map)->hash(&hero_v->f_fields)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_json_0Value_retain(const h_json_Value *v) {
-    switch (v->tag) {
-        case h_json_0Value_tag_string: h_json_0Value_c_string_retain(&v->as.c_string); break;
-        case h_json_0Value_tag_array: h_json_0Value_c_array_retain(&v->as.c_array); break;
-        case h_json_0Value_tag_object: h_json_0Value_c_object_retain(&v->as.c_object); break;
+HERO_TU_LOCAL void h_json_0Value_retain(const h_json_Value *hero_v) {
+    switch (hero_v->hero_tag) {
+        case h_json_0Value_tag_string: h_json_0Value_c_string_retain(&hero_v->hero_as.hero_c_string); break;
+        case h_json_0Value_tag_array: h_json_0Value_c_array_retain(&hero_v->hero_as.hero_c_array); break;
+        case h_json_0Value_tag_object: h_json_0Value_c_object_retain(&hero_v->hero_as.hero_c_object); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL void h_json_0Value_release(h_json_Value *v) {
-    switch (v->tag) {
-        case h_json_0Value_tag_string: h_json_0Value_c_string_release(&v->as.c_string); break;
-        case h_json_0Value_tag_array: h_json_0Value_c_array_release(&v->as.c_array); break;
-        case h_json_0Value_tag_object: h_json_0Value_c_object_release(&v->as.c_object); break;
+HERO_TU_LOCAL void h_json_0Value_release(h_json_Value *hero_v) {
+    switch (hero_v->hero_tag) {
+        case h_json_0Value_tag_string: h_json_0Value_c_string_release(&hero_v->hero_as.hero_c_string); break;
+        case h_json_0Value_tag_array: h_json_0Value_c_array_release(&hero_v->hero_as.hero_c_array); break;
+        case h_json_0Value_tag_object: h_json_0Value_c_object_release(&hero_v->hero_as.hero_c_object); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL bool h_json_0Value_eq(const h_json_Value *a, const h_json_Value *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
+HERO_TU_LOCAL bool h_json_0Value_eq(const h_json_Value *hero_a, const h_json_Value *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
         case h_json_0Value_tag_nothing: return true;
-        case h_json_0Value_tag_boolean: return h_json_0Value_c_boolean_eq(&a->as.c_boolean, &b->as.c_boolean);
-        case h_json_0Value_tag_number: return h_json_0Value_c_number_eq(&a->as.c_number, &b->as.c_number);
-        case h_json_0Value_tag_string: return h_json_0Value_c_string_eq(&a->as.c_string, &b->as.c_string);
-        case h_json_0Value_tag_array: return h_json_0Value_c_array_eq(&a->as.c_array, &b->as.c_array);
-        case h_json_0Value_tag_object: return h_json_0Value_c_object_eq(&a->as.c_object, &b->as.c_object);
+        case h_json_0Value_tag_boolean: return h_json_0Value_c_boolean_eq(&hero_a->hero_as.hero_c_boolean, &hero_b->hero_as.hero_c_boolean);
+        case h_json_0Value_tag_number: return h_json_0Value_c_number_eq(&hero_a->hero_as.hero_c_number, &hero_b->hero_as.hero_c_number);
+        case h_json_0Value_tag_string: return h_json_0Value_c_string_eq(&hero_a->hero_as.hero_c_string, &hero_b->hero_as.hero_c_string);
+        case h_json_0Value_tag_array: return h_json_0Value_c_array_eq(&hero_a->hero_as.hero_c_array, &hero_b->hero_as.hero_c_array);
+        case h_json_0Value_tag_object: return h_json_0Value_c_object_eq(&hero_a->hero_as.hero_c_object, &hero_b->hero_as.hero_c_object);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Value_hash(const void *elem) {
-    const h_json_Value *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_json_0Value_hash(const void *hero_elem) {
+    const h_json_Value *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_json_0Value_tag_nothing: return h;
-        case h_json_0Value_tag_boolean: return (h ^ h_json_0Value_c_boolean_hash(&v->as.c_boolean)) * UINT64_C(0x100000001b3);
-        case h_json_0Value_tag_number: return (h ^ h_json_0Value_c_number_hash(&v->as.c_number)) * UINT64_C(0x100000001b3);
-        case h_json_0Value_tag_string: return (h ^ h_json_0Value_c_string_hash(&v->as.c_string)) * UINT64_C(0x100000001b3);
-        case h_json_0Value_tag_array: return (h ^ h_json_0Value_c_array_hash(&v->as.c_array)) * UINT64_C(0x100000001b3);
-        case h_json_0Value_tag_object: return (h ^ h_json_0Value_c_object_hash(&v->as.c_object)) * UINT64_C(0x100000001b3);
+    switch (hero_v->hero_tag) {
+        case h_json_0Value_tag_nothing: return hero_h;
+        case h_json_0Value_tag_boolean: return (hero_h ^ h_json_0Value_c_boolean_hash(&hero_v->hero_as.hero_c_boolean)) * UINT64_C(0x100000001b3);
+        case h_json_0Value_tag_number: return (hero_h ^ h_json_0Value_c_number_hash(&hero_v->hero_as.hero_c_number)) * UINT64_C(0x100000001b3);
+        case h_json_0Value_tag_string: return (hero_h ^ h_json_0Value_c_string_hash(&hero_v->hero_as.hero_c_string)) * UINT64_C(0x100000001b3);
+        case h_json_0Value_tag_array: return (hero_h ^ h_json_0Value_c_array_hash(&hero_v->hero_as.hero_c_array)) * UINT64_C(0x100000001b3);
+        case h_json_0Value_tag_object: return (hero_h ^ h_json_0Value_c_object_hash(&hero_v->hero_as.hero_c_object)) * UINT64_C(0x100000001b3);
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_json_0Reader_retain(const h_json_Reader *v) {
-    hero_str_incref(v->f_text);
+HERO_TU_LOCAL void h_json_0Reader_retain(const h_json_Reader *hero_v) {
+    hero_str_incref(hero_v->f_text);
 }
 
-HERO_TU_LOCAL void h_json_0Reader_release(h_json_Reader *v) {
-    hero_str_decref(v->f_text);
+HERO_TU_LOCAL void h_json_0Reader_release(h_json_Reader *hero_v) {
+    hero_str_decref(hero_v->f_text);
 }
 
-HERO_TU_LOCAL bool h_json_0Reader_eq(const h_json_Reader *a, const h_json_Reader *b) {
-    if (!(hero_str_eq(a->f_text, b->f_text))) return false;
-    if (!(a->f_at == b->f_at)) return false;
+HERO_TU_LOCAL bool h_json_0Reader_eq(const h_json_Reader *hero_a, const h_json_Reader *hero_b) {
+    if (!(hero_str_eq(hero_a->f_text, hero_b->f_text))) return false;
+    if (!(hero_a->f_at == hero_b->f_at)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_json_0Reader_hash(const void *elem) {
-    const h_json_Reader *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_at)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_json_0Reader_hash(const void *hero_elem) {
+    const h_json_Reader *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_text)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_at)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_2b821190_retain(const h_0opt_2b821190 *v) {
-    if (v->tag == INT64_C(0)) {
-        h_json_0Value_retain(&v->as.ok);
+HERO_TU_LOCAL void h_0opt_2b821190_retain(const h_0opt_2b821190 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        h_json_0Value_retain(&hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_2b821190_release(h_0opt_2b821190 *v) {
-    if (v->tag == INT64_C(0)) {
-        h_json_0Value_release(&v->as.ok);
+HERO_TU_LOCAL void h_0opt_2b821190_release(h_0opt_2b821190 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        h_json_0Value_release(&hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_2b821190_eq(const h_0opt_2b821190 *a, const h_0opt_2b821190 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_json_0Value_desc)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_2b821190_eq(const h_0opt_2b821190 *hero_a, const h_0opt_2b821190 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&h_json_0Value_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_2b821190_hash(const void *elem) {
-    const h_0opt_2b821190 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_2b821190_hash(const void *hero_elem) {
+    const h_0opt_2b821190 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_json_0Value_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&h_json_0Value_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_db92a83_retain(const h_0opt_db92a83 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_db92a83_release(h_0opt_db92a83 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *a, const h_0opt_db92a83 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_f64)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_db92a83_eq(const h_0opt_db92a83 *hero_a, const h_0opt_db92a83 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_f64)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *elem) {
-    const h_0opt_db92a83 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_db92a83_hash(const void *hero_elem) {
+    const h_0opt_db92a83 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_f64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_f64)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *a, const h_0opt_1ec004 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u8)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u8)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *elem) {
-    const h_0opt_1ec004 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem) {
+    const h_0opt_1ec004 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u8)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("138ca79558387a06", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("496bc9616e967c4f", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

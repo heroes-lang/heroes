@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -91,26 +91,26 @@ typedef int64_t (*h_0fn_1d823fbf)(int64_t, int64_t);
 typedef int64_t (*h_0fn_318658f)(int64_t, int64_t);
 typedef int64_t (*h_0fn_68ae8b5e)(int64_t, int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -119,29 +119,29 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 131 "fixedbugs409manyfunctiontypesandalongcfile.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f0(int64_t h0_a0, int64_t h1_b0);
 int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f1(int64_t h0_a1, int64_t h1_b1);
@@ -186,247 +186,247 @@ int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f39(int64_t h0_a39, int64_t
 void h_fixedbugs409manyfunctiontypesandalongcfile_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f0(int64_t h0_a0, int64_t h1_b0) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f0(int64_t h0_a0, int64_t h1_b0) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a0; t2 = INT64_C(1); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f0", 14, 12); t4 = h1_b0; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f0", 14, 12); return t5;
 #line 192 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f1(int64_t h0_a1, int64_t h1_b1) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f1(int64_t h0_a1, int64_t h1_b1) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a1; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f1", 17, 12); t4 = h1_b1; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f1", 17, 12); return t5;
 #line 198 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f2(int64_t h0_a2, int64_t h1_b2) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f2(int64_t h0_a2, int64_t h1_b2) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a2; t2 = INT64_C(3); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f2", 20, 12); t4 = h1_b2; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f2", 20, 12); return t5;
 #line 204 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f3(int64_t h0_a3, int64_t h1_b3) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f3(int64_t h0_a3, int64_t h1_b3) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a3; t2 = INT64_C(4); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f3", 23, 12); t4 = h1_b3; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f3", 23, 12); return t5;
 #line 210 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 25 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f4(int64_t h0_a4, int64_t h1_b4) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f4(int64_t h0_a4, int64_t h1_b4) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a4; t2 = INT64_C(5); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f4", 26, 12); t4 = h1_b4; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f4", 26, 12); return t5;
 #line 216 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f5(int64_t h0_a5, int64_t h1_b5) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f5(int64_t h0_a5, int64_t h1_b5) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a5; t2 = INT64_C(6); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f5", 29, 12); t4 = h1_b5; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f5", 29, 12); return t5;
 #line 222 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f6(int64_t h0_a6, int64_t h1_b6) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f6(int64_t h0_a6, int64_t h1_b6) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a6; t2 = INT64_C(7); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f6", 32, 12); t4 = h1_b6; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f6", 32, 12); return t5;
 #line 228 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f7(int64_t h0_a7, int64_t h1_b7) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f7(int64_t h0_a7, int64_t h1_b7) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a7; t2 = INT64_C(8); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f7", 35, 12); t4 = h1_b7; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f7", 35, 12); return t5;
 #line 234 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f8(int64_t h0_a8, int64_t h1_b8) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f8(int64_t h0_a8, int64_t h1_b8) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a8; t2 = INT64_C(9); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f8", 38, 12); t4 = h1_b8; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f8", 38, 12); return t5;
 #line 240 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f9(int64_t h0_a9, int64_t h1_b9) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f9(int64_t h0_a9, int64_t h1_b9) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a9; t2 = INT64_C(10); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f9", 41, 12); t4 = h1_b9; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f9", 41, 12); return t5;
 #line 246 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 43 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f10(int64_t h0_a10, int64_t h1_b10) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f10(int64_t h0_a10, int64_t h1_b10) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a10; t2 = INT64_C(11); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f10", 44, 12); t4 = h1_b10; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f10", 44, 12); return t5;
 #line 252 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f11(int64_t h0_a11, int64_t h1_b11) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f11(int64_t h0_a11, int64_t h1_b11) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a11; t2 = INT64_C(12); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f11", 47, 12); t4 = h1_b11; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f11", 47, 12); return t5;
 #line 258 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 49 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f12(int64_t h0_a12, int64_t h1_b12) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f12(int64_t h0_a12, int64_t h1_b12) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a12; t2 = INT64_C(13); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f12", 50, 12); t4 = h1_b12; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f12", 50, 12); return t5;
 #line 264 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 52 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f13(int64_t h0_a13, int64_t h1_b13) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f13(int64_t h0_a13, int64_t h1_b13) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a13; t2 = INT64_C(14); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f13", 53, 12); t4 = h1_b13; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f13", 53, 12); return t5;
 #line 270 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 55 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f14(int64_t h0_a14, int64_t h1_b14) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f14(int64_t h0_a14, int64_t h1_b14) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a14; t2 = INT64_C(15); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f14", 56, 12); t4 = h1_b14; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f14", 56, 12); return t5;
 #line 276 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 58 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f15(int64_t h0_a15, int64_t h1_b15) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f15(int64_t h0_a15, int64_t h1_b15) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a15; t2 = INT64_C(16); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f15", 59, 12); t4 = h1_b15; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f15", 59, 12); return t5;
 #line 282 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 61 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f16(int64_t h0_a16, int64_t h1_b16) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f16(int64_t h0_a16, int64_t h1_b16) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a16; t2 = INT64_C(17); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f16", 62, 12); t4 = h1_b16; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f16", 62, 12); return t5;
 #line 288 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f17(int64_t h0_a17, int64_t h1_b17) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f17(int64_t h0_a17, int64_t h1_b17) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a17; t2 = INT64_C(18); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f17", 65, 12); t4 = h1_b17; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f17", 65, 12); return t5;
 #line 294 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f18(int64_t h0_a18, int64_t h1_b18) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f18(int64_t h0_a18, int64_t h1_b18) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a18; t2 = INT64_C(19); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f18", 68, 12); t4 = h1_b18; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f18", 68, 12); return t5;
 #line 300 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 70 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f19(int64_t h0_a19, int64_t h1_b19) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f19(int64_t h0_a19, int64_t h1_b19) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a19; t2 = INT64_C(20); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f19", 71, 12); t4 = h1_b19; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f19", 71, 12); return t5;
 #line 306 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 73 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f20(int64_t h0_a20, int64_t h1_b20) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f20(int64_t h0_a20, int64_t h1_b20) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a20; t2 = INT64_C(21); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f20", 74, 12); t4 = h1_b20; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f20", 74, 12); return t5;
 #line 312 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 76 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f21(int64_t h0_a21, int64_t h1_b21) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f21(int64_t h0_a21, int64_t h1_b21) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a21; t2 = INT64_C(22); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f21", 77, 12); t4 = h1_b21; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f21", 77, 12); return t5;
 #line 318 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f22(int64_t h0_a22, int64_t h1_b22) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f22(int64_t h0_a22, int64_t h1_b22) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a22; t2 = INT64_C(23); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f22", 80, 12); t4 = h1_b22; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f22", 80, 12); return t5;
 #line 324 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 82 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f23(int64_t h0_a23, int64_t h1_b23) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f23(int64_t h0_a23, int64_t h1_b23) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a23; t2 = INT64_C(24); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f23", 83, 12); t4 = h1_b23; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f23", 83, 12); return t5;
 #line 330 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 85 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f24(int64_t h0_a24, int64_t h1_b24) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f24(int64_t h0_a24, int64_t h1_b24) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a24; t2 = INT64_C(25); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f24", 86, 12); t4 = h1_b24; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f24", 86, 12); return t5;
 #line 336 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 88 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f25(int64_t h0_a25, int64_t h1_b25) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f25(int64_t h0_a25, int64_t h1_b25) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a25; t2 = INT64_C(26); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f25", 89, 12); t4 = h1_b25; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f25", 89, 12); return t5;
 #line 342 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 91 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f26(int64_t h0_a26, int64_t h1_b26) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f26(int64_t h0_a26, int64_t h1_b26) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a26; t2 = INT64_C(27); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f26", 92, 12); t4 = h1_b26; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f26", 92, 12); return t5;
 #line 348 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f27(int64_t h0_a27, int64_t h1_b27) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f27(int64_t h0_a27, int64_t h1_b27) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a27; t2 = INT64_C(28); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f27", 95, 12); t4 = h1_b27; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f27", 95, 12); return t5;
 #line 354 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 97 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f28(int64_t h0_a28, int64_t h1_b28) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f28(int64_t h0_a28, int64_t h1_b28) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a28; t2 = INT64_C(29); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f28", 98, 12); t4 = h1_b28; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f28", 98, 12); return t5;
 #line 360 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 100 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f29(int64_t h0_a29, int64_t h1_b29) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f29(int64_t h0_a29, int64_t h1_b29) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a29; t2 = INT64_C(30); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f29", 101, 12); t4 = h1_b29; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f29", 101, 12); return t5;
 #line 366 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 103 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f30(int64_t h0_a30, int64_t h1_b30) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f30(int64_t h0_a30, int64_t h1_b30) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a30; t2 = INT64_C(31); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f30", 104, 12); t4 = h1_b30; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f30", 104, 12); return t5;
 #line 372 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 106 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f31(int64_t h0_a31, int64_t h1_b31) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f31(int64_t h0_a31, int64_t h1_b31) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a31; t2 = INT64_C(32); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f31", 107, 12); t4 = h1_b31; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f31", 107, 12); return t5;
 #line 378 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f32(int64_t h0_a32, int64_t h1_b32) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f32(int64_t h0_a32, int64_t h1_b32) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a32; t2 = INT64_C(33); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f32", 110, 12); t4 = h1_b32; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f32", 110, 12); return t5;
 #line 384 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 112 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f33(int64_t h0_a33, int64_t h1_b33) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f33(int64_t h0_a33, int64_t h1_b33) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a33; t2 = INT64_C(34); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f33", 113, 12); t4 = h1_b33; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f33", 113, 12); return t5;
 #line 390 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 115 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f34(int64_t h0_a34, int64_t h1_b34) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f34(int64_t h0_a34, int64_t h1_b34) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a34; t2 = INT64_C(35); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f34", 116, 12); t4 = h1_b34; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f34", 116, 12); return t5;
 #line 396 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 118 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f35(int64_t h0_a35, int64_t h1_b35) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f35(int64_t h0_a35, int64_t h1_b35) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a35; t2 = INT64_C(36); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f35", 119, 12); t4 = h1_b35; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f35", 119, 12); return t5;
 #line 402 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 121 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f36(int64_t h0_a36, int64_t h1_b36) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f36(int64_t h0_a36, int64_t h1_b36) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a36; t2 = INT64_C(37); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f36", 122, 12); t4 = h1_b36; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f36", 122, 12); return t5;
 #line 408 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 124 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f37(int64_t h0_a37, int64_t h1_b37) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f37(int64_t h0_a37, int64_t h1_b37) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a37; t2 = INT64_C(38); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f37", 125, 12); t4 = h1_b37; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f37", 125, 12); return t5;
 #line 414 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 127 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f38(int64_t h0_a38, int64_t h1_b38) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f38(int64_t h0_a38, int64_t h1_b38) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a38; t2 = INT64_C(39); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f38", 128, 12); t4 = h1_b38; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f38", 128, 12); return t5;
 #line 420 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f39(int64_t h0_a39, int64_t h1_b39) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs409manyfunctiontypesandalongcfile_f39(int64_t h0_a39, int64_t h1_b39) { HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a39; t2 = INT64_C(40); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f39", 131, 12); t4 = h1_b39; if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.f39", 131, 12); return t5;
 #line 426 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
 
 #line 133 "tests/golden/run/fixedbugs-409-many-function-types-and-a-long-c-file.hero"
-void h_fixedbugs409manyfunctiontypesandalongcfile_main(void) { int64_t h0_total; h_0fn_2e01c615 h1_g0; h_0fn_14eefd42 h2_g1; h_0fn_7bdc346e h3_g2; h_0fn_62c96b9b h4_g3; h_0fn_49b6a2c8 h5_g4; h_0fn_30a3d9f5 h6_g5; h_0fn_17911122 h7_g6; h_0fn_7e7e484e h8_g7; h_0fn_656b7f7b h9_g8; h_0fn_4c58b6a8 h10_g9; h_0fn_5ebc8466 h11_g10; h_0fn_4452aa36 h12_g11; h_0fn_29e8d006 h13_g12; h_0fn_f7ef5d6 h14_g13; h_0fn_75151ba5 h15_g14; h_0fn_5aab4175 h16_g15; h_0fn_40416745 h17_g16; h_0fn_25d78d15 h18_g17; h_0fn_b6db2e5 h19_g18; h_0fn_7103d8b4 h20_g19; h_0fn_5a91ddbb h21_g20; h_0fn_4028038b h22_g21; h_0fn_25be295b h23_g22; h_0fn_b544f2b h24_g23; h_0fn_70ea74fa h25_g24; h_0fn_56809aca h26_g25; h_0fn_3c16c09a h27_g26; h_0fn_21ace66a h28_g27; h_0fn_7430c3a h29_g28; h_0fn_6cd93209 h30_g29; h_0fn_56673710 h31_g30; h_0fn_3bfd5ce0 h32_g31; h_0fn_219382b0 h33_g32; h_0fn_729a880 h34_g33; h_0fn_6cbfce4f h35_g34; h_0fn_5255f41f h36_g35; h_0fn_37ec19ef h37_g36; h_0fn_1d823fbf h38_g37; h_0fn_318658f h39_g38; h_0fn_68ae8b5e h40_g39; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10, t11, t12, t14, t15, t16, t17, t18, t20, t21, t22, t23, t25, t26, t27, t28, t29, t31, t32, t33, t34, t36, t37, t38, t39, t40, t42, t43, t44, t45, t47, t48, t49, t50, t51, t53, t54, t55, t56, t58, t59, t60, t61, t62, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75, t76, t77, t78, t80, t81, t82, t83, t84, t86, t87, t88, t89, t91, t92, t93, t94, t95, t97, t98, t99, t100, t102, t103, t104, t105, t106, t108, t109, t110, t111, t113, t114, t115, t116, t117, t119, t120, t121, t122, t124, t125, t126, t127, t128, t130, t131, t132, t133, t135, t136, t137, t138, t139, t141, t142, t143, t144, t146, t147, t148, t149, t150, t152, t153, t154, t155, t157, t158, t159, t160, t161, t163, t164, t165, t166, t168, t169, t170, t171, t172, t174, t175, t176, t177, t179, t180, t181, t182, t183, t185, t186, t187, t188, t190, t191, t192, t193, t194, t196, t197, t198, t199, t201, t202, t203, t204, t205, t207, t208, t209, t210, t212, t213, t214, t215, t216, t218, t219, t220, t221, t223, t224, t225, t226, t227, t229, t230, t231, t232, t234, t235, t236, t237, t238, t240, t241, t242, t243, t245, t246, t247, t248, t249, t251, t252, t253, t254, t256, t257, t258, t259, t260, t262, t263, t264, t265, t267, t268, t269, t270, t271, t273, t274, t275, t276, t278, t279, t280, t281, t282, t284, t285, t286, t287, t289, t290, t291, t292, t293, t295, t296, t297, t298, t300, t301, t302, t303, t304, t306, t307, t308, t309, t311, t312, t313, t314, t315, t317, t318, t319, t320, t322, t323, t324, t325, t326, t328, t329, t330, t331, t333, t334, t335, t336, t337, t339, t340, t341, t342, t344, t345, t346, t347, t348, t350, t351, t352, t353, t355, t356, t357, t358, t359, t361, t362, t363, t364, t366, t367, t368, t369, t370, t372, t373, t374, t375, t377, t378, t379, t380, t381, t383, t384, t385, t386, t388, t389, t390, t391, t392, t394, t395, t396, t397, t399, t400, t401, t402, t403, t405, t406, t407, t408, t410, t411, t412, t413, t414, t416, t417, t418, t419, t421, t422, t423, t424, t425, t427, t428, t429, t430, t432, t433, t434, t435, t436, t438, t439, t440, t441, t442; HERO_NODEBUG h_0fn_2e01c615 t2, t8; HERO_NODEBUG h_0fn_14eefd42 t13, t19; HERO_NODEBUG h_0fn_7bdc346e t24, t30; HERO_NODEBUG h_0fn_62c96b9b t35, t41; HERO_NODEBUG h_0fn_49b6a2c8 t46, t52; HERO_NODEBUG h_0fn_30a3d9f5 t57, t63; HERO_NODEBUG h_0fn_17911122 t68, t74; HERO_NODEBUG h_0fn_7e7e484e t79, t85; HERO_NODEBUG h_0fn_656b7f7b t90, t96; HERO_NODEBUG h_0fn_4c58b6a8 t101, t107; HERO_NODEBUG h_0fn_5ebc8466 t112, t118; HERO_NODEBUG h_0fn_4452aa36 t123, t129; HERO_NODEBUG h_0fn_29e8d006 t134, t140; HERO_NODEBUG h_0fn_f7ef5d6 t145, t151; HERO_NODEBUG h_0fn_75151ba5 t156, t162; HERO_NODEBUG h_0fn_5aab4175 t167, t173; HERO_NODEBUG h_0fn_40416745 t178, t184; HERO_NODEBUG h_0fn_25d78d15 t189, t195; HERO_NODEBUG h_0fn_b6db2e5 t200, t206; HERO_NODEBUG h_0fn_7103d8b4 t211, t217; HERO_NODEBUG h_0fn_5a91ddbb t222, t228; HERO_NODEBUG h_0fn_4028038b t233, t239; HERO_NODEBUG h_0fn_25be295b t244, t250; HERO_NODEBUG h_0fn_b544f2b t255, t261; HERO_NODEBUG h_0fn_70ea74fa t266, t272; HERO_NODEBUG h_0fn_56809aca t277, t283; HERO_NODEBUG h_0fn_3c16c09a t288, t294; HERO_NODEBUG h_0fn_21ace66a t299, t305; HERO_NODEBUG h_0fn_7430c3a t310, t316; HERO_NODEBUG h_0fn_6cd93209 t321, t327; HERO_NODEBUG h_0fn_56673710 t332, t338; HERO_NODEBUG h_0fn_3bfd5ce0 t343, t349; HERO_NODEBUG h_0fn_219382b0 t354, t360; HERO_NODEBUG h_0fn_729a880 t365, t371; HERO_NODEBUG h_0fn_6cbfce4f t376, t382; HERO_NODEBUG h_0fn_5255f41f t387, t393; HERO_NODEBUG h_0fn_37ec19ef t398, t404; HERO_NODEBUG h_0fn_1d823fbf t409, t415; HERO_NODEBUG h_0fn_318658f t420, t426; HERO_NODEBUG h_0fn_68ae8b5e t431, t437; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs409manyfunctiontypesandalongcfile_main(void) { int64_t h0_total; h_0fn_2e01c615 h1_g0; h_0fn_14eefd42 h2_g1; h_0fn_7bdc346e h3_g2; h_0fn_62c96b9b h4_g3; h_0fn_49b6a2c8 h5_g4; h_0fn_30a3d9f5 h6_g5; h_0fn_17911122 h7_g6; h_0fn_7e7e484e h8_g7; h_0fn_656b7f7b h9_g8; h_0fn_4c58b6a8 h10_g9; h_0fn_5ebc8466 h11_g10; h_0fn_4452aa36 h12_g11; h_0fn_29e8d006 h13_g12; h_0fn_f7ef5d6 h14_g13; h_0fn_75151ba5 h15_g14; h_0fn_5aab4175 h16_g15; h_0fn_40416745 h17_g16; h_0fn_25d78d15 h18_g17; h_0fn_b6db2e5 h19_g18; h_0fn_7103d8b4 h20_g19; h_0fn_5a91ddbb h21_g20; h_0fn_4028038b h22_g21; h_0fn_25be295b h23_g22; h_0fn_b544f2b h24_g23; h_0fn_70ea74fa h25_g24; h_0fn_56809aca h26_g25; h_0fn_3c16c09a h27_g26; h_0fn_21ace66a h28_g27; h_0fn_7430c3a h29_g28; h_0fn_6cd93209 h30_g29; h_0fn_56673710 h31_g30; h_0fn_3bfd5ce0 h32_g31; h_0fn_219382b0 h33_g32; h_0fn_729a880 h34_g33; h_0fn_6cbfce4f h35_g34; h_0fn_5255f41f h36_g35; h_0fn_37ec19ef h37_g36; h_0fn_1d823fbf h38_g37; h_0fn_318658f h39_g38; h_0fn_68ae8b5e h40_g39; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10, t11, t12, t14, t15, t16, t17, t18, t20, t21, t22, t23, t25, t26, t27, t28, t29, t31, t32, t33, t34, t36, t37, t38, t39, t40, t42, t43, t44, t45, t47, t48, t49, t50, t51, t53, t54, t55, t56, t58, t59, t60, t61, t62, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75, t76, t77, t78, t80, t81, t82, t83, t84, t86, t87, t88, t89, t91, t92, t93, t94, t95, t97, t98, t99, t100, t102, t103, t104, t105, t106, t108, t109, t110, t111, t113, t114, t115, t116, t117, t119, t120, t121, t122, t124, t125, t126, t127, t128, t130, t131, t132, t133, t135, t136, t137, t138, t139, t141, t142, t143, t144, t146, t147, t148, t149, t150, t152, t153, t154, t155, t157, t158, t159, t160, t161, t163, t164, t165, t166, t168, t169, t170, t171, t172, t174, t175, t176, t177, t179, t180, t181, t182, t183, t185, t186, t187, t188, t190, t191, t192, t193, t194, t196, t197, t198, t199, t201, t202, t203, t204, t205, t207, t208, t209, t210, t212, t213, t214, t215, t216, t218, t219, t220, t221, t223, t224, t225, t226, t227, t229, t230, t231, t232, t234, t235, t236, t237, t238, t240, t241, t242, t243, t245, t246, t247, t248, t249, t251, t252, t253, t254, t256, t257, t258, t259, t260, t262, t263, t264, t265, t267, t268, t269, t270, t271, t273, t274, t275, t276, t278, t279, t280, t281, t282, t284, t285, t286, t287, t289, t290, t291, t292, t293, t295, t296, t297, t298, t300, t301, t302, t303, t304, t306, t307, t308, t309, t311, t312, t313, t314, t315, t317, t318, t319, t320, t322, t323, t324, t325, t326, t328, t329, t330, t331, t333, t334, t335, t336, t337, t339, t340, t341, t342, t344, t345, t346, t347, t348, t350, t351, t352, t353, t355, t356, t357, t358, t359, t361, t362, t363, t364, t366, t367, t368, t369, t370, t372, t373, t374, t375, t377, t378, t379, t380, t381, t383, t384, t385, t386, t388, t389, t390, t391, t392, t394, t395, t396, t397, t399, t400, t401, t402, t403, t405, t406, t407, t408, t410, t411, t412, t413, t414, t416, t417, t418, t419, t421, t422, t423, t424, t425, t427, t428, t429, t430, t432, t433, t434, t435, t436, t438, t439, t440, t441, t442; HERO_NODEBUG h_0fn_2e01c615 t2, t8; HERO_NODEBUG h_0fn_14eefd42 t13, t19; HERO_NODEBUG h_0fn_7bdc346e t24, t30; HERO_NODEBUG h_0fn_62c96b9b t35, t41; HERO_NODEBUG h_0fn_49b6a2c8 t46, t52; HERO_NODEBUG h_0fn_30a3d9f5 t57, t63; HERO_NODEBUG h_0fn_17911122 t68, t74; HERO_NODEBUG h_0fn_7e7e484e t79, t85; HERO_NODEBUG h_0fn_656b7f7b t90, t96; HERO_NODEBUG h_0fn_4c58b6a8 t101, t107; HERO_NODEBUG h_0fn_5ebc8466 t112, t118; HERO_NODEBUG h_0fn_4452aa36 t123, t129; HERO_NODEBUG h_0fn_29e8d006 t134, t140; HERO_NODEBUG h_0fn_f7ef5d6 t145, t151; HERO_NODEBUG h_0fn_75151ba5 t156, t162; HERO_NODEBUG h_0fn_5aab4175 t167, t173; HERO_NODEBUG h_0fn_40416745 t178, t184; HERO_NODEBUG h_0fn_25d78d15 t189, t195; HERO_NODEBUG h_0fn_b6db2e5 t200, t206; HERO_NODEBUG h_0fn_7103d8b4 t211, t217; HERO_NODEBUG h_0fn_5a91ddbb t222, t228; HERO_NODEBUG h_0fn_4028038b t233, t239; HERO_NODEBUG h_0fn_25be295b t244, t250; HERO_NODEBUG h_0fn_b544f2b t255, t261; HERO_NODEBUG h_0fn_70ea74fa t266, t272; HERO_NODEBUG h_0fn_56809aca t277, t283; HERO_NODEBUG h_0fn_3c16c09a t288, t294; HERO_NODEBUG h_0fn_21ace66a t299, t305; HERO_NODEBUG h_0fn_7430c3a t310, t316; HERO_NODEBUG h_0fn_6cd93209 t321, t327; HERO_NODEBUG h_0fn_56673710 t332, t338; HERO_NODEBUG h_0fn_3bfd5ce0 t343, t349; HERO_NODEBUG h_0fn_219382b0 t354, t360; HERO_NODEBUG h_0fn_729a880 t365, t371; HERO_NODEBUG h_0fn_6cbfce4f t376, t382; HERO_NODEBUG h_0fn_5255f41f t387, t393; HERO_NODEBUG h_0fn_37ec19ef t398, t404; HERO_NODEBUG h_0fn_1d823fbf t409, t415; HERO_NODEBUG h_0fn_318658f t420, t426; HERO_NODEBUG h_0fn_68ae8b5e t431, t437; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h0_total = t1;
     t2 = h_fixedbugs409manyfunctiontypesandalongcfile_f0; h1_g0 = t2;
     t3 = h0_total; t4 = INT64_C(0); t5 = INT64_C(1); t6 = h_fixedbugs409manyfunctiontypesandalongcfile_f0(t4, t5); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.main", 136, 13); t8 = h1_g0; t9 = INT64_C(2); t10 = INT64_C(0); t11 = t8(t9, t10); if (__builtin_add_overflow(t7, t11, &t12)) hero_panic_overflow_at("fixedbugs-409-many-function-types-and-a-long-c-file.hero", "fixedbugs-409-many-function-types-and-a-long-c-file.main", 136, 13); h0_total = t12;
@@ -511,106 +511,106 @@ void h_fixedbugs409manyfunctiontypesandalongcfile_main(void) { int64_t h0_total;
     t442 = h0_total; hero_print_int(t442); hero_print_end(); return;
 #line 513 "fixedbugs409manyfunctiontypesandalongcfile.c"
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("152794583234d779", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0e71b3ec1d3831b5", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs409manyfunctiontypesandalongcfile\tfixedbugs-409-many-function-types-and-a-long-c-file\n");
     h_fixedbugs409manyfunctiontypesandalongcfile_main();
     hero_runtime_check_leaks();

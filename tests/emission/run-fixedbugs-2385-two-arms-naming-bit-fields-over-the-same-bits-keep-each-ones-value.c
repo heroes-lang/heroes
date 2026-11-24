@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-2385-arms.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -64,7 +121,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 10 "tests/golden/run/fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero"
 _Static_assert(__builtin_classify_type(((struct fixedbugs_2385_two *)0)->k) == 1 && sizeof(((struct fixedbugs_2385_two *)0)->k) == sizeof(int32_t) && (_Generic(((struct fixedbugs_2385_two *)0)->k, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Two k");
-#line 68 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
+#line 125 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -113,26 +170,26 @@ typedef struct h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesv
 } h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -153,48 +210,48 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_fixedbugs_2385_check_two(struct fixedbugs_2385_two * a0) { (void)(fixedbugs_2385_check_two)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_fixedbugs_2385_two_value(struct fixedbugs_2385_two * a0) { (void)(fixedbugs_2385_two_value)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_fixedbugs_2385_check_two(struct fixedbugs_2385_two * hero_a0) { (void)(fixedbugs_2385_check_two)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_fixedbugs_2385_two_value(struct fixedbugs_2385_two * hero_a0) { (void)(fixedbugs_2385_two_value)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 225 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(const struct fixedbugs_2385_two *a, const struct fixedbugs_2385_two *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_eq(const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *a, const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(const struct fixedbugs_2385_two *hero_a, const struct fixedbugs_2385_two *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_eq(const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *hero_a, const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("k")
 #undef k
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2385_two, k), sizeof(((struct fixedbugs_2385_two *)0)->k)};
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct fixedbugs_2385_two, k), sizeof(((struct fixedbugs_2385_two *)0)->k)};
 #pragma pop_macro("k")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 10];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static size_t hero_pad_m_0[8];
-__attribute__((unused)) static size_t hero_pad_mn_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 10];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__unused__)) static size_t hero_pad_m_0[8];
+__attribute__((__unused__)) static size_t hero_pad_mn_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     {
         struct fixedbugs_2385_two *const hero_pad_o = (struct fixedbugs_2385_two *)hero_pad_object(sizeof(struct fixedbugs_2385_two));
     #pragma push_macro("p")
@@ -228,136 +285,136 @@ __attribute__((__noinline__)) void h_fixedbugs2385twoarmsnamingbitfieldsoverthes
 #line 19
 #define t3 (*hero_big_t3)
 #line 19
-    h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *const hero_big_h0_h = (h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)hero_frame_take(sizeof(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held)); HERO_NODEBUG struct fixedbugs_2385_two *const hero_big_t1 = (struct fixedbugs_2385_two *)hero_frame_take(sizeof(struct fixedbugs_2385_two)); HERO_NODEBUG int64_t t2, t4, t6; HERO_NODEBUG h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *const hero_big_t3 = (h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)hero_frame_take(sizeof(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held)); HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 20, 26}; t1 = fixedbugs_2385_mk_two(); } t2 = INT64_C(1); t3 = *(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)__builtin_memset(&t3, 0, sizeof t3); t3.f_one = t1; t3.f_n = t2; h0_h = t3;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 21, 11}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2385_check_two(&h0_h.f_one); } t5 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 21, 50}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_m_0, hero_pad_mn_0); t6 = fixedbugs_2385_two_value(&h0_h.f_one); } hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
-#line 235 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
+    h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *const hero_big_h0_h = (h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)hero_frame_take(sizeof(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held)); HERO_NODEBUG struct fixedbugs_2385_two *const hero_big_t1 = (struct fixedbugs_2385_two *)hero_frame_take(sizeof(struct fixedbugs_2385_two)); HERO_NODEBUG int64_t t2, t4, t6; HERO_NODEBUG h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *const hero_big_t3 = (h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)hero_frame_take(sizeof(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held)); HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 20, 26}; t1 = fixedbugs_2385_mk_two(); } t2 = INT64_C(1); t3 = *(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *)__builtin_memset(&t3, 0, sizeof t3); t3.f_one = t1; t3.f_n = t2; h0_h = t3;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 21, 11}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_m_0, hero_pad_mn_0); t4 = fixedbugs_2385_check_two(&h0_h.f_one); } t5 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.hero", "fixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value.main", 21, 50}; hero_pad_fill(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_g_0, hero_pad_n_0); hero_pad_clear(&h0_h.f_one, sizeof(struct fixedbugs_2385_two), 1, hero_pad_m_0, hero_pad_mn_0); t6 = fixedbugs_2385_two_value(&h0_h.f_one); } hero_print_int(t4); hero_print_str(t5); hero_print_int(t6); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t1); hero_frame_give(hero_big_h0_h); return;
+#line 292 "fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue.c"
 }
 #undef h0_h
 #undef t1
 #undef t3
-HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(const struct fixedbugs_2385_two *a, const struct fixedbugs_2385_two *b) {
+HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(const struct fixedbugs_2385_two *hero_a, const struct fixedbugs_2385_two *hero_b) {
     hero_panic("h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(const void *hero_elem) {
+    (void)hero_elem; hero_panic("h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_eq(const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *a, const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *b) {
-    if (!(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(&a->f_one, &b->f_one))) return false;
-    if (!(a->f_n == b->f_n)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_eq(const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *hero_a, const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *hero_b) {
+    if (!(h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_eq(&hero_a->f_one, &hero_b->f_one))) return false;
+    if (!(hero_a->f_n == hero_b->f_n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_hash(const void *elem) {
-    const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(&v->f_one)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Held_hash(const void *hero_elem) {
+    const h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_Held *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_0Two_hash(&hero_v->f_one)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_n)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("55345ff97449b964", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("171155be22839668", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue\tfixedbugs-2385-two-arms-naming-bit-fields-over-the-same-bits-keep-each-ones-value\n");
     h_fixedbugs2385twoarmsnamingbitfieldsoverthesamebitskeepeachonesvalue_main();
     hero_runtime_check_leaks();

@@ -31,7 +31,7 @@
 #
 # **Three UBSan checks left out when optimising, defect 622** (2026-10-11):
 # `-fsanitize=undefined` checks each member access through a pointer, its
-# null, alignment and object size, so every level's `&v->f_inner` carries a
+# null, alignment and object size, so every level's `&hero_v->f_inner` carries a
 # check of its own, and inlined into each other a chain's functions hold a
 # check per level below them: JumpThreading, the inliner and EarlyCSE took
 # the thousand-deep case (defect 539's) to 28.9 s and 4.2 GB of clang at
@@ -55,9 +55,9 @@ constant EAGER: [str]
     [
         "#undef HERO_TU_LOCAL"
         "#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)"
-        "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize(\"null\", \"alignment\", \"object-size\"))) static"
+        "#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__, __no_sanitize__(\"null\", \"alignment\", \"object-size\"))) static"
         "#else"
-        "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static"
+        "#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__)) static"
         "#endif"
     ]
 

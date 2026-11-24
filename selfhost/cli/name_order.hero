@@ -56,7 +56,7 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     # among them, and an unused `static` function is `-Wall`'s, so with no
     # mark every order was refused for the question itself and no order note
     # was ever told (batch 31's gate B, 2026-11-11).
-    question = "__attribute__((unused)) static void hero_order_q(void) { (void)(" + name + "); }"
+    question = "__attribute__((__unused__)) static void hero_order_q(void) { (void)(" + name + "); }"
     written = order_trial.theirs(unit_headers)
 
     # Read alone: right after the header and before `heroes_standard.h`,

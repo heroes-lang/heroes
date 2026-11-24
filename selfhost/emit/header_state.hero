@@ -53,6 +53,7 @@
 use cli/flags
 use cli/process
 use cli/strings
+use emit/c_words
 use emit/header_region
 
 # The lines before the groups' includes, inside their region: the
@@ -78,6 +79,68 @@ constant GIVEN_BACK: [str]
         "#pragma clang section bss=\"\" data=\"\" rodata=\"\" text=\"\" relro=\"\""
         "#pragma clang optimize on"
     ]
+
+# The lines after the guard's close as the unit writes them: every word of
+# `GIVEN_BACK` saved and undefined before them and given back after, so the
+# pragmas read clang's own words and the header's macros stand again for
+# every line after (2026-11-24). Measured on this Mac's clang that day,
+# under the unit's words: a header's `#define on 1`, `pop 1` or `precise 1`
+# made a `float_control` line malformed, a refusal the opening's trial told
+# as the header's, a correct program refused; and `#define bss 1` made the
+# sections' line one clang drops under the `-Wignored-pragmas` the first
+# line quiets, unsaid, a header's section left over the program's
+# functions. Every word of the lines, not the four clang expands today:
+# which arguments a pragma expands is clang's to change.
+function given_back() -> [str]
+    words = words_of(GIVEN_BACK)
+    out: [str] @= []
+
+    for word in words
+        out @ out.push("#pragma push_macro(\"" + word + "\")")
+        out @ out.push("#undef " + word)
+
+    for line in GIVEN_BACK
+        out @ out.push(line)
+
+    for word in words
+        out @ out.push("#pragma pop_macro(\"" + word + "\")")
+
+    return out
+
+# Every identifier of `lines` after a line's `#pragma`, outside its quotes,
+# once each in the order it first stands.
+function words_of(lines: [str]) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for line in lines
+        i: i64 @= "#pragma".len()
+
+        while i < line.len()
+            if line[i] == 34
+                i @ i + 1
+
+                while i < line.len() && line[i] != 34
+                    i @ i + 1
+
+                i @ i + 1
+                continue
+
+            if c_words.starts_word(line[i])
+                start = i
+
+                while i < line.len() && c_words.in_word(line[i])
+                    i @ i + 1
+
+                word = line.slice(from: start, to: i)
+
+                if seen[word].is_err()
+                    seen[word] @ true
+                    out @ out.push(word)
+                continue
+            i @ i + 1
+
+    return out
 
 # The words of the build that would make a line above other than the
 # build's own: a packing, a visibility, a bit-field layout, or a
@@ -112,6 +175,14 @@ test "the floating-point state is saved before the groups and every state given 
     assert GIVEN_BACK[2] == "#pragma float_control(pop)"
     assert GIVEN_BACK[3] == "#pragma float_control(precise, on)"
     assert GIVEN_BACK.len() == 7
+    words = words_of(GIVEN_BACK)
+    assert words.join(" ") == "clang diagnostic ignored pack float_control pop precise on GCC visibility push default section bss data rodata text relro optimize"
+    given = given_back()
+    assert given.len() == 3 * words.len() + GIVEN_BACK.len()
+    assert given[0] == "#pragma push_macro(\"clang\")"
+    assert given[1] == "#undef clang"
+    assert given[2 * words.len()] == GIVEN_BACK[0]
+    assert given[given.len() - 1] == "#pragma pop_macro(\"optimize\")"
 
 # The premise the constant lines rest on: `push(default)` and
 # `float_control(precise, on)` are the build's own only while no word of it
@@ -129,19 +200,22 @@ test "no build word sets a state the close gives back as a constant"
 # `-Werror`, the program's own record is laid out by the build's packing,
 # the header's by its own, and none of the lines says a word; without the
 # lines given back the program's record is packed, so the case is not blind.
+# The header also defines a macro over every word of the lines, and one of
+# its own reads `on` after them: the lines read clang's words, and the
+# header's macro stands again past them (2026-11-24).
 test "a header's packing and state left set reach no line the compiler writes"
     dir = "build/selftest-header-state"
     assert !process.mkdir_all(dir).is_err()
-    header = "#pragma pack(push, 1)\n#pragma float_control(push)\n#pragma float_control(precise, off)\n#pragma clang fp contract(fast)\n#pragma GCC visibility push(hidden)\n#pragma clang section text=\"__TEXT,__heroes_hdr\"\n#pragma clang optimize off\nstruct heroes_theirs { char a; long long b; };\n"
+    header = "#pragma pack(push, 1)\n#pragma float_control(push)\n#pragma float_control(precise, off)\n#pragma clang fp contract(fast)\n#pragma GCC visibility push(hidden)\n#pragma clang section text=\"__TEXT,__heroes_hdr\"\n#pragma clang optimize off\nstruct heroes_theirs { char a; long long b; };\n" + planted()
     assert !write_file(path: dir + "/heroes_state.h", text: header).is_err()
-    after = "struct heroes_mine { char a; long long b; };\n_Static_assert(sizeof(struct heroes_theirs) == 1 + sizeof(long long), \"the header's record keeps its packing\");\n_Static_assert(sizeof(struct heroes_mine) == 2 * sizeof(long long), \"the program's record has the build's\");\nint heroes_state_probe(void);\nint heroes_state_probe(void) { return 1; }\n"
+    after = "_Static_assert(on == 1, \"the header's macro stands past the lines\");\nstruct heroes_mine { char a; long long b; };\n_Static_assert(sizeof(struct heroes_theirs) == 1 + sizeof(long long), \"the header's record keeps its packing\");\n_Static_assert(sizeof(struct heroes_mine) == 2 * sizeof(long long), \"the program's record has the build's\");\nint heroes_state_probe(void);\nint heroes_state_probe(void) { return 1; }\n"
 
     for give in [true, false]
         lines: [str] @= strings.with_all(list: header_region.opening(), more: SAVED)
         lines @ lines.push("#include <heroes_state.h>")
 
         if give
-            lines @ strings.with_all(list: lines, more: GIVEN_BACK)
+            lines @ strings.with_all(list: lines, more: given_back())
         lines @ lines.push(header_region.CLOSING)
         unit = dir + "/unit-" + give.to_str() + ".c"
         assert !write_file(path: unit, text: lines.join("\n") + "\n" + after).is_err()
@@ -155,3 +229,12 @@ test "a header's packing and state left set reach no line the compiler writes"
 
         said = process.run(program: "clang", words: words, out: process.discard(), err: process.discard())
         assert said.code == 0 == give
+
+# A macro over every word of the lines, each `1`, as a header may define.
+function planted() -> str
+    out: [str] @= []
+
+    for word in words_of(GIVEN_BACK)
+        out @ out.push("#define " + word + " 1\n")
+
+    return out.join("")

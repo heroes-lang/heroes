@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <raylib.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -98,13 +155,13 @@ _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensSeparationDistance, float *: 1
 _Static_assert(_Generic(&((VrDeviceInfo *)0)->interpupillaryDistance, float *: 1, default: 0) && sizeof(((VrDeviceInfo *)0)->interpupillaryDistance) == sizeof(float), "heroes-ffi-field VrDeviceInfo interpupillaryDistance");
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) != 0, "heroes-ffi-flex VrDeviceInfo lensDistortionValues"); _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, lensDistortionValues) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo lensDistortionValues");
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection"); _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 102 "ffiacarraymember.c"
+#line 159 "ffiacarraymember.c"
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 106 "ffiacarraymember.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 163 "ffiacarraymember.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -145,26 +202,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -185,51 +242,51 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 78 "tests/golden/run/ffi-a-c-array-member.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo a0) { (void)(LoadVrStereoConfig)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_ffiacarraymember_UnloadVrStereoConfig(VrStereoConfig a0) { (void)(UnloadVrStereoConfig)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiacarraymember_LoadVrStereoConfig(VrDeviceInfo hero_a0) { (void)(LoadVrStereoConfig)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiacarraymember_UnloadVrStereoConfig(VrStereoConfig hero_a0) { (void)(UnloadVrStereoConfig)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 200 "ffiacarraymember.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 257 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *a, const Matrix *b);
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0Matrix_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiacarraymember_0VrStereoConfig_eq(const VrStereoConfig *a, const VrStereoConfig *b);
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrStereoConfig_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiacarraymember_0VrDeviceInfo_eq(const VrDeviceInfo *a, const VrDeviceInfo *b);
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrDeviceInfo_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *hero_a, const Matrix *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0Matrix_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_ffiacarraymember_0VrStereoConfig_eq(const VrStereoConfig *hero_a, const VrStereoConfig *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrStereoConfig_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_ffiacarraymember_0VrDeviceInfo_eq(const VrDeviceInfo *hero_a, const VrDeviceInfo *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrDeviceInfo_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_ffiacarraymember_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Matrix *)hero_pad_nowhere()) == 13 ? sizeof(Matrix) : 0), __builtin_offsetof(Matrix, m0), sizeof(((Matrix *)0)->m0), __builtin_offsetof(Matrix, m4), sizeof(((Matrix *)0)->m4), __builtin_offsetof(Matrix, m8), sizeof(((Matrix *)0)->m8), __builtin_offsetof(Matrix, m12), sizeof(((Matrix *)0)->m12), __builtin_offsetof(Matrix, m1), sizeof(((Matrix *)0)->m1), __builtin_offsetof(Matrix, m5), sizeof(((Matrix *)0)->m5), __builtin_offsetof(Matrix, m9), sizeof(((Matrix *)0)->m9), __builtin_offsetof(Matrix, m13), sizeof(((Matrix *)0)->m13), __builtin_offsetof(Matrix, m2), sizeof(((Matrix *)0)->m2), __builtin_offsetof(Matrix, m6), sizeof(((Matrix *)0)->m6), __builtin_offsetof(Matrix, m10), sizeof(((Matrix *)0)->m10), __builtin_offsetof(Matrix, m14), sizeof(((Matrix *)0)->m14), __builtin_offsetof(Matrix, m3), sizeof(((Matrix *)0)->m3), __builtin_offsetof(Matrix, m7), sizeof(((Matrix *)0)->m7), __builtin_offsetof(Matrix, m11), sizeof(((Matrix *)0)->m11), __builtin_offsetof(Matrix, m15), sizeof(((Matrix *)0)->m15)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(VrStereoConfig *)hero_pad_nowhere()) == 13 ? sizeof(VrStereoConfig) : 0), __builtin_offsetof(VrStereoConfig, projection), sizeof(((VrStereoConfig *)0)->projection), __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(((VrStereoConfig *)0)->viewOffset), __builtin_offsetof(VrStereoConfig, leftLensCenter), sizeof(((VrStereoConfig *)0)->leftLensCenter), __builtin_offsetof(VrStereoConfig, rightLensCenter), sizeof(((VrStereoConfig *)0)->rightLensCenter), __builtin_offsetof(VrStereoConfig, leftScreenCenter), sizeof(((VrStereoConfig *)0)->leftScreenCenter), __builtin_offsetof(VrStereoConfig, rightScreenCenter), sizeof(((VrStereoConfig *)0)->rightScreenCenter), __builtin_offsetof(VrStereoConfig, scale), sizeof(((VrStereoConfig *)0)->scale), __builtin_offsetof(VrStereoConfig, scaleIn), sizeof(((VrStereoConfig *)0)->scaleIn)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(VrDeviceInfo *)hero_pad_nowhere()) == 13 ? sizeof(VrDeviceInfo) : 0), __builtin_offsetof(VrDeviceInfo, hResolution), sizeof(((VrDeviceInfo *)0)->hResolution), __builtin_offsetof(VrDeviceInfo, vResolution), sizeof(((VrDeviceInfo *)0)->vResolution), __builtin_offsetof(VrDeviceInfo, hScreenSize), sizeof(((VrDeviceInfo *)0)->hScreenSize), __builtin_offsetof(VrDeviceInfo, vScreenSize), sizeof(((VrDeviceInfo *)0)->vScreenSize), __builtin_offsetof(VrDeviceInfo, eyeToScreenDistance), sizeof(((VrDeviceInfo *)0)->eyeToScreenDistance), __builtin_offsetof(VrDeviceInfo, lensSeparationDistance), sizeof(((VrDeviceInfo *)0)->lensSeparationDistance), __builtin_offsetof(VrDeviceInfo, interpupillaryDistance), sizeof(((VrDeviceInfo *)0)->interpupillaryDistance), __builtin_offsetof(VrDeviceInfo, lensDistortionValues), sizeof(((VrDeviceInfo *)0)->lensDistortionValues), __builtin_offsetof(VrDeviceInfo, chromaAbCorrection), sizeof(((VrDeviceInfo *)0)->chromaAbCorrection)};
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Matrix *)hero_pad_nowhere()) == 13 ? sizeof(Matrix) : 0), __builtin_offsetof(Matrix, m0), sizeof(((Matrix *)0)->m0), __builtin_offsetof(Matrix, m4), sizeof(((Matrix *)0)->m4), __builtin_offsetof(Matrix, m8), sizeof(((Matrix *)0)->m8), __builtin_offsetof(Matrix, m12), sizeof(((Matrix *)0)->m12), __builtin_offsetof(Matrix, m1), sizeof(((Matrix *)0)->m1), __builtin_offsetof(Matrix, m5), sizeof(((Matrix *)0)->m5), __builtin_offsetof(Matrix, m9), sizeof(((Matrix *)0)->m9), __builtin_offsetof(Matrix, m13), sizeof(((Matrix *)0)->m13), __builtin_offsetof(Matrix, m2), sizeof(((Matrix *)0)->m2), __builtin_offsetof(Matrix, m6), sizeof(((Matrix *)0)->m6), __builtin_offsetof(Matrix, m10), sizeof(((Matrix *)0)->m10), __builtin_offsetof(Matrix, m14), sizeof(((Matrix *)0)->m14), __builtin_offsetof(Matrix, m3), sizeof(((Matrix *)0)->m3), __builtin_offsetof(Matrix, m7), sizeof(((Matrix *)0)->m7), __builtin_offsetof(Matrix, m11), sizeof(((Matrix *)0)->m11), __builtin_offsetof(Matrix, m15), sizeof(((Matrix *)0)->m15)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(VrStereoConfig *)hero_pad_nowhere()) == 13 ? sizeof(VrStereoConfig) : 0), __builtin_offsetof(VrStereoConfig, projection), sizeof(((VrStereoConfig *)0)->projection), __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(((VrStereoConfig *)0)->viewOffset), __builtin_offsetof(VrStereoConfig, leftLensCenter), sizeof(((VrStereoConfig *)0)->leftLensCenter), __builtin_offsetof(VrStereoConfig, rightLensCenter), sizeof(((VrStereoConfig *)0)->rightLensCenter), __builtin_offsetof(VrStereoConfig, leftScreenCenter), sizeof(((VrStereoConfig *)0)->leftScreenCenter), __builtin_offsetof(VrStereoConfig, rightScreenCenter), sizeof(((VrStereoConfig *)0)->rightScreenCenter), __builtin_offsetof(VrStereoConfig, scale), sizeof(((VrStereoConfig *)0)->scale), __builtin_offsetof(VrStereoConfig, scaleIn), sizeof(((VrStereoConfig *)0)->scaleIn)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(VrDeviceInfo *)hero_pad_nowhere()) == 13 ? sizeof(VrDeviceInfo) : 0), __builtin_offsetof(VrDeviceInfo, hResolution), sizeof(((VrDeviceInfo *)0)->hResolution), __builtin_offsetof(VrDeviceInfo, vResolution), sizeof(((VrDeviceInfo *)0)->vResolution), __builtin_offsetof(VrDeviceInfo, hScreenSize), sizeof(((VrDeviceInfo *)0)->hScreenSize), __builtin_offsetof(VrDeviceInfo, vScreenSize), sizeof(((VrDeviceInfo *)0)->vScreenSize), __builtin_offsetof(VrDeviceInfo, eyeToScreenDistance), sizeof(((VrDeviceInfo *)0)->eyeToScreenDistance), __builtin_offsetof(VrDeviceInfo, lensSeparationDistance), sizeof(((VrDeviceInfo *)0)->lensSeparationDistance), __builtin_offsetof(VrDeviceInfo, interpupillaryDistance), sizeof(((VrDeviceInfo *)0)->interpupillaryDistance), __builtin_offsetof(VrDeviceInfo, lensDistortionValues), sizeof(((VrDeviceInfo *)0)->lensDistortionValues), __builtin_offsetof(VrDeviceInfo, chromaAbCorrection), sizeof(((VrDeviceInfo *)0)->chromaAbCorrection)};
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(Matrix), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(VrStereoConfig), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(VrDeviceInfo), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
@@ -237,7 +294,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
-void h_ffiacarraymember_main(void) { VrDeviceInfo h0_device; VrStereoConfig h1_config; HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG float t3, t4, t5, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17, t21, t25, t26, t29, t30; HERO_NODEBUG VrDeviceInfo t19, t22; HERO_NODEBUG int64_t t20, t24, t28; HERO_NODEBUG VrStereoConfig t23, t32; HERO_NODEBUG bool t27, t31; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_ffiacarraymember_main(void) { VrDeviceInfo h0_device; VrStereoConfig h1_config; HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG float t3, t4, t5, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17, t21, t25, t26, t29, t30; HERO_NODEBUG VrDeviceInfo t19, t22; HERO_NODEBUG int64_t t20, t24, t28; HERO_NODEBUG VrStereoConfig t23, t32; HERO_NODEBUG bool t27, t31; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 85
     t1 = INT64_C(2160);
     t2 = INT64_C(1200);
@@ -253,222 +310,222 @@ void h_ffiacarraymember_main(void) { VrDeviceInfo h0_device; VrStereoConfig h1_c
 #line 95
     t20 = INT64_C(1); t21 = h0_device.lensDistortionValues[((uint64_t)(t20) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 95, 11), (int64_t)0) : (t20))]; hero_print_f32(t21); hero_print_end();
 #line 98
-    t22 = h0_device; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 98, 14}; t23 = LoadVrStereoConfig(t22); } h1_config = t23; hero_pad_fill(&h1_config, sizeof(VrStereoConfig), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, projection), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->projection) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0); } for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->viewOffset) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0); }
+    t22 = h0_device; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 98, 14}; t23 = LoadVrStereoConfig(t22); } h1_config = t23; hero_pad_fill(&h1_config, sizeof(VrStereoConfig), 1, hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, projection), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->projection) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0); } for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h1_config) + hero_pad_k0 * sizeof(VrStereoConfig) + __builtin_offsetof(VrStereoConfig, viewOffset), sizeof(Matrix), sizeof(((VrStereoConfig *)0)->viewOffset) / sizeof(Matrix), hero_pad_g_0, hero_pad_n_0); }
     t24 = INT64_C(0); t25 = h1_config.scale[((uint64_t)(t24) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 99, 11), (int64_t)0) : (t24))]; t26 = 0x0p+0; if (t25 != t25 || t26 != t26) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 99, 11); t27 = t25 > t26; hero_print_bool(t27); hero_print_end();
     t28 = INT64_C(1); t29 = h1_config.leftScreenCenter[((uint64_t)(t28) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 100, 11), (int64_t)0) : (t28))]; t30 = 0x0p+0; if (t29 != t29 || t30 != t30) hero_panic_at("a nan in `>`: it is neither less nor greater, so both arms would be false", "ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 100, 11); t31 = t29 > t30; hero_print_bool(t31); hero_print_end();
-    t32 = h1_config; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 101, 5}; (void)UnloadVrStereoConfig(t32); } return;
-#line 261 "ffiacarraymember.c"
+    t32 = h1_config; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-c-array-member.hero", "ffi-a-c-array-member.main", 101, 5}; (void)UnloadVrStereoConfig(t32); } return;
+#line 318 "ffiacarraymember.c"
 }
-HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *a, const Matrix *b) {
-    if (!(a->m0 == b->m0)) return false;
-    if (!(a->m4 == b->m4)) return false;
-    if (!(a->m8 == b->m8)) return false;
-    if (!(a->m12 == b->m12)) return false;
-    if (!(a->m1 == b->m1)) return false;
-    if (!(a->m5 == b->m5)) return false;
-    if (!(a->m9 == b->m9)) return false;
-    if (!(a->m13 == b->m13)) return false;
-    if (!(a->m2 == b->m2)) return false;
-    if (!(a->m6 == b->m6)) return false;
-    if (!(a->m10 == b->m10)) return false;
-    if (!(a->m14 == b->m14)) return false;
-    if (!(a->m3 == b->m3)) return false;
-    if (!(a->m7 == b->m7)) return false;
-    if (!(a->m11 == b->m11)) return false;
-    if (!(a->m15 == b->m15)) return false;
+HERO_TU_LOCAL bool h_ffiacarraymember_0Matrix_eq(const Matrix *hero_a, const Matrix *hero_b) {
+    if (!(hero_a->m0 == hero_b->m0)) return false;
+    if (!(hero_a->m4 == hero_b->m4)) return false;
+    if (!(hero_a->m8 == hero_b->m8)) return false;
+    if (!(hero_a->m12 == hero_b->m12)) return false;
+    if (!(hero_a->m1 == hero_b->m1)) return false;
+    if (!(hero_a->m5 == hero_b->m5)) return false;
+    if (!(hero_a->m9 == hero_b->m9)) return false;
+    if (!(hero_a->m13 == hero_b->m13)) return false;
+    if (!(hero_a->m2 == hero_b->m2)) return false;
+    if (!(hero_a->m6 == hero_b->m6)) return false;
+    if (!(hero_a->m10 == hero_b->m10)) return false;
+    if (!(hero_a->m14 == hero_b->m14)) return false;
+    if (!(hero_a->m3 == hero_b->m3)) return false;
+    if (!(hero_a->m7 == hero_b->m7)) return false;
+    if (!(hero_a->m11 == hero_b->m11)) return false;
+    if (!(hero_a->m15 == hero_b->m15)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0Matrix_hash(const void *elem) {
-    const Matrix *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m0)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m4)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m8)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m12)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m1)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m5)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m9)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m13)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m2)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m6)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m10)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m14)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m3)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m7)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m11)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->m15)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0Matrix_hash(const void *hero_elem) {
+    const Matrix *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m0)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m4)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m8)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m12)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m1)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m5)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m9)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m13)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m2)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m6)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m10)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m14)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m3)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m7)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m11)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->m15)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_ffiacarraymember_0VrStereoConfig_eq(const VrStereoConfig *a, const VrStereoConfig *b) {
-    if (!((h_ffiacarraymember_0Matrix_eq(&a->projection[0], &b->projection[0]) && h_ffiacarraymember_0Matrix_eq(&a->projection[1], &b->projection[1])))) return false;
-    if (!((h_ffiacarraymember_0Matrix_eq(&a->viewOffset[0], &b->viewOffset[0]) && h_ffiacarraymember_0Matrix_eq(&a->viewOffset[1], &b->viewOffset[1])))) return false;
-    if (!((a->leftLensCenter[0] == b->leftLensCenter[0] && a->leftLensCenter[1] == b->leftLensCenter[1]))) return false;
-    if (!((a->rightLensCenter[0] == b->rightLensCenter[0] && a->rightLensCenter[1] == b->rightLensCenter[1]))) return false;
-    if (!((a->leftScreenCenter[0] == b->leftScreenCenter[0] && a->leftScreenCenter[1] == b->leftScreenCenter[1]))) return false;
-    if (!((a->rightScreenCenter[0] == b->rightScreenCenter[0] && a->rightScreenCenter[1] == b->rightScreenCenter[1]))) return false;
-    if (!((a->scale[0] == b->scale[0] && a->scale[1] == b->scale[1]))) return false;
-    if (!((a->scaleIn[0] == b->scaleIn[0] && a->scaleIn[1] == b->scaleIn[1]))) return false;
+HERO_TU_LOCAL bool h_ffiacarraymember_0VrStereoConfig_eq(const VrStereoConfig *hero_a, const VrStereoConfig *hero_b) {
+    if (!((h_ffiacarraymember_0Matrix_eq(&hero_a->projection[0], &hero_b->projection[0]) && h_ffiacarraymember_0Matrix_eq(&hero_a->projection[1], &hero_b->projection[1])))) return false;
+    if (!((h_ffiacarraymember_0Matrix_eq(&hero_a->viewOffset[0], &hero_b->viewOffset[0]) && h_ffiacarraymember_0Matrix_eq(&hero_a->viewOffset[1], &hero_b->viewOffset[1])))) return false;
+    if (!((hero_a->leftLensCenter[0] == hero_b->leftLensCenter[0] && hero_a->leftLensCenter[1] == hero_b->leftLensCenter[1]))) return false;
+    if (!((hero_a->rightLensCenter[0] == hero_b->rightLensCenter[0] && hero_a->rightLensCenter[1] == hero_b->rightLensCenter[1]))) return false;
+    if (!((hero_a->leftScreenCenter[0] == hero_b->leftScreenCenter[0] && hero_a->leftScreenCenter[1] == hero_b->leftScreenCenter[1]))) return false;
+    if (!((hero_a->rightScreenCenter[0] == hero_b->rightScreenCenter[0] && hero_a->rightScreenCenter[1] == hero_b->rightScreenCenter[1]))) return false;
+    if (!((hero_a->scale[0] == hero_b->scale[0] && hero_a->scale[1] == hero_b->scale[1]))) return false;
+    if (!((hero_a->scaleIn[0] == hero_b->scaleIn[0] && hero_a->scaleIn[1] == hero_b->scaleIn[1]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrStereoConfig_hash(const void *elem) {
-    const VrStereoConfig *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_ffiacarraymember_0Matrix_hash(&v->projection[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiacarraymember_0Matrix_hash(&v->projection[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiacarraymember_0Matrix_hash(&v->viewOffset[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiacarraymember_0Matrix_hash(&v->viewOffset[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->leftLensCenter[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->leftLensCenter[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->rightLensCenter[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->rightLensCenter[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->leftScreenCenter[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->leftScreenCenter[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->rightScreenCenter[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->rightScreenCenter[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->scale[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->scale[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->scaleIn[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->scaleIn[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrStereoConfig_hash(const void *hero_elem) {
+    const VrStereoConfig *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_ffiacarraymember_0Matrix_hash(&hero_v->projection[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_ffiacarraymember_0Matrix_hash(&hero_v->projection[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_ffiacarraymember_0Matrix_hash(&hero_v->viewOffset[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_ffiacarraymember_0Matrix_hash(&hero_v->viewOffset[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->leftLensCenter[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->leftLensCenter[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->rightLensCenter[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->rightLensCenter[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->leftScreenCenter[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->leftScreenCenter[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->rightScreenCenter[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->rightScreenCenter[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->scale[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->scale[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->scaleIn[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->scaleIn[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_ffiacarraymember_0VrDeviceInfo_eq(const VrDeviceInfo *a, const VrDeviceInfo *b) {
-    if (!(a->hResolution == b->hResolution)) return false;
-    if (!(a->vResolution == b->vResolution)) return false;
-    if (!(a->hScreenSize == b->hScreenSize)) return false;
-    if (!(a->vScreenSize == b->vScreenSize)) return false;
-    if (!(a->eyeToScreenDistance == b->eyeToScreenDistance)) return false;
-    if (!(a->lensSeparationDistance == b->lensSeparationDistance)) return false;
-    if (!(a->interpupillaryDistance == b->interpupillaryDistance)) return false;
-    if (!((a->lensDistortionValues[0] == b->lensDistortionValues[0] && a->lensDistortionValues[1] == b->lensDistortionValues[1] && a->lensDistortionValues[2] == b->lensDistortionValues[2] && a->lensDistortionValues[3] == b->lensDistortionValues[3]))) return false;
-    if (!((a->chromaAbCorrection[0] == b->chromaAbCorrection[0] && a->chromaAbCorrection[1] == b->chromaAbCorrection[1] && a->chromaAbCorrection[2] == b->chromaAbCorrection[2] && a->chromaAbCorrection[3] == b->chromaAbCorrection[3]))) return false;
+HERO_TU_LOCAL bool h_ffiacarraymember_0VrDeviceInfo_eq(const VrDeviceInfo *hero_a, const VrDeviceInfo *hero_b) {
+    if (!(hero_a->hResolution == hero_b->hResolution)) return false;
+    if (!(hero_a->vResolution == hero_b->vResolution)) return false;
+    if (!(hero_a->hScreenSize == hero_b->hScreenSize)) return false;
+    if (!(hero_a->vScreenSize == hero_b->vScreenSize)) return false;
+    if (!(hero_a->eyeToScreenDistance == hero_b->eyeToScreenDistance)) return false;
+    if (!(hero_a->lensSeparationDistance == hero_b->lensSeparationDistance)) return false;
+    if (!(hero_a->interpupillaryDistance == hero_b->interpupillaryDistance)) return false;
+    if (!((hero_a->lensDistortionValues[0] == hero_b->lensDistortionValues[0] && hero_a->lensDistortionValues[1] == hero_b->lensDistortionValues[1] && hero_a->lensDistortionValues[2] == hero_b->lensDistortionValues[2] && hero_a->lensDistortionValues[3] == hero_b->lensDistortionValues[3]))) return false;
+    if (!((hero_a->chromaAbCorrection[0] == hero_b->chromaAbCorrection[0] && hero_a->chromaAbCorrection[1] == hero_b->chromaAbCorrection[1] && hero_a->chromaAbCorrection[2] == hero_b->chromaAbCorrection[2] && hero_a->chromaAbCorrection[3] == hero_b->chromaAbCorrection[3]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrDeviceInfo_hash(const void *elem) {
-    const VrDeviceInfo *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->hResolution)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->vResolution)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->hScreenSize)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->vScreenSize)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->eyeToScreenDistance)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->lensSeparationDistance)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->interpupillaryDistance)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->lensDistortionValues[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->lensDistortionValues[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->lensDistortionValues[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->lensDistortionValues[3])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->chromaAbCorrection[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->chromaAbCorrection[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->chromaAbCorrection[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f32)->hash(&v->chromaAbCorrection[3])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiacarraymember_0VrDeviceInfo_hash(const void *hero_elem) {
+    const VrDeviceInfo *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->hResolution)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->vResolution)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->hScreenSize)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->vScreenSize)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->eyeToScreenDistance)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->lensSeparationDistance)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->interpupillaryDistance)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->lensDistortionValues[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->lensDistortionValues[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->lensDistortionValues[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->lensDistortionValues[3])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->chromaAbCorrection[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->chromaAbCorrection[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->chromaAbCorrection[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->chromaAbCorrection[3])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7823790510f64724", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6d150c264f1f2068", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("ffiacarraymember\tffi-a-c-array-member\n");
     h_ffiacarraymember_main();
     hero_runtime_check_leaks();

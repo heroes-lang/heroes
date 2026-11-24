@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-144-every-wider-result-builds.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -186,28 +243,28 @@ HERO_STR_STATIC(hero_str_61f72f8, "float as f32: ");
 HERO_STR_STATIC(hero_str_686e1db, "float as f64: ");
 HERO_STR_STATIC(hero_str_61fadc34, "double as f64: ");
 
-#line 190 "fixedbugs144everywiderresultbuilds.c"
+#line 247 "fixedbugs144everywiderresultbuilds.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -228,180 +285,180 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 240 "fixedbugs144everywiderresultbuilds.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 297 "fixedbugs144everywiderresultbuilds.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_fixedbugs144everywiderresultbuilds_main(void);
 
 #line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-void h_fixedbugs144everywiderresultbuilds_main(void) { HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t17, t19, t21, t23, t25, t27, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47, t49, t51, t53, t55, t57, t59, t61, t63, t65, t67, t69, t71, t73, t75, t77, t79, t81, t83, t85, t87; HERO_NODEBUG int8_t t2, t20, t28; HERO_NODEBUG int16_t t4, t22, t30, t36, t50; HERO_NODEBUG int32_t t6, t24, t32, t38, t42, t52, t64; HERO_NODEBUG int64_t t8, t26, t34, t40, t44, t46, t48, t54, t66, t74; HERO_NODEBUG uint8_t t10, t56; HERO_NODEBUG uint16_t t12, t58, t68; HERO_NODEBUG uint32_t t14, t60, t70, t76; HERO_NODEBUG uint64_t t16, t62, t72, t78, t80, t82; HERO_NODEBUG bool t18; HERO_NODEBUG float t84; HERO_NODEBUG double t86, t88; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_42cd28); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 68, 28}; t2 = bool_as_i8(); } hero_print_str(t1); hero_print_int(t2); hero_print_end();
-    t3 = HERO_STR_LIT(hero_str_213ddd85); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 69, 29}; t4 = bool_as_i16(); } hero_print_str(t3); hero_print_int(t4); hero_print_end();
-    t5 = HERO_STR_LIT(hero_str_21816c97); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 70, 29}; t6 = bool_as_i32(); } hero_print_str(t5); hero_print_int(t6); hero_print_end();
-    t7 = HERO_STR_LIT(hero_str_21e8db7a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 71, 29}; t8 = bool_as_i64(); } hero_print_str(t7); hero_print_int(t8); hero_print_end();
-    t9 = HERO_STR_LIT(hero_str_1de706c); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 72, 28}; t10 = bool_as_u8(); } hero_print_str(t9); hero_print_int(t10); hero_print_end();
-    t11 = HERO_STR_LIT(hero_str_73e26952); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 73, 29}; t12 = bool_as_u16(); } hero_print_str(t11); hero_print_int(t12); hero_print_end();
-    t13 = HERO_STR_LIT(hero_str_7425f864); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 74, 29}; t14 = bool_as_u32(); } hero_print_str(t13); hero_print_int(t14); hero_print_end();
-    t15 = HERO_STR_LIT(hero_str_748d6747); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 75, 29}; t16 = bool_as_u64(); } hero_print_str(t15); hero_print_uint(t16); hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_6a0cdee7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 76, 30}; t18 = bool_as_bool(); } hero_print_str(t17); hero_print_bool(t18); hero_print_end();
-    t19 = HERO_STR_LIT(hero_str_66f443e8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 77, 27}; t20 = char_as_i8(); } hero_print_str(t19); hero_print_int(t20); hero_print_end();
-    t21 = HERO_STR_LIT(hero_str_2e0da22e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 78, 28}; t22 = char_as_i16(); } hero_print_str(t21); hero_print_int(t22); hero_print_end();
-    t23 = HERO_STR_LIT(hero_str_2e513140); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 79, 28}; t24 = char_as_i32(); } hero_print_str(t23); hero_print_int(t24); hero_print_end();
-    t25 = HERO_STR_LIT(hero_str_2eb8a023); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 80, 28}; t26 = char_as_i64(); } hero_print_str(t25); hero_print_int(t26); hero_print_end();
-    t27 = HERO_STR_LIT(hero_str_1f44bd63); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 81, 34}; t28 = schar_as_i8(); } hero_print_str(t27); hero_print_int(t28); hero_print_end();
-    t29 = HERO_STR_LIT(hero_str_7f3bcbd5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 82, 35}; t30 = schar_as_i16(); } hero_print_str(t29); hero_print_int(t30); hero_print_end();
-    t31 = HERO_STR_LIT(hero_str_7f7f5ae7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 83, 35}; t32 = schar_as_i32(); } hero_print_str(t31); hero_print_int(t32); hero_print_end();
-    t33 = HERO_STR_LIT(hero_str_7fe6c9ca); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 84, 35}; t34 = schar_as_i64(); } hero_print_str(t33); hero_print_int(t34); hero_print_end();
-    t35 = HERO_STR_LIT(hero_str_4fac1a0f); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 85, 29}; t36 = short_as_i16(); } hero_print_str(t35); hero_print_int(t36); hero_print_end();
-    t37 = HERO_STR_LIT(hero_str_4fefa921); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 86, 29}; t38 = short_as_i32(); } hero_print_str(t37); hero_print_int(t38); hero_print_end();
-    t39 = HERO_STR_LIT(hero_str_50571804); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 87, 29}; t40 = short_as_i64(); } hero_print_str(t39); hero_print_int(t40); hero_print_end();
-    t41 = HERO_STR_LIT(hero_str_7bd92ada); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 88, 27}; t42 = int_as_i32(); } hero_print_str(t41); hero_print_int(t42); hero_print_end();
-    t43 = HERO_STR_LIT(hero_str_7c4099bd); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 89, 27}; t44 = int_as_i64(); } hero_print_str(t43); hero_print_int(t44); hero_print_end();
-    t45 = HERO_STR_LIT(hero_str_79a87001); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 90, 28}; t46 = long_as_i64(); } hero_print_str(t45); hero_print_int(t46); hero_print_end();
-    t47 = HERO_STR_LIT(hero_str_45e596d7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 91, 33}; t48 = llong_as_i64(); } hero_print_str(t47); hero_print_int(t48); hero_print_end();
-    t49 = HERO_STR_LIT(hero_str_79c1f998); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 92, 37}; t50 = uchar_as_i16(); } hero_print_str(t49); hero_print_int(t50); hero_print_end();
-    t51 = HERO_STR_LIT(hero_str_7a0588aa); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 93, 37}; t52 = uchar_as_i32(); } hero_print_str(t51); hero_print_int(t52); hero_print_end();
-    t53 = HERO_STR_LIT(hero_str_7a6cf78d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 94, 37}; t54 = uchar_as_i64(); } hero_print_str(t53); hero_print_int(t54); hero_print_end();
-    t55 = HERO_STR_LIT(hero_str_1327c0c2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 95, 36}; t56 = uchar_as_u8(); } hero_print_str(t55); hero_print_int(t56); hero_print_end();
-    t57 = HERO_STR_LIT(hero_str_4c668566); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 96, 37}; t58 = uchar_as_u16(); } hero_print_str(t57); hero_print_int(t58); hero_print_end();
-    t59 = HERO_STR_LIT(hero_str_4caa1478); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 97, 37}; t60 = uchar_as_u32(); } hero_print_str(t59); hero_print_int(t60); hero_print_end();
-    t61 = HERO_STR_LIT(hero_str_4d11835b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 98, 37}; t62 = uchar_as_u64(); } hero_print_str(t61); hero_print_uint(t62); hero_print_end();
-    t63 = HERO_STR_LIT(hero_str_d3864ad); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 99, 38}; t64 = ushort_as_i32(); } hero_print_str(t63); hero_print_int(t64); hero_print_end();
-    t65 = HERO_STR_LIT(hero_str_d9fd390); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 100, 38}; t66 = ushort_as_i64(); } hero_print_str(t65); hero_print_int(t66); hero_print_end();
-    t67 = HERO_STR_LIT(hero_str_5f996168); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 101, 38}; t68 = ushort_as_u16(); } hero_print_str(t67); hero_print_int(t68); hero_print_end();
-    t69 = HERO_STR_LIT(hero_str_5fdcf07a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 102, 38}; t70 = ushort_as_u32(); } hero_print_str(t69); hero_print_int(t70); hero_print_end();
-    t71 = HERO_STR_LIT(hero_str_60445f5d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 103, 38}; t72 = ushort_as_u64(); } hero_print_str(t71); hero_print_uint(t72); hero_print_end();
-    t73 = HERO_STR_LIT(hero_str_26d87353); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 104, 36}; t74 = uint_as_i64(); } hero_print_str(t73); hero_print_int(t74); hero_print_end();
-    t75 = HERO_STR_LIT(hero_str_7915903d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 105, 36}; t76 = uint_as_u32(); } hero_print_str(t75); hero_print_int(t76); hero_print_end();
-    t77 = HERO_STR_LIT(hero_str_797cff20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 106, 36}; t78 = uint_as_u64(); } hero_print_str(t77); hero_print_uint(t78); hero_print_end();
-    t79 = HERO_STR_LIT(hero_str_1801533a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 107, 37}; t80 = ulong_as_u64(); } hero_print_str(t79); hero_print_uint(t80); hero_print_end();
-    t81 = HERO_STR_LIT(hero_str_40d8cdf1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 108, 42}; t82 = ullong_as_u64(); } hero_print_str(t81); hero_print_uint(t82); hero_print_end();
-    t83 = HERO_STR_LIT(hero_str_61f72f8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 109, 29}; t84 = float_as_f32(); } hero_print_str(t83); hero_print_f32(t84); hero_print_end();
-    t85 = HERO_STR_LIT(hero_str_686e1db); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 110, 29}; t86 = float_as_f64(); } hero_print_str(t85); hero_print_f64(t86); hero_print_end();
-    t87 = HERO_STR_LIT(hero_str_61fadc34); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 111, 30}; t88 = double_as_f64(); } hero_print_str(t87); hero_print_f64(t88); hero_print_end(); return;
-#line 304 "fixedbugs144everywiderresultbuilds.c"
+void h_fixedbugs144everywiderresultbuilds_main(void) { HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11, t13, t15, t17, t19, t21, t23, t25, t27, t29, t31, t33, t35, t37, t39, t41, t43, t45, t47, t49, t51, t53, t55, t57, t59, t61, t63, t65, t67, t69, t71, t73, t75, t77, t79, t81, t83, t85, t87; HERO_NODEBUG int8_t t2, t20, t28; HERO_NODEBUG int16_t t4, t22, t30, t36, t50; HERO_NODEBUG int32_t t6, t24, t32, t38, t42, t52, t64; HERO_NODEBUG int64_t t8, t26, t34, t40, t44, t46, t48, t54, t66, t74; HERO_NODEBUG uint8_t t10, t56; HERO_NODEBUG uint16_t t12, t58, t68; HERO_NODEBUG uint32_t t14, t60, t70, t76; HERO_NODEBUG uint64_t t16, t62, t72, t78, t80, t82; HERO_NODEBUG bool t18; HERO_NODEBUG float t84; HERO_NODEBUG double t86, t88; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_42cd28); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 68, 28}; t2 = bool_as_i8(); } hero_print_str(t1); hero_print_int(t2); hero_print_end();
+    t3 = HERO_STR_LIT(hero_str_213ddd85); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 69, 29}; t4 = bool_as_i16(); } hero_print_str(t3); hero_print_int(t4); hero_print_end();
+    t5 = HERO_STR_LIT(hero_str_21816c97); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 70, 29}; t6 = bool_as_i32(); } hero_print_str(t5); hero_print_int(t6); hero_print_end();
+    t7 = HERO_STR_LIT(hero_str_21e8db7a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 71, 29}; t8 = bool_as_i64(); } hero_print_str(t7); hero_print_int(t8); hero_print_end();
+    t9 = HERO_STR_LIT(hero_str_1de706c); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 72, 28}; t10 = bool_as_u8(); } hero_print_str(t9); hero_print_int(t10); hero_print_end();
+    t11 = HERO_STR_LIT(hero_str_73e26952); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 73, 29}; t12 = bool_as_u16(); } hero_print_str(t11); hero_print_int(t12); hero_print_end();
+    t13 = HERO_STR_LIT(hero_str_7425f864); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 74, 29}; t14 = bool_as_u32(); } hero_print_str(t13); hero_print_int(t14); hero_print_end();
+    t15 = HERO_STR_LIT(hero_str_748d6747); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 75, 29}; t16 = bool_as_u64(); } hero_print_str(t15); hero_print_uint(t16); hero_print_end();
+    t17 = HERO_STR_LIT(hero_str_6a0cdee7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 76, 30}; t18 = bool_as_bool(); } hero_print_str(t17); hero_print_bool(t18); hero_print_end();
+    t19 = HERO_STR_LIT(hero_str_66f443e8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 77, 27}; t20 = char_as_i8(); } hero_print_str(t19); hero_print_int(t20); hero_print_end();
+    t21 = HERO_STR_LIT(hero_str_2e0da22e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 78, 28}; t22 = char_as_i16(); } hero_print_str(t21); hero_print_int(t22); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_2e513140); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 79, 28}; t24 = char_as_i32(); } hero_print_str(t23); hero_print_int(t24); hero_print_end();
+    t25 = HERO_STR_LIT(hero_str_2eb8a023); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 80, 28}; t26 = char_as_i64(); } hero_print_str(t25); hero_print_int(t26); hero_print_end();
+    t27 = HERO_STR_LIT(hero_str_1f44bd63); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 81, 34}; t28 = schar_as_i8(); } hero_print_str(t27); hero_print_int(t28); hero_print_end();
+    t29 = HERO_STR_LIT(hero_str_7f3bcbd5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 82, 35}; t30 = schar_as_i16(); } hero_print_str(t29); hero_print_int(t30); hero_print_end();
+    t31 = HERO_STR_LIT(hero_str_7f7f5ae7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 83, 35}; t32 = schar_as_i32(); } hero_print_str(t31); hero_print_int(t32); hero_print_end();
+    t33 = HERO_STR_LIT(hero_str_7fe6c9ca); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 84, 35}; t34 = schar_as_i64(); } hero_print_str(t33); hero_print_int(t34); hero_print_end();
+    t35 = HERO_STR_LIT(hero_str_4fac1a0f); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 85, 29}; t36 = short_as_i16(); } hero_print_str(t35); hero_print_int(t36); hero_print_end();
+    t37 = HERO_STR_LIT(hero_str_4fefa921); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 86, 29}; t38 = short_as_i32(); } hero_print_str(t37); hero_print_int(t38); hero_print_end();
+    t39 = HERO_STR_LIT(hero_str_50571804); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 87, 29}; t40 = short_as_i64(); } hero_print_str(t39); hero_print_int(t40); hero_print_end();
+    t41 = HERO_STR_LIT(hero_str_7bd92ada); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 88, 27}; t42 = int_as_i32(); } hero_print_str(t41); hero_print_int(t42); hero_print_end();
+    t43 = HERO_STR_LIT(hero_str_7c4099bd); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 89, 27}; t44 = int_as_i64(); } hero_print_str(t43); hero_print_int(t44); hero_print_end();
+    t45 = HERO_STR_LIT(hero_str_79a87001); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 90, 28}; t46 = long_as_i64(); } hero_print_str(t45); hero_print_int(t46); hero_print_end();
+    t47 = HERO_STR_LIT(hero_str_45e596d7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 91, 33}; t48 = llong_as_i64(); } hero_print_str(t47); hero_print_int(t48); hero_print_end();
+    t49 = HERO_STR_LIT(hero_str_79c1f998); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 92, 37}; t50 = uchar_as_i16(); } hero_print_str(t49); hero_print_int(t50); hero_print_end();
+    t51 = HERO_STR_LIT(hero_str_7a0588aa); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 93, 37}; t52 = uchar_as_i32(); } hero_print_str(t51); hero_print_int(t52); hero_print_end();
+    t53 = HERO_STR_LIT(hero_str_7a6cf78d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 94, 37}; t54 = uchar_as_i64(); } hero_print_str(t53); hero_print_int(t54); hero_print_end();
+    t55 = HERO_STR_LIT(hero_str_1327c0c2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 95, 36}; t56 = uchar_as_u8(); } hero_print_str(t55); hero_print_int(t56); hero_print_end();
+    t57 = HERO_STR_LIT(hero_str_4c668566); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 96, 37}; t58 = uchar_as_u16(); } hero_print_str(t57); hero_print_int(t58); hero_print_end();
+    t59 = HERO_STR_LIT(hero_str_4caa1478); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 97, 37}; t60 = uchar_as_u32(); } hero_print_str(t59); hero_print_int(t60); hero_print_end();
+    t61 = HERO_STR_LIT(hero_str_4d11835b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 98, 37}; t62 = uchar_as_u64(); } hero_print_str(t61); hero_print_uint(t62); hero_print_end();
+    t63 = HERO_STR_LIT(hero_str_d3864ad); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 99, 38}; t64 = ushort_as_i32(); } hero_print_str(t63); hero_print_int(t64); hero_print_end();
+    t65 = HERO_STR_LIT(hero_str_d9fd390); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 100, 38}; t66 = ushort_as_i64(); } hero_print_str(t65); hero_print_int(t66); hero_print_end();
+    t67 = HERO_STR_LIT(hero_str_5f996168); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 101, 38}; t68 = ushort_as_u16(); } hero_print_str(t67); hero_print_int(t68); hero_print_end();
+    t69 = HERO_STR_LIT(hero_str_5fdcf07a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 102, 38}; t70 = ushort_as_u32(); } hero_print_str(t69); hero_print_int(t70); hero_print_end();
+    t71 = HERO_STR_LIT(hero_str_60445f5d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 103, 38}; t72 = ushort_as_u64(); } hero_print_str(t71); hero_print_uint(t72); hero_print_end();
+    t73 = HERO_STR_LIT(hero_str_26d87353); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 104, 36}; t74 = uint_as_i64(); } hero_print_str(t73); hero_print_int(t74); hero_print_end();
+    t75 = HERO_STR_LIT(hero_str_7915903d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 105, 36}; t76 = uint_as_u32(); } hero_print_str(t75); hero_print_int(t76); hero_print_end();
+    t77 = HERO_STR_LIT(hero_str_797cff20); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 106, 36}; t78 = uint_as_u64(); } hero_print_str(t77); hero_print_uint(t78); hero_print_end();
+    t79 = HERO_STR_LIT(hero_str_1801533a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 107, 37}; t80 = ulong_as_u64(); } hero_print_str(t79); hero_print_uint(t80); hero_print_end();
+    t81 = HERO_STR_LIT(hero_str_40d8cdf1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 108, 42}; t82 = ullong_as_u64(); } hero_print_str(t81); hero_print_uint(t82); hero_print_end();
+    t83 = HERO_STR_LIT(hero_str_61f72f8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 109, 29}; t84 = float_as_f32(); } hero_print_str(t83); hero_print_f32(t84); hero_print_end();
+    t85 = HERO_STR_LIT(hero_str_686e1db); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 110, 29}; t86 = float_as_f64(); } hero_print_str(t85); hero_print_f64(t86); hero_print_end();
+    t87 = HERO_STR_LIT(hero_str_61fadc34); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-144-every-wider-result-builds.hero", "fixedbugs-144-every-wider-result-builds.main", 111, 30}; t88 = double_as_f64(); } hero_print_str(t87); hero_print_f64(t88); hero_print_end(); return;
+#line 361 "fixedbugs144everywiderresultbuilds.c"
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("655f8f926c11489d", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("35b6525e0fa8947e", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs144everywiderresultbuilds\tfixedbugs-144-every-wider-result-builds\n");
     h_fixedbugs144everywiderresultbuilds_main();
     hero_runtime_check_leaks();

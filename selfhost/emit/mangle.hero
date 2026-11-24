@@ -141,15 +141,22 @@ function field_of(foreign: bool, name: str) -> str
     return "f_" + name
 
 # One of a variant's cases: the union member that carries its payload.
+# Of the compiler's own form `hero_`, as every name this compiler chooses
+# for a member, a label or a local of its own (below, `emit/types.hero`,
+# `emit/crossing_bodies.hero`): the unit's C stands after the headers its
+# groups name, so a macro one of them defines rewrites every bare word of
+# it, and `#define c_word 1` made a variant's `c_word;` an internal error
+# at exit 2 until 2026-11-24. A macro of the form `hero_` is one
+# `cli/own_names.hero` tells as the header's.
 function case_member(name: str) -> str
-    return "c_" + name
+    return "hero_c_" + name
 
 # The payload of one case, as a C type of its own. It needs a name
 # rather than an anonymous struct inside the union, because a case type
 # is a real type in the IR — a payload read puts one in a temporary,
-# and a temporary needs a declaration.
+# and a temporary needs a declaration. Mangled by the type's own `h_`.
 function case_type(ty: str, case_name: str) -> str
-    return ty + "_" + case_member(case_name)
+    return ty + "_c_" + case_name
 
 # The enum a variant's tag is drawn from.
 function tag_type(ty: str) -> str
@@ -206,9 +213,18 @@ function value(index: i64) -> str
     return "t" + index.to_str()
 
 # A basic block's label. Not a user name, but it goes through here
-# anyway so that "every name that reaches C" has exactly one home.
+# anyway so that "every name that reaches C" has exactly one home; of the
+# form `hero_`, since a header's `#define bb0 1` made every function's
+# `goto bb0;` an internal error at exit 2 until 2026-11-24.
 function block(index: i64) -> str
-    return "bb" + index.to_str()
+    return "hero_bb" + index.to_str()
+
+# A probe's or an adapter's parameter, by its position: never the author's
+# name, so nothing a program spells changes the line, and of the form
+# `hero_`, since a header's `#define a1 1` made the probe of every bound
+# function of two parameters an internal error at exit 2 until 2026-11-24.
+function argument(index: i64) -> str
+    return "hero_a" + index.to_str()
 
 # A constant's static block (panel 195): the constant's own C name, already
 # mangled, then the value of its IR the block holds. The value is digits and
@@ -257,6 +273,9 @@ test "names collide with nothing: library capture, sanitised slots, foreign fiel
     assert field_of(foreign: true, name: "r") == "r"
     assert tag_of(ty: "h_m_0Tok", case_name: "plus") == "h_m_0Tok_tag_plus"
     assert case_type(ty: "h_m_0Tok", case_name: "word") == "h_m_0Tok_c_word"
+    assert case_member("word") == "hero_c_word"
+    assert block(3) == "hero_bb3"
+    assert argument(0) == "hero_a0"
     assert out_param(index: 0, name: "l") == "ph0_l"
     assert test_name(module: "geom", index: 2) == "h_geom_0test2"
     assert constant_block(owner: "h_geom_K", held: 5) == "hero_constant_h_geom_K_5"

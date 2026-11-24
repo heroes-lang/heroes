@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -66,26 +66,26 @@ typedef struct h_fixedbugs335everywayoutkeepsitsreturnsline_Tally {
 } h_fixedbugs335everywayoutkeepsitsreturnsline_Tally;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -94,31 +94,31 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 106 "fixedbugs335everywayoutkeepsitsreturnsline.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *hero_a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word);
 h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n);
@@ -129,19 +129,19 @@ HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everyway
 void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void);
 
 #line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_found = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t5, t6, t7, t11, t15, t16, t17, t18, t19, t20; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t12, t13; HERO_NODEBUG bool t10, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_found = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, t4, t5, t6, t7, t11, t15, t16, t17, t18, t19, t20; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t12, t13; HERO_NODEBUG bool t10, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_t).f_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.pick", 18, 11); (*ph0_t).f_n = t3;
     t4 = h1_word; t5 = HERO_STR_LIT(hero_str_21); t6 = hero_str_concat(t4, t5); t19 = h4_own4; h4_own4 = t6; hero_str_decref(t19); t20 = h2_found; hero_str_incref(t6); h2_found = t6; hero_str_decref(t20);
 #line 21
-    t7 = h1_word; t8 = hero_str_len(t7); t9 = INT64_C(1); t10 = t8 > t9; if (t10) goto bb2; else goto bb3; bb1:
+    t7 = h1_word; t8 = hero_str_len(t7); t9 = INT64_C(1); t10 = t8 > t9; if (t10) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 25
-    t17 = HERO_STR_LIT(hero_str_2d); h3_ret0 = t17; goto bb7; bb2:
+    t17 = HERO_STR_LIT(hero_str_2d); h3_ret0 = t17; goto hero_bb7; hero_bb2:
 #line 22
-    t11 = h1_word; t12 = hero_str_len(t11); t13 = INT64_C(3); t14 = t12 > t13; if (t14) goto bb5; else goto bb6; bb3: goto bb1; bb4:
+    t11 = h1_word; t12 = hero_str_len(t11); t13 = INT64_C(3); t14 = t12 > t13; if (t14) goto hero_bb5; else goto hero_bb6; hero_bb3: goto hero_bb1; hero_bb4:
 #line 24
-    t16 = h1_word; h3_ret0 = t16; goto bb7; bb5:
+    t16 = h1_word; h3_ret0 = t16; goto hero_bb7; hero_bb5:
 #line 23
-    t15 = h2_found; h3_ret0 = t15; goto bb7; bb6: goto bb4; bb7:
+    t15 = h2_found; h3_ret0 = t15; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
 #line 146 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t18 = h3_ret0;
     hero_str_incref(t18);
@@ -151,12 +151,12 @@ HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everyway
 }
 
 #line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 28, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 28, 8); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 28, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 28, 8); t3 = t1 % t2; t4 = INT64_C(1); t5 = t3 == t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 30
-    t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 30, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 30, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
+    t9 = h0_n; t10 = INT64_C(2); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 30, 15); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.half", 30, 15); t11 = t9 / t10; t12 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t11}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto hero_bb4; hero_bb2:
 #line 29
-    t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto bb4; bb3: goto bb1; bb4:
+    t6 = HERO_STR_LIT(hero_str_1d4477); t7 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t6, .msg = t7}}; t15 = h3_own3; h3_own3 = t8; h_0opt_e201354_release(&t15); h1_ret0 = t8; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 161 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
@@ -166,12 +166,12 @@ h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) {
 }
 
 #line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, int64_t h1_n) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t16, t17, t18, t19, t20, t21; int64_t h3_h; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t13, t14, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_n; t2 = h_fixedbugs335everywayoutkeepsitsreturnsline_half(t1); t18 = h5_own5; h5_own5 = t2; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t2); h2_f0 = t2; h_0opt_e201354_release(&t19); t3 = h2_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t10 = h2_f0; t11 = t10.as.ok; h3_h = t11;
+h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, int64_t h1_n) { HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t16, t17, t18, t19, t20, t21; int64_t h3_h; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t13, t14, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_n; t2 = h_fixedbugs335everywayoutkeepsitsreturnsline_half(t1); t18 = h5_own5; h5_own5 = t2; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t2); h2_f0 = t2; h_0opt_e201354_release(&t19); t3 = h2_f0; t4 = t3.hero_tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto hero_bb1; else goto hero_bb2; hero_bb1: t10 = h2_f0; t11 = t10.hero_as.hero_ok; h3_h = t11;
     t12 = (*ph0_t).f_n; t13 = h3_h; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.halves", 34, 11); (*ph0_t).f_n = t14;
-    t15 = h3_h; t16 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t15}; t20 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t20); h4_ret0 = t16; goto bb3; bb2:
+    t15 = h3_h; t16 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t15}; t20 = h6_own6; h6_own6 = t16; h_0opt_e201354_release(&t20); h4_ret0 = t16; goto hero_bb3; hero_bb2:
 #line 33
-    t7 = h2_f0; t8 = t7.as.err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = t8}; t21 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t21); h4_ret0 = t9; goto bb3; bb3:
+    t7 = h2_f0; t8 = t7.hero_as.hero_err; hero_failure_retain(&t8); t9 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = t8}; t21 = h7_own7; h7_own7 = t9; h_0opt_e201354_release(&t21); h4_ret0 = t9; goto hero_bb3; hero_bb3:
 #line 176 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t17 = h4_ret0;
     h_0opt_e201354_retain(&t17);
@@ -183,12 +183,12 @@ h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs33
 }
 
 #line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t5, t8, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t5, t8, t11, t12; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7, t9, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h1_word; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t11 = h3_own3; h3_own3 = t3; hero_str_decref(t11); t12 = h2_shout; hero_str_incref(t3); h2_shout = t3; hero_str_decref(t12);
 #line 40
-    t4 = h1_word; t5 = HERO_STR_LIT(hero_str_0); t6 = hero_str_eq(t4, t5); if (t6) goto bb2; else goto bb3; bb1:
+    t4 = h1_word; t5 = HERO_STR_LIT(hero_str_0); t6 = hero_str_eq(t4, t5); if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 42
-    t7 = (*ph0_t).f_n; t8 = h2_shout; t9 = hero_str_len(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.count", 42, 11); (*ph0_t).f_n = t10; goto bb4; bb2: goto bb4; bb3: goto bb1; bb4:
+    t7 = (*ph0_t).f_n; t8 = h2_shout; t9 = hero_str_len(t8); if (__builtin_add_overflow(t7, t9, &t10)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.count", 42, 11); (*ph0_t).f_n = t10; goto hero_bb4; hero_bb2: goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 193 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_release_at(&h2_shout);
     hero_str_release_at(&h3_own3);
@@ -196,7 +196,7 @@ void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayou
 }
 
 #line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t5, t8, t9; HERO_NODEBUG int64_t t4, t6, t7; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t5, t8, t9; HERO_NODEBUG int64_t t4, t6, t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h1_word; t2 = HERO_STR_LIT(hero_str_21); t3 = hero_str_concat(t1, t2); t8 = h3_own3; h3_own3 = t3; hero_str_decref(t8); t9 = h2_shout; hero_str_incref(t3); h2_shout = t3; hero_str_decref(t9);
     t4 = (*ph0_t).f_n; t5 = h2_shout; t6 = hero_str_len(t5); if (__builtin_add_overflow(t4, t6, &t7)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.grow", 46, 11); (*ph0_t).f_n = t7;
 #line 203 "fixedbugs335everywayoutkeepsitsreturnsline.c"
@@ -206,7 +206,7 @@ void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayout
 }
 
 #line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t5, t6, t7; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) { HERO_NODEBUG HeroStr h2_own2 = {0}, t4, t5, t6, t7; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_t).f_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-335-every-way-out-keeps-its-return-s-line.hero", "fixedbugs-335-every-way-out-keeps-its-return-s-line.only", 49, 11); (*ph0_t).f_n = t3;
     t4 = h1_word; t5 = HERO_STR_LIT(hero_str_3f); t6 = hero_str_concat(t4, t5); t7 = h2_own2; h2_own2 = t6; hero_str_decref(t7);
 #line 213 "fixedbugs335everywayoutkeepsitsreturnsline.c"
@@ -216,10 +216,10 @@ HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everyway
 }
 
 #line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) { h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h8_own8 = {0}, h9_own9 = {0}, t10, t11, t15, t20, t21, t25, t38, t39, t40, t41; HERO_NODEBUG int64_t h2_r0, h4_r1, t1, t9, t12, t13, t16, t17, t18, t19, t22, t23, t26, t27, t28, t34; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, t3, t4, t5, t6, t7, t8, t29, t30, t31, t32, t33, t35, t36, t37, t42; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HERO_NODEBUG bool t14, t24; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) { h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h8_own8 = {0}, h9_own9 = {0}, t10, t11, t15, t20, t21, t25, t38, t39, t40, t41; HERO_NODEBUG int64_t h2_r0, h4_r1, t1, t9, t12, t13, t16, t17, t18, t19, t22, t23, t26, t27, t28, t34; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, t3, t4, t5, t6, t7, t8, t29, t30, t31, t32, t33, t35, t36, t37, t42; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HERO_NODEBUG bool t14, t24; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); t2 = (h_fixedbugs335everywayoutkeepsitsreturnsline_Tally){.f_n = t1}; h0_t = t2;
     t3 = HERO_STR_LIT(hero_str_37dd738d); t4 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t3); t35 = h5_own5; h5_own5 = t4; hero_str_decref(t35); t5 = HERO_STR_LIT(hero_str_3205); t6 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t5); t36 = h6_own6; h6_own6 = t6; hero_str_decref(t36); t7 = HERO_STR_LIT(hero_str_61); t8 = h_fixedbugs335everywayoutkeepsitsreturnsline_pick(&h0_t, t7); t37 = h7_own7; h7_own7 = t8; hero_str_decref(t37); hero_print_str(t4); hero_print_str(t6); hero_print_str(t8); hero_print_end();
-    t9 = INT64_C(8); t10 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t9); t38 = h8_own8; h8_own8 = t10; h_0opt_e201354_release(&t38); t39 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t39); t11 = h1_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb1; else goto bb2; bb1: t15 = h1_f0; t16 = t15.as.ok; h2_r0 = t16; goto bb3; bb2: t17 = INT64_C(0); h2_r0 = t17; goto bb3; bb3: t18 = h2_r0; t19 = INT64_C(3); t20 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t19); t40 = h9_own9; h9_own9 = t20; h_0opt_e201354_release(&t40); t41 = h3_f1; h_0opt_e201354_retain(&t20); h3_f1 = t20; h_0opt_e201354_release(&t41); t21 = h3_f1; t22 = t21.tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto bb4; else goto bb5; bb4: t25 = h3_f1; t26 = t25.as.ok; h4_r1 = t26; goto bb6; bb5: t27 = INT64_C(0); h4_r1 = t27; goto bb6; bb6: t28 = h4_r1; hero_print_int(t18); hero_print_int(t28); hero_print_end();
+    t9 = INT64_C(8); t10 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t9); t38 = h8_own8; h8_own8 = t10; h_0opt_e201354_release(&t38); t39 = h1_f0; h_0opt_e201354_retain(&t10); h1_f0 = t10; h_0opt_e201354_release(&t39); t11 = h1_f0; t12 = t11.hero_tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto hero_bb1; else goto hero_bb2; hero_bb1: t15 = h1_f0; t16 = t15.hero_as.hero_ok; h2_r0 = t16; goto hero_bb3; hero_bb2: t17 = INT64_C(0); h2_r0 = t17; goto hero_bb3; hero_bb3: t18 = h2_r0; t19 = INT64_C(3); t20 = h_fixedbugs335everywayoutkeepsitsreturnsline_halves(&h0_t, t19); t40 = h9_own9; h9_own9 = t20; h_0opt_e201354_release(&t40); t41 = h3_f1; h_0opt_e201354_retain(&t20); h3_f1 = t20; h_0opt_e201354_release(&t41); t21 = h3_f1; t22 = t21.hero_tag; t23 = INT64_C(0); t24 = t22 == t23; if (t24) goto hero_bb4; else goto hero_bb5; hero_bb4: t25 = h3_f1; t26 = t25.hero_as.hero_ok; h4_r1 = t26; goto hero_bb6; hero_bb5: t27 = INT64_C(0); h4_r1 = t27; goto hero_bb6; hero_bb6: t28 = h4_r1; hero_print_int(t18); hero_print_int(t28); hero_print_end();
     t29 = HERO_STR_LIT(hero_str_dc838fa); h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t29);
     t30 = HERO_STR_LIT(hero_str_0); h_fixedbugs335everywayoutkeepsitsreturnsline_count(&h0_t, t30);
     t31 = HERO_STR_LIT(hero_str_3205); h_fixedbugs335everywayoutkeepsitsreturnsline_grow(&h0_t, t31);
@@ -235,118 +235,118 @@ void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) { h_fixedbugs335eve
     hero_str_release_at(&h10_own10);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *b) {
-    if (!(a->f_n == b->f_n)) return false;
+HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *hero_a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *hero_b) {
+    if (!(hero_a->f_n == hero_b->f_n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_hash(const void *elem) {
-    const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs335everywayoutkeepsitsreturnsline_0Tally_hash(const void *hero_elem) {
+    const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_n)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ac1507840371179", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("040b700c2b3a6bb5", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs335everywayoutkeepsitsreturnsline\tfixedbugs-335-every-way-out-keeps-its-return-s-line\n");
     h_fixedbugs335everywayoutkeepsitsreturnsline_main();
     hero_runtime_check_leaks();

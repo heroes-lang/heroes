@@ -590,7 +590,7 @@ function entry_offences(c: str, source: str) -> [str]
             continue
 
         if pending
-            if strings.has_suffix(s: row, suffix: "goto bb0;") || strings.has_suffix(s: row, suffix: "goto bb0; bb0:")
+            if strings.has_suffix(s: row, suffix: "goto hero_bb0;") || strings.has_suffix(s: row, suffix: "goto hero_bb0; hero_bb0:")
                 entries @ entries + 1
                 pending @ false
 
@@ -612,7 +612,7 @@ function entry_offences(c: str, source: str) -> [str]
 
         # An entry written on its signature's own physical line (panel 219's
         # R1), which the signature's claim claims by construction.
-        if row.len() > 0 && row[0] != 32 && !strings.index_of(text: row, needle: ") { ").is_err() && !strings.index_of(text: row, needle: " goto bb0;").is_err()
+        if row.len() > 0 && row[0] != 32 && !strings.index_of(text: row, needle: ") { ").is_err() && !strings.index_of(text: row, needle: " goto hero_bb0;").is_err()
             entries @ entries + 1
         else if row.len() > 0 && row[0] != 32 && strings.has_suffix(s: row, suffix: ") {")
             pending @ true
@@ -623,7 +623,7 @@ function entry_offences(c: str, source: str) -> [str]
 
     if entries == 0
         found @ found.push(
-            "    no function's entry, a line ending `goto bb0;` after a signature's `{` or a signature's line holding it, was found in the C of " + source + ", so the walk asked nothing"
+            "    no function's entry, a line ending `goto hero_bb0;` after a signature's `{` or a signature's line holding it, was found in the C of " + source + ", so the walk asked nothing"
         )
     return found
 
@@ -769,11 +769,11 @@ test "a restore of the generated file names its own next line, and one short is 
     assert generated_claim("m.c")
 
 test "a function's entry is claimed by its signature's line, and an entry under the generated file is an offence (defect 472)"
-    good = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n    int64_t t1; goto bb0;\n#line 3 \"a.hero\"\nbb0:\n"
+    good = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n    int64_t t1; goto hero_bb0;\n#line 3 \"a.hero\"\nbb0:\n"
     assert entry_offences(c: good, source: "t").len() == 0
-    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n#define h1_x (*p)\n#line 3 \"a.hero\"\n    int64_t *const p = 0; goto bb0;\n"
+    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n#define h1_x (*p)\n#line 3 \"a.hero\"\n    int64_t *const p = 0; goto hero_bb0;\n"
     assert entry_offences(c: guarded, source: "t").len() == 0
-    generated = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"m.c\"\n    int64_t t1;\n    goto bb0;\n"
+    generated = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"m.c\"\n    int64_t t1;\n    goto hero_bb0;\n"
     spread = entry_offences(c: generated, source: "t")
     assert spread.len() == 1
     assert strings.contains(
@@ -782,7 +782,7 @@ test "a function's entry is claimed by its signature's line, and an entry under 
     )
     accessor = "#line 3 \"a.hero\"\nint64_t f(void) {\n    return X;\n}\n" + good
     assert entry_offences(c: accessor, source: "t").len() == 0
-    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n    int64_t t1; goto bb0;\n"
+    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n    int64_t t1; goto hero_bb0;\n"
     found = entry_offences(c: drifted, source: "t")
     assert found.len() == 1
     assert strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
@@ -806,11 +806,11 @@ test "a bare #line claims the file clang presumes, and an entry on its signature
     assert offences(c: "#line 2 \"m.c\"\nint a;\n#line 4\nint b;\n", source: "t").len() == 0
     assert offences(c: "#line 2 \"m.c\"\nint a;\n#line 3\nint b;\n", source: "t").len() == 1
     assert !shell.remove_tree(scratch).is_err()
-    joined = "#line 3 \"a.hero\"\nint64_t f(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:\n    t1 = 1;\n"
+    joined = "#line 3 \"a.hero\"\nint64_t f(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:\n    t1 = 1;\n"
     assert entry_offences(c: joined, source: "t").len() == 0
-    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3\n#define h1_x (*p)\n#line 3\n    int64_t *const p = 0; goto bb0; bb0:\n"
+    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3\n#define h1_x (*p)\n#line 3\n    int64_t *const p = 0; goto hero_bb0; hero_bb0:\n"
     assert entry_offences(c: guarded, source: "t").len() == 0
-    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 4\n    int64_t t1; goto bb0; bb0:\n"
+    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 4\n    int64_t t1; goto hero_bb0; hero_bb0:\n"
     found = entry_offences(c: drifted, source: "t")
     assert found.len() == 1
     assert strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
