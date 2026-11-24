@@ -195,6 +195,13 @@ constant FOREIGN_DATA: [str]
         "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero numbered names english"
         # ICU 79.1's answers, `31 M12 1999` among them.
         "packages/rebel/0.1.0/files/i18n/dates/internal/icu_cases.hero numbered"
+        # CLDR 49's display names, each locale's row of entries five
+        # characters each of an alphabet holding letters and digits, `M900`
+        # and `M737` among them. **A row added after the list's day,
+        # 2026-11-24** (defect d-gap-net2-1): the table was born at
+        # M-rebel-library's step 137e, and `records/numbered` reported it at
+        # that merge (`M900`, `M6`, `M8`, `M737`).
+        "packages/rebel/0.1.0/files/i18n/names/internal/name_tables.hero numbered"
         # CLDR 49's number patterns.
         "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero numbered"
         # SVG path data, `M0 0`. **A row added after the list's day,

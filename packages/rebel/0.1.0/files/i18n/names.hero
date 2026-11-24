@@ -113,7 +113,8 @@ function script_name(code: str, written_in: i18n.Locale, form: NameForm) -> str?
 # The name of the region `code` in `written_in`: `DE` in Italian is
 # "Germania", `419` in English "Latin America".
 #
-# - `code`: two letters, ISO 3166's, or three digits, UN M49's; any case.
+# - `code`: two letters, ISO 3166's, or three digits, a United Nations area
+#   code; any case.
 # - `written_in`: the language the name is written in.
 # - `form`: which of its names.
 #
