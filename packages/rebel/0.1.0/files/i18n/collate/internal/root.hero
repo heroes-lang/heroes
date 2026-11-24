@@ -10,6 +10,7 @@
 
 use i18n/collate/internal/collate_tables
 use i18n/internal/locale_syntax
+use i18n/internal/table_codes
 use strings
 use unicode
 
@@ -24,39 +25,13 @@ constant COMMON_SECONDARY: i64
 constant COMMON_TERTIARY: i64
     131072
 
-# The value of one character of `ALPHABET`.
-function digit_of(b: u8) -> i64
-    if b >= '0' && b <= '9'
-        return to_i64(b - '0').must()
-
-    if b >= 'A' && b <= 'Z'
-        return to_i64(b - 'A').must() + 10
-
-    if b >= 'a' && b <= 'z'
-        return to_i64(b - 'a').must() + 36
-
-    if b == '+'
-        return 62
-    return 63
-
-# The number `width` characters from `at` of `text` write.
-function number_at(text: str, at: i64, width: i64) -> i64
-    value @= 0
-    i @= at
-
-    while i < at + width
-        value @ value * 64 + digit_of(text[i])
-        i @ i + 1
-
-    return value
-
 # Entry `index` of `SINGLES`: code point << 21 | first element << 5 | count.
 function single(index: i64) -> i64
-    return number_at(collate_tables.SINGLES[index / 512], at: index % 512 * 7, width: 7)
+    return table_codes.number_at(collate_tables.SINGLES[index / 512], at: index % 512 * 7, width: 7)
 
 # Packed element `index` of `ELEMENTS`.
 function packed(index: i64) -> i64
-    return number_at(collate_tables.ELEMENTS[index / 512], at: index % 512 * 6, width: 6)
+    return table_codes.number_at(collate_tables.ELEMENTS[index / 512], at: index % 512 * 6, width: 6)
 
 # Adds packed element `e` to `out`, scaled.
 function add_packed(@out: [i64], e: i64)
@@ -149,7 +124,7 @@ function contraction(key: str) -> [i64]?
     i @= 0
 
     while i < codes.len()
-        add_packed(@out, e: number_at(codes, at: i, width: 6))
+        add_packed(@out, e: table_codes.number_at(codes, at: i, width: 6))
         i @ i + 6
 
     return ok(out)
