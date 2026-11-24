@@ -139,17 +139,23 @@ constant CHANGE_OWNER: i64
 constant SYNCHRONIZE: i64
     0x100000
 
-# Windows' generic rights, which an entry a folder hands down may carry and
-# Darwin has no place for.
+# Windows' generic right to everything, which an entry a folder hands down
+# may carry and Darwin has no place for.
 constant GENERIC_ALL: i64
     0x10000000
 
+# Windows' generic right to run a file or pass through a folder, which an
+# entry a folder hands down may carry and Darwin has no place for.
 constant GENERIC_EXECUTE: i64
     0x20000000
 
+# Windows' generic right to write, which an entry a folder hands down may
+# carry and Darwin has no place for.
 constant GENERIC_WRITE: i64
     0x40000000
 
+# Windows' generic right to read, which an entry a folder hands down may
+# carry and Darwin has no place for.
 constant GENERIC_READ: i64
     0x80000000
 
@@ -548,3 +554,101 @@ test "user_id_of and group_id_of: this user's id, a group's, and names the syste
     match user_id_of("")
         .ok _  => assert false
         .err e => assert e.code == INVALID
+
+## Examples
+
+# A backup reads a file's list beside its bytes; a volume that keeps no list
+# answers `unsupported`.
+test "read: the list a backup keeps beside a file"
+    dir = fixture.folder("example-read")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match read(file)
+        .ok list => assert read(file).must() == list
+        .err e   => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# The list of a link itself, which a backup of a tree that keeps its links
+# reads apart from the list of what each names.
+test "link_read: the list of a link, not of its file"
+    dir = fixture.folder("example-link-read")
+    fs.write_bytes(dir + "/report.txt", data: [1]).must()
+
+    match fs.symlink(target: "report.txt", name: dir + "/latest")
+        .err e => assert e.code == fs.PERMISSION
+        .ok _ =>
+            match link_read(dir + "/latest")
+                .ok list => assert link_read(dir + "/latest").must() == list
+                .err e   => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# A program grants the user it runs as the right to read a file's data, the
+# rest of the list kept.
+test "write: one user allowed to read a file"
+    dir = fixture.folder("example-write")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match read(file)
+        .err e => assert e.code == UNSUPPORTED
+        .ok before =>
+            me = user_id_of(os.user_name().must()).must()
+            entry = Entry(who: .user, deny: false, rights: READ_DATA, flags: 0, id: me, name: "")
+            write(path: file, acl: Acl(protected: false, entries: before.entries.push(entry))).must()
+            assert fixture.naming(read(file).must(), id: me) == [entry]
+
+    fs.remove_all(dir).must()
+
+# The list of a link itself written back as it was read: Windows keeps one,
+# and Linux and Darwin's APFS answer `unsupported`.
+test "link_write: a link's own list written back"
+    dir = fixture.folder("example-link-write")
+    fs.write_bytes(dir + "/report.txt", data: [1]).must()
+
+    match fs.symlink(target: "report.txt", name: dir + "/latest")
+        .err e => assert e.code == fs.PERMISSION
+        .ok _ =>
+            match link_read(dir + "/latest")
+                .err e => assert e.code == UNSUPPORTED
+                .ok own =>
+                    match link_write(path: dir + "/latest", acl: own)
+                        .ok _  => assert link_read(dir + "/latest").must() == own
+                        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# A new version of a file written beside the old one takes the old one's
+# list, so who may read it does not change when it replaces the old.
+test "copy: the old file's list on its new version"
+    dir = fixture.folder("example-copy")
+    fs.write_bytes(dir + "/report.txt", data: [1]).must()
+    fs.write_bytes(dir + "/report.new", data: [2]).must()
+
+    match copy(from: dir + "/report.txt", to: dir + "/report.new")
+        .ok _  => assert read(dir + "/report.new").must() == read(dir + "/report.txt").must()
+        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# The id an entry names the user the program runs as by, found from the name
+# the system gives it.
+test "user_id_of: the id of the user the program runs as"
+    match user_id_of(os.user_name().must())
+        .ok id => assert id.len() > 0
+        .err e => assert e.code == UNSUPPORTED
+
+# The id of a group every system of the three has, which an entry granting
+# the group names.
+test "group_id_of: the id of a group the system has"
+    group = match os.system()
+        .windows => "Users"
+        .darwin  => "staff"
+        .linux   => "root"
+        .other   => "wheel"
+
+    match group_id_of(group)
+        .ok id => assert id.len() > 0
+        .err e => assert e.code == UNSUPPORTED

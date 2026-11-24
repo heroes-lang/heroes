@@ -1,0 +1,75 @@
+# What `syslog` refuses before the system is asked: a name that is not a
+# name on every one of the four logs, and a line holding a zero byte, which
+# no C string carries. Private to the package (README § A2); the face's
+# `is_name` is this module's.
+
+use syslog/internal/failure
+
+# The most bytes of a name.
+constant NAME_MOST: i64
+    64
+
+# Whether `name` is 1 to `NAME_MOST` bytes of ASCII letters, digits, `.`,
+# `_` and `-`, a name every system's log files lines under.
+#
+# - `name`: the name asked about.
+function is_name(name: str) -> bool
+    if name.len() == 0 || name.len() > NAME_MOST
+        return false
+
+    for i in range(from: 0, to: name.len())
+        b = name[i]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+        if !letter && !(b >= '0' && b <= '9') && b != '.' && b != '_' && b != '-'
+            return false
+
+    return true
+
+# `name` where it is one by `is_name`, else `invalid`.
+#
+# - `name`: the name asked about.
+# - `asked`: what was being done, in words that begin a failure's message.
+function checked(name: str, asked: str) -> str?
+    if !is_name(name)
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"\"{name}\" is no name: 1 to {NAME_MOST} bytes of ASCII letters, digits, ., _ and -"
+        )
+    return ok(name)
+
+# `line` where it holds no zero byte, else `invalid`, the message naming
+# where the first stands.
+#
+# - `line`: the line asked about.
+# - `asked`: what was being done, in words that begin a failure's message.
+function without_zero(line: str, asked: str) -> str?
+    for i in range(from: 0, to: line.len())
+        if line[i] == 0
+            return failure.of(code: failure.INVALID, asked: asked, why: f"the line holds a zero byte at {i}")
+
+    return ok(line)
+
+## Tests
+
+test "checked: a name passes whole, one that is none is invalid with the rule in its message"
+    assert checked(name: "org.heroes-lang.demo_1", asked: "x").must() == "org.heroes-lang.demo_1"
+
+    match checked(name: "a b", asked: "opening")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID && e.msg == "opening: \"a b\" is no name: 1 to 64 bytes of ASCII letters, digits, ., _ and -"
+
+test "without_zero: a line passes whole, a zero byte first or last is invalid at its place"
+    assert without_zero(line: "", asked: "x").must() == ""
+    assert without_zero(line: "caffè\n", asked: "x").must() == "caffè\n"
+    first: [u8] = [0, 'a']
+    last: [u8] = ['a', 0]
+
+    match without_zero(line: first.validated_bytes().must(), asked: "writing")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID && e.msg == "writing: the line holds a zero byte at 0"
+
+    match without_zero(line: last.validated_bytes().must(), asked: "writing")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID && e.msg == "writing: the line holds a zero byte at 1"

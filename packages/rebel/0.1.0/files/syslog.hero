@@ -34,11 +34,15 @@
 # It fails with `invalid`, `unsupported`, `not_found`, `permission`, `limit`,
 # `exists` and `failed` (README § A4).
 
+use bytes
+use errors
 use fs
 use os
 use syslog/hero_syslog
+use syslog/internal/checks
 use syslog/internal/failure
 use syslog/internal/forms
+use syslog/internal/machine
 use time
 
 ## Codes
@@ -82,7 +86,7 @@ constant SYSLOG_SOCKET: str
 
 # The most bytes of a name.
 constant NAME_MOST: i64
-    64
+    checks.NAME_MOST
 
 ## Levels and logs
 
@@ -144,38 +148,7 @@ function level_number(level: Level) -> i64
 #
 # - `name`: the name asked about.
 function is_name(name: str) -> bool
-    if name.len() == 0 || name.len() > NAME_MOST
-        return false
-
-    for i in range(from: 0, to: name.len())
-        b = name[i]
-        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
-
-        if !letter && !(b >= '0' && b <= '9') && b != '.' && b != '_' && b != '-'
-            return false
-
-    return true
-
-# `name` where it is one, else `invalid`.
-#
-# - `name`: the name asked about.
-# - `asked`: what was being done, in words that begin a failure's message.
-function checked(name: str, asked: str) -> str?
-    if !is_name(name)
-        return failure.of(
-            code: failure.INVALID,
-            asked: asked,
-            why: f"\"{name}\" is no name: 1 to {NAME_MOST} bytes of ASCII letters, digits, ., _ and -"
-        )
-    return ok(name)
-
-# Whether a path names something, a socket among them.
-#
-# - `path`: the path asked about.
-function stands(path: str) -> bool
-    match fs.exists(path)
-        .ok found => return found
-        .err _    => return false
+    return checks.is_name(name)
 
 # The system's log, the lines filed under `name`: the journal on a Linux that
 # runs it, else `/dev/log`; the unified log on macOS; the Event Log on Windows.
@@ -186,16 +159,16 @@ function stands(path: str) -> bool
 # socket, and `unsupported` on a system with no log of the four.
 function open(name: str) -> Log?
     asked = f"opening the system's log as \"{name}\""
-    _ = checked(name: name, asked: asked)?
+    _ = checks.checked(name: name, asked: asked)?
 
     match os.system()
         .windows => return ok(Log(name: name, destination: .event_log, socket: ""))
         .darwin  => return ok(Log(name: name, destination: .unified_log, socket: ""))
         .linux =>
-            if stands(JOURNAL_SOCKET)
+            if machine.stands(JOURNAL_SOCKET)
                 return ok(Log(name: name, destination: .journal, socket: JOURNAL_SOCKET))
 
-            if stands(SYSLOG_SOCKET)
+            if machine.stands(SYSLOG_SOCKET)
                 return ok(Log(name: name, destination: .syslog, socket: SYSLOG_SOCKET))
             return failure.of(
                 code: failure.NOT_FOUND,
@@ -216,7 +189,7 @@ function open(name: str) -> Log?
 # destination, and `unsupported` on Windows, which has no local datagram.
 function open_socket(name: str, destination: Destination, socket: str) -> Log?
     asked = f"opening the log at \"{socket}\" as \"{name}\""
-    _ = checked(name: name, asked: asked)?
+    _ = checks.checked(name: name, asked: asked)?
 
     if hero_syslog.has(hero_syslog.HERO_SYSLOG_HAS_DATAGRAM) == 0
         return failure.of(code: failure.UNSUPPORTED, asked: asked, why: "this system has no local datagram socket")
@@ -229,9 +202,10 @@ function open_socket(name: str, destination: Destination, socket: str) -> Log?
         )
     return ok(Log(name: name, destination: destination, socket: socket))
 
-# The journal entry one line is: `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3,
-# a daemon's) and `SYSLOG_IDENTIFIER`, a line holding a newline in the
-# protocol's binary form. Pure: it sends nothing.
+# The bytes of the journal entry one line is, in the journal's native
+# protocol: `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3, a daemon's) and
+# `SYSLOG_IDENTIFIER`, a line holding a newline in the protocol's binary
+# form. Pure: it sends nothing. See also `format_syslog`.
 #
 # - `name`: the identifier, as `is_name` says.
 # - `level`: the severity.
@@ -239,8 +213,8 @@ function open_socket(name: str, destination: Destination, socket: str) -> Log?
 #
 # Fails `invalid` for a name that is none and a line holding a zero byte.
 function format_journal(name: str, level: Level, line: str) -> [u8]?
-    _ = checked(name: name, asked: "writing a journal entry")?
-    _ = without_zero(line: line, asked: "writing a journal entry")?
+    _ = checks.checked(name: name, asked: "writing a journal entry")?
+    _ = checks.without_zero(line: line, asked: "writing a journal entry")?
     return ok(forms.journal(identifier: name, level: level_number(level), line: line))
 
 # The classic syslog line one line is, as the C library's `syslog(3)` writes it
@@ -252,30 +226,12 @@ function format_journal(name: str, level: Level, line: str) -> [u8]?
 # - `pid`: the process's number.
 # - `at`: the local time it is stamped with.
 #
-# Fails `invalid` for a name that is none and a line holding a zero byte.
+# Fails `invalid` for a name that is none and a line holding a zero byte. See
+# also `format_journal`.
 function format_syslog(name: str, level: Level, line: str, pid: i64, at: time.DateTime) -> str?
-    _ = checked(name: name, asked: "writing a syslog line")?
-    _ = without_zero(line: line, asked: "writing a syslog line")?
+    _ = checks.checked(name: name, asked: "writing a syslog line")?
+    _ = checks.without_zero(line: line, asked: "writing a syslog line")?
     return ok(forms.classic(identifier: name, level: level_number(level), line: line, pid: pid, at: at))
-
-# `line` where it holds no zero byte, which no C string carries.
-#
-# - `line`: the line asked about.
-# - `asked`: what was being done, in words that begin a failure's message.
-function without_zero(line: str, asked: str) -> str?
-    for i in range(from: 0, to: line.len())
-        if line[i] == 0
-            return failure.of(code: failure.INVALID, asked: asked, why: f"the line holds a zero byte at {i}")
-
-    return ok(line)
-
-# The machine's local time now, UTC's where the system names no zone.
-function local_now() -> time.DateTime?
-    now = time.now()?
-
-    match time.local_zone()
-        .ok zone => return ok(time.to_date_time_in(now, zone: zone))
-        .err _   => return ok(time.to_date_time(now))
 
 # Writes `line` to `log` at `level`, never waiting.
 #
@@ -290,7 +246,7 @@ function local_now() -> time.DateTime?
 # destination this system does not have, `failed` for any other refusal.
 function write(log: Log, level: Level, line: str) -> ()?
     asked = f"writing to the system's log as \"{log.name}\""
-    _ = without_zero(line: line, asked: asked)?
+    _ = checks.without_zero(line: line, asked: asked)?
     n = level_number(level)
 
     match log.destination
@@ -300,8 +256,8 @@ function write(log: Log, level: Level, line: str) -> ()?
             if hero_syslog.send(log.socket, @data, sealed: 1) < 0
                 return failure.last(asked: asked)
         .syslog =>
-            data: [u8] @= bytes_of(
-                forms.classic(identifier: log.name, level: n, line: line, pid: os.pid(), at: local_now()?)
+            data: [u8] @= bytes.from_text(
+                forms.classic(identifier: log.name, level: n, line: line, pid: os.pid(), at: machine.local_now()?)
             )
 
             if hero_syslog.send(log.socket, @data, sealed: 0) < 0
@@ -315,17 +271,6 @@ function write(log: Log, level: Level, line: str) -> ()?
 
     return ok()
 
-# The bytes of `text`.
-#
-# - `text`: the text.
-function bytes_of(text: str) -> [u8]
-    made: [u8] @= []
-
-    for i in range(from: 0, to: text.len())
-        made @ made.push(text[i])
-
-    return made
-
 # Registers `name` as a source of the Event Log's Application log, with
 # `EventCreate.exe` as its message file, so the Event Viewer shows each line
 # whole. Run once, with the administrator's rights, where the program is
@@ -337,7 +282,7 @@ function bytes_of(text: str) -> [u8]
 # `permission` without the rights, `unsupported` off Windows.
 function install_source(name: str) -> ()?
     asked = f"registering the Event Log's source \"{name}\""
-    _ = checked(name: name, asked: asked)?
+    _ = checks.checked(name: name, asked: asked)?
 
     if hero_syslog.event_install(name) < 0
         return failure.last(asked: asked)
@@ -351,21 +296,13 @@ function install_source(name: str) -> ()?
 # registered, `permission` without the rights, `unsupported` off Windows.
 function remove_source(name: str) -> ()?
     asked = f"removing the Event Log's source \"{name}\""
-    _ = checked(name: name, asked: asked)?
+    _ = checks.checked(name: name, asked: asked)?
 
     if hero_syslog.event_remove(name) < 0
         return failure.last(asked: asked)
     return ok()
 
 ## Tests
-
-# The code a failed result carries, "" where it succeeded.
-#
-# - `r`: the result.
-function code_of<T>(r: T?) -> str
-    match r
-        .ok _  => return ""
-        .err e => return e.code
 
 test "level_number: RFC 5424's eight severities, emergency 0 to debug 7"
     every: [Level] = [.emergency, .alert, .critical, .error, .warning, .notice, .info, .debug]
@@ -386,8 +323,8 @@ test "is_name: 1 to 64 bytes of letters, digits, dot, underscore and dash, nothi
     assert !is_name("é")
 
 test "open: a name that is none is invalid on every system, before the system is asked"
-    assert code_of(open("")) == INVALID
-    assert code_of(open("a b")) == INVALID
+    assert errors.has_code(open(""), code: INVALID)
+    assert errors.has_code(open("a b"), code: INVALID)
 
 test "open: each system's own log, or not_found on a Linux that runs neither"
     match os.system()
@@ -397,27 +334,27 @@ test "open: each system's own log, or not_found on a Linux that runs neither"
             match open("demo")
                 .ok log => assert log.socket == JOURNAL_SOCKET || log.socket == SYSLOG_SOCKET
                 .err e  => assert e.code == NOT_FOUND
-        .other => assert code_of(open("demo")) == UNSUPPORTED
+        .other => assert errors.has_code(open("demo"), code: UNSUPPORTED)
 
 test "open_socket: the journal's or syslog's protocol to a path, POSIX alone"
     if hero_syslog.has(hero_syslog.HERO_SYSLOG_HAS_DATAGRAM) == 0
-        assert code_of(open_socket(name: "demo", destination: .journal, socket: "x")) == UNSUPPORTED
+        assert errors.has_code(open_socket(name: "demo", destination: .journal, socket: "x"), code: UNSUPPORTED)
         skip_test(reason: "this system has no local datagram socket")
     assert open_socket(name: "demo", destination: .syslog, socket: "/dev/log").must().destination == .syslog
-    assert code_of(open_socket(name: "demo", destination: .journal, socket: "")) == INVALID
-    assert code_of(open_socket(name: "demo", destination: .unified_log, socket: "x")) == INVALID
-    assert code_of(open_socket(name: "", destination: .journal, socket: "x")) == INVALID
+    assert errors.has_code(open_socket(name: "demo", destination: .journal, socket: ""), code: INVALID)
+    assert errors.has_code(open_socket(name: "demo", destination: .unified_log, socket: "x"), code: INVALID)
+    assert errors.has_code(open_socket(name: "", destination: .journal, socket: "x"), code: INVALID)
 
 test "write: a socket nothing answers at is not_found, a path longer than an address invalid"
     if hero_syslog.has(hero_syslog.HERO_SYSLOG_HAS_DATAGRAM) == 0
         skip_test(reason: "this system has no local datagram socket")
     folder = fs.make_temp_dir(dir: "", pattern: "hero-syslog-*").must()
     log = open_socket(name: "demo", destination: .journal, socket: folder + "/none").must()
-    assert code_of(write(log, level: .info, line: "hello")) == NOT_FOUND
+    assert errors.has_code(write(log, level: .info, line: "hello"), code: NOT_FOUND)
     classic = open_socket(name: "demo", destination: .syslog, socket: folder + "/none").must()
-    assert code_of(write(classic, level: .info, line: "hello")) == NOT_FOUND
+    assert errors.has_code(write(classic, level: .info, line: "hello"), code: NOT_FOUND)
     long = open_socket(name: "demo", destination: .journal, socket: folder + "/" + "x".repeat(200)).must()
-    assert code_of(write(long, level: .info, line: "hello")) == INVALID
+    assert errors.has_code(write(long, level: .info, line: "hello"), code: INVALID)
     fs.remove_all(folder).must()
 
 test "write: a line holding a zero byte is invalid on every destination, before anything is sent"
@@ -426,16 +363,19 @@ test "write: a line holding a zero byte is invalid on every destination, before 
     zeroed = raw.validated_bytes().must()
 
     for d in every
-        assert code_of(write(Log(name: "demo", destination: d, socket: "/nowhere"), level: .info, line: zeroed)) == INVALID
+        assert errors.has_code(
+            write(Log(name: "demo", destination: d, socket: "/nowhere"), level: .info, line: zeroed),
+            code: INVALID
+        )
 
 test "write: the unified log takes a line on macOS, and is unsupported elsewhere"
     log = Log(name: "org.heroes-lang.syslog-test", destination: .unified_log, socket: "")
 
     match os.system()
         .darwin  => write(log, level: .debug, line: "a line of syslog's tests").must()
-        .windows => assert code_of(write(log, level: .debug, line: "x")) == UNSUPPORTED
-        .linux   => assert code_of(write(log, level: .debug, line: "x")) == UNSUPPORTED
-        .other   => assert code_of(write(log, level: .debug, line: "x")) == UNSUPPORTED
+        .windows => assert errors.has_code(write(log, level: .debug, line: "x"), code: UNSUPPORTED)
+        .linux   => assert errors.has_code(write(log, level: .debug, line: "x"), code: UNSUPPORTED)
+        .other   => assert errors.has_code(write(log, level: .debug, line: "x"), code: UNSUPPORTED)
 
 test "write: a line longer than the unified log and the Event Log take is invalid, a level beyond is not reachable"
     long = "x".repeat((hero_syslog.HERO_SYSLOG_LINE_MOST + 1).to_u64().must())
@@ -443,26 +383,85 @@ test "write: a line longer than the unified log and the Event Log take is invali
     match os.system()
         .darwin =>
             log = Log(name: "org.heroes-lang.syslog-test", destination: .unified_log, socket: "")
-            assert code_of(write(log, level: .info, line: long)) == INVALID
+            assert errors.has_code(write(log, level: .info, line: long), code: INVALID)
         .windows =>
             log = Log(name: "org.heroes-lang.syslog-test", destination: .event_log, socket: "")
-            assert code_of(write(log, level: .info, line: long)) == INVALID
+            assert errors.has_code(write(log, level: .info, line: long), code: INVALID)
         .linux => skip_test(reason: "the journal takes a line of any length, a long one through a sealed memory file")
         .other => skip_test(reason: "this system has no log Rebel knows")
 
 test "install_source and remove_source: invalid names before the system, unsupported off Windows"
-    assert code_of(install_source("a b")) == INVALID
-    assert code_of(remove_source("")) == INVALID
+    assert errors.has_code(install_source("a b"), code: INVALID)
+    assert errors.has_code(remove_source(""), code: INVALID)
 
     if os.system() != .windows
-        assert code_of(install_source("demo")) == UNSUPPORTED
-        assert code_of(remove_source("demo")) == UNSUPPORTED
+        assert errors.has_code(install_source("demo"), code: UNSUPPORTED)
+        assert errors.has_code(remove_source("demo"), code: UNSUPPORTED)
 
 test "format_journal and format_syslog: the protocol's entry and RFC 3164's line, a wrong name or a zero byte invalid"
     assert format_journal(name: "demo", level: .warning, line: "hi").must() == forms.journal(identifier: "demo", level: 4, line: "hi")
     at = time.DateTime(year: 2026, month: 1, day: 15, hour: 12, minute: 0, second: 0, nanosecond: 0)
     assert format_syslog(name: "demo", level: .notice, line: "up", pid: 7, at: at).must() == "<29>Jan 15 12:00:00 demo[7]: up"
-    assert code_of(format_journal(name: "", level: .info, line: "x")) == INVALID
+    assert errors.has_code(format_journal(name: "", level: .info, line: "x"), code: INVALID)
     raw: [u8] = [97, 0]
     zeroed = raw.validated_bytes().must()
-    assert code_of(format_syslog(name: "demo", level: .info, line: zeroed, pid: 1, at: at)) == INVALID
+    assert errors.has_code(format_syslog(name: "demo", level: .info, line: zeroed, pid: 1, at: at), code: INVALID)
+
+## Examples
+
+# The number a syslog line's priority is made of, for a level.
+test "level_number: a warning is 4"
+    assert level_number(.warning) == 4
+
+# A name asked about before it is used, as an installer asks of a name a user
+# typed.
+test "is_name: a reverse domain name, and one with a space"
+    assert is_name("org.heroes-lang.backup")
+    assert !is_name("my backup")
+
+# The log a daemon's lines go to, chosen by what the system runs.
+test "open: the system's own log for a daemon"
+    match open("org.heroes-lang.example")
+        .ok log => assert log.name == "org.heroes-lang.example"
+        .err e  => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+
+# A journal reached at a path of the program's choosing, as a container
+# mounts the host's journal socket.
+test "open_socket: the journal at the socket a container mounts"
+    match open_socket(name: "org.heroes-lang.example", destination: .journal, socket: JOURNAL_SOCKET)
+        .ok log => assert log.destination == .journal && log.socket == JOURNAL_SOCKET
+        .err e  => assert e.code == UNSUPPORTED
+
+# The datagram the journal is sent for one line, told without a socket.
+test "format_journal: the fields of one warning"
+    entry = format_journal(name: "backup", level: .warning, line: "disk almost full").must()
+    assert bytes.to_text(entry).must() == "MESSAGE=disk almost full\nPRIORITY=4\nSYSLOG_FACILITY=3\nSYSLOG_IDENTIFIER=backup\n"
+
+# The line `/dev/log` is sent for one notice, stamped with the time given.
+test "format_syslog: RFC 3164's line for a notice"
+    at = time.DateTime(year: 2026, month: 3, day: 9, hour: 8, minute: 30, second: 0, nanosecond: 0)
+    line = format_syslog(name: "backup", level: .notice, line: "started", pid: 812, at: at).must()
+    assert line == "<29>Mar  9 08:30:00 backup[812]: started"
+
+# A daemon's line in the system's log, where its tools show it; a Linux
+# with no journal and no syslog daemon has no log to write to.
+test "write: a notice under the program's name"
+    match open("org.heroes-lang.example")
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+        .ok log =>
+            match write(log, level: .notice, line: "the example ran")
+                .ok _  => assert true
+                .err e => assert e.code == NOT_FOUND
+
+# An installer registering the program's source with the administrator's
+# rights, and its uninstaller removing it; off Windows there is none.
+test "install_source: the source registered where the program is installed"
+    match install_source("org.heroes-lang.example")
+        .ok _  => remove_source("org.heroes-lang.example").must()
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION || e.code == EXISTS
+
+# An uninstaller removing the source its installer registered.
+test "remove_source: the source an installer registered, removed"
+    match remove_source("org.heroes-lang.example")
+        .ok _  => assert true
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION || e.code == NOT_FOUND

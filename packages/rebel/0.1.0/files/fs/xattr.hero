@@ -470,3 +470,132 @@ test "write: a note beside a file"
         .err e => assert e.code == UNSUPPORTED
 
     fs.remove_all(dir).must()
+
+# The attributes a file carries, listed as a backup lists them before it
+# copies each.
+test "names: the attributes of a file"
+    dir = fixture.folder("example-names")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.notes", value: octets.from_text("checked"))
+        .ok _  => assert fixture.count_of(names(file).must(), name: "user.notes") == 1
+        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# The attributes of a link itself, apart from those of the file it names.
+test "link_names: a link's own attributes, not its file's"
+    dir = fixture.folder("example-link-names")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.notes", value: octets.from_text("checked"))
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            match fs.symlink(target: "report.txt", name: dir + "/latest")
+                .ok _  => assert fixture.count_of(link_names(dir + "/latest").must(), name: "user.notes") == 0
+                .err e => assert e.code == fs.PERMISSION
+
+    fs.remove_all(dir).must()
+
+# A value a program stored beside a file, read back as the bytes it wrote.
+test "read: the value stored beside a file"
+    dir = fixture.folder("example-read")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.checksum", value: [0xde, 0xad])
+        .ok _  => assert read(path: file, name: "user.checksum").must() == [0xde, 0xad]
+        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+# A link asked for itself: the value stored on the file it names is not the
+# link's own, so it is `not_found`.
+test "link_read: the link's own value, not its file's"
+    dir = fixture.folder("example-link-read")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.checksum", value: [7])
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            match fs.symlink(target: "report.txt", name: dir + "/latest")
+                .err e => assert e.code == fs.PERMISSION
+                .ok _ =>
+                    match link_read(path: dir + "/latest", name: "user.checksum")
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+    fs.remove_all(dir).must()
+
+# A claim written only where none is there, so a second program's claim does
+# not replace the first's.
+test "write_with: a claim written only where none is"
+    dir = fixture.folder("example-write-with")
+    file = dir + "/job.lock"
+    fs.write_bytes(file, data: []).must()
+
+    match write_with(path: file, name: "user.owner", value: octets.from_text("job 1"), when: .only_new, follow: true)
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            match write_with(path: file, name: "user.owner", value: octets.from_text("job 2"), when: .only_new, follow: true)
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            assert read(path: file, name: "user.owner").must() == octets.from_text("job 1")
+
+    fs.remove_all(dir).must()
+
+# A note taken off a file once it no longer holds.
+test "remove: a note taken off a file"
+    dir = fixture.folder("example-remove")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.notes", value: octets.from_text("draft"))
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            remove(path: file, name: "user.notes").must()
+            assert fixture.count_of(names(file).must(), name: "user.notes") == 0
+
+    fs.remove_all(dir).must()
+
+# A link asked to lose a value it does not hold itself: the file's value
+# stays.
+test "link_remove: the link's own value, never its file's"
+    dir = fixture.folder("example-link-remove")
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: [1]).must()
+
+    match write(path: file, name: "user.notes", value: [1])
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            match fs.symlink(target: "report.txt", name: dir + "/latest")
+                .err e => assert e.code == fs.PERMISSION
+                .ok _ =>
+                    match link_remove(path: dir + "/latest", name: "user.notes")
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    assert read(path: file, name: "user.notes").must() == [1]
+
+    fs.remove_all(dir).must()
+
+# A file's attributes carried to its copy, as a backup that keeps a macOS
+# file's tags carries them.
+test "copy: a note carried to a file's copy"
+    dir = fixture.folder("example-copy")
+    from = dir + "/report.txt"
+    to = dir + "/report-copy.txt"
+    fs.write_bytes(from, data: [1]).must()
+    fs.write_bytes(to, data: [1]).must()
+
+    match write(path: from, name: "user.notes", value: octets.from_text("checked"))
+        .err e => assert e.code == UNSUPPORTED
+        .ok _ =>
+            copy(from: from, to: to).must()
+            assert read(path: to, name: "user.notes").must() == octets.from_text("checked")
+
+    fs.remove_all(dir).must()
