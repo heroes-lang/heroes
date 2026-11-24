@@ -139,7 +139,7 @@ int64_t h_abortcallsonathread_worker(int64_t h0_at) { hero_thread_guard("abortca
 #line 140 "abortcallsonathread.c"
 }
 
-int64_t h_0cb_abortcallsonathread_worker(int64_t h0_at) {
+__attribute__((__noinline__)) int64_t h_0cb_abortcallsonathread_worker(int64_t h0_at) {
     hero_callback_entered("abortcallsonathread.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_abortcallsonathread_worker(h0_at);
     return hero_result;

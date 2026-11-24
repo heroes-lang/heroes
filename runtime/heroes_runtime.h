@@ -875,25 +875,38 @@ void hero_array_push_owned(HeroArrayHeader **slot, const void *value);
  * the region back and returns the array the place now holds, releasing the one
  * it held; `hero_lend_count_u64` is an unsigned extent as the `int64_t` the two
  * take, refused above `INT64_MAX`. The two strings are what a message names. */
-void *hero_lend_take(const HeroArrayHeader *from, int64_t, const char *, const char *);
+/* EVERY TAKE NAMES THE FRAME THAT TOOK IT (panel 258's R1, provisional, author
+ * ratification pending; defects 2752 and 2756): the three takes below, a
+ * buffer's, a local's and a large value's room, are macros that hand the
+ * runtime the taking function's own `__builtin_frame_address(0)`, so a
+ * region or a room a C jump left above a live frame is given back by the
+ * next take, give or thunk below it (`parts/callback.c`, WHICH FRAMES A C JUMP
+ * LEFT). The program's C writes the calls as before; the functions they
+ * reach end `_in`. */
+void *hero_lend_take_in(const HeroArrayHeader *from, int64_t, const char *, const char *, const HeroPlace *where,
+                        void *);
+#define hero_lend_take(from, n, what, name) hero_lend_take_in((from), (n), (what), (name), NULL, __builtin_frame_address(0))
 HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *, int64_t);
 int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
 /* The three with the call's record last, which a refusal the program's count
  * caused, or a give-back C moved, names (panel 230's R1, kind 2). */
-void *hero_lend_take_at(const HeroArrayHeader *from, int64_t, const char *, const char *, const HeroPlace *where);
+#define hero_lend_take_at(from, n, what, name, where)                                                     \
+    hero_lend_take_in((from), (n), (what), (name), (where), __builtin_frame_address(0))
 HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *, int64_t, const HeroPlace *where);
 int64_t hero_lend_count_u64_at(uint64_t, const char *, const char *, const HeroPlace *where);
 
 /* A local lent through `@` to an `extern` call, in place in a region of its
  * own for its function's life (panel 196's R7): taken in the prologue, zeroed,
  * labelled with each call that lends it, given back at the function's exit. */
-void *hero_lend_local(size_t, const char *, const char *);
+void *hero_lend_local_in(size_t, const char *, const char *, void *);
+#define hero_lend_local(size, what, name) hero_lend_local_in((size), (what), (name), __builtin_frame_address(0))
 void hero_lend_local_name(void *, const char *, const char *);
 void hero_lend_local_give(void *);
 /* A large value's room, off its function's frame: taken in the prologue, given
  * back at the function's one exit, the last taken first (defect 2278;
  * `parts/frame.c`, `selfhost/emit/large_value.hero`). */
-void *hero_frame_take(size_t bytes);
+void *hero_frame_take_in(size_t bytes, void *);
+#define hero_frame_take(size) hero_frame_take_in((size), __builtin_frame_address(0))
 void hero_frame_give(void *p);
 void hero_frame_give_at(void *slot); /* the same, as a cleanup: `slot` holds the pointer */
 /* A padding table's gaps, found once, and written zero at each lend (panel 215's R1). */

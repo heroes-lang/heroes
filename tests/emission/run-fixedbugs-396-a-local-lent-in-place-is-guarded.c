@@ -251,7 +251,7 @@ void h_fixedbugs396alocallentinplaceisguarded_inner(void) {
 }
 #undef h0_y
 
-void h_0cb_fixedbugs396alocallentinplaceisguarded_inner(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs396alocallentinplaceisguarded_inner(void) {
     hero_callback_entered("fixedbugs396alocallentinplaceisguarded.inner", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs396alocallentinplaceisguarded_inner();
 }
@@ -349,7 +349,7 @@ bb4:
 }
 #undef h1_x
 
-int64_t h_0cb_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
     hero_callback_entered("fixedbugs396alocallentinplaceisguarded.on_a_thread", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs396alocallentinplaceisguarded_on_a_thread(h0_n);
     return hero_result;

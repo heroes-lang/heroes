@@ -1,0 +1,55 @@
+# Fixed 2026-11-24, defect 2756, lane-panel258-r1 (panel 258's R1): the
+# shapes beside the first case, 2,000 rounds of each: a buffer lent by a
+# function the callback calls, then a local lent in place, each jumped out
+# of; a lend inside a lend, the outer callback's buffer lent to C that calls
+# an inner callback, whose own lend C jumps out of to the inner save point,
+# so the outer callback's give finds the inner region above its own; and a
+# local the callback itself lends in place. A correct program: every round
+# answers 7, 9 and 7.
+# Symptom: the lend inside a lend aborted with `panic: a buffer lent to C was
+# given back at an address its region does not hold ... or by a fault of
+# this compiler`, the inner region standing above the outer.
+# Cause and fix: as the first case of defect 2756; the outer give, finding
+# its region below the newest, first gives back the regions above it, each of
+# a frame below its own.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_put_throw(@x: i32 lent) -> i32
+    function lv_fill_throw(@md: [u8] counted_by 4096 lent) -> i32
+    function lv_fill_then(@md: [u8] counted_by 4096 lent, cb: (function(i64) -> i64), n: i64) -> i64
+
+function lend_buffer(n: i64) -> i64
+    md: [u8] @= []
+    _ = lv_fill_throw(@md)
+    return md.len().to_i64().must() + n
+
+function lend_local(n: i64) -> i64
+    x: i32 @= 0
+    _ = lv_put_throw(x: @x)
+    return x.to_i64().must() + n
+
+function by_helper(n: i64) -> i64
+    return lend_buffer(n) + lend_local(n)
+
+function inner(n: i64) -> i64
+    md: [u8] @= []
+    _ = lv_fill_throw(@md)
+    return n
+
+function outer(n: i64) -> i64
+    md: [u8] @= []
+    got = lv_fill_then(@md, cb: inner, n: n)
+    return got + md[0].to_i64().must()
+
+function local_then(n: i64) -> i64
+    x: i32 @= 3
+    _ = lv_put_throw(x: @x)
+    return n
+
+function main()
+    total: i64 @= 0
+
+    for i in range(from: 0, to: 2000)
+        total @ total + lv_try(cb: by_helper, n: i) + lv_try(cb: outer, n: i) + lv_try(cb: local_then, n: i)
+
+    print("lent, sum ", total)

@@ -39,7 +39,9 @@ static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *e
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
  * a landing in frames already left is seen wherever it happens. Where the
- * decode did not verify, route A's record judges it. */
+ * decode did not verify, route A's record judges it. A jump that leaves every
+ * handler the thread stood in is asked whether it abandons this runtime's
+ * allocator (`parts/sigguard.c`, panel 258's R1). */
 static void hero_jmp_jump(const void *env) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || env == NULL) return;
@@ -56,6 +58,7 @@ static void hero_jmp_jump(const void *env) {
     } else {
         hero_jmp_reenter_by_record(own, env);
     }
+    if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
 }
 
 /* Rule 6 for `setcontext` to `ucp`: a target on a coroutine's stack (a known
@@ -87,6 +90,7 @@ static void hero_jmp_set(const ucontext_t *ucp) {
     } else {
         hero_jmp_reenter_by_record(own, ucp);
     }
+    if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
 }
 
 /* THE SAVE POINTS: under A the frame noted, then the C library's own reached

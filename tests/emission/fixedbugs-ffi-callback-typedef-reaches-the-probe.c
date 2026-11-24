@@ -187,7 +187,7 @@ void h_fficallbacktypedefreachestheprobe_bye(void) { hero_thread_guard("fficallb
 #line 188 "fficallbacktypedefreachestheprobe.c"
 }
 
-void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
+__attribute__((__noinline__)) void h_0cb_fficallbacktypedefreachestheprobe_bye(void) {
     hero_callback_entered("fficallbacktypedefreachestheprobe.bye", __builtin_return_address(0), __builtin_frame_address(0));
     h_fficallbacktypedefreachestheprobe_bye();
 }

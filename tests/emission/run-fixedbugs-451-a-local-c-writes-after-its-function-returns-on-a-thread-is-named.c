@@ -209,7 +209,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worke
 #line 210 "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.c"
 }
 
-int64_t h_0cb_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(int64_t h0_arg) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(int64_t h0_arg) {
     hero_callback_entered("fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(h0_arg);
     return hero_result;

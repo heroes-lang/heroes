@@ -224,7 +224,7 @@ void h_fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisr
 #line 225 "fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisrefused.c"
 }
 
-void h_0cb_fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisrefused_on_info(int32_t h0_sig, void * h1_info, void * h2_context) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisrefused_on_info(int32_t h0_sig, void * h1_info, void * h2_context) {
     hero_callback_entered("fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisrefused.on_info", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesfunctionwithsiginfotheprogramsownsigactioninstallsisrefused_on_info(h0_sig, h1_info, h2_context);
 }

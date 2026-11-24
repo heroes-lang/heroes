@@ -248,7 +248,7 @@ int64_t h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogram
     return t16;
 }
 
-int64_t h_0cb_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits(int64_t h0_round) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits(int64_t h0_round) {
     hero_callback_entered("fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown.awaits", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits(h0_round);
     return hero_result;

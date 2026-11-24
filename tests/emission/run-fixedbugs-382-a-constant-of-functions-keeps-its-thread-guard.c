@@ -146,7 +146,7 @@ int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n
 #line 147 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
-int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) {
     hero_callback_entered("fixedbugs382aconstantoffunctionskeepsitsthreadguard.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(h0_n);
     return hero_result;
@@ -158,7 +158,7 @@ int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_
 #line 159 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
-int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) {
     hero_callback_entered("fixedbugs382aconstantoffunctionskeepsitsthreadguard.thrice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(h0_n);
     return hero_result;
@@ -180,7 +180,7 @@ int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_
     return t19;
 }
 
-int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_n) {
     hero_callback_entered("fixedbugs382aconstantoffunctionskeepsitsthreadguard.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(h0_n);
     return hero_result;

@@ -300,7 +300,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) { he
     return t25;
 }
 
-int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) {
+__attribute__((__noinline__)) int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) {
     hero_callback_entered("theplatformlayerrunstheleakcheckafterastop.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerrunstheleakcheckafterastop_serve(h0_port);
     return hero_result;

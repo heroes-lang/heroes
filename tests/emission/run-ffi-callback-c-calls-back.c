@@ -188,7 +188,7 @@ void h_fficallbackccallsback_bye(void) { hero_thread_guard("fficallbackccallsbac
 #line 189 "fficallbackccallsback.c"
 }
 
-void h_0cb_fficallbackccallsback_bye(void) {
+__attribute__((__noinline__)) void h_0cb_fficallbackccallsback_bye(void) {
     hero_callback_entered("fficallbackccallsback.bye", __builtin_return_address(0), __builtin_frame_address(0));
     h_fficallbackccallsback_bye();
 }

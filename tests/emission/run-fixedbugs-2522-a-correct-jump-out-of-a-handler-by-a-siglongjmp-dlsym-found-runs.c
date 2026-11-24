@@ -190,7 +190,7 @@ int64_t h_fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns_answ
 #line 191 "fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns.c"
 }
 
-int64_t h_0cb_fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns_answer(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns_answer(int64_t h0_n) {
     hero_callback_entered("fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns.answer", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2522acorrectjumpoutofahandlerbyasiglongjmpdlsymfoundruns_answer(h0_n);
     return hero_result;

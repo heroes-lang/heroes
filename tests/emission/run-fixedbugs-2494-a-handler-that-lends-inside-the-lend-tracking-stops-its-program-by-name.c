@@ -202,7 +202,7 @@ void h_fixedbugs2494ahandlerthatlendsinsidethelendtrackingstopsitsprogrambyname_
 }
 #undef h1_cell
 
-void h_0cb_fixedbugs2494ahandlerthatlendsinsidethelendtrackingstopsitsprogrambyname_on_signal(int32_t h0_sig) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494ahandlerthatlendsinsidethelendtrackingstopsitsprogrambyname_on_signal(int32_t h0_sig) {
     hero_callback_entered("fixedbugs2494ahandlerthatlendsinsidethelendtrackingstopsitsprogrambyname.on_signal", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494ahandlerthatlendsinsidethelendtrackingstopsitsprogrambyname_on_signal(h0_sig);
 }

@@ -1,0 +1,2 @@
+waiting
+!panic: a thread ended without its answer: C ended it (`pthread_exit`, a cancellation, `ExitThread`) inside a function its own function called, before that function returned, so waiting for it has no answer to give

@@ -240,7 +240,7 @@ void h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_before_f
     return;
 }
 
-void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_before_fork(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_before_fork(void) {
     hero_callback_entered("fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused.before_fork", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_before_fork();
 }
@@ -251,7 +251,7 @@ void h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_paren
 #line 252 "fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused.c"
 }
 
-void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_parent(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_parent(void) {
     hero_callback_entered("fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused.in_parent", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_parent();
 }
@@ -262,7 +262,7 @@ void h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_child
 #line 263 "fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused.c"
 }
 
-void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_child(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_child(void) {
     hero_callback_entered("fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused.in_child", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesfunctionachandlerreachesthroughforkisrefused_in_child();
 }

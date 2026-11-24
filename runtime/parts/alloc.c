@@ -341,6 +341,17 @@ static int64_t hero_dir_blocks_held_at_exit(void);
 /* `parts/mail.c`, later in this translation unit. */
 static void hero_mail_check_alive(void);
 
+/* The end of a scratch gate's sentence: that the program did not give the
+ * scratch back, or, where a callback never returned, that C's jump skipped
+ * the release (panel 258's R1, defect 2753). */
+static void hero_scratch_owner(int64_t unfinished, const char *own) {
+    if (unfinished > 0) {
+        hero_report_printf(HERO_CALLBACKS_LEFT "a release those frames would have run never ran\n", (long long)unfinished);
+    } else {
+        hero_report_printf("%s\n", own);
+    }
+}
+
 void hero_runtime_check_leaks(void) {
     /* THE THREADS FIRST (panel 251's R2): no balance below is read while a
      * thread the program started runs or waits unjoined, since what it holds
@@ -360,7 +371,8 @@ void hero_runtime_check_leaks(void) {
      * ffi-pragmatist: libpng's error path over a Heroes frame, 27 runs of 27).
      * Not audited, as a program that calls `exit` is not (`hero_exit`); the
      * count is `parts/callback.c`'s. */
-    if (blocks != 0 && hero_callbacks_unfinished() > 0) blocks = 0;
+    int64_t unfinished = hero_callbacks_unfinished();
+    if (blocks != 0 && unfinished > 0) blocks = 0;
     if (blocks != 0) {
         hero_report_begin();
         hero_report_printf("panic: %lld heap blocks still live at exit "
@@ -374,6 +386,12 @@ void hero_runtime_check_leaks(void) {
      * told *a runtime call kept what it borrowed — this is a runtime bug*, of a
      * program that had only not called the release. What is left after them is
      * still the runtime's. */
+    /* AND EVERY GATE BELOW KEEPS ITS ABORT WHERE A CALLBACK NEVER RETURNED, AND
+     * SAYS SO (panel 258's R1, provisional, author ratification pending;
+     * defect 2753): what it counts may be a release those frames would have
+     * run, so it names the jump as well as the count, and no longer *this
+     * program did not call it* or *this is a runtime bug*, which C's jump made
+     * false (`parts/callback.c`'s HERO_CALLBACKS_LEFT). */
     int64_t scratch = hero_live_scratch;
     if (scratch != 0) {
         int64_t words = hero_run_words_held_at_exit();
@@ -386,28 +404,36 @@ void hero_runtime_check_leaks(void) {
         if (words > 0) {
             hero_report_printf("panic: a launch's argument list still holds %lld word(s) at exit — "
                             "`hero_run_arg` keeps each word until `hero_run_reset()` gives the list "
-                            "back, and this program did not call it after its last `hero_run_arg`\n",
+                            "back, and ",
                     (long long)words);
+            hero_scratch_owner(unfinished, "this program did not call it after its last `hero_run_arg`");
         }
         if (variables > 0) {
             hero_report_printf("panic: a launch still holds %lld variable(s) for its child at exit — "
                             "`hero_run_env` keeps each until `hero_run_reset()` gives them "
-                            "back, and this program did not call it after its last `hero_run_env`\n",
+                            "back, and ",
                     (long long)variables);
+            hero_scratch_owner(unfinished, "this program did not call it after its last `hero_run_env`");
         }
         if (folders > 0) {
             hero_report_printf("panic: a launch still holds %lld working folder(s) for its child at exit — "
-                            "`hero_run_dir` keeps one until `hero_run_reset()` gives it back, and "
-                            "this program did not call it after its last `hero_run_dir`\n",
+                            "`hero_run_dir` keeps one until `hero_run_reset()` gives it back, and ",
                     (long long)folders);
+            hero_scratch_owner(unfinished, "this program did not call it after its last `hero_run_dir`");
         }
         if (listing > 0) {
             hero_report_printf("panic: a directory listing of %lld name(s) is still held at exit — "
                             "`hero_dir_scan` keeps its listing until `hero_dir_release()` gives it "
-                            "back, and this program did not call it after its last scan\n",
+                            "back, and ",
                     (long long)names);
+            hero_scratch_owner(unfinished, "this program did not call it after its last scan");
         }
-        if (rest != 0) {
+        if (rest != 0 && unfinished > 0) {
+            hero_report_printf("panic: %lld scratch buffers still live at exit — " HERO_CALLBACKS_LEFT
+                               "a runtime call those frames stood inside, `sort` asking its comparison among "
+                               "them, never gave back what it borrowed\n",
+                               (long long)rest, (long long)unfinished);
+        } else if (rest != 0) {
             hero_report_printf("panic: %lld scratch buffers still live at exit "
                             "(a runtime call kept what it borrowed) — this is a "
                             "runtime bug\n",
@@ -423,10 +449,16 @@ void hero_runtime_check_leaks(void) {
         HeroPlaces taken = {.used = 0};
         hero_lease_places(&taken);
         hero_report_begin();
-        hero_report_printf("panic: %lld lease(s) never ended — every `.lease()` owes "
-                        "one `end_lease`, and this program is missing that "
-                        "many\n",
-                (long long)held);
+        if (unfinished > 0) {
+            hero_report_printf("panic: %lld lease(s) never ended — every `.lease()` owes one `end_lease`, and "
+                               HERO_CALLBACKS_LEFT "an `end_lease` those frames would have run never ran\n",
+                               (long long)held, (long long)unfinished);
+        } else {
+            hero_report_printf("panic: %lld lease(s) never ended — every `.lease()` owes "
+                               "one `end_lease`, and this program is missing that "
+                               "many\n",
+                               (long long)held);
+        }
         hero_places_write(&taken, held > 0 ? (size_t)held : 0);
         hero_abort();
     }
@@ -541,9 +573,16 @@ void hero_runtime_check_leaks(void) {
                             : doors >= live ? "a door of the runtime began"
                                             : "a mark began, `acquires` or `retains`, or a door of the runtime began,";
         hero_report_begin();
-        hero_report_printf("panic: %llu C handle(s) never given back — every life %s owes one "
-                        "release, and this program is missing that many. The first is at %p\n",
-                (unsigned long long)live, began, first_live);
+        if (unfinished > 0) {
+            hero_report_printf("panic: %llu C handle(s) never given back — every life %s owes one release, and "
+                               HERO_CALLBACKS_LEFT "a release those frames would have run never ran. The first "
+                               "is at %p\n",
+                               (unsigned long long)live, began, (long long)unfinished, first_live);
+        } else {
+            hero_report_printf("panic: %llu C handle(s) never given back — every life %s owes one "
+                               "release, and this program is missing that many. The first is at %p\n",
+                               (unsigned long long)live, began, first_live);
+        }
         hero_places_write(&taken, live);
         if (with_mail > 0) {
             hero_report_printf("  %llu of them went inside a value of a mailbox when its last copy went, never "
@@ -615,6 +654,13 @@ void hero_runtime_check_leaks(void) {
 #include <signal.h>
 
 static _Thread_local volatile sig_atomic_t hero_alloc_inside = 0;
+
+/* Whether the code a handler interrupted is inside the allocator, asked by a
+ * jump that leaves the handler (`parts/sigguard.c`'s
+ * `hero_signal_jump_checked`, panel 258's R1). */
+#if !defined(_WIN32)
+static int hero_alloc_interrupted(void) { return hero_alloc_inside != 0; }
+#endif
 
 /* The stop, through the one every refusal of a signal's re-entrance takes
  * (`parts/sigguard.c`), async-signal-safe from its first call to its last and

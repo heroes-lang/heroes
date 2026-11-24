@@ -262,7 +262,7 @@ int64_t h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacall
 #line 263 "fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
-int64_t h_0cb_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) {
     hero_callback_entered("fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback.one", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2337afunctiontakingalargerecordwhoseaddressistakenbesideacallback_one(h0_n);
     return hero_result;

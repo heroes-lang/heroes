@@ -1,0 +1,20 @@
+# Fixed 2026-11-24, defect 2754, lane-panel258-r1 (panel 258's R1): the
+# shape beside the first case, a thread C ends that nobody waits for. Spec
+# section 13: a thread nobody waits for aborts when `main` returns, saying
+# how many, and so this program still does.
+# Symptom: the abort said the thread was `still running`, of a thread C had
+# ended 200 milliseconds before.
+# Cause and fix: as the first case of defect 2754; the end of `main` tells a
+# thread that ended without its answer as that (`runtime/parts/spawn.c`).
+extern "fixedbugs-2754-thread-end.h"
+    function te_nap(ms: i64)
+    function te_end_after(ms: i64)
+
+function worker(n: i64) -> i64
+    te_end_after(ms: 0)
+    return n
+
+function main()
+    t = spawn(worker, 7).must()
+    te_nap(ms: 200)
+    print("main returns without waiting for ", [t].len(), " thread")

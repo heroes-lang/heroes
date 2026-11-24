@@ -238,7 +238,7 @@ bb4:
 #line 239 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
-struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
+__attribute__((__noinline__)) struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
     hero_callback_entered("deadhandleinacallbackresultrecordnamesitsfield.give", __builtin_return_address(0), __builtin_frame_address(0));
     struct pair hero_result = h_deadhandleinacallbackresultrecordnamesitsfield_give(h0_k);
     hero_handle_alive(hero_result.a, "the result of the callback `deadhandleinacallbackresultrecordnamesitsfield.give`, at `.a`");

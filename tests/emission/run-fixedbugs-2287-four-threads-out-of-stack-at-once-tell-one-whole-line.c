@@ -134,7 +134,7 @@ int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t 
     return t11;
 }
 
-int64_t h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n) {
     hero_callback_entered("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.down", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(h0_n);
     return hero_result;

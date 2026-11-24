@@ -194,7 +194,7 @@ int64_t h_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) { hero_thre
 #line 195 "deadaddresscallbackhandbackclearsthemark.c"
 }
 
-int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
     hero_callback_entered("deadaddresscallbackhandbackclearsthemark.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_n);
     int64_t hero_result = h_deadaddresscallbackhandbackclearsthemark_seen(h0_n);

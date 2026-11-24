@@ -209,7 +209,7 @@ int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); int64_t 
 #line 210 "main.c"
 }
 
-int64_t h_0cb_main_band(int64_t h0_index) {
+__attribute__((__noinline__)) int64_t h_0cb_main_band(int64_t h0_index) {
     hero_callback_entered("main.band", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_band(h0_index);
     return hero_result;

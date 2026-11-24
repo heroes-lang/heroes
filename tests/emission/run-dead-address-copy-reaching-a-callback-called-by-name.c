@@ -212,7 +212,7 @@ int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) { hero_
 #line 213 "deadaddresscopyreachingacallbackcalledbyname.c"
 }
 
-int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
     hero_callback_entered("deadaddresscopyreachingacallbackcalledbyname.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_n);
     int64_t hero_result = h_deadaddresscopyreachingacallbackcalledbyname_seen(h0_n);

@@ -175,7 +175,7 @@ int64_t h_main_inside_for(int64_t h0_seed) { hero_thread_guard("main.inside_for"
 #line 176 "main.c"
 }
 
-int64_t h_0cb_main_inside_for(int64_t h0_seed) {
+__attribute__((__noinline__)) int64_t h_0cb_main_inside_for(int64_t h0_seed) {
     hero_callback_entered("main.inside_for", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_inside_for(h0_seed);
     return hero_result;

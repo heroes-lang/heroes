@@ -172,6 +172,46 @@ static _Noreturn void hero_signal_stop(const char *const *parts, size_t count) {
     _exit(134);
 }
 
+/* A JUMP OUT OF A HANDLER THAT INTERRUPTED THIS RUNTIME'S ALLOCATOR (panel
+ * 258's R1, provisional, author ratification pending; defect 2755). A handler
+ * of C's that `siglongjmp`s out of the code it interrupted (a watchdog's
+ * `SIGALRM`) abandons that code at whatever instruction the signal found, and
+ * where that was inside this runtime's allocator, or its record of the buffers
+ * lent to C, the bracket the code had opened was never closed: the landing
+ * code's next allocation found it open and stopped the program saying *a
+ * Heroes function given to C as a signal handler*, of a program that has none
+ * (`alarm`, 8 processes of 8 at exit 134, or killed by the C library's own
+ * allocator with nothing said). POSIX leaves everything after such a jump
+ * undefined, and the C library's allocator the code was inside holds its own
+ * lock (the sitting's ffi-pragmatist: 10 processes of 10 die with no Heroes
+ * code at all, on Darwin and Linux). So the jump hooks (`parts/sigjump_save.c`
+ * on Linux, `parts/rebind_jump.c` on Darwin) ask here, after a jump has left
+ * every handler the thread stood in, and the program stops before the jump,
+ * saying what happened, from inside the handler: async-signal-safe, as every
+ * refusal of this file. A jump the hooks never see leaves the bracket open,
+ * and its next use says the words below with the re-entrance they name
+ * (`parts/alloc.c`'s `hero_alloc_reentered`). */
+#if !defined(_WIN32)
+static int hero_alloc_interrupted(void); /* `parts/alloc.c` */
+static int hero_lend_interrupted(void);  /* `parts/lend.c` */
+
+static void hero_signal_jump_checked(void) {
+    int alloc = hero_alloc_interrupted();
+    if (!alloc && !hero_lend_interrupted()) return;
+    static const char *const said[] = {
+        "panic: a signal handler jumped out of the code it interrupted while that code was inside this runtime's ",
+        NULL,
+        ", which nothing will ever finish: what runs after such a jump is undefined, the allocator's lock and "
+        "lists may be left half written, so the program stops here, before the jump. A handler that ends work by "
+        "jumping (`siglongjmp`, `longjmp`) may leave only code it is safe to abandon, and this runtime's "
+        "allocation is not: count the signal instead, with `hero_signal_watch(sig: i32) -> i64` and "
+        "`hero_signal_take(sig: i32) -> i64` (`hero_os.h`), and let the function return",
+    };
+    const char *parts[3] = {said[0], alloc ? "allocator" : "record of the buffers lent to C", said[2]};
+    hero_signal_stop(parts, 3);
+}
+#endif
+
 /* WHICH ROUTE STANDS (panel 251's R1): B' with J on Linux and every POSIX
  * system but Darwin, D-rebind with J on Darwin, none on Windows. */
 #if defined(__APPLE__)
@@ -569,10 +609,13 @@ static void hero_callback_asked(const char *what, void *ret, void *frame);
 
 /* The thunk's first line: the question, then the count (`parts/callback.c`):
  * the count is begun only for a call the question let through, which the
- * thunk's own last line then ends. */
+ * thunk's own last line then ends. Then what frames below the thunk's own a
+ * C jump left in the room and the lend regions is given back (panel 258's
+ * R1): nothing of this thread's stack below the thunk is alive. */
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     hero_callback_asked(what, ret, frame);
     hero_callback_in();
+    hero_callback_heal(frame);
 }
 
 static void hero_callback_asked(const char *what, void *ret, void *frame) {
@@ -636,8 +679,8 @@ void hero_signal_learn(void) {}
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     (void)what;
     (void)ret;
-    (void)frame;
     hero_callback_in();
+    hero_callback_heal(frame);
 }
 
 static void hero_signal_measure(void) {}

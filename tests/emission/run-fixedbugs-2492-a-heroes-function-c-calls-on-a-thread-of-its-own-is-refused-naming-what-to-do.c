@@ -188,7 +188,7 @@ int64_t h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhat
 #line 189 "fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.c"
 }
 
-int64_t h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(int64_t h0_n) {
     hero_callback_entered("fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2492aheroesfunctionccallsonathreadofitsownisrefusednamingwhattodo_worker(h0_n);
     return hero_result;

@@ -146,7 +146,7 @@ int64_t h_fixedbugs2605aprintspanathreadleavesopenendswithit_command(int64_t h0_
 #line 147 "fixedbugs2605aprintspanathreadleavesopenendswithit.c"
 }
 
-int64_t h_0cb_fixedbugs2605aprintspanathreadleavesopenendswithit_command(int64_t h0_) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2605aprintspanathreadleavesopenendswithit_command(int64_t h0_) {
     hero_callback_entered("fixedbugs2605aprintspanathreadleavesopenendswithit.command", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2605aprintspanathreadleavesopenendswithit_command(h0_);
     return hero_result;

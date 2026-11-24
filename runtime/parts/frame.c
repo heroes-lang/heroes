@@ -25,7 +25,25 @@
  * thread: a bump pointer in chunks of a mebibyte or of the value, whichever is
  * larger, the newest chunk on top and one emptied chunk kept for the next. A
  * give that is not of the newest take is the compiler's error, never the
- * program's, and stops loudly rather than lose a value. The chunks come from
+ * program's, and stops loudly rather than lose a value.
+ *
+ * BUT A C JUMP LEAVES TAKES NOBODY GIVES BACK (panel 258's R1, provisional,
+ * author ratification pending; defect 2752). A callback C `longjmp`s over
+ * never reaches its exit, so its takes stood on top of the room and the next
+ * give of a live frame below them was told *given back out of order
+ * (compiler bug)*, of a correct program (`room_order`, exit 134, 3 runs of 3);
+ * left alone they would also have filled the room's gibibyte, about 1,260
+ * jumps of that program's 832 KB. So each take is MARKED with the frame that
+ * took it (`parts/callback.c`, WHICH FRAMES A C JUMP LEFT), and the marks heal
+ * the room: a take first gives back every take of a frame below its own, a
+ * thunk's entry every take below the thunk, and a give of a take that is not
+ * the newest first gives back the takes above it when every one of them is of
+ * a frame below the giver's, since the giver is the deepest frame alive. A
+ * take above it of the giver's own frame, or of no frame this thread's stack
+ * holds, is still the compiler's error and stops as it did. The marks are
+ * this room's machinery, an array of the same raw `malloc` as its chunks.
+ *
+ * The chunks come from
  * the one `malloc` neither counter weighs and go back through its mate
  * (`hero_malloc_raw`, which stops at `out of memory` rather than return NULL,
  * and `hero_free_raw`, both in `parts/alloc.c` where Part 7.13's single point
@@ -85,13 +103,23 @@ static _Noreturn void hero_frame_exhausted(void *caller) {
 #endif
 }
 
-void *hero_frame_take(size_t bytes) {
-    if (bytes > HERO_FRAME_ROOM) hero_frame_exhausted(__builtin_return_address(0));
+/* A take and the frame that took it (the head's BUT A C JUMP). */
+typedef struct {
+    void *at;
+    uintptr_t frame;
+} HeroFrameMark;
+
+static _Thread_local HeroFrameMark *hero_frame_marks = NULL;
+static _Thread_local size_t hero_frame_marked = 0;
+static _Thread_local size_t hero_frame_mark_cap = 0;
+
+static void *hero_frame_take_raw(size_t bytes, void *caller) {
+    if (bytes > HERO_FRAME_ROOM) hero_frame_exhausted(caller);
     size_t need = (bytes + 15) & ~(size_t)15;
     size_t before = atomic_fetch_add(&hero_frame_held, need);
     if (before > HERO_FRAME_ROOM - need) {
         atomic_fetch_sub(&hero_frame_held, need);
-        hero_frame_exhausted(__builtin_return_address(0));
+        hero_frame_exhausted(caller);
     }
     HeroFrameChunk *top = hero_frame_top;
     if (top == NULL || top->size - top->used < need) {
@@ -114,12 +142,14 @@ void *hero_frame_take(size_t bytes) {
     return at;
 }
 
-void hero_frame_give(void *p) {
+static _Noreturn void hero_frame_out_of_order(void) {
+    hero_panic("internal error: a large value's room was given back out of order (compiler bug)");
+}
+
+static void hero_frame_give_raw(void *p) {
     HeroFrameChunk *top = hero_frame_top;
     char *base = top == NULL ? NULL : (char *)top + HERO_FRAME_HEADER;
-    if (top == NULL || (char *)p < base || (char *)p >= base + top->used) {
-        hero_panic("internal error: a large value's room was given back out of order (compiler bug)");
-    }
+    if (top == NULL || (char *)p < base || (char *)p >= base + top->used) hero_frame_out_of_order();
     atomic_fetch_sub(&hero_frame_held, top->used - (size_t)((char *)p - base));
     top->used = (size_t)((char *)p - base);
     if (top->used > 0) return;
@@ -130,6 +160,62 @@ void hero_frame_give(void *p) {
     } else {
         hero_free_raw(top);
     }
+}
+
+/* The newest take given back, its mark with it. */
+static void hero_frame_pop(void) {
+    hero_frame_marked -= 1;
+    hero_frame_give_raw(hero_frame_marks[hero_frame_marked].at);
+}
+
+/* Every newest take of a frame below `frame` on this thread's stack, given
+ * back: those frames are gone, left by a C jump (the head's BUT A C JUMP). */
+static void hero_frame_heal_below(uintptr_t frame) {
+    while (hero_frame_marked > 0 && hero_frame_is_below(hero_frame_marks[hero_frame_marked - 1].frame, frame)) {
+        hero_frame_pop();
+    }
+}
+
+/* `frame` is the taking function's own frame, which `heroes_runtime.h`'s
+ * `hero_frame_take` hands in; the caller named where the room runs out is
+ * this function's own, the taking function's code. */
+__attribute__((noinline)) void *hero_frame_take_in(size_t bytes, void *frame) {
+    uintptr_t own = (uintptr_t)frame;
+    hero_frame_heal_below(own);
+    if (hero_frame_marked == hero_frame_mark_cap) {
+        size_t cap = hero_frame_mark_cap == 0 ? 64 : hero_frame_mark_cap * 2;
+        HeroFrameMark *grown = (HeroFrameMark *)hero_malloc_raw(cap * sizeof(HeroFrameMark));
+        if (hero_frame_marked > 0) memcpy(grown, hero_frame_marks, hero_frame_marked * sizeof(HeroFrameMark));
+        hero_free_raw(hero_frame_marks);
+        hero_frame_marks = grown;
+        hero_frame_mark_cap = cap;
+    }
+    void *at = hero_frame_take_raw(bytes, __builtin_return_address(0));
+    hero_frame_marks[hero_frame_marked].at = at;
+    hero_frame_marks[hero_frame_marked].frame = own;
+    hero_frame_marked += 1;
+    return at;
+}
+
+/* The newest take is `p`'s, the common case; otherwise `p`'s mark lies below
+ * the newest, and the takes above it are given back first where each is of a
+ * frame below `p`'s own taker, which is giving `p` back at its exit and so is
+ * the deepest frame alive. `p`'s own mark names that frame, never the frame
+ * this call came from: a give is the last call of its function and may be
+ * reached by a tail call from the function's caller. */
+void hero_frame_give(void *p) {
+    if (hero_frame_marked > 0 && hero_frame_marks[hero_frame_marked - 1].at == p) {
+        hero_frame_pop();
+        return;
+    }
+    size_t at = hero_frame_marked;
+    while (at > 0 && hero_frame_marks[at - 1].at != p) at -= 1;
+    if (at == 0) hero_frame_out_of_order();
+    uintptr_t giver = hero_frame_marks[at - 1].frame;
+    for (size_t above = at; above < hero_frame_marked; above += 1) {
+        if (!hero_frame_is_below(hero_frame_marks[above].frame, giver)) hero_frame_out_of_order();
+    }
+    while (hero_frame_marked >= at) hero_frame_pop();
 }
 
 /* The same, for `__attribute__((__cleanup__))`, which hands the address of
@@ -144,8 +230,9 @@ void hero_frame_give_at(void *slot) {
 }
 
 /* A spawned thread's room goes back with the thread (`parts/spawn.c`), as its
- * lend regions do: every function it ran has returned, so only the kept chunk
- * is left. */
+ * lend regions do: every function it ran has returned, or was left by a C
+ * jump, so what is left is the kept chunk, the takes of frames a jump left,
+ * and the marks. */
 static void hero_frame_thread_leave(void) {
     while (hero_frame_top != NULL) {
         HeroFrameChunk *below = hero_frame_top->below;
@@ -154,4 +241,8 @@ static void hero_frame_thread_leave(void) {
     }
     hero_free_raw(hero_frame_spare);
     hero_frame_spare = NULL;
+    hero_free_raw(hero_frame_marks);
+    hero_frame_marks = NULL;
+    hero_frame_marked = 0;
+    hero_frame_mark_cap = 0;
 }

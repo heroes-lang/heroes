@@ -207,7 +207,7 @@ int64_t h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int6
 #line 208 "fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.c"
 }
 
-int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(int64_t h0_slot) {
     hero_callback_entered("fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugstwothreadsoveroneallocatorgivebacktheirownhandles_worker(h0_slot);
     return hero_result;
