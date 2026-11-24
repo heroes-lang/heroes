@@ -1,0 +1,45 @@
+# The server the package's tests reach: an `sshd` the variables
+# `REBEL_SSH_PORT`, `REBEL_SSH_USER` and `REBEL_SSH_DIR` name, run on this
+# machine as this user with `known_hosts` and `id_ecdsa` in that folder, so
+# what the tests write through SFTP is also read through the system's own
+# calls, a second witness of every answer.
+
+use fs
+use numbers
+use os
+use ssh
+
+# Why a test skips where no server is named.
+constant SKIP: str
+    "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd"
+
+# A client signed in to the tests' server, and a folder of the test's own
+# beside the server's files.
+record Lab
+    # The client, signed in.
+    client: ssh.Client
+    # The folder the test works in, made empty.
+    dir: str
+
+# The tests' server signed in to, and the folder `name` under its folder
+# made empty for the test.
+function signed_in(name: str) -> Lab?
+    port = numbers.parse_int(os.env("REBEL_SSH_PORT")?)?
+    user = os.env("REBEL_SSH_USER")?
+    home = os.env("REBEL_SSH_DIR")?
+    opts @= ssh.options(host: "127.0.0.1", user: user, known_hosts: home + "/known_hosts")
+    opts.port @ port
+    c @= ssh.connect(opts)?
+    key @= ssh.parse_private_key(read_file(home + "/id_ecdsa")?)?
+    signed = ssh.sign_in_with_key(@c, key: key)
+    ssh.close_key(@key)?
+    signed?
+    dir = home + "/sftp-" + name
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir(dir)?
+    return ok(Lab(client: c, dir: dir))
+
+# Removes the test's folder and closes the client.
+function done(@lab: Lab) -> ()?
+    fs.remove_all(lab.dir)?
+    return ssh.close(@lab.client)

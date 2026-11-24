@@ -1,0 +1,180 @@
+# SFTP's data types (draft-ietf-secsh-filexfer-02 § 3, which takes them from
+# the SSH protocol's): `byte`, `uint32`, `uint64` and `string`, read from
+# bytes and written to them. Every reader checks a length against the bytes
+# left before it cuts, so bytes from the server fail `invalid` and never
+# index past their end.
+
+use bytes
+
+## Codes
+
+# Bytes that are not the type asked for: too few, a length past the end, a
+# uint64 past 2^63 - 1.
+constant INVALID: str
+    "invalid"
+
+# A string that names a path and is not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+## Reading
+
+# A place in bytes being read, from `at` to the end of `data`.
+record Reader
+    # The bytes read.
+    data: [u8]
+    # The index of the next byte to read, from 0 to `data`'s length.
+    at: i64
+
+# A reader at the first byte of `data`.
+function reader(data: [u8]) -> Reader
+    return Reader(data: data, at: 0)
+
+# How many bytes `r` has not read.
+function left(r: Reader lent) -> i64
+    return r.data.len() - r.at
+
+# The next `n` bytes of `r`, which moves past them; `what` names them in a
+# failure.
+function take(@r: Reader, n: i64, what: str) -> [u8]?
+    if n < 0 || n > left(r)
+        return fail(
+            code: INVALID,
+            msg: f"{what}: {n} bytes asked where {left(r)} are left"
+        )
+    part = r.data.slice(from: r.at, to: r.at + n)
+    r.at @ r.at + n
+    return ok(part)
+
+# The next byte of `r`.
+function read_byte(@r: Reader, what: str) -> u8?
+    if left(r) < 1
+        return fail(code: INVALID, msg: f"{what}: no byte is left")
+    b = r.data[r.at]
+    r.at @ r.at + 1
+    return ok(b)
+
+# The next `uint32` of `r`, big-endian, as an `i64` from 0 to 2^32 - 1.
+function read_u32(@r: Reader, what: str) -> i64?
+    four = take(@r, n: 4, what: what)?
+    return ok(u32_of(four, at: 0))
+
+# The next `uint64` of `r`, big-endian, as an `i64`; one past 2^63 - 1 fails
+# `invalid`, no size or offset a system keeps reaching it.
+function read_u64(@r: Reader, what: str) -> i64?
+    eight = take(@r, n: 8, what: what)?
+
+    if eight[0] > 127
+        return fail(code: INVALID, msg: f"{what}: a uint64 past 2^63 - 1")
+    return ok(u32_of(eight, at: 0) * 4294967296 + u32_of(eight, at: 4))
+
+# The next `string` of `r`: a `uint32` length and that many bytes.
+function read_string(@r: Reader, what: str) -> [u8]?
+    n = read_u32(@r, what: what)?
+    return take(@r, n: n, what: what)
+
+# The next `string` of `r` read as UTF-8 text, failing `not_text` where it is
+# not: a name the server holds in bytes no text spells.
+function read_text(@r: Reader, what: str) -> str?
+    raw = read_string(@r, what: what)?
+
+    match bytes.to_text(raw)
+        .ok t => return ok(t)
+        .err _ =>
+            return fail(
+                code: NOT_TEXT,
+                msg: f"{what}: the name {bytes.format_escaped(raw)} is not UTF-8"
+            )
+
+# Fails `invalid` where `r` holds bytes not read: a message that must hold
+# nothing more.
+function expect_end(r: Reader lent, what: str) -> ()?
+    if left(r) != 0
+        return fail(code: INVALID, msg: f"{what}: {left(r)} bytes past its end")
+    return ok()
+
+## Writing
+
+# `b` added to `out`.
+function put_byte(@out: [u8], b: u8)
+    out @ out.push(b)
+
+# `n` added to `out` as a `uint32`. Aborts outside 0 to 2^32 - 1, a number
+# the package itself checked.
+function put_u32(@out: [u8], n: i64)
+    assert n >= 0 && n <= 4294967295
+    out @ out.push(to_u8(n >> 24 & 255).must())
+    out @ out.push(to_u8(n >> 16 & 255).must())
+    out @ out.push(to_u8(n >> 8 & 255).must())
+    out @ out.push(to_u8(n & 255).must())
+
+# `n` added to `out` as a `uint64`. Aborts below 0.
+function put_u64(@out: [u8], n: i64)
+    assert n >= 0
+    put_u32(@out, n: n >> 32)
+    put_u32(@out, n: n & 4294967295)
+
+# `data` added to `out` as a `string`: its length, then its bytes.
+function put_string(@out: [u8], data: [u8] lent)
+    put_u32(@out, n: data.len())
+
+    for b in data
+        out @ out.push(b)
+
+# `text`'s UTF-8 bytes added to `out` as a `string`.
+function put_text(@out: [u8], text: str)
+    put_string(out: @out, data: bytes.from_text(text))
+
+## Bytes
+
+# The `uint32` at `at` in `four`, big-endian. Aborts past the end.
+function u32_of(four: [u8] lent, at: i64) -> i64
+    a = to_i64(four[at]).must()
+    b = to_i64(four[at + 1]).must()
+    c = to_i64(four[at + 2]).must()
+    d = to_i64(four[at + 3]).must()
+    return a << 24 | b << 16 | c << 8 | d
+
+test "read_u32, read_u64 and read_string: the edges, the largest uint32, a uint64 past 2^63 - 1, a length past the end"
+    none: [u8] = []
+    r @= reader(none)
+    assert read_byte(@r, what: "a byte").is_err()
+    assert read_u32(@r, what: "a number").is_err()
+    out: [u8] @= []
+    put_u32(@out, n: 4294967295)
+    put_u64(@out, n: 9223372036854775807)
+    put_u32(@out, n: 0)
+    assert out == [255, 255, 255, 255, 127, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0]
+    r2 @= reader(out)
+    assert read_u32(@r2, what: "a").must() == 4294967295
+    assert read_u64(@r2, what: "b").must() == 9223372036854775807
+    assert read_string(@r2, what: "c").must().len() == 0
+    assert expect_end(r2, what: "d").is_err() == false
+    past: [u8] = [128, 0, 0, 0, 0, 0, 0, 0]
+    r3 @= reader(past)
+
+    match read_u64(@r3, what: "an offset")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    long: [u8] = [0, 0, 0, 5, 104, 105]
+    r4 @= reader(long)
+
+    match read_string(@r4, what: "a name")
+        .ok _  => assert false
+        .err e => assert e.msg == "a name: 5 bytes asked where 2 are left"
+
+test "read_text: a name of more than one byte, an empty one, and bytes that are not UTF-8"
+    out: [u8] @= []
+    put_text(@out, text: "café")
+    put_text(@out, text: "")
+    put_string(out: @out, data: [102, 255])
+    r @= reader(out)
+    assert read_text(@r, what: "a").must() == "café"
+    assert read_text(@r, what: "b").must() == ""
+
+    match read_text(@r, what: "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    assert left(r) == 0

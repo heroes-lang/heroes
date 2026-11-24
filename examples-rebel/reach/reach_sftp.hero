@@ -1,0 +1,20 @@
+# Reaches Rebel's `sftp`, so that `heroes test` on this file runs the
+# package's tests and its examples (spec § 12). It prints the code a session
+# started on a client nobody signed in answers.
+
+use <rebel>/sftp
+use <rebel>/ssh
+
+function main()
+    opts = ssh.options(host: "127.0.0.1", user: "nobody", known_hosts: "known_hosts")
+
+    match ssh.connect(opts)
+        .err e => print(e.code)
+        .ok found =>
+            c @= found
+
+            match sftp.start(@c)
+                .ok _  => print("started")
+                .err e => print(e.code)
+
+            ssh.close(@c).must()
