@@ -1,0 +1,39 @@
+# Fixed 2026-11-24, lane macro-members2 (found by lane macro-members beside
+# its repair of the names the unit's own C chooses).
+# Symptom: a group's header holding `#define b 5`, the program binding it as
+# `constant b: i64`, made every program writing a string literal fail with
+# *internal error: compiling the generated C failed* at exit 2, clang's
+# `expected member name or ';'` at the unit's
+# `HERO_STR_STATIC(hero_str_61, "a");`; `#define h 6` the same.
+# Cause: a name the program binds keeps its header's meaning after the
+# groups (`emit/macro_guard.hero`), and the runtime's own macros, expanded
+# where the unit writes them, wrote the members `h` and `b`, and `offsetof`,
+# `int64_t` and `uint64_t`, words a header may define.
+# Repair: every name a macro of the unit's own headers writes is of the
+# runtime's form or one C reserves, saved and given back around the groups:
+# the members `hero_header` and `hero_body`, `__builtin_offsetof`,
+# `__INT64_TYPE__` and `__UINT64_TYPE__`; the macros' parameters are no such
+# word, C putting the argument in their place. The program below writes each
+# of those macros: string literals, a constant array, an empty one, and a
+# constant of strings, beside the two constants it binds.
+
+extern "fixedbugs-a-bound-header-macro-over-a-word-a-runtime-macro-writes-leaves-it-building.h"
+    function bound_seven() -> i64
+    constant b: i64
+    constant h: i64
+
+constant PRIMES: [i64]
+    [2, 3, 5]
+
+constant NOTHING: [i64]
+    []
+
+constant WORDS: [str]
+    ["one", "two"]
+
+function main()
+    words = ["a", "b"]
+    print(words[0])
+    print(b + h + bound_seven())
+    print(PRIMES[2] + NOTHING.len() + WORDS.len())
+    print(WORDS[1])

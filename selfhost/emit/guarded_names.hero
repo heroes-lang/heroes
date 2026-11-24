@@ -7,7 +7,7 @@
 #
 # It is three sets: every word `heroes_runtime.h` and `hero_os.h` write, a
 # runtime macro's expansion included (`HERO_STR_LIT` writes `HeroStr` and the
-# member `b`); every name C11 gives the standard headers a unit reads,
+# member `hero_body`); every name C11 gives the standard headers a unit reads,
 # <stdbool.h> and <stddef.h> through the runtime before the groups and
 # <stdint.h> and <math.h> after them (7.18, 7.19, 7.20, 7.12), but the macros
 # of the last two the unit never writes (`LEFT`); and `main`. `macro_guard`'s
@@ -60,7 +60,7 @@ constant NAMES: [str]
         "hero_array_eq hero_array_incref hero_array_len hero_array_new"
         "hero_array_push hero_array_push_owned hero_array_release_at"
         "hero_array_set hero_array_slice hero_array_slice_at hero_array_sort hero_array_sort_at hero_array_unshare"
-        "hero_bool_to_str hero_callback_entered hero_callback_left hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
+        "hero_body hero_bool_to_str hero_callback_entered hero_callback_left hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
         "hero_desc_array"
         "hero_desc_bool hero_desc_f32 hero_desc_f64 hero_desc_failure hero_desc_func"
         "hero_desc_i16 hero_desc_i32 hero_desc_i8 hero_desc_int hero_desc_mailbox hero_desc_map"
@@ -84,7 +84,7 @@ constant NAMES: [str]
         "hero_handle_ended hero_handle_ending hero_handle_ending_at hero_handle_eq hero_handle_eq_at"
         "hero_handle_eq_from hero_handle_kept"
         "hero_handle_lent hero_handle_retained hero_handle_retained_at hero_handle_sent hero_handle_transferring hero_handle_transferring_at"
-        "hero_held_release hero_held_release_at hero_int_to_f32 hero_int_to_f64 hero_int_to_str"
+        "hero_header hero_held_release hero_held_release_at hero_int_to_f32 hero_int_to_f64 hero_int_to_str"
         "hero_lend_count_u64 hero_lend_count_u64_at hero_lend_give hero_lend_give_at hero_lend_local hero_lend_local_give"
         "hero_lend_local_name hero_lend_take hero_lend_take_at hero_mail_close hero_mail_decref hero_mail_hear_stop hero_mail_incref hero_mail_new hero_mail_number hero_mail_receive hero_mail_release_at hero_mail_send hero_map_decref hero_map_eq"
         "hero_map_find hero_map_find_at hero_map_incref hero_map_keys hero_map_len hero_map_new"
