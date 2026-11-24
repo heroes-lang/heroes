@@ -2,9 +2,9 @@
 # five-digit add-ons (ISO/IEC 15420 and the GS1 General Specifications),
 # Code 128 and GS1-128 (ISO/IEC 15417), Data Matrix ECC 200 and GS1 Data
 # Matrix (ISO/IEC 16022), and PDF417 and compact PDF417 (ISO/IEC 15438),
-# each with its check characters or error
-# correction and its quiet zones, and written as SVG text or drawn into an
-# `image`, the digits a person reads set under a linear symbol's bars.
+# each with its check characters or error correction and its quiet zones,
+# and written as SVG text or drawn into an `image`, the digits a person
+# reads set under a linear symbol's bars.
 #
 # It makes symbols and does not read them: finding a barcode in a photograph
 # is a task of vision this package leaves alone. QR codes are `qr`'s. It
@@ -20,9 +20,8 @@
 # range; `unsupported`, where the data is longer than the symbology holds;
 # and `limit`, where an image would pass 16,384 pixels a side.
 #
-# Not written yet, each a `pending` block of its ledger: a PDF417 of a text or bytes, at a level of error correction and a
-# count of columns; Code 39, Code 93, Code 11, Codabar, Interleaved and
-# Standard 2 of 5, ITF-14, EAN-14.
+# Not written yet, each a `pending` block of its ledger: Code 39, Code 93,
+# Code 11, Codabar, Interleaved and Standard 2 of 5, ITF-14, EAN-14.
 
 use barcode/internal/code128 as c128
 use barcode/internal/codes

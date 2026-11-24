@@ -40,6 +40,7 @@ extern "hero_sys.h"
     function hero_sys_state_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_runtime_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_open(target: cstr lent) -> i64
+    function hero_sys_reveal(path: cstr lent) -> i64
     function hero_sys_environment(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_random(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_terminal_size(@columns: i64, @rows: i64) -> i64
@@ -200,6 +201,17 @@ function runtime_folder(@buffer: [u8], n: u64) -> i64
 #   it holds a zero byte.
 function open(target: str) -> i64
     return hero_sys_open(target.cstr())
+
+# 0 where the system took `path` to show selected in its file manager, or -1:
+# `open -R` on Darwin; on Linux the file manager's `ShowItems` over the
+# session's D-Bus, and where none answers it the item's folder opened by
+# `xdg-open`; `SHOpenFolderAndSelectItems` on Windows.
+#
+# - `path`: the file or folder shown, never beginning with `-`, which
+#   Darwin's `open` reads as an option; the empty path is `HERO_SYS_INVALID`.
+#   It aborts where it holds a zero byte.
+function reveal(path: str) -> i64
+    return hero_sys_reveal(path.cstr())
 
 # How many bytes every variable of the environment takes, or -1. Each is
 # written into `buffer` as its name, `=` and its value, then one zero byte.
