@@ -1,0 +1,73 @@
+# The ledger of `fs/acl`: what a program can do with the access control list
+# of a file or a folder, one block per capability, and what Rebel answers
+# (gap G06, 2026-11-24). The yardsticks, each read on this machine that day:
+# Go 1.27.4's `go doc -all os` and `io/fs` and `go doc syscall` with
+# `GOOS=linux` and `GOOS=windows` name no access list (`os/user`'s `Lookup`
+# and `LookupGroup` find a name's number); Rust 1.100.0's installed
+# documentation names one only to say `std::fs::Permissions::readonly` does
+# not take it into account; Python 3.15.2's `Doc/library/os.rst` names none
+# (`pwd.getpwnam` and `grp.getgrnam` find a name's number). None of the three
+# reads one, so the answers were held to each system's own tools instead:
+# this Mac's `ls -le` and `chmod +a`, and the Linux arm64 image's kernel (its
+# `stat` of the permission bits, and Python 3's `os.getxattr` of
+# `system.posix_acl_access`, the kernel's own form, with no `getfacl`
+# installed there). The Windows arm is compiled by zig and UNRUN: the Windows
+# box was off and was not started, a paid run. .NET's `FileSystemSecurity` and
+# Java's `AclFileAttributeView`, which the gap catalogue names, are neither
+# installed here; their answers are UNRUN.
+
+capability acl/read  a file's or a folder's access list read, every entry with whom it names, allow or deny, its rights and its inheritance
+  heroes  fs/acl.read, fs/acl.Acl, fs/acl.Entry, fs/acl.Who
+  go      -
+  rust    -
+  python  -
+  note    Darwin `acl_get_file` with `ACL_TYPE_EXTENDED`, each entry's UUID asked `mbr_uuid_to_id` and its name `getpwuid_r` or `getgrgid_r`; Linux the kernel's `system.posix_acl_access` and, for a folder, `system.posix_acl_default`, read with `getxattr` (no libacl), a file with none answering the three entries of its permission bits; Windows `GetNamedSecurityInfoW`'s DACL, `SE_DACL_PROTECTED`, each entry's SID by `ConvertSidToStringSidW` and its name by `LookupAccountSidW`. A Windows list holding an object, callback or audit entry, or a null DACL, is `unsupported`, never read with an entry left out
+
+capability acl/write  a list written whole, so a backup restores a folder with who may read it
+  heroes  fs/acl.write
+  go      -
+  rust    -
+  python  -
+  note    Darwin `acl_set_file`; Linux `setxattr` of the kernel's form, its entries put in the kernel's order and a mask made where one is needed and none given, as `setfacl` makes one, a folder's default list removed where none is given, a volume without lists taking a list of its permission bits as `chmod`; Windows `SetNamedSecurityInfoW` with `PROTECTED_` or `UNPROTECTED_DACL_SECURITY_INFORMATION`, an unprotected list's inherited entries left to the system. An entry a system cannot hold is `unsupported` naming its place and why, before anything is written
+
+capability acl/link  the list of a link itself
+  heroes  fs/acl.link_read, fs/acl.link_write
+  go      -
+  rust    -
+  python  -
+  note    Darwin `acl_get_link_np` and `acl_set_link_np`, which on this Mac's APFS answered `ENOTSUP` for a link, so a write there is `unsupported`; Windows by a handle opened with `FILE_FLAG_OPEN_REPARSE_POINT` (unrun); Linux keeps no list on a link, reads the three entries of its bits and refuses a write `unsupported`
+
+capability acl/copy  one path's list written on another
+  heroes  fs/acl.copy
+  go      -
+  rust    -
+  python  -
+  note    `read` then `write`; on Windows the target keeps what its own parent hands down unless the list is protected
+
+capability acl/protect  a list protected from its parent's inheritance, and its entries handed down a tree
+  heroes  fs/acl.Acl, fs/acl.FILE_INHERIT, fs/acl.FOLDER_INHERIT, fs/acl.LIMIT_INHERIT, fs/acl.ONLY_INHERIT, fs/acl.INHERITED, fs/acl.LINUX_DEFAULT
+  go      -
+  rust    -
+  python  -
+  note    Windows' and Darwin's five flags, the same numbers; Linux's default entries, `LINUX_DEFAULT`; Linux has no protection and refuses one `unsupported`
+
+capability acl/rights  the rights an entry grants, named
+  heroes  fs/acl.READ_DATA, fs/acl.WRITE_DATA, fs/acl.APPEND_DATA, fs/acl.EXECUTE, fs/acl.DELETE, fs/acl.READ, fs/acl.WRITE, fs/acl.READ_AND_EXECUTE, fs/acl.MODIFY, fs/acl.FULL_CONTROL
+  go      -
+  rust    -
+  python  -
+  note    Windows' own numbers (`winnt.h`), Darwin's fourteen rights carried to them one to one (`sys/acl.h`), Linux's read, write and execute as `READ_DATA`, `WRITE_DATA` and `EXECUTE`; Explorer's Read, Write, Read and execute, Modify and Full control as Windows' generic file rights
+
+capability acl/principal  the id of a user or a group found by its name
+  heroes  fs/acl.user_id_of, fs/acl.group_id_of
+  go      os/user.Lookup, os/user.LookupGroup
+  rust    -
+  python  pwd.getpwnam, grp.getgrnam
+  note    Darwin `mbr_user_name_to_uuid` and `mbr_group_name_to_uuid` (a UUID, the form Darwin's lists hold, which Go's and Python's numbers are not); Linux `getpwnam_r` and `getgrnam_r`; Windows `LookupAccountNameW` and `ConvertSidToStringSidW`, a user's name naming a group refused `not_found`
+
+capability acl/unsupported  a volume or a system that keeps none told so
+  heroes  fs/acl.UNSUPPORTED
+  go      -
+  rust    -
+  python  -
+  note    a FAT drive, a Linux file system mounted without lists written anything but its permission bits, and a POSIX system neither Darwin nor Linux, whose NFSv4 and POSIX.1e lists are not read; every test skips by those words. Unrun: a volume that keeps no list, on any of the three
