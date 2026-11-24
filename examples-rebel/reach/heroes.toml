@@ -170,6 +170,7 @@ packages = [
     "ssh",
     "stats",
     "strings",
+    "syslog",
     "template",
     "template/sanitized",
     "term",

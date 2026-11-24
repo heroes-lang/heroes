@@ -512,4 +512,6 @@
 #include "platform/hero_service.c"
 #include "hero_activation.h"
 #include "platform/hero_activation.c"
+#include "hero_syslog.h"
+#include "platform/hero_syslog.c"
 #endif

@@ -1,0 +1,73 @@
+# The ledger of `syslog`: what a program can write to the system's own log,
+# one block per capability, and what Rebel answers. The census, each list read
+# on 2026-11-24: Go's `log/syslog` (pkg.go.dev, go1.27.4), the `go` lines;
+# Rust's `syslog` 7.0.0 (docs.rs), the crate the `rust` lines name, the
+# standard library having none; Python's `syslog` (docs.python.org, 3.15.2),
+# the `python` lines. None of the three writes the journal's native protocol,
+# the unified log or the Event Log: those are read from systemd's
+# `JOURNAL_NATIVE_PROTOCOL` page (systemd.io), this Mac's SDK header
+# `os/log.h` and the Windows headers zig 0.15.2 carries (`winbase.h`,
+# `winreg.h`), each a system's own documentation of its log.
+# `runtime/platform/hero_syslog.c` follows them. Run as the commit that wrote
+# this says.
+
+capability syslog/open  a log of the system's, the name lines are filed under
+  heroes  syslog.open, syslog.Log, syslog.Destination, syslog.is_name
+  go      syslog.New, syslog.Writer, syslog.NewLogger
+  rust    unix, init_unix, Logger, BasicLogger
+  python  syslog.openlog, syslog.closelog
+  note    nothing is held open: `open` chooses the journal where `/run/systemd/journal/socket` stands, else `/dev/log`, the unified log on macOS and the Event Log on Windows, and each `write` opens what it needs and gives it back, so a `Log` never outlives what it names and there is no close. Go's `New` and Python's `openlog` connect once and keep the connection; Python's is process-global, which a record per name replaces. A name is 1 to 64 bytes of ASCII letters, digits, `.`, `_` and `-`, so one name is a journal identifier, a syslog tag, a unified log subsystem and an Event Log source alike
+
+capability syslog/levels  RFC 5424's eight severities
+  heroes  syslog.Level, syslog.level_number
+  go      syslog.Priority, LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG
+  rust    Severity, Priority
+  python  LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG
+  note    the journal and the syslog line keep all eight; the unified log's five types take them as emergency to critical a fault, error an error, warning and notice the default, info and debug their own; the Event Log's three as emergency to error an error, warning a warning, the rest information
+
+capability syslog/write  a line written at a level
+  heroes  syslog.write
+  go      Writer.Write, Writer.Emerg, Writer.Alert, Writer.Crit, Writer.Err, Writer.Warning, Writer.Notice, Writer.Info, Writer.Debug
+  rust    Logger::emerg, Logger::alert, Logger::crit, Logger::err, Logger::warning, Logger::notice, Logger::info, Logger::debug
+  python  syslog.syslog
+  note    never waits: a log whose queue is full answers `limit`, where Go's and Python's block. A line holding a zero byte is `invalid` everywhere, since no C string carries it; a newline stays in the line, in the journal's binary form. The unified log and the Event Log take at most 31,839 bytes (`ReportEventW`'s string), the journal any length, an entry past a datagram's size sent as the protocol asks, an empty datagram carrying a sealed memory file
+
+capability syslog/journal  the journal's native protocol
+  heroes  syslog.write, syslog.format_journal, syslog.open_socket
+  go      -
+  rust    -
+  python  -
+  note    `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3, a daemon's) and `SYSLOG_IDENTIFIER`, as `JOURNAL_NATIVE_PROTOCOL` writes them, sent as one datagram to `/run/systemd/journal/socket`; systemd's own `sd_journal_send` is the C library's way, which none of the three binds. Fields of the program's own (`CODE_FILE=` and the rest) are not written: a field the journal indexes is a name the program would have to keep to the protocol's rules, a door this step left shut
+
+capability syslog/classic  RFC 3164's line to a syslog socket
+  heroes  syslog.write, syslog.format_syslog, syslog.open_socket
+  go      syslog.Dial, syslog.New
+  rust    Formatter3164, unix_custom, udp, tcp
+  python  syslog.syslog
+  note    `<PRI>Mmm dd hh:mm:ss name[pid]: line`, PRI the facility `daemon` times eight and the level, the local time, as the C library's `syslog(3)` writes to `/dev/log`, where no journal runs. The facility is a daemon's alone: Go, Rust and Python take any of the twenty-odd facilities, which a daemon's log has no use for. Sending over the network (UDP, TCP, TLS to a remote collector, RFC 5424's form) is not this package's: Go's `Dial` and Rust's `tcp` and `udp` do it, and a program that needs it writes RFC 5424's line over `net`
+
+capability syslog/unified-log  macOS's unified log
+  heroes  syslog.write
+  go      -
+  rust    -
+  python  -
+  note    `os_log_create(name, "default")` and `os_log_with_type` with the line `%{public}s`, so the system does not redact it; the log answers nothing, so a line it drops is not told. Read back by `log show --predicate 'subsystem == "<name>"'`. macOS keeps `info` and `debug` lines in memory unless its configuration says otherwise
+
+capability syslog/event-log  Windows' Event Log
+  heroes  syslog.write, syslog.install_source, syslog.remove_source
+  go      -
+  rust    -
+  python  -
+  note    `RegisterEventSourceW`, `ReportEventW` with the line as the event's one string and the id 1, `DeregisterEventSource`, for each line; `install_source` registers the source under the Application log with `%SystemRoot%\System32\EventCreate.exe` as its message file and the three types, as Go's `golang.org/x/sys/windows/svc/eventlog.InstallAsEventCreate` does, so the Event Viewer shows the line whole. Unrun on the box (it was off the network when this was written), compiled by zig 0.15.2 for x86_64-windows-gnu
+
+capability syslog/mask  a mask of the levels written
+  heroes  refused: a program that does not want a line does not write it; a mask set once for the process is state a library keeps for the program
+  go      -
+  rust    -
+  python  syslog.setlogmask, LOG_MASK, LOG_UPTO
+  note    `log` has a logger's lowest level for a program that wants one
+
+dropped
+  go      LOG_KERN, LOG_USER, LOG_MAIL, LOG_AUTH, LOG_SYSLOG, LOG_LPR, LOG_NEWS, LOG_UUCP, LOG_CRON, LOG_AUTHPRIV, LOG_FTP, LOG_LOCAL0, LOG_LOCAL1, LOG_LOCAL2, LOG_LOCAL3, LOG_LOCAL4, LOG_LOCAL5, LOG_LOCAL6, LOG_LOCAL7 (the facilities: a daemon's lines are `daemon`'s), Writer.Close (nothing is held open)
+  rust    Facility, Formatter5424, LogFormat, init, init_tcp, init_udp, init_unix_custom, LoggerBackend, Error, Result (the facilities, the network and the `log` crate's global logger)
+  python  LOG_PID, LOG_CONS, LOG_NDELAY, LOG_ODELAY, LOG_NOWAIT, LOG_PERROR (options of a process-global connection), the facilities
