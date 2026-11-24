@@ -1,0 +1,253 @@
+# A request and a response read below `x509/ocsp`'s records (RFC 6960
+# § 4.1.1 and § 4.2.1, whose module tags EXPLICIT): a request's CertIDs and
+# nonce; a response's status and, where it is successful, its basic
+# response, whose signed bytes are taken from the DER as received and never
+# written again, so a signature holds over exactly what the responder signed.
+
+use asn1
+use time
+use x509
+use x509/ocsp/internal/ids
+
+# A request read.
+record Asked
+    # The certificates asked about, one or more.
+    ids: [ids.Id]
+    # The nonce; [] where none is written.
+    nonce: [u8]
+    # Whether it carries a signature.
+    signed: bool
+
+# What a response says of one certificate.
+record Entry
+    # The certificate.
+    id: ids.Id
+    # CertStatus's choice by its tag: 0 good, 1 revoked, 2 unknown.
+    state: i64
+    # When it was revoked; it fails `not_found` unless `state` is 1.
+    revoked_at: time.DateTime?
+    # Why; it fails `not_found` where no reason is written.
+    reason: x509.Reason?
+    # When the status was known to be right.
+    this_update: time.DateTime
+    # When newer word will be had; it fails `not_found` where none is written.
+    next_update: time.DateTime?
+    # Its extensions, as written.
+    extensions: [x509.Extension]
+
+# A basic response read.
+record Data
+    # The DER of its ResponseData, as received.
+    tbs: [u8]
+    # The signer's name where the responder ID is by name; it fails
+    # `not_found` where it is by key.
+    responder_name: x509.Name?
+    # The SHA-1 of the signer's key where the responder ID is by key; []
+    # where it is by name.
+    responder_key: [u8]
+    # When it was signed.
+    produced_at: time.DateTime
+    # What it says of each certificate.
+    entries: [Entry]
+    # The nonce it echoes; [] where none.
+    nonce: [u8]
+    # Its extensions.
+    extensions: [x509.Extension]
+    # The signature's algorithm.
+    signature_algorithm: x509.Algorithm
+    # The signature's bytes.
+    signature: [u8]
+    # The certificates it carries.
+    certificates: [x509.Certificate]
+
+# A response read.
+record Answered
+    # Its status's code, RFC 6960 § 4.2.1's: 0, 1, 2, 3, 5 or 6.
+    code: i64
+    # Its basic response; it fails `not_found` unless `code` is 0.
+    data: Data?
+
+# The extensions under `v`'s EXPLICIT tag `number`, `what` naming them.
+function tagged_extensions(v: asn1.Value, number: i64, what: str) -> [x509.Extension]?
+    return ids.extensions_of(v: ids.explicit(v: v, number: number, what: what)?, what: what)
+
+# The version under `v`'s EXPLICIT `[0]`, which RFC 6960 writes only as v1.
+function check_version(v: asn1.Value, what: str) -> ()?
+    version = ids.within(r: asn1.int_of(ids.explicit(v: v, number: 0, what: what)?), what: what)?
+
+    if version != 0
+        return fail(code: "invalid", msg: f"{what} {version}, where RFC 6960 writes v1, 0")
+    return ok()
+
+# The request `der` holds, an OCSPRequest.
+function request_of(der: [u8]) -> Asked?
+    fields = ids.items(v: ids.within(r: asn1.decode_der(der), what: "the request")?, least: 1, most: 2, what: "the request")?
+
+    if fields.len() == 2
+        _ = ids.explicit(v: fields[1], number: 0, what: "the request's signature")?
+    parts = ids.items(v: fields[0], least: 1, most: 4, what: "the request's body")?
+    at: i64 @= 0
+
+    if ids.context(parts[0]) == 0
+        check_version(v: parts[0], what: "the request's version")?
+        at @ 1
+
+    if at < parts.len() && ids.context(parts[at]) == 1
+        at @ at + 1
+
+    if at >= parts.len() || ids.context(parts[at]) != -1
+        return fail(code: "invalid", msg: "the request writes no list of certificates")
+    asked: [ids.Id] @= []
+
+    for one in ids.items(v: parts[at], least: 1, most: 1 << 16, what: "the request's list")?
+        single = ids.items(v: one, least: 1, most: 2, what: "a request's entry")?
+
+        if single.len() == 2
+            _ = tagged_extensions(v: single[1], number: 0, what: "a request entry's extensions")?
+        asked @ asked.push(ids.cert_id_of(single[0])?)
+
+    nonce: [u8] @= []
+
+    if at + 1 < parts.len()
+        if at + 2 < parts.len()
+            return fail(code: "invalid", msg: "the request's body holds an element after its extensions")
+        nonce @ ids.nonce_of(tagged_extensions(v: parts[at + 1], number: 2, what: "the request's extensions")?)?
+    return ok(Asked(ids: asked, nonce: nonce, signed: fields.len() == 2))
+
+# The response `der` holds, an OCSPResponse.
+function response_of(der: [u8]) -> Answered?
+    fields = ids.items(v: ids.within(r: asn1.decode_der(der), what: "the response")?, least: 1, most: 2, what: "the response")?
+    code: i64 @= -1
+
+    match fields[0]
+        .enumerated e => code @ e.v
+        .boolean _ | .integer _ | .big_integer _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => code @ -1
+
+    if code < 0 || code > 6 || code == 4
+        return fail(
+            code: "invalid",
+            msg: "the response's status: an ENUMERATED that RFC 6960 § 4.2.1 names was expected"
+        )
+
+    if code != 0
+        if fields.len() == 2
+            return fail(code: "invalid", msg: "a response with an error status writes responseBytes")
+        return ok(Answered(code: code, data: fail(code: "not_found", msg: "the responder answered an error")))
+
+    if fields.len() == 1
+        return fail(code: "invalid", msg: "a successful response writes no responseBytes")
+    typed = ids.items(v: ids.explicit(v: fields[1], number: 0, what: "the responseBytes")?, least: 2, most: 2, what: "the responseBytes")?
+    kind = ids.within(r: asn1.oid_of(typed[0]), what: "the response's type")?
+
+    if kind.dotted != ids.BASIC
+        return fail(
+            code: "unsupported",
+            msg: f"the response type {kind.dotted}, where this package reads the basic one"
+        )
+    return ok(Answered(code: 0, data: ok(data_of(ids.octets(v: typed[1], what: "the basic response")?)?)))
+
+# The basic response `der` holds, a BasicOCSPResponse.
+function data_of(der: [u8]) -> Data?
+    fields = ids.items(v: ids.within(r: asn1.decode_der(der), what: "the basic response")?, least: 3, most: 4, what: "the basic response")?
+    options = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    whole = asn1.element_at(data: der, at: 0, options: options)?
+    spans = asn1.elements_of(data: der, element: whole, options: options)?
+    data = ids.items(v: fields[0], least: 3, most: 5, what: "the ResponseData")?
+    at: i64 @= 0
+
+    if ids.context(data[0]) == 0
+        check_version(v: data[0], what: "the response's version")?
+        at @ 1
+
+    if data.len() < at + 3
+        return fail(code: "invalid", msg: "the ResponseData lacks its responder, its moment or its responses")
+    responder_name: x509.Name? @= fail(code: "not_found", msg: "the responder is named by its key")
+    responder_key: [u8] @= []
+
+    if ids.context(data[at]) == 1
+        responder_name @ ok(
+            ids.within(r: x509.to_name(ids.explicit(v: data[at], number: 1, what: "the responder's name")?), what: "the responder's name")?
+        )
+    else
+        responder_key @ ids.octets(v: ids.explicit(v: data[at], number: 2, what: "the responder ID, [1] or [2],")?, what: "the responder's key hash")?
+
+        if responder_key.len() != 20
+            return fail(
+                code: "invalid",
+                msg: f"a responder's key hash of {responder_key.len()} bytes, where SHA-1 makes 20"
+            )
+    entries: [Entry] @= []
+
+    for one in ids.items(v: data[at + 2], least: 0, most: 1 << 16, what: "the responses")?
+        entries @ entries.push(entry_of(one)?)
+
+    extensions: [x509.Extension] @= []
+
+    if data.len() == at + 4
+        extensions @ tagged_extensions(v: data[at + 3], number: 1, what: "the response's extensions")?
+    else if data.len() > at + 4
+        return fail(code: "invalid", msg: "the ResponseData holds an element after its extensions")
+    bits = ids.within(r: asn1.bits_of(fields[2]), what: "the signature")?
+
+    if bits.bit_len % 8 != 0
+        return fail(code: "invalid", msg: "a signature of bits that are not whole bytes")
+    certificates: [x509.Certificate] @= []
+
+    if fields.len() == 4
+        for one in ids.items(v: ids.explicit(v: fields[3], number: 0, what: "the certificates")?, least: 0, most: 1 << 16, what: "the certificates")?
+            certificates @ certificates.push(
+                ids.within(r: x509.decode_certificate(asn1.encode_der(one)?), what: "a certificate carried")?
+            )
+    return ok(
+        Data(tbs: der.slice(from: spans[0].start, to: spans[0].end), responder_name: responder_name, responder_key: responder_key, produced_at: ids.moment(v: data[at + 1], what: "producedAt")?, entries: entries, nonce: ids.nonce_of(extensions)?, extensions: extensions, signature_algorithm: ids.within(r: x509.to_algorithm(fields[1]), what: "the signature's algorithm")?, signature: bits.bytes, certificates: certificates)
+    )
+
+# The SingleResponse `v` holds.
+function entry_of(v: asn1.Value) -> Entry?
+    fields = ids.items(v: v, least: 3, most: 5, what: "a SingleResponse")?
+    id = ids.cert_id_of(fields[0])?
+    tag = asn1.tag_of(fields[1])
+    revoked_at: time.DateTime? @= fail(code: "not_found", msg: "the certificate is not revoked")
+    reason: x509.Reason? @= fail(code: "not_found", msg: "the response gives no reason")
+
+    if tag.kind != .context_specific || tag.number > 2 || tag.constructed != (tag.number == 1)
+        return fail(code: "invalid", msg: "a certificate's status: [0] or [2] NULL, or [1] RevokedInfo, was expected")
+
+    if tag.number == 1
+        info = ids.within(r: asn1.to_universal(v: fields[1], number: asn1.SEQUENCE, encoding: .der), what: "a RevokedInfo")?
+        parts = ids.items(v: info, least: 1, most: 2, what: "a RevokedInfo")?
+        revoked_at @ ok(ids.moment(v: parts[0], what: "revocationTime")?)
+
+        if parts.len() == 2
+            code: i64 @= -1
+
+            match ids.explicit(v: parts[1], number: 0, what: "the revocation's reason")?
+                .enumerated e => code @ e.v
+                .boolean _ | .integer _ | .big_integer _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ =>
+                    return fail(code: "invalid", msg: "the revocation's reason: an ENUMERATED was expected")
+
+            reason @ ok(ids.reason_of(code)?)
+    else
+        nothing = ids.within(r: asn1.to_universal(v: fields[1], number: asn1.NULL, encoding: .der), what: "a certificate's status")?
+
+        if nothing != .null_value
+            return fail(code: "invalid", msg: "a certificate's status: a NULL was expected")
+    next_update: time.DateTime? @= fail(code: "not_found", msg: "the response writes no nextUpdate")
+    extensions: [x509.Extension] @= []
+    at: i64 @= 3
+
+    if at < fields.len() && ids.context(fields[at]) == 0
+        next_update @ ok(
+            ids.moment(v: ids.explicit(v: fields[at], number: 0, what: "nextUpdate")?, what: "nextUpdate")?
+        )
+        at @ at + 1
+
+    if at < fields.len() && ids.context(fields[at]) == 1
+        extensions @ tagged_extensions(v: fields[at], number: 1, what: "a single response's extensions")?
+        at @ at + 1
+
+    if at < fields.len()
+        return fail(code: "invalid", msg: "a SingleResponse holds an element out of place")
+    return ok(
+        Entry(id: id, state: tag.number, revoked_at: revoked_at, reason: reason, this_update: ids.moment(v: fields[2], what: "thisUpdate")?, next_update: next_update, extensions: extensions)
+    )

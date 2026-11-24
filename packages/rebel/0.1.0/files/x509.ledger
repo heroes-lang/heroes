@@ -80,8 +80,8 @@ capability x509/public-key  the subject's public key read, its kind and an RSA m
   python  x509.Certificate.public_key, x509.Certificate.public_key_algorithm_oid, x509.PublicKeyAlgorithmOID
   note    the key's kinds are `crypto/keypairs`' (RSA, P-256, P-384, Ed25519, X25519), another `unsupported`; a key a program uses is `keypairs.decode_public_der` of `der`
 
-capability x509/signature-algorithm  a signature's algorithm and its parameters read, and the scheme that checks it
-  heroes  x509.Algorithm, x509.to_algorithm, x509.scheme_of
+capability x509/signature-algorithm  a signature's algorithm and its parameters read, the scheme that checks it, and the algorithm a scheme writes
+  heroes  x509.Algorithm, x509.to_algorithm, x509.scheme_of, x509.algorithm_of
   go      x509.SignatureAlgorithm, x509.SignatureAlgorithm.String, pkix.AlgorithmIdentifier, x509.InsecureAlgorithmError, x509.ErrUnsupportedAlgorithm
   rust    -
   python  x509.Certificate.signature_algorithm_oid, x509.Certificate.signature_hash_algorithm, x509.Certificate.signature_algorithm_parameters, x509.SignatureAlgorithmOID

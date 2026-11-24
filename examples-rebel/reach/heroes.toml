@@ -201,6 +201,7 @@ packages = [
     "webauthn",
     "websocket",
     "x509",
+    "x509/ocsp",
     "x509/pkcs12",
     "xlsx",
     "xml",

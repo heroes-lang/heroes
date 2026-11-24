@@ -1,0 +1,99 @@
+# A request and a response written below `x509/ocsp`'s records, in the DER
+# of RFC 6960 § 4.1.1 and § 4.2.1 as OpenSSL 4.1.0 writes them: a CertID's
+# hash with NULL parameters, a v1 left out as DER asks of a default, the
+# responder named by its subject or by the SHA-1 of its key, every moment a
+# GeneralizedTime to the second, and the nonce RFC 8954 § 2.1 writes.
+
+use asn1
+use crypto/keypairs
+use time
+use x509
+use x509/ocsp/internal/ids
+use x509/ocsp/internal/reading
+
+# The DER of an OCSPRequest for `asked`, with `nonce` where it is not [].
+function request(asked: [ids.Id], nonce: [u8]) -> [u8]?
+    list: [asn1.Value] @= []
+
+    for id in asked
+        list @ list.push(.sequence(items: [ids.from_cert_id(id)]))
+
+    body: [asn1.Value] @= [.sequence(items: list)]
+
+    if nonce.len() > 0
+        body @ body.push(asn1.tagged(.sequence(items: [ids.nonce_extension(nonce)?]), number: 2))
+    return asn1.encode_der(.sequence(items: [.sequence(items: body)]))
+
+# `entry` as a SingleResponse; its `extensions` are not written.
+function single(entry: reading.Entry) -> asn1.Value?
+    status = match entry.revoked_at
+        .ok at =>
+            info: [asn1.Value] @= [ids.generalized(at)]
+
+            match entry.reason
+                .ok reason => info @ info.push(asn1.tagged(.enumerated(v: ids.reason_code(reason)), number: 0))
+                .err _     => info @ info
+
+            asn1.with_tag(v: .sequence(items: info), tag: asn1.Tag(kind: .context_specific, number: 1, constructed: true))?
+        .err _ =>
+            asn1.with_tag(v: .null_value, tag: asn1.Tag(kind: .context_specific, number: entry.state, constructed: false))?
+
+    fields: [asn1.Value] @= [ids.from_cert_id(entry.id), status, ids.generalized(entry.this_update)]
+
+    match entry.next_update
+        .ok next => fields @ fields.push(asn1.tagged(ids.generalized(next), number: 0))
+        .err _   => fields @ fields
+
+    return ok(.sequence(items: fields))
+
+# The DER of a successful OCSPResponse whose basic response says `entries`,
+# produced at `produced_at`, echoes `nonce` where it is not [], names
+# `signer` by its key's hash where `by_key` and else by its subject, carries
+# `certificates`, and is signed by `key` by `scheme`.
+function response(entries: [reading.Entry], produced_at: time.DateTime, nonce: [u8], by_key: bool, signer: x509.Certificate, key: keypairs.PrivateKey, scheme: keypairs.Scheme, certificates: [x509.Certificate]) -> [u8]?
+    responder: asn1.Value @= asn1.tagged(
+        ids.within(r: asn1.decode_der(signer.subject.der), what: "the signer's name")?,
+        number: 1
+    )
+
+    if by_key
+        responder @ asn1.tagged(.octet_string(v: ids.digest(hash: .sha1, data: signer.public_key.key)), number: 2)
+    singles: [asn1.Value] @= []
+
+    for entry in entries
+        singles @ singles.push(single(entry)?)
+
+    data: [asn1.Value] @= [responder, ids.generalized(produced_at), .sequence(items: singles)]
+
+    if nonce.len() > 0
+        data @ data.push(asn1.tagged(.sequence(items: [ids.nonce_extension(nonce)?]), number: 1))
+    response_data: asn1.Value = .sequence(items: data)
+    signature = keypairs.sign(key, scheme: scheme, message: asn1.encode_der(response_data)?)?
+    algorithm = x509.algorithm_of(scheme)
+
+    identifier: asn1.Value = match algorithm.parameters
+        .ok parameters => .sequence(items: [.oid(v: algorithm.oid), parameters])
+        .err _         => .sequence(items: [.oid(v: algorithm.oid)])
+
+    basic: [asn1.Value] @= [
+        response_data
+        identifier
+        .bit_string(v: asn1.BitString(bytes: signature, bit_len: signature.len() * 8))
+    ]
+
+    if certificates.len() > 0
+        carried: [asn1.Value] @= []
+
+        for certificate in certificates
+            carried @ carried.push(ids.within(r: asn1.decode_der(certificate.der), what: "a certificate carried")?)
+
+        basic @ basic.push(asn1.tagged(.sequence(items: carried), number: 0))
+    typed: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: ids.BASIC)), .octet_string(v: asn1.encode_der(.sequence(items: basic))?)]
+    )
+    return asn1.encode_der(.sequence(items: [.enumerated(v: 0), asn1.tagged(typed, number: 0)]))
+
+# The DER of an OCSPResponse of the error status `code`, without
+# responseBytes.
+function error_response(code: i64) -> [u8]?
+    return asn1.encode_der(.sequence(items: [.enumerated(v: code)]))

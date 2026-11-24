@@ -1,0 +1,317 @@
+# The pieces of OCSP (RFC 6960 § 4.1.1 and § 4.2.1) below its records: a
+# CertID's hash named by its identifier and computed over the issuer's name
+# and key, a revocation reason and its code, a GeneralizedTime read and
+# written, the nonce's extension (RFC 8954) read, a list of extensions read
+# with a critical one not understood refused, and the readers of a SEQUENCE,
+# an EXPLICIT tag and an OCTET STRING that refuse with the part's name.
+
+use asn1
+use big
+use crypto
+use time
+use x509
+
+# The most bytes a nonce has, RFC 8954 § 2.1's 32; the least is 1.
+constant MAX_NONCE: i64
+    32
+
+# The nonce's extension, `id-pkix-ocsp-nonce`.
+constant NONCE: str
+    "1.3.6.1.5.5.7.48.1.2"
+
+# The basic response's type, `id-pkix-ocsp-basic`.
+constant BASIC: str
+    "1.3.6.1.5.5.7.48.1.1"
+
+# A CertID's parts (RFC 6960 § 4.1.1), as the face's `CertId` holds them.
+record Id
+    # The hash of the two below.
+    hash: crypto.Algorithm
+    # The hash of the issuer's name, its DER.
+    issuer_name_hash: [u8]
+    # The hash of the issuer's public key, its BIT STRING's bytes.
+    issuer_key_hash: [u8]
+    # The certificate's serial.
+    serial: big.Integer
+
+# The digest whose identifier is `dotted`: SHA-1, which RFC 5019 asks of a
+# CertID, and SHA-2.
+function hash_of(dotted: str) -> crypto.Algorithm?
+    if dotted == "1.3.14.3.2.26"
+        return ok(.sha1)
+
+    if dotted == "2.16.840.1.101.3.4.2.1"
+        return ok(.sha256)
+
+    if dotted == "2.16.840.1.101.3.4.2.2"
+        return ok(.sha384)
+
+    if dotted == "2.16.840.1.101.3.4.2.3"
+        return ok(.sha512)
+    return fail(code: "unsupported", msg: f"a CertID's hash {dotted}, where this package reads SHA-1 and SHA-2")
+
+# The identifier of `hash`, or "" where a CertID takes no such hash.
+function hash_oid(hash: crypto.Algorithm) -> str
+    return match hash
+        .sha1 => "1.3.14.3.2.26"
+        .sha256 => "2.16.840.1.101.3.4.2.1"
+        .sha384 => "2.16.840.1.101.3.4.2.2"
+        .sha512 => "2.16.840.1.101.3.4.2.3"
+        .md5 | .sha224 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 => ""
+
+# The digest of `data` by `hash`.
+function digest(hash: crypto.Algorithm, data: [u8]) -> [u8]
+    state @= crypto.start(hash)
+    crypto.update(@state, data)
+    return crypto.digest(state)
+
+# The CertID of the certificate whose serial is `serial`, issued by the
+# certificate whose subject's DER is `issuer_name` and whose key's bytes are
+# `issuer_key`.
+function id_of(hash: crypto.Algorithm, issuer_name: [u8], issuer_key: [u8], serial: big.Integer) -> Id
+    return Id(
+        hash: hash,
+        issuer_name_hash: digest(hash: hash, data: issuer_name),
+        issuer_key_hash: digest(hash: hash, data: issuer_key),
+        serial: serial
+    )
+
+# Whether `id`'s hashes are those of the issuer's name `issuer_name` and key
+# `issuer_key`, by the hash `id` names.
+function is_issued_by(id: Id, issuer_name: [u8], issuer_key: [u8]) -> bool
+    return id.issuer_name_hash == digest(hash: id.hash, data: issuer_name) && id.issuer_key_hash == digest(hash: id.hash, data: issuer_key)
+
+# Whether a responder ID names the certificate whose subject's DER is
+# `subject` and whose key's bytes are `key`: by that name where `name` is
+# not [], else by `key_hash`, the SHA-1 of the key (RFC 6960 § 4.2.1).
+function names(name: [u8], key_hash: [u8], subject: [u8], key: [u8]) -> bool
+    if name.len() > 0
+        return name == subject
+    return key_hash == digest(hash: .sha1, data: key)
+
+# The CertID `v` holds.
+function cert_id_of(v: asn1.Value) -> Id?
+    fields = items(v: v, least: 4, most: 4, what: "a CertID")?
+    algorithm = within(r: x509.to_algorithm(fields[0]), what: "a CertID's hash")?
+    serial = within(r: asn1.integer_of(fields[3]), what: "a CertID's serial")?
+    hash = hash_of(algorithm.oid.dotted)?
+    name_hash = octets(v: fields[1], what: "a CertID's name hash")?
+    key_hash = octets(v: fields[2], what: "a CertID's key hash")?
+    size = digest(hash: hash, data: []).len()
+
+    if name_hash.len() != size || key_hash.len() != size
+        return fail(
+            code: "invalid",
+            msg: f"a CertID's hashes of {name_hash.len()} and {key_hash.len()} bytes, where its hash makes {size}"
+        )
+    return ok(Id(hash: hash, issuer_name_hash: name_hash, issuer_key_hash: key_hash, serial: serial))
+
+# `id` as the CertID RFC 6960 writes, its hash's parameters NULL as OpenSSL
+# and Python's `cryptography` write them.
+function from_cert_id(id: Id) -> asn1.Value
+    algorithm: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: hash_oid(id.hash))), .null_value])
+    return .sequence(
+        items: [algorithm, .octet_string(v: id.issuer_name_hash), .octet_string(v: id.issuer_key_hash), asn1.from_integer(id.serial)]
+    )
+
+# The code RFC 5280 § 5.3.1 gives `reason`.
+function reason_code(reason: x509.Reason) -> i64
+    return match reason
+        .unspecified            => 0
+        .key_compromise         => 1
+        .ca_compromise          => 2
+        .affiliation_changed    => 3
+        .superseded             => 4
+        .cessation_of_operation => 5
+        .certificate_hold       => 6
+        .remove_from_crl        => 8
+        .privilege_withdrawn    => 9
+        .aa_compromise          => 10
+
+# The reason of `code`, RFC 5280 § 5.3.1's; 7 is unused there.
+function reason_of(code: i64) -> x509.Reason?
+    reasons: [x509.Reason] = [
+        .unspecified
+        .key_compromise
+        .ca_compromise
+        .affiliation_changed
+        .superseded
+        .cessation_of_operation
+        .certificate_hold
+        .unspecified
+        .remove_from_crl
+        .privilege_withdrawn
+        .aa_compromise
+    ]
+
+    if code < 0 || code > 10 || code == 7
+        return fail(code: "invalid", msg: f"a revocation reason of code {code}, which RFC 5280 § 5.3.1 does not name")
+    return ok(reasons[code])
+
+# `r`, its failure's message beginning with `what` and its code kept where
+# it is `unsupported`, else `invalid`.
+function within<T>(r: T?, what: str) -> T?
+    return match r
+        .ok v => ok(v)
+        .err e =>
+            if e.code == "unsupported"
+                fail(code: e.code, msg: f"{what}: {e.msg}")
+            else
+                fail(code: "invalid", msg: f"{what}: {e.msg}")
+
+# The elements of `v`, a SEQUENCE of `least` to `most` of them, `what`
+# naming it.
+function items(v: asn1.Value, least: i64, most: i64, what: str) -> [asn1.Value]?
+    return match v
+        .sequence s =>
+            if s.items.len() < least || s.items.len() > most
+                fail(
+                    code: "invalid",
+                    msg: f"{what}: a SEQUENCE of {s.items.len()} elements, where it holds {least} to {most}"
+                )
+            else
+                ok(s.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: "invalid",
+            msg: f"{what}: a SEQUENCE was expected"
+        )
+
+# The value under `v`'s EXPLICIT context tag `number`, `what` naming it.
+function explicit(v: asn1.Value, number: i64, what: str) -> asn1.Value?
+    return within(r: asn1.untagged(v: v, number: number), what: what)
+
+# The context number of `v`'s tag, or -1 where it is of another class.
+function context(v: asn1.Value) -> i64
+    tag = asn1.tag_of(v)
+
+    if tag.kind == .context_specific
+        return tag.number
+    return -1
+
+# The bytes of `v`, an OCTET STRING, `what` naming it.
+function octets(v: asn1.Value, what: str) -> [u8]?
+    return within(r: asn1.bytes_of(v), what: what)
+
+# The moment of `v`, a GeneralizedTime as RFC 6960 writes every one, `what`
+# naming it.
+function moment(v: asn1.Value, what: str) -> time.DateTime?
+    return match v
+        .generalized_time g => ok(g.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: "invalid",
+            msg: f"{what}: a GeneralizedTime was expected"
+        )
+
+# `at` as a GeneralizedTime to the second, as RFC 5280 § 4.1.2.5.2 writes
+# one and every responder reads.
+function generalized(at: time.DateTime) -> asn1.Value
+    return .generalized_time(
+        v: time.DateTime(year: at.year, month: at.month, day: at.day, hour: at.hour, minute: at.minute, second: at.second, nanosecond: 0)
+    )
+
+# `at` as an instant, `what` naming it.
+function instant(at: time.DateTime, what: str) -> time.Instant?
+    return within(r: time.from_date_time(at), what: what)
+
+# The extensions `v` holds, a SEQUENCE of one or more, `what` naming it: a
+# critical one other than the nonce refused, since a client that does not
+# understand it may not act on what it qualifies (RFC 5280 § 4.2).
+function extensions_of(v: asn1.Value, what: str) -> [x509.Extension]?
+    out: [x509.Extension] @= []
+
+    for item in items(v: v, least: 1, most: 1 << 16, what: what)?
+        extension = within(r: x509.to_extension(item), what: what)?
+
+        if extension.critical && extension.oid.dotted != NONCE
+            return fail(
+                code: "invalid",
+                msg: f"{what}: the critical extension {extension.oid.dotted}, which this package does not understand"
+            )
+        out @ out.push(extension)
+
+    return ok(out)
+
+# The nonce `extensions` write, 1 to `MAX_NONCE` bytes inside the OCTET
+# STRING RFC 8954 § 2.1 writes; [] where they write none.
+function nonce_of(extensions: [x509.Extension]) -> [u8]?
+    for extension in extensions
+        if extension.oid.dotted == NONCE
+            inner = within(r: asn1.decode_der(extension.value), what: "the nonce, an OCTET STRING as RFC 8954 § 2.1 writes it")?
+            nonce = octets(v: inner, what: "the nonce, as RFC 8954 § 2.1 writes it")?
+
+            if nonce.len() < 1 || nonce.len() > MAX_NONCE
+                return fail(
+                    code: "invalid",
+                    msg: f"a nonce of {nonce.len()} bytes, where RFC 8954 § 2.1 writes 1 to {MAX_NONCE}"
+                )
+            return ok(nonce)
+
+    return ok([])
+
+# The extension that writes `nonce`, as an element of a list.
+function nonce_extension(nonce: [u8]) -> asn1.Value?
+    return x509.from_extension(
+        x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: asn1.encode_der(.octet_string(v: nonce))?)
+    )
+
+# The code `r` failed with, or "" where it holds a value: what the tests
+# compare.
+function code_of<T>(r: T?) -> str
+    return match r
+        .ok _  => ""
+        .err e => e.code
+
+# The words `r` failed with, or "" where it holds a value.
+function message_of<T>(r: T?) -> str
+    return match r
+        .ok _  => ""
+        .err e => e.msg
+
+test "hash_of and hash_oid: SHA-1 and SHA-2 both ways, MD5 and an unknown one refused"
+    assert hash_of(hash_oid(.sha1)).must() == .sha1
+    assert hash_of(hash_oid(.sha256)).must() == .sha256
+    assert hash_of(hash_oid(.sha512)).must() == .sha512
+    assert hash_oid(.md5) == ""
+    assert code_of(hash_of("1.2.840.113549.2.5")) == "unsupported"
+
+test "reason_code and reason_of: every reason both ways, 7, -1 and 11 refused"
+    code: i64 @= 0
+
+    while code <= 10
+        if code != 7
+            assert reason_code(reason_of(code).must()) == code
+        code @ code + 1
+
+    assert reason_of(7).is_err()
+    assert reason_of(-1).is_err()
+    assert reason_of(11).is_err()
+
+test "nonce_of: none, one of 1 and 32 bytes, 0 and 33 bytes refused, a bare nonce without its OCTET STRING refused"
+    assert nonce_of([]).must() == []
+    one = x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: [0x04, 0x01, 0xaa])
+    assert nonce_of([one]).must() == [0xaa]
+    empty = x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: [0x04, 0x00])
+    assert nonce_of([empty]).is_err()
+    long: [u8] @= [0x04, 33]
+    i: i64 @= 0
+
+    while i < 33
+        long @ long.push(0x11)
+        i @ i + 1
+
+    assert nonce_of([x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: long)]).is_err()
+    fits = long.slice(from: 2, to: 34)
+    assert nonce_of([x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: asn1.encode_der(.octet_string(v: fits)).must())]).must().len() == 32
+    bare = x509.Extension(oid: asn1.Oid(dotted: NONCE), critical: false, value: [0xaa, 0xbb, 0xcc])
+    assert nonce_of([bare]).is_err()
+
+test "extensions_of: a critical extension not understood refused, a critical nonce read"
+    critical: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: "1.2.3.4")), .boolean(v: true), .octet_string(v: [0x05, 0x00])]
+    )
+    assert extensions_of(v: .sequence(items: [critical]), what: "here").is_err()
+    nonce: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: NONCE)), .boolean(v: true), .octet_string(v: [0x04, 0x01, 0x07])]
+    )
+    assert nonce_of(extensions_of(v: .sequence(items: [nonce]), what: "here").must()).must() == [0x07]
+    assert extensions_of(v: .sequence(items: []), what: "here").is_err()
