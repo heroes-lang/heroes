@@ -1,0 +1,344 @@
+# A service of systemd, reached through `systemctl`: the unit file written in
+# the administrator's folder or the user's, the manager reloaded, the unit
+# enabled, started, stopped, restarted, asked and removed. `systemctl` runs
+# with `--no-ask-password`, so a call never waits on a password prompt, and
+# `--user` for a user's unit, which reaches the user's manager through
+# `$XDG_RUNTIME_DIR` as `systemctl` itself does. Its exit codes, measured with
+# systemd 257 on 2026-11-24: 4 where the manager refuses the caller (`Access
+# denied`), 5 where it knows no such unit, 1 for every other refusal, its
+# words on its error.
+
+use fs
+use lists
+use os
+use service/manage
+use service/manage/internal/failure
+use service/manage/internal/running
+use strings
+use time
+
+# The folder systemd makes where it booted the system (`sd_booted(3)`).
+constant BOOTED: str
+    "/run/systemd/system"
+
+# The administrator's folder of system units.
+constant SYSTEM_FOLDER: str
+    "/etc/systemd/system"
+
+# The properties `status_of` and `install` read.
+constant SHOWN: str
+    "LoadState,ActiveState,MainPID,UnitFileState,ExecMainCode,ExecMainStatus,FragmentPath,Job"
+
+# `systemctl`'s path: `/usr/bin` on a merged system, `/bin` on an older one,
+# never a search of `PATH`.
+function systemctl() -> str?
+    for at in ["/usr/bin/systemctl", "/bin/systemctl"]
+        match fs.is_file(at)
+            .ok here =>
+                if here
+                    return ok(at)
+            .err _ => _ = 0
+
+    return fail(
+        code: failure.UNSUPPORTED,
+        msg: "this system was booted with systemd and has no systemctl in /usr/bin or /bin"
+    )
+
+# The unit's name of the service `name`.
+function unit_of(name: str) -> str
+    return name + ".service"
+
+# The folder of `scope`'s unit files.
+function folder_of(scope: manage.Scope) -> str?
+    match scope
+        .system => return ok(SYSTEM_FOLDER)
+        .user =>
+            config = os.config_dir()?
+            return ok(config + "/systemd/user")
+
+# Where the unit file of the service `name` of `scope` stands.
+function path_of(name: str, scope: manage.Scope) -> str?
+    folder = folder_of(scope)?
+    return ok(folder + "/" + unit_of(name))
+
+# `systemctl` run for `scope` with `words`, for at most `limit`.
+function called(scope: manage.Scope, words: [str], limit: time.Duration) -> running.Ran?
+    program = systemctl()?
+
+    head: [str] = match scope
+        .system => ["--no-ask-password"]
+        .user   => ["--no-ask-password", "--user"]
+
+    return running.ran(program, arguments: lists.concat(xs: head, then: words), limit: limit)
+
+# The failure `r`, a run of `systemctl` that did not end with 0, told with
+# what was asked.
+function refused<T>(r: running.Ran, asked: str) -> T?
+    said = f"{asked}: systemctl answered {r.code}, \"{r.error}\""
+
+    if r.code == 4
+        return fail(code: failure.PERMISSION, msg: said)
+
+    if r.code == 5
+        return fail(code: failure.NOT_FOUND, msg: said)
+    return fail(code: failure.FAILED, msg: said)
+
+# `systemctl` run for `scope` with `words`, a question that waits on no
+# service; fails as `refused` tells where it does not end with 0.
+function done(scope: manage.Scope, words: [str], asked: str) -> ()?
+    r = called(scope, words: words, limit: running.ask_limit())?
+
+    if r.code != 0
+        return refused(r, asked: asked)
+    return ok()
+
+# The properties `SHOWN` of the unit of `name`, read from `systemctl show`'s
+# lines, `Key=Value`.
+function shown(name: str, scope: manage.Scope) -> {str: str}?
+    asking = f"asking systemd of the unit \"{unit_of(name)}\""
+    r = called(scope, words: ["show", "--property=" + SHOWN, unit_of(name)], limit: running.ask_limit())?
+
+    if r.code != 0
+        return refused(r, asked: asking)
+
+    found: {str: str} @= {}
+
+    for line in strings.lines(r.output)
+        match strings.index_of(s: line, substr: "=")
+            .ok at => found[line.slice(from: 0, to: at)] @ line.slice(from: at + 1, to: line.len())
+            .err _ => _ = 0
+
+    return ok(found)
+
+# Installs the unit `text` of `d`, which `manage.format_unit` wrote: refused
+# where systemd knows a unit of the name already, wherever its file stands (so
+# no vendor's unit is ever shadowed); then written new, read by `systemctl
+# daemon-reload` and enabled where `d.at_boot`. A step that fails removes the
+# file again and reloads.
+function install(d: manage.Definition, text: str) -> ()?
+    unit = unit_of(d.name)
+    known = shown(d.name, scope: d.scope)?
+    load = known["LoadState"].default("")
+
+    if load != "not-found"
+        return fail(
+            code: failure.EXISTS,
+            msg: f"installing the unit \"{unit}\": systemd knows it already ({load}, from \"{known["FragmentPath"].default("")}\")"
+        )
+
+    folder = folder_of(d.scope)?
+    at = folder + "/" + unit
+
+    match d.scope
+        .system => _ = 0
+        .user   => fs.make_dir_all(folder)?
+
+    fs.write_new_text(path: at, text: text)?
+
+    match written(d, at: at)
+        .ok _ => return ok()
+        .err e =>
+            undone(at, scope: d.scope)
+            return fail(code: e.code, msg: e.msg)
+
+# What follows the file's writing: its mode, the reload, the enabling.
+function written(d: manage.Definition, at: str) -> ()?
+    fs.set_permission(at, permission: 0o644)?
+    done(d.scope, words: ["daemon-reload"], asked: "reloading systemd's units")?
+
+    if d.at_boot
+        done(d.scope, words: ["enable", unit_of(d.name)], asked: f"enabling the unit \"{unit_of(d.name)}\"")?
+    return ok()
+
+# The file at `at` removed and the manager reloaded, after an install failed;
+# what fails here is passed over, the install's own failure being the one told.
+function undone(at: str, scope: manage.Scope)
+    match fs.remove(at)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    match done(scope, words: ["daemon-reload"], asked: "reloading systemd's units")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# `verb` (`start`, `stop`, `restart`) asked of the unit of `name`, waiting at
+# most `limit` for systemd's job; a `limit` of 0 queues the job and answers
+# whether it is done already: no job stands for the unit (`Job=` empty, as
+# systemd 257 shows an idle unit's) and the unit stands where the job takes
+# it.
+function job(verb: str, name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    unit = unit_of(name)
+    asking = f"{verb} of the unit \"{unit}\""
+
+    if limit.nanoseconds > 0
+        r = called(scope, words: [verb, unit], limit: limit)?
+
+        if r.code != 0
+            return refused(r, asked: asking)
+        return ok()
+
+    done(scope, words: ["--no-block", verb, unit], asked: asking)?
+    known = shown(name, scope: scope)?
+
+    if known["Job"].default("") != ""
+        return fail(code: failure.TIMEOUT, msg: f"{asking}: asked, and its job not done at once; the job stands")
+
+    now = status_from(known, name: name)?
+
+    there = match now.state
+        .running                                               => verb != "stop"
+        .stopped                                               => verb == "stop"
+        .failed _                                              => verb == "stop"
+        .starting | .stopping | .pausing | .paused | .resuming => false
+
+    if there
+        return ok()
+    return fail(code: failure.TIMEOUT, msg: f"{asking}: asked, and not done at once; the job stands")
+
+# Starts the unit of `name`.
+function start(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    return job(verb: "start", name: name, scope: scope, limit: limit)
+
+# Stops the unit of `name`.
+function stop(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    return job(verb: "stop", name: name, scope: scope, limit: limit)
+
+# Restarts the unit of `name`.
+function restart(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    return job(verb: "restart", name: name, scope: scope, limit: limit)
+
+# The state `active` names, `ActiveState` read with the code of the main
+# process's end.
+function state_of(active: str, code_kind: str, status: i64) -> manage.State?
+    if active == "active" || active == "reloading" || active == "refreshing"
+        return ok(.running)
+
+    if active == "inactive"
+        return ok(.stopped)
+
+    if active == "activating"
+        return ok(.starting)
+
+    if active == "deactivating"
+        return ok(.stopping)
+
+    if active == "failed"
+        code = if code_kind == "exited"
+            status
+        else if code_kind == "killed" || code_kind == "dumped"
+            -status
+        else
+            0
+        return ok(.failed(code: code))
+    return fail(
+        code: failure.FAILED,
+        msg: f"systemd answered the state \"{active}\", which this package does not know"
+    )
+
+# What systemd says of the unit of `name`.
+function status_of(name: str, scope: manage.Scope) -> manage.Status?
+    known = shown(name, scope: scope)?
+    return status_from(known, name: name)
+
+# The status the properties `known` of the unit of `name` say.
+function status_from(known: {str: str}, name: str) -> manage.Status?
+    if known["LoadState"].default("") == "not-found"
+        return fail(code: failure.NOT_FOUND, msg: f"systemd knows no unit \"{unit_of(name)}\"")
+
+    status = strings_number(known["ExecMainStatus"].default("0"))
+    kind = end_kind(known["ExecMainCode"].default("0"))
+    state = state_of(active: known["ActiveState"].default(""), code_kind: kind, status: status)?
+    main = strings_number(known["MainPID"].default("0"))
+
+    pid: i64? = if main > 0
+        ok(main)
+    else
+        fail(code: failure.NOT_FOUND, msg: f"the unit \"{unit_of(name)}\" runs no process")
+    file_state = known["UnitFileState"].default("")
+    at_boot = file_state == "enabled" || file_state == "enabled-runtime"
+    return ok(manage.Status(state: state, pid: pid, at_boot: at_boot))
+
+# The word `ExecMainCode` is, a number or a word by the version of
+# `systemctl`: `exited` 1, `killed` 2, `dumped` 3 (`waitid(2)`'s CLD_ codes).
+function end_kind(value: str) -> str
+    if value == "1" || value == "exited"
+        return "exited"
+
+    if value == "2" || value == "killed"
+        return "killed"
+
+    if value == "3" || value == "dumped"
+        return "dumped"
+    return ""
+
+# The number `value` writes, 0 where it writes none.
+function strings_number(value: str) -> i64
+    match numbers_of(value)
+        .ok n  => return n
+        .err _ => return 0
+
+# The decimal number `value` writes, digits alone.
+function numbers_of(value: str) -> i64?
+    if value.len() == 0 || value.len() > 18
+        return fail(code: failure.INVALID, msg: f"\"{value}\" is no number systemd writes")
+
+    n @= 0
+
+    for i in range(from: 0, to: value.len())
+        c = value[i]
+
+        if c < '0' || c > '9'
+            return fail(code: failure.INVALID, msg: f"\"{value}\" is no number systemd writes")
+        n @ n * 10 + to_i64(c - '0').must()
+
+    return ok(n)
+
+# Stops the unit of `name`, disables it, removes its file, reloads systemd and
+# resets its failed state. Fails `not_found` where no unit file stands at
+# `path_of`'s path: a unit of the system's own, or another's, is never
+# removed.
+function remove(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    at = path_of(name, scope: scope)?
+
+    if !fs.exists(at)?
+        return fail(
+            code: failure.NOT_FOUND,
+            msg: f"removing the unit \"{unit_of(name)}\": no unit file at \"{at}\", and this package removes only the units it installs"
+        )
+
+    stop(name, scope: scope, limit: limit)?
+    done(scope, words: ["disable", unit_of(name)], asked: f"disabling the unit \"{unit_of(name)}\"")?
+    fs.remove(at)?
+    done(scope, words: ["daemon-reload"], asked: "reloading systemd's units")?
+
+    match done(scope, words: ["reset-failed", unit_of(name)], asked: "resetting the unit's failed state")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    return ok()
+
+test "state_of: every state systemd 257 writes, a failure's exit code and signal, a word it does not know"
+    assert state_of(active: "active", code_kind: "", status: 0).must() == .running
+    assert state_of(active: "reloading", code_kind: "", status: 0).must() == .running
+    assert state_of(active: "inactive", code_kind: "", status: 0).must() == .stopped
+    assert state_of(active: "activating", code_kind: "", status: 0).must() == .starting
+    assert state_of(active: "deactivating", code_kind: "", status: 0).must() == .stopping
+    assert state_of(active: "failed", code_kind: "exited", status: 3).must() == .failed(code: 3)
+    assert state_of(active: "failed", code_kind: "killed", status: 9).must() == .failed(code: -9)
+    assert state_of(active: "failed", code_kind: "", status: 0).must() == .failed(code: 0)
+    assert state_of(active: "maintenance", code_kind: "", status: 0).is_err()
+
+test "end_kind: the numbers and the words of ExecMainCode"
+    assert end_kind("1") == "exited"
+    assert end_kind("killed") == "killed"
+    assert end_kind("3") == "dumped"
+    assert end_kind("0") == ""
+
+test "numbers_of: digits, empty, a sign, a word, the longest taken"
+    assert numbers_of("0").must() == 0
+    assert numbers_of("12345").must() == 12345
+    assert numbers_of("999999999999999999").must() == 999999999999999999
+    assert numbers_of("").is_err()
+    assert numbers_of("-1").is_err()
+    assert numbers_of("[not set]").is_err()
+    assert numbers_of("1000000000000000000").is_err()

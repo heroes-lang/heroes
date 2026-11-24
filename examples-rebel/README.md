@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eighty-two packages, in layers. **A package may use any package of a layer below
+A hundred and eighty-three packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -181,6 +181,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `ical/vcard` | vCard 3.0 and 4.0 (RFC 6350, 2426): contacts read into names, telephones, addresses and the rest with their groups and types, written; every line a record does not hold kept; version 2.1, photos and keys as bytes, groups of cards and the conversion between versions refused or not written yet | `bytes`, `ical`, `strings` |  |
 | 5 | `ssh` | an SSH 2 client: the host key checked against `known_hosts`, a sign-in by key or password, programs run with their output and exit status, shells and subsystems in a terminal, connections forwarded both ways; SSH's public key lines, OpenSSH's private key files and `known_hosts` lines read and written | `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `fs`, `io`, `net`, `numbers`, `os`, `pem`, `strings`, `time` |  |
 | 5 | `syslog` | the system's own log: a daemon's lines in the journal or `/dev/log` on Linux, the unified log on macOS, the Event Log on Windows, at RFC 5424's eight levels, nothing held open | `bytes`, `fs`, `os`, `strings`, `time` | `hero_syslog.h` |
+| 5 | `service/manage` | a service of the system installed, started, stopped, asked and removed by another program: a systemd unit, system or user, through `systemctl`; a launchd daemon or agent through `launchctl`; a service of the Service Control Manager; the unit file and the property list written with every text escaped; what a system has no form for answered `unsupported` | `bytes`, `fs`, `lists`, `numbers`, `os`, `path`, `plist`, `process`, `strings`, `time` | `hero_scm.h` |
 | 6 | `service` | the program as a service of the system that starts it: on Windows started by the Service Control Manager, its state reported, and the stop, pause, resume and shutdown the system sends waited on alone or in a poll set; on POSIX systemd's readiness, status and watchdog notices sent, its watchdog timeout read, and the sockets systemd and launchd hand a program taken as `net` values; the other systems answer `unsupported` | `bytes`, `fs`, `io`, `ipc`, `net`, `numbers`, `os`, `poll`, `strings`, `time` | `hero_service.h`, `hero_activation.h` |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `retries`, `strings`, `threads`, `time`, `tls`, `url` | `hero_proxy.h` |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |

@@ -1,0 +1,142 @@
+# The ledger of `service/manage`: a service of the system installed, started,
+# stopped, asked and removed by another program (catalogue row H15). The
+# census, each list read on 2026-11-24: Go's `golang.org/x/sys/windows/svc/mgr`
+# v0.50.0, `go doc -all` run on this Mac against the module already in the
+# tree's Go cache, fetched by nobody, the `go` lines (Go's standard library has
+# no service manager); Rust's `windows-service` 0.8.1, whose names below are
+# the ones `service.ledger`'s block `service/manage` recorded from docs.rs on
+# 2026-11-23, the crate not being on this machine and this lane downloading
+# nothing, so its other entries are a question rather than a census; Python's
+# standard library has none, so the `python` lines are `-`. systemd's and
+# launchd's halves have no library of the three: go-systemd's `dbus` and `unit`
+# packages are not on this machine and were not read. The systems' own words
+# are what the code follows: `systemctl` and a unit file measured against
+# systemd 257 in a Debian 13 container of this Mac's Linux arm64 image;
+# `launchctl(1)` and `launchd.plist(5)` on this Mac (macOS 27.2), and
+# `launchctl` run here; the Service Control Manager's calls as the toolchain's
+# `winsvc.h` (zig 0.15.2's MinGW headers) declares them. A subpackage of
+# `service` so that only the programs that install services carry `process`
+# and `plist`, and since a program that is a service never installs itself.
+#
+# Run on 2026-11-24: a user agent installed, started, asked, restarted,
+# stopped and removed through launchd on this Mac; a system unit and a user
+# unit the same through systemd 257 in the container, read back by
+# `systemctl show`. Unrun: a launchd daemon (root on this Mac, which this lane
+# is not), and the Service Control Manager's arm, compiled by zig for
+# x86_64-windows-gnu and aarch64-windows-gnu with `-Wall -Wextra -Werror` and
+# never run, the Windows box being off its network.
+
+capability service-manage/manager  which manager the system has
+  heroes  service/manage.manager, service/manage.Manager
+  go      mgr.Connect, mgr.Mgr
+  rust    -
+  python  -
+  note    systemd where `/run/systemd/system` is a folder (`sd_booted(3)`'s test), launchd on macOS, the Service Control Manager on Windows; a Linux booted with another init is `unsupported` by words. Go's `Connect` opens the manager and hands its handle; here each call opens and closes what it needs, so no handle reaches the program
+
+capability service-manage/definition  a service's definition: program, arguments, folder, variables, start at boot, restart
+  heroes  service/manage.Definition, service/manage.definition, service/manage.Scope, service/manage.Restart
+  go      mgr.Config, mgr.StartManual, mgr.StartAutomatic, mgr.ErrorNormal
+  rust    ServiceInfo, ServiceType, ServiceStartType, ServiceErrorControl
+  python  -
+  note    one definition for the three systems: Windows refuses a user's service, a working folder and variables by words (`CreateServiceW` takes none), and a restart at every exit (its failure actions run only at a failure); launchd refuses a restart at every exit for a job that waits to be started, since `KeepAlive` true starts it at every load. The description is systemd's and Windows', launchd's property list having no key for one. A system service runs as the machine's own account (LocalSystem on Windows, root on Linux and macOS): another account is the block `service-manage/account`
+
+capability service-manage/install  a service installed, not started
+  heroes  service/manage.install
+  go      mgr.Mgr.CreateService, mgr.Config.BinaryPathName, mgr.Config.DisplayName, mgr.Config.Description, mgr.Config.StartType, mgr.Config.ServiceType, mgr.Config.ErrorControl
+  rust    Service, ServiceAccess
+  python  -
+  note    systemd: the unit file written new at `/etc/systemd/system` or the user's `systemd/user` folder, refused `exists` where systemd knows a unit of the name wherever its file stands (no vendor's unit is ever shadowed), `daemon-reload`, `enable` where it starts at boot; a step that fails removes the file and reloads. launchd: the property list written new at `/Library/LaunchDaemons` or `~/Library/LaunchAgents`, mode 0644 as launchd asks of a daemon's, loaded at `start`, boot or login. Windows: `CreateServiceW` of its own process, the command line by `strings.quote_windows_args` (the program's path quoted where it holds a blank, so no unquoted path with a space reaches the manager), its description, its failure actions; a step refused deletes the service again. Go's `CreateService` takes the arguments apart from the path and quotes them as `syscall.EscapeArg` does
+
+capability service-manage/format  the unit file and the property list as text
+  heroes  service/manage.format_unit, service/manage.format_job, service/manage.path_of
+  go      -
+  rust    -
+  python  -
+  note    measured with systemd 257, a unit whose program wrote back what it was given: `ExecStart=` words double-quoted with C's escapes and `%` and `$` doubled; `Environment=` the same quoting with `$` kept, which it does not expand; `Description=` and `WorkingDirectory=` taken as they stand, `%` doubled, a blank at either end dropped and a `\` at the end read as the line going on, so both refused there. The property list through `plist`, which escapes what XML needs and refuses a control character XML cannot hold
+
+capability service-manage/restart-on-failure  the system restarting a service that failed
+  heroes  service/manage.Definition.restart, service/manage.Definition.restart_delay, service/manage.Restart
+  go      mgr.Service.SetRecoveryActions, mgr.Service.RecoveryActions, mgr.RecoveryAction, mgr.ServiceRestart, mgr.Service.SetRecoveryActionsOnNonCrashFailures, mgr.Service.RecoveryActionsOnNonCrashFailures, mgr.Service.ResetPeriod, mgr.Service.ResetRecoveryActions
+  rust    ServiceFailureActions, ServiceAction
+  python  -
+  note    systemd's `Restart=on-failure` or `always` and `RestartSec=`; launchd's `KeepAlive` dictionary, `SuccessfulExit` false or `Crashed` true, with `AfterInitialDemand` where the job waits to be started (run on this Mac: loaded and standing, kickstarted, back after it exited with 3), `ThrottleInterval` in whole seconds; Windows' three restart actions, the count reset after a day, and the flag that counts a stop reported with an error code as a failure, as systemd counts an exit that is not 0
+
+capability service-manage/start  a service started, waited for
+  heroes  service/manage.start
+  go      mgr.Service.Start
+  rust    -
+  python  -
+  note    systemd `systemctl start`, its job done once the program runs (`Type=exec`), `--no-block` for a span of 0; launchd `bootstrap` where not loaded, then `kickstart`; Windows `StartServiceW`, then the state asked until it leaves its start pending. A service already running is left running, where the Service Control Manager answers `ERROR_SERVICE_ALREADY_RUNNING`. Go's `Start` takes the start's own arguments: the block `service-manage/start-arguments`
+
+capability service-manage/stop  a service stopped, waited for
+  heroes  service/manage.stop
+  go      mgr.Service.Control
+  rust    -
+  python  -
+  note    systemd `systemctl stop`; launchd `bootout`, which unloads the job too, since a job kept alive is started again after a signal (measured: `bootout` returns before the process ends, so its process is waited for); Windows the stop control, again while the service is between two states, then the state asked until stopped. A stopped service is left stopped. Go's `Control` sends any control: pause and resume are the block `service-manage/pause`
+
+capability service-manage/restart  a service stopped and started again
+  heroes  service/manage.restart
+  go      -
+  rust    -
+  python  -
+  note    systemd `systemctl restart`; launchd `kickstart -k`; Windows a stop and a start within the one span
+
+capability service-manage/status  where a service stands, its process, whether it starts at boot
+  heroes  service/manage.status_of, service/manage.Status, service/manage.State
+  go      mgr.Service.Query, mgr.Service.Config
+  rust    ServiceConfig
+  python  -
+  note    systemd `systemctl show`'s `ActiveState`, `MainPID`, `UnitFileState` and the main process's end; launchd `print`'s exit code and `list`'s documented columns, `print`'s output being no interface by its own page, so a system daemon asked by a program that is not root is `permission` by words; Windows `QueryServiceStatusEx` and `QueryServiceConfigW`. A state systemd adds later is `failed` by words rather than read as another
+
+capability service-manage/remove  a service stopped and removed
+  heroes  service/manage.remove
+  go      mgr.Service.Delete
+  rust    -
+  python  -
+  note    systemd: stopped, disabled, the file removed, reloaded, its failed state reset; launchd: stopped and unloaded, the property list removed; both remove only a file at `path_of`'s path, so a unit or a job of the system's own is never removed. Windows: stopped, then `DeleteService`, which the manager ends once no program holds the service; the manager keeps no mark of who installed a service, so any of the name is removed
+
+capability service-manage/list  the services a manager holds, listed
+  heroes  pending
+  go      mgr.Mgr.ListServices, mgr.Service.ListDependentServices
+  rust    -
+  python  -
+  note    pending: not in catalogue row H15; `systemctl list-units`, `launchctl list` and `EnumServicesStatusExW` would answer it
+
+capability service-manage/account  a service run as another account than the machine's own
+  heroes  refused: an account's password would pass through the program, and each system sets the account by its own tool (`systemctl edit` with `User=`, launchd's `UserName` for a daemon, `sc config obj=`), where an administrator chooses it
+  go      mgr.Config.ServiceStartName, mgr.Config.Password, mgr.Config.SidType
+  rust    -
+  python  -
+  note    a user's own services are the scope `.user` on systemd and launchd
+
+capability service-manage/start-arguments  arguments given to one start, not to the definition
+  heroes  refused: Windows alone has them; a program's arguments are its definition's, the same on every system
+  go      -
+  rust    -
+  python  -
+  note    Go's `mgr.Service.Start` takes them (its block is `service-manage/start`); the service reads them with `service.arguments` on Windows
+
+capability service-manage/pause  a service paused and resumed
+  heroes  refused: Windows alone has a pause, which a service accepts or not; systemd and launchd have none
+  go      -
+  rust    -
+  python  -
+  note    Go sends them through `mgr.Service.Control` with `svc.Pause` and `svc.Continue`, which `service.ledger` holds; `status_of` reports the pause states where a Windows service is in one
+
+capability service-manage/change  an installed definition changed in place
+  heroes  refused: one way, `remove` and `install` again (README § A5)
+  go      mgr.Service.UpdateConfig
+  rust    -
+  python  -
+  note    systemd and launchd read a definition from a file, which a change rewrites and reloads as `install` writes it
+
+capability service-manage/other-recovery  a reboot or a command run when a service fails
+  heroes  refused: a service failing restarts the service; a reboot or a command of the administrator's choice is set by `sc failure`, and systemd's `OnFailure=` and launchd have no counterpart of one form
+  go      mgr.ComputerReboot, mgr.RunCommand, mgr.NoAction, mgr.Service.SetRebootMessage, mgr.Service.RebootMessage, mgr.Service.SetRecoveryCommand, mgr.Service.RecoveryCommand
+  rust    -
+  python  -
+  note    -
+
+dropped
+  go      mgr.ConnectRemote (another machine's manager, which needs its network rights, none of systemd's or launchd's), mgr.Mgr.Disconnect and mgr.Service.Close (handles the layer opens and closes in each call), mgr.Mgr.LockStatus and mgr.LockStatus (the manager's lock, which Microsoft keeps for older programs), mgr.Mgr.Handle and mgr.Service.Handle and mgr.Service.Name (raw handles and the name the program gave), mgr.StartDisabled (a disabled service, which `remove` replaces), mgr.ErrorCritical, mgr.ErrorIgnore, mgr.ErrorSevere (what the boot does when a service fails to start, set by `sc config error=`), mgr.Config.LoadOrderGroup, mgr.Config.TagId, mgr.Config.Dependencies, mgr.Config.DelayedAutoStart (orderings of the boot, each system's own)

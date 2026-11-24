@@ -1,0 +1,213 @@
+# A service of the Windows Service Control Manager, reached through the
+# platform layer's `hero_scm.h`: created with its command line, description
+# and failure actions, started, stopped, asked and deleted. A start or a stop
+# asks and returns at once, so the waits are here: the state is asked again
+# every `running.LOOK_MS` milliseconds until it comes or the caller's span
+# passes. What the manager has no form for is refused by words before it is
+# asked: a user's service, a working folder, variables, a restart at every
+# exit (`CreateServiceW` and the kinds of `ChangeServiceConfig2W` take no
+# folder and no environment, as `winsvc.h` declares them, and its failure
+# actions run only at a failure).
+
+use lists
+use service/manage
+use service/manage/hero_scm
+use service/manage/internal/failure
+use service/manage/internal/running
+use strings
+use time
+
+# Fails `unsupported` for a user's service.
+function system_only(scope: manage.Scope) -> ()?
+    match scope
+        .system => return ok()
+        .user   => return fail(code: failure.UNSUPPORTED, msg: failure.NO_USER_SERVICES)
+
+# Creates the service of `d`, which `checks.definition_checked` has passed by
+# Windows' rules, its restart delay `delay_ms`.
+function install(d: manage.Definition, delay_ms: i64) -> ()?
+    system_only(d.scope)?
+    asking = f"installing the service \"{d.name}\""
+
+    if d.dir != ""
+        return fail(
+            code: failure.UNSUPPORTED,
+            msg: f"{asking}: the Service Control Manager keeps no working folder for a service (`CreateServiceW` takes none); the program sets its own"
+        )
+
+    if d.env.len() > 0
+        return fail(
+            code: failure.UNSUPPORTED,
+            msg: f"{asking}: the Service Control Manager keeps no variables for a service (`CreateServiceW` and `ChangeServiceConfig2W` take none); the program reads its settings itself"
+        )
+
+    restart_ms = match d.restart
+        .never      => -1
+        .on_failure => delay_ms
+        .always     => -2
+
+    if restart_ms == -2
+        return fail(
+            code: failure.UNSUPPORTED,
+            msg: f"{asking}: the Service Control Manager restarts a service only when it fails, by its failure actions; restart it on failure"
+        )
+
+    line = strings.quote_windows_args(lists.concat(xs: [d.program], then: d.arguments))?
+
+    at_boot = if d.at_boot
+        1
+    else
+        0
+
+    if hero_scm.install(name: d.name, description: d.description, command_line: line, at_boot: at_boot, restart_delay_ms: restart_ms) != 0
+        return failure.scm_failed(asking)
+    return ok()
+
+# What the manager says of the service `name`, read once.
+function read(name: str) -> manage.Status?
+    state @= 0
+    pid @= 0
+    at_boot @= 0
+    exit_code @= 0
+
+    if hero_scm.query(name, state: @state, pid: @pid, at_boot: @at_boot, exit_code: @exit_code) != 0
+        return failure.scm_failed(f"asking the Service Control Manager of the service \"{name}\"")
+
+    told = state_of(state: state, exit_code: exit_code)?
+
+    process: i64? = if pid > 0
+        ok(pid)
+    else
+        fail(code: failure.NOT_FOUND, msg: f"the service \"{name}\" runs no process")
+    return ok(manage.Status(state: told, pid: process, at_boot: at_boot == 1))
+
+# The state the manager's number `state` names, `exit_code` the code it last
+# stopped with.
+function state_of(state: i64, exit_code: i64) -> manage.State?
+    if state == hero_scm.HERO_SCM_STATE_STOPPED
+        if exit_code != 0
+            return ok(.failed(code: exit_code))
+        return ok(.stopped)
+
+    if state == hero_scm.HERO_SCM_STATE_START_PENDING
+        return ok(.starting)
+
+    if state == hero_scm.HERO_SCM_STATE_STOP_PENDING
+        return ok(.stopping)
+
+    if state == hero_scm.HERO_SCM_STATE_RUNNING
+        return ok(.running)
+
+    if state == hero_scm.HERO_SCM_STATE_CONTINUE_PENDING
+        return ok(.resuming)
+
+    if state == hero_scm.HERO_SCM_STATE_PAUSE_PENDING
+        return ok(.pausing)
+
+    if state == hero_scm.HERO_SCM_STATE_PAUSED
+        return ok(.paused)
+    return fail(
+        code: failure.FAILED,
+        msg: f"the Service Control Manager answered the state {state}, which this package does not know"
+    )
+
+# What the manager says of the service `name`.
+function status_of(name: str, scope: manage.Scope) -> manage.Status?
+    system_only(scope)?
+    return read(name)
+
+# Asks the manager to start the service `name`, then waits at most `limit`
+# since `started` until it leaves its start pending.
+function started_by(name: str, started: time.Mark, limit: time.Duration) -> ()?
+    asking = f"starting the service \"{name}\""
+
+    if hero_scm.start(name) < 0
+        return failure.scm_failed(asking)
+
+    while true
+        now = read(name)?
+
+        match now.state
+            .running | .paused | .pausing | .resuming => return ok()
+            .failed f =>
+                return fail(code: failure.FAILED, msg: f"{asking}: it stopped as it started, with the code {f.code}")
+            .stopped =>
+                return fail(code: failure.FAILED, msg: f"{asking}: it stopped as it started")
+            .starting | .stopping => _ = 0
+
+        if !running.looked(started, limit: limit)
+            return fail(code: failure.TIMEOUT, msg: f"{asking}: still starting after {limit.nanoseconds / 1000000} ms")
+
+# Starts the service `name`, waiting at most `limit`.
+function start(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    system_only(scope)?
+    started = time.mark()?
+    return started_by(name, started: started, limit: limit)
+
+# Asks the service `name` to stop, again while it is between two states, then
+# waits at most `limit` since `started` until it reports stopped.
+function stopped_by(name: str, started: time.Mark, limit: time.Duration) -> ()?
+    asking = f"stopping the service \"{name}\""
+
+    while hero_scm.stop(name) < 0
+        if hero_scm.last_error() != hero_scm.HERO_SCM_BUSY
+            return failure.scm_failed(asking)
+
+        if !running.looked(started, limit: limit)
+            return failure.scm_failed(asking)
+
+    while true
+        now = read(name)?
+
+        match now.state
+            .stopped | .failed _                                              => return ok()
+            .starting | .running | .stopping | .pausing | .paused | .resuming => _ = 0
+
+        if !running.looked(started, limit: limit)
+            return fail(
+                code: failure.TIMEOUT,
+                msg: f"{asking}: still stopping after {limit.nanoseconds / 1000000} ms; the system goes on stopping it"
+            )
+
+# Stops the service `name`, waiting at most `limit`.
+function stop(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    system_only(scope)?
+    started = time.mark()?
+    return stopped_by(name, started: started, limit: limit)
+
+# Stops the service `name` and starts it, both within `limit`.
+function restart(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    system_only(scope)?
+    started = time.mark()?
+    stopped_by(name, started: started, limit: limit)?
+    return started_by(name, started: started, limit: limit)
+
+# Stops the service `name`, at most `limit`, and deletes it.
+function remove(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    system_only(scope)?
+    started = time.mark()?
+    stopped_by(name, started: started, limit: limit)?
+
+    if hero_scm.remove(name) != 0
+        return failure.scm_failed(f"removing the service \"{name}\"")
+    return ok()
+
+test "state_of: every state of the manager, a stop with an error code, a number it does not know"
+    assert state_of(state: hero_scm.HERO_SCM_STATE_STOPPED, exit_code: 0).must() == .stopped
+    assert state_of(state: hero_scm.HERO_SCM_STATE_STOPPED, exit_code: 1066).must() == .failed(code: 1066)
+    assert state_of(state: hero_scm.HERO_SCM_STATE_START_PENDING, exit_code: 0).must() == .starting
+    assert state_of(state: hero_scm.HERO_SCM_STATE_STOP_PENDING, exit_code: 0).must() == .stopping
+    assert state_of(state: hero_scm.HERO_SCM_STATE_RUNNING, exit_code: 0).must() == .running
+    assert state_of(state: hero_scm.HERO_SCM_STATE_CONTINUE_PENDING, exit_code: 0).must() == .resuming
+    assert state_of(state: hero_scm.HERO_SCM_STATE_PAUSE_PENDING, exit_code: 0).must() == .pausing
+    assert state_of(state: hero_scm.HERO_SCM_STATE_PAUSED, exit_code: 0).must() == .paused
+    assert state_of(state: 8, exit_code: 0).is_err()
+
+test "system_only: a user's service refused by the words that say what Windows lacks"
+    match system_only(.user)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.UNSUPPORTED
+            assert e.msg == failure.NO_USER_SERVICES
+
+    assert system_only(.system).is_err() == false

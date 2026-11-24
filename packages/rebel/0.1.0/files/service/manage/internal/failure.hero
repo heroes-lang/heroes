@@ -1,0 +1,119 @@
+# The codes `service/manage` fails with, and the one place a kind of the floor
+# `service/manage/hero_scm` becomes one: every failure of the Service Control
+# Manager is built here, its message saying what was asked and what the system
+# answered (README § A4). The failures of `systemctl` and `launchctl` are
+# built where those programs are run, `service/manage/internal/running`.
+
+use service/manage/hero_scm
+
+constant INVALID: str
+    "invalid"
+
+constant EXISTS: str
+    "exists"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# Why Windows refuses a user's service, said wherever one is asked.
+constant NO_USER_SERVICES: str
+    "Windows has no service a user installs for themself, as systemd's user units and launchd's agents are: a service of the Service Control Manager is the machine's, installed by an administrator (scope `.system`)"
+
+# The system's own words for the floor's last failure on this thread, "" where
+# the layer refused it itself.
+function system_words() -> str
+    room: [u8] @= []
+    length = hero_scm.last_message(@room, n: 0)
+
+    if length <= 0
+        return ""
+
+    for _ in range(from: 0, to: length)
+        room @ room.push(0)
+
+    if hero_scm.last_message(@room, n: length.to_u64().must()) != length
+        return ""
+
+    match room.validated_bytes()
+        .ok text => return text
+        .err _   => return ""
+
+# The code and the words for the floor's last failure on this thread, `asked`
+# saying what the program asked, as "starting the service \"x\"".
+function scm_failed<T>(asked: str) -> T?
+    kind = hero_scm.last_error()
+    number = hero_scm.last_os_error()
+    words = system_words()
+
+    said = if words == ""
+        f"the system's error {number}"
+    else
+        f"the system's error {number}, \"{words}\""
+
+    if kind == hero_scm.HERO_SCM_INVALID
+        return fail(code: INVALID, msg: f"{asked}: the layer refuses a text that is empty, too long or not UTF-8")
+
+    if kind == hero_scm.HERO_SCM_UNSUPPORTED
+        return fail(code: UNSUPPORTED, msg: f"{asked}: only Windows has the Service Control Manager")
+
+    if kind == hero_scm.HERO_SCM_EXISTS
+        return fail(
+            code: EXISTS,
+            msg: f"{asked}: a service of that name, or whose display name is that name, is installed already ({said})"
+        )
+
+    if kind == hero_scm.HERO_SCM_NOT_FOUND
+        return fail(code: NOT_FOUND, msg: f"{asked}: no service of that name is installed ({said})")
+
+    if kind == hero_scm.HERO_SCM_DENIED
+        return fail(
+            code: PERMISSION,
+            msg: f"{asked}: the system refuses it to this program, which needs an administrator's rights ({said})"
+        )
+
+    if kind == hero_scm.HERO_SCM_MARKED
+        return fail(
+            code: FAILED,
+            msg: f"{asked}: a service of that name is deleted and goes once every program that holds it lets it go, the Services console among them ({said})"
+        )
+
+    if kind == hero_scm.HERO_SCM_BUSY
+        return fail(code: FAILED, msg: f"{asked}: the service is between two states and takes no control now ({said})")
+
+    if kind == hero_scm.HERO_SCM_TIMEOUT
+        return fail(
+            code: TIMEOUT,
+            msg: f"{asked}: the service did not answer its start in the time the system allows ({said})"
+        )
+
+    if kind == hero_scm.HERO_SCM_LIMIT
+        return fail(code: LIMIT, msg: f"{asked}: no memory was left ({said})")
+
+    return fail(code: FAILED, msg: f"{asked}: {said}")
+
+test "scm_failed: off Windows the floor's refusal is unsupported, with what was asked"
+    if hero_scm.on_windows()
+        skip_test(reason: "Windows has the Service Control Manager; the face's tests ask it")
+    assert hero_scm.start("heroes-no-such") == -1
+    told: ()? = scm_failed("starting the service \"heroes-no-such\"")
+
+    match told
+        .ok _ => assert false
+        .err e =>
+            assert e.code == UNSUPPORTED
+            assert e.msg == "starting the service \"heroes-no-such\": only Windows has the Service Control Manager"

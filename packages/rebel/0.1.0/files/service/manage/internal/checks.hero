@@ -1,0 +1,229 @@
+# What a definition and a name pass before anything is written or run: the
+# name every system takes, texts with no zero byte (which no system's text
+# carries and which would abort a call into C), absolute paths, variable
+# names, and the one-line texts systemd reads without quotes. A check here
+# fails `invalid`, naming what it found and where (README § A4).
+
+use path
+use service/manage
+use service/manage/internal/failure
+use time
+
+# The longest restart delay, in milliseconds: the Service Control Manager
+# takes a delay as a 32-bit count of them.
+constant DELAY_MOST_MS: i64
+    4294967295
+
+# Whether `c` is an ASCII letter or digit.
+function is_letter_or_digit(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+
+# Whether `c` may stand in a service's name.
+function is_name_byte(c: u8) -> bool
+    return is_letter_or_digit(c) || c == '.' || c == '_' || c == '-'
+
+# Whether `c` is a control character, C0 or DEL.
+function is_control(c: u8) -> bool
+    return c < 0x20 || c == 0x7f
+
+# `name` as every system takes a service's name: 1 to `manage.NAME_MOST`
+# bytes of ASCII letters, digits, `.`, `_` and `-`, the first a letter or a
+# digit, so it is a systemd unit's name, a launchd label, a file's name and
+# the Service Control Manager's alike.
+function name_checked(name: str) -> ()?
+    if name.len() == 0 || name.len() > manage.NAME_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"the service's name \"{name}\" is {name.len()} bytes long, where 1 to {manage.NAME_MOST} are taken"
+        )
+
+    if !is_letter_or_digit(name[0])
+        return fail(
+            code: failure.INVALID,
+            msg: f"the service's name \"{name}\" begins with the byte {name[0]}, where it begins with an ASCII letter or digit"
+        )
+
+    for i in range(from: 0, to: name.len())
+        if !is_name_byte(name[i])
+            return fail(
+                code: failure.INVALID,
+                msg: f"the service's name \"{name}\" holds the byte {name[i]} at {i}, where only ASCII letters, digits, `.`, `_` and `-` are taken"
+            )
+
+    return ok()
+
+# `text` with no zero byte, `what` naming it in the message.
+function text_checked(text: str, what: str) -> ()?
+    for i in range(from: 0, to: text.len())
+        if text[i] == 0
+            return fail(code: failure.INVALID, msg: f"{what} holds a zero byte at {i}, which no system's text carries")
+
+    return ok()
+
+# `text` as one line: no control character at all, `what` naming it.
+function line_checked(text: str, what: str) -> ()?
+    for i in range(from: 0, to: text.len())
+        if is_control(text[i])
+            return fail(
+                code: failure.INVALID,
+                msg: f"{what} holds the control character {text[i]} at {i}, where it is one line of text"
+            )
+
+    return ok()
+
+# `text` as systemd reads a setting it takes without quotes, `Description=`
+# and `WorkingDirectory=`: one line, no blank at either end (the parser drops
+# it) and no `\` at the end (the parser reads the setting as going on to the
+# next line); measured with systemd 257 on 2026-11-24.
+function bare_setting_checked(text: str, what: str) -> ()?
+    line_checked(text: text, what: what)?
+
+    if text.len() == 0
+        return ok()
+
+    first = text[0]
+    last = text[text.len() - 1]
+
+    if first == ' ' || first == '\t' || last == ' ' || last == '\t'
+        return fail(code: failure.INVALID, msg: f"{what} \"{text}\" has a blank at an end, which systemd drops")
+
+    if last == '\\'
+        return fail(
+            code: failure.INVALID,
+            msg: f"{what} \"{text}\" ends with `\\`, which systemd reads as the setting going on to the next line"
+        )
+    return ok()
+
+# `name` as a variable's name: an ASCII letter or `_`, then letters, digits
+# and `_`.
+function env_name_checked(name: str) -> ()?
+    if name.len() == 0
+        return fail(code: failure.INVALID, msg: "a variable's name is empty")
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+        taken = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || i > 0 && c >= '0' && c <= '9'
+
+        if !taken
+            return fail(
+                code: failure.INVALID,
+                msg: f"the variable's name \"{name}\" holds the byte {c} at {i}, where a name is an ASCII letter or `_`, then letters, digits and `_`"
+            )
+
+    return ok()
+
+# The restart delay in milliseconds, checked: 0 to `DELAY_MOST_MS`, a part of
+# a millisecond rounded up.
+function delay_ms(delay: time.Duration) -> i64?
+    ns = delay.nanoseconds
+
+    if ns < 0 || ns / 1000000 > DELAY_MOST_MS
+        return fail(
+            code: failure.INVALID,
+            msg: f"the restart delay is {ns} nanoseconds, where 0 to {DELAY_MOST_MS} milliseconds are taken"
+        )
+
+    whole = ns / 1000000
+
+    if ns % 1000000 != 0
+        return ok(whole + 1)
+    return ok(whole)
+
+# `limit` as a wait takes it: 0 or more.
+function limit_checked(limit: time.Duration) -> ()?
+    if limit.nanoseconds < 0
+        return fail(code: failure.INVALID, msg: f"the limit is {limit.nanoseconds} nanoseconds, below zero")
+    return ok()
+
+# What every system asks of `d` before its definition is written: its name,
+# its texts free of zero bytes, its program and its folder absolute by
+# `rules`, its variables' names, its description one line, its restart delay
+# in range.
+function definition_checked(d: manage.Definition, rules: path.Rules) -> ()?
+    name_checked(d.name)?
+    text_checked(text: d.program, what: "the program's path")?
+
+    if !path.is_abs_by(d.program, rules: rules)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the program's path \"{d.program}\" is not absolute, and a service manager starts a program from no folder of the caller's"
+        )
+
+    for i in range(from: 0, to: d.arguments.len())
+        text_checked(text: d.arguments[i], what: f"the argument {i}")?
+
+    line_checked(text: d.description, what: "the description")?
+
+    if d.description.len() > manage.TEXT_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"the description is {d.description.len()} bytes long, where at most {manage.TEXT_MOST} are taken"
+        )
+
+    if d.dir != ""
+        text_checked(text: d.dir, what: "the working folder")?
+
+        if !path.is_abs_by(d.dir, rules: rules)
+            return fail(code: failure.INVALID, msg: f"the working folder \"{d.dir}\" is not absolute")
+
+    for key in keys(d.env)
+        env_name_checked(key)?
+        text_checked(text: d.env[key].must(), what: f"the variable {key}")?
+
+    _ = delay_ms(d.restart_delay)?
+    return ok()
+
+test "name_checked: the edges, one byte, the longest, a first byte that is no letter, a slash, a space, a byte past ASCII"
+    assert name_checked("a").is_err() == false
+    assert name_checked("org.heroes-lang.a_b-9").is_err() == false
+    assert name_checked("x".repeat(247)).is_err() == false
+    assert name_checked("x".repeat(248)).is_err()
+    assert name_checked("").is_err()
+    assert name_checked(".hidden").is_err()
+    assert name_checked("-dash").is_err()
+    assert name_checked("a/b").is_err()
+    assert name_checked("a\\b").is_err()
+    assert name_checked("a b").is_err()
+    assert name_checked("a@b").is_err()
+    assert name_checked("café").is_err()
+
+    match name_checked("a b")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "the service's name \"a b\" holds the byte 32 at 1, where only ASCII letters, digits, `.`, `_` and `-` are taken"
+
+test "bare_setting_checked: empty, plain, blanks at either end, a line end, a backslash at the end and inside"
+    assert bare_setting_checked(text: "", what: "d").is_err() == false
+    assert bare_setting_checked(text: "a web server, 100% up", what: "d").is_err() == false
+    assert bare_setting_checked(text: "a\\b", what: "d").is_err() == false
+    assert bare_setting_checked(text: " lead", what: "d").is_err()
+    assert bare_setting_checked(text: "trail ", what: "d").is_err()
+    assert bare_setting_checked(text: "tab\t", what: "d").is_err()
+    assert bare_setting_checked(text: "two\nlines", what: "d").is_err()
+    assert bare_setting_checked(text: "ends\\", what: "d").is_err()
+
+test "env_name_checked: a letter, an underscore, a digit after the first and first, a dash, empty"
+    assert env_name_checked("A").is_err() == false
+    assert env_name_checked("_x9").is_err() == false
+    assert env_name_checked("9x").is_err()
+    assert env_name_checked("A-B").is_err()
+    assert env_name_checked("").is_err()
+    assert env_name_checked("A=B").is_err()
+
+test "delay_ms: zero, a part of a millisecond rounded up, the largest, past it, below zero"
+    assert delay_ms(time.nanoseconds(0)).must() == 0
+    assert delay_ms(time.nanoseconds(1)).must() == 1
+    assert delay_ms(time.nanoseconds(1500000)).must() == 2
+    assert delay_ms(time.milliseconds(4294967295).must()).must() == 4294967295
+    assert delay_ms(time.milliseconds(4294967296).must()).is_err()
+    assert delay_ms(time.nanoseconds(-1)).is_err()
+
+test "text_checked: a zero byte refused where it stands, every other byte taken"
+    assert text_checked(text: "a\tb\nc\u{1}", what: "t").is_err() == false
+
+    held: [u8] = [97, 0, 98]
+
+    match text_checked(text: held.validated_bytes().must(), what: "the argument 0")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID

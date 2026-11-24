@@ -159,6 +159,8 @@ packages = [
     "service",
     "service/hero_activation",
     "service/hero_service",
+    "service/manage",
+    "service/manage/hero_scm",
     "sets",
     "sftp",
     "sql",
