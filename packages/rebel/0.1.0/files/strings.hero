@@ -1409,6 +1409,36 @@ test "has_match: the kinds alike, the empty pattern, and no pattern"
     assert has_match(s: "", patterns: compile_patterns([""], .standard))
     assert !has_match(s: "abc", patterns: compile_patterns([], .leftmost_first))
 
+test "dedent: the edges, as Python 3.15.2's textwrap.dedent answers them"
+    assert dedent("") == ""
+    assert dedent("a\n  b") == "a\n  b"
+    assert dedent("   \n  ") == "\n"
+    assert dedent("  a\n\t b") == "  a\n\t b"
+    assert dedent("\ta\n\t\tb\n\t") == "a\n\tb\n"
+    assert dedent("  a\n   \n  b") == "a\n\nb"
+    assert dedent("  a\r\n  b\r\n") == "a\r\nb\r\n"
+
+test "dedent: white space that is not a margin, and a blank line's end"
+    no_break: [u8] = [0xc2, 0xa0]
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    hard = no_break.validated_bytes().must()
+    wide = ideographic.validated_bytes().must()
+    assert dedent("  " + hard + "a\n  b") == hard + "a\nb"
+    assert dedent(" " + wide + "x\n y") == wide + "x\ny"
+    assert dedent("  a\r\n  \r\n  b") == "a\r\n\r\nb"
+
+test "indent_where: a line of spaces, no text, a text of no ASCII"
+    assert indent_where(s: "a\n  \nb", prefix: "> ", accepts: is_ascii) == "> a\n>   \n> b"
+    assert indent_where(s: "", prefix: "*", accepts: is_ascii) == ""
+    assert indent_where(s: "è\na", prefix: "*", accepts: is_ascii) == "è\n*a"
+
+test "indent: the edges"
+    assert indent(s: "", prefix: "> ") == ""
+    assert indent(s: "a\n  \nb", prefix: "> ") == "> a\n  \n> b"
+    assert indent(s: "a\nb", prefix: "") == "a\nb"
+    assert indent(s: "a\r\nb", prefix: "» ") == "» a\r\n» b"
+    assert indent(s: "a\rb", prefix: "-") == "-a\rb"
+
 ## Examples
 
 # A name lowered, its first sigma inside the word and its last one ending it.
@@ -1777,62 +1807,15 @@ test "expand_tabs: stops every four characters"
 test "dedent: a function's body"
     assert dedent("    def f():\n        return 1\n") == "def f():\n    return 1\n"
 
-# Edges first: no text, no margin shared, every line blank, spaces against
-# tabs, a margin of tabs, a blank line inside, ends of both kinds kept.
-test "dedent: the edges, as Python 3.15.2's textwrap.dedent answers them"
-    assert dedent("") == ""
-    assert dedent("a\n  b") == "a\n  b"
-    assert dedent("   \n  ") == "\n"
-    assert dedent("  a\n\t b") == "  a\n\t b"
-    assert dedent("\ta\n\t\tb\n\t") == "a\n\tb\n"
-    assert dedent("  a\n   \n  b") == "a\n\nb"
-    assert dedent("  a\r\n  b\r\n") == "a\r\nb\r\n"
-
-# A no-break space and an ideographic space, built from their bytes since a
-# source may not hold an invisible character as itself, are white space but
-# no margin; a blank line written "\r\n" keeps its end, where Python writes
-# "\n".
-test "dedent: white space that is not a margin, and a blank line's end"
-    no_break: [u8] = [0xc2, 0xa0]
-    ideographic: [u8] = [0xe3, 0x80, 0x80]
-    hard = no_break.validated_bytes().must()
-    wide = ideographic.validated_bytes().must()
-    assert dedent("  " + hard + "a\n  b") == hard + "a\nb"
-    assert dedent(" " + wide + "x\n y") == wide + "x\ny"
-    assert dedent("  a\r\n  \r\n  b") == "a\r\n\r\nb"
-
 # A mail quoted, its blank line left as it is.
 test "indent: a quoted mail"
     assert indent(s: "a\n\nb\n", prefix: "> ") == "> a\n\n> b\n"
 
-# Edges first: no text, a line of spaces alone, an empty prefix, a prefix of
-# characters of more than one byte, ends of both kinds kept, a "\r" alone
-# ending no line.
-test "indent: the edges"
-    assert indent(s: "", prefix: "> ") == ""
-    assert indent(s: "a\n  \nb", prefix: "> ") == "> a\n  \n> b"
-    assert indent(s: "a\nb", prefix: "") == "a\nb"
-    assert indent(s: "a\r\nb", prefix: "» ") == "» a\r\n» b"
-    assert indent(s: "a\rb", prefix: "-") == "-a\rb"
-
-# Whether a line is accepted: always.
-#
-# - `line`: the line, without its end.
-function every_line(line: str) -> bool
-    return line.len() >= 0
-
-# Whether `line` begins with a letter "a".
-#
-# - `line`: the line, without its end.
-function starts_with_a(line: str) -> bool
-    return has_prefix(s: line, prefix: "a")
-
-# Every line quoted, the blank ones too, and only some lines indented.
+# A mail quoted with "> " on every line, its blank one too, and the lines in
+# upper case of a text marked.
 test "indent_where: every line, and the lines a function chooses"
-    assert indent_where(s: "a\n\nb\n", prefix: "> ", accepts: every_line) == "> a\n> \n> b\n"
-    assert indent_where(s: "a\n  \nb", prefix: "> ", accepts: every_line) == "> a\n>   \n> b"
-    assert indent_where(s: "ab\nba\naa", prefix: "*", accepts: starts_with_a) == "*ab\nba\n*aa"
-    assert indent_where(s: "", prefix: "*", accepts: every_line) == ""
+    assert indent_where(s: "a\n\nb\n", prefix: "> ", accepts: is_ascii) == "> a\n> \n> b\n"
+    assert indent_where(s: "NOTE\nplain\nWARN", prefix: "! ", accepts: is_upper) == "! NOTE\nplain\n! WARN"
 
 # A text in upper case, its sharp s written as two letters.
 test "to_upper: a German word"

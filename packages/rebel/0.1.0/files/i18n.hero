@@ -10,7 +10,8 @@
 # tables: numbers written and read for a language (`i18n/numbers`), dates and
 # times written for a language (`i18n/dates`), texts ordered for a language
 # (`i18n/collate`), the likely script and region of a language and the
-# aliases of old tags (`i18n/locales`). Text put in a normal form or its case folded is
+# aliases of old tags (`i18n/locales`), languages, scripts, regions and
+# whole locales named in words (`i18n/names`). Text put in a normal form or its case folded is
 # `unicode/normalize`'s; legacy encodings are `unicode/encodings`'.
 #
 # It fails `invalid` where a tag, a rule, a `.po` text or a `.mo` file is not
@@ -20,10 +21,9 @@
 # file declares a character set other than UTF-8; and `failed` where the
 # system keeps locale settings and will not say them.
 #
-# Not written yet, each a `pending` block of its ledger: a language, script or
-# region named in words in a language; every locale CLDR has data for, and every
-# ISO code; a message with arguments formatted, plural and select chosen inside
-# it; Qt Linguist's .ts files read.
+# Not written yet, each a `pending` block of its ledger: every locale CLDR has
+# data for, and every ISO code; a message with arguments formatted, plural and
+# select chosen inside it; Qt Linguist's .ts files read.
 
 use i18n/internal/locale_syntax
 use i18n/internal/lookup
@@ -1253,11 +1253,9 @@ test "catalog_paths: a language with a region"
     paths = catalog_paths(dir: "/usr/share/locale", domain: "app", languages: ["de_DE"])
     assert paths == ["/usr/share/locale/de_DE/LC_MESSAGES/app.mo", "/usr/share/locale/de/LC_MESSAGES/app.mo"]
 
-# The settings of the system the tests run on: a list of well-formed locales,
-# each once, and a locale for the formats or none set; never `failed` on the
-# three systems, macOS's and Windows' calls answering and the environment
-# read elsewhere.
-test "system_languages and system_locale: the system the tests run on"
+# The languages the person chose, each a well-formed locale and each once,
+# on whichever system the tests run.
+test "system_languages: the system the tests run on"
     chosen = system_languages().must()
 
     for i in range(from: 0, to: chosen.len())
@@ -1266,6 +1264,9 @@ test "system_languages and system_locale: the system the tests run on"
         for j in range(from: i + 1, to: chosen.len())
             assert chosen[i] != chosen[j]
 
+# The locale of the person's formats, or none set, on whichever system the
+# tests run; never `failed` on the three systems.
+test "system_locale: the system the tests run on"
     match system_locale()
         .ok shown => assert parse_locale(format_locale(shown)).must() == shown
         .err e    => assert e.code == NOT_FOUND

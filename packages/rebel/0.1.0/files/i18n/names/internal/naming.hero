@@ -1,0 +1,270 @@
+# A whole locale named in words, as ICU's `LocaleDisplayNames` builds the
+# name from CLDR's: the language, or the language with its script, its region
+# or both where CLDR names the pair as a dialect and dialects are asked for;
+# then the script, the region, the variants and each Unicode keyword not
+# already named, joined by the locale's separator and put after the language
+# by its pattern, "{0} ({1})". A part CLDR has no name for is written as its
+# code, so the name never fails.
+
+use i18n
+use i18n/internal/keyword_tables
+use i18n/names
+use i18n/names/internal/name_data
+use strings
+
+# The suffix of a key for each form, in the order of `i18n/names.NameForm`'s
+# cases: none, short, long, another name, a menu's, the official one, the
+# one standing alone.
+constant FORM_SUFFIXES: [str]
+    ["", "-alt-short", "-alt-long", "-alt-variant", "-alt-menu", "-alt-official", "-alt-stand-alone"]
+
+# The suffix of a name's key for `form`.
+function suffix_of(form: names.NameForm) -> str
+    return match form
+        .standard    => FORM_SUFFIXES[0]
+        .short       => FORM_SUFFIXES[1]
+        .long        => FORM_SUFFIXES[2]
+        .alternative => FORM_SUFFIXES[3]
+        .menu        => FORM_SUFFIXES[4]
+        .official    => FORM_SUFFIXES[5]
+        .stand_alone => FORM_SUFFIXES[6]
+
+# The codes a language's own name is looked for under: with its script and
+# region, with its script, with its region, then alone.
+function self_codes(locale: i18n.Locale) -> [str]
+    out: [str] @= []
+
+    if locale.script != "" && locale.region != ""
+        out @ out.push(f"{locale.language}-{locale.script}-{locale.region}")
+
+    if locale.script != ""
+        out @ out.push(f"{locale.language}-{locale.script}")
+
+    if locale.region != ""
+        out @ out.push(f"{locale.language}-{locale.region}")
+    out @ out.push(locale.language)
+    return out
+
+# Whether every byte of `code` is an ASCII letter, or an ASCII digit where
+# `digits`.
+function ascii_only(code: str, digits: bool) -> bool
+    at @= 0
+
+    while at < code.len()
+        b = code[at]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+        digit = b >= '0' && b <= '9'
+
+        if digits && !digit || !digits && !letter
+            return false
+        at @ at + 1
+
+    return true
+
+# The name `key` has in `locale` in the form whose suffix is `suffix`, the
+# standard name where CLDR has none in that form; a menu's name built from its
+# core and its extension where CLDR gives those and no menu name.
+#
+# Fails `not_found` where CLDR has no standard name either.
+function name_in_form(key: str, suffix: str, locale: i18n.Locale) -> str?
+    if suffix != ""
+        match name_data.name_of(key + suffix, locale: locale)
+            .ok found => return ok(found)
+            .err _    => _ = 0
+
+        if suffix == "-alt-menu"
+            match name_data.name_of(key + "-menu-core", locale: locale)
+                .ok core =>
+                    match name_data.name_of(key + "-menu-extension", locale: locale)
+                        .ok extension => return ok(filled(pattern: pattern_of(locale), first: core, second: extension))
+                        .err _        => _ = 0
+                .err _ => _ = 0
+    return name_data.name_of(key, locale: locale)
+
+# `pattern` with `{0}` written as `first` and `{1}` as `second`.
+function filled(pattern: str, first: str, second: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: pattern, old: "{0}", new: first), old: "{1}", new: second)
+
+# The pattern a locale's name puts its parts after its language with.
+function pattern_of(locale: i18n.Locale) -> str
+    return name_data.name_of("p pattern", locale: locale).default("{0} ({1})")
+
+# `text` with its parentheses made brackets, full-width where `pattern` writes
+# full-width parentheses, so a part's own parenthesis is not read as the
+# pattern's.
+function bracketed(text: str, pattern: str) -> str
+    if strings.contains(s: pattern, substr: "（")
+        return strings.replace_all(s: strings.replace_all(s: text, old: "（", new: "［"), old: "）", new: "］")
+    return strings.replace_all(s: strings.replace_all(s: text, old: "(", new: "["), old: ")", new: "]")
+
+# The long name ICU's identifiers write the key `key` with, `calendar` for
+# `ca`, or `key` itself where it has none: the order ICU names keywords in.
+function long_key(key: str) -> str
+    at @= 0
+
+    while at < keyword_tables.KEY_NAMES.len()
+        if keyword_tables.KEY_NAMES[at] == key
+            return keyword_tables.KEY_ALIASES[at]
+        at @ at + 1
+
+    return key
+
+# The long name ICU's identifiers write `value` of the key `key` with,
+# `phonebook` for `co` `phonebk`, or `value` itself where it has none.
+function long_value(key: str, value: str) -> str
+    prefix = key + " "
+    at @= 0
+
+    while at < keyword_tables.VALUE_NAMES.len()
+        alias = keyword_tables.VALUE_ALIASES[at]
+
+        if keyword_tables.VALUE_NAMES[at] == value && strings.has_prefix(s: alias, prefix: prefix)
+            return alias.slice(from: prefix.len(), to: alias.len())
+        at @ at + 1
+
+    return value
+
+# A Unicode keyword of a locale: its key, its value, and the key's long name
+# it is ordered by.
+record Keyword
+    key: str
+    value: str
+    order: str
+
+# The Unicode keywords of `locale`, in the order of their keys' long names.
+function keywords_of(locale: i18n.Locale) -> [Keyword]
+    found: {str: Keyword} @= {}
+
+    for extension in locale.extensions
+        if strings.has_prefix(s: extension, prefix: "u-")
+            subtags = strings.split(s: extension.slice(from: 2, to: extension.len()), sep: "-")
+            at @= 0
+
+            while at < subtags.len()
+                if subtags[at].len() == 2
+                    next @= at + 1
+
+                    while next < subtags.len() && subtags[next].len() != 2
+                        next @ next + 1
+
+                    value = if next > at + 1
+                        subtags.slice(from: at + 1, to: next).join("-")
+                    else
+                        "true"
+                    long = long_key(subtags[at])
+                    found[long] @ Keyword(key: subtags[at], value: value, order: long)
+                    at @ next
+                else
+                    at @ at + 1
+
+    out: [Keyword] @= []
+
+    for name in sort(keys(found))
+        out @ out.push(found[name].must())
+
+    return out
+
+# The name of `locale` in `written_in`, as `i18n/names.locale_name` says.
+function locale_name(locale: i18n.Locale, written_in: i18n.Locale, dialects: bool, short: bool) -> str
+    suffix = if short
+        "-alt-short"
+    else
+        ""
+
+    language = if locale.language == ""
+        "und"
+    else
+        locale.language
+    has_script @= locale.script != ""
+    has_region @= locale.region != ""
+    head: str @= ""
+
+    if dialects
+        if has_script && has_region
+            match name_in_form(key: f"l {language}-{locale.script}-{locale.region}", suffix: suffix, locale: written_in)
+                .ok found =>
+                    head @ found
+                    has_script @ false
+                    has_region @ false
+                .err _ => _ = 0
+        else if has_script
+            match name_in_form(key: f"l {language}-{locale.script}", suffix: suffix, locale: written_in)
+                .ok found =>
+                    head @ found
+                    has_script @ false
+                .err _ => _ = 0
+        else if has_region
+            match name_in_form(key: f"l {language}-{locale.region}", suffix: suffix, locale: written_in)
+                .ok found =>
+                    head @ found
+                    has_region @ false
+                .err _ => _ = 0
+
+    if head == ""
+        head @ name_in_form(key: "l " + language, suffix: suffix, locale: written_in).default(language)
+    pattern = pattern_of(written_in)
+    separator = name_data.name_of("p separator", locale: written_in).default("{0}, {1}")
+    parts: [str] @= []
+
+    if has_script
+        parts @ parts.push(
+            name_in_form(key: "s " + locale.script, suffix: suffix, locale: written_in).default(locale.script)
+        )
+
+    if has_region
+        parts @ parts.push(
+            name_in_form(key: "r " + locale.region, suffix: suffix, locale: written_in).default(locale.region)
+        )
+
+    for code in locale.variants
+        parts @ parts.push(name_data.name_of("v " + code, locale: written_in).default(strings.to_upper_ascii(code)))
+
+    tail: str @= ""
+
+    for part in parts
+        tail @ joined(tail: tail, part: bracketed(text: part, pattern: pattern), separator: separator)
+
+    keytype = name_data.name_of("p keytype", locale: written_in).default("{0}: {1}")
+
+    for keyword in keywords_of(locale)
+        key_name = bracketed(
+            text: name_data.name_of("k " + keyword.key, locale: written_in).default(keyword.order),
+            pattern: pattern
+        )
+        long = long_value(key: keyword.key, value: keyword.value)
+        written: str @= ""
+
+        match name_data.name_of(f"t {keyword.key} {keyword.value}", locale: written_in)
+            .ok named => written @ bracketed(text: named, pattern: pattern)
+            .err _ =>
+                written @ if key_name != keyword.order
+                    filled(pattern: keytype, first: key_name, second: long)
+                else
+                    keyword.order + "=" + long
+
+        tail @ joined(tail: tail, part: written, separator: separator)
+
+    if tail == ""
+        return head
+    return filled(pattern: pattern, first: head, second: tail)
+
+# `part` after `tail` by `separator`, or `part` alone where `tail` is empty.
+function joined(tail: str, part: str, separator: str) -> str
+    if tail == ""
+        return part
+    return filled(pattern: separator, first: tail, second: part)
+
+## Tests
+
+test "filled and bracketed: a pattern's two places, parentheses of both widths"
+    assert filled(pattern: "{0} ({1})", first: "a", second: "b") == "a (b)"
+    assert bracketed(text: "x (y)", pattern: "{0} ({1})") == "x [y]"
+    assert bracketed(text: "x（y）", pattern: "{0}（{1}）") == "x［y］"
+
+test "keywords_of: none, two in the order of their long names, a key with no value"
+    plain = i18n.parse_locale("de-DE").must()
+    assert keywords_of(plain).len() == 0
+    two = keywords_of(i18n.parse_locale("de-DE-u-kn-co-phonebk").must())
+    assert two.len() == 2
+    assert two[0].key == "co" && two[0].value == "phonebk"
+    assert two[1].key == "kn" && two[1].value == "true"

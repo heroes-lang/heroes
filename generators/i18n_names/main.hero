@@ -1,0 +1,272 @@
+# The generator of `i18n/names`' table of CLDR 49's display names,
+# `i18n/names/internal/name_tables.hero`: every locale's names of languages,
+# scripts, regions, variants and keywords, and its patterns, each locale
+# holding only the names that differ from what the locales after it in
+# `i18n.fallback_chain` answer, so a lookup down the chain answers what CLDR's
+# resolved data says. Written byte for byte, or checked against the table in
+# the tree.
+#
+# Its input is CLDR 49's JSON release, fetched from `cldrkit.SOURCE_URL` into
+# any folder; `cldrkit` holds it to its SHA-256. Run from the repository's
+# root:
+#
+#     heroes run generators/i18n_names/main.hero -- write <zip>
+#     heroes run generators/i18n_names/main.hero -- check <zip>
+#
+# `write` writes the table. `check` reads it and exits 0 where it is exactly
+# what `write` would write, and 1 where it is not, naming its first line that
+# differs. Either exits 2 where its words are not these, where the zip's
+# digest is not the pinned one, where its data is not what the generator
+# reads, or where the table would not answer every locale's resolved names.
+
+use <cldrkit>/cldrkit
+use <rebel>/i18n
+use <tablekit>/tablekit
+
+use names
+
+# The table, from the repository's root.
+constant TABLE: str
+    "packages/rebel/0.1.0/files/i18n/names/internal/name_tables.hero"
+
+# The characters a number is written with, as `i18n/dates`' tables write it.
+constant ALPHABET: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+
+# One locale's names: its tag as `i18n.format_locale` writes it, and every
+# name CLDR's resolved data gives it.
+record Resolved
+    tag: str
+    names: {str: str}
+
+# `n` in `width` characters of `ALPHABET`, the most significant first.
+function code_of(n: i64, width: i64) -> str
+    out: [str] @= []
+    at @= 0
+
+    while at < width
+        shift @= 0
+        left @= n
+
+        while shift < width - 1 - at
+            left @ left / 64
+            shift @ shift + 1
+
+        out @ out.push(ALPHABET.slice(from: left % 64, to: left % 64 + 1))
+        at @ at + 1
+
+    return out.join("")
+
+# The tags of the locales after the first of `chain` that `data` holds, in
+# the chain's order.
+function rest_of(chain: [i18n.Locale] lent, data: {str: Resolved} lent) -> [str]
+    out: [str] @= []
+
+    for step in chain.slice(from: 1, to: chain.len())
+        tag = i18n.format_locale(step)
+
+        if !data[tag].is_err()
+            out @ out.push(tag)
+
+    return out
+
+# What a lookup down `rest` answers for `key` from the differences `kept`:
+# the first locale's text, the empty text meaning absent there; the empty
+# text where none holds it.
+function down(rest: [str] lent, kept: {str: {str: str}} lent, key: str) -> str
+    for tag in rest
+        match kept[tag]
+            .ok held =>
+                match held[key]
+                    .ok text => return text
+                    .err _   => _ = 0
+            .err _ => _ = 0
+
+    return ""
+
+# The names of `tag` that differ from what the locales after it answer, and
+# an empty text for each name they answer that `tag` has not; `kept` holds
+# every locale after it already.
+function differences(tag: str, rest: [str] lent, data: {str: Resolved} lent, kept: {str: {str: str}} lent) -> {str: str}
+    own = data[tag].must().names
+    out: {str: str} @= {}
+
+    for key in keys(own)
+        text = own[key].must()
+
+        if down(rest, kept: kept, key: key) != text
+            out[key] @ text
+
+    for later in rest
+        for key in keys(kept[later].must())
+            if own[key].is_err() && down(rest, kept: kept, key: key) != ""
+                out[key] @ ""
+
+    return out
+
+# The text of the table: its header, the texts in chunks of a hundred, the
+# keys, the locales and each locale's names.
+#
+# Fails as writing a literal fails, and `invalid` where the keys or the texts
+# pass what their codes can number.
+function module_text(release: cldrkit.Release lent) -> str?
+    aliases = cldrkit.keyword_aliases(release)?
+    data: {str: Resolved} @= {}
+
+    for folder in cldrkit.folders_in(release, folder: names.FOLDER, file: "localeDisplayNames.json")
+        tag = i18n.format_locale(i18n.parse_locale(folder)?)
+        data[tag] @ Resolved(tag: tag, names: names.names_of(release, locale: folder, aliases: aliases)?)
+
+    tags = sort(keys(data))
+    chains: {str: [str]} @= {}
+
+    for tag in tags
+        chain = i18n.fallback_chain(i18n.parse_locale(tag)?)
+
+        if i18n.format_locale(chain[0]) != tag
+            return fail(code: "invalid", msg: f"the chain of `{tag}` begins at `{i18n.format_locale(chain[0])}`")
+        chains[tag] @ rest_of(chain, data: data)
+
+    # Each locale after every locale its chain passes through: the shorter
+    # chain first, which a locale's own rest always is.
+    kept: {str: {str: str}} @= {}
+    by_length: [str] @= []
+    longest @= 0
+
+    for tag in tags
+        if chains[tag].must().len() > longest
+            longest @ chains[tag].must().len()
+
+    for size in range(from: 0, to: longest + 1)
+        for tag in tags
+            if chains[tag].must().len() == size
+                by_length @ by_length.push(tag)
+
+    for tag in by_length
+        kept[tag] @ differences(tag: tag, rest: chains[tag].must(), data: data, kept: kept)
+
+    for tag in tags
+        for key in keys(data[tag].must().names)
+            own = kept[tag].must()
+
+            if own[key].default(down(chains[tag].must(), kept: kept, key: key)) != data[tag].must().names[key].must()
+                return fail(code: "invalid", msg: f"`{key}` of `{tag}` is not answered by the chain")
+
+    every_key: {str: bool} @= {}
+    every_text: {str: bool} @= {}
+
+    for tag in tags
+        own = kept[tag].must()
+
+        for key in keys(own)
+            every_key[key] @ true
+            every_text[own[key].must()] @ true
+
+    key_list = sort(keys(every_key))
+    every_text[""] @ true
+    text_list = sort(keys(every_text))
+
+    if key_list.len() > 4096 || text_list.len() > 262_144
+        return fail(
+            code: "invalid",
+            msg: f"{key_list.len()} keys and {text_list.len()} texts pass what two and three characters number"
+        )
+    key_at: {str: i64} @= {}
+
+    for i in range(from: 0, to: key_list.len())
+        key_at[key_list[i]] @ i
+
+    text_at: {str: i64} @= {}
+
+    for i in range(from: 0, to: text_list.len())
+        text_at[text_list[i]] @ i
+
+    rows: [str] @= []
+
+    for tag in tags
+        own = kept[tag].must()
+        entries: [str] @= []
+
+        for key in sort(keys(own))
+            entries @ entries.push(
+                code_of(n: key_at[key].must(), width: 2) + code_of(n: text_at[own[key].must()].must(), width: 3)
+            )
+
+        rows @ rows.push(entries.join(""))
+
+    chunks: [str] @= []
+    at @= 0
+
+    while at < text_list.len()
+        end @= at + 100
+
+        if end > text_list.len()
+            end @ text_list.len()
+        chunks @ chunks.push(text_list.slice(from: at, to: end).join("\u{1}"))
+        at @ at + 100
+
+    head = [
+        "# The display names of CLDR release 49 for every locale it holds, which"
+        "# `i18n/names` reads: each locale's names of languages, scripts, regions,"
+        "# variants and Unicode locale keywords, and the patterns a locale's name is"
+        "# built with, each locale holding only the names that differ from what the"
+        "# locales after it in `i18n.fallback_chain` answer, an empty text where it"
+        "# has none of a name they have."
+        "#"
+        "# Every text is held once, in `STRINGS`: a hundred texts a chunk, separated"
+        "# by U+0001, text 0 the empty one. A key is named by two characters of"
+        "# `ALPHABET`, its position in `KEYS`, and a text by three; a locale's row in"
+        "# `NAMES` is its names, five characters each, in the order of their keys."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/i18n_names/`"
+        "# read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of"
+        "# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/"
+        "# (SHA-256"
+        f"# {cldrkit.SOURCE_SHA256},"
+        "# fetched 2026-11-21), its files `cldr-localenames-full/main/*/languages.json`,"
+        "# `scripts.json`, `territories.json`, `variants.json` and"
+        "# `localeDisplayNames.json`, and `cldr-bcp47/bcp47/*.json` for the keywords'"
+        "# names, and wrote this module whole; its `check` command says whether this"
+        "# module is still what it writes."
+    ]
+    parts = [
+        head.join("\n")
+        tablekit.string_constant(comment: ["# The characters a number is written with, the most significant first."], name: "ALPHABET", value: ALPHABET)?
+        tablekit.strings_constant(comment: ["# Every text, a hundred to a chunk."], name: "STRINGS", items: chunks)?
+        tablekit.strings_constant(comment: ["# What each name names, in the order of their bytes: `l`, `s`, `r` and `v`", "# a language, script, region and variant, `p` and `c` a pattern, `k` and `t`", "# a keyword and a value of one, then a space and the code."], name: "KEYS", items: key_list)?
+        tablekit.strings_constant(comment: ["# The locales, in the order of their bytes."], name: "LOCALES", items: tags)?
+        tablekit.strings_constant(comment: ["# Each locale's names, in the order of `LOCALES`."], name: "NAMES", items: rows)?
+    ]
+    return ok(parts.join("\n\n") + "\n")
+
+# Does what `command` asks with the table, reading the zip at `path`.
+#
+# Fails as opening the zip, reading its data and writing or reading the table
+# fail.
+function run(command: str, path: str) -> i64?
+    release = cldrkit.open(path)?
+    return tablekit.settle(command: command, path: TABLE, text: module_text(release)?)
+
+function main()
+    words = tablekit.command_words("i18n_names")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/i18n_names/main.hero -- write|check <zip of ",
+            cldrkit.SOURCE_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], path: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
+
+## Tests
+
+test "code_of: zero, the last of two characters, a number of three"
+    assert code_of(n: 0, width: 2) == "00"
+    assert code_of(n: 4095, width: 2) == "//"
+    assert code_of(n: 64 * 64 + 65, width: 3) == "111"
