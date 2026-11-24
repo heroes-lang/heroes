@@ -39,8 +39,18 @@ record Body
 # by the connection's end included. Fails as `read.final_head` and
 # `body.of_response` do.
 function response_head(@r: io.Reader, method: str, bounds: wire.Bounds) -> read.Message?
-    h = read.final_head(@r, bounds: bounds)?
+    return message_of(read.final_head(@r, bounds: bounds)?, method: method)
 
+# The head of the next response of `r` that is final or a 101, as
+# `response_head` answers a final one; a 101 has no body and keeps the
+# connection. Fails as `read.switch_or_final_head` and `body.of_response` do.
+function switch_or_response_head(@r: io.Reader, method: str, bounds: wire.Bounds) -> read.Message?
+    return message_of(read.switch_or_final_head(@r, bounds: bounds)?, method: method)
+
+# The response head `h` with no content, and whether the connection ends
+# after it, a body framed by the connection's end included. Fails as
+# `body.of_response` does.
+function message_of(h: wire.Head, method: str) -> read.Message?
     to_end = match body.of_response(h, method: method)?
         .to_end                      => true
         .none | .length _ | .chunked => false
@@ -53,6 +63,19 @@ function response_head(@r: io.Reader, method: str, bounds: wire.Bounds) -> read.
 function body_of(status_code: i64, fields: [wire.Field], method: str, most_fields: i64) -> Body?
     h = wire.Head(method: "", target: "", status: status_code, reason: "", major: 1, minor: 1, fields: fields)
     framing = body.of_response(h, method: method)?
+
+    left = match framing
+        .length l                  => l.n
+        .none | .chunked | .to_end => 0
+
+    return ok(Body(framing: framing, left: left, started: false, ended: false, most_fields: most_fields))
+
+# How far the body after a request's head with `fields` is read before a
+# byte of it: none where the fields frame none, a request's body never
+# running to the connection's end. Fails as `body.of_request` does.
+function request_body_of(fields: [wire.Field], most_fields: i64) -> Body?
+    h = wire.Head(method: "", target: "", status: 0, reason: "", major: 1, minor: 1, fields: fields)
+    framing = body.of_request(h)?
 
     left = match framing
         .length l                  => l.n
@@ -679,6 +702,36 @@ test "response_head: informational heads skipped, the body left, closing where i
     assert m.head.status == 200 && m.closing && m.content.len() == 0
     assert io.read_n(@r, n: 7).must() == bytes.from_text("data: 1")
     wire.done(@r)
+
+test "switch_or_response_head: a 101 answered with the bytes after it left, an interim before it skipped"
+    r @= wire.fixture(
+        "HTTP/1.1 103 Early Hints\r\nLink: x\r\n\r\nHTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n!frame"
+    )
+    m = switch_or_response_head(@r, method: "GET", bounds: read.bounds_of_tests()).must()
+    assert m.head.status == 101 && !m.closing && m.content.len() == 0
+    assert io.read_n(@r, n: 6).must() == bytes.from_text("!frame")
+    wire.done(@r)
+    f @= wire.fixture("HTTP/1.1 101 Switching Protocols\r\nUpgrade: h2c\r\n\r\n")
+    assert response_head(@f, method: "GET", bounds: read.bounds_of_tests()).is_err()
+    wire.done(@f)
+
+test "request_body_of: a length, chunks, none where nothing frames it, and both framings refused"
+    b @= request_body_of([wire.Field(name: "Content-Length", value: "3")], most_fields: 10).must()
+    r @= fed(bytes.from_text("abcGET"))
+    assert all_pieces(@r, @b, most: 2) == bytes.from_text("abc")
+    wire.done(@r)
+    c @= request_body_of([wire.Field(name: "Transfer-Encoding", value: "chunked")], most_fields: 10).must()
+    s @= fed(bytes.from_text("2\r\nab\r\n0\r\n\r\n"))
+    assert all_pieces(@s, @c, most: 8) == bytes.from_text("ab")
+    wire.done(@s)
+    n @= request_body_of([], most_fields: 10).must()
+    t @= fed(bytes.from_text("GET / HTTP/1.1"))
+    assert piece(@t, @n, most: 8).must() == []
+    wire.done(@t)
+    both = [wire.Field(name: "Content-Length", value: "3"), wire.Field(name: "Transfer-Encoding", value: "chunked")]
+    assert request_body_of(both, most_fields: 10).is_err()
+    assert request_body_of([wire.Field(name: "Transfer-Encoding", value: "gzip, chunked")], most_fields: 10).is_err()
+    assert request_body_of([wire.Field(name: "Content-Length", value: "3, 4")], most_fields: 10).is_err()
 
 test "is_event_stream: the type with a parameter and in capitals, then another status, another type, none, and a coding"
     assert !is_event_stream(status_code: 200, fields: [wire.Field(name: "Content-Type", value: "Text/Event-Stream; charset=utf-8")]).is_err()
