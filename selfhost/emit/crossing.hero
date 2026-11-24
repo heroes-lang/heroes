@@ -145,6 +145,12 @@ record Roots
     sents: {i64: bool}
     started: {i64: bool}
 
+# What the program's calls of threads and mailboxes make cross (`Crossed`).
+# ORDER: `started` and `described` by type id, ascending, as `sort` orders
+# an `i64`: the boxes, the runners and the descriptors are written in that
+# order (`emit/crossing_bodies.hero`), and one input's emitted C is one text
+# (`determinism`); the walk of `roots.takes` fills a set read sorted after
+# it, so its own order is none.
 function wanted(c: state.Checked, decls: [ast.Decl], p: containers.Program, at: [i64], target: emit_decls.BuildTarget) -> Crossed
     roots: Roots @= Roots(puts: {}, takes: {}, sents: {}, started: {})
 

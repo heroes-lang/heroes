@@ -118,6 +118,8 @@ function letters_of(c: state.Checked, ty: i64) -> [i64]
             .named | .case_ty | .thread_ty | .mailbox_ty | .function_ty        => continue
             .failure | .error                                                  => continue
 
+    # ORDER: by the letter's index, ascending: a need's letters are compared
+    # and keyed as a list (`generic_calls.key`), so one set is one list.
     return sort(keys(found))
 
 # Whether a send's `@` is left to the calls: the value holds nothing without

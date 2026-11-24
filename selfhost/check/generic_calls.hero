@@ -160,6 +160,10 @@ function carried(c: state.Checked, a: ast.Ast, r: resolved.Resolved, s: source.S
 function sites(c: state.Checked, decls: [ast.Decl], generic: [i64]) -> {i64: [Site]}
     out: {i64: [Site]} @= {}
 
+    # ORDER: by the call's end in the source, ascending: each callee's calls
+    # are asked in the order written, which orders the breaks told and
+    # decides from which call a need carried on is first recorded (the
+    # diagnostics read both).
     for end in sort(keys(c.instantiations))
         assert !c.instantiated[end].is_err()
         pair = c.instantiated[end].must()
@@ -227,6 +231,9 @@ function asked(c: state.Checked, decls: [ast.Decl], need: generic_needs.Need, in
             for x in reached_letters(c, need: need, ty: ty)
                 found[x] @ true
 
+    # ORDER: by the letter's index, ascending: the needs handed on are made
+    # in that order, and a need's letters are its key (`key`), so one set of
+    # letters is one need however the type spelled them.
     letters = sort(keys(found))
 
     if !asked_any || satisfied
@@ -295,6 +302,8 @@ function contradictions(needs: [generic_needs.Need], @conflicting: {i64: bool}) 
 
     out: [[i64]] @= []
 
+    # ORDER: by the declaration's index, ascending: the pairs are told in
+    # that order (a diagnostic reads it).
     for decl in sort(keys(by_decl))
         own = by_decl[decl].must()
 
