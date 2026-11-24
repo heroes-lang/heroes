@@ -160,7 +160,8 @@ function said(answer: str?) -> str
 ## Tests
 
 # **Every flag a module that hands clang its words writes is one `WORDS`
-# holds**, or a word that is no job's (`NOT_WORDS`): a job given a word the
+# holds**, or a word that is no job's (`NOT_WORDS`, and `SWIFT_WORDS` in the
+# module that runs `swiftc`): a job given a word the
 # line does not hold would be edited unseen, so a new word fails here and is
 # added before it ships. Read from the modules' code under `selfhost/cli` and
 # `selfhost/emit`, their tests and comments left out.
@@ -178,7 +179,7 @@ test "every word a module hands clang is on the line the edits are asked of (def
 
             if strings.holds(text: code, needle: "\"clang\"") || strings.holds(text: code, needle: "mode: [\"-")
                 for word in flag_literals(code)
-                    if !listed(word)
+                    if !listed(word) && !swift_word(path: path, word: word)
                         unlisted @ unlisted.push(path + ": " + word)
 
     assert unlisted == []
@@ -243,6 +244,51 @@ constant NOT_WORDS: [str]
         "-Wl,"
         "--error-limit=0"
     ]
+
+# `swiftc`'s line and `xcrun`'s `--find`, which `cli/layer_swift.hero` writes
+# for the layer's members in Swift, and the two suffixes of the files it
+# writes there, `-swift.h` and `-check.c`: another program's words, passed
+# over in that module alone, so a module handing clang `-O` or `-g` is still
+# named. Neither swiftc's driver nor its Clang importer applies
+# `CCC_OVERRIDE_OPTIONS`, measured 2026-11-24 with Apple Swift 6.4.2:
+# `+-fheroes-no-such-flag` made `clang -fsyntax-only` exit 1 and left `xcrun
+# swiftc -emit-object` of a member importing Foundation, its module cache
+# fresh, at exit 0, and `x-parse-as-library` deleted nothing from its line.
+# The job that module hands clang, `held`'s, writes listed words alone.
+constant SWIFT_MODULE: str
+    "selfhost/cli/layer_swift.hero"
+
+constant SWIFT_WORDS: [str]
+    [
+        "-parse-as-library"
+        "-Onone"
+        "-g"
+        "-O"
+        "-gline-tables-only"
+        "-sanitize=address"
+        "-sdk"
+        "-emit-object"
+        "-module-name"
+        "-module-cache-path"
+        "-emit-dependencies"
+        "-output-file-map"
+        "-emit-clang-header-path"
+        "--find"
+        "-swift.h"
+        "-check.c"
+    ]
+
+# Whether `word`, written in the module at `path`, is one of `swiftc`'s
+# there.
+function swift_word(path: str, word: str) -> bool
+    if path != SWIFT_MODULE
+        return false
+
+    for one in SWIFT_WORDS
+        if one == word
+            return true
+
+    return false
 
 function listed(word: str) -> bool
     for one in NOT_WORDS
