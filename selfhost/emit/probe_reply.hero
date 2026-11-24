@@ -40,7 +40,7 @@ function argument_columns(probe: str, name: str, parameters: [str], arguments: [
     return out
 
 test "argument columns point at each argument's own token"
-    parameters: [str] = ["int64_t a0", "double a1"]
+    parameters: [str] = ["int64_t hero_a0", "double hero_a1"]
     arguments = extern_probe.argument_names(count: 2)
     line = extern_probe.probe_line(
         probe: "hero_ffi_probe_h_t_f",
@@ -52,7 +52,6 @@ test "argument columns point at each argument's own token"
     assert columns.len() == 2
 
     # The 1-based column lands on the first character of each argument.
-    cs = line.chars()
-    assert cs[columns[0] - 1] == "a"
-    assert cs[columns[1] - 1] == "a"
-    assert columns[1] == columns[0] + 4
+    assert line.slice(from: columns[0] - 1, to: columns[0] + 6) == "hero_a0"
+    assert line.slice(from: columns[1] - 1, to: columns[1] + 6) == "hero_a1"
+    assert columns[1] == columns[0] + 9

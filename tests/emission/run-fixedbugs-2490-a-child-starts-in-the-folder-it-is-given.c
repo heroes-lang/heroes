@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -131,26 +131,26 @@ HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every a
 
 #line 133 "fixedbugs2490achildstartsinthefolderitisgiven.c"
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -159,42 +159,42 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 34 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_env(HeroStr a0, HeroStr a1) { (void)(hero_run_env)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_dir(HeroStr a0) { (void)(hero_run_dir)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_arg(HeroStr hero_a0) { (void)(hero_run_arg)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_env(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_run_env)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_dir(HeroStr hero_a0) { (void)(hero_run_dir)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_limit(int64_t hero_a0) { (void)(hero_run_limit)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_run_go(const char * hero_a0, const char * hero_a1, const char * hero_a2, const char * hero_a3, int64_t * hero_a4) { (void)(hero_run_go)(hero_a0, hero_a1, hero_a2, hero_a3, (void *)hero_a4); }
 #line 41
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_exe_path_shown(int64_t * a0, int64_t * a1) { (void)(hero_exe_path_shown)((void *)a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_env_shown(const char * a0, int64_t * a1, int64_t * a2) { (void)(hero_env_shown)(a0, (void *)a1, (void *)a2); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_exists(const char * a0) { (void)(hero_fs_exists)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_link(const char * a0, const char * a1) { (void)(hero_fs_link)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_exe_path_shown(int64_t * hero_a0, int64_t * hero_a1) { (void)(hero_exe_path_shown)((void *)hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_env_shown(const char * hero_a0, int64_t * hero_a1, int64_t * hero_a2) { (void)(hero_env_shown)(hero_a0, (void *)hero_a1, (void *)hero_a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_exists(const char * hero_a0) { (void)(hero_fs_exists)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_mkdir_all(const char * hero_a0) { (void)(hero_fs_mkdir_all)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_fs_link(const char * hero_a0, const char * hero_a1) { (void)(hero_fs_link)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2490achildstartsinthefolderitisgiven_hero_dir_remove_tree(const char * hero_a0) { (void)(hero_dir_remove_tree)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 184 "fixedbugs2490achildstartsinthefolderitisgiven.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(void);
 int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NOT_FOUND(void);
@@ -214,13 +214,13 @@ int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void);
 
 #line 48 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
 int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(void) {
@@ -277,7 +277,7 @@ int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NO_FOLDER(void) 
 }
 
 #line 52 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_5047270e);
 #line 283 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_incref(t1);
@@ -285,7 +285,7 @@ HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(void) { HERO_NODE
 }
 
 #line 56 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_TOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_TOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_11ade8e6);
 #line 291 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_incref(t1);
@@ -299,10 +299,10 @@ HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_itself(void) {
 #line 59
 #define h1_marks (*hero_lend_h1_marks)
 #line 59
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.itself", 62, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.itself", 62, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
 #line 307 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
@@ -314,28 +314,28 @@ HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_itself(void) {
 #undef h1_marks
 
 #line 64 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-bool h_fixedbugs2490achildstartsinthefolderitisgiven_windows(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t2, t4; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.windows", 65, 12}; t1 = hero_run_exe_suffix(); } t4 = h0_own0; h0_own0 = t1; hero_str_decref(t4); t2 = HERO_STR_LIT(hero_str_644a234); t3 = hero_str_eq(t1, t2);
+bool h_fixedbugs2490achildstartsinthefolderitisgiven_windows(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t2, t4; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.windows", 65, 12}; t1 = hero_run_exe_suffix(); } t4 = h0_own0; h0_own0 = t1; hero_str_decref(t4); t2 = HERO_STR_LIT(hero_str_644a234); t3 = hero_str_eq(t1, t2);
 #line 320 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_release_at(&h0_own0);
     return t3;
 }
 
 #line 68 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_said(int64_t h0_status) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t4, t8, t12, t13, t15, t16, t17, t18, t19; HERO_NODEBUG int64_t t1, t2, t5, t6, t9, t10, t14; HERO_NODEBUG bool t3, t7, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_status; t2 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_said(int64_t h0_status) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t4, t8, t12, t13, t15, t16, t17, t18, t19; HERO_NODEBUG int64_t t1, t2, t5, t6, t9, t10, t14; HERO_NODEBUG bool t3, t7, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_status; t2 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 72
-    t5 = h0_status; t6 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NO_FOLDER(); t7 = t5 == t6; if (t7) goto bb5; else goto bb6; bb2:
+    t5 = h0_status; t6 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NO_FOLDER(); t7 = t5 == t6; if (t7) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 70
-    t4 = HERO_STR_LIT(hero_str_5a4993d8); h1_ret0 = t4; goto bb10; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_5a4993d8); h1_ret0 = t4; goto hero_bb10; hero_bb3: goto hero_bb1; hero_bb4:
 #line 75
-    t9 = h0_status; t10 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NOT_FOUND(); t11 = t9 == t10; if (t11) goto bb8; else goto bb9; bb5:
+    t9 = h0_status; t10 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_NOT_FOUND(); t11 = t9 == t10; if (t11) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 73
-    t8 = HERO_STR_LIT(hero_str_d705365); h1_ret0 = t8; goto bb10; bb6: goto bb4; bb7:
+    t8 = HERO_STR_LIT(hero_str_d705365); h1_ret0 = t8; goto hero_bb10; hero_bb6: goto hero_bb4; hero_bb7:
 #line 77
-    t13 = HERO_STR_LIT(hero_str_5a8e78fd); t14 = h0_status; t15 = hero_int_to_str(t14); t18 = h2_own2; h2_own2 = t15; hero_str_decref(t18); t16 = hero_str_concat(t13, t15); t19 = h3_own3; h3_own3 = t16; hero_str_decref(t19); h1_ret0 = t16; goto bb10; bb8:
+    t13 = HERO_STR_LIT(hero_str_5a8e78fd); t14 = h0_status; t15 = hero_int_to_str(t14); t18 = h2_own2; h2_own2 = t15; hero_str_decref(t18); t16 = hero_str_concat(t13, t15); t19 = h3_own3; h3_own3 = t16; hero_str_decref(t19); h1_ret0 = t16; goto hero_bb10; hero_bb8:
 #line 76
-    t12 = HERO_STR_LIT(hero_str_7451cc90); h1_ret0 = t12; goto bb10; bb9: goto bb7; bb10:
+    t12 = HERO_STR_LIT(hero_str_7451cc90); h1_ret0 = t12; goto hero_bb10; hero_bb9: goto hero_bb7; hero_bb10:
 #line 340 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     t17 = h1_ret0;
     hero_str_incref(t17);
@@ -345,28 +345,28 @@ HeroStr h_fixedbugs2490achildstartsinthefolderitisgiven_said(int64_t h0_status) 
 }
 
 #line 83 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_launched(HeroStr h0_program, HeroStr h1_role, HeroStr h2_folder, HeroStr h3_out, HeroStr h4_given_path, int64_t *ph5_status) { int64_t h6_code; HERO_NODEBUG HeroStr t1, t2, t4, t8, t9, t10, t14, t15, t17, t19, t21; HERO_NODEBUG int64_t t3, t5, t6, t11, t12, t23, t24; HERO_NODEBUG bool t7, t13; HERO_NODEBUG const char *t16, *t18, *t20, *t22; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 84, 5}; (void)hero_run_arg(t1); }
-    t2 = h1_role; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 85, 5}; (void)hero_run_arg(t2); }
-    t3 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 86, 5}; (void)hero_run_limit(t3); }
+int64_t h_fixedbugs2490achildstartsinthefolderitisgiven_launched(HeroStr h0_program, HeroStr h1_role, HeroStr h2_folder, HeroStr h3_out, HeroStr h4_given_path, int64_t *ph5_status) { int64_t h6_code; HERO_NODEBUG HeroStr t1, t2, t4, t8, t9, t10, t14, t15, t17, t19, t21; HERO_NODEBUG int64_t t3, t5, t6, t11, t12, t23, t24; HERO_NODEBUG bool t7, t13; HERO_NODEBUG const char *t16, *t18, *t20, *t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 84, 5}; (void)hero_run_arg(t1); }
+    t2 = h1_role; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 85, 5}; (void)hero_run_arg(t2); }
+    t3 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 86, 5}; (void)hero_run_limit(t3); }
 #line 88
-    t4 = h4_given_path; t5 = hero_str_len(t4); t6 = INT64_C(0); t7 = t5 > t6; if (t7) goto bb2; else goto bb3; bb1:
+    t4 = h4_given_path; t5 = hero_str_len(t4); t6 = INT64_C(0); t7 = t5 > t6; if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 91
-    t10 = h2_folder; t11 = hero_str_len(t10); t12 = INT64_C(0); t13 = t11 > t12; if (t13) goto bb5; else goto bb6; bb2:
+    t10 = h2_folder; t11 = hero_str_len(t10); t12 = INT64_C(0); t13 = t11 > t12; if (t13) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 89
-    t8 = HERO_STR_LIT(hero_str_ac970fd); t9 = h4_given_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 89, 9}; (void)hero_run_env(t8, t9); } goto bb1; bb3: goto bb1; bb4:
+    t8 = HERO_STR_LIT(hero_str_ac970fd); t9 = h4_given_path; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 89, 9}; (void)hero_run_env(t8, t9); } goto hero_bb1; hero_bb3: goto hero_bb1; hero_bb4:
 #line 93
-    t15 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 33}; t16 = hero_str_lend_at(t15, &hero_here); } t17 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 58}; t18 = hero_str_lend_at(t17, &hero_here); } t19 = h3_out; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 79}; t20 = hero_str_lend_at(t19, &hero_here); } t21 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 101}; t22 = hero_str_lend_at(t21, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 12}; hero_lend_local_name(ph5_status, "hero_run_go", "status"); t23 = hero_run_go(hero_cstr_nonnull_at(t16, &hero_here), hero_cstr_nonnull_at(t18, &hero_here), hero_cstr_nonnull_at(t20, &hero_here), hero_cstr_nonnull_at(t22, &hero_here), (void *)&(*ph5_status)); } h6_code = t23;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 94, 5}; (void)hero_run_reset(); }
-    t24 = h6_code; return t24; bb5:
+    t15 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 33}; t16 = hero_str_lend_at(t15, &hero_here); } t17 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 58}; t18 = hero_str_lend_at(t17, &hero_here); } t19 = h3_out; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 79}; t20 = hero_str_lend_at(t19, &hero_here); } t21 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 101}; t22 = hero_str_lend_at(t21, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 93, 12}; hero_lend_local_name(ph5_status, "hero_run_go", "status"); t23 = hero_run_go(hero_cstr_nonnull_at(t16, &hero_here), hero_cstr_nonnull_at(t18, &hero_here), hero_cstr_nonnull_at(t20, &hero_here), hero_cstr_nonnull_at(t22, &hero_here), (void *)&(*ph5_status)); } h6_code = t23;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 94, 5}; (void)hero_run_reset(); }
+    t24 = h6_code; return t24; hero_bb5:
 #line 92
-    t14 = h2_folder; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 92, 9}; (void)hero_run_dir(t14); } goto bb4; bb6: goto bb4;
+    t14 = h2_folder; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.launched", 92, 9}; (void)hero_run_dir(t14); } goto hero_bb4; hero_bb6: goto hero_bb4;
 #line 365 "fixedbugs2490achildstartsinthefolderitisgiven.c"
 }
 
 #line 98 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-void h_fixedbugs2490achildstartsinthefolderitisgiven_told(HeroStr h0_what, int64_t h1_status, int64_t h2_code) { HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t6, t8, t9, t10, t11, t13, t14, t15, t17, t18, t19, t20, t22, t26, t27, t28, t29, t30, t31, t32, t33; HERO_NODEBUG int64_t t1, t2, t7, t12, t16, t21, t23, t24; HERO_NODEBUG bool t3, t25; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_status; t2 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+void h_fixedbugs2490achildstartsinthefolderitisgiven_told(HeroStr h0_what, int64_t h1_status, int64_t h2_code) { HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t6, t8, t9, t10, t11, t13, t14, t15, t17, t18, t19, t20, t22, t26, t27, t28, t29, t30, t31, t32, t33; HERO_NODEBUG int64_t t1, t2, t7, t12, t16, t21, t23, t24; HERO_NODEBUG bool t3, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_status; t2 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 371 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -377,11 +377,11 @@ void h_fixedbugs2490achildstartsinthefolderitisgiven_told(HeroStr h0_what, int64
     hero_str_release_at(&h9_own9);
     hero_str_release_at(&h10_own10);
     return;
-bb2:
+hero_bb2:
 #line 100 "tests/golden/run/fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero"
-    t4 = h0_what; t5 = HERO_STR_LIT(hero_str_1dce); t6 = hero_str_concat(t4, t5); t26 = h3_own3; h3_own3 = t6; hero_str_decref(t26); t7 = h1_status; t8 = h_fixedbugs2490achildstartsinthefolderitisgiven_said(t7); t27 = h4_own4; h4_own4 = t8; hero_str_decref(t27); t9 = hero_str_concat(t6, t8); t28 = h5_own5; h5_own5 = t9; hero_str_decref(t28); t10 = HERO_STR_LIT(hero_str_7c56d740); t11 = hero_str_concat(t9, t10); t29 = h6_own6; h6_own6 = t11; hero_str_decref(t29); t12 = h2_code; hero_print_str(t11); hero_print_int(t12); hero_print_end(); goto bb1; bb3:
+    t4 = h0_what; t5 = HERO_STR_LIT(hero_str_1dce); t6 = hero_str_concat(t4, t5); t26 = h3_own3; h3_own3 = t6; hero_str_decref(t26); t7 = h1_status; t8 = h_fixedbugs2490achildstartsinthefolderitisgiven_said(t7); t27 = h4_own4; h4_own4 = t8; hero_str_decref(t27); t9 = hero_str_concat(t6, t8); t28 = h5_own5; h5_own5 = t9; hero_str_decref(t28); t10 = HERO_STR_LIT(hero_str_7c56d740); t11 = hero_str_concat(t9, t10); t29 = h6_own6; h6_own6 = t11; hero_str_decref(t29); t12 = h2_code; hero_print_str(t11); hero_print_int(t12); hero_print_end(); goto hero_bb1; hero_bb3:
 #line 102
-    t13 = h0_what; t14 = HERO_STR_LIT(hero_str_1dce); t15 = hero_str_concat(t13, t14); t30 = h7_own7; h7_own7 = t15; hero_str_decref(t30); t16 = h1_status; t17 = h_fixedbugs2490achildstartsinthefolderitisgiven_said(t16); t31 = h8_own8; h8_own8 = t17; hero_str_decref(t31); t18 = hero_str_concat(t15, t17); t32 = h9_own9; h9_own9 = t18; hero_str_decref(t32); t19 = HERO_STR_LIT(hero_str_7c56d740); t20 = hero_str_concat(t18, t19); t33 = h10_own10; h10_own10 = t20; hero_str_decref(t33); t21 = h2_code; t22 = HERO_STR_LIT(hero_str_734ef0b3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.told", 102, 82}; t23 = hero_run_why(); } t24 = INT64_C(0); t25 = t23 != t24; hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_bool(t25); hero_print_end(); goto bb1;
+    t13 = h0_what; t14 = HERO_STR_LIT(hero_str_1dce); t15 = hero_str_concat(t13, t14); t30 = h7_own7; h7_own7 = t15; hero_str_decref(t30); t16 = h1_status; t17 = h_fixedbugs2490achildstartsinthefolderitisgiven_said(t16); t31 = h8_own8; h8_own8 = t17; hero_str_decref(t31); t18 = hero_str_concat(t15, t17); t32 = h9_own9; h9_own9 = t18; hero_str_decref(t32); t19 = HERO_STR_LIT(hero_str_7c56d740); t20 = hero_str_concat(t18, t19); t33 = h10_own10; h10_own10 = t20; hero_str_decref(t33); t21 = h2_code; t22 = HERO_STR_LIT(hero_str_734ef0b3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.told", 102, 82}; t23 = hero_run_why(); } t24 = INT64_C(0); t25 = t23 != t24; hero_print_str(t20); hero_print_int(t21); hero_print_str(t22); hero_print_bool(t25); hero_print_end(); goto hero_bb1;
 #line 386 "fixedbugs2490achildstartsinthefolderitisgiven.c"
 }
 
@@ -390,7 +390,7 @@ void h_fixedbugs2490achildstartsinthefolderitisgiven_middle(HeroStr h0_inner) {
 #line 106
 #define h1_status (*hero_lend_h1_status)
 #line 106
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.middle", "status"); int64_t h2_code; HERO_NODEBUG HeroStr h3_own3 = {0}, t2, t3, t4, t5, t6, t8, t11; HERO_NODEBUG int64_t t1, t7, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.middle", "status"); int64_t h2_code; HERO_NODEBUG HeroStr h3_own3 = {0}, t2, t3, t4, t5, t6, t8, t11; HERO_NODEBUG int64_t t1, t7, t9, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
     t2 = h_fixedbugs2490achildstartsinthefolderitisgiven_TOOL(); t11 = h3_own3; h3_own3 = t2; hero_str_decref(t11); t3 = HERO_STR_LIT(hero_str_36e9f3f7); t4 = h0_inner; t5 = HERO_STR_LIT(hero_str_0); t6 = HERO_STR_LIT(hero_str_0); t7 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t2, t3, t4, t5, t6, &h1_status); h2_code = t7;
     t8 = HERO_STR_LIT(hero_str_25e2a167); t9 = h1_status; t10 = h2_code; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t8, t9, t10);
@@ -410,41 +410,41 @@ void h_fixedbugs2490achildstartsinthefolderitisgiven_main(void) {
 #line 111
 #define h19_marks (*hero_lend_h19_marks)
 #line 111
-    HERO_NODEBUG bool h0_b0, h1_b1, h11_b2, t4, t9, t10, t16, t20, t25, t26, t83, t96, t98, t99, t100, t106, t127, t143, t154, t223, t229, t273; HeroStr h2_root = {0}; HeroStr h3_inner = {0}; HeroStr h4_suffix = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h6_f1 = {0}, h23_f3 = {0}, h44_own44 = {0}, h46_own46 = {0}, h68_own68 = {0}, t57, t58, t66, t67, t190, t191, t293, t294, t296, t297, t327, t328; HeroStr h7_program = {0}; HeroStr h8_second = {0}; bool h9_linked; bool h10_linked2; int64_t *const hero_lend_h12_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "status"); int64_t h13_code; HERO_NODEBUG h_0opt_f87774a h14_f2 = {0}, h26_f4 = {0}, h59_own59 = {0}, h71_own71 = {0}, t123, t124, t128, t219, t220, t224, t312, t313, t331, t332; HERO_NODEBUG HeroStr h15_r0 = {0}, h27_r1 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, h43_own43 = {0}, h45_own45 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h50_own50 = {0}, h51_own51 = {0}, h52_own52 = {0}, h53_own53 = {0}, h56_own56 = {0}, h57_own57 = {0}, h58_own58 = {0}, h60_own60 = {0}, h61_own61 = {0}, h62_own62 = {0}, h63_own63 = {0}, h64_own64 = {0}, h65_own65 = {0}, h66_own66 = {0}, h67_own67 = {0}, h69_own69 = {0}, h70_own70 = {0}, h72_own72 = {0}, h73_own73 = {0}, h74_own74 = {0}, h75_own75 = {0}, h76_own76 = {0}, t7, t8, t11, t12, t23, t24, t29, t30, t32, t33, t34, t35, t36, t37, t38, t41, t42, t43, t46, t47, t48, t51, t52, t53, t54, t55, t56, t62, t63, t64, t65, t71, t72, t73, t74, t75, t76, t77, t79, t84, t86, t87, t88, t89, t90, t91, t92, t97, t101, t102, t108, t109, t110, t111, t112, t113, t114, t116, t119, t120, t121, t122, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t144, t145, t146, t147, t148, t150, t153, t155, t158, t160, t161, t162, t163, t165, t166, t167, t168, t169, t170, t171, t172, t173, t175, t177, t179, t182, t185, t186, t187, t188, t189, t195, t196, t197, t198, t199, t200, t201, t203, t206, t207, t208, t209, t210, t211, t212, t214, t217, t218, t225, t226, t227, t228, t230, t231, t232, t233, t234, t235, t236, t237, t238, t240, t243, t244, t245, t246, t247, t248, t249, t250, t252, t255, t256, t257, t258, t259, t261, t264, t265, t266, t267, t268, t269, t274, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t295, t298, t299, t300, t301, t302, t303, t304, t305, t306, t309, t310, t311, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t329, t330, t333, t334, t335, t336, t337, t338, t339, t340; int64_t h16_code2; HeroStr h17_separator = {0}; int64_t *const hero_lend_h18_path_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "path_status"); int64_t *const hero_lend_h19_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "marks"); HeroStr h20_own_path = {0}; int64_t h21_code3; HeroStr h22_kept = {0}; int64_t h24_code4; int64_t h25_code5; int64_t h28_code6; int64_t h29_code7; int64_t h30_code8; HERO_NODEBUG HeroArrayHeader *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h54_own54 = {0}, *h55_own55 = {0}, *t1, *t5, *t17, *t21, *t27, *t277, *t278, *t279, *t307, *t308; HERO_NODEBUG int64_t t2, t3, t6, t14, t15, t18, t19, t22, t28, t31, t59, t60, t68, t69, t81, t82, t94, t95, t104, t105, t107, t115, t117, t118, t125, t126, t141, t142, t149, t151, t152, t156, t157, t164, t181, t183, t184, t192, t193, t202, t204, t205, t213, t215, t216, t221, t222, t239, t241, t242, t251, t253, t254, t260, t262, t263, t271, t272; HERO_NODEBUG const char *t13, *t39, *t44, *t49, *t78, *t80, *t85, *t93, *t103, *t140, *t159, *t174, *t176, *t178, *t180, *t270, *t275; HERO_NODEBUG __attribute__((unused)) bool t61, t70, t194; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 8}; t1 = h_library_args(&hero_here); } t277 = h31_own31; h31_own31 = t1; hero_array_decref(t277); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; h0_b0 = t4; if (t4) goto bb2; else goto bb3; bb1:
+    HERO_NODEBUG bool h0_b0, h1_b1, h11_b2, t4, t9, t10, t16, t20, t25, t26, t83, t96, t98, t99, t100, t106, t127, t143, t154, t223, t229, t273; HeroStr h2_root = {0}; HeroStr h3_inner = {0}; HeroStr h4_suffix = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h6_f1 = {0}, h23_f3 = {0}, h44_own44 = {0}, h46_own46 = {0}, h68_own68 = {0}, t57, t58, t66, t67, t190, t191, t293, t294, t296, t297, t327, t328; HeroStr h7_program = {0}; HeroStr h8_second = {0}; bool h9_linked; bool h10_linked2; int64_t *const hero_lend_h12_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "status"); int64_t h13_code; HERO_NODEBUG h_0opt_f87774a h14_f2 = {0}, h26_f4 = {0}, h59_own59 = {0}, h71_own71 = {0}, t123, t124, t128, t219, t220, t224, t312, t313, t331, t332; HERO_NODEBUG HeroStr h15_r0 = {0}, h27_r1 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, h38_own38 = {0}, h39_own39 = {0}, h40_own40 = {0}, h41_own41 = {0}, h42_own42 = {0}, h43_own43 = {0}, h45_own45 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h50_own50 = {0}, h51_own51 = {0}, h52_own52 = {0}, h53_own53 = {0}, h56_own56 = {0}, h57_own57 = {0}, h58_own58 = {0}, h60_own60 = {0}, h61_own61 = {0}, h62_own62 = {0}, h63_own63 = {0}, h64_own64 = {0}, h65_own65 = {0}, h66_own66 = {0}, h67_own67 = {0}, h69_own69 = {0}, h70_own70 = {0}, h72_own72 = {0}, h73_own73 = {0}, h74_own74 = {0}, h75_own75 = {0}, h76_own76 = {0}, t7, t8, t11, t12, t23, t24, t29, t30, t32, t33, t34, t35, t36, t37, t38, t41, t42, t43, t46, t47, t48, t51, t52, t53, t54, t55, t56, t62, t63, t64, t65, t71, t72, t73, t74, t75, t76, t77, t79, t84, t86, t87, t88, t89, t90, t91, t92, t97, t101, t102, t108, t109, t110, t111, t112, t113, t114, t116, t119, t120, t121, t122, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t144, t145, t146, t147, t148, t150, t153, t155, t158, t160, t161, t162, t163, t165, t166, t167, t168, t169, t170, t171, t172, t173, t175, t177, t179, t182, t185, t186, t187, t188, t189, t195, t196, t197, t198, t199, t200, t201, t203, t206, t207, t208, t209, t210, t211, t212, t214, t217, t218, t225, t226, t227, t228, t230, t231, t232, t233, t234, t235, t236, t237, t238, t240, t243, t244, t245, t246, t247, t248, t249, t250, t252, t255, t256, t257, t258, t259, t261, t264, t265, t266, t267, t268, t269, t274, t280, t281, t282, t283, t284, t285, t286, t287, t288, t289, t290, t291, t292, t295, t298, t299, t300, t301, t302, t303, t304, t305, t306, t309, t310, t311, t314, t315, t316, t317, t318, t319, t320, t321, t322, t323, t324, t325, t326, t329, t330, t333, t334, t335, t336, t337, t338, t339, t340; int64_t h16_code2; HeroStr h17_separator = {0}; int64_t *const hero_lend_h18_path_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "path_status"); int64_t *const hero_lend_h19_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2490achildstartsinthefolderitisgiven.main", "marks"); HeroStr h20_own_path = {0}; int64_t h21_code3; HeroStr h22_kept = {0}; int64_t h24_code4; int64_t h25_code5; int64_t h28_code6; int64_t h29_code7; int64_t h30_code8; HERO_NODEBUG HeroArrayHeader *h31_own31 = {0}, *h32_own32 = {0}, *h33_own33 = {0}, *h54_own54 = {0}, *h55_own55 = {0}, *t1, *t5, *t17, *t21, *t27, *t277, *t278, *t279, *t307, *t308; HERO_NODEBUG int64_t t2, t3, t6, t14, t15, t18, t19, t22, t28, t31, t59, t60, t68, t69, t81, t82, t94, t95, t104, t105, t107, t115, t117, t118, t125, t126, t141, t142, t149, t151, t152, t156, t157, t164, t181, t183, t184, t192, t193, t202, t204, t205, t213, t215, t216, t221, t222, t239, t241, t242, t251, t253, t254, t260, t262, t263, t271, t272; HERO_NODEBUG const char *t13, *t39, *t44, *t49, *t78, *t80, *t85, *t93, *t103, *t140, *t159, *t174, *t176, *t178, *t180, *t270, *t275; HERO_NODEBUG __attribute__((__unused__)) bool t61, t70, t194; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 8}; t1 = h_library_args(&hero_here); } t277 = h31_own31; h31_own31 = t1; hero_array_decref(t277); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(0); t4 = t2 > t3; h0_b0 = t4; if (t4) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 116
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 8}; t17 = h_library_args(&hero_here); } t278 = h32_own32; h32_own32 = t17; hero_array_decref(t278); t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len); t19 = INT64_C(1); t20 = t18 > t19; h1_b1 = t20; if (t20) goto bb7; else goto bb8; bb2:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 8}; t17 = h_library_args(&hero_here); } t278 = h32_own32; h32_own32 = t17; hero_array_decref(t278); t18 = ((void)(t17 == NULL ? ((void)hero_array_len(t17), hero_unreachable()) : (void)0), t17->len); t19 = INT64_C(1); t20 = t18 > t19; h1_b1 = t20; if (t20) goto hero_bb7; else goto hero_bb8; hero_bb2:
 #line 112
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 28}; t5 = h_library_args(&hero_here); } t279 = h33_own33; h33_own33 = t5; hero_array_decref(t279); t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 28) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_36e9f3f7); t9 = hero_str_eq(t7, t8); h0_b0 = t9; goto bb3; bb3: t10 = h0_b0; if (t10) goto bb4; else goto bb5; bb4:
-    t11 = HERO_STR_LIT(hero_str_5a122de5); t12 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t280 = h34_own34; h34_own34 = t12; hero_str_decref(t280); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 113, 86}; t13 = hero_str_lend_at(t12, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 113, 65}; t14 = hero_fs_exists(hero_cstr_nonnull_at(t13, &hero_here)); } t15 = INT64_C(1); t16 = t14 == t15; hero_print_str(t11); hero_print_bool(t16); hero_print_end(); goto bb22; bb5: goto bb1; bb6:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 28}; t5 = h_library_args(&hero_here); } t279 = h33_own33; h33_own33 = t5; hero_array_decref(t279); t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 112, 28) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_36e9f3f7); t9 = hero_str_eq(t7, t8); h0_b0 = t9; goto hero_bb3; hero_bb3: t10 = h0_b0; if (t10) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t11 = HERO_STR_LIT(hero_str_5a122de5); t12 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t280 = h34_own34; h34_own34 = t12; hero_str_decref(t280); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 113, 86}; t13 = hero_str_lend_at(t12, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 113, 65}; t14 = hero_fs_exists(hero_cstr_nonnull_at(t13, &hero_here)); } t15 = INT64_C(1); t16 = t14 == t15; hero_print_str(t11); hero_print_bool(t16); hero_print_end(); goto hero_bb22; hero_bb5: goto hero_bb1; hero_bb6:
 #line 119
-    t30 = HERO_STR_LIT(hero_str_21526d2f); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 119, 42}; t31 = hero_os_pid(); } t32 = hero_int_to_str(t31); t281 = h35_own35; h35_own35 = t32; hero_str_decref(t281); t33 = hero_str_concat(t30, t32); t282 = h36_own36; h36_own36 = t33; hero_str_decref(t282); t283 = h2_root; hero_str_incref(t33); h2_root = t33; hero_str_decref(t283);
+    t30 = HERO_STR_LIT(hero_str_21526d2f); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 119, 42}; t31 = hero_os_pid(); } t32 = hero_int_to_str(t31); t281 = h35_own35; h35_own35 = t32; hero_str_decref(t281); t33 = hero_str_concat(t30, t32); t282 = h36_own36; h36_own36 = t33; hero_str_decref(t282); t283 = h2_root; hero_str_incref(t33); h2_root = t33; hero_str_decref(t283);
     t34 = h2_root; t35 = HERO_STR_LIT(hero_str_6f43ff49); t36 = hero_str_concat(t34, t35); t284 = h37_own37; h37_own37 = t36; hero_str_decref(t284); t285 = h3_inner; hero_str_incref(t36); h3_inner = t36; hero_str_decref(t285);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 121, 14}; t37 = hero_run_exe_suffix(); } t286 = h38_own38; h38_own38 = t37; hero_str_decref(t286); t287 = h4_suffix; hero_str_incref(t37); h4_suffix = t37; hero_str_decref(t287);
-    t38 = h3_inner; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 122, 33}; t39 = hero_str_lend_at(t38, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 122, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t39, &hero_here)); }
-    t41 = h2_root; t42 = HERO_STR_LIT(hero_str_48aced41); t43 = hero_str_concat(t41, t42); t288 = h39_own39; h39_own39 = t43; hero_str_decref(t288); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 123, 33}; t44 = hero_str_lend_at(t43, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 123, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t44, &hero_here)); }
-    t46 = h2_root; t47 = HERO_STR_LIT(hero_str_6661f10); t48 = hero_str_concat(t46, t47); t289 = h40_own40; h40_own40 = t48; hero_str_decref(t289); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 124, 33}; t49 = hero_str_lend_at(t48, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 124, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t49, &hero_here)); }
-    t51 = h3_inner; t52 = HERO_STR_LIT(hero_str_2f); t53 = hero_str_concat(t51, t52); t290 = h41_own41; h41_own41 = t53; hero_str_decref(t290); t54 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t291 = h42_own42; h42_own42 = t54; hero_str_decref(t291); t55 = hero_str_concat(t53, t54); t292 = h43_own43; h43_own43 = t55; hero_str_decref(t292); t56 = HERO_STR_LIT(hero_str_e0a3440); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 125, 9}; t57 = h_library_write_file(t55, t56, &hero_here); } t293 = h44_own44; h44_own44 = t57; h_0opt_a8ea2_release(&t293); t294 = h5_f0; h_0opt_a8ea2_retain(&t57); h5_f0 = t57; h_0opt_a8ea2_release(&t294); t58 = h5_f0; t59 = t58.tag; t60 = INT64_C(1); t61 = t59 == t60;
-    t62 = h2_root; t63 = HERO_STR_LIT(hero_str_1d9c98aa); t64 = hero_str_concat(t62, t63); t295 = h45_own45; h45_own45 = t64; hero_str_decref(t295); t65 = HERO_STR_LIT(hero_str_71123d99); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 126, 9}; t66 = h_library_write_file(t64, t65, &hero_here); } t296 = h46_own46; h46_own46 = t66; h_0opt_a8ea2_release(&t296); t297 = h6_f1; h_0opt_a8ea2_retain(&t66); h6_f1 = t66; h_0opt_a8ea2_release(&t297); t67 = h6_f1; t68 = t67.tag; t69 = INT64_C(1); t70 = t68 == t69;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 121, 14}; t37 = hero_run_exe_suffix(); } t286 = h38_own38; h38_own38 = t37; hero_str_decref(t286); t287 = h4_suffix; hero_str_incref(t37); h4_suffix = t37; hero_str_decref(t287);
+    t38 = h3_inner; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 122, 33}; t39 = hero_str_lend_at(t38, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 122, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t39, &hero_here)); }
+    t41 = h2_root; t42 = HERO_STR_LIT(hero_str_48aced41); t43 = hero_str_concat(t41, t42); t288 = h39_own39; h39_own39 = t43; hero_str_decref(t288); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 123, 33}; t44 = hero_str_lend_at(t43, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 123, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t44, &hero_here)); }
+    t46 = h2_root; t47 = HERO_STR_LIT(hero_str_6661f10); t48 = hero_str_concat(t46, t47); t289 = h40_own40; h40_own40 = t48; hero_str_decref(t289); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 124, 33}; t49 = hero_str_lend_at(t48, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 124, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t49, &hero_here)); }
+    t51 = h3_inner; t52 = HERO_STR_LIT(hero_str_2f); t53 = hero_str_concat(t51, t52); t290 = h41_own41; h41_own41 = t53; hero_str_decref(t290); t54 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t291 = h42_own42; h42_own42 = t54; hero_str_decref(t291); t55 = hero_str_concat(t53, t54); t292 = h43_own43; h43_own43 = t55; hero_str_decref(t292); t56 = HERO_STR_LIT(hero_str_e0a3440); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 125, 9}; t57 = h_library_write_file(t55, t56, &hero_here); } t293 = h44_own44; h44_own44 = t57; h_0opt_a8ea2_release(&t293); t294 = h5_f0; h_0opt_a8ea2_retain(&t57); h5_f0 = t57; h_0opt_a8ea2_release(&t294); t58 = h5_f0; t59 = t58.hero_tag; t60 = INT64_C(1); t61 = t59 == t60;
+    t62 = h2_root; t63 = HERO_STR_LIT(hero_str_1d9c98aa); t64 = hero_str_concat(t62, t63); t295 = h45_own45; h45_own45 = t64; hero_str_decref(t295); t65 = HERO_STR_LIT(hero_str_71123d99); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 126, 9}; t66 = h_library_write_file(t64, t65, &hero_here); } t296 = h46_own46; h46_own46 = t66; h_0opt_a8ea2_release(&t296); t297 = h6_f1; h_0opt_a8ea2_retain(&t66); h6_f1 = t66; h_0opt_a8ea2_release(&t297); t67 = h6_f1; t68 = t67.hero_tag; t69 = INT64_C(1); t70 = t68 == t69;
     t71 = h_fixedbugs2490achildstartsinthefolderitisgiven_itself(); t298 = h47_own47; h47_own47 = t71; hero_str_decref(t298); t299 = h7_program; hero_str_incref(t71); h7_program = t71; hero_str_decref(t299);
     t72 = h2_root; t73 = HERO_STR_LIT(hero_str_2bb6548b); t74 = hero_str_concat(t72, t73); t300 = h48_own48; h48_own48 = t74; hero_str_decref(t300); t75 = h4_suffix; t76 = hero_str_concat(t74, t75); t301 = h49_own49; h49_own49 = t76; hero_str_decref(t301); t302 = h8_second; hero_str_incref(t76); h8_second = t76; hero_str_decref(t302);
-    t77 = h7_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 37}; t78 = hero_str_lend_at(t77, &hero_here); } t79 = h8_second; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 59}; t80 = hero_str_lend_at(t79, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 14}; t81 = hero_fs_link(hero_cstr_nonnull_at(t78, &hero_here), hero_cstr_nonnull_at(t80, &hero_here)); } t82 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t83 = t81 == t82; h9_linked = t83;
-    t84 = h7_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 38}; t85 = hero_str_lend_at(t84, &hero_here); } t86 = h2_root; t87 = HERO_STR_LIT(hero_str_4641e565); t88 = hero_str_concat(t86, t87); t303 = h50_own50; h50_own50 = t88; hero_str_decref(t303); t89 = h_fixedbugs2490achildstartsinthefolderitisgiven_TOOL(); t304 = h51_own51; h51_own51 = t89; hero_str_decref(t304); t90 = hero_str_concat(t88, t89); t305 = h52_own52; h52_own52 = t90; hero_str_decref(t305); t91 = h4_suffix; t92 = hero_str_concat(t90, t91); t306 = h53_own53; h53_own53 = t92; hero_str_decref(t306); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 60}; t93 = hero_str_lend_at(t92, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 15}; t94 = hero_fs_link(hero_cstr_nonnull_at(t85, &hero_here), hero_cstr_nonnull_at(t93, &hero_here)); } t95 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t96 = t94 == t95; h10_linked2 = t96;
-    t97 = HERO_STR_LIT(hero_str_703230cc); t98 = h9_linked; h11_b2 = t98; if (t98) goto bb11; else goto bb12; bb7:
+    t77 = h7_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 37}; t78 = hero_str_lend_at(t77, &hero_here); } t79 = h8_second; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 59}; t80 = hero_str_lend_at(t79, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 129, 14}; t81 = hero_fs_link(hero_cstr_nonnull_at(t78, &hero_here), hero_cstr_nonnull_at(t80, &hero_here)); } t82 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t83 = t81 == t82; h9_linked = t83;
+    t84 = h7_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 38}; t85 = hero_str_lend_at(t84, &hero_here); } t86 = h2_root; t87 = HERO_STR_LIT(hero_str_4641e565); t88 = hero_str_concat(t86, t87); t303 = h50_own50; h50_own50 = t88; hero_str_decref(t303); t89 = h_fixedbugs2490achildstartsinthefolderitisgiven_TOOL(); t304 = h51_own51; h51_own51 = t89; hero_str_decref(t304); t90 = hero_str_concat(t88, t89); t305 = h52_own52; h52_own52 = t90; hero_str_decref(t305); t91 = h4_suffix; t92 = hero_str_concat(t90, t91); t306 = h53_own53; h53_own53 = t92; hero_str_decref(t306); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 60}; t93 = hero_str_lend_at(t92, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 130, 15}; t94 = hero_fs_link(hero_cstr_nonnull_at(t85, &hero_here), hero_cstr_nonnull_at(t93, &hero_here)); } t95 = h_fixedbugs2490achildstartsinthefolderitisgiven_HERO_OS_OK(); t96 = t94 == t95; h10_linked2 = t96;
+    t97 = HERO_STR_LIT(hero_str_703230cc); t98 = h9_linked; h11_b2 = t98; if (t98) goto hero_bb11; else goto hero_bb12; hero_bb7:
 #line 116
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 28}; t21 = h_library_args(&hero_here); } t307 = h54_own54; h54_own54 = t21; hero_array_decref(t307); t22 = INT64_C(0); t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 28) : (void)0), (void)(t21->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t21 + 1))[t22]); t24 = HERO_STR_LIT(hero_str_57f4a69d); t25 = hero_str_eq(t23, t24); h1_b1 = t25; goto bb8; bb8: t26 = h1_b1; if (t26) goto bb9; else goto bb10; bb9:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 117, 16}; t27 = h_library_args(&hero_here); } t308 = h55_own55; h55_own55 = t27; hero_array_decref(t308); t28 = INT64_C(1); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 117, 16) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]); h_fixedbugs2490achildstartsinthefolderitisgiven_middle(t29); goto bb22; bb10: goto bb6; bb11:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 28}; t21 = h_library_args(&hero_here); } t307 = h54_own54; h54_own54 = t21; hero_array_decref(t307); t22 = INT64_C(0); t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 116, 28) : (void)0), (void)(t21->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t21 + 1))[t22]); t24 = HERO_STR_LIT(hero_str_57f4a69d); t25 = hero_str_eq(t23, t24); h1_b1 = t25; goto hero_bb8; hero_bb8: t26 = h1_b1; if (t26) goto hero_bb9; else goto hero_bb10; hero_bb9:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 117, 16}; t27 = h_library_args(&hero_here); } t308 = h55_own55; h55_own55 = t27; hero_array_decref(t308); t28 = INT64_C(1); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 117, 16) : (void)0), (void)(t27->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t27 + 1))[t28]); h_fixedbugs2490achildstartsinthefolderitisgiven_middle(t29); goto hero_bb22; hero_bb10: goto hero_bb6; hero_bb11:
 #line 131
-    t99 = h10_linked2; h11_b2 = t99; goto bb12; bb12: t100 = h11_b2; hero_print_str(t97); hero_print_bool(t100); hero_print_end();
-    t101 = HERO_STR_LIT(hero_str_2b2e4f3b); t102 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t309 = h56_own56; h56_own56 = t102; hero_str_decref(t309); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 132, 81}; t103 = hero_str_lend_at(t102, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 132, 60}; t104 = hero_fs_exists(hero_cstr_nonnull_at(t103, &hero_here)); } t105 = INT64_C(1); t106 = t104 == t105; hero_print_str(t101); hero_print_bool(t106); hero_print_end();
+    t99 = h10_linked2; h11_b2 = t99; goto hero_bb12; hero_bb12: t100 = h11_b2; hero_print_str(t97); hero_print_bool(t100); hero_print_end();
+    t101 = HERO_STR_LIT(hero_str_2b2e4f3b); t102 = h_fixedbugs2490achildstartsinthefolderitisgiven_MARKER(); t309 = h56_own56; h56_own56 = t102; hero_str_decref(t309); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 132, 81}; t103 = hero_str_lend_at(t102, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 132, 60}; t104 = hero_fs_exists(hero_cstr_nonnull_at(t103, &hero_here)); } t105 = INT64_C(1); t106 = t104 == t105; hero_print_str(t101); hero_print_bool(t106); hero_print_end();
     t107 = INT64_C(0); h12_status = t107;
 #line 136
     t108 = h7_program; t109 = HERO_STR_LIT(hero_str_36e9f3f7); t110 = h3_inner; t111 = h2_root; t112 = HERO_STR_LIT(hero_str_33f69b3f); t113 = hero_str_concat(t111, t112); t310 = h57_own57; h57_own57 = t113; hero_str_decref(t310); t114 = HERO_STR_LIT(hero_str_0); t115 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t108, t109, t110, t113, t114, &h12_status); h13_code = t115;
     t116 = HERO_STR_LIT(hero_str_71331f12); t117 = h12_status; t118 = h13_code; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t116, t117, t118);
-    t119 = HERO_STR_LIT(hero_str_21802127); t120 = h2_root; t121 = HERO_STR_LIT(hero_str_33f69b3f); t122 = hero_str_concat(t120, t121); t311 = h58_own58; h58_own58 = t122; hero_str_decref(t311); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 138, 60}; t123 = h_library_read_file(t122, &hero_here); } t312 = h59_own59; h59_own59 = t123; h_0opt_f87774a_release(&t312); t313 = h14_f2; h_0opt_f87774a_retain(&t123); h14_f2 = t123; h_0opt_f87774a_release(&t313); t124 = h14_f2; t125 = t124.tag; t126 = INT64_C(0); t127 = t125 == t126; if (t127) goto bb13; else goto bb14; bb13: t128 = h14_f2; t129 = t128.as.ok; t314 = h15_r0; hero_str_incref(t129); h15_r0 = t129; hero_str_decref(t314); goto bb15; bb14: t130 = HERO_STR_LIT(hero_str_668ccb8e); t315 = h15_r0; hero_str_incref(t130); h15_r0 = t130; hero_str_decref(t315); goto bb15; bb15: t131 = h15_r0; hero_print_str(t119); hero_print_str(t131); hero_print_end();
+    t119 = HERO_STR_LIT(hero_str_21802127); t120 = h2_root; t121 = HERO_STR_LIT(hero_str_33f69b3f); t122 = hero_str_concat(t120, t121); t311 = h58_own58; h58_own58 = t122; hero_str_decref(t311); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 138, 60}; t123 = h_library_read_file(t122, &hero_here); } t312 = h59_own59; h59_own59 = t123; h_0opt_f87774a_release(&t312); t313 = h14_f2; h_0opt_f87774a_retain(&t123); h14_f2 = t123; h_0opt_f87774a_release(&t313); t124 = h14_f2; t125 = t124.hero_tag; t126 = INT64_C(0); t127 = t125 == t126; if (t127) goto hero_bb13; else goto hero_bb14; hero_bb13: t128 = h14_f2; t129 = t128.hero_as.hero_ok; t314 = h15_r0; hero_str_incref(t129); h15_r0 = t129; hero_str_decref(t314); goto hero_bb15; hero_bb14: t130 = HERO_STR_LIT(hero_str_668ccb8e); t315 = h15_r0; hero_str_incref(t130); h15_r0 = t130; hero_str_decref(t315); goto hero_bb15; hero_bb15: t131 = h15_r0; hero_print_str(t119); hero_print_str(t131); hero_print_end();
 #line 140
     t132 = HERO_STR_LIT(hero_str_2d400cbc);
-    t133 = h3_inner; t134 = HERO_STR_LIT(hero_str_2f); t135 = hero_str_concat(t133, t134); t316 = h60_own60; h60_own60 = t135; hero_str_decref(t316); t136 = h2_root; t137 = hero_str_concat(t135, t136); t317 = h61_own61; h61_own61 = t137; hero_str_decref(t317); t138 = HERO_STR_LIT(hero_str_33f69b3f); t139 = hero_str_concat(t137, t138); t318 = h62_own62; h62_own62 = t139; hero_str_decref(t318); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 141, 30}; t140 = hero_str_lend_at(t139, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 141, 9}; t141 = hero_fs_exists(hero_cstr_nonnull_at(t140, &hero_here)); } t142 = INT64_C(1); t143 = t141 != t142;
+    t133 = h3_inner; t134 = HERO_STR_LIT(hero_str_2f); t135 = hero_str_concat(t133, t134); t316 = h60_own60; h60_own60 = t135; hero_str_decref(t316); t136 = h2_root; t137 = hero_str_concat(t135, t136); t317 = h61_own61; h61_own61 = t137; hero_str_decref(t317); t138 = HERO_STR_LIT(hero_str_33f69b3f); t139 = hero_str_concat(t137, t138); t318 = h62_own62; h62_own62 = t139; hero_str_decref(t318); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 141, 30}; t140 = hero_str_lend_at(t139, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 141, 9}; t141 = hero_fs_exists(hero_cstr_nonnull_at(t140, &hero_here)); } t142 = INT64_C(1); t143 = t141 != t142;
 #line 139
     hero_print_str(t132); hero_print_bool(t143); hero_print_end();
 #line 145
@@ -453,31 +453,31 @@ void h_fixedbugs2490achildstartsinthefolderitisgiven_main(void) {
 #line 149
     t153 = HERO_STR_LIT(hero_str_3a); t319 = h17_separator; hero_str_incref(t153); h17_separator = t153; hero_str_decref(t319);
 #line 151
-    t154 = h_fixedbugs2490achildstartsinthefolderitisgiven_windows(); if (t154) goto bb17; else goto bb18; bb16:
+    t154 = h_fixedbugs2490achildstartsinthefolderitisgiven_windows(); if (t154) goto hero_bb17; else goto hero_bb18; hero_bb16:
 #line 153
     t156 = INT64_C(0); h18_path_status = t156;
     t157 = INT64_C(0); h19_marks = t157;
-    t158 = HERO_STR_LIT(hero_str_ac970fd); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 155, 37}; t159 = hero_str_lend_at(t158, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 155, 16}; hero_lend_local_name(hero_lend_h18_path_status, "hero_env_shown", "status"); hero_lend_local_name(hero_lend_h19_marks, "hero_env_shown", "marks"); t160 = hero_env_shown(hero_cstr_nonnull_at(t159, &hero_here), (void *)&h18_path_status, (void *)&h19_marks); } t320 = h63_own63; h63_own63 = t160; hero_str_decref(t320); t321 = h20_own_path; hero_str_incref(t160); h20_own_path = t160; hero_str_decref(t321);
-    t161 = h7_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 156, 5}; (void)hero_run_arg(t161); }
-    t162 = HERO_STR_LIT(hero_str_57f4a69d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 157, 5}; (void)hero_run_arg(t162); }
-    t163 = h3_inner; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 158, 5}; (void)hero_run_arg(t163); }
-    t164 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 159, 5}; (void)hero_run_limit(t164); }
-    t165 = HERO_STR_LIT(hero_str_ac970fd); t166 = h2_root; t167 = HERO_STR_LIT(hero_str_6661f10); t168 = hero_str_concat(t166, t167); t322 = h64_own64; h64_own64 = t168; hero_str_decref(t322); t169 = h17_separator; t170 = hero_str_concat(t168, t169); t323 = h65_own65; h65_own65 = t170; hero_str_decref(t323); t171 = h20_own_path; t172 = hero_str_concat(t170, t171); t324 = h66_own66; h66_own66 = t172; hero_str_decref(t324); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 160, 5}; (void)hero_run_env(t165, t172); }
-    t173 = h7_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 34}; t174 = hero_str_lend_at(t173, &hero_here); } t175 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 59}; t176 = hero_str_lend_at(t175, &hero_here); } t177 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 80}; t178 = hero_str_lend_at(t177, &hero_here); } t179 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 101}; t180 = hero_str_lend_at(t179, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 13}; hero_lend_local_name(hero_lend_h12_status, "hero_run_go", "status"); t181 = hero_run_go(hero_cstr_nonnull_at(t174, &hero_here), hero_cstr_nonnull_at(t176, &hero_here), hero_cstr_nonnull_at(t178, &hero_here), hero_cstr_nonnull_at(t180, &hero_here), (void *)&h12_status); } h21_code3 = t181;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 162, 5}; (void)hero_run_reset(); }
+    t158 = HERO_STR_LIT(hero_str_ac970fd); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 155, 37}; t159 = hero_str_lend_at(t158, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 155, 16}; hero_lend_local_name(hero_lend_h18_path_status, "hero_env_shown", "status"); hero_lend_local_name(hero_lend_h19_marks, "hero_env_shown", "marks"); t160 = hero_env_shown(hero_cstr_nonnull_at(t159, &hero_here), (void *)&h18_path_status, (void *)&h19_marks); } t320 = h63_own63; h63_own63 = t160; hero_str_decref(t320); t321 = h20_own_path; hero_str_incref(t160); h20_own_path = t160; hero_str_decref(t321);
+    t161 = h7_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 156, 5}; (void)hero_run_arg(t161); }
+    t162 = HERO_STR_LIT(hero_str_57f4a69d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 157, 5}; (void)hero_run_arg(t162); }
+    t163 = h3_inner; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 158, 5}; (void)hero_run_arg(t163); }
+    t164 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 159, 5}; (void)hero_run_limit(t164); }
+    t165 = HERO_STR_LIT(hero_str_ac970fd); t166 = h2_root; t167 = HERO_STR_LIT(hero_str_6661f10); t168 = hero_str_concat(t166, t167); t322 = h64_own64; h64_own64 = t168; hero_str_decref(t322); t169 = h17_separator; t170 = hero_str_concat(t168, t169); t323 = h65_own65; h65_own65 = t170; hero_str_decref(t323); t171 = h20_own_path; t172 = hero_str_concat(t170, t171); t324 = h66_own66; h66_own66 = t172; hero_str_decref(t324); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 160, 5}; (void)hero_run_env(t165, t172); }
+    t173 = h7_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 34}; t174 = hero_str_lend_at(t173, &hero_here); } t175 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 59}; t176 = hero_str_lend_at(t175, &hero_here); } t177 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 80}; t178 = hero_str_lend_at(t177, &hero_here); } t179 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 101}; t180 = hero_str_lend_at(t179, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 161, 13}; hero_lend_local_name(hero_lend_h12_status, "hero_run_go", "status"); t181 = hero_run_go(hero_cstr_nonnull_at(t174, &hero_here), hero_cstr_nonnull_at(t176, &hero_here), hero_cstr_nonnull_at(t178, &hero_here), hero_cstr_nonnull_at(t180, &hero_here), (void *)&h12_status); } h21_code3 = t181;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 162, 5}; (void)hero_run_reset(); }
     t182 = HERO_STR_LIT(hero_str_166e8ce8); t183 = h12_status; t184 = h21_code3; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t182, t183, t184);
 #line 167
     t185 = h2_root; t186 = HERO_STR_LIT(hero_str_43a9b991); t187 = hero_str_concat(t185, t186); t325 = h67_own67; h67_own67 = t187; hero_str_decref(t325); t326 = h22_kept; hero_str_incref(t187); h22_kept = t187; hero_str_decref(t326);
-    t188 = h22_kept; t189 = HERO_STR_LIT(hero_str_e711c1a); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 168, 9}; t190 = h_library_write_file(t188, t189, &hero_here); } t327 = h68_own68; h68_own68 = t190; h_0opt_a8ea2_release(&t327); t328 = h23_f3; h_0opt_a8ea2_retain(&t190); h23_f3 = t190; h_0opt_a8ea2_release(&t328); t191 = h23_f3; t192 = t191.tag; t193 = INT64_C(1); t194 = t192 == t193;
+    t188 = h22_kept; t189 = HERO_STR_LIT(hero_str_e711c1a); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 168, 9}; t190 = h_library_write_file(t188, t189, &hero_here); } t327 = h68_own68; h68_own68 = t190; h_0opt_a8ea2_release(&t327); t328 = h23_f3; h_0opt_a8ea2_retain(&t190); h23_f3 = t190; h_0opt_a8ea2_release(&t328); t191 = h23_f3; t192 = t191.hero_tag; t193 = INT64_C(1); t194 = t192 == t193;
     t195 = h7_program; t196 = HERO_STR_LIT(hero_str_36e9f3f7); t197 = h2_root; t198 = HERO_STR_LIT(hero_str_5694f880); t199 = hero_str_concat(t197, t198); t329 = h69_own69; h69_own69 = t199; hero_str_decref(t329); t200 = h22_kept; t201 = HERO_STR_LIT(hero_str_0); t202 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t195, t196, t199, t200, t201, &h12_status); h24_code4 = t202;
     t203 = HERO_STR_LIT(hero_str_53cbd622); t204 = h12_status; t205 = h24_code4; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t203, t204, t205);
     t206 = h7_program; t207 = HERO_STR_LIT(hero_str_36e9f3f7); t208 = h2_root; t209 = HERO_STR_LIT(hero_str_1d9c98aa); t210 = hero_str_concat(t208, t209); t330 = h70_own70; h70_own70 = t210; hero_str_decref(t330); t211 = h22_kept; t212 = HERO_STR_LIT(hero_str_0); t213 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t206, t207, t210, t211, t212, &h12_status); h25_code5 = t213;
     t214 = HERO_STR_LIT(hero_str_1eca538d); t215 = h12_status; t216 = h25_code5; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t214, t215, t216);
-    t217 = HERO_STR_LIT(hero_str_239e5f3a); t218 = h22_kept; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 173, 52}; t219 = h_library_read_file(t218, &hero_here); } t331 = h71_own71; h71_own71 = t219; h_0opt_f87774a_release(&t331); t332 = h26_f4; h_0opt_f87774a_retain(&t219); h26_f4 = t219; h_0opt_f87774a_release(&t332); t220 = h26_f4; t221 = t220.tag; t222 = INT64_C(0); t223 = t221 == t222; if (t223) goto bb19; else goto bb20; bb17:
+    t217 = HERO_STR_LIT(hero_str_239e5f3a); t218 = h22_kept; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 173, 52}; t219 = h_library_read_file(t218, &hero_here); } t331 = h71_own71; h71_own71 = t219; h_0opt_f87774a_release(&t331); t332 = h26_f4; h_0opt_f87774a_retain(&t219); h26_f4 = t219; h_0opt_f87774a_release(&t332); t220 = h26_f4; t221 = t220.hero_tag; t222 = INT64_C(0); t223 = t221 == t222; if (t223) goto hero_bb19; else goto hero_bb20; hero_bb17:
 #line 152
-    t155 = HERO_STR_LIT(hero_str_3b); t333 = h17_separator; hero_str_incref(t155); h17_separator = t155; hero_str_decref(t333); goto bb16; bb18: goto bb16; bb19:
+    t155 = HERO_STR_LIT(hero_str_3b); t333 = h17_separator; hero_str_incref(t155); h17_separator = t155; hero_str_decref(t333); goto hero_bb16; hero_bb18: goto hero_bb16; hero_bb19:
 #line 173
-    t224 = h26_f4; t225 = t224.as.ok; t334 = h27_r1; hero_str_incref(t225); h27_r1 = t225; hero_str_decref(t334); goto bb21; bb20: t226 = HERO_STR_LIT(hero_str_668ccb8e); t335 = h27_r1; hero_str_incref(t226); h27_r1 = t226; hero_str_decref(t335); goto bb21; bb21: t227 = h27_r1; t228 = HERO_STR_LIT(hero_str_e711c1a); t229 = hero_str_eq(t227, t228); hero_print_str(t217); hero_print_bool(t229); hero_print_end();
+    t224 = h26_f4; t225 = t224.hero_as.hero_ok; t334 = h27_r1; hero_str_incref(t225); h27_r1 = t225; hero_str_decref(t334); goto hero_bb21; hero_bb20: t226 = HERO_STR_LIT(hero_str_668ccb8e); t335 = h27_r1; hero_str_incref(t226); h27_r1 = t226; hero_str_decref(t335); goto hero_bb21; hero_bb21: t227 = h27_r1; t228 = HERO_STR_LIT(hero_str_e711c1a); t229 = hero_str_eq(t227, t228); hero_print_str(t217); hero_print_bool(t229); hero_print_end();
 #line 177
     t230 = h2_root; t231 = HERO_STR_LIT(hero_str_34fbe1a1); t232 = hero_str_concat(t230, t231); t336 = h72_own72; h72_own72 = t232; hero_str_decref(t336); t233 = h4_suffix; t234 = hero_str_concat(t232, t233); t337 = h73_own73; h73_own73 = t234; hero_str_decref(t337);
     t235 = HERO_STR_LIT(hero_str_36e9f3f7);
@@ -489,14 +489,14 @@ void h_fixedbugs2490achildstartsinthefolderitisgiven_main(void) {
 #line 184
     t240 = HERO_STR_LIT(hero_str_500eaad6); t241 = h12_status; t242 = h28_code6; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t240, t241, t242);
 #line 187
-    t243 = h2_root; t244 = HERO_STR_LIT(hero_str_5694f880); t245 = hero_str_concat(t243, t244); t338 = h74_own74; h74_own74 = t245; hero_str_decref(t338); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 187, 5}; (void)hero_run_dir(t245); }
+    t243 = h2_root; t244 = HERO_STR_LIT(hero_str_5694f880); t245 = hero_str_concat(t243, t244); t338 = h74_own74; h74_own74 = t245; hero_str_decref(t338); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 187, 5}; (void)hero_run_dir(t245); }
     t246 = h7_program; t247 = HERO_STR_LIT(hero_str_36e9f3f7); t248 = h3_inner; t249 = HERO_STR_LIT(hero_str_0); t250 = HERO_STR_LIT(hero_str_0); t251 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t246, t247, t248, t249, t250, &h12_status); h29_code7 = t251;
     t252 = HERO_STR_LIT(hero_str_2eff6479); t253 = h12_status; t254 = h29_code7; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t252, t253, t254);
 #line 192
     t255 = h7_program; t256 = HERO_STR_LIT(hero_str_36e9f3f7); t257 = HERO_STR_LIT(hero_str_0); t258 = HERO_STR_LIT(hero_str_0); t259 = HERO_STR_LIT(hero_str_0); t260 = h_fixedbugs2490achildstartsinthefolderitisgiven_launched(t255, t256, t257, t258, t259, &h12_status); h30_code8 = t260;
     t261 = HERO_STR_LIT(hero_str_2bfbd42b); t262 = h12_status; t263 = h30_code8; h_fixedbugs2490achildstartsinthefolderitisgiven_told(t261, t262, t263);
-    t264 = HERO_STR_LIT(hero_str_30a82254); t265 = h3_inner; t266 = HERO_STR_LIT(hero_str_2f); t267 = hero_str_concat(t265, t266); t339 = h75_own75; h75_own75 = t267; hero_str_decref(t339); t268 = h2_root; t269 = hero_str_concat(t267, t268); t340 = h76_own76; h76_own76 = t269; hero_str_decref(t340); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 194, 86}; t270 = hero_str_lend_at(t269, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 194, 65}; t271 = hero_fs_exists(hero_cstr_nonnull_at(t270, &hero_here)); } t272 = INT64_C(1); t273 = t271 != t272; hero_print_str(t264); hero_print_bool(t273); hero_print_end();
-    t274 = h2_root; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 195, 36}; t275 = hero_str_lend_at(t274, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 195, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t275, &hero_here)); } goto bb22; bb22:
+    t264 = HERO_STR_LIT(hero_str_30a82254); t265 = h3_inner; t266 = HERO_STR_LIT(hero_str_2f); t267 = hero_str_concat(t265, t266); t339 = h75_own75; h75_own75 = t267; hero_str_decref(t339); t268 = h2_root; t269 = hero_str_concat(t267, t268); t340 = h76_own76; h76_own76 = t269; hero_str_decref(t340); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 194, 86}; t270 = hero_str_lend_at(t269, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 194, 65}; t271 = hero_fs_exists(hero_cstr_nonnull_at(t270, &hero_here)); } t272 = INT64_C(1); t273 = t271 != t272; hero_print_str(t264); hero_print_bool(t273); hero_print_end();
+    t274 = h2_root; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 195, 36}; t275 = hero_str_lend_at(t274, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.hero", "fixedbugs-2490-a-child-starts-in-the-folder-it-is-given.main", 195, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t275, &hero_here)); } goto hero_bb22; hero_bb22:
 #line 501 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_str_release_at(&h2_root);
     hero_str_release_at(&h3_inner);
@@ -598,18 +598,18 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
 #line 614 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
@@ -622,7 +622,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
@@ -632,26 +632,26 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 #line 166
 #define h1_status (*hero_lend_h1_status)
 #line 166
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
-    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 173
-    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 170
-    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto hero_bb13; hero_bb3: goto hero_bb1; hero_bb4:
 #line 175
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 174
-    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto hero_bb13; hero_bb6: goto hero_bb4; hero_bb7:
 #line 180
-    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 176
-    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto hero_bb13; hero_bb9: goto hero_bb7; hero_bb10:
 #line 182
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto hero_bb13; hero_bb11:
 #line 181
-    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto hero_bb13; hero_bb12: goto hero_bb10; hero_bb13:
 #line 656 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
@@ -670,23 +670,23 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     return t38;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
 
 #line 185 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
-    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 189
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 188
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+    t7 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 191
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto hero_bb7; hero_bb5:
 #line 190
-    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
 #line 691 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
@@ -696,18 +696,18 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
-    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); h1_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 207
     t47 = h0_out;
 #line 714 "fixedbugs2490achildstartsinthefolderitisgiven.c"
@@ -725,130 +725,130 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     hero_str_release_at(&h11_own11);
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
-bb4:
+hero_bb4:
 #line 206 "<heroes library>"
-    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto hero_bb1; hero_bb5:
 #line 202
-    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
-    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 205
-    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb9; else goto hero_bb10; hero_bb7:
 #line 203
-    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
+    t30 = h5_f1; t31 = t30.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t31); goto hero_bb4; hero_bb8: t28 = h5_f1; t29 = t28.hero_as.hero_err;
 #line 739 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 205 "<heroes library>"
-    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
+    t41 = h6_f2; t42 = t41.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t42); goto hero_bb4; hero_bb10: t39 = h6_f2; t40 = t39.hero_as.hero_err;
 #line 745 "fixedbugs2490achildstartsinthefolderitisgiven.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1060c3bb33db541d", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a20f8e33ab099d4", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2490achildstartsinthefolderitisgiven\tfixedbugs-2490-a-child-starts-in-the-folder-it-is-given\n");
     h_fixedbugs2490achildstartsinthefolderitisgiven_main();
     hero_runtime_check_leaks();

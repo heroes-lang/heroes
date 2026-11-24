@@ -97,7 +97,7 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                 sizes: [str] @= []
 
                 for field in rec.fields
-                    sizes @ sizes.push("(void)sizeof(v." + source.span_text(s, field.name) + ");")
+                    sizes @ sizes.push("(void)sizeof(hero_v." + source.span_text(s, field.name) + ");")
                     slots @ slots.push(slot(c, decls, s, field))
 
                 list: str @= slots.join(", ")
@@ -115,7 +115,7 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                     "/* " + one.decl.to_str() + " built " + built.to_str() + " omits " + omitted.to_str() + " compared " + compared.to_str() + " */"
                 )
                 lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + SCREEN + "\"")
-                text: str @= "__attribute__((unused)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " v = {" + list + "}; " + sizes.join(" ") + " (void)v; }"
+                text: str @= "__attribute__((__unused__)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " hero_v = {" + list + "}; " + sizes.join(" ") + " (void)hero_v; }"
 
                 # A construction that leaves a field out is judged per
                 # construction from the layout (panel 186 R7).

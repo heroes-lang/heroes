@@ -31,6 +31,7 @@ use checker
 use emit/ctype
 use emit/extern_probe
 use emit/externs as emit_externs
+use emit/mangle
 use emit/shadowed
 use emit/writer
 use ir/containers
@@ -107,7 +108,7 @@ function definition(f: containers.Function, c: state.Checked, names: ctype.Names
 
     for slot_id in f.params
         spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty).default("void")
-        params @ params.push(spelled + " a" + index.to_str())
+        params @ params.push(spelled + " " + mangle.argument(index))
         index @ index + 1
 
     listed: str @= "void"
@@ -120,7 +121,7 @@ function definition(f: containers.Function, c: state.Checked, names: ctype.Names
 
     if returned == "void"
         body @ call + ";"
-    return "__attribute__((unused)) static " + returned + " " + adapter(name, s: s, decls: decls) + "(" + listed + ") { " + body + " }"
+    return "__attribute__((__unused__)) static " + returned + " " + adapter(name, s: s, decls: decls) + "(" + listed + ") { " + body + " }"
 
 ## Tests
 
@@ -139,11 +140,11 @@ test "a bound function taken as a value has an adapter of the program's type, an
 
     # The probe's call, the function in parentheses, at the program's types;
     # a function with no result calls and returns nothing.
-    assert extern_probe.find_text(line: got, needle: "__attribute__((unused)) static int32_t hero_value_set_two(void * a0) { return (set_two)(a0); }").must() >= 0
-    assert extern_probe.find_text(line: got, needle: "static void hero_value_drop(void * a0) { (drop)(a0); }").must() >= 0
+    assert extern_probe.find_text(line: got, needle: "__attribute__((__unused__)) static int32_t hero_value_set_two(void * hero_a0) { return (set_two)(hero_a0); }").must() >= 0
+    assert extern_probe.find_text(line: got, needle: "static void hero_value_drop(void * hero_a0) { (drop)(hero_a0); }").must() >= 0
 
     # A name a body declares is reached through its accessor (defect 2389).
-    assert extern_probe.find_text(line: got, needle: "static int32_t hero_value_t1(int32_t a0) { return ((*hero_bound_t1()))(a0); }").must() >= 0
+    assert extern_probe.find_text(line: got, needle: "static int32_t hero_value_t1(int32_t hero_a0) { return ((*hero_bound_t1()))(hero_a0); }").must() >= 0
 
     # The value: the function where its type is the target's, else the adapter.
     assert chosen(target: "t4", name: "set_two", s: s, decls: parsed.decls) == "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&set_two)), set_two, hero_value_set_two)"

@@ -2207,13 +2207,20 @@ function built_program(w: Wide, compiler: str, name: str, source: str) -> str?
         return fail(code: "unbuilt", msg: name + " did not build: " + ending(ok(made)))
     return ok(binary)
 
+# The folders of `from` made under `to`, each after its parent: `list_directories` answers one level, and the runtime
+# holds a folder inside a folder (`vendor/monocypher`, since step 69a), which a single level of `mkdir` left unmade, so
+# `cp` into it failed with error 3 on Windows (the CI run of 2026-11-24).
+function copied_folders(w: Wide, from: str, to: str) -> ()?
+    for sub in list_directories(scratch: w.scratch, dir: from)?
+        _ = wide(w, words: ["mkdir", to + strings.without_prefix(text: sub, prefix: "runtime")])?
+        copied_folders(w, from: sub, to: to)?
+
+    return ok()
+
 # The runtime's files copied under `to`, a folder the helper names wide.
 function copied_runtime(w: Wide, to: str) -> ()?
     _ = wide(w, words: ["mkdir", to])?
-
-    for sub in list_directories(scratch: w.scratch, dir: "runtime")?
-        _ = wide(w, words: ["mkdir", to + strings.without_prefix(text: sub, prefix: "runtime")])?
-
+    copied_folders(w, from: "runtime", to: to)?
     nothing: [str] = []
 
     for file in list_tree(scratch: w.scratch, dir: "runtime", skip: nothing)?

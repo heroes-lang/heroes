@@ -200,7 +200,7 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
 # macro-only, so nothing fires today — but the promise is in the document
 # and the golden case is owed (docs/panel/092 § Where the seats disagreed).
 function probe_line(probe: str, name: str, parameters: [str], arguments: [str]) -> str
-    return "__attribute__((unused)) static void " + probe + "(" + parameters.join(", ") + ") { (void)(" + name + ")(" + arguments.join(", ") + "); }"
+    return "__attribute__((__unused__)) static void " + probe + "(" + parameters.join(", ") + ") { (void)(" + name + ")(" + arguments.join(", ") + "); }"
 
 # The arguments the probe's body hands to the header's function: the
 # positional names, and `(void *)aN` for an `@` parameter that is opaque
@@ -222,7 +222,7 @@ function probe_arguments(f: containers.Function, c: state.Checked, names: ctype.
     index: i64 @= 0
 
     for slot_id in f.params
-        name = "a" + index.to_str()
+        name = mangle.argument(index)
 
         if is_cast_out(c, f.slots[slot_id])
             out @ out.push("(void *)" + name)
@@ -259,7 +259,7 @@ function argument_names(count: i64) -> [str]
     index: i64 @= 0
 
     while index < count
-        out @ out.push("a" + index.to_str())
+        out @ out.push(mangle.argument(index))
         index @ index + 1
 
     return out
@@ -280,13 +280,13 @@ test "a probe per extern with parameters, mutables as pointers, columns exact"
     # The probe's name goes through the mangler; the C name does not.
     assert ffi_lookup.has(
         text: got,
-        needle: "__attribute__((unused)) static void hero_ffi_probe_h_t_narrow(int64_t a0) { (void)(narrow)(a0); }"
+        needle: "__attribute__((__unused__)) static void hero_ffi_probe_h_t_narrow(int64_t hero_a0) { (void)(narrow)(hero_a0); }"
     )
 
     # An @ parameter is declared the way the call site passes it.
     assert ffi_lookup.has(
         text: got,
-        needle: "hero_ffi_probe_h_t_fill(int64_t * a0, int64_t a1) { (void)(fill)((void *)a0, a1); }"
+        needle: "hero_ffi_probe_h_t_fill(int64_t * hero_a0, int64_t hero_a1) { (void)(fill)((void *)hero_a0, hero_a1); }"
     )
 
     # A zero-parameter extern gets no probe at all.

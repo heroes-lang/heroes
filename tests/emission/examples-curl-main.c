@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <curl_bound.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -114,36 +171,36 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 118 "main.c"
+#line 175 "main.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_fbaec77 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint32_t ok;
-        HeroFailure err;
-    } as;
+        uint32_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_fbaec77;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -164,50 +221,50 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 66 "examples/curl/main.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_main_net_set_url(CURL * a0, const char * a1) { (void)(net_set_url)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_main_curl_easy_strerror(uint32_t a0) { (void)(curl_easy_strerror)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_main_curl_easy_cleanup(CURL * a0) { (void)(curl_easy_cleanup)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_net_set_url(CURL * hero_a0, const char * hero_a1) { (void)(net_set_url)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_curl_easy_strerror(uint32_t hero_a0) { (void)(curl_easy_strerror)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_main_curl_easy_cleanup(CURL * hero_a0) { (void)(curl_easy_cleanup)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "main.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 237 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_main_0Curl_eq(CURL * const *a, CURL * const *b);
-HERO_TU_LOCAL uint64_t h_main_0Curl_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v);
-HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *v);
-HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b);
-HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_main_0Curl_eq(CURL * const *hero_a, CURL * const *hero_b);
+HERO_TU_LOCAL uint64_t h_main_0Curl_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *hero_v);
+HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *hero_v);
+HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *hero_a, const h_0opt_fbaec77 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_main_CURLE_OK(void);
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void);
 void h_main_main(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 
 #line 53 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
-#line 211 "main.c"
+#line 268 "main.c"
     _Static_assert(HERO_RET_INT(CURLE_OK), "heroes-ffi-return CURLE_OK i64");
     _Static_assert(__builtin_constant_p(CURLE_OK), "heroes-ffi-const CURLE_OK");
 #pragma clang diagnostic push
@@ -219,7 +276,7 @@ int64_t h_main_CURLE_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 53 "examples/curl/main.hero"
     return CURLE_OK;
-#line 223 "main.c"
+#line 280 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -237,7 +294,7 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 54 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
-#line 241 "main.c"
+#line 298 "main.c"
     _Static_assert(HERO_RET_INT(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-return CURLE_UNSUPPORTED_PROTOCOL i64");
     _Static_assert(__builtin_constant_p(CURLE_UNSUPPORTED_PROTOCOL), "heroes-ffi-const CURLE_UNSUPPORTED_PROTOCOL");
 #pragma clang diagnostic push
@@ -249,7 +306,7 @@ int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 54 "examples/curl/main.hero"
     return CURLE_UNSUPPORTED_PROTOCOL;
-#line 253 "main.c"
+#line 310 "main.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -266,39 +323,39 @@ int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 70 "examples/curl/main.hero"
-void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h5_f2 = {0}, h8_f4 = {0}, h10_own10 = {0}, h13_own13 = {0}, h14_own14 = {0}, t3, t4, t8, t33, t34, t38, t54, t55, t59, t64, t65, t72, t73, t76, t77; HERO_NODEBUG HeroStr h1_r0 = {0}, h6_r1 = {0}, h9_r2 = {0}, t1, t9, t10, t11, t14, t20, t21, t39, t40, t41, t42, t60, t61, t62, t66, t67, t74, t75, t78, t79; CURL * h2_handle; int64_t h3_rc; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}, h7_f3 = {0}, h11_own11 = {0}, h12_own12 = {0}, t23, t24, t28, t30, t44, t45, t49, t51, t68, t69, t70, t71; HERO_NODEBUG const char *t2, *t15, *t32, *t53; HERO_NODEBUG int64_t t5, t6, t16, t17, t18, t22, t25, t26, t35, t36, t43, t46, t47, t56, t57; HERO_NODEBUG bool t7, t19, t27, t37, t48, t58; HERO_NODEBUG CURL *t12, *t13, *t63; HERO_NODEBUG HeroFailure t29, t50; HERO_NODEBUG uint32_t t31, t52; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_17a24f25); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 71, 37}; t2 = (const char *)curl_version(); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 71, 24}; t3 = h_library_validated(t2, &hero_here); } t64 = h10_own10; h10_own10 = t3; h_0opt_f87774a_release(&t64); t65 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t65); t4 = h0_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1: t8 = h0_f0; t9 = t8.as.ok; t66 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t66); goto bb3; bb2: t10 = HERO_STR_LIT(hero_str_7125eeac); t67 = h1_r0; hero_str_incref(t10); h1_r0 = t10; hero_str_decref(t67); goto bb3; bb3: t11 = h1_r0; hero_print_str(t1); hero_print_str(t11); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 72, 14}; t12 = curl_easy_init(); hero_handle_acquired_at(t12, "curl_easy_cleanup", &hero_here); } h2_handle = t12;
+void h_main_main(void) { HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h5_f2 = {0}, h8_f4 = {0}, h10_own10 = {0}, h13_own13 = {0}, h14_own14 = {0}, t3, t4, t8, t33, t34, t38, t54, t55, t59, t64, t65, t72, t73, t76, t77; HERO_NODEBUG HeroStr h1_r0 = {0}, h6_r1 = {0}, h9_r2 = {0}, t1, t9, t10, t11, t14, t20, t21, t39, t40, t41, t42, t60, t61, t62, t66, t67, t74, t75, t78, t79; CURL * h2_handle; int64_t h3_rc; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}, h7_f3 = {0}, h11_own11 = {0}, h12_own12 = {0}, t23, t24, t28, t30, t44, t45, t49, t51, t68, t69, t70, t71; HERO_NODEBUG const char *t2, *t15, *t32, *t53; HERO_NODEBUG int64_t t5, t6, t16, t17, t18, t22, t25, t26, t35, t36, t43, t46, t47, t56, t57; HERO_NODEBUG bool t7, t19, t27, t37, t48, t58; HERO_NODEBUG CURL *t12, *t13, *t63; HERO_NODEBUG HeroFailure t29, t50; HERO_NODEBUG uint32_t t31, t52; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_17a24f25); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 71, 37}; t2 = (const char *)curl_version(); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 71, 24}; t3 = h_library_validated(t2, &hero_here); } t64 = h10_own10; h10_own10 = t3; h_0opt_f87774a_release(&t64); t65 = h0_f0; h_0opt_f87774a_retain(&t3); h0_f0 = t3; h_0opt_f87774a_release(&t65); t4 = h0_f0; t5 = t4.hero_tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t8 = h0_f0; t9 = t8.hero_as.hero_ok; t66 = h1_r0; hero_str_incref(t9); h1_r0 = t9; hero_str_decref(t66); goto hero_bb3; hero_bb2: t10 = HERO_STR_LIT(hero_str_7125eeac); t67 = h1_r0; hero_str_incref(t10); h1_r0 = t10; hero_str_decref(t67); goto hero_bb3; hero_bb3: t11 = h1_r0; hero_print_str(t1); hero_print_str(t11); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 72, 14}; t12 = curl_easy_init(); hero_handle_acquired_at(t12, "curl_easy_cleanup", &hero_here); } h2_handle = t12;
 #line 84
-    t13 = h2_handle; t14 = HERO_STR_LIT(hero_str_594067c8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 84, 30}; t15 = hero_str_lend_at(t14, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 84, 10}; hero_handle_alive_at(t13, "the argument `handle` of `net_set_url`", &hero_here); t16 = net_set_url(t13, hero_cstr_nonnull_at(t15, &hero_here)); } h3_rc = t16;
+    t13 = h2_handle; t14 = HERO_STR_LIT(hero_str_594067c8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 84, 30}; t15 = hero_str_lend_at(t14, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 84, 10}; hero_handle_alive_at(t13, "the argument `handle` of `net_set_url`", &hero_here); t16 = net_set_url(t13, hero_cstr_nonnull_at(t15, &hero_here)); } h3_rc = t16;
 #line 86
-    t17 = h3_rc; t18 = h_main_CURLE_OK(); t19 = t17 == t18; if (t19) goto bb5; else goto bb6; bb4:
+    t17 = h3_rc; t18 = h_main_CURLE_OK(); t19 = t17 == t18; if (t19) goto hero_bb5; else goto hero_bb6; hero_bb4:
 #line 94
     t42 = HERO_STR_LIT(hero_str_3b34fb4b);
-    t43 = h_main_CURLE_UNSUPPORTED_PROTOCOL(); if (t43 >= 0LL && t43 <= 4294967295LL) { t44 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t43}; } else { t44 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t68 = h11_own11; h11_own11 = t44; h_0opt_fbaec77_release(&t68); t69 = h7_f3; h_0opt_fbaec77_retain(&t44); h7_f3 = t44; h_0opt_fbaec77_release(&t69); t45 = h7_f3; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb12; else goto bb13; bb5:
+    t43 = h_main_CURLE_UNSUPPORTED_PROTOCOL(); if (t43 >= 0LL && t43 <= 4294967295LL) { t44 = (h_0opt_fbaec77){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint32_t)t43}; } else { t44 = (h_0opt_fbaec77){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t68 = h11_own11; h11_own11 = t44; h_0opt_fbaec77_release(&t68); t69 = h7_f3; h_0opt_fbaec77_retain(&t44); h7_f3 = t44; h_0opt_fbaec77_release(&t69); t45 = h7_f3; t46 = t45.hero_tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto hero_bb12; else goto hero_bb13; hero_bb5:
 #line 87
-    t20 = HERO_STR_LIT(hero_str_58166374); hero_print_str(t20); hero_print_end(); goto bb4; bb6:
+    t20 = HERO_STR_LIT(hero_str_58166374); hero_print_str(t20); hero_print_end(); goto hero_bb4; hero_bb6:
 #line 89
-    t21 = HERO_STR_LIT(hero_str_52331108); t22 = h3_rc; if (t22 >= 0LL && t22 <= 4294967295LL) { t23 = (h_0opt_fbaec77){.tag = INT64_C(0), .as.ok = (uint32_t)t22}; } else { t23 = (h_0opt_fbaec77){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t70 = h12_own12; h12_own12 = t23; h_0opt_fbaec77_release(&t70); t71 = h4_f1; h_0opt_fbaec77_retain(&t23); h4_f1 = t23; h_0opt_fbaec77_release(&t71); t24 = h4_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb7: t30 = h4_f1; t31 = t30.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 51}; t32 = (const char *)curl_easy_strerror(t31); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 38}; t33 = h_library_validated(t32, &hero_here); } t72 = h13_own13; h13_own13 = t33; h_0opt_f87774a_release(&t72); t73 = h5_f2; h_0opt_f87774a_retain(&t33); h5_f2 = t33; h_0opt_f87774a_release(&t73); t34 = h5_f2; t35 = t34.tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto bb9; else goto bb10; bb8: t28 = h4_f1; t29 = t28.as.err;
-#line 284 "main.c"
+    t21 = HERO_STR_LIT(hero_str_52331108); t22 = h3_rc; if (t22 >= 0LL && t22 <= 4294967295LL) { t23 = (h_0opt_fbaec77){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint32_t)t22}; } else { t23 = (h_0opt_fbaec77){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t70 = h12_own12; h12_own12 = t23; h_0opt_fbaec77_release(&t70); t71 = h4_f1; h_0opt_fbaec77_retain(&t23); h4_f1 = t23; h_0opt_fbaec77_release(&t71); t24 = h4_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb7; else goto hero_bb8; hero_bb7: t30 = h4_f1; t31 = t30.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 51}; t32 = (const char *)curl_easy_strerror(t31); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 89, 38}; t33 = h_library_validated(t32, &hero_here); } t72 = h13_own13; h13_own13 = t33; h_0opt_f87774a_release(&t72); t73 = h5_f2; h_0opt_f87774a_retain(&t33); h5_f2 = t33; h_0opt_f87774a_release(&t73); t34 = h5_f2; t35 = t34.hero_tag; t36 = INT64_C(0); t37 = t35 == t36; if (t37) goto hero_bb9; else goto hero_bb10; hero_bb8: t28 = h4_f1; t29 = t28.hero_as.hero_err;
+#line 341 "main.c"
     hero_panic_must_at(t29, "main.hero", "main.main", 89, 70);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 89 "examples/curl/main.hero"
-    t38 = h5_f2; t39 = t38.as.ok; t74 = h6_r1; hero_str_incref(t39); h6_r1 = t39; hero_str_decref(t74); goto bb11; bb10: t40 = HERO_STR_LIT(hero_str_7125eeac); t75 = h6_r1; hero_str_incref(t40); h6_r1 = t40; hero_str_decref(t75); goto bb11; bb11: t41 = h6_r1; hero_print_str(t21); hero_print_str(t41); hero_print_end(); goto bb4; bb12:
+    t38 = h5_f2; t39 = t38.hero_as.hero_ok; t74 = h6_r1; hero_str_incref(t39); h6_r1 = t39; hero_str_decref(t74); goto hero_bb11; hero_bb10: t40 = HERO_STR_LIT(hero_str_7125eeac); t75 = h6_r1; hero_str_incref(t40); h6_r1 = t40; hero_str_decref(t75); goto hero_bb11; hero_bb11: t41 = h6_r1; hero_print_str(t21); hero_print_str(t41); hero_print_end(); goto hero_bb4; hero_bb12:
 #line 95
-    t51 = h7_f3; t52 = t51.as.ok; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 22}; t53 = (const char *)curl_easy_strerror(t52); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 9}; t54 = h_library_validated(t53, &hero_here); } t76 = h14_own14; h14_own14 = t54; h_0opt_f87774a_release(&t76); t77 = h8_f4; h_0opt_f87774a_retain(&t54); h8_f4 = t54; h_0opt_f87774a_release(&t77); t55 = h8_f4; t56 = t55.tag; t57 = INT64_C(0); t58 = t56 == t57; if (t58) goto bb14; else goto bb15; bb13: t49 = h7_f3; t50 = t49.as.err;
-#line 292 "main.c"
+    t51 = h7_f3; t52 = t51.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 22}; t53 = (const char *)curl_easy_strerror(t52); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 95, 9}; t54 = h_library_validated(t53, &hero_here); } t76 = h14_own14; h14_own14 = t54; h_0opt_f87774a_release(&t76); t77 = h8_f4; h_0opt_f87774a_retain(&t54); h8_f4 = t54; h_0opt_f87774a_release(&t77); t55 = h8_f4; t56 = t55.hero_tag; t57 = INT64_C(0); t58 = t56 == t57; if (t58) goto hero_bb14; else goto hero_bb15; hero_bb13: t49 = h7_f3; t50 = t49.hero_as.hero_err;
+#line 349 "main.c"
     hero_panic_must_at(t50, "main.hero", "main.main", 95, 41);
     hero_unreachable();
-bb14:
+hero_bb14:
 #line 95 "examples/curl/main.hero"
-    t59 = h8_f4; t60 = t59.as.ok; t78 = h9_r2; hero_str_incref(t60); h9_r2 = t60; hero_str_decref(t78); goto bb16; bb15: t61 = HERO_STR_LIT(hero_str_7125eeac); t79 = h9_r2; hero_str_incref(t61); h9_r2 = t61; hero_str_decref(t79); goto bb16; bb16: t62 = h9_r2;
+    t59 = h8_f4; t60 = t59.hero_as.hero_ok; t78 = h9_r2; hero_str_incref(t60); h9_r2 = t60; hero_str_decref(t78); goto hero_bb16; hero_bb15: t61 = HERO_STR_LIT(hero_str_7125eeac); t79 = h9_r2; hero_str_incref(t61); h9_r2 = t61; hero_str_decref(t79); goto hero_bb16; hero_bb16: t62 = h9_r2;
 #line 93
     hero_print_str(t42); hero_print_str(t62); hero_print_end();
 #line 97
-    t63 = h2_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"main.hero", "main.main", 97, 5}; { hero_handle_alive_at(t63, "the argument `handle` of `curl_easy_cleanup`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t63, "curl_easy_cleanup", NULL, &hero_here); (void)curl_easy_cleanup(t63); if (hero_handle_ended(t63, hero_life_0_0) && h2_handle == t63) h2_handle = hero_handle_dead(); } }
-#line 302 "main.c"
+    t63 = h2_handle; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"main.hero", "main.main", 97, 5}; { hero_handle_alive_at(t63, "the argument `handle` of `curl_easy_cleanup`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t63, "curl_easy_cleanup", NULL, &hero_here); (void)curl_easy_cleanup(t63); if (hero_handle_ended(t63, hero_life_0_0) && h2_handle == t63) h2_handle = hero_handle_dead(); } }
+#line 359 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -317,7 +374,7 @@ bb14:
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 321 "main.c"
+#line 378 "main.c"
 }
 
 #line 152 "<heroes library>"
@@ -325,19 +382,19 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 341 "main.c"
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 398 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -349,153 +406,153 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
-HERO_TU_LOCAL bool h_main_0Curl_eq(CURL * const *a, CURL * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_main_0Curl_eq(CURL * const *hero_a, CURL * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_main_0Curl_hash(const void *elem) {
-    CURL * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_main_0Curl_hash(const void *hero_elem) {
+    CURL * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbaec77_retain(const h_0opt_fbaec77 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbaec77_release(h_0opt_fbaec77 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *a, const h_0opt_fbaec77 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u32)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_fbaec77_eq(const h_0opt_fbaec77 *hero_a, const h_0opt_fbaec77 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u32)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *elem) {
-    const h_0opt_fbaec77 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_fbaec77_hash(const void *hero_elem) {
+    const h_0opt_fbaec77 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u32)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("78d89e5f6521da2f", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3fc20f587d9cfc44", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

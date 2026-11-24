@@ -126,7 +126,7 @@ function around(lines: [str], bound: {str: bool}) -> [str]
             out @ out.push("#pragma push_macro(\"" + name + "\")")
 
     out @ out.push(CLOSE_LINE)
-    out @ strings.with_all(list: out, more: header_state.GIVEN_BACK)
+    out @ strings.with_all(list: out, more: header_state.given_back())
     out @ out.push(header_region.CLOSING)
 
     for raised in checks_raised.lines()
@@ -230,7 +230,7 @@ test "the groups' includes stand between the guard's two, a bound name of the li
         list: opened,
         more: [OPEN_LINE, "#include <a.h>", "#pragma push_macro(\"INT64_C\")", CLOSE_LINE]
     )
-    head = strings.with_all(list: guarded, more: header_state.GIVEN_BACK).push(header_region.CLOSING)
+    head = strings.with_all(list: guarded, more: header_state.given_back()).push(header_region.CLOSING)
     got = around(["#include <a.h>"], bound: bound)
     assert got.len() == head.len() + checks_raised.lines().len() + 1 + deprecation.BESIDE.len()
     assert got.slice(from: 0, to: head.len()) == head

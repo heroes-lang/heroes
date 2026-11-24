@@ -42,7 +42,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "a, " + handles.const_pointer(at.c_type) + "b) {"
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
     )
 
     # A partial record's _eq is emitted and ABORTS (panel 061): the
@@ -76,7 +76,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     # and a dead one unequal to its earlier copy (the compiler-engineer's E6).
     # `hero_handle_eq` refuses the read and compares the rest as addresses.
     if at.handle
-        writer.line(@w, text: "    return hero_handle_eq(*a, *b);")
+        writer.line(@w, text: "    return hero_handle_eq(*hero_a, *hero_b);")
         writer.line(@w, text: "}")
         writer.blank(@w)
         return
@@ -120,10 +120,10 @@ function field_eq_expr(c: state.Checked, names: ctype.Names, ty: i64, member: st
         # == on a complete group record holding either was
         # hero_unreachable() at exit 134 on a correct program (panel
         # 062's spec-warden).
-        .int_ty | .bool | .float_ty | .ptr | .cstr => return "a->" + member + " == b->" + member
-        .thread_ty | .mailbox_ty                   => return "a->" + member + " == b->" + member
-        .str                                       => return "hero_str_eq(a->" + member + ", b->" + member + ")"
-        .array                                     => return "hero_array_eq(a->" + member + ", b->" + member + ")"
+        .int_ty | .bool | .float_ty | .ptr | .cstr => return "hero_a->" + member + " == hero_b->" + member
+        .thread_ty | .mailbox_ty => return "hero_a->" + member + " == hero_b->" + member
+        .str => return "hero_str_eq(hero_a->" + member + ", hero_b->" + member + ")"
+        .array => return "hero_array_eq(hero_a->" + member + ", hero_b->" + member + ")"
         # A C array member is compared ELEMENTWISE: a->f == b->f
         # compiles with zero warnings and is a POINTER comparison — two
         # distinct structs always differ, so == would be false for two
@@ -133,14 +133,14 @@ function field_eq_expr(c: state.Checked, names: ctype.Names, ty: i64, member: st
         .fixed x => return "(" + fixed_eq_expr(c, names, member: member, element: x.element, count: x.length) + ")"
         # The three rows the table went without until 2026-08-12.
 
-        .map      => return "hero_map_eq(a->" + member + ", b->" + member + ")"
-        .fallible => return ctype.option_of(names, ty: ty) + "_eq(&a->" + member + ", &b->" + member + ")"
+        .map      => return "hero_map_eq(hero_a->" + member + ", hero_b->" + member + ")"
+        .fallible => return ctype.option_of(names, ty: ty) + "_eq(&hero_a->" + member + ", &hero_b->" + member + ")"
         # A function value is a bare C function pointer, and panel 029
         # made its equality pointer identity.
 
-        .function_ty => return "a->" + member + " == b->" + member
-        .named n     => return ctype.satellite(names, decl: n.decl) + "_eq(&a->" + member + ", &b->" + member + ")"
-        .case_ty vc => return ctype.case_of(names, decl: vc.decl, at: vc.at) + "_eq(&a->" + member + ", &b->" + member + ")"
+        .function_ty => return "hero_a->" + member + " == hero_b->" + member
+        .named n => return ctype.satellite(names, decl: n.decl) + "_eq(&hero_a->" + member + ", &hero_b->" + member + ")"
+        .case_ty vc => return ctype.case_of(names, decl: vc.decl, at: vc.at) + "_eq(&hero_a->" + member + ", &hero_b->" + member + ")"
         # Still loud, and it must stay loud: a failure-typed field has
         # no surface spelling, so it is a compiler bug rather than a
         # program.
@@ -159,8 +159,8 @@ function fixed_eq_expr(c: state.Checked, names: ctype.Names, member: str, elemen
     i: i64 @= 0
 
     while i < count
-        a_place = "a->" + member + "[" + i.to_str() + "]"
-        b_place = "b->" + member + "[" + i.to_str() + "]"
+        a_place = "hero_a->" + member + "[" + i.to_str() + "]"
+        b_place = "hero_b->" + member + "[" + i.to_str() + "]"
         parts @ parts.push(element_eq(c, names, a_place: a_place, b_place: b_place, element: element))
         i @ i + 1
 
@@ -188,10 +188,10 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "a, " + handles.const_pointer(at.c_type) + "b) {"
+        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
     )
-    writer.line(@w, text: "    if (a->tag != b->tag) return false;")
-    writer.line(@w, text: "    switch (a->tag) {")
+    writer.line(@w, text: "    if (hero_a->hero_tag != hero_b->hero_tag) return false;")
+    writer.line(@w, text: "    switch (hero_a->hero_tag) {")
     case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
@@ -203,7 +203,7 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
         else
             writer.line(
                 @w,
-                text: "        case " + tag + ": return " + ctype.case_of(names, decl: decl, at: case_at) + "_eq(&a->as." + mangle.case_member(case_name) + ", &b->as." + mangle.case_member(case_name) + ");"
+                text: "        case " + tag + ": return " + ctype.case_of(names, decl: decl, at: case_at) + "_eq(&hero_a->hero_as." + mangle.case_member(case_name) + ", &hero_b->hero_as." + mangle.case_member(case_name) + ");"
             )
         case_at @ case_at + 1
 
@@ -219,12 +219,12 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
 # pointer, which differs between two equal values.
 function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, at: ctype.Aggregate, fields: [ast.Field])
     writer.at_generated(@w)
-    writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *elem) {")
+    writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *hero_elem) {")
 
     if at.partial
         writer.line(
             @w,
-            text: "    (void)elem; hero_panic(\"" + at.prefix + "_hash: a partial record has no structural hash\");"
+            text: "    (void)hero_elem; hero_panic(\"" + at.prefix + "_hash: a partial record has no structural hash\");"
         )
         writer.line(@w, text: "}")
         writer.blank(@w)
@@ -235,10 +235,10 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
     # a key through containers and fields alike, so the constant this returned
     # was sound by luck — every hash equal — rather than by construction.
     if at.handle
-        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
-        writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
-        writer.line(@w, text: "    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);")
-        writer.line(@w, text: "    return h;")
+        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
+        writer.line(@w, text: "    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);")
+        writer.line(@w, text: "    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);")
+        writer.line(@w, text: "    return hero_h;")
         writer.line(@w, text: "}")
         writer.blank(@w)
         return
@@ -248,11 +248,11 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
     # produce one (CLAUDE.md §11). A record whose every field is unhashable
     # — one `ptr`, which is what a binding wraps a handle in — otherwise
     # declares it and reads nothing, and `suite_warnings` holds the corpus
-    # to zero clang warnings. `(void)elem;` is the other way and is worse:
+    # to zero clang warnings. `(void)hero_elem;` is the other way and is worse:
     # it says *somebody might have read this* where nothing can.
     #
     # **The first repair asked a predicate instead and was wrong** — a fixed
-    # array answers no there while the loop below still writes `&v->…` for
+    # array answers no there while the loop below still writes `&hero_v->…` for
     # it. Defect 009 has the reproducer, the golden
     # that caught it and why the predicate could not have been right.
     lines: [str] @= []
@@ -281,14 +281,14 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             i: i64 @= 0
 
             while i < fixed_count
-                place = "&v->" + member + "[" + i.to_str() + "]"
+                place = "&hero_v->" + member + "[" + i.to_str() + "]"
                 lines @ lines.push(
-                    "    h = (h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
+                    "    hero_h = (hero_h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
                 )
                 i @ i + 1
         else
             lines @ lines.push(
-                "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);"
+                "    hero_h = (hero_h ^ " + one_hash(c, names, ty: ty, place: "&hero_v->" + member) + ") * UINT64_C(0x100000001b3);"
             )
 
     reads_the_value: bool @= false
@@ -298,24 +298,25 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             reads_the_value @ true
 
     if reads_the_value
-        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
-    writer.line(@w, text: "    uint64_t h = UINT64_C(0xcbf29ce484222325);")
+        writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
+    writer.line(@w, text: "    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);")
 
     for line in lines
         writer.line(@w, text: line)
 
-    writer.line(@w, text: "    return h;")
+    writer.line(@w, text: "    return hero_h;")
     writer.line(@w, text: "}")
     writer.blank(@w)
 
-# Whether a line the hash is about to write reads `v`. Every place this
-# emitter builds spells it `&v->`, in both branches of the loop above and
-# nowhere else, so the needle is that and not the bare letter — which would
-# match the `v` inside a field named `value`. Asked of the bytes
+# Whether a line the hash is about to write reads `hero_v`. Every place this
+# emitter builds spells it `&hero_v->`, in both branches of the loop above
+# and nowhere else, so the needle is that and not the bare name, which a
+# longer name holding it would match (`v` inside `value`, when this read
+# `v`). Asked of the bytes
 # (`strings.holds`, defect 452): it sliced the line at every byte, safe only
 # while every line it read was ASCII.
 function mentions_v(line: str) -> bool
-    return strings.holds(text: line, needle: "&v->")
+    return strings.holds(text: line, needle: "&hero_v->")
 
 function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> str
     found = descriptors.hash_call(c, names, ty: ty, place: place)
@@ -331,11 +332,11 @@ function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> 
 # list.
 function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: ctype.Aggregate)
     writer.at_generated(@w)
-    writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *elem) {")
-    writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "v = elem;")
-    writer.line(@w, text: "    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)")
+    writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *hero_elem) {")
+    writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
+    writer.line(@w, text: "    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)")
     writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
-    writer.line(@w, text: "    switch (v->tag) {")
+    writer.line(@w, text: "    switch (hero_v->hero_tag) {")
     case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
@@ -343,11 +344,11 @@ function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Sour
         tag = mangle.tag_of(ty: at.prefix, case_name: case_name)
 
         if one_case.fields.len() == 0
-            writer.line(@w, text: "        case " + tag + ": return h;")
+            writer.line(@w, text: "        case " + tag + ": return hero_h;")
         else
             writer.line(
                 @w,
-                text: "        case " + tag + ": return (h ^ " + ctype.case_of(names, decl: decl, at: case_at) + "_hash(&v->as." + mangle.case_member(case_name) + ")) * UINT64_C(0x100000001b3);"
+                text: "        case " + tag + ": return (hero_h ^ " + ctype.case_of(names, decl: decl, at: case_at) + "_hash(&hero_v->hero_as." + mangle.case_member(case_name) + ")) * UINT64_C(0x100000001b3);"
             )
         case_at @ case_at + 1
 
@@ -381,11 +382,11 @@ test "eq short-circuits per field and hash mixes the same fields"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Person_eq(const h_t_Person *a, const h_t_Person *b) {\n    if (!(hero_str_eq(a->f_name, b->f_name))) return false;\n    if (!(a->f_age == b->f_age)) return false;\n    return true;\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Person_eq(const h_t_Person *hero_a, const h_t_Person *hero_b) {\n    if (!(hero_str_eq(hero_a->f_name, hero_b->f_name))) return false;\n    if (!(hero_a->f_age == hero_b->f_age)) return false;\n    return true;\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     hash_body(@hw, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Person_hash(const void *elem) {\n    const h_t_Person *v = elem;\n    uint64_t h = UINT64_C(0xcbf29ce484222325);\n    h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);\n    h = (h ^ (&hero_desc_int)->hash(&v->f_age)) * UINT64_C(0x100000001b3);\n    return h;\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Person_hash(const void *hero_elem) {\n    const h_t_Person *hero_v = hero_elem;\n    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);\n    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_name)) * UINT64_C(0x100000001b3);\n    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_age)) * UINT64_C(0x100000001b3);\n    return hero_h;\n}\n\n"
 
 test "a variant compares tags first and mixes the tag into the hash"
     got = ready("variant Coin\n    heads\n    tails\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n")
@@ -393,11 +394,11 @@ test "a variant compares tags first and mixes the tag into the hash"
     w: writer.Writer @= writer.new_writer("t")
     variant_equality_body(@w, got.names, got.s, got.decls, decl: 0, at: at)
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Coin_eq(const h_t_Coin *a, const h_t_Coin *b) {\n    if (a->tag != b->tag) return false;\n    switch (a->tag) {\n        case h_t_0Coin_tag_heads: return true;\n        case h_t_0Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Coin_eq(const h_t_Coin *hero_a, const h_t_Coin *hero_b) {\n    if (hero_a->hero_tag != hero_b->hero_tag) return false;\n    switch (hero_a->hero_tag) {\n        case h_t_0Coin_tag_heads: return true;\n        case h_t_0Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     variant_hash_body(@hw, got.names, got.s, got.decls, decl: 0, at: at)
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Coin_hash(const void *elem) {\n    const h_t_Coin *v = elem;\n    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)\n        * UINT64_C(0x100000001b3);\n    switch (v->tag) {\n        case h_t_0Coin_tag_heads: return h;\n        case h_t_0Coin_tag_tails: return h;\n    }\n    hero_unreachable();\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Coin_hash(const void *hero_elem) {\n    const h_t_Coin *hero_v = hero_elem;\n    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)\n        * UINT64_C(0x100000001b3);\n    switch (hero_v->hero_tag) {\n        case h_t_0Coin_tag_heads: return hero_h;\n        case h_t_0Coin_tag_tails: return hero_h;\n    }\n    hero_unreachable();\n}\n\n"
 
 test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     got = ready(
@@ -407,17 +408,17 @@ test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: vec, fields: types.fields_of(got.decls, decl: 0))
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Vec2_eq(const Vec2 *a, const Vec2 *b) {\n    if (!((a->cells[0] == b->cells[0] && a->cells[1] == b->cells[1]))) return false;\n    return true;\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Vec2_eq(const Vec2 *hero_a, const Vec2 *hero_b) {\n    if (!((hero_a->cells[0] == hero_b->cells[0] && hero_a->cells[1] == hero_b->cells[1]))) return false;\n    return true;\n}\n\n"
     font = ctype.aggregate(got.names, decl: 1)
     fw: writer.Writer @= writer.new_writer("t")
     equality_body(@fw, got.c, got.names, got.s, at: font, fields: types.fields_of(got.decls, decl: 1))
     font_text = writer.finish(fw)
-    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Font_eq(const Font *a, const Font *b) {\n    hero_panic(\"h_t_0Font_eq: a partial record has no structural equality\");\n}\n\n"
+    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Font_eq(const Font *hero_a, const Font *hero_b) {\n    hero_panic(\"h_t_0Font_eq: a partial record has no structural equality\");\n}\n\n"
 
 # Defect 452's case: a line holding characters above ASCII, the needle
 # absent, after them and before them; the slicing search split the first one
 # it met.
 test "a line is searched by its bytes, whatever it holds (defect 452)"
-    assert !mentions_v("    /* é€😀 */ h = h * 3;")
-    assert mentions_v("    /* é€😀 */ h = hash(&v->f_x);")
-    assert mentions_v("    h = hash(&v->f_x); /* é */")
+    assert !mentions_v("    /* é€😀 */ hero_h = hero_h * 3;")
+    assert mentions_v("    /* é€😀 */ hero_h = hash(&hero_v->f_x);")
+    assert mentions_v("    hero_h = hash(&hero_v->f_x); /* é */")

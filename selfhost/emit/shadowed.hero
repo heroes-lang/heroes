@@ -62,11 +62,11 @@ constant HEAD: str
 # what such a block spells is what keeps a bound name of theirs reachable.
 constant LOCALS: [str]
     [
-        "found"
         "hero_answer"
         "hero_arg"
         "hero_box"
         "hero_caller"
+        "hero_found"
         "hero_head"
         "hero_here"
         "hero_left"
@@ -317,15 +317,20 @@ function elsewhere(word: str) -> bool
 
 # C's own words and a value (`return;`, `break;`, `= true;`), the members of
 # an option's and a variant's structs (`types.hero`) and of a thread's box
-# (`crossing_bodies.hero`, `head`; C keeps a member's name apart from the
+# (`crossing_bodies.hero`, `hero_fn`; C keeps a member's name apart from the
 # ordinary names a bound function has), a word of a Heroes text
 # a constant holds (`callback_guard.hero`, `_`) and a statement the runtime
 # defines (`inst.hero`); the locals of functions that call no bound C
-# function, C's `main` (`which`), a thunk (`f`), the per-type functions and
-# an assertion's renderers (`elem`, `h`, `p`, `v`), the layout tables (`a`,
-# `b`, `c`, `g`, `n`); and the words of the C a probe or a question to clang
-# compiles apart from the program's unit (`ffi_*`, `value_probe`,
-# `probe_cut`, `field_asked`, `header_reach`, `c_spellings`, `extern_union`).
+# function, C's `main` (`hero_which`), a thunk (`hero_f`), the per-type
+# functions, a crossing's and an assertion's renderers (`hero_elem`,
+# `hero_h`, `hero_p`, `hero_cell`), the layout tables (`a`, `b`, `c`, `g`,
+# `n`); and the words of the C a probe or a question to clang compiles apart
+# from the program's unit (`ffi_*`, `value_probe`, `probe_cut`,
+# `field_asked`, `header_reach`, `c_spellings`, `extern_union`). Every name
+# the unit's own C declares is of the compiler's own form `hero_` since
+# 2026-11-24: a header's macro over a bare one rewrote it, and a name of the
+# list the guard gives back was rewritten too wherever the program bound a
+# macro of that name, the guard then pushing the header's meaning again.
 constant ELSEWHERE: [str]
     [
         "break"
@@ -333,16 +338,19 @@ constant ELSEWHERE: [str]
         "return"
         "struct"
         "true"
-        "as"
-        "err"
-        "ok"
-        "tag"
-        "head"
+        "hero_as"
+        "hero_err"
+        "hero_ok"
+        "hero_tag"
+        "hero_fn"
+        "hero_which"
+        "hero_f"
+        "hero_elem"
+        "hero_h"
+        "hero_p"
+        "hero_cell"
         "_"
         "HERO_ELEMENT_WRITE_NOT_EMITTED"
-        "which"
-        "f"
-        "elem"
         "h"
         "p"
         "v"
@@ -353,9 +361,7 @@ constant ELSEWHERE: [str]
         "n"
         "MISSPELLED"
         "W"
-        "at"
         "bytes"
-        "cell"
         "check"
         "extent"
         "field"

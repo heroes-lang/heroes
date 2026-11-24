@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -68,26 +68,26 @@ typedef struct h_inoutthroughpathsofacell_Bag {
 } h_inoutthroughpathsofacell_Bag;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -96,43 +96,43 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 108 "inoutthroughpathsofacell.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_retain(const h_inoutthroughpathsofacell_Bag *v);
-HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_release(h_inoutthroughpathsofacell_Bag *v);
-HERO_TU_LOCAL bool h_inoutthroughpathsofacell_0Bag_eq(const h_inoutthroughpathsofacell_Bag *a, const h_inoutthroughpathsofacell_Bag *b);
-HERO_TU_LOCAL uint64_t h_inoutthroughpathsofacell_0Bag_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_retain(const h_inoutthroughpathsofacell_Bag *hero_v);
+HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_release(h_inoutthroughpathsofacell_Bag *hero_v);
+HERO_TU_LOCAL bool h_inoutthroughpathsofacell_0Bag_eq(const h_inoutthroughpathsofacell_Bag *hero_a, const h_inoutthroughpathsofacell_Bag *hero_b);
+HERO_TU_LOCAL uint64_t h_inoutthroughpathsofacell_0Bag_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_inoutthroughpathsofacell_0Bag_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_inoutthroughpathsofacell_Bag));
-    h_inoutthroughpathsofacell_0Bag_retain((const h_inoutthroughpathsofacell_Bag *)dst);
+static void h_inoutthroughpathsofacell_0Bag_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_inoutthroughpathsofacell_Bag));
+    h_inoutthroughpathsofacell_0Bag_retain((const h_inoutthroughpathsofacell_Bag *)hero_dst);
 }
-static void h_inoutthroughpathsofacell_0Bag_desc_drop(void *elem) {
-    h_inoutthroughpathsofacell_0Bag_release((h_inoutthroughpathsofacell_Bag *)elem);
+static void h_inoutthroughpathsofacell_0Bag_desc_drop(void *hero_elem) {
+    h_inoutthroughpathsofacell_0Bag_release((h_inoutthroughpathsofacell_Bag *)hero_elem);
 }
-static bool h_inoutthroughpathsofacell_0Bag_desc_eq(const void *a, const void *b) {
-    return h_inoutthroughpathsofacell_0Bag_eq((const h_inoutthroughpathsofacell_Bag *)a, (const h_inoutthroughpathsofacell_Bag *)b);
+static bool h_inoutthroughpathsofacell_0Bag_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_inoutthroughpathsofacell_0Bag_eq((const h_inoutthroughpathsofacell_Bag *)hero_a, (const h_inoutthroughpathsofacell_Bag *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_inoutthroughpathsofacell_0Bag_desc = {
     sizeof(h_inoutthroughpathsofacell_Bag),
@@ -149,7 +149,7 @@ int64_t h_inoutthroughpathsofacell_pick(void);
 void h_inoutthroughpathsofacell_main(void);
 
 #line 27 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-void h_inoutthroughpathsofacell_add(h_inoutthroughpathsofacell_Bag *ph0_b, HeroStr h1_s) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4, *t5; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_inoutthroughpathsofacell_add(h_inoutthroughpathsofacell_Bag *ph0_b, HeroStr h1_s) { HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4, *t5; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_b).f_items; t2 = h1_s; t3 = hero_array_push(t1, &t2); t4 = h2_own2; h2_own2 = t3; hero_array_decref(t4); t5 = (*ph0_b).f_items; hero_array_incref(t3); (*ph0_b).f_items = t3; hero_array_decref(t5);
 #line 155 "inoutthroughpathsofacell.c"
     hero_array_release_at(&h2_own2);
@@ -157,13 +157,13 @@ void h_inoutthroughpathsofacell_add(h_inoutthroughpathsofacell_Bag *ph0_b, HeroS
 }
 
 #line 30 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-void h_inoutthroughpathsofacell_add_items(HeroArrayHeader * *ph0_xs, HeroStr h1_s) { HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_inoutthroughpathsofacell_add_items(HeroArrayHeader * *ph0_xs, HeroStr h1_s) { HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t2 = h1_s; hero_array_push_owned(&(*ph0_xs), &t2); return;
 #line 163 "inoutthroughpathsofacell.c"
 }
 
 #line 33 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_inoutthroughpathsofacell_Bag *ph1_b) { h_inoutthroughpathsofacell_Bag h2_held = {0}; HERO_NODEBUG h_inoutthroughpathsofacell_Bag t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_inoutthroughpathsofacell_Bag *ph1_b) { h_inoutthroughpathsofacell_Bag h2_held = {0}; HERO_NODEBUG h_inoutthroughpathsofacell_Bag t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_a); t4 = h2_held; h_inoutthroughpathsofacell_0Bag_retain(&t1); h2_held = t1; h_inoutthroughpathsofacell_0Bag_release(&t4);
     t2 = (*ph1_b); t5 = (*ph0_a); h_inoutthroughpathsofacell_0Bag_retain(&t2); (*ph0_a) = t2; h_inoutthroughpathsofacell_0Bag_release(&t5);
     t3 = h2_held; t6 = (*ph1_b); h_inoutthroughpathsofacell_0Bag_retain(&t3); (*ph1_b) = t3; h_inoutthroughpathsofacell_0Bag_release(&t6);
@@ -173,14 +173,14 @@ void h_inoutthroughpathsofacell_swap(h_inoutthroughpathsofacell_Bag *ph0_a, h_in
 }
 
 #line 38 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-int64_t h_inoutthroughpathsofacell_pick(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_inoutthroughpathsofacell_pick(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_f1da595); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(0); return t2;
 #line 180 "inoutthroughpathsofacell.c"
 }
 
 #line 42 "tests/golden/run/inout-through-paths-of-a-cell.hero"
-void h_inoutthroughpathsofacell_main(void) { h_inoutthroughpathsofacell_Bag h0_b = {0}; HeroArrayHeader * h1_bs = {0}; HeroArrayHeader * h2_cs = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h5_own5 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *t2, *t5, *t8, *t12, *t14, *t17, *t20, *t24, *t27, *t33, *t35, *t38, *t41, *t43, *t46, *t50, *t53, *t55, *t58, *t60, *t62, *t63, *t64, *t66, *t67; HERO_NODEBUG h_inoutthroughpathsofacell_Bag h4_own4 = {0}, h6_own6 = {0}, h8_own8 = {0}, h11_own11 = {0}, t3, t9, t13, t19, t26, t34, t40, t45, t52, t56, t57, t59, t61, t65; HERO_NODEBUG HeroStr t1, t4, t7, t10, t11, t16, t23, t29, t30, t31, t32, t49; HERO_NODEBUG int64_t t6, t15, t18, t21, t22, t25, t28, t36, t37, t39, t42, t44, t47, t48, t51, t54; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_inoutthroughpathsofacell_main(void) { h_inoutthroughpathsofacell_Bag h0_b = {0}; HeroArrayHeader * h1_bs = {0}; HeroArrayHeader * h2_cs = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h5_own5 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *t2, *t5, *t8, *t12, *t14, *t17, *t20, *t24, *t27, *t33, *t35, *t38, *t41, *t43, *t46, *t50, *t53, *t55, *t58, *t60, *t62, *t63, *t64, *t66, *t67; HERO_NODEBUG h_inoutthroughpathsofacell_Bag h4_own4 = {0}, h6_own6 = {0}, h8_own8 = {0}, h11_own11 = {0}, t3, t9, t13, t19, t26, t34, t40, t45, t52, t56, t57, t59, t61, t65; HERO_NODEBUG HeroStr t1, t4, t7, t10, t11, t16, t23, t29, t30, t31, t32, t49; HERO_NODEBUG int64_t t6, t15, t18, t21, t22, t25, t28, t36, t37, t39, t42, t44, t47, t48, t51, t54; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_61); t2 = hero_array_new(&hero_desc_str, 1); hero_array_push_owned(&t2, &t1); t55 = h3_own3; h3_own3 = t2; hero_array_decref(t55); hero_array_incref(t2); t3 = (h_inoutthroughpathsofacell_Bag){.f_items = t2}; t56 = h4_own4; h4_own4 = t3; h_inoutthroughpathsofacell_0Bag_release(&t56); t57 = h0_b; h_inoutthroughpathsofacell_0Bag_retain(&t3); h0_b = t3; h_inoutthroughpathsofacell_0Bag_release(&t57);
     t4 = HERO_STR_LIT(hero_str_78); h_inoutthroughpathsofacell_add_items(&h0_b.f_items, t4);
     t5 = h0_b.f_items; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); hero_print_int(t6); hero_print_end();
@@ -211,126 +211,126 @@ void h_inoutthroughpathsofacell_main(void) { h_inoutthroughpathsofacell_Bag h0_b
     hero_array_release_at(&h12_own12);
     return;
 }
-HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_retain(const h_inoutthroughpathsofacell_Bag *v) {
-    hero_array_incref(v->f_items);
+HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_retain(const h_inoutthroughpathsofacell_Bag *hero_v) {
+    hero_array_incref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_release(h_inoutthroughpathsofacell_Bag *v) {
-    hero_array_decref(v->f_items);
+HERO_TU_LOCAL void h_inoutthroughpathsofacell_0Bag_release(h_inoutthroughpathsofacell_Bag *hero_v) {
+    hero_array_decref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL bool h_inoutthroughpathsofacell_0Bag_eq(const h_inoutthroughpathsofacell_Bag *a, const h_inoutthroughpathsofacell_Bag *b) {
-    if (!(hero_array_eq(a->f_items, b->f_items))) return false;
+HERO_TU_LOCAL bool h_inoutthroughpathsofacell_0Bag_eq(const h_inoutthroughpathsofacell_Bag *hero_a, const h_inoutthroughpathsofacell_Bag *hero_b) {
+    if (!(hero_array_eq(hero_a->f_items, hero_b->f_items))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_inoutthroughpathsofacell_0Bag_hash(const void *elem) {
-    const h_inoutthroughpathsofacell_Bag *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_items)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_inoutthroughpathsofacell_0Bag_hash(const void *hero_elem) {
+    const h_inoutthroughpathsofacell_Bag *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_items)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6c9951b15cdeab85", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08a010373d04387f", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("inoutthroughpathsofacell\tinout-through-paths-of-a-cell\n");
     h_inoutthroughpathsofacell_main();
     hero_runtime_check_leaks();

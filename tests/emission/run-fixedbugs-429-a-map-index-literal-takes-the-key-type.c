@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,7 +65,7 @@ typedef enum h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag {
 } h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag;
 
 typedef struct h_fixedbugs429amapindexliteraltakesthekeytype_Op {
-    h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag tag;
+    h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag hero_tag;
 } h_fixedbugs429amapindexliteraltakesthekeytype_Op;
 
 typedef struct h_fixedbugs429amapindexliteraltakesthekeytype_Holder {
@@ -73,26 +73,26 @@ typedef struct h_fixedbugs429amapindexliteraltakesthekeytype_Holder {
 } h_fixedbugs429amapindexliteraltakesthekeytype_Holder;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -101,44 +101,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 113 "fixedbugs429amapindexliteraltakesthekeytype.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Op_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *v);
-HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(h_fixedbugs429amapindexliteraltakesthekeytype_Holder *v);
-HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *hero_a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Op_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_v);
+HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_a, const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_fixedbugs429amapindexliteraltakesthekeytype_Op));
+static void h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_fixedbugs429amapindexliteraltakesthekeytype_Op));
 }
-static void h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_drop(void *elem) {
-    (void)elem;
+static void h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq((const h_fixedbugs429amapindexliteraltakesthekeytype_Op *)a, (const h_fixedbugs429amapindexliteraltakesthekeytype_Op *)b);
+static bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq((const h_fixedbugs429amapindexliteraltakesthekeytype_Op *)hero_a, (const h_fixedbugs429amapindexliteraltakesthekeytype_Op *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc = {
     sizeof(h_fixedbugs429amapindexliteraltakesthekeytype_Op),
@@ -151,61 +151,61 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugs429amapindexliteraltakesthekeytyp
 void h_fixedbugs429amapindexliteraltakesthekeytype_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) { HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h11_f6 = {0}, h13_f7 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t6, t7, t11, t13, t19, t20, t24, t26, t30, t31, t35, t44, t45, t49, t51, t59, t60, t64, t66, t73, t74, t78, t80, t84, t85, t94, t95, t99, t101, t116, t117, t118, t119, t120, t121, t126, t127, t131, t132, t135, t136, t137, t138, t141, t142; HERO_NODEBUG HeroStr h4_r0 = {0}, t2, t14, t16, t27, t36, t37, t38, t40, t52, t54, t67, t69, t81, t90, t102, t110, t111, t122, t123, t145; HeroMapHeader * h5_low = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HeroMapHeader * h9_ops = {0}; HeroMapHeader * h12_wide = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader *h16_own16 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h25_own25 = {0}, *h28_own28 = {0}, *t3, *t4, *t17, *t28, *t41, *t42, *t55, *t57, *t70, *t71, *t82, *t91, *t92, *t114, *t115, *t124, *t125, *t128, *t133, *t134, *t139, *t140; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}, t56, t129, t130; HERO_NODEBUG HeroArrayHeader *h30_own30 = {0}, *t106, *t107, *t143, *t144; HERO_NODEBUG uint8_t t1, t5, t15, t18, t29, t103, t104, t105, t109, t113; HERO_NODEBUG int64_t t8, t9, t21, t22, t32, t33, t46, t47, t61, t62, t75, t76, t86, t87, t89, t93, t96, t97, t108, t112; HERO_NODEBUG bool t10, t23, t34, t48, t63, t77, t88, t98; HERO_NODEBUG HeroFailure t12, t25, t50, t65, t79, t100; HERO_NODEBUG int8_t t39, t43; HERO_NODEBUG uint16_t t53, t58; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t68, t72, t83; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(11); t2 = HERO_STR_LIT(hero_str_30a26e1a); t3 = hero_map_new(&hero_desc_u8, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 22, 25}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t114 = h16_own16; h16_own16 = t3; hero_map_decref(t114); t115 = h0_names; hero_map_incref(t3); h0_names = t3; hero_map_decref(t115);
-    t4 = h0_names; t5 = UINT64_C(11); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 23, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t4, &t5, &hero_here); if (found == NULL) { t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t6 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t6.as.ok, found); } } t116 = h17_own17; h17_own17 = t6; h_0opt_f87774a_release(&t116); t117 = h1_f0; h_0opt_f87774a_retain(&t6); h1_f0 = t6; h_0opt_f87774a_release(&t117); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t13 = h1_f0; t14 = t13.as.ok; hero_print_str(t14); hero_print_end();
-    t15 = UINT64_C(12); t16 = HERO_STR_LIT(hero_str_2e771ab1); hero_str_incref(t16); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 24, 5}; hero_map_set_at(&(h0_names), &t15, &t16, &hero_here); }
-    t17 = h0_names; t18 = UINT64_C(12); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 25, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t17, &t18, &hero_here); if (found == NULL) { t19 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t19 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t19.as.ok, found); } } t118 = h18_own18; h18_own18 = t19; h_0opt_f87774a_release(&t118); t119 = h2_f1; h_0opt_f87774a_retain(&t19); h2_f1 = t19; h_0opt_f87774a_release(&t119); t20 = h2_f1; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb3; else goto bb4; bb2:
+void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) { HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h2_f1 = {0}, h3_f2 = {0}, h6_f3 = {0}, h8_f4 = {0}, h10_f5 = {0}, h11_f6 = {0}, h13_f7 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h21_own21 = {0}, h24_own24 = {0}, h26_own26 = {0}, h27_own27 = {0}, h29_own29 = {0}, t6, t7, t11, t13, t19, t20, t24, t26, t30, t31, t35, t44, t45, t49, t51, t59, t60, t64, t66, t73, t74, t78, t80, t84, t85, t94, t95, t99, t101, t116, t117, t118, t119, t120, t121, t126, t127, t131, t132, t135, t136, t137, t138, t141, t142; HERO_NODEBUG HeroStr h4_r0 = {0}, t2, t14, t16, t27, t36, t37, t38, t40, t52, t54, t67, t69, t81, t90, t102, t110, t111, t122, t123, t145; HeroMapHeader * h5_low = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HeroMapHeader * h9_ops = {0}; HeroMapHeader * h12_wide = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader *h16_own16 = {0}, *h20_own20 = {0}, *h22_own22 = {0}, *h25_own25 = {0}, *h28_own28 = {0}, *t3, *t4, *t17, *t28, *t41, *t42, *t55, *t57, *t70, *t71, *t82, *t91, *t92, *t114, *t115, *t124, *t125, *t128, *t133, *t134, *t139, *t140; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}, t56, t129, t130; HERO_NODEBUG HeroArrayHeader *h30_own30 = {0}, *t106, *t107, *t143, *t144; HERO_NODEBUG uint8_t t1, t5, t15, t18, t29, t103, t104, t105, t109, t113; HERO_NODEBUG int64_t t8, t9, t21, t22, t32, t33, t46, t47, t61, t62, t75, t76, t86, t87, t89, t93, t96, t97, t108, t112; HERO_NODEBUG bool t10, t23, t34, t48, t63, t77, t88, t98; HERO_NODEBUG HeroFailure t12, t25, t50, t65, t79, t100; HERO_NODEBUG int8_t t39, t43; HERO_NODEBUG uint16_t t53, t58; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t68, t72, t83; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = UINT64_C(11); t2 = HERO_STR_LIT(hero_str_30a26e1a); t3 = hero_map_new(&hero_desc_u8, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 22, 25}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t114 = h16_own16; h16_own16 = t3; hero_map_decref(t114); t115 = h0_names; hero_map_incref(t3); h0_names = t3; hero_map_decref(t115);
+    t4 = h0_names; t5 = UINT64_C(11); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 23, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t4, &t5, &hero_here); if (hero_found == NULL) { t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t6 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t6.hero_as.hero_ok, hero_found); } } t116 = h17_own17; h17_own17 = t6; h_0opt_f87774a_release(&t116); t117 = h1_f0; h_0opt_f87774a_retain(&t6); h1_f0 = t6; h_0opt_f87774a_release(&t117); t7 = h1_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1: t13 = h1_f0; t14 = t13.hero_as.hero_ok; hero_print_str(t14); hero_print_end();
+    t15 = UINT64_C(12); t16 = HERO_STR_LIT(hero_str_2e771ab1); hero_str_incref(t16); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 24, 5}; hero_map_set_at(&(h0_names), &t15, &t16, &hero_here); }
+    t17 = h0_names; t18 = UINT64_C(12); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 25, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t17, &t18, &hero_here); if (hero_found == NULL) { t19 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t19 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t19.hero_as.hero_ok, hero_found); } } t118 = h18_own18; h18_own18 = t19; h_0opt_f87774a_release(&t118); t119 = h2_f1; h_0opt_f87774a_retain(&t19); h2_f1 = t19; h_0opt_f87774a_release(&t119); t20 = h2_f1; t21 = t20.hero_tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 23
-    t11 = h1_f0; t12 = t11.as.err;
+    t11 = h1_f0; t12 = t11.hero_as.hero_err;
 #line 162 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t12, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 23, 11);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t26 = h2_f1; t27 = t26.as.ok; hero_print_str(t27); hero_print_end();
-    t28 = h0_names; t29 = UINT64_C(13); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 26, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t28, &t29, &hero_here); if (found == NULL) { t30 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t30 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t30.as.ok, found); } } t120 = h19_own19; h19_own19 = t30; h_0opt_f87774a_release(&t120); t121 = h3_f2; h_0opt_f87774a_retain(&t30); h3_f2 = t30; h_0opt_f87774a_release(&t121); t31 = h3_f2; t32 = t31.tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto bb5; else goto bb6; bb4:
+    t26 = h2_f1; t27 = t26.hero_as.hero_ok; hero_print_str(t27); hero_print_end();
+    t28 = h0_names; t29 = UINT64_C(13); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 26, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t28, &t29, &hero_here); if (hero_found == NULL) { t30 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t30 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t30.hero_as.hero_ok, hero_found); } } t120 = h19_own19; h19_own19 = t30; h_0opt_f87774a_release(&t120); t121 = h3_f2; h_0opt_f87774a_retain(&t30); h3_f2 = t30; h_0opt_f87774a_release(&t121); t31 = h3_f2; t32 = t31.hero_tag; t33 = INT64_C(0); t34 = t32 == t33; if (t34) goto hero_bb5; else goto hero_bb6; hero_bb4:
 #line 25
-    t24 = h2_f1; t25 = t24.as.err;
+    t24 = h2_f1; t25 = t24.hero_as.hero_err;
 #line 171 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t25, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 25, 11);
     hero_unreachable();
-bb5:
+hero_bb5:
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t35 = h3_f2; t36 = t35.as.ok; t122 = h4_r0; hero_str_incref(t36); h4_r0 = t36; hero_str_decref(t122); goto bb7; bb6: t37 = HERO_STR_LIT(hero_str_edaa230); t123 = h4_r0; hero_str_incref(t37); h4_r0 = t37; hero_str_decref(t123); goto bb7; bb7: t38 = h4_r0; hero_print_str(t38); hero_print_end();
-    t39 = INT64_C(-128); t40 = HERO_STR_LIT(hero_str_484eaa2d); t41 = hero_map_new(&hero_desc_i8, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 27, 22}; hero_map_put_at(t41, &t39, &t40, &hero_here); } t124 = h20_own20; h20_own20 = t41; hero_map_decref(t124); t125 = h5_low; hero_map_incref(t41); h5_low = t41; hero_map_decref(t125);
-    t42 = h5_low; t43 = INT64_C(-128); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 28, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t42, &t43, &hero_here); if (found == NULL) { t44 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t44 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t44.as.ok, found); } } t126 = h21_own21; h21_own21 = t44; h_0opt_f87774a_release(&t126); t127 = h6_f3; h_0opt_f87774a_retain(&t44); h6_f3 = t44; h_0opt_f87774a_release(&t127); t45 = h6_f3; t46 = t45.tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto bb8; else goto bb9; bb8: t51 = h6_f3; t52 = t51.as.ok; hero_print_str(t52); hero_print_end();
-    t53 = UINT64_C(7); t54 = HERO_STR_LIT(hero_str_70509edc); t55 = hero_map_new(&hero_desc_u16, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 29, 19}; hero_map_put_at(t55, &t53, &t54, &hero_here); } t128 = h22_own22; h22_own22 = t55; hero_map_decref(t128); hero_map_incref(t55); t56 = (h_fixedbugs429amapindexliteraltakesthekeytype_Holder){.f_m = t55}; t129 = h23_own23; h23_own23 = t56; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(&t129); t130 = h7_h; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(&t56); h7_h = t56; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(&t130);
-    t57 = h7_h.f_m; t58 = UINT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 30, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t57, &t58, &hero_here); if (found == NULL) { t59 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t59 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t59.as.ok, found); } } t131 = h24_own24; h24_own24 = t59; h_0opt_f87774a_release(&t131); t132 = h8_f4; h_0opt_f87774a_retain(&t59); h8_f4 = t59; h_0opt_f87774a_release(&t132); t60 = h8_f4; t61 = t60.tag; t62 = INT64_C(0); t63 = t61 == t62; if (t63) goto bb10; else goto bb11; bb9:
+    t35 = h3_f2; t36 = t35.hero_as.hero_ok; t122 = h4_r0; hero_str_incref(t36); h4_r0 = t36; hero_str_decref(t122); goto hero_bb7; hero_bb6: t37 = HERO_STR_LIT(hero_str_edaa230); t123 = h4_r0; hero_str_incref(t37); h4_r0 = t37; hero_str_decref(t123); goto hero_bb7; hero_bb7: t38 = h4_r0; hero_print_str(t38); hero_print_end();
+    t39 = INT64_C(-128); t40 = HERO_STR_LIT(hero_str_484eaa2d); t41 = hero_map_new(&hero_desc_i8, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 27, 22}; hero_map_put_at(t41, &t39, &t40, &hero_here); } t124 = h20_own20; h20_own20 = t41; hero_map_decref(t124); t125 = h5_low; hero_map_incref(t41); h5_low = t41; hero_map_decref(t125);
+    t42 = h5_low; t43 = INT64_C(-128); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 28, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t42, &t43, &hero_here); if (hero_found == NULL) { t44 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t44 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t44.hero_as.hero_ok, hero_found); } } t126 = h21_own21; h21_own21 = t44; h_0opt_f87774a_release(&t126); t127 = h6_f3; h_0opt_f87774a_retain(&t44); h6_f3 = t44; h_0opt_f87774a_release(&t127); t45 = h6_f3; t46 = t45.hero_tag; t47 = INT64_C(0); t48 = t46 == t47; if (t48) goto hero_bb8; else goto hero_bb9; hero_bb8: t51 = h6_f3; t52 = t51.hero_as.hero_ok; hero_print_str(t52); hero_print_end();
+    t53 = UINT64_C(7); t54 = HERO_STR_LIT(hero_str_70509edc); t55 = hero_map_new(&hero_desc_u16, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 29, 19}; hero_map_put_at(t55, &t53, &t54, &hero_here); } t128 = h22_own22; h22_own22 = t55; hero_map_decref(t128); hero_map_incref(t55); t56 = (h_fixedbugs429amapindexliteraltakesthekeytype_Holder){.f_m = t55}; t129 = h23_own23; h23_own23 = t56; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(&t129); t130 = h7_h; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(&t56); h7_h = t56; h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(&t130);
+    t57 = h7_h.f_m; t58 = UINT64_C(7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 30, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t57, &t58, &hero_here); if (hero_found == NULL) { t59 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t59 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t59.hero_as.hero_ok, hero_found); } } t131 = h24_own24; h24_own24 = t59; h_0opt_f87774a_release(&t131); t132 = h8_f4; h_0opt_f87774a_retain(&t59); h8_f4 = t59; h_0opt_f87774a_release(&t132); t60 = h8_f4; t61 = t60.hero_tag; t62 = INT64_C(0); t63 = t61 == t62; if (t63) goto hero_bb10; else goto hero_bb11; hero_bb9:
 #line 28
-    t49 = h6_f3; t50 = t49.as.err;
+    t49 = h6_f3; t50 = t49.hero_as.hero_err;
 #line 183 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t50, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 28, 11);
     hero_unreachable();
-bb10:
+hero_bb10:
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t66 = h8_f4; t67 = t66.as.ok; hero_print_str(t67); hero_print_end();
-    t68 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus}; t69 = HERO_STR_LIT(hero_str_f1e77ee); t70 = hero_map_new(&h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 31, 22}; hero_map_put_at(t70, &t68, &t69, &hero_here); } t133 = h25_own25; h25_own25 = t70; hero_map_decref(t133); t134 = h9_ops; hero_map_incref(t70); h9_ops = t70; hero_map_decref(t134);
-    t71 = h9_ops; t72 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus}; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 32, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t71, &t72, &hero_here); if (found == NULL) { t73 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t73 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t73.as.ok, found); } } t135 = h26_own26; h26_own26 = t73; h_0opt_f87774a_release(&t135); t136 = h10_f5; h_0opt_f87774a_retain(&t73); h10_f5 = t73; h_0opt_f87774a_release(&t136); t74 = h10_f5; t75 = t74.tag; t76 = INT64_C(0); t77 = t75 == t76; if (t77) goto bb12; else goto bb13; bb11:
+    t66 = h8_f4; t67 = t66.hero_as.hero_ok; hero_print_str(t67); hero_print_end();
+    t68 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.hero_tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus}; t69 = HERO_STR_LIT(hero_str_f1e77ee); t70 = hero_map_new(&h_fixedbugs429amapindexliteraltakesthekeytype_0Op_desc, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 31, 22}; hero_map_put_at(t70, &t68, &t69, &hero_here); } t133 = h25_own25; h25_own25 = t70; hero_map_decref(t133); t134 = h9_ops; hero_map_incref(t70); h9_ops = t70; hero_map_decref(t134);
+    t71 = h9_ops; t72 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.hero_tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus}; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 32, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t71, &t72, &hero_here); if (hero_found == NULL) { t73 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t73 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t73.hero_as.hero_ok, hero_found); } } t135 = h26_own26; h26_own26 = t73; h_0opt_f87774a_release(&t135); t136 = h10_f5; h_0opt_f87774a_retain(&t73); h10_f5 = t73; h_0opt_f87774a_release(&t136); t74 = h10_f5; t75 = t74.hero_tag; t76 = INT64_C(0); t77 = t75 == t76; if (t77) goto hero_bb12; else goto hero_bb13; hero_bb11:
 #line 30
-    t64 = h8_f4; t65 = t64.as.err;
+    t64 = h8_f4; t65 = t64.hero_as.hero_err;
 #line 193 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t65, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 30, 11);
     hero_unreachable();
-bb12:
+hero_bb12:
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t80 = h10_f5; t81 = t80.as.ok; hero_print_str(t81); hero_print_end();
-    t82 = h9_ops; t83 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus}; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 33, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t82, &t83, &hero_here); if (found == NULL) { t84 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t84 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t84.as.ok, found); } } t137 = h27_own27; h27_own27 = t84; h_0opt_f87774a_release(&t137); t138 = h11_f6; h_0opt_f87774a_retain(&t84); h11_f6 = t84; h_0opt_f87774a_release(&t138); t85 = h11_f6; t86 = t85.tag; t87 = INT64_C(1); t88 = t86 == t87; hero_print_bool(t88); hero_print_end();
-    t89 = INT64_C(5); t90 = HERO_STR_LIT(hero_str_dc6a73a); t91 = hero_map_new(&hero_desc_int, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 34, 24}; hero_map_put_at(t91, &t89, &t90, &hero_here); } t139 = h28_own28; h28_own28 = t91; hero_map_decref(t139); t140 = h12_wide; hero_map_incref(t91); h12_wide = t91; hero_map_decref(t140);
-    t92 = h12_wide; t93 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 35, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t92, &t93, &hero_here); if (found == NULL) { t94 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t94 = (h_0opt_f87774a){.tag = INT64_C(0)}; (&hero_desc_str)->copy(&t94.as.ok, found); } } t141 = h29_own29; h29_own29 = t94; h_0opt_f87774a_release(&t141); t142 = h13_f7; h_0opt_f87774a_retain(&t94); h13_f7 = t94; h_0opt_f87774a_release(&t142); t95 = h13_f7; t96 = t95.tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto bb14; else goto bb15; bb13:
+    t80 = h10_f5; t81 = t80.hero_as.hero_ok; hero_print_str(t81); hero_print_end();
+    t82 = h9_ops; t83 = (h_fixedbugs429amapindexliteraltakesthekeytype_Op){.hero_tag = h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus}; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 33, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t82, &t83, &hero_here); if (hero_found == NULL) { t84 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t84 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t84.hero_as.hero_ok, hero_found); } } t137 = h27_own27; h27_own27 = t84; h_0opt_f87774a_release(&t137); t138 = h11_f6; h_0opt_f87774a_retain(&t84); h11_f6 = t84; h_0opt_f87774a_release(&t138); t85 = h11_f6; t86 = t85.hero_tag; t87 = INT64_C(1); t88 = t86 == t87; hero_print_bool(t88); hero_print_end();
+    t89 = INT64_C(5); t90 = HERO_STR_LIT(hero_str_dc6a73a); t91 = hero_map_new(&hero_desc_int, &hero_desc_str, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 34, 24}; hero_map_put_at(t91, &t89, &t90, &hero_here); } t139 = h28_own28; h28_own28 = t91; hero_map_decref(t139); t140 = h12_wide; hero_map_incref(t91); h12_wide = t91; hero_map_decref(t140);
+    t92 = h12_wide; t93 = INT64_C(5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 35, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t92, &t93, &hero_here); if (hero_found == NULL) { t94 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t94 = (h_0opt_f87774a){.hero_tag = INT64_C(0)}; (&hero_desc_str)->copy(&t94.hero_as.hero_ok, hero_found); } } t141 = h29_own29; h29_own29 = t94; h_0opt_f87774a_release(&t141); t142 = h13_f7; h_0opt_f87774a_retain(&t94); h13_f7 = t94; h_0opt_f87774a_release(&t142); t95 = h13_f7; t96 = t95.hero_tag; t97 = INT64_C(0); t98 = t96 == t97; if (t98) goto hero_bb14; else goto hero_bb15; hero_bb13:
 #line 32
-    t78 = h10_f5; t79 = t78.as.err;
+    t78 = h10_f5; t79 = t78.hero_as.hero_err;
 #line 204 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t79, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 32, 11);
     hero_unreachable();
-bb14:
+hero_bb14:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t101 = h13_f7; t102 = t101.as.ok; hero_print_str(t102); hero_print_end();
+    t101 = h13_f7; t102 = t101.hero_as.hero_ok; hero_print_str(t102); hero_print_end();
     t103 = UINT64_C(1); t104 = UINT64_C(2); t105 = UINT64_C(3); t106 = hero_array_new(&hero_desc_u8, 3); hero_array_push_owned(&t106, &t103); hero_array_push_owned(&t106, &t104); hero_array_push_owned(&t106, &t105); t143 = h30_own30; h30_own30 = t106; hero_array_decref(t143); t144 = h14_xs; hero_array_incref(t106); h14_xs = t106; hero_array_decref(t144);
     t107 = h14_xs; t108 = INT64_C(1); t109 = ((void)((t107 == NULL || t108 < 0 || t108 >= t107->len) ? hero_panic_index_at(t107, t108, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 37, 11) : (void)0), (void)(t107->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t107 + 1))[t108]); hero_print_int(t109); hero_print_end();
     t110 = HERO_STR_LIT(hero_str_1998f2); t145 = h15_s; hero_str_incref(t110); h15_s = t110; hero_str_decref(t145);
@@ -243,153 +243,153 @@ bb14:
     h_0opt_f87774a_release(hero_slot_escape(&h29_own29));
     hero_array_release_at(&h30_own30);
     return;
-bb15:
+hero_bb15:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    t99 = h13_f7; t100 = t99.as.err;
+    t99 = h13_f7; t100 = t99.hero_as.hero_err;
 #line 250 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must_at(t100, "fixedbugs-429-a-map-index-literal-takes-the-key-type.hero", "fixedbugs-429-a-map-index-literal-takes-the-key-type.main", 35, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
+HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *hero_a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
         case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus: return true;
         case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Op_hash(const void *elem) {
-    const h_fixedbugs429amapindexliteraltakesthekeytype_Op *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Op_hash(const void *hero_elem) {
+    const h_fixedbugs429amapindexliteraltakesthekeytype_Op *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus: return h;
-        case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus: return h;
+    switch (hero_v->hero_tag) {
+        case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_plus: return hero_h;
+        case h_fixedbugs429amapindexliteraltakesthekeytype_0Op_tag_minus: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *v) {
-    hero_map_incref(v->f_m);
+HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_retain(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_v) {
+    hero_map_incref(hero_v->f_m);
 }
 
-HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(h_fixedbugs429amapindexliteraltakesthekeytype_Holder *v) {
-    hero_map_decref(v->f_m);
+HERO_TU_LOCAL void h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_release(h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_v) {
+    hero_map_decref(hero_v->f_m);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *b) {
-    if (!(hero_map_eq(a->f_m, b->f_m))) return false;
+HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_a, const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_b) {
+    if (!(hero_map_eq(hero_a->f_m, hero_b->f_m))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_hash(const void *elem) {
-    const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_map)->hash(&v->f_m)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs429amapindexliteraltakesthekeytype_0Holder_hash(const void *hero_elem) {
+    const h_fixedbugs429amapindexliteraltakesthekeytype_Holder *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_map)->hash(&hero_v->f_m)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("57d332c326394c70", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("109c31a465612619", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs429amapindexliteraltakesthekeytype\tfixedbugs-429-a-map-index-literal-takes-the-key-type\n");
     h_fixedbugs429amapindexliteraltakesthekeytype_main();
     hero_runtime_check_leaks();

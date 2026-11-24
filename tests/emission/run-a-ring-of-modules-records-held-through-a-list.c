@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -60,26 +60,26 @@ typedef struct h_sa_A {
 } h_sa_A;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -88,47 +88,47 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 100 "main.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_sb_0B_retain(const h_sb_B *v);
-HERO_TU_LOCAL void h_sb_0B_release(h_sb_B *v);
-HERO_TU_LOCAL bool h_sb_0B_eq(const h_sb_B *a, const h_sb_B *b);
-HERO_TU_LOCAL uint64_t h_sb_0B_hash(const void *elem);
-HERO_TU_LOCAL void h_sa_0A_retain(const h_sa_A *v);
-HERO_TU_LOCAL void h_sa_0A_release(h_sa_A *v);
-HERO_TU_LOCAL bool h_sa_0A_eq(const h_sa_A *a, const h_sa_A *b);
-HERO_TU_LOCAL uint64_t h_sa_0A_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_sb_0B_retain(const h_sb_B *hero_v);
+HERO_TU_LOCAL void h_sb_0B_release(h_sb_B *hero_v);
+HERO_TU_LOCAL bool h_sb_0B_eq(const h_sb_B *hero_a, const h_sb_B *hero_b);
+HERO_TU_LOCAL uint64_t h_sb_0B_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_sa_0A_retain(const h_sa_A *hero_v);
+HERO_TU_LOCAL void h_sa_0A_release(h_sa_A *hero_v);
+HERO_TU_LOCAL bool h_sa_0A_eq(const h_sa_A *hero_a, const h_sa_A *hero_b);
+HERO_TU_LOCAL uint64_t h_sa_0A_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_sa_0A_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_sa_A));
-    h_sa_0A_retain((const h_sa_A *)dst);
+static void h_sa_0A_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_sa_A));
+    h_sa_0A_retain((const h_sa_A *)hero_dst);
 }
-static void h_sa_0A_desc_drop(void *elem) {
-    h_sa_0A_release((h_sa_A *)elem);
+static void h_sa_0A_desc_drop(void *hero_elem) {
+    h_sa_0A_release((h_sa_A *)hero_elem);
 }
-static bool h_sa_0A_desc_eq(const void *a, const void *b) {
-    return h_sa_0A_eq((const h_sa_A *)a, (const h_sa_A *)b);
+static bool h_sa_0A_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_sa_0A_eq((const h_sa_A *)hero_a, (const h_sa_A *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_sa_0A_desc = {
     sizeof(h_sa_A),
@@ -143,7 +143,7 @@ int64_t h_sa_total(h_sa_A h0_a);
 int64_t h_sb_sum(h_sb_B h0_b);
 
 #line 8 "tests/golden/run/a-ring-of-modules-records-held-through-a-list.case/main.hero"
-void h_main_main(void) { h_sa_A h0_inner = {0}; h_sa_A h1_outer = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h5_own5 = {0}, *t1, *t7, *t13, *t17; HERO_NODEBUG h_sb_B h3_own3 = {0}, h6_own6 = {0}, t2, t8, t14, t18; HERO_NODEBUG h_sa_A h4_own4 = {0}, h7_own7 = {0}, t4, t5, t6, t10, t11, t15, t16, t19, t20; HERO_NODEBUG int64_t t3, t9, t12; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_main_main(void) { h_sa_A h0_inner = {0}; h_sa_A h1_outer = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h5_own5 = {0}, *t1, *t7, *t13, *t17; HERO_NODEBUG h_sb_B h3_own3 = {0}, h6_own6 = {0}, t2, t8, t14, t18; HERO_NODEBUG h_sa_A h4_own4 = {0}, h7_own7 = {0}, t4, t5, t6, t10, t11, t15, t16, t19, t20; HERO_NODEBUG int64_t t3, t9, t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&h_sa_0A_desc, 1); t13 = h2_own2; h2_own2 = t1; hero_array_decref(t13); hero_array_incref(t1); t2 = (h_sb_B){.f_items = t1}; t14 = h3_own3; h3_own3 = t2; h_sb_0B_release(&t14); t3 = INT64_C(4); h_sb_0B_retain(&t2); t4 = (h_sa_A){.f_b = t2, .f_n = t3}; t15 = h4_own4; h4_own4 = t4; h_sa_0A_release(&t15); t16 = h0_inner; h_sa_0A_retain(&t4); h0_inner = t4; h_sa_0A_release(&t16);
     t5 = h0_inner; t6 = h0_inner; t7 = hero_array_new(&h_sa_0A_desc, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t17 = h5_own5; h5_own5 = t7; hero_array_decref(t17); hero_array_incref(t7); t8 = (h_sb_B){.f_items = t7}; t18 = h6_own6; h6_own6 = t8; h_sb_0B_release(&t18); t9 = INT64_C(1); h_sb_0B_retain(&t8); t10 = (h_sa_A){.f_b = t8, .f_n = t9}; t19 = h7_own7; h7_own7 = t10; h_sa_0A_release(&t19); t20 = h1_outer; h_sa_0A_retain(&t10); h1_outer = t10; h_sa_0A_release(&t20);
     t11 = h1_outer; t12 = h_sa_total(t11); hero_print_int(t12); hero_print_end();
@@ -160,19 +160,19 @@ void h_main_main(void) { h_sa_A h0_inner = {0}; h_sa_A h1_outer = {0}; HERO_NODE
 }
 
 #line 9 "tests/golden/run/a-ring-of-modules-records-held-through-a-list.case/sa.hero"
-int64_t h_sa_total(h_sa_A h0_a) { HERO_NODEBUG int64_t t1, t3, t4; HERO_NODEBUG h_sb_B t2; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_sa_total(h_sa_A h0_a) { HERO_NODEBUG int64_t t1, t3, t4; HERO_NODEBUG h_sb_B t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_a.f_n; t2 = h0_a.f_b; t3 = h_sb_sum(t2); if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("sa.hero", "sa.total", 10, 12); return t4;
 #line 166 "main.c"
 }
 
 #line 8 "tests/golden/run/a-ring-of-modules-records-held-through-a-list.case/sb.hero"
-int64_t h_sb_sum(h_sb_B h0_b) { int64_t h1_t; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18; h_sa_A h4_x = {0}; HERO_NODEBUG bool t7; HERO_NODEBUG h_sa_A t10, t12, t20; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_sb_sum(h_sb_B h0_b) { int64_t h1_t; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18; h_sa_A h4_x = {0}; HERO_NODEBUG bool t7; HERO_NODEBUG h_sa_A t10, t12, t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_t = t1;
 #line 11
-    t2 = h0_b.f_items; t19 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t19); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "sb.hero", "sb.sum", 11, 9) : (void)0), (void)(t8->elem->size != sizeof(h_sa_A) ? hero_unreachable() : (void)0), ((h_sa_A const *)(const void *)(t8 + 1))[t9]); t20 = h4_x; h_sa_0A_retain(&t10); h4_x = t10; h_sa_0A_release(&t20);
-    t11 = h1_t; t12 = h4_x; t13 = h_sa_total(t12); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("sb.hero", "sb.sum", 12, 13); h1_t = t14; goto bb3; bb3:
+    t2 = h0_b.f_items; t19 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t19); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "sb.hero", "sb.sum", 11, 9) : (void)0), (void)(t8->elem->size != sizeof(h_sa_A) ? hero_unreachable() : (void)0), ((h_sa_A const *)(const void *)(t8 + 1))[t9]); t20 = h4_x; h_sa_0A_retain(&t10); h4_x = t10; h_sa_0A_release(&t20);
+    t11 = h1_t; t12 = h4_x; t13 = h_sa_total(t12); if (__builtin_add_overflow(t11, t13, &t14)) hero_panic_overflow_at("sb.hero", "sb.sum", 12, 13); h1_t = t14; goto hero_bb3; hero_bb3:
 #line 11
-    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("sb.hero", "sb.sum", 11, 9); h3_i0 = t17; goto bb1; bb4:
+    t15 = h3_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("sb.hero", "sb.sum", 11, 9); h3_i0 = t17; goto hero_bb1; hero_bb4:
 #line 14
     t18 = h1_t;
 #line 179 "main.c"
@@ -180,148 +180,148 @@ int64_t h_sb_sum(h_sb_B h0_b) { int64_t h1_t; HERO_NODEBUG HeroArrayHeader *h2_x
     h_sa_0A_release(hero_slot_escape(&h4_x));
     return t18;
 }
-HERO_TU_LOCAL void h_sb_0B_retain(const h_sb_B *v) {
-    hero_array_incref(v->f_items);
+HERO_TU_LOCAL void h_sb_0B_retain(const h_sb_B *hero_v) {
+    hero_array_incref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL void h_sb_0B_release(h_sb_B *v) {
-    hero_array_decref(v->f_items);
+HERO_TU_LOCAL void h_sb_0B_release(h_sb_B *hero_v) {
+    hero_array_decref(hero_v->f_items);
 }
 
-HERO_TU_LOCAL bool h_sb_0B_eq(const h_sb_B *a, const h_sb_B *b) {
-    if (!(hero_array_eq(a->f_items, b->f_items))) return false;
+HERO_TU_LOCAL bool h_sb_0B_eq(const h_sb_B *hero_a, const h_sb_B *hero_b) {
+    if (!(hero_array_eq(hero_a->f_items, hero_b->f_items))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_sb_0B_hash(const void *elem) {
-    const h_sb_B *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_items)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_sb_0B_hash(const void *hero_elem) {
+    const h_sb_B *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_items)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_sa_0A_retain(const h_sa_A *v) {
-    h_sb_0B_retain(&v->f_b);
+HERO_TU_LOCAL void h_sa_0A_retain(const h_sa_A *hero_v) {
+    h_sb_0B_retain(&hero_v->f_b);
 }
 
-HERO_TU_LOCAL void h_sa_0A_release(h_sa_A *v) {
-    h_sb_0B_release(&v->f_b);
+HERO_TU_LOCAL void h_sa_0A_release(h_sa_A *hero_v) {
+    h_sb_0B_release(&hero_v->f_b);
 }
 
-HERO_TU_LOCAL bool h_sa_0A_eq(const h_sa_A *a, const h_sa_A *b) {
-    if (!(h_sb_0B_eq(&a->f_b, &b->f_b))) return false;
-    if (!(a->f_n == b->f_n)) return false;
+HERO_TU_LOCAL bool h_sa_0A_eq(const h_sa_A *hero_a, const h_sa_A *hero_b) {
+    if (!(h_sb_0B_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(hero_a->f_n == hero_b->f_n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_sa_0A_hash(const void *elem) {
-    const h_sa_A *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_sb_0B_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_sa_0A_hash(const void *hero_elem) {
+    const h_sa_A *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_sb_0B_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_n)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("637863032d434f67", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5538b75635083f3e", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     h_main_main();
     hero_runtime_check_leaks();
     return 0;

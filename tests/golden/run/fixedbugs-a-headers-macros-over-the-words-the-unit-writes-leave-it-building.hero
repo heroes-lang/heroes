@@ -1,0 +1,107 @@
+# Fixed 2026-11-24, lane macro-members (found by lane selfhost-reds beside
+# its repair of the guard's lists): a group's header that defines a macro
+# over a word the unit's own C writes bare.
+# Symptom: `#define head 1` in the header a group names made every program
+# of that group calling `spawn` fail with *internal error: compiling the
+# generated C failed* at exit 2, clang's `expected member name or ';'` at the
+# thread's box, `HeroThreadBox head;`; `#define tag 1` did the same at a
+# `T?`'s `int64_t tag;`. Measured beside them that day on this Mac, each at
+# exit 2: `as`, `ok`, `err`, a variant's `c_circle`, a block's `bb0`, a
+# probe's `a1`, a renderer's `o`, `unused`, `used`, `nodebug`, `constructor`
+# and `default`; and told as the header's refusal at exit 1, a correct
+# program refused all the same: `found`, `a0`, `pop`, `on` and `precise`.
+# Cause: the unit writes its own C after every header its groups name, and
+# it wrote those words bare, members, labels, parameters and locals of its
+# own choosing, attributes in their plain spelling, C's keywords and the
+# words of the pragmas that give a header's state back.
+# Repair: every name the unit chooses is of the compiler's own form `hero_`
+# (`hero_tag`, `hero_as`, `hero_ok`, `hero_err`, `hero_head`, `hero_fn`,
+# `hero_c_<case>`, `hero_bb<N>`, `hero_a<N>`, `hero_o`, `hero_found` and
+# the per-type functions' parameters), which `cli/own_names.hero` tells as
+# the header's should a header define one; the attributes are spelled
+# `__unused__`, `__used__`, `__nodebug__`, `__constructor__` and
+# `__no_sanitize__`, and they and C's keywords are saved and given back
+# around the groups with the reserved names; and every word of the pragmas
+# after the guard's close is saved and undefined around them, so the
+# header's macros stand again past them. The header below defines each of
+# those words after its own code, and the program meets each shape: a
+# thread's box and its runner, a mailbox, a `T?` matched, a variant of
+# payloads and a bare case, a map lookup, an assertion's renderers, a
+# function of two parameters, a callback, a record passed by value and
+# through `@`, and a constant.
+
+extern "fixedbugs-a-headers-macros-over-the-words-the-unit-writes-leave-it-building.h"
+    function macro_seven() -> i64
+    function macro_add(x: i64, y: i64) -> i64
+    function macro_apply(callback: (function(i64) -> i64), x: i64) -> i64
+    record Pair tag macro_pair
+        left: i64
+        right: i64
+    function macro_sum(pair: Pair) -> i64
+    function macro_grow(@pair: Pair)
+    constant MACRO_LIMIT: i64
+
+variant Shape
+    circle
+        r: i64
+    rect
+        w: i64
+        h: i64
+    none
+
+function area(s: Shape) -> i64
+    return match s
+        .circle c => c.r * c.r * 3
+        .rect r   => r.w * r.h
+        .none     => 0
+
+function half(x: i64) -> i64?
+    if x % 2 != 0
+        return fail(code: "odd", msg: "an odd number has no half")
+    return ok(x / 2)
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function shout(word: str) -> str
+    return word + "!"
+
+function fill(m: (mailbox i64)) -> i64
+    m.send(40).must()
+    m.send(2).must()
+    return 2
+
+function main()
+    t = spawn(twice, macro_seven()).must()
+    print(t.wait())
+    w = spawn(shout, "a thread's text").must()
+    print(w.wait())
+    m: (mailbox i64) = mailbox()
+    f = spawn(fill, m).must()
+    print(f.wait())
+    a = m.receive(within_ms: -1).must()
+    b = m.receive(within_ms: -1).must()
+    print(a + b)
+    print(area(.circle(r: 2)) + area(.rect(w: 3, h: 4)) + area(.none))
+    print(half(10).default(-1), " ", half(7).default(-1), " ", half(7).is_err())
+
+    match half(9)
+        .ok v  => print(v)
+        .err e => print(e.code)
+
+    places = {"origin": 0, "unit": 1}
+    print(places["unit"].default(-1), " ", places["none"].is_err())
+    print(macro_add(x: 20, y: 22), " ", macro_apply(callback: twice, x: 21))
+    pair: Pair @= Pair(left: 3, right: 4)
+    macro_grow(@pair)
+    print(macro_sum(pair: pair), " ", MACRO_LIMIT)
+    xs = range(from: 0, to: 5)
+    ys: [i64] @= range(from: 0, to: 5)
+    ys[4] @ 4
+    assert xs == ys
+    total @= 0
+
+    for x in xs
+        total @ total + x
+
+    print(total)

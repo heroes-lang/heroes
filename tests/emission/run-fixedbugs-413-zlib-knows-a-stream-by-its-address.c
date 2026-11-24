@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <zlib.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,7 +122,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 20 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_in) == 1 && sizeof(((struct z_stream_s *)0)->avail_in) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_in, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_in");
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_out) == 1 && sizeof(((struct z_stream_s *)0)->avail_out) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_out, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_out");
-#line 69 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 126 "fixedbugs413zlibknowsastreambyitsaddress.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -109,26 +166,26 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -149,44 +206,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 23 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateInit_(struct z_stream_s * a0, int32_t a1, const char * a2, int32_t a3) { (void)(deflateInit_)(a0, a1, a2, a3); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateReset(struct z_stream_s * a0) { (void)(deflateReset)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateEnd(struct z_stream_s * a0) { (void)(deflateEnd)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateInit_(struct z_stream_s * hero_a0, int32_t hero_a1, const char * hero_a2, int32_t hero_a3) { (void)(deflateInit_)(hero_a0, hero_a1, hero_a2, hero_a3); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateReset(struct z_stream_s * hero_a0) { (void)(deflateReset)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs413zlibknowsastreambyitsaddress_deflateEnd(struct z_stream_s * hero_a0) { (void)(deflateEnd)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "fixedbugs413zlibknowsastreambyitsaddress.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 222 "fixedbugs413zlibknowsastreambyitsaddress.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq(const struct z_stream_s *a, const struct z_stream_s *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq(const struct z_stream_s *hero_a, const struct z_stream_s *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(struct z_stream_s));
+static void h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(struct z_stream_s));
 }
-static void h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_drop(void *elem) {
-    (void)elem;
+static void h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq((const struct z_stream_s *)a, (const struct z_stream_s *)b);
+static bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq((const struct z_stream_s *)hero_a, (const struct z_stream_s *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc = {
     sizeof(struct z_stream_s),
@@ -227,7 +284,7 @@ void *hero_pad_nowhere(void);
 #undef zalloc
 #pragma push_macro("zfree")
 #undef zfree
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct z_stream_s, next_in), sizeof(((struct z_stream_s *)0)->next_in), __builtin_offsetof(struct z_stream_s, avail_in), sizeof(((struct z_stream_s *)0)->avail_in), __builtin_offsetof(struct z_stream_s, total_in), sizeof(((struct z_stream_s *)0)->total_in), __builtin_offsetof(struct z_stream_s, next_out), sizeof(((struct z_stream_s *)0)->next_out), __builtin_offsetof(struct z_stream_s, avail_out), sizeof(((struct z_stream_s *)0)->avail_out), __builtin_offsetof(struct z_stream_s, total_out), sizeof(((struct z_stream_s *)0)->total_out), __builtin_offsetof(struct z_stream_s, msg), sizeof(((struct z_stream_s *)0)->msg), __builtin_offsetof(struct z_stream_s, state), sizeof(((struct z_stream_s *)0)->state), __builtin_offsetof(struct z_stream_s, zalloc), sizeof(((struct z_stream_s *)0)->zalloc), __builtin_offsetof(struct z_stream_s, zfree), sizeof(((struct z_stream_s *)0)->zfree), __builtin_offsetof(struct z_stream_s, opaque), sizeof(((struct z_stream_s *)0)->opaque), __builtin_offsetof(struct z_stream_s, data_type), sizeof(((struct z_stream_s *)0)->data_type), __builtin_offsetof(struct z_stream_s, adler), sizeof(((struct z_stream_s *)0)->adler), __builtin_offsetof(struct z_stream_s, reserved), sizeof(((struct z_stream_s *)0)->reserved)};
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct z_stream_s, next_in), sizeof(((struct z_stream_s *)0)->next_in), __builtin_offsetof(struct z_stream_s, avail_in), sizeof(((struct z_stream_s *)0)->avail_in), __builtin_offsetof(struct z_stream_s, total_in), sizeof(((struct z_stream_s *)0)->total_in), __builtin_offsetof(struct z_stream_s, next_out), sizeof(((struct z_stream_s *)0)->next_out), __builtin_offsetof(struct z_stream_s, avail_out), sizeof(((struct z_stream_s *)0)->avail_out), __builtin_offsetof(struct z_stream_s, total_out), sizeof(((struct z_stream_s *)0)->total_out), __builtin_offsetof(struct z_stream_s, msg), sizeof(((struct z_stream_s *)0)->msg), __builtin_offsetof(struct z_stream_s, state), sizeof(((struct z_stream_s *)0)->state), __builtin_offsetof(struct z_stream_s, zalloc), sizeof(((struct z_stream_s *)0)->zalloc), __builtin_offsetof(struct z_stream_s, zfree), sizeof(((struct z_stream_s *)0)->zfree), __builtin_offsetof(struct z_stream_s, opaque), sizeof(((struct z_stream_s *)0)->opaque), __builtin_offsetof(struct z_stream_s, data_type), sizeof(((struct z_stream_s *)0)->data_type), __builtin_offsetof(struct z_stream_s, adler), sizeof(((struct z_stream_s *)0)->adler), __builtin_offsetof(struct z_stream_s, reserved), sizeof(((struct z_stream_s *)0)->reserved)};
 #pragma pop_macro("adler")
 #pragma pop_macro("avail_in")
 #pragma pop_macro("avail_out")
@@ -242,17 +299,17 @@ __attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof
 #pragma pop_macro("total_out")
 #pragma pop_macro("zalloc")
 #pragma pop_macro("zfree")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct z_stream_s), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
-int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s) { HERO_NODEBUG int32_t t1, t3, t4; HERO_NODEBUG const char *t2; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.init", 28, 49}; t2 = (const char *)zlibVersion(); } t3 = INT64_C(112); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.init", 28, 12}; hero_lend_local_name(ph0_s, "deflateInit_", "s"); hero_pad_fill(&(*ph0_s), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull_at(t2, &hero_here), t3); } return t4;
-#line 256 "fixedbugs413zlibknowsastreambyitsaddress.c"
+int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s) { HERO_NODEBUG int32_t t1, t3, t4; HERO_NODEBUG const char *t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(-1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.init", 28, 49}; t2 = (const char *)zlibVersion(); } t3 = INT64_C(112); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.init", 28, 12}; hero_lend_local_name(ph0_s, "deflateInit_", "s"); hero_pad_fill(&(*ph0_s), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull_at(t2, &hero_here), t3); } return t4;
+#line 313 "fixedbugs413zlibknowsastreambyitsaddress.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -270,27 +327,27 @@ __attribute__((__noinline__)) void h_fixedbugs413zlibknowsastreambyitsaddress_ma
 #line 30
 #define t30 (*hero_big_t30)
 #line 30
-    struct z_stream_s *const hero_lend_h0_s = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "s"); int32_t h1_a; int32_t h2_b; int32_t h3_c; HeroArrayHeader * h4_zs = {0}; int32_t h5_d; int32_t h6_e; int32_t h7_f; struct z_stream_s *const hero_lend_h8_t = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "t"); int32_t h9_g; int32_t h10_h; int32_t h11_i; int32_t h12_j; int32_t h13_k; int32_t h14_l; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *t15, *t50, *t51; HERO_NODEBUG struct z_stream_s *const hero_big_t1 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG int32_t t2, t4, t5, t6, t7, t8, t10, t12, t17, t19, t20, t22, t24, t25, t27, t29, t31, t32, t33, t34, t36, t38, t40, t42, t44, t45, t47, t49; HERO_NODEBUG const char *t3, *t18; HERO_NODEBUG HeroStr t9, t11, t26, t28, t35, t37, t46, t48; HERO_NODEBUG struct z_stream_s *const hero_big_t13 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG struct z_stream_s *const hero_big_t14 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG int64_t t16, t21, t23, t39, t41, t43; HERO_NODEBUG struct z_stream_s *const hero_big_t30 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_ENTRY_STOP; goto bb0; bb0:
+    struct z_stream_s *const hero_lend_h0_s = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "s"); int32_t h1_a; int32_t h2_b; int32_t h3_c; HeroArrayHeader * h4_zs = {0}; int32_t h5_d; int32_t h6_e; int32_t h7_f; struct z_stream_s *const hero_lend_h8_t = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "t"); int32_t h9_g; int32_t h10_h; int32_t h11_i; int32_t h12_j; int32_t h13_k; int32_t h14_l; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *t15, *t50, *t51; HERO_NODEBUG struct z_stream_s *const hero_big_t1 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG int32_t t2, t4, t5, t6, t7, t8, t10, t12, t17, t19, t20, t22, t24, t25, t27, t29, t31, t32, t33, t34, t36, t38, t40, t42, t44, t45, t47, t49; HERO_NODEBUG const char *t3, *t18; HERO_NODEBUG HeroStr t9, t11, t26, t28, t35, t37, t46, t48; HERO_NODEBUG struct z_stream_s *const hero_big_t13 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG struct z_stream_s *const hero_big_t14 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_NODEBUG int64_t t16, t21, t23, t39, t41, t43; HERO_NODEBUG struct z_stream_s *const hero_big_t30 = (struct z_stream_s *)hero_frame_take(sizeof(struct z_stream_s)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = *(struct z_stream_s *)__builtin_memset(&t1, 0, sizeof t1); __builtin_memset(&t1, 0, sizeof t1); h0_s = t1; hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 32, 46}; t3 = (const char *)zlibVersion(); } t4 = INT64_C(112); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 32, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateInit_", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t5 = deflateInit_(&h0_s, t2, hero_cstr_nonnull_at(t3, &hero_here), t4); } h1_a = t5;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 33, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateReset", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t6 = deflateReset(&h0_s); } h2_b = t6;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 34, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateEnd", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t7 = deflateEnd(&h0_s); } h3_c = t7;
+    t2 = INT64_C(-1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 32, 46}; t3 = (const char *)zlibVersion(); } t4 = INT64_C(112); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 32, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateInit_", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t5 = deflateInit_(&h0_s, t2, hero_cstr_nonnull_at(t3, &hero_here), t4); } h1_a = t5;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 33, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateReset", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t6 = deflateReset(&h0_s); } h2_b = t6;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 34, 9}; hero_lend_local_name(hero_lend_h0_s, "deflateEnd", "s"); hero_pad_fill(&h0_s, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t7 = deflateEnd(&h0_s); } h3_c = t7;
     t8 = h1_a; t9 = HERO_STR_LIT(hero_str_20); t10 = h2_b; t11 = HERO_STR_LIT(hero_str_20); t12 = h3_c; hero_print_int(t8); hero_print_str(t9); hero_print_int(t10); hero_print_str(t11); hero_print_int(t12); hero_print_end();
     t13 = *(struct z_stream_s *)__builtin_memset(&t13, 0, sizeof t13); __builtin_memset(&t13, 0, sizeof t13); t14 = *(struct z_stream_s *)__builtin_memset(&t14, 0, sizeof t14); __builtin_memset(&t14, 0, sizeof t14); t15 = hero_array_new(&h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_desc, 2); hero_array_push_owned(&t15, &t13); hero_array_push_owned(&t15, &t14); t50 = h15_own15; h15_own15 = t15; hero_array_decref(t50); t51 = h4_zs; hero_array_incref(t15); h4_zs = t15; hero_array_decref(t51);
-    t16 = INT64_C(0); t17 = INT64_C(-1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 50}; t18 = (const char *)zlibVersion(); } t19 = INT64_C(112); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t16, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t20 = deflateInit_(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t16, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), t17, hero_cstr_nonnull_at(t18, &hero_here), t19); } h5_d = t20;
-    t21 = INT64_C(0); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t21, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t22 = deflateReset(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t21, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21))); } h6_e = t22;
-    t23 = INT64_C(0); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t23, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t24 = deflateEnd(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t23, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23))); } h7_f = t24;
+    t16 = INT64_C(0); t17 = INT64_C(-1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 50}; t18 = (const char *)zlibVersion(); } t19 = INT64_C(112); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t16, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t20 = deflateInit_(&(*((void)((h4_zs == NULL || t16 < 0 || t16 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t16, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 37, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t16)), t17, hero_cstr_nonnull_at(t18, &hero_here), t19); } h5_d = t20;
+    t21 = INT64_C(0); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t21, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t22 = deflateReset(&(*((void)((h4_zs == NULL || t21 < 0 || t21 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t21, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 38, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t21))); } h6_e = t22;
+    t23 = INT64_C(0); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t23, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t24 = deflateEnd(&(*((void)((h4_zs == NULL || t23 < 0 || t23 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t23, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 39, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t23))); } h7_f = t24;
     t25 = h5_d; t26 = HERO_STR_LIT(hero_str_20); t27 = h6_e; t28 = HERO_STR_LIT(hero_str_20); t29 = h7_f; hero_print_int(t25); hero_print_str(t26); hero_print_int(t27); hero_print_str(t28); hero_print_int(t29); hero_print_end();
     t30 = *(struct z_stream_s *)__builtin_memset(&t30, 0, sizeof t30); __builtin_memset(&t30, 0, sizeof t30); h8_t = t30; hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0);
     t31 = h_fixedbugs413zlibknowsastreambyitsaddress_init(&h8_t); h9_g = t31;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 43, 9}; hero_lend_local_name(hero_lend_h8_t, "deflateReset", "s"); hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t32 = deflateReset(&h8_t); } h10_h = t32;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 44, 9}; hero_lend_local_name(hero_lend_h8_t, "deflateEnd", "s"); hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t33 = deflateEnd(&h8_t); } h11_i = t33;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 43, 9}; hero_lend_local_name(hero_lend_h8_t, "deflateReset", "s"); hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t32 = deflateReset(&h8_t); } h10_h = t32;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 44, 9}; hero_lend_local_name(hero_lend_h8_t, "deflateEnd", "s"); hero_pad_fill(&h8_t, sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t33 = deflateEnd(&h8_t); } h11_i = t33;
     t34 = h9_g; t35 = HERO_STR_LIT(hero_str_20); t36 = h10_h; t37 = HERO_STR_LIT(hero_str_20); t38 = h11_i; hero_print_int(t34); hero_print_str(t35); hero_print_int(t36); hero_print_str(t37); hero_print_int(t38); hero_print_end();
     t39 = INT64_C(1); hero_array_unshare(&(h4_zs)); t40 = h_fixedbugs413zlibknowsastreambyitsaddress_init(&(*((void)((h4_zs == NULL || t39 < 0 || t39 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t39, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 46, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t39))); h12_j = t40;
-    t41 = INT64_C(1); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t41, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t42 = deflateReset(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t41, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41))); } h13_k = t42;
-    t43 = INT64_C(1); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t43, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t44 = deflateEnd(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t43, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43))); } h14_l = t44;
+    t41 = INT64_C(1); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t41, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t42 = deflateReset(&(*((void)((h4_zs == NULL || t41 < 0 || t41 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t41, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 47, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t41))); } h13_k = t42;
+    t43 = INT64_C(1); hero_array_unshare(&(h4_zs)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9}; hero_pad_fill(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t43, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43)), sizeof(struct z_stream_s), 1, hero_pad_g_0, hero_pad_n_0); t44 = deflateEnd(&(*((void)((h4_zs == NULL || t43 < 0 || t43 >= h4_zs->len) ? hero_panic_index_at(h4_zs, t43, "fixedbugs-413-zlib-knows-a-stream-by-its-address.hero", "fixedbugs-413-zlib-knows-a-stream-by-its-address.main", 48, 9) : (void)0), (void)(h4_zs->elem->size != sizeof(struct z_stream_s) ? hero_unreachable() : (void)0), (struct z_stream_s *)(void *)(h4_zs + 1) + t43))); } h14_l = t44;
     t45 = h12_j; t46 = HERO_STR_LIT(hero_str_20); t47 = h13_k; t48 = HERO_STR_LIT(hero_str_20); t49 = h14_l; hero_print_int(t45); hero_print_str(t46); hero_print_int(t47); hero_print_str(t48); hero_print_int(t49); hero_print_end();
-#line 294 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 351 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);
@@ -307,114 +364,114 @@ __attribute__((__noinline__)) void h_fixedbugs413zlibknowsastreambyitsaddress_ma
 #undef t13
 #undef t14
 #undef t30
-HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq(const struct z_stream_s *a, const struct z_stream_s *b) {
+HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq(const struct z_stream_s *hero_a, const struct z_stream_s *hero_b) {
     hero_panic("h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash(const void *elem) {
-    (void)elem; hero_panic("h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash(const void *hero_elem) {
+    (void)hero_elem; hero_panic("h_fixedbugs413zlibknowsastreambyitsaddress_0ZStream_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("031ef4e60dfe8c6f", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5db7f3f700fbff19", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs413zlibknowsastreambyitsaddress\tfixedbugs-413-zlib-knows-a-stream-by-its-address\n");
     h_fixedbugs413zlibknowsastreambyitsaddress_main();
     hero_runtime_check_leaks();

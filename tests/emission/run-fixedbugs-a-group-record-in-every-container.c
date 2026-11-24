@@ -29,6 +29,44 @@
 #pragma push_macro("a")
 #pragma push_macro("b")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -75,13 +132,13 @@ _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 79 "fixedbugsagrouprecordineverycontainer.c"
+#line 136 "fixedbugsagrouprecordineverycontainer.c"
 
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->r) == sizeof(Color), "heroes-ffi-union-narrow Color r"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->g) == sizeof(Color), "heroes-ffi-union-narrow Color g"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->b) == sizeof(Color), "heroes-ffi-union-narrow Color b"); _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->a) == sizeof(Color), "heroes-ffi-union-narrow Color a");
-#line 83 "fixedbugsagrouprecordineverycontainer.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 140 "fixedbugsagrouprecordineverycontainer.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -120,34 +177,34 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_31fbd75 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        Color ok;
-        HeroFailure err;
-    } as;
+        Color hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_31fbd75;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -168,46 +225,46 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 39 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsagrouprecordineverycontainer_ColorToInt(Color a0) { (void)(ColorToInt)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugsagrouprecordineverycontainer_ColorToInt(Color hero_a0) { (void)(ColorToInt)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "fixedbugsagrouprecordineverycontainer.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 239 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *a, const Color *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *v);
-HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *v);
-HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b);
-HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *hero_a, const Color *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *hero_v);
+HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *hero_v);
+HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *hero_a, const h_0opt_31fbd75 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
-static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(Color));
+static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(Color));
 }
-static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_drop(void *elem) {
-    (void)elem;
+static void h_fixedbugsagrouprecordineverycontainer_0Color_desc_drop(void *hero_elem) {
+    (void)hero_elem;
 }
-static bool h_fixedbugsagrouprecordineverycontainer_0Color_desc_eq(const void *a, const void *b) {
-    return h_fixedbugsagrouprecordineverycontainer_0Color_eq((const Color *)a, (const Color *)b);
+static bool h_fixedbugsagrouprecordineverycontainer_0Color_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugsagrouprecordineverycontainer_0Color_eq((const Color *)hero_a, (const Color *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_0Color_desc = {
     sizeof(Color),
@@ -219,16 +276,16 @@ HERO_TU_QUIET static const HeroDesc h_fixedbugsagrouprecordineverycontainer_0Col
 
 void h_fixedbugsagrouprecordineverycontainer_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(Color *)hero_pad_nowhere()) == 13 ? sizeof(Color) : 0), __builtin_offsetof(Color, r), sizeof(((Color *)0)->r), __builtin_offsetof(Color, g), sizeof(((Color *)0)->g), __builtin_offsetof(Color, b), sizeof(((Color *)0)->b), __builtin_offsetof(Color, a), sizeof(((Color *)0)->a)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(Color), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-void h_fixedbugsagrouprecordineverycontainer_main(void) { Color h0_a; Color h1_b; Color h2_c; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; HERO_NODEBUG h_0opt_31fbd75 h5_f0 = {0}, h9_f2 = {0}, h12_own12 = {0}, h15_own15 = {0}, t37, t38, t42, t44, t63, t64, t65, t75, t76, t81, t82, t83; HeroMapHeader * h6_keyed = {0}; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}, h14_own14 = {0}, t53, t54, t58, t60, t79, t80; h_0opt_31fbd75 h8_maybe = {0}; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t24, *t25, *t27, *t71, *t72; HERO_NODEBUG HeroMapHeader *h11_own11 = {0}, *h13_own13 = {0}, *t32, *t35, *t48, *t51, *t73, *t74, *t77, *t78; HERO_NODEBUG uint8_t t1, t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14; HERO_NODEBUG Color t5, t10, t15, t16, t17, t19, t20, t22, t23, t29, t30, t34, t45, t46, t49, t52, t62, t69; HERO_NODEBUG bool t18, t21, t31, t41, t47, t57, t68; HERO_NODEBUG int64_t t26, t28, t33, t36, t39, t40, t50, t55, t56, t61, t66, t67; HERO_NODEBUG HeroFailure t43, t59; HERO_NODEBUG int32_t t70; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugsagrouprecordineverycontainer_main(void) { Color h0_a; Color h1_b; Color h2_c; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; HERO_NODEBUG h_0opt_31fbd75 h5_f0 = {0}, h9_f2 = {0}, h12_own12 = {0}, h15_own15 = {0}, t37, t38, t42, t44, t63, t64, t65, t75, t76, t81, t82, t83; HeroMapHeader * h6_keyed = {0}; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}, h14_own14 = {0}, t53, t54, t58, t60, t79, t80; h_0opt_31fbd75 h8_maybe = {0}; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t24, *t25, *t27, *t71, *t72; HERO_NODEBUG HeroMapHeader *h11_own11 = {0}, *h13_own13 = {0}, *t32, *t35, *t48, *t51, *t73, *t74, *t77, *t78; HERO_NODEBUG uint8_t t1, t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14; HERO_NODEBUG Color t5, t10, t15, t16, t17, t19, t20, t22, t23, t29, t30, t34, t45, t46, t49, t52, t62, t69; HERO_NODEBUG bool t18, t21, t31, t41, t47, t57, t68; HERO_NODEBUG int64_t t26, t28, t33, t36, t39, t40, t50, t55, t56, t61, t66, t67; HERO_NODEBUG HeroFailure t43, t59; HERO_NODEBUG int32_t t70; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = UINT64_C(1); t2 = UINT64_C(2); t3 = UINT64_C(3); t4 = UINT64_C(4); t5 = (Color){.r = t1, .g = t2, .b = t3, .a = t4}; h0_a = t5; hero_pad_fill(&h0_a, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t6 = UINT64_C(1); t7 = UINT64_C(2); t8 = UINT64_C(3); t9 = UINT64_C(4); t10 = (Color){.r = t6, .g = t7, .b = t8, .a = t9}; h1_b = t10; hero_pad_fill(&h1_b, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
     t11 = UINT64_C(9); t12 = UINT64_C(9); t13 = UINT64_C(9); t14 = UINT64_C(9); t15 = (Color){.r = t11, .g = t12, .b = t13, .a = t14}; h2_c = t15; hero_pad_fill(&h2_c, sizeof(Color), 1, hero_pad_g_0, hero_pad_n_0);
@@ -241,25 +298,25 @@ void h_fixedbugsagrouprecordineverycontainer_main(void) { Color h0_a; Color h1_b
     t27 = h3_xs; t28 = INT64_C(0); t29 = ((void)((t27 == NULL || t28 < 0 || t28 >= t27->len) ? hero_panic_index_at(t27, t28, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 53, 11) : (void)0), (void)(t27->elem->size != sizeof(Color) ? hero_unreachable() : (void)0), ((Color const *)(const void *)(t27 + 1))[t28]); t30 = h0_a; t31 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t29, &t30); hero_print_bool(t31); hero_print_end();
 #line 56
     t32 = hero_map_new(&hero_desc_int, &h_fixedbugsagrouprecordineverycontainer_0Color_desc, 0); t73 = h11_own11; h11_own11 = t32; hero_map_decref(t73); t74 = h4_m; hero_map_incref(t32); h4_m = t32; hero_map_decref(t74);
-    t33 = INT64_C(1); t34 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 57, 5}; hero_map_set_at(&(h4_m), &t33, &t34, &hero_here); }
-    t35 = h4_m; t36 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t35, &t36, &hero_here); if (found == NULL) { t37 = (h_0opt_31fbd75){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t37 = (h_0opt_31fbd75){.tag = INT64_C(0)}; (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->copy(&t37.as.ok, found); } } t75 = h12_own12; h12_own12 = t37; h_0opt_31fbd75_release(&t75); t76 = h5_f0; h_0opt_31fbd75_retain(&t37); h5_f0 = t37; h_0opt_31fbd75_release(&t76); t38 = h5_f0; t39 = t38.tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto bb1; else goto bb2; bb1: t44 = h5_f0; t45 = t44.as.ok; t46 = h0_a; t47 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t45, &t46); hero_print_bool(t47); hero_print_end();
+    t33 = INT64_C(1); t34 = h0_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 57, 5}; hero_map_set_at(&(h4_m), &t33, &t34, &hero_here); }
+    t35 = h4_m; t36 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t35, &t36, &hero_here); if (hero_found == NULL) { t37 = (h_0opt_31fbd75){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t37 = (h_0opt_31fbd75){.hero_tag = INT64_C(0)}; (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->copy(&t37.hero_as.hero_ok, hero_found); } } t75 = h12_own12; h12_own12 = t37; h_0opt_31fbd75_release(&t75); t76 = h5_f0; h_0opt_31fbd75_retain(&t37); h5_f0 = t37; h_0opt_31fbd75_release(&t76); t38 = h5_f0; t39 = t38.hero_tag; t40 = INT64_C(0); t41 = t39 == t40; if (t41) goto hero_bb1; else goto hero_bb2; hero_bb1: t44 = h5_f0; t45 = t44.hero_as.hero_ok; t46 = h0_a; t47 = h_fixedbugsagrouprecordineverycontainer_0Color_eq(&t45, &t46); hero_print_bool(t47); hero_print_end();
     t48 = hero_map_new(&h_fixedbugsagrouprecordineverycontainer_0Color_desc, &hero_desc_int, 0); t77 = h13_own13; h13_own13 = t48; hero_map_decref(t77); t78 = h6_keyed; hero_map_incref(t48); h6_keyed = t48; hero_map_decref(t78);
-    t49 = h0_a; t50 = INT64_C(7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 60, 5}; hero_map_set_at(&(h6_keyed), &t49, &t50, &hero_here); }
-    t51 = h6_keyed; t52 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t51, &t52, &hero_here); if (found == NULL) { t53 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t53 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t53.as.ok, found); } } t79 = h14_own14; h14_own14 = t53; h_0opt_e201354_release(&t79); t80 = h7_f1; h_0opt_e201354_retain(&t53); h7_f1 = t53; h_0opt_e201354_release(&t80); t54 = h7_f1; t55 = t54.tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto bb3; else goto bb4; bb2:
+    t49 = h0_a; t50 = INT64_C(7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 60, 5}; hero_map_set_at(&(h6_keyed), &t49, &t50, &hero_here); }
+    t51 = h6_keyed; t52 = h1_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t51, &t52, &hero_here); if (hero_found == NULL) { t53 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t53 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t53.hero_as.hero_ok, hero_found); } } t79 = h14_own14; h14_own14 = t53; h_0opt_e201354_release(&t79); t80 = h7_f1; h_0opt_e201354_retain(&t53); h7_f1 = t53; h_0opt_e201354_release(&t80); t54 = h7_f1; t55 = t54.hero_tag; t56 = INT64_C(0); t57 = t55 == t56; if (t57) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 58
-    t42 = h5_f0; t43 = t42.as.err;
-#line 252 "fixedbugsagrouprecordineverycontainer.c"
+    t42 = h5_f0; t43 = t42.hero_as.hero_err;
+#line 309 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must_at(t43, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 58, 11);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    t60 = h7_f1; t61 = t60.as.ok; hero_print_int(t61); hero_print_end();
+    t60 = h7_f1; t61 = t60.hero_as.hero_ok; hero_print_int(t61); hero_print_end();
 #line 64
-    t62 = h2_c; t63 = (h_0opt_31fbd75){.tag = INT64_C(0), .as.ok = t62}; t81 = h15_own15; h15_own15 = t63; h_0opt_31fbd75_release(&t81); t82 = h8_maybe; h_0opt_31fbd75_retain(&t63); h8_maybe = t63; h_0opt_31fbd75_release(&t82);
-    t64 = h8_maybe; t83 = h9_f2; h_0opt_31fbd75_retain(&t64); h9_f2 = t64; h_0opt_31fbd75_release(&t83); t65 = h9_f2; t66 = t65.tag; t67 = INT64_C(1); t68 = t66 == t67; hero_print_bool(t68); hero_print_end();
+    t62 = h2_c; t63 = (h_0opt_31fbd75){.hero_tag = INT64_C(0), .hero_as.hero_ok = t62}; t81 = h15_own15; h15_own15 = t63; h_0opt_31fbd75_release(&t81); t82 = h8_maybe; h_0opt_31fbd75_retain(&t63); h8_maybe = t63; h_0opt_31fbd75_release(&t82);
+    t64 = h8_maybe; t83 = h9_f2; h_0opt_31fbd75_retain(&t64); h9_f2 = t64; h_0opt_31fbd75_release(&t83); t65 = h9_f2; t66 = t65.hero_tag; t67 = INT64_C(1); t68 = t66 == t67; hero_print_bool(t68); hero_print_end();
 #line 68
-    t69 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 68, 11}; t70 = ColorToInt(t69); } hero_print_int(t70); hero_print_end();
-#line 263 "fixedbugsagrouprecordineverycontainer.c"
+    t69 = h0_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 68, 11}; t70 = ColorToInt(t69); } hero_print_int(t70); hero_print_end();
+#line 320 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -274,163 +331,163 @@ bb3:
     h_0opt_e201354_release(hero_slot_escape(&h14_own14));
     h_0opt_31fbd75_release(hero_slot_escape(&h15_own15));
     return;
-bb4:
+hero_bb4:
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    t58 = h7_f1; t59 = t58.as.err;
-#line 281 "fixedbugsagrouprecordineverycontainer.c"
+    t58 = h7_f1; t59 = t58.hero_as.hero_err;
+#line 338 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must_at(t59, "fixedbugs-a-group-record-in-every-container.hero", "fixedbugs-a-group-record-in-every-container.main", 61, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *a, const Color *b) {
-    if (!(a->r == b->r)) return false;
-    if (!(a->g == b->g)) return false;
-    if (!(a->b == b->b)) return false;
-    if (!(a->a == b->a)) return false;
+HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_0Color_eq(const Color *hero_a, const Color *hero_b) {
+    if (!(hero_a->r == hero_b->r)) return false;
+    if (!(hero_a->g == hero_b->g)) return false;
+    if (!(hero_a->b == hero_b->b)) return false;
+    if (!(hero_a->a == hero_b->a)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *elem) {
-    const Color *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u8)->hash(&v->r)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->g)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->b)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->a)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugsagrouprecordineverycontainer_0Color_hash(const void *hero_elem) {
+    const Color *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->r)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->a)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_31fbd75_retain(const h_0opt_31fbd75 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_31fbd75_release(h_0opt_31fbd75 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *a, const h_0opt_31fbd75 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_31fbd75_eq(const h_0opt_31fbd75 *hero_a, const h_0opt_31fbd75 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *elem) {
-    const h_0opt_31fbd75 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_31fbd75_hash(const void *hero_elem) {
+    const h_0opt_31fbd75 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&h_fixedbugsagrouprecordineverycontainer_0Color_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2d9b5e7001c97a22", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("369f5f960118b9e8", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsagrouprecordineverycontainer\tfixedbugs-a-group-record-in-every-container\n");
     h_fixedbugsagrouprecordineverycontainer_main();
     hero_runtime_check_leaks();

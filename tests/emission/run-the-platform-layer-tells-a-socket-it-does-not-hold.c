@@ -28,6 +28,44 @@
 #include <hero_net.h>
 #include <the-platform-layer-tells-a-socket-it-does-not-hold.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -56,7 +113,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -111,28 +168,28 @@ HERO_STR_STATIC(hero_str_155b68c, "a slot taken again: ");
 HERO_STR_STATIC(hero_str_4db98ba1, "no bytes behind a count: ");
 HERO_STR_STATIC(hero_str_4fd839fd, "a success clears the kind: ");
 
-#line 115 "theplatformlayertellsasocketitdoesnothold.c"
+#line 172 "theplatformlayertellsasocketitdoesnothold.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -153,29 +210,29 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "theplatformlayertellsasocketitdoesnothold.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 222 "theplatformlayertellsasocketitdoesnothold.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(void);
 int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(void);
@@ -184,7 +241,7 @@ void h_theplatformlayertellsasocketitdoesnothold_main(void);
 
 #line 11 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
 int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(void) {
-#line 188 "theplatformlayertellsasocketitdoesnothold.c"
+#line 245 "theplatformlayertellsasocketitdoesnothold.c"
     _Static_assert(HERO_RET_INT(HERO_NET_OK), "heroes-ffi-return HERO_NET_OK i64");
     _Static_assert(__builtin_constant_p(HERO_NET_OK), "heroes-ffi-const HERO_NET_OK");
 #pragma clang diagnostic push
@@ -196,7 +253,7 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
     return HERO_NET_OK;
-#line 200 "theplatformlayertellsasocketitdoesnothold.c"
+#line 257 "theplatformlayertellsasocketitdoesnothold.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -214,7 +271,7 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(void) {
 
 #line 12 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
 int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(void) {
-#line 218 "theplatformlayertellsasocketitdoesnothold.c"
+#line 275 "theplatformlayertellsasocketitdoesnothold.c"
     _Static_assert(HERO_RET_INT(HERO_NET_INVALID), "heroes-ffi-return HERO_NET_INVALID i64");
     _Static_assert(__builtin_constant_p(HERO_NET_INVALID), "heroes-ffi-const HERO_NET_INVALID");
 #pragma clang diagnostic push
@@ -226,7 +283,7 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 12 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
     return HERO_NET_INVALID;
-#line 230 "theplatformlayertellsasocketitdoesnothold.c"
+#line 287 "theplatformlayertellsasocketitdoesnothold.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -244,7 +301,7 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(void) {
 
 #line 13 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
 int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(void) {
-#line 248 "theplatformlayertellsasocketitdoesnothold.c"
+#line 305 "theplatformlayertellsasocketitdoesnothold.c"
     _Static_assert(HERO_RET_INT(HERO_NET_NOT_OPEN), "heroes-ffi-return HERO_NET_NOT_OPEN i64");
     _Static_assert(__builtin_constant_p(HERO_NET_NOT_OPEN), "heroes-ffi-const HERO_NET_NOT_OPEN");
 #pragma clang diagnostic push
@@ -256,7 +313,7 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
     return HERO_NET_NOT_OPEN;
-#line 260 "theplatformlayertellsasocketitdoesnothold.c"
+#line 317 "theplatformlayertellsasocketitdoesnothold.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -273,14 +330,14 @@ int64_t h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 23 "tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero"
-void h_theplatformlayertellsasocketitdoesnothold_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t4, t5, t6, t10, t11, t12, t16, t17, t18, t22, t23, t24, t28, t29, t30, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t7, t8, t13, t14, t19, t20, t25, t26, t31, t32; HERO_NODEBUG bool t3, t9, t15, t21, t27, t33; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 24, 28}; t1 = closed_twice(); } t2 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t3 = t1 == t2; t4 = HERO_STR_LIT(hero_str_48fb93ad); t5 = hero_bool_to_str(t3); t37 = h0_own0; h0_own0 = t5; hero_str_decref(t37); t6 = hero_str_concat(t4, t5); t38 = h1_own1; h1_own1 = t6; hero_str_decref(t38); hero_print_str(t6); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 25, 20}; t7 = null_handle(); } t8 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t9 = t7 == t8; t10 = HERO_STR_LIT(hero_str_2731e935); t11 = hero_bool_to_str(t9); t39 = h2_own2; h2_own2 = t11; hero_str_decref(t39); t12 = hero_str_concat(t10, t11); t40 = h3_own3; h3_own3 = t12; hero_str_decref(t40); hero_print_str(t12); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 26, 28}; t13 = forged_handle(); } t14 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t15 = t13 == t14; t16 = HERO_STR_LIT(hero_str_4cc29c27); t17 = hero_bool_to_str(t15); t41 = h4_own4; h4_own4 = t17; hero_str_decref(t41); t18 = hero_str_concat(t16, t17); t42 = h5_own5; h5_own5 = t18; hero_str_decref(t42); hero_print_str(t18); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 27, 34}; t19 = stale_after_reuse(); } t20 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t21 = t19 == t20; t22 = HERO_STR_LIT(hero_str_155b68c); t23 = hero_bool_to_str(t21); t43 = h6_own6; h6_own6 = t23; hero_str_decref(t43); t24 = hero_str_concat(t22, t23); t44 = h7_own7; h7_own7 = t24; hero_str_decref(t44); hero_print_str(t24); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 28, 39}; t25 = bytes_not_there(); } t26 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(); t27 = t25 == t26; t28 = HERO_STR_LIT(hero_str_4db98ba1); t29 = hero_bool_to_str(t27); t45 = h8_own8; h8_own8 = t29; hero_str_decref(t45); t30 = hero_str_concat(t28, t29); t46 = h9_own9; h9_own9 = t30; hero_str_decref(t46); hero_print_str(t30); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 29, 41}; t31 = cleared_after_success(); } t32 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(); t33 = t31 == t32; t34 = HERO_STR_LIT(hero_str_4fd839fd); t35 = hero_bool_to_str(t33); t47 = h10_own10; h10_own10 = t35; hero_str_decref(t47); t36 = hero_str_concat(t34, t35); t48 = h11_own11; h11_own11 = t36; hero_str_decref(t48); hero_print_str(t36); hero_print_end();
-#line 284 "theplatformlayertellsasocketitdoesnothold.c"
+void h_theplatformlayertellsasocketitdoesnothold_main(void) { HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t4, t5, t6, t10, t11, t12, t16, t17, t18, t22, t23, t24, t28, t29, t30, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t7, t8, t13, t14, t19, t20, t25, t26, t31, t32; HERO_NODEBUG bool t3, t9, t15, t21, t27, t33; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 24, 28}; t1 = closed_twice(); } t2 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t3 = t1 == t2; t4 = HERO_STR_LIT(hero_str_48fb93ad); t5 = hero_bool_to_str(t3); t37 = h0_own0; h0_own0 = t5; hero_str_decref(t37); t6 = hero_str_concat(t4, t5); t38 = h1_own1; h1_own1 = t6; hero_str_decref(t38); hero_print_str(t6); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 25, 20}; t7 = null_handle(); } t8 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t9 = t7 == t8; t10 = HERO_STR_LIT(hero_str_2731e935); t11 = hero_bool_to_str(t9); t39 = h2_own2; h2_own2 = t11; hero_str_decref(t39); t12 = hero_str_concat(t10, t11); t40 = h3_own3; h3_own3 = t12; hero_str_decref(t40); hero_print_str(t12); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 26, 28}; t13 = forged_handle(); } t14 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t15 = t13 == t14; t16 = HERO_STR_LIT(hero_str_4cc29c27); t17 = hero_bool_to_str(t15); t41 = h4_own4; h4_own4 = t17; hero_str_decref(t41); t18 = hero_str_concat(t16, t17); t42 = h5_own5; h5_own5 = t18; hero_str_decref(t42); hero_print_str(t18); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 27, 34}; t19 = stale_after_reuse(); } t20 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_NOT_OPEN(); t21 = t19 == t20; t22 = HERO_STR_LIT(hero_str_155b68c); t23 = hero_bool_to_str(t21); t43 = h6_own6; h6_own6 = t23; hero_str_decref(t43); t24 = hero_str_concat(t22, t23); t44 = h7_own7; h7_own7 = t24; hero_str_decref(t44); hero_print_str(t24); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 28, 39}; t25 = bytes_not_there(); } t26 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_INVALID(); t27 = t25 == t26; t28 = HERO_STR_LIT(hero_str_4db98ba1); t29 = hero_bool_to_str(t27); t45 = h8_own8; h8_own8 = t29; hero_str_decref(t45); t30 = hero_str_concat(t28, t29); t46 = h9_own9; h9_own9 = t30; hero_str_decref(t46); hero_print_str(t30); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-socket-it-does-not-hold.hero", "the-platform-layer-tells-a-socket-it-does-not-hold.main", 29, 41}; t31 = cleared_after_success(); } t32 = h_theplatformlayertellsasocketitdoesnothold_HERO_NET_OK(); t33 = t31 == t32; t34 = HERO_STR_LIT(hero_str_4fd839fd); t35 = hero_bool_to_str(t33); t47 = h10_own10; h10_own10 = t35; hero_str_decref(t47); t36 = hero_str_concat(t34, t35); t48 = h11_own11; h11_own11 = t36; hero_str_decref(t48); hero_print_str(t36); hero_print_end();
+#line 341 "theplatformlayertellsasocketitdoesnothold.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -295,106 +352,106 @@ void h_theplatformlayertellsasocketitdoesnothold_main(void) { HERO_NODEBUG HeroS
     hero_str_release_at(&h11_own11);
     return;
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("30aa859a15c8db62", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("77a38dfa3392041a", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("theplatformlayertellsasocketitdoesnothold\tthe-platform-layer-tells-a-socket-it-does-not-hold\n");
     h_theplatformlayertellsasocketitdoesnothold_main();
     hero_runtime_check_leaks();

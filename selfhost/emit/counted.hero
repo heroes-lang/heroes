@@ -120,9 +120,9 @@ function reference_body(@w: writer.Writer, c: state.Checked, names: ctype.Names,
     writer.at_generated(@w)
 
     if keep
-        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *hero_v) {")
     else
-        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *hero_v) {")
 
     for field in fields
         ty: i64 @= table.error_ty(c.types)
@@ -138,7 +138,7 @@ function reference_body(@w: writer.Writer, c: state.Checked, names: ctype.Names,
         # Missing a row here is how variant Expr with an [Expr] payload
         # aborted on its first run: the fallback stops the program
         # instead of leaking.
-        found = reference_line(c, names, ty: ty, place: "v->" + member, keep: keep)
+        found = reference_line(c, names, ty: ty, place: "hero_v->" + member, keep: keep)
 
         if found.is_err()
             writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this field type */")
@@ -160,10 +160,10 @@ function variant_reference_body(@w: writer.Writer, c: state.Checked, names: ctyp
     writer.at_generated(@w)
 
     if keep
-        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *v) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_retain(const " + at.c_type + " *hero_v) {")
     else
-        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
-    writer.line(@w, text: "    switch (v->tag) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *hero_v) {")
+    writer.line(@w, text: "    switch (hero_v->hero_tag) {")
     case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
@@ -171,7 +171,7 @@ function variant_reference_body(@w: writer.Writer, c: state.Checked, names: ctyp
             case_name = source.span_text(s, one_case.name)
             writer.line(
                 @w,
-                text: "        case " + mangle.tag_of(ty: at.prefix, case_name: case_name) + ": " + ctype.case_of(names, decl: decl, at: case_at) + "_" + verb + "(&v->as." + mangle.case_member(case_name) + "); break;"
+                text: "        case " + mangle.tag_of(ty: at.prefix, case_name: case_name) + ": " + ctype.case_of(names, decl: decl, at: case_at) + "_" + verb + "(&hero_v->hero_as." + mangle.case_member(case_name) + "); break;"
             )
         case_at @ case_at + 1
 
@@ -207,7 +207,7 @@ test "ownership is the declaration's fact, and the walk is one line per counted 
     at = ctype.aggregate(got.names, decl: 0)
     reference_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0), keep: false)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Person_release(h_t_Person *v) {\n    hero_str_decref(v->f_name);\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Person_release(h_t_Person *hero_v) {\n    hero_str_decref(hero_v->f_name);\n}\n\n"
 
 test "a variant switches on the tag and touches only the counted case"
     got = ready(
@@ -220,7 +220,7 @@ test "a variant switches on the tag and touches only the counted case"
     at = ctype.aggregate(got.names, decl: 0)
     variant_reference_body(@w, got.c, got.names, got.s, got.decls, decl: 0, at: at, keep: true)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Tok_retain(const h_t_Tok *v) {\n    switch (v->tag) {\n        case h_t_0Tok_tag_word: h_t_0Tok_c_word_retain(&v->as.c_word); break;\n        default: break;\n    }\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL void h_t_0Tok_retain(const h_t_Tok *hero_v) {\n    switch (hero_v->hero_tag) {\n        case h_t_0Tok_tag_word: h_t_0Tok_c_word_retain(&hero_v->hero_as.hero_c_word); break;\n        default: break;\n    }\n}\n\n"
 
 test "the D3 repair: a payload nobody destructures still answers from its fields"
     # .word is BUILT but never matched, so Ty.case may be uninterned —

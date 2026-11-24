@@ -35,7 +35,7 @@ use source
 # driver's `main` is the one that runs there. One spelling for both, so the
 # probe's rename can never miss the line the shims write.
 function opening(name: str) -> str
-    return "int " + name + "(int argc, char **argv) {"
+    return "int " + name + "(int hero_argc, char **hero_argv) {"
 
 # One process per test: an assert is a panic, so a runner that called
 # tests in sequence would stop at the first failure and hide every
@@ -48,7 +48,7 @@ function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, s
     writer.at_generated(@w)
     provenance.write(@w, sources: sources)
     writer.line(@w, text: opening("main"))
-    writer.line(@w, text: "    hero_args_set(argc, argv);")
+    writer.line(@w, text: "    hero_args_set(hero_argc, hero_argv);")
     tests: [containers.Function] @= []
 
     for f in p.functions
@@ -57,8 +57,8 @@ function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source, s
             .function_kind | .constant_kind | .extern_kind => continue
 
     spell(@w, s, tests: tests)
-    writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
-    writer.line(@w, text: "    switch (which) {")
+    writer.line(@w, text: "    int64_t hero_which = hero_test_index(hero_argc, hero_argv);")
+    writer.line(@w, text: "    switch (hero_which) {")
     position: i64 @= 0
 
     for f in p.functions
@@ -92,7 +92,7 @@ function shim(@w: writer.Writer, f: containers.Function, s: source.Source, sourc
     writer.at_generated(@w)
     provenance.write(@w, sources: sources)
     writer.line(@w, text: opening("main"))
-    writer.line(@w, text: "    hero_args_set(argc, argv);")
+    writer.line(@w, text: "    hero_args_set(hero_argc, hero_argv);")
     none: [containers.Function] = []
     spell(@w, s, tests: none)
     writer.line(
@@ -167,14 +167,14 @@ test "the shim calls the mangled main and gates leaks on the way out"
     w: writer.Writer @= writer.new_writer("t")
     shim(@w, low.program.functions[0], s, sources: "0123456789abcdef")
     got = writer.finish(w)
-    assert has(text: got, needle: "int main(int argc, char **argv) {")
-    assert has(text: got, needle: "    hero_args_set(argc, argv);")
+    assert has(text: got, needle: "int main(int hero_argc, char **hero_argv) {")
+    assert has(text: got, needle: "    hero_args_set(hero_argc, hero_argv);")
     assert has(text: got, needle: "    h_t_main();")
     assert has(text: got, needle: "    hero_runtime_check_leaks();")
     tw: writer.Writer @= writer.new_writer("t")
     test_shim(@tw, low.program, s, sources: "0123456789abcdef")
     runner = writer.finish(tw)
-    assert has(text: runner, needle: "int main(int argc, char **argv) {")
+    assert has(text: runner, needle: "int main(int hero_argc, char **hero_argv) {")
     assert has(text: runner, needle: "    case 0:")
     assert has(text: runner, needle: "        h_t_0test1();")
     assert has(text: runner, needle: "        hero_panic(\"no test with that index — this is a compiler bug\");")

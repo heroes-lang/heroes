@@ -29,6 +29,44 @@
 #pragma push_macro("code")
 #pragma push_macro("type")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -86,13 +143,13 @@ _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data2) == 5 && _Gen
 _Static_assert(__builtin_classify_type(((SDL_Event *)0)->type) == 1 && sizeof(((SDL_Event *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_Event *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_Event type");
 _Static_assert(_Generic(&((SDL_Event *)0)->common, SDL_CommonEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->common) == sizeof(SDL_CommonEvent), "heroes-ffi-field SDL_Event common");
 _Static_assert(_Generic(&((SDL_Event *)0)->user, SDL_UserEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->user) == sizeof(SDL_UserEvent), "heroes-ffi-field SDL_Event user");
-#line 90 "ffiaconstructionpollsansdl3event.c"
+#line 147 "ffiaconstructionpollsansdl3event.c"
 
 #line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(*(SDL_UserEvent *)0) != 13, "heroes-ffi-union SDL_UserEvent type reserved timestamp windowID code data1 data2");
-#line 94 "ffiaconstructionpollsansdl3event.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 151 "ffiaconstructionpollsansdl3event.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -134,26 +191,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -174,39 +231,39 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 41 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_Init(uint32_t a0) { (void)(SDL_Init)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PushEvent(SDL_Event * a0) { (void)(SDL_PushEvent)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PollEvent(SDL_Event * a0) { (void)(SDL_PollEvent)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_Init(uint32_t hero_a0) { (void)(SDL_Init)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PushEvent(SDL_Event * hero_a0) { (void)(SDL_PushEvent)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiaconstructionpollsansdl3event_SDL_PollEvent(SDL_Event * hero_a0) { (void)(SDL_PollEvent)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 190 "ffiaconstructionpollsansdl3event.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 247 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *a, const SDL_Event *b);
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *hero_a, const SDL_CommonEvent *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *hero_a, const SDL_UserEvent *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *hero_a, const SDL_Event *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_ffiaconstructionpollsansdl3event_main(void);
 void *hero_pad_nowhere(void);
@@ -404,7 +461,7 @@ void *hero_pad_nowhere(void);
 #undef y
 #pragma push_macro("yrel")
 #undef yrel
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(SDL_Event, type), sizeof(((SDL_Event *)0)->type), __builtin_offsetof(SDL_Event, common.type), sizeof(((SDL_Event *)0)->common.type), __builtin_offsetof(SDL_Event, common.reserved), sizeof(((SDL_Event *)0)->common.reserved), __builtin_offsetof(SDL_Event, common.timestamp), sizeof(((SDL_Event *)0)->common.timestamp), __builtin_offsetof(SDL_Event, display.type), sizeof(((SDL_Event *)0)->display.type), __builtin_offsetof(SDL_Event, display.reserved), sizeof(((SDL_Event *)0)->display.reserved), __builtin_offsetof(SDL_Event, display.timestamp), sizeof(((SDL_Event *)0)->display.timestamp), __builtin_offsetof(SDL_Event, display.displayID), sizeof(((SDL_Event *)0)->display.displayID), __builtin_offsetof(SDL_Event, display.data1), sizeof(((SDL_Event *)0)->display.data1), __builtin_offsetof(SDL_Event, display.data2), sizeof(((SDL_Event *)0)->display.data2), __builtin_offsetof(SDL_Event, window.type), sizeof(((SDL_Event *)0)->window.type), __builtin_offsetof(SDL_Event, window.reserved), sizeof(((SDL_Event *)0)->window.reserved), __builtin_offsetof(SDL_Event, window.timestamp), sizeof(((SDL_Event *)0)->window.timestamp), __builtin_offsetof(SDL_Event, window.windowID), sizeof(((SDL_Event *)0)->window.windowID), __builtin_offsetof(SDL_Event, window.data1), sizeof(((SDL_Event *)0)->window.data1), __builtin_offsetof(SDL_Event, window.data2), sizeof(((SDL_Event *)0)->window.data2), __builtin_offsetof(SDL_Event, kdevice.type), sizeof(((SDL_Event *)0)->kdevice.type), __builtin_offsetof(SDL_Event, kdevice.reserved), sizeof(((SDL_Event *)0)->kdevice.reserved), __builtin_offsetof(SDL_Event, kdevice.timestamp), sizeof(((SDL_Event *)0)->kdevice.timestamp), __builtin_offsetof(SDL_Event, kdevice.which), sizeof(((SDL_Event *)0)->kdevice.which), __builtin_offsetof(SDL_Event, key.type), sizeof(((SDL_Event *)0)->key.type), __builtin_offsetof(SDL_Event, key.reserved), sizeof(((SDL_Event *)0)->key.reserved), __builtin_offsetof(SDL_Event, key.timestamp), sizeof(((SDL_Event *)0)->key.timestamp), __builtin_offsetof(SDL_Event, key.windowID), sizeof(((SDL_Event *)0)->key.windowID), __builtin_offsetof(SDL_Event, key.which), sizeof(((SDL_Event *)0)->key.which), __builtin_offsetof(SDL_Event, key.scancode), sizeof(((SDL_Event *)0)->key.scancode), __builtin_offsetof(SDL_Event, key.key), sizeof(((SDL_Event *)0)->key.key), __builtin_offsetof(SDL_Event, key.mod), sizeof(((SDL_Event *)0)->key.mod), __builtin_offsetof(SDL_Event, key.raw), sizeof(((SDL_Event *)0)->key.raw), __builtin_offsetof(SDL_Event, key.down), sizeof(((SDL_Event *)0)->key.down), __builtin_offsetof(SDL_Event, key.repeat), sizeof(((SDL_Event *)0)->key.repeat), __builtin_offsetof(SDL_Event, edit.type), sizeof(((SDL_Event *)0)->edit.type), __builtin_offsetof(SDL_Event, edit.reserved), sizeof(((SDL_Event *)0)->edit.reserved), __builtin_offsetof(SDL_Event, edit.timestamp), sizeof(((SDL_Event *)0)->edit.timestamp), __builtin_offsetof(SDL_Event, edit.windowID), sizeof(((SDL_Event *)0)->edit.windowID), __builtin_offsetof(SDL_Event, edit.text), sizeof(((SDL_Event *)0)->edit.text), __builtin_offsetof(SDL_Event, edit.start), sizeof(((SDL_Event *)0)->edit.start), __builtin_offsetof(SDL_Event, edit.length), sizeof(((SDL_Event *)0)->edit.length), __builtin_offsetof(SDL_Event, edit_candidates.type), sizeof(((SDL_Event *)0)->edit_candidates.type), __builtin_offsetof(SDL_Event, edit_candidates.reserved), sizeof(((SDL_Event *)0)->edit_candidates.reserved), __builtin_offsetof(SDL_Event, edit_candidates.timestamp), sizeof(((SDL_Event *)0)->edit_candidates.timestamp), __builtin_offsetof(SDL_Event, edit_candidates.windowID), sizeof(((SDL_Event *)0)->edit_candidates.windowID), __builtin_offsetof(SDL_Event, edit_candidates.candidates), sizeof(((SDL_Event *)0)->edit_candidates.candidates), __builtin_offsetof(SDL_Event, edit_candidates.num_candidates), sizeof(((SDL_Event *)0)->edit_candidates.num_candidates), __builtin_offsetof(SDL_Event, edit_candidates.selected_candidate), sizeof(((SDL_Event *)0)->edit_candidates.selected_candidate), __builtin_offsetof(SDL_Event, edit_candidates.horizontal), sizeof(((SDL_Event *)0)->edit_candidates.horizontal), __builtin_offsetof(SDL_Event, edit_candidates.padding1), sizeof(((SDL_Event *)0)->edit_candidates.padding1), __builtin_offsetof(SDL_Event, edit_candidates.padding2), sizeof(((SDL_Event *)0)->edit_candidates.padding2), __builtin_offsetof(SDL_Event, edit_candidates.padding3), sizeof(((SDL_Event *)0)->edit_candidates.padding3), __builtin_offsetof(SDL_Event, text.type), sizeof(((SDL_Event *)0)->text.type), __builtin_offsetof(SDL_Event, text.reserved), sizeof(((SDL_Event *)0)->text.reserved), __builtin_offsetof(SDL_Event, text.timestamp), sizeof(((SDL_Event *)0)->text.timestamp), __builtin_offsetof(SDL_Event, text.windowID), sizeof(((SDL_Event *)0)->text.windowID), __builtin_offsetof(SDL_Event, text.text), sizeof(((SDL_Event *)0)->text.text), __builtin_offsetof(SDL_Event, mdevice.type), sizeof(((SDL_Event *)0)->mdevice.type), __builtin_offsetof(SDL_Event, mdevice.reserved), sizeof(((SDL_Event *)0)->mdevice.reserved), __builtin_offsetof(SDL_Event, mdevice.timestamp), sizeof(((SDL_Event *)0)->mdevice.timestamp), __builtin_offsetof(SDL_Event, mdevice.which), sizeof(((SDL_Event *)0)->mdevice.which), __builtin_offsetof(SDL_Event, motion.type), sizeof(((SDL_Event *)0)->motion.type), __builtin_offsetof(SDL_Event, motion.reserved), sizeof(((SDL_Event *)0)->motion.reserved), __builtin_offsetof(SDL_Event, motion.timestamp), sizeof(((SDL_Event *)0)->motion.timestamp), __builtin_offsetof(SDL_Event, motion.windowID), sizeof(((SDL_Event *)0)->motion.windowID), __builtin_offsetof(SDL_Event, motion.which), sizeof(((SDL_Event *)0)->motion.which), __builtin_offsetof(SDL_Event, motion.state), sizeof(((SDL_Event *)0)->motion.state), __builtin_offsetof(SDL_Event, motion.x), sizeof(((SDL_Event *)0)->motion.x), __builtin_offsetof(SDL_Event, motion.y), sizeof(((SDL_Event *)0)->motion.y), __builtin_offsetof(SDL_Event, motion.xrel), sizeof(((SDL_Event *)0)->motion.xrel), __builtin_offsetof(SDL_Event, motion.yrel), sizeof(((SDL_Event *)0)->motion.yrel), __builtin_offsetof(SDL_Event, button.type), sizeof(((SDL_Event *)0)->button.type), __builtin_offsetof(SDL_Event, button.reserved), sizeof(((SDL_Event *)0)->button.reserved), __builtin_offsetof(SDL_Event, button.timestamp), sizeof(((SDL_Event *)0)->button.timestamp), __builtin_offsetof(SDL_Event, button.windowID), sizeof(((SDL_Event *)0)->button.windowID), __builtin_offsetof(SDL_Event, button.which), sizeof(((SDL_Event *)0)->button.which), __builtin_offsetof(SDL_Event, button.button), sizeof(((SDL_Event *)0)->button.button), __builtin_offsetof(SDL_Event, button.down), sizeof(((SDL_Event *)0)->button.down), __builtin_offsetof(SDL_Event, button.clicks), sizeof(((SDL_Event *)0)->button.clicks), __builtin_offsetof(SDL_Event, button.padding), sizeof(((SDL_Event *)0)->button.padding), __builtin_offsetof(SDL_Event, button.x), sizeof(((SDL_Event *)0)->button.x), __builtin_offsetof(SDL_Event, button.y), sizeof(((SDL_Event *)0)->button.y), __builtin_offsetof(SDL_Event, wheel.type), sizeof(((SDL_Event *)0)->wheel.type), __builtin_offsetof(SDL_Event, wheel.reserved), sizeof(((SDL_Event *)0)->wheel.reserved), __builtin_offsetof(SDL_Event, wheel.timestamp), sizeof(((SDL_Event *)0)->wheel.timestamp), __builtin_offsetof(SDL_Event, wheel.windowID), sizeof(((SDL_Event *)0)->wheel.windowID), __builtin_offsetof(SDL_Event, wheel.which), sizeof(((SDL_Event *)0)->wheel.which), __builtin_offsetof(SDL_Event, wheel.x), sizeof(((SDL_Event *)0)->wheel.x), __builtin_offsetof(SDL_Event, wheel.y), sizeof(((SDL_Event *)0)->wheel.y), __builtin_offsetof(SDL_Event, wheel.direction), sizeof(((SDL_Event *)0)->wheel.direction), __builtin_offsetof(SDL_Event, wheel.mouse_x), sizeof(((SDL_Event *)0)->wheel.mouse_x), __builtin_offsetof(SDL_Event, wheel.mouse_y), sizeof(((SDL_Event *)0)->wheel.mouse_y), __builtin_offsetof(SDL_Event, wheel.integer_x), sizeof(((SDL_Event *)0)->wheel.integer_x), __builtin_offsetof(SDL_Event, wheel.integer_y), sizeof(((SDL_Event *)0)->wheel.integer_y), __builtin_offsetof(SDL_Event, jdevice.type), sizeof(((SDL_Event *)0)->jdevice.type), __builtin_offsetof(SDL_Event, jdevice.reserved), sizeof(((SDL_Event *)0)->jdevice.reserved), __builtin_offsetof(SDL_Event, jdevice.timestamp), sizeof(((SDL_Event *)0)->jdevice.timestamp), __builtin_offsetof(SDL_Event, jdevice.which), sizeof(((SDL_Event *)0)->jdevice.which), __builtin_offsetof(SDL_Event, jaxis.type), sizeof(((SDL_Event *)0)->jaxis.type), __builtin_offsetof(SDL_Event, jaxis.reserved), sizeof(((SDL_Event *)0)->jaxis.reserved), __builtin_offsetof(SDL_Event, jaxis.timestamp), sizeof(((SDL_Event *)0)->jaxis.timestamp), __builtin_offsetof(SDL_Event, jaxis.which), sizeof(((SDL_Event *)0)->jaxis.which), __builtin_offsetof(SDL_Event, jaxis.axis), sizeof(((SDL_Event *)0)->jaxis.axis), __builtin_offsetof(SDL_Event, jaxis.padding1), sizeof(((SDL_Event *)0)->jaxis.padding1), __builtin_offsetof(SDL_Event, jaxis.padding2), sizeof(((SDL_Event *)0)->jaxis.padding2), __builtin_offsetof(SDL_Event, jaxis.padding3), sizeof(((SDL_Event *)0)->jaxis.padding3), __builtin_offsetof(SDL_Event, jaxis.value), sizeof(((SDL_Event *)0)->jaxis.value), __builtin_offsetof(SDL_Event, jaxis.padding4), sizeof(((SDL_Event *)0)->jaxis.padding4), __builtin_offsetof(SDL_Event, jball.type), sizeof(((SDL_Event *)0)->jball.type), __builtin_offsetof(SDL_Event, jball.reserved), sizeof(((SDL_Event *)0)->jball.reserved), __builtin_offsetof(SDL_Event, jball.timestamp), sizeof(((SDL_Event *)0)->jball.timestamp), __builtin_offsetof(SDL_Event, jball.which), sizeof(((SDL_Event *)0)->jball.which), __builtin_offsetof(SDL_Event, jball.ball), sizeof(((SDL_Event *)0)->jball.ball), __builtin_offsetof(SDL_Event, jball.padding1), sizeof(((SDL_Event *)0)->jball.padding1), __builtin_offsetof(SDL_Event, jball.padding2), sizeof(((SDL_Event *)0)->jball.padding2), __builtin_offsetof(SDL_Event, jball.padding3), sizeof(((SDL_Event *)0)->jball.padding3), __builtin_offsetof(SDL_Event, jball.xrel), sizeof(((SDL_Event *)0)->jball.xrel), __builtin_offsetof(SDL_Event, jball.yrel), sizeof(((SDL_Event *)0)->jball.yrel), __builtin_offsetof(SDL_Event, jhat.type), sizeof(((SDL_Event *)0)->jhat.type), __builtin_offsetof(SDL_Event, jhat.reserved), sizeof(((SDL_Event *)0)->jhat.reserved), __builtin_offsetof(SDL_Event, jhat.timestamp), sizeof(((SDL_Event *)0)->jhat.timestamp), __builtin_offsetof(SDL_Event, jhat.which), sizeof(((SDL_Event *)0)->jhat.which), __builtin_offsetof(SDL_Event, jhat.hat), sizeof(((SDL_Event *)0)->jhat.hat), __builtin_offsetof(SDL_Event, jhat.value), sizeof(((SDL_Event *)0)->jhat.value), __builtin_offsetof(SDL_Event, jhat.padding1), sizeof(((SDL_Event *)0)->jhat.padding1), __builtin_offsetof(SDL_Event, jhat.padding2), sizeof(((SDL_Event *)0)->jhat.padding2), __builtin_offsetof(SDL_Event, jbutton.type), sizeof(((SDL_Event *)0)->jbutton.type), __builtin_offsetof(SDL_Event, jbutton.reserved), sizeof(((SDL_Event *)0)->jbutton.reserved), __builtin_offsetof(SDL_Event, jbutton.timestamp), sizeof(((SDL_Event *)0)->jbutton.timestamp), __builtin_offsetof(SDL_Event, jbutton.which), sizeof(((SDL_Event *)0)->jbutton.which), __builtin_offsetof(SDL_Event, jbutton.button), sizeof(((SDL_Event *)0)->jbutton.button), __builtin_offsetof(SDL_Event, jbutton.down), sizeof(((SDL_Event *)0)->jbutton.down), __builtin_offsetof(SDL_Event, jbutton.padding1), sizeof(((SDL_Event *)0)->jbutton.padding1), __builtin_offsetof(SDL_Event, jbutton.padding2), sizeof(((SDL_Event *)0)->jbutton.padding2), __builtin_offsetof(SDL_Event, jbattery.type), sizeof(((SDL_Event *)0)->jbattery.type), __builtin_offsetof(SDL_Event, jbattery.reserved), sizeof(((SDL_Event *)0)->jbattery.reserved), __builtin_offsetof(SDL_Event, jbattery.timestamp), sizeof(((SDL_Event *)0)->jbattery.timestamp), __builtin_offsetof(SDL_Event, jbattery.which), sizeof(((SDL_Event *)0)->jbattery.which), __builtin_offsetof(SDL_Event, jbattery.state), sizeof(((SDL_Event *)0)->jbattery.state), __builtin_offsetof(SDL_Event, jbattery.percent), sizeof(((SDL_Event *)0)->jbattery.percent), __builtin_offsetof(SDL_Event, gdevice.type), sizeof(((SDL_Event *)0)->gdevice.type), __builtin_offsetof(SDL_Event, gdevice.reserved), sizeof(((SDL_Event *)0)->gdevice.reserved), __builtin_offsetof(SDL_Event, gdevice.timestamp), sizeof(((SDL_Event *)0)->gdevice.timestamp), __builtin_offsetof(SDL_Event, gdevice.which), sizeof(((SDL_Event *)0)->gdevice.which), __builtin_offsetof(SDL_Event, gaxis.type), sizeof(((SDL_Event *)0)->gaxis.type), __builtin_offsetof(SDL_Event, gaxis.reserved), sizeof(((SDL_Event *)0)->gaxis.reserved), __builtin_offsetof(SDL_Event, gaxis.timestamp), sizeof(((SDL_Event *)0)->gaxis.timestamp), __builtin_offsetof(SDL_Event, gaxis.which), sizeof(((SDL_Event *)0)->gaxis.which), __builtin_offsetof(SDL_Event, gaxis.axis), sizeof(((SDL_Event *)0)->gaxis.axis), __builtin_offsetof(SDL_Event, gaxis.padding1), sizeof(((SDL_Event *)0)->gaxis.padding1), __builtin_offsetof(SDL_Event, gaxis.padding2), sizeof(((SDL_Event *)0)->gaxis.padding2), __builtin_offsetof(SDL_Event, gaxis.padding3), sizeof(((SDL_Event *)0)->gaxis.padding3), __builtin_offsetof(SDL_Event, gaxis.value), sizeof(((SDL_Event *)0)->gaxis.value), __builtin_offsetof(SDL_Event, gaxis.padding4), sizeof(((SDL_Event *)0)->gaxis.padding4), __builtin_offsetof(SDL_Event, gbutton.type), sizeof(((SDL_Event *)0)->gbutton.type), __builtin_offsetof(SDL_Event, gbutton.reserved), sizeof(((SDL_Event *)0)->gbutton.reserved), __builtin_offsetof(SDL_Event, gbutton.timestamp), sizeof(((SDL_Event *)0)->gbutton.timestamp), __builtin_offsetof(SDL_Event, gbutton.which), sizeof(((SDL_Event *)0)->gbutton.which), __builtin_offsetof(SDL_Event, gbutton.button), sizeof(((SDL_Event *)0)->gbutton.button), __builtin_offsetof(SDL_Event, gbutton.down), sizeof(((SDL_Event *)0)->gbutton.down), __builtin_offsetof(SDL_Event, gbutton.padding1), sizeof(((SDL_Event *)0)->gbutton.padding1), __builtin_offsetof(SDL_Event, gbutton.padding2), sizeof(((SDL_Event *)0)->gbutton.padding2), __builtin_offsetof(SDL_Event, gtouchpad.type), sizeof(((SDL_Event *)0)->gtouchpad.type), __builtin_offsetof(SDL_Event, gtouchpad.reserved), sizeof(((SDL_Event *)0)->gtouchpad.reserved), __builtin_offsetof(SDL_Event, gtouchpad.timestamp), sizeof(((SDL_Event *)0)->gtouchpad.timestamp), __builtin_offsetof(SDL_Event, gtouchpad.which), sizeof(((SDL_Event *)0)->gtouchpad.which), __builtin_offsetof(SDL_Event, gtouchpad.touchpad), sizeof(((SDL_Event *)0)->gtouchpad.touchpad), __builtin_offsetof(SDL_Event, gtouchpad.finger), sizeof(((SDL_Event *)0)->gtouchpad.finger), __builtin_offsetof(SDL_Event, gtouchpad.x), sizeof(((SDL_Event *)0)->gtouchpad.x), __builtin_offsetof(SDL_Event, gtouchpad.y), sizeof(((SDL_Event *)0)->gtouchpad.y), __builtin_offsetof(SDL_Event, gtouchpad.pressure), sizeof(((SDL_Event *)0)->gtouchpad.pressure), __builtin_offsetof(SDL_Event, gsensor.type), sizeof(((SDL_Event *)0)->gsensor.type), __builtin_offsetof(SDL_Event, gsensor.reserved), sizeof(((SDL_Event *)0)->gsensor.reserved), __builtin_offsetof(SDL_Event, gsensor.timestamp), sizeof(((SDL_Event *)0)->gsensor.timestamp), __builtin_offsetof(SDL_Event, gsensor.which), sizeof(((SDL_Event *)0)->gsensor.which), __builtin_offsetof(SDL_Event, gsensor.sensor), sizeof(((SDL_Event *)0)->gsensor.sensor), __builtin_offsetof(SDL_Event, gsensor.data), sizeof(((SDL_Event *)0)->gsensor.data), __builtin_offsetof(SDL_Event, gsensor.sensor_timestamp), sizeof(((SDL_Event *)0)->gsensor.sensor_timestamp), __builtin_offsetof(SDL_Event, adevice.type), sizeof(((SDL_Event *)0)->adevice.type), __builtin_offsetof(SDL_Event, adevice.reserved), sizeof(((SDL_Event *)0)->adevice.reserved), __builtin_offsetof(SDL_Event, adevice.timestamp), sizeof(((SDL_Event *)0)->adevice.timestamp), __builtin_offsetof(SDL_Event, adevice.which), sizeof(((SDL_Event *)0)->adevice.which), __builtin_offsetof(SDL_Event, adevice.recording), sizeof(((SDL_Event *)0)->adevice.recording), __builtin_offsetof(SDL_Event, adevice.padding1), sizeof(((SDL_Event *)0)->adevice.padding1), __builtin_offsetof(SDL_Event, adevice.padding2), sizeof(((SDL_Event *)0)->adevice.padding2), __builtin_offsetof(SDL_Event, adevice.padding3), sizeof(((SDL_Event *)0)->adevice.padding3), __builtin_offsetof(SDL_Event, cdevice.type), sizeof(((SDL_Event *)0)->cdevice.type), __builtin_offsetof(SDL_Event, cdevice.reserved), sizeof(((SDL_Event *)0)->cdevice.reserved), __builtin_offsetof(SDL_Event, cdevice.timestamp), sizeof(((SDL_Event *)0)->cdevice.timestamp), __builtin_offsetof(SDL_Event, cdevice.which), sizeof(((SDL_Event *)0)->cdevice.which), __builtin_offsetof(SDL_Event, sensor.type), sizeof(((SDL_Event *)0)->sensor.type), __builtin_offsetof(SDL_Event, sensor.reserved), sizeof(((SDL_Event *)0)->sensor.reserved), __builtin_offsetof(SDL_Event, sensor.timestamp), sizeof(((SDL_Event *)0)->sensor.timestamp), __builtin_offsetof(SDL_Event, sensor.which), sizeof(((SDL_Event *)0)->sensor.which), __builtin_offsetof(SDL_Event, sensor.data), sizeof(((SDL_Event *)0)->sensor.data), __builtin_offsetof(SDL_Event, sensor.sensor_timestamp), sizeof(((SDL_Event *)0)->sensor.sensor_timestamp), __builtin_offsetof(SDL_Event, quit.type), sizeof(((SDL_Event *)0)->quit.type), __builtin_offsetof(SDL_Event, quit.reserved), sizeof(((SDL_Event *)0)->quit.reserved), __builtin_offsetof(SDL_Event, quit.timestamp), sizeof(((SDL_Event *)0)->quit.timestamp), __builtin_offsetof(SDL_Event, user.type), sizeof(((SDL_Event *)0)->user.type), __builtin_offsetof(SDL_Event, user.reserved), sizeof(((SDL_Event *)0)->user.reserved), __builtin_offsetof(SDL_Event, user.timestamp), sizeof(((SDL_Event *)0)->user.timestamp), __builtin_offsetof(SDL_Event, user.windowID), sizeof(((SDL_Event *)0)->user.windowID), __builtin_offsetof(SDL_Event, user.code), sizeof(((SDL_Event *)0)->user.code), __builtin_offsetof(SDL_Event, user.data1), sizeof(((SDL_Event *)0)->user.data1), __builtin_offsetof(SDL_Event, user.data2), sizeof(((SDL_Event *)0)->user.data2), __builtin_offsetof(SDL_Event, tfinger.type), sizeof(((SDL_Event *)0)->tfinger.type), __builtin_offsetof(SDL_Event, tfinger.reserved), sizeof(((SDL_Event *)0)->tfinger.reserved), __builtin_offsetof(SDL_Event, tfinger.timestamp), sizeof(((SDL_Event *)0)->tfinger.timestamp), __builtin_offsetof(SDL_Event, tfinger.touchID), sizeof(((SDL_Event *)0)->tfinger.touchID), __builtin_offsetof(SDL_Event, tfinger.fingerID), sizeof(((SDL_Event *)0)->tfinger.fingerID), __builtin_offsetof(SDL_Event, tfinger.x), sizeof(((SDL_Event *)0)->tfinger.x), __builtin_offsetof(SDL_Event, tfinger.y), sizeof(((SDL_Event *)0)->tfinger.y), __builtin_offsetof(SDL_Event, tfinger.dx), sizeof(((SDL_Event *)0)->tfinger.dx), __builtin_offsetof(SDL_Event, tfinger.dy), sizeof(((SDL_Event *)0)->tfinger.dy), __builtin_offsetof(SDL_Event, tfinger.pressure), sizeof(((SDL_Event *)0)->tfinger.pressure), __builtin_offsetof(SDL_Event, tfinger.windowID), sizeof(((SDL_Event *)0)->tfinger.windowID), __builtin_offsetof(SDL_Event, pinch.type), sizeof(((SDL_Event *)0)->pinch.type), __builtin_offsetof(SDL_Event, pinch.reserved), sizeof(((SDL_Event *)0)->pinch.reserved), __builtin_offsetof(SDL_Event, pinch.timestamp), sizeof(((SDL_Event *)0)->pinch.timestamp), __builtin_offsetof(SDL_Event, pinch.scale), sizeof(((SDL_Event *)0)->pinch.scale), __builtin_offsetof(SDL_Event, pinch.windowID), sizeof(((SDL_Event *)0)->pinch.windowID), __builtin_offsetof(SDL_Event, pproximity.type), sizeof(((SDL_Event *)0)->pproximity.type), __builtin_offsetof(SDL_Event, pproximity.reserved), sizeof(((SDL_Event *)0)->pproximity.reserved), __builtin_offsetof(SDL_Event, pproximity.timestamp), sizeof(((SDL_Event *)0)->pproximity.timestamp), __builtin_offsetof(SDL_Event, pproximity.windowID), sizeof(((SDL_Event *)0)->pproximity.windowID), __builtin_offsetof(SDL_Event, pproximity.which), sizeof(((SDL_Event *)0)->pproximity.which), __builtin_offsetof(SDL_Event, pproximity.pen_state), sizeof(((SDL_Event *)0)->pproximity.pen_state), __builtin_offsetof(SDL_Event, pproximity.device_type), sizeof(((SDL_Event *)0)->pproximity.device_type), __builtin_offsetof(SDL_Event, ptouch.type), sizeof(((SDL_Event *)0)->ptouch.type), __builtin_offsetof(SDL_Event, ptouch.reserved), sizeof(((SDL_Event *)0)->ptouch.reserved), __builtin_offsetof(SDL_Event, ptouch.timestamp), sizeof(((SDL_Event *)0)->ptouch.timestamp), __builtin_offsetof(SDL_Event, ptouch.windowID), sizeof(((SDL_Event *)0)->ptouch.windowID), __builtin_offsetof(SDL_Event, ptouch.which), sizeof(((SDL_Event *)0)->ptouch.which), __builtin_offsetof(SDL_Event, ptouch.pen_state), sizeof(((SDL_Event *)0)->ptouch.pen_state), __builtin_offsetof(SDL_Event, ptouch.x), sizeof(((SDL_Event *)0)->ptouch.x), __builtin_offsetof(SDL_Event, ptouch.y), sizeof(((SDL_Event *)0)->ptouch.y), __builtin_offsetof(SDL_Event, ptouch.eraser), sizeof(((SDL_Event *)0)->ptouch.eraser), __builtin_offsetof(SDL_Event, ptouch.down), sizeof(((SDL_Event *)0)->ptouch.down), __builtin_offsetof(SDL_Event, ptouch.device_type), sizeof(((SDL_Event *)0)->ptouch.device_type), __builtin_offsetof(SDL_Event, pmotion.type), sizeof(((SDL_Event *)0)->pmotion.type), __builtin_offsetof(SDL_Event, pmotion.reserved), sizeof(((SDL_Event *)0)->pmotion.reserved), __builtin_offsetof(SDL_Event, pmotion.timestamp), sizeof(((SDL_Event *)0)->pmotion.timestamp), __builtin_offsetof(SDL_Event, pmotion.windowID), sizeof(((SDL_Event *)0)->pmotion.windowID), __builtin_offsetof(SDL_Event, pmotion.which), sizeof(((SDL_Event *)0)->pmotion.which), __builtin_offsetof(SDL_Event, pmotion.pen_state), sizeof(((SDL_Event *)0)->pmotion.pen_state), __builtin_offsetof(SDL_Event, pmotion.x), sizeof(((SDL_Event *)0)->pmotion.x), __builtin_offsetof(SDL_Event, pmotion.y), sizeof(((SDL_Event *)0)->pmotion.y), __builtin_offsetof(SDL_Event, pmotion.device_type), sizeof(((SDL_Event *)0)->pmotion.device_type), __builtin_offsetof(SDL_Event, pbutton.type), sizeof(((SDL_Event *)0)->pbutton.type), __builtin_offsetof(SDL_Event, pbutton.reserved), sizeof(((SDL_Event *)0)->pbutton.reserved), __builtin_offsetof(SDL_Event, pbutton.timestamp), sizeof(((SDL_Event *)0)->pbutton.timestamp), __builtin_offsetof(SDL_Event, pbutton.windowID), sizeof(((SDL_Event *)0)->pbutton.windowID), __builtin_offsetof(SDL_Event, pbutton.which), sizeof(((SDL_Event *)0)->pbutton.which), __builtin_offsetof(SDL_Event, pbutton.pen_state), sizeof(((SDL_Event *)0)->pbutton.pen_state), __builtin_offsetof(SDL_Event, pbutton.x), sizeof(((SDL_Event *)0)->pbutton.x), __builtin_offsetof(SDL_Event, pbutton.y), sizeof(((SDL_Event *)0)->pbutton.y), __builtin_offsetof(SDL_Event, pbutton.button), sizeof(((SDL_Event *)0)->pbutton.button), __builtin_offsetof(SDL_Event, pbutton.down), sizeof(((SDL_Event *)0)->pbutton.down), __builtin_offsetof(SDL_Event, pbutton.device_type), sizeof(((SDL_Event *)0)->pbutton.device_type), __builtin_offsetof(SDL_Event, paxis.type), sizeof(((SDL_Event *)0)->paxis.type), __builtin_offsetof(SDL_Event, paxis.reserved), sizeof(((SDL_Event *)0)->paxis.reserved), __builtin_offsetof(SDL_Event, paxis.timestamp), sizeof(((SDL_Event *)0)->paxis.timestamp), __builtin_offsetof(SDL_Event, paxis.windowID), sizeof(((SDL_Event *)0)->paxis.windowID), __builtin_offsetof(SDL_Event, paxis.which), sizeof(((SDL_Event *)0)->paxis.which), __builtin_offsetof(SDL_Event, paxis.pen_state), sizeof(((SDL_Event *)0)->paxis.pen_state), __builtin_offsetof(SDL_Event, paxis.x), sizeof(((SDL_Event *)0)->paxis.x), __builtin_offsetof(SDL_Event, paxis.y), sizeof(((SDL_Event *)0)->paxis.y), __builtin_offsetof(SDL_Event, paxis.axis), sizeof(((SDL_Event *)0)->paxis.axis), __builtin_offsetof(SDL_Event, paxis.value), sizeof(((SDL_Event *)0)->paxis.value), __builtin_offsetof(SDL_Event, paxis.device_type), sizeof(((SDL_Event *)0)->paxis.device_type), __builtin_offsetof(SDL_Event, render.type), sizeof(((SDL_Event *)0)->render.type), __builtin_offsetof(SDL_Event, render.reserved), sizeof(((SDL_Event *)0)->render.reserved), __builtin_offsetof(SDL_Event, render.timestamp), sizeof(((SDL_Event *)0)->render.timestamp), __builtin_offsetof(SDL_Event, render.windowID), sizeof(((SDL_Event *)0)->render.windowID), __builtin_offsetof(SDL_Event, drop.type), sizeof(((SDL_Event *)0)->drop.type), __builtin_offsetof(SDL_Event, drop.reserved), sizeof(((SDL_Event *)0)->drop.reserved), __builtin_offsetof(SDL_Event, drop.timestamp), sizeof(((SDL_Event *)0)->drop.timestamp), __builtin_offsetof(SDL_Event, drop.windowID), sizeof(((SDL_Event *)0)->drop.windowID), __builtin_offsetof(SDL_Event, drop.x), sizeof(((SDL_Event *)0)->drop.x), __builtin_offsetof(SDL_Event, drop.y), sizeof(((SDL_Event *)0)->drop.y), __builtin_offsetof(SDL_Event, drop.source), sizeof(((SDL_Event *)0)->drop.source), __builtin_offsetof(SDL_Event, drop.data), sizeof(((SDL_Event *)0)->drop.data), __builtin_offsetof(SDL_Event, clipboard.type), sizeof(((SDL_Event *)0)->clipboard.type), __builtin_offsetof(SDL_Event, clipboard.reserved), sizeof(((SDL_Event *)0)->clipboard.reserved), __builtin_offsetof(SDL_Event, clipboard.timestamp), sizeof(((SDL_Event *)0)->clipboard.timestamp), __builtin_offsetof(SDL_Event, clipboard.owner), sizeof(((SDL_Event *)0)->clipboard.owner), __builtin_offsetof(SDL_Event, clipboard.num_mime_types), sizeof(((SDL_Event *)0)->clipboard.num_mime_types), __builtin_offsetof(SDL_Event, clipboard.mime_types), sizeof(((SDL_Event *)0)->clipboard.mime_types), __builtin_offsetof(SDL_Event, padding), sizeof(((SDL_Event *)0)->padding)};
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(SDL_Event, type), sizeof(((SDL_Event *)0)->type), __builtin_offsetof(SDL_Event, common.type), sizeof(((SDL_Event *)0)->common.type), __builtin_offsetof(SDL_Event, common.reserved), sizeof(((SDL_Event *)0)->common.reserved), __builtin_offsetof(SDL_Event, common.timestamp), sizeof(((SDL_Event *)0)->common.timestamp), __builtin_offsetof(SDL_Event, display.type), sizeof(((SDL_Event *)0)->display.type), __builtin_offsetof(SDL_Event, display.reserved), sizeof(((SDL_Event *)0)->display.reserved), __builtin_offsetof(SDL_Event, display.timestamp), sizeof(((SDL_Event *)0)->display.timestamp), __builtin_offsetof(SDL_Event, display.displayID), sizeof(((SDL_Event *)0)->display.displayID), __builtin_offsetof(SDL_Event, display.data1), sizeof(((SDL_Event *)0)->display.data1), __builtin_offsetof(SDL_Event, display.data2), sizeof(((SDL_Event *)0)->display.data2), __builtin_offsetof(SDL_Event, window.type), sizeof(((SDL_Event *)0)->window.type), __builtin_offsetof(SDL_Event, window.reserved), sizeof(((SDL_Event *)0)->window.reserved), __builtin_offsetof(SDL_Event, window.timestamp), sizeof(((SDL_Event *)0)->window.timestamp), __builtin_offsetof(SDL_Event, window.windowID), sizeof(((SDL_Event *)0)->window.windowID), __builtin_offsetof(SDL_Event, window.data1), sizeof(((SDL_Event *)0)->window.data1), __builtin_offsetof(SDL_Event, window.data2), sizeof(((SDL_Event *)0)->window.data2), __builtin_offsetof(SDL_Event, kdevice.type), sizeof(((SDL_Event *)0)->kdevice.type), __builtin_offsetof(SDL_Event, kdevice.reserved), sizeof(((SDL_Event *)0)->kdevice.reserved), __builtin_offsetof(SDL_Event, kdevice.timestamp), sizeof(((SDL_Event *)0)->kdevice.timestamp), __builtin_offsetof(SDL_Event, kdevice.which), sizeof(((SDL_Event *)0)->kdevice.which), __builtin_offsetof(SDL_Event, key.type), sizeof(((SDL_Event *)0)->key.type), __builtin_offsetof(SDL_Event, key.reserved), sizeof(((SDL_Event *)0)->key.reserved), __builtin_offsetof(SDL_Event, key.timestamp), sizeof(((SDL_Event *)0)->key.timestamp), __builtin_offsetof(SDL_Event, key.windowID), sizeof(((SDL_Event *)0)->key.windowID), __builtin_offsetof(SDL_Event, key.which), sizeof(((SDL_Event *)0)->key.which), __builtin_offsetof(SDL_Event, key.scancode), sizeof(((SDL_Event *)0)->key.scancode), __builtin_offsetof(SDL_Event, key.key), sizeof(((SDL_Event *)0)->key.key), __builtin_offsetof(SDL_Event, key.mod), sizeof(((SDL_Event *)0)->key.mod), __builtin_offsetof(SDL_Event, key.raw), sizeof(((SDL_Event *)0)->key.raw), __builtin_offsetof(SDL_Event, key.down), sizeof(((SDL_Event *)0)->key.down), __builtin_offsetof(SDL_Event, key.repeat), sizeof(((SDL_Event *)0)->key.repeat), __builtin_offsetof(SDL_Event, edit.type), sizeof(((SDL_Event *)0)->edit.type), __builtin_offsetof(SDL_Event, edit.reserved), sizeof(((SDL_Event *)0)->edit.reserved), __builtin_offsetof(SDL_Event, edit.timestamp), sizeof(((SDL_Event *)0)->edit.timestamp), __builtin_offsetof(SDL_Event, edit.windowID), sizeof(((SDL_Event *)0)->edit.windowID), __builtin_offsetof(SDL_Event, edit.text), sizeof(((SDL_Event *)0)->edit.text), __builtin_offsetof(SDL_Event, edit.start), sizeof(((SDL_Event *)0)->edit.start), __builtin_offsetof(SDL_Event, edit.length), sizeof(((SDL_Event *)0)->edit.length), __builtin_offsetof(SDL_Event, edit_candidates.type), sizeof(((SDL_Event *)0)->edit_candidates.type), __builtin_offsetof(SDL_Event, edit_candidates.reserved), sizeof(((SDL_Event *)0)->edit_candidates.reserved), __builtin_offsetof(SDL_Event, edit_candidates.timestamp), sizeof(((SDL_Event *)0)->edit_candidates.timestamp), __builtin_offsetof(SDL_Event, edit_candidates.windowID), sizeof(((SDL_Event *)0)->edit_candidates.windowID), __builtin_offsetof(SDL_Event, edit_candidates.candidates), sizeof(((SDL_Event *)0)->edit_candidates.candidates), __builtin_offsetof(SDL_Event, edit_candidates.num_candidates), sizeof(((SDL_Event *)0)->edit_candidates.num_candidates), __builtin_offsetof(SDL_Event, edit_candidates.selected_candidate), sizeof(((SDL_Event *)0)->edit_candidates.selected_candidate), __builtin_offsetof(SDL_Event, edit_candidates.horizontal), sizeof(((SDL_Event *)0)->edit_candidates.horizontal), __builtin_offsetof(SDL_Event, edit_candidates.padding1), sizeof(((SDL_Event *)0)->edit_candidates.padding1), __builtin_offsetof(SDL_Event, edit_candidates.padding2), sizeof(((SDL_Event *)0)->edit_candidates.padding2), __builtin_offsetof(SDL_Event, edit_candidates.padding3), sizeof(((SDL_Event *)0)->edit_candidates.padding3), __builtin_offsetof(SDL_Event, text.type), sizeof(((SDL_Event *)0)->text.type), __builtin_offsetof(SDL_Event, text.reserved), sizeof(((SDL_Event *)0)->text.reserved), __builtin_offsetof(SDL_Event, text.timestamp), sizeof(((SDL_Event *)0)->text.timestamp), __builtin_offsetof(SDL_Event, text.windowID), sizeof(((SDL_Event *)0)->text.windowID), __builtin_offsetof(SDL_Event, text.text), sizeof(((SDL_Event *)0)->text.text), __builtin_offsetof(SDL_Event, mdevice.type), sizeof(((SDL_Event *)0)->mdevice.type), __builtin_offsetof(SDL_Event, mdevice.reserved), sizeof(((SDL_Event *)0)->mdevice.reserved), __builtin_offsetof(SDL_Event, mdevice.timestamp), sizeof(((SDL_Event *)0)->mdevice.timestamp), __builtin_offsetof(SDL_Event, mdevice.which), sizeof(((SDL_Event *)0)->mdevice.which), __builtin_offsetof(SDL_Event, motion.type), sizeof(((SDL_Event *)0)->motion.type), __builtin_offsetof(SDL_Event, motion.reserved), sizeof(((SDL_Event *)0)->motion.reserved), __builtin_offsetof(SDL_Event, motion.timestamp), sizeof(((SDL_Event *)0)->motion.timestamp), __builtin_offsetof(SDL_Event, motion.windowID), sizeof(((SDL_Event *)0)->motion.windowID), __builtin_offsetof(SDL_Event, motion.which), sizeof(((SDL_Event *)0)->motion.which), __builtin_offsetof(SDL_Event, motion.state), sizeof(((SDL_Event *)0)->motion.state), __builtin_offsetof(SDL_Event, motion.x), sizeof(((SDL_Event *)0)->motion.x), __builtin_offsetof(SDL_Event, motion.y), sizeof(((SDL_Event *)0)->motion.y), __builtin_offsetof(SDL_Event, motion.xrel), sizeof(((SDL_Event *)0)->motion.xrel), __builtin_offsetof(SDL_Event, motion.yrel), sizeof(((SDL_Event *)0)->motion.yrel), __builtin_offsetof(SDL_Event, button.type), sizeof(((SDL_Event *)0)->button.type), __builtin_offsetof(SDL_Event, button.reserved), sizeof(((SDL_Event *)0)->button.reserved), __builtin_offsetof(SDL_Event, button.timestamp), sizeof(((SDL_Event *)0)->button.timestamp), __builtin_offsetof(SDL_Event, button.windowID), sizeof(((SDL_Event *)0)->button.windowID), __builtin_offsetof(SDL_Event, button.which), sizeof(((SDL_Event *)0)->button.which), __builtin_offsetof(SDL_Event, button.button), sizeof(((SDL_Event *)0)->button.button), __builtin_offsetof(SDL_Event, button.down), sizeof(((SDL_Event *)0)->button.down), __builtin_offsetof(SDL_Event, button.clicks), sizeof(((SDL_Event *)0)->button.clicks), __builtin_offsetof(SDL_Event, button.padding), sizeof(((SDL_Event *)0)->button.padding), __builtin_offsetof(SDL_Event, button.x), sizeof(((SDL_Event *)0)->button.x), __builtin_offsetof(SDL_Event, button.y), sizeof(((SDL_Event *)0)->button.y), __builtin_offsetof(SDL_Event, wheel.type), sizeof(((SDL_Event *)0)->wheel.type), __builtin_offsetof(SDL_Event, wheel.reserved), sizeof(((SDL_Event *)0)->wheel.reserved), __builtin_offsetof(SDL_Event, wheel.timestamp), sizeof(((SDL_Event *)0)->wheel.timestamp), __builtin_offsetof(SDL_Event, wheel.windowID), sizeof(((SDL_Event *)0)->wheel.windowID), __builtin_offsetof(SDL_Event, wheel.which), sizeof(((SDL_Event *)0)->wheel.which), __builtin_offsetof(SDL_Event, wheel.x), sizeof(((SDL_Event *)0)->wheel.x), __builtin_offsetof(SDL_Event, wheel.y), sizeof(((SDL_Event *)0)->wheel.y), __builtin_offsetof(SDL_Event, wheel.direction), sizeof(((SDL_Event *)0)->wheel.direction), __builtin_offsetof(SDL_Event, wheel.mouse_x), sizeof(((SDL_Event *)0)->wheel.mouse_x), __builtin_offsetof(SDL_Event, wheel.mouse_y), sizeof(((SDL_Event *)0)->wheel.mouse_y), __builtin_offsetof(SDL_Event, wheel.integer_x), sizeof(((SDL_Event *)0)->wheel.integer_x), __builtin_offsetof(SDL_Event, wheel.integer_y), sizeof(((SDL_Event *)0)->wheel.integer_y), __builtin_offsetof(SDL_Event, jdevice.type), sizeof(((SDL_Event *)0)->jdevice.type), __builtin_offsetof(SDL_Event, jdevice.reserved), sizeof(((SDL_Event *)0)->jdevice.reserved), __builtin_offsetof(SDL_Event, jdevice.timestamp), sizeof(((SDL_Event *)0)->jdevice.timestamp), __builtin_offsetof(SDL_Event, jdevice.which), sizeof(((SDL_Event *)0)->jdevice.which), __builtin_offsetof(SDL_Event, jaxis.type), sizeof(((SDL_Event *)0)->jaxis.type), __builtin_offsetof(SDL_Event, jaxis.reserved), sizeof(((SDL_Event *)0)->jaxis.reserved), __builtin_offsetof(SDL_Event, jaxis.timestamp), sizeof(((SDL_Event *)0)->jaxis.timestamp), __builtin_offsetof(SDL_Event, jaxis.which), sizeof(((SDL_Event *)0)->jaxis.which), __builtin_offsetof(SDL_Event, jaxis.axis), sizeof(((SDL_Event *)0)->jaxis.axis), __builtin_offsetof(SDL_Event, jaxis.padding1), sizeof(((SDL_Event *)0)->jaxis.padding1), __builtin_offsetof(SDL_Event, jaxis.padding2), sizeof(((SDL_Event *)0)->jaxis.padding2), __builtin_offsetof(SDL_Event, jaxis.padding3), sizeof(((SDL_Event *)0)->jaxis.padding3), __builtin_offsetof(SDL_Event, jaxis.value), sizeof(((SDL_Event *)0)->jaxis.value), __builtin_offsetof(SDL_Event, jaxis.padding4), sizeof(((SDL_Event *)0)->jaxis.padding4), __builtin_offsetof(SDL_Event, jball.type), sizeof(((SDL_Event *)0)->jball.type), __builtin_offsetof(SDL_Event, jball.reserved), sizeof(((SDL_Event *)0)->jball.reserved), __builtin_offsetof(SDL_Event, jball.timestamp), sizeof(((SDL_Event *)0)->jball.timestamp), __builtin_offsetof(SDL_Event, jball.which), sizeof(((SDL_Event *)0)->jball.which), __builtin_offsetof(SDL_Event, jball.ball), sizeof(((SDL_Event *)0)->jball.ball), __builtin_offsetof(SDL_Event, jball.padding1), sizeof(((SDL_Event *)0)->jball.padding1), __builtin_offsetof(SDL_Event, jball.padding2), sizeof(((SDL_Event *)0)->jball.padding2), __builtin_offsetof(SDL_Event, jball.padding3), sizeof(((SDL_Event *)0)->jball.padding3), __builtin_offsetof(SDL_Event, jball.xrel), sizeof(((SDL_Event *)0)->jball.xrel), __builtin_offsetof(SDL_Event, jball.yrel), sizeof(((SDL_Event *)0)->jball.yrel), __builtin_offsetof(SDL_Event, jhat.type), sizeof(((SDL_Event *)0)->jhat.type), __builtin_offsetof(SDL_Event, jhat.reserved), sizeof(((SDL_Event *)0)->jhat.reserved), __builtin_offsetof(SDL_Event, jhat.timestamp), sizeof(((SDL_Event *)0)->jhat.timestamp), __builtin_offsetof(SDL_Event, jhat.which), sizeof(((SDL_Event *)0)->jhat.which), __builtin_offsetof(SDL_Event, jhat.hat), sizeof(((SDL_Event *)0)->jhat.hat), __builtin_offsetof(SDL_Event, jhat.value), sizeof(((SDL_Event *)0)->jhat.value), __builtin_offsetof(SDL_Event, jhat.padding1), sizeof(((SDL_Event *)0)->jhat.padding1), __builtin_offsetof(SDL_Event, jhat.padding2), sizeof(((SDL_Event *)0)->jhat.padding2), __builtin_offsetof(SDL_Event, jbutton.type), sizeof(((SDL_Event *)0)->jbutton.type), __builtin_offsetof(SDL_Event, jbutton.reserved), sizeof(((SDL_Event *)0)->jbutton.reserved), __builtin_offsetof(SDL_Event, jbutton.timestamp), sizeof(((SDL_Event *)0)->jbutton.timestamp), __builtin_offsetof(SDL_Event, jbutton.which), sizeof(((SDL_Event *)0)->jbutton.which), __builtin_offsetof(SDL_Event, jbutton.button), sizeof(((SDL_Event *)0)->jbutton.button), __builtin_offsetof(SDL_Event, jbutton.down), sizeof(((SDL_Event *)0)->jbutton.down), __builtin_offsetof(SDL_Event, jbutton.padding1), sizeof(((SDL_Event *)0)->jbutton.padding1), __builtin_offsetof(SDL_Event, jbutton.padding2), sizeof(((SDL_Event *)0)->jbutton.padding2), __builtin_offsetof(SDL_Event, jbattery.type), sizeof(((SDL_Event *)0)->jbattery.type), __builtin_offsetof(SDL_Event, jbattery.reserved), sizeof(((SDL_Event *)0)->jbattery.reserved), __builtin_offsetof(SDL_Event, jbattery.timestamp), sizeof(((SDL_Event *)0)->jbattery.timestamp), __builtin_offsetof(SDL_Event, jbattery.which), sizeof(((SDL_Event *)0)->jbattery.which), __builtin_offsetof(SDL_Event, jbattery.state), sizeof(((SDL_Event *)0)->jbattery.state), __builtin_offsetof(SDL_Event, jbattery.percent), sizeof(((SDL_Event *)0)->jbattery.percent), __builtin_offsetof(SDL_Event, gdevice.type), sizeof(((SDL_Event *)0)->gdevice.type), __builtin_offsetof(SDL_Event, gdevice.reserved), sizeof(((SDL_Event *)0)->gdevice.reserved), __builtin_offsetof(SDL_Event, gdevice.timestamp), sizeof(((SDL_Event *)0)->gdevice.timestamp), __builtin_offsetof(SDL_Event, gdevice.which), sizeof(((SDL_Event *)0)->gdevice.which), __builtin_offsetof(SDL_Event, gaxis.type), sizeof(((SDL_Event *)0)->gaxis.type), __builtin_offsetof(SDL_Event, gaxis.reserved), sizeof(((SDL_Event *)0)->gaxis.reserved), __builtin_offsetof(SDL_Event, gaxis.timestamp), sizeof(((SDL_Event *)0)->gaxis.timestamp), __builtin_offsetof(SDL_Event, gaxis.which), sizeof(((SDL_Event *)0)->gaxis.which), __builtin_offsetof(SDL_Event, gaxis.axis), sizeof(((SDL_Event *)0)->gaxis.axis), __builtin_offsetof(SDL_Event, gaxis.padding1), sizeof(((SDL_Event *)0)->gaxis.padding1), __builtin_offsetof(SDL_Event, gaxis.padding2), sizeof(((SDL_Event *)0)->gaxis.padding2), __builtin_offsetof(SDL_Event, gaxis.padding3), sizeof(((SDL_Event *)0)->gaxis.padding3), __builtin_offsetof(SDL_Event, gaxis.value), sizeof(((SDL_Event *)0)->gaxis.value), __builtin_offsetof(SDL_Event, gaxis.padding4), sizeof(((SDL_Event *)0)->gaxis.padding4), __builtin_offsetof(SDL_Event, gbutton.type), sizeof(((SDL_Event *)0)->gbutton.type), __builtin_offsetof(SDL_Event, gbutton.reserved), sizeof(((SDL_Event *)0)->gbutton.reserved), __builtin_offsetof(SDL_Event, gbutton.timestamp), sizeof(((SDL_Event *)0)->gbutton.timestamp), __builtin_offsetof(SDL_Event, gbutton.which), sizeof(((SDL_Event *)0)->gbutton.which), __builtin_offsetof(SDL_Event, gbutton.button), sizeof(((SDL_Event *)0)->gbutton.button), __builtin_offsetof(SDL_Event, gbutton.down), sizeof(((SDL_Event *)0)->gbutton.down), __builtin_offsetof(SDL_Event, gbutton.padding1), sizeof(((SDL_Event *)0)->gbutton.padding1), __builtin_offsetof(SDL_Event, gbutton.padding2), sizeof(((SDL_Event *)0)->gbutton.padding2), __builtin_offsetof(SDL_Event, gtouchpad.type), sizeof(((SDL_Event *)0)->gtouchpad.type), __builtin_offsetof(SDL_Event, gtouchpad.reserved), sizeof(((SDL_Event *)0)->gtouchpad.reserved), __builtin_offsetof(SDL_Event, gtouchpad.timestamp), sizeof(((SDL_Event *)0)->gtouchpad.timestamp), __builtin_offsetof(SDL_Event, gtouchpad.which), sizeof(((SDL_Event *)0)->gtouchpad.which), __builtin_offsetof(SDL_Event, gtouchpad.touchpad), sizeof(((SDL_Event *)0)->gtouchpad.touchpad), __builtin_offsetof(SDL_Event, gtouchpad.finger), sizeof(((SDL_Event *)0)->gtouchpad.finger), __builtin_offsetof(SDL_Event, gtouchpad.x), sizeof(((SDL_Event *)0)->gtouchpad.x), __builtin_offsetof(SDL_Event, gtouchpad.y), sizeof(((SDL_Event *)0)->gtouchpad.y), __builtin_offsetof(SDL_Event, gtouchpad.pressure), sizeof(((SDL_Event *)0)->gtouchpad.pressure), __builtin_offsetof(SDL_Event, gsensor.type), sizeof(((SDL_Event *)0)->gsensor.type), __builtin_offsetof(SDL_Event, gsensor.reserved), sizeof(((SDL_Event *)0)->gsensor.reserved), __builtin_offsetof(SDL_Event, gsensor.timestamp), sizeof(((SDL_Event *)0)->gsensor.timestamp), __builtin_offsetof(SDL_Event, gsensor.which), sizeof(((SDL_Event *)0)->gsensor.which), __builtin_offsetof(SDL_Event, gsensor.sensor), sizeof(((SDL_Event *)0)->gsensor.sensor), __builtin_offsetof(SDL_Event, gsensor.data), sizeof(((SDL_Event *)0)->gsensor.data), __builtin_offsetof(SDL_Event, gsensor.sensor_timestamp), sizeof(((SDL_Event *)0)->gsensor.sensor_timestamp), __builtin_offsetof(SDL_Event, adevice.type), sizeof(((SDL_Event *)0)->adevice.type), __builtin_offsetof(SDL_Event, adevice.reserved), sizeof(((SDL_Event *)0)->adevice.reserved), __builtin_offsetof(SDL_Event, adevice.timestamp), sizeof(((SDL_Event *)0)->adevice.timestamp), __builtin_offsetof(SDL_Event, adevice.which), sizeof(((SDL_Event *)0)->adevice.which), __builtin_offsetof(SDL_Event, adevice.recording), sizeof(((SDL_Event *)0)->adevice.recording), __builtin_offsetof(SDL_Event, adevice.padding1), sizeof(((SDL_Event *)0)->adevice.padding1), __builtin_offsetof(SDL_Event, adevice.padding2), sizeof(((SDL_Event *)0)->adevice.padding2), __builtin_offsetof(SDL_Event, adevice.padding3), sizeof(((SDL_Event *)0)->adevice.padding3), __builtin_offsetof(SDL_Event, cdevice.type), sizeof(((SDL_Event *)0)->cdevice.type), __builtin_offsetof(SDL_Event, cdevice.reserved), sizeof(((SDL_Event *)0)->cdevice.reserved), __builtin_offsetof(SDL_Event, cdevice.timestamp), sizeof(((SDL_Event *)0)->cdevice.timestamp), __builtin_offsetof(SDL_Event, cdevice.which), sizeof(((SDL_Event *)0)->cdevice.which), __builtin_offsetof(SDL_Event, sensor.type), sizeof(((SDL_Event *)0)->sensor.type), __builtin_offsetof(SDL_Event, sensor.reserved), sizeof(((SDL_Event *)0)->sensor.reserved), __builtin_offsetof(SDL_Event, sensor.timestamp), sizeof(((SDL_Event *)0)->sensor.timestamp), __builtin_offsetof(SDL_Event, sensor.which), sizeof(((SDL_Event *)0)->sensor.which), __builtin_offsetof(SDL_Event, sensor.data), sizeof(((SDL_Event *)0)->sensor.data), __builtin_offsetof(SDL_Event, sensor.sensor_timestamp), sizeof(((SDL_Event *)0)->sensor.sensor_timestamp), __builtin_offsetof(SDL_Event, quit.type), sizeof(((SDL_Event *)0)->quit.type), __builtin_offsetof(SDL_Event, quit.reserved), sizeof(((SDL_Event *)0)->quit.reserved), __builtin_offsetof(SDL_Event, quit.timestamp), sizeof(((SDL_Event *)0)->quit.timestamp), __builtin_offsetof(SDL_Event, user.type), sizeof(((SDL_Event *)0)->user.type), __builtin_offsetof(SDL_Event, user.reserved), sizeof(((SDL_Event *)0)->user.reserved), __builtin_offsetof(SDL_Event, user.timestamp), sizeof(((SDL_Event *)0)->user.timestamp), __builtin_offsetof(SDL_Event, user.windowID), sizeof(((SDL_Event *)0)->user.windowID), __builtin_offsetof(SDL_Event, user.code), sizeof(((SDL_Event *)0)->user.code), __builtin_offsetof(SDL_Event, user.data1), sizeof(((SDL_Event *)0)->user.data1), __builtin_offsetof(SDL_Event, user.data2), sizeof(((SDL_Event *)0)->user.data2), __builtin_offsetof(SDL_Event, tfinger.type), sizeof(((SDL_Event *)0)->tfinger.type), __builtin_offsetof(SDL_Event, tfinger.reserved), sizeof(((SDL_Event *)0)->tfinger.reserved), __builtin_offsetof(SDL_Event, tfinger.timestamp), sizeof(((SDL_Event *)0)->tfinger.timestamp), __builtin_offsetof(SDL_Event, tfinger.touchID), sizeof(((SDL_Event *)0)->tfinger.touchID), __builtin_offsetof(SDL_Event, tfinger.fingerID), sizeof(((SDL_Event *)0)->tfinger.fingerID), __builtin_offsetof(SDL_Event, tfinger.x), sizeof(((SDL_Event *)0)->tfinger.x), __builtin_offsetof(SDL_Event, tfinger.y), sizeof(((SDL_Event *)0)->tfinger.y), __builtin_offsetof(SDL_Event, tfinger.dx), sizeof(((SDL_Event *)0)->tfinger.dx), __builtin_offsetof(SDL_Event, tfinger.dy), sizeof(((SDL_Event *)0)->tfinger.dy), __builtin_offsetof(SDL_Event, tfinger.pressure), sizeof(((SDL_Event *)0)->tfinger.pressure), __builtin_offsetof(SDL_Event, tfinger.windowID), sizeof(((SDL_Event *)0)->tfinger.windowID), __builtin_offsetof(SDL_Event, pinch.type), sizeof(((SDL_Event *)0)->pinch.type), __builtin_offsetof(SDL_Event, pinch.reserved), sizeof(((SDL_Event *)0)->pinch.reserved), __builtin_offsetof(SDL_Event, pinch.timestamp), sizeof(((SDL_Event *)0)->pinch.timestamp), __builtin_offsetof(SDL_Event, pinch.scale), sizeof(((SDL_Event *)0)->pinch.scale), __builtin_offsetof(SDL_Event, pinch.windowID), sizeof(((SDL_Event *)0)->pinch.windowID), __builtin_offsetof(SDL_Event, pproximity.type), sizeof(((SDL_Event *)0)->pproximity.type), __builtin_offsetof(SDL_Event, pproximity.reserved), sizeof(((SDL_Event *)0)->pproximity.reserved), __builtin_offsetof(SDL_Event, pproximity.timestamp), sizeof(((SDL_Event *)0)->pproximity.timestamp), __builtin_offsetof(SDL_Event, pproximity.windowID), sizeof(((SDL_Event *)0)->pproximity.windowID), __builtin_offsetof(SDL_Event, pproximity.which), sizeof(((SDL_Event *)0)->pproximity.which), __builtin_offsetof(SDL_Event, pproximity.pen_state), sizeof(((SDL_Event *)0)->pproximity.pen_state), __builtin_offsetof(SDL_Event, pproximity.device_type), sizeof(((SDL_Event *)0)->pproximity.device_type), __builtin_offsetof(SDL_Event, ptouch.type), sizeof(((SDL_Event *)0)->ptouch.type), __builtin_offsetof(SDL_Event, ptouch.reserved), sizeof(((SDL_Event *)0)->ptouch.reserved), __builtin_offsetof(SDL_Event, ptouch.timestamp), sizeof(((SDL_Event *)0)->ptouch.timestamp), __builtin_offsetof(SDL_Event, ptouch.windowID), sizeof(((SDL_Event *)0)->ptouch.windowID), __builtin_offsetof(SDL_Event, ptouch.which), sizeof(((SDL_Event *)0)->ptouch.which), __builtin_offsetof(SDL_Event, ptouch.pen_state), sizeof(((SDL_Event *)0)->ptouch.pen_state), __builtin_offsetof(SDL_Event, ptouch.x), sizeof(((SDL_Event *)0)->ptouch.x), __builtin_offsetof(SDL_Event, ptouch.y), sizeof(((SDL_Event *)0)->ptouch.y), __builtin_offsetof(SDL_Event, ptouch.eraser), sizeof(((SDL_Event *)0)->ptouch.eraser), __builtin_offsetof(SDL_Event, ptouch.down), sizeof(((SDL_Event *)0)->ptouch.down), __builtin_offsetof(SDL_Event, ptouch.device_type), sizeof(((SDL_Event *)0)->ptouch.device_type), __builtin_offsetof(SDL_Event, pmotion.type), sizeof(((SDL_Event *)0)->pmotion.type), __builtin_offsetof(SDL_Event, pmotion.reserved), sizeof(((SDL_Event *)0)->pmotion.reserved), __builtin_offsetof(SDL_Event, pmotion.timestamp), sizeof(((SDL_Event *)0)->pmotion.timestamp), __builtin_offsetof(SDL_Event, pmotion.windowID), sizeof(((SDL_Event *)0)->pmotion.windowID), __builtin_offsetof(SDL_Event, pmotion.which), sizeof(((SDL_Event *)0)->pmotion.which), __builtin_offsetof(SDL_Event, pmotion.pen_state), sizeof(((SDL_Event *)0)->pmotion.pen_state), __builtin_offsetof(SDL_Event, pmotion.x), sizeof(((SDL_Event *)0)->pmotion.x), __builtin_offsetof(SDL_Event, pmotion.y), sizeof(((SDL_Event *)0)->pmotion.y), __builtin_offsetof(SDL_Event, pmotion.device_type), sizeof(((SDL_Event *)0)->pmotion.device_type), __builtin_offsetof(SDL_Event, pbutton.type), sizeof(((SDL_Event *)0)->pbutton.type), __builtin_offsetof(SDL_Event, pbutton.reserved), sizeof(((SDL_Event *)0)->pbutton.reserved), __builtin_offsetof(SDL_Event, pbutton.timestamp), sizeof(((SDL_Event *)0)->pbutton.timestamp), __builtin_offsetof(SDL_Event, pbutton.windowID), sizeof(((SDL_Event *)0)->pbutton.windowID), __builtin_offsetof(SDL_Event, pbutton.which), sizeof(((SDL_Event *)0)->pbutton.which), __builtin_offsetof(SDL_Event, pbutton.pen_state), sizeof(((SDL_Event *)0)->pbutton.pen_state), __builtin_offsetof(SDL_Event, pbutton.x), sizeof(((SDL_Event *)0)->pbutton.x), __builtin_offsetof(SDL_Event, pbutton.y), sizeof(((SDL_Event *)0)->pbutton.y), __builtin_offsetof(SDL_Event, pbutton.button), sizeof(((SDL_Event *)0)->pbutton.button), __builtin_offsetof(SDL_Event, pbutton.down), sizeof(((SDL_Event *)0)->pbutton.down), __builtin_offsetof(SDL_Event, pbutton.device_type), sizeof(((SDL_Event *)0)->pbutton.device_type), __builtin_offsetof(SDL_Event, paxis.type), sizeof(((SDL_Event *)0)->paxis.type), __builtin_offsetof(SDL_Event, paxis.reserved), sizeof(((SDL_Event *)0)->paxis.reserved), __builtin_offsetof(SDL_Event, paxis.timestamp), sizeof(((SDL_Event *)0)->paxis.timestamp), __builtin_offsetof(SDL_Event, paxis.windowID), sizeof(((SDL_Event *)0)->paxis.windowID), __builtin_offsetof(SDL_Event, paxis.which), sizeof(((SDL_Event *)0)->paxis.which), __builtin_offsetof(SDL_Event, paxis.pen_state), sizeof(((SDL_Event *)0)->paxis.pen_state), __builtin_offsetof(SDL_Event, paxis.x), sizeof(((SDL_Event *)0)->paxis.x), __builtin_offsetof(SDL_Event, paxis.y), sizeof(((SDL_Event *)0)->paxis.y), __builtin_offsetof(SDL_Event, paxis.axis), sizeof(((SDL_Event *)0)->paxis.axis), __builtin_offsetof(SDL_Event, paxis.value), sizeof(((SDL_Event *)0)->paxis.value), __builtin_offsetof(SDL_Event, paxis.device_type), sizeof(((SDL_Event *)0)->paxis.device_type), __builtin_offsetof(SDL_Event, render.type), sizeof(((SDL_Event *)0)->render.type), __builtin_offsetof(SDL_Event, render.reserved), sizeof(((SDL_Event *)0)->render.reserved), __builtin_offsetof(SDL_Event, render.timestamp), sizeof(((SDL_Event *)0)->render.timestamp), __builtin_offsetof(SDL_Event, render.windowID), sizeof(((SDL_Event *)0)->render.windowID), __builtin_offsetof(SDL_Event, drop.type), sizeof(((SDL_Event *)0)->drop.type), __builtin_offsetof(SDL_Event, drop.reserved), sizeof(((SDL_Event *)0)->drop.reserved), __builtin_offsetof(SDL_Event, drop.timestamp), sizeof(((SDL_Event *)0)->drop.timestamp), __builtin_offsetof(SDL_Event, drop.windowID), sizeof(((SDL_Event *)0)->drop.windowID), __builtin_offsetof(SDL_Event, drop.x), sizeof(((SDL_Event *)0)->drop.x), __builtin_offsetof(SDL_Event, drop.y), sizeof(((SDL_Event *)0)->drop.y), __builtin_offsetof(SDL_Event, drop.source), sizeof(((SDL_Event *)0)->drop.source), __builtin_offsetof(SDL_Event, drop.data), sizeof(((SDL_Event *)0)->drop.data), __builtin_offsetof(SDL_Event, clipboard.type), sizeof(((SDL_Event *)0)->clipboard.type), __builtin_offsetof(SDL_Event, clipboard.reserved), sizeof(((SDL_Event *)0)->clipboard.reserved), __builtin_offsetof(SDL_Event, clipboard.timestamp), sizeof(((SDL_Event *)0)->clipboard.timestamp), __builtin_offsetof(SDL_Event, clipboard.owner), sizeof(((SDL_Event *)0)->clipboard.owner), __builtin_offsetof(SDL_Event, clipboard.num_mime_types), sizeof(((SDL_Event *)0)->clipboard.num_mime_types), __builtin_offsetof(SDL_Event, clipboard.mime_types), sizeof(((SDL_Event *)0)->clipboard.mime_types), __builtin_offsetof(SDL_Event, padding), sizeof(((SDL_Event *)0)->padding)};
 #pragma pop_macro("adevice")
 #pragma pop_macro("axis")
 #pragma pop_macro("ball")
@@ -502,9 +559,9 @@ __attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof
 #pragma pop_macro("xrel")
 #pragma pop_macro("y")
 #pragma pop_macro("yrel")
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_2 = hero_pad_gaps(sizeof(SDL_Event), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
 }
 
@@ -516,197 +573,197 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
 #line 46
 #define h6_got (*hero_lend_h6_got)
 #line 46
-    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0, h7_b1, t2, t12, t13, t17, t18, t21, t22, t25, t28, t29, t30, t36, t40; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG uint32_t t1, t3, t4, t6, t15, t23, t26, t27, t32, t38, t39; HERO_NODEBUG uint64_t t5; HERO_NODEBUG int32_t t7, t14, t31, t37; HERO_NODEBUG void *t8, *t9; HERO_NODEBUG SDL_UserEvent t10; HERO_NODEBUG SDL_Event t11, t24; HERO_NODEBUG int64_t t16, t19, t20, t33, t34, t35; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = UINT64_C(16384); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 47, 11}; t2 = SDL_Init(t1); } hero_print_bool(t2); hero_print_end();
+    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0, h7_b1, t2, t12, t13, t17, t18, t21, t22, t25, t28, t29, t30, t36, t40; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG uint32_t t1, t3, t4, t6, t15, t23, t26, t27, t32, t38, t39; HERO_NODEBUG uint64_t t5; HERO_NODEBUG int32_t t7, t14, t31, t37; HERO_NODEBUG void *t8, *t9; HERO_NODEBUG SDL_UserEvent t10; HERO_NODEBUG SDL_Event t11, t24; HERO_NODEBUG int64_t t16, t19, t20, t33, t34, t35; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = UINT64_C(16384); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 47, 11}; t2 = SDL_Init(t1); } hero_print_bool(t2); hero_print_end();
 #line 49
     t3 = UINT64_C(32768); t4 = UINT64_C(0); t5 = UINT64_C(0); t6 = UINT64_C(0); t7 = INT64_C(42); t8 = ((void *)0); t9 = ((void *)0); t10 = (SDL_UserEvent){.type = t3, .reserved = t4, .timestamp = t5, .windowID = t6, .code = t7, .data1 = t8, .data2 = t9};
 #line 48
     t11 = (SDL_Event){.user = t10}; h0_sent = t11; hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 51
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 51, 11}; hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event"); hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t12 = SDL_PushEvent(&h0_sent); } hero_print_bool(t12); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 51, 11}; hero_lend_local_name(hero_lend_h0_sent, "SDL_PushEvent", "event"); hero_pad_fill(&h0_sent, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t12 = SDL_PushEvent(&h0_sent); } hero_print_bool(t12); hero_print_end();
     t13 = false; h1_found = t13;
     t14 = INT64_C(0); h2_code = t14;
     t15 = UINT64_C(0); h3_keyed = t15;
-    t16 = INT64_C(0); h4_tries = t16; goto bb1; bb1:
+    t16 = INT64_C(0); h4_tries = t16; goto hero_bb1; hero_bb1:
 #line 57
-    t17 = h1_found; t18 = !t17; h5_b0 = t18; if (t18) goto bb4; else goto bb5; bb2:
+    t17 = h1_found; t18 = !t17; h5_b0 = t18; if (t18) goto hero_bb4; else goto hero_bb5; hero_bb2:
     t23 = UINT64_C(0); t24 = (SDL_Event){.type = t23}; h6_got = t24; hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2);
 #line 60
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 60, 12}; hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event"); hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t25 = SDL_PollEvent(&h6_got); } h7_b1 = t25; if (t25) goto bb7; else goto bb8; bb3:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 60, 12}; hero_lend_local_name(hero_lend_h6_got, "SDL_PollEvent", "event"); hero_pad_fill(&h6_got, sizeof(SDL_Event), 1, hero_pad_g_2, hero_pad_n_2); t25 = SDL_PollEvent(&h6_got); } h7_b1 = t25; if (t25) goto hero_bb7; else goto hero_bb8; hero_bb3:
 #line 66
     t36 = h1_found; hero_print_bool(t36); hero_print_end();
     t37 = h2_code; hero_print_int(t37); hero_print_end();
     t38 = h3_keyed; t39 = UINT64_C(32768); t40 = t38 == t39; hero_print_bool(t40); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 69, 5}; (void)SDL_Quit(); } hero_lend_local_give(hero_lend_h6_got); hero_lend_local_give(hero_lend_h0_sent); return; bb4:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 69, 5}; (void)SDL_Quit(); } hero_lend_local_give(hero_lend_h6_got); hero_lend_local_give(hero_lend_h0_sent); return; hero_bb4:
 #line 57
-    t19 = h4_tries; t20 = INT64_C(64); t21 = t19 < t20; h5_b0 = t21; goto bb5; bb5: t22 = h5_b0; if (t22) goto bb2; else goto bb3; bb6:
+    t19 = h4_tries; t20 = INT64_C(64); t21 = t19 < t20; h5_b0 = t21; goto hero_bb5; hero_bb5: t22 = h5_b0; if (t22) goto hero_bb2; else goto hero_bb3; hero_bb6:
 #line 64
-    t33 = h4_tries; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 64, 17); h4_tries = t35; goto bb1; bb7:
+    t33 = h4_tries; t34 = INT64_C(1); if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow_at("ffi-a-construction-polls-an-sdl3-event.hero", "ffi-a-construction-polls-an-sdl3-event.main", 64, 17); h4_tries = t35; goto hero_bb1; hero_bb7:
 #line 60
-    t26 = h6_got.type; t27 = UINT64_C(32768); t28 = t26 == t27; h7_b1 = t28; goto bb8; bb8: t29 = h7_b1; if (t29) goto bb9; else goto bb10; bb9:
+    t26 = h6_got.type; t27 = UINT64_C(32768); t28 = t26 == t27; h7_b1 = t28; goto hero_bb8; hero_bb8: t29 = h7_b1; if (t29) goto hero_bb9; else goto hero_bb10; hero_bb9:
     t30 = true; h1_found = t30;
     t31 = h6_got.user.code; h2_code = t31;
-    t32 = h6_got.common.type; h3_keyed = t32; goto bb6; bb10: goto bb6;
-#line 551 "ffiaconstructionpollsansdl3event.c"
+    t32 = h6_got.common.type; h3_keyed = t32; goto hero_bb6; hero_bb10: goto hero_bb6;
+#line 608 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b) {
-    if (!(a->type == b->type)) return false;
-    if (!(a->reserved == b->reserved)) return false;
-    if (!(a->timestamp == b->timestamp)) return false;
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(const SDL_CommonEvent *hero_a, const SDL_CommonEvent *hero_b) {
+    if (!(hero_a->type == hero_b->type)) return false;
+    if (!(hero_a->reserved == hero_b->reserved)) return false;
+    if (!(hero_a->timestamp == hero_b->timestamp)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *elem) {
-    const SDL_CommonEvent *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->reserved)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u64)->hash(&v->timestamp)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(const void *hero_elem) {
+    const SDL_CommonEvent *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->type)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->reserved)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u64)->hash(&hero_v->timestamp)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *a, const SDL_UserEvent *b) {
-    if (!(a->type == b->type)) return false;
-    if (!(a->reserved == b->reserved)) return false;
-    if (!(a->timestamp == b->timestamp)) return false;
-    if (!(a->windowID == b->windowID)) return false;
-    if (!(a->code == b->code)) return false;
-    if (!(a->data1 == b->data1)) return false;
-    if (!(a->data2 == b->data2)) return false;
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(const SDL_UserEvent *hero_a, const SDL_UserEvent *hero_b) {
+    if (!(hero_a->type == hero_b->type)) return false;
+    if (!(hero_a->reserved == hero_b->reserved)) return false;
+    if (!(hero_a->timestamp == hero_b->timestamp)) return false;
+    if (!(hero_a->windowID == hero_b->windowID)) return false;
+    if (!(hero_a->code == hero_b->code)) return false;
+    if (!(hero_a->data1 == hero_b->data1)) return false;
+    if (!(hero_a->data2 == hero_b->data2)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *elem) {
-    const SDL_UserEvent *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->reserved)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u64)->hash(&v->timestamp)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u32)->hash(&v->windowID)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->code)) * UINT64_C(0x100000001b3);
-    h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
-    h = (h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(const void *hero_elem) {
+    const SDL_UserEvent *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->type)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->reserved)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u64)->hash(&hero_v->timestamp)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->windowID)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->code)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (hero_unreachable(), UINT64_C(0))) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *a, const SDL_Event *b) {
-    if (!(a->type == b->type)) return false;
-    if (!(h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(&a->common, &b->common))) return false;
-    if (!(h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(&a->user, &b->user))) return false;
+HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_0SDL_Event_eq(const SDL_Event *hero_a, const SDL_Event *hero_b) {
+    if (!(hero_a->type == hero_b->type)) return false;
+    if (!(h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_eq(&hero_a->common, &hero_b->common))) return false;
+    if (!(h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_eq(&hero_a->user, &hero_b->user))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *elem) {
-    const SDL_Event *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u32)->hash(&v->type)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(&v->common)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(&v->user)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffiaconstructionpollsansdl3event_0SDL_Event_hash(const void *hero_elem) {
+    const SDL_Event *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u32)->hash(&hero_v->type)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_ffiaconstructionpollsansdl3event_0SDL_CommonEvent_hash(&hero_v->common)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_ffiaconstructionpollsansdl3event_0SDL_UserEvent_hash(&hero_v->user)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("42ba1ee77016ab5e", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6730519013e4a545", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("ffiaconstructionpollsansdl3event\tffi-a-construction-polls-an-sdl3-event\n");
     h_ffiaconstructionpollsansdl3event_main();
     hero_runtime_check_leaks();

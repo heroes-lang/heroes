@@ -99,8 +99,8 @@ function around(s: source.Source, f: containers.Function, offset: i64, statement
 # the block, which holds every use of it.
 function declared(s: source.Source, f: containers.Function, offset: i64) -> str
     if in_library(s, f)
-        return nodebug.MARK + "__attribute__((unused)) const HeroPlace " + HERE + " = *" + CALLER + ";"
-    return nodebug.MARK + "__attribute__((unused)) static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
+        return nodebug.MARK + "__attribute__((__unused__)) const HeroPlace " + HERE + " = *" + CALLER + ";"
+    return nodebug.MARK + "__attribute__((__unused__)) static const HeroPlace " + HERE + " = {" + of(s, f, offset: offset) + "};"
 
 # The record's name inside its block.
 constant HERE: str
@@ -213,7 +213,7 @@ test "a check the runtime makes is handed its site's record, declared in a block
     s = program("/home/u/proj/main.hero")
     f = named(name: "main", kind: .function_kind, start: s.files[0].start)
     call = "t1 = hero_str_slice_at(t0, t2, t3, &hero_here);"
-    assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
+    assert around(s, f, offset: s.files[0].start + 20, statement: call) == "{ HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {\"main.hero\", \"main.main\", 2, 5}; " + call + " }"
 
 test "a function of the library hands on its caller's place, and a program's writes its own"
     s = program("/home/u/proj/main.hero")
@@ -228,7 +228,7 @@ test "a function of the library hands on its caller's place, and a program's wri
 
     # A block inside the library reads the caller's record through a copy, so
     # every `&hero_here` a check writes names the program's call.
-    assert declared(s, library, offset: s.files[2].start) == "HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller;"
+    assert declared(s, library, offset: s.files[2].start) == "HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller;"
 
 # No literal writes a NUL (`nul_in_string`), so the title is built from bytes, as
 # a program would have to build one.

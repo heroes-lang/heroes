@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-2109-defined.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,7 +122,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 69 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 126 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -103,26 +160,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -143,31 +200,31 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 212 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *a, const struct pt *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *hero_a, const struct pt *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void);
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void);
@@ -184,17 +241,17 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void);
 struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void);
 void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)hero_pad_nowhere()) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)hero_pad_nowhere()) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct pt), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 14 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
-#line 198 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 255 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_B), "heroes-ffi-return E_B i32");
     _Static_assert(__builtin_constant_p(E_B), "heroes-ffi-const E_B");
 #pragma clang diagnostic push
@@ -206,7 +263,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_B;
-#line 210 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 267 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -224,7 +281,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(void) {
 
 #line 15 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
-#line 228 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 285 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_NEXT), "heroes-ffi-return E_NEXT i32");
     _Static_assert(__builtin_constant_p(E_NEXT), "heroes-ffi-const E_NEXT");
 #pragma clang diagnostic push
@@ -236,7 +293,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_NEXT;
-#line 240 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 297 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -254,7 +311,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(void) {
 
 #line 16 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
-#line 258 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 315 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_SIZE), "heroes-ffi-return E_SIZE i32");
     _Static_assert(__builtin_constant_p(E_SIZE), "heroes-ffi-const E_SIZE");
 #pragma clang diagnostic push
@@ -266,7 +323,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_SIZE;
-#line 270 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 327 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -284,7 +341,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(void) {
 
 #line 17 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
-#line 288 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 345 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_OFF), "heroes-ffi-return E_OFF i32");
     _Static_assert(__builtin_constant_p(E_OFF), "heroes-ffi-const E_OFF");
 #pragma clang diagnostic push
@@ -296,7 +353,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 17 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_OFF;
-#line 300 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 357 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -314,7 +371,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_OFF(void) {
 
 #line 18 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
-#line 318 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 375 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_30), "heroes-ffi-return E_30 i32");
     _Static_assert(__builtin_constant_p(E_30), "heroes-ffi-const E_30");
 #pragma clang diagnostic push
@@ -326,7 +383,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 18 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_30;
-#line 330 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 387 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -344,7 +401,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_30(void) {
 
 #line 19 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
-#line 348 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 405 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(E_FDIV), "heroes-ffi-return E_FDIV i32");
     _Static_assert(__builtin_constant_p(E_FDIV), "heroes-ffi-const E_FDIV");
 #pragma clang diagnostic push
@@ -356,7 +413,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return E_FDIV;
-#line 360 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 417 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -374,7 +431,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_FDIV(void) {
 
 #line 20 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
-#line 378 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 435 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_FROME), "heroes-ffi-return S_FROME i32");
     _Static_assert(__builtin_constant_p(S_FROME), "heroes-ffi-const S_FROME");
 #pragma clang diagnostic push
@@ -386,7 +443,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_FROME;
-#line 390 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 447 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -404,7 +461,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FROME(void) {
 
 #line 21 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
-#line 408 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 465 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_U32(S_WRAP), "heroes-ffi-return S_WRAP u32");
     _Static_assert(__builtin_constant_p(S_WRAP), "heroes-ffi-const S_WRAP");
 #pragma clang diagnostic push
@@ -416,7 +473,7 @@ uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_WRAP;
-#line 420 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 477 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -434,7 +491,7 @@ uint32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_WRAP(void) {
 
 #line 22 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
-#line 438 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 495 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_NEGOK), "heroes-ffi-return S_NEGOK i32");
     _Static_assert(__builtin_constant_p(S_NEGOK), "heroes-ffi-const S_NEGOK");
 #pragma clang diagnostic push
@@ -446,7 +503,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_NEGOK;
-#line 450 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 507 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -464,12 +521,12 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_NEGOK(void) {
 
 #line 23 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 double h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK(void) {
-#line 468 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 525 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_F64(S_FOK), "heroes-ffi-return S_FOK f64");
     _Static_assert(__builtin_constant_p(S_FOK), "heroes-ffi-const S_FOK");
 #line 23 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_FOK;
-#line 473 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 530 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -486,7 +543,7 @@ double h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_FOK(void) {
 
 #line 24 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
-#line 490 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 547 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
     _Static_assert(HERO_RET_I32(S_BCPV), "heroes-ffi-return S_BCPV i32");
     _Static_assert(__builtin_constant_p(S_BCPV), "heroes-ffi-const S_BCPV");
 #pragma clang diagnostic push
@@ -498,7 +555,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 24 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     return S_BCPV;
-#line 502 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 559 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -516,7 +573,7 @@ int32_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_S_BCPV(void) {
 
 #line 25 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
-#line 520 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 577 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -528,7 +585,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 25 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     static struct pt hero_constant_value = R_OK;
-#line 532 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 589 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -547,7 +604,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_R_OK(void) {
 
 #line 26 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
 struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
-#line 551 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 608 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -559,7 +616,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 26 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
     static struct pt hero_constant_value = M_ROBJ_OK;
-#line 563 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 620 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -577,7 +634,7 @@ struct pt h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 28 "tests/golden/run/fixedbugs-2109-a-value-c-defines-in-an-initialiser-builds.hero"
-void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) { struct pt h0_r; struct pt h1_o; HERO_NODEBUG int32_t t1, t2, t3, t4, t5, t6, t7, t9, t11, t13, t15, t16; HERO_NODEBUG uint32_t t8; HERO_NODEBUG double t10; HERO_NODEBUG struct pt t12, t14; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) { struct pt h0_r; struct pt h1_o; HERO_NODEBUG int32_t t1, t2, t3, t4, t5, t6, t7, t9, t11, t13, t15, t16; HERO_NODEBUG uint32_t t8; HERO_NODEBUG double t10; HERO_NODEBUG struct pt t12, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_B(); hero_print_int(t1); hero_print_end();
     t2 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_NEXT(); hero_print_int(t2); hero_print_end();
     t3 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_E_SIZE(); hero_print_int(t3); hero_print_end();
@@ -594,122 +651,122 @@ void h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main(void) { struct pt h
     t14 = h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_M_ROBJ_OK(); h1_o = t14; hero_pad_fill(&h1_o, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
     t15 = h1_o.x; hero_print_int(t15); hero_print_end();
     t16 = h1_o.y; hero_print_int(t16); hero_print_end(); return;
-#line 598 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
+#line 655 "fixedbugs2109avaluecdefinesinaninitialiserbuilds.c"
 }
-HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *a, const struct pt *b) {
-    if (!(a->x == b->x)) return false;
-    if (!(a->y == b->y)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_eq(const struct pt *hero_a, const struct pt *hero_b) {
+    if (!(hero_a->x == hero_b->x)) return false;
+    if (!(hero_a->y == hero_b->y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_hash(const void *elem) {
-    const struct pt *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->y)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_0Pt_hash(const void *hero_elem) {
+    const struct pt *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->y)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1247fea834c3117c", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("24c9fac72504c1af", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2109avaluecdefinesinaninitialiserbuilds\tfixedbugs-2109-a-value-c-defines-in-an-initialiser-builds\n");
     h_fixedbugs2109avaluecdefinesinaninitialiserbuilds_main();
     hero_runtime_check_leaks();

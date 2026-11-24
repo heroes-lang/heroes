@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -51,10 +51,10 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 #line 53 "fixedbugs2682arecordsunitoptionfieldpassesthrough.c"
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box {
@@ -62,19 +62,19 @@ typedef struct h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box {
 } h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -83,43 +83,43 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 95 "fixedbugs2682arecordsunitoptionfieldpassesthrough.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_retain(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *v);
-HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *v);
-HERO_TU_LOCAL bool h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_eq(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *a, const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_retain(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_v);
+HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_eq(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_a, const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_0opt_a8ea2_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_0opt_a8ea2));
-    h_0opt_a8ea2_retain((const h_0opt_a8ea2 *)dst);
+static void h_0opt_a8ea2_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_0opt_a8ea2));
+    h_0opt_a8ea2_retain((const h_0opt_a8ea2 *)hero_dst);
 }
-static void h_0opt_a8ea2_desc_drop(void *elem) {
-    h_0opt_a8ea2_release((h_0opt_a8ea2 *)elem);
+static void h_0opt_a8ea2_desc_drop(void *hero_elem) {
+    h_0opt_a8ea2_release((h_0opt_a8ea2 *)hero_elem);
 }
-static bool h_0opt_a8ea2_desc_eq(const void *a, const void *b) {
-    return h_0opt_a8ea2_eq((const h_0opt_a8ea2 *)a, (const h_0opt_a8ea2 *)b);
+static bool h_0opt_a8ea2_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_0opt_a8ea2_eq((const h_0opt_a8ea2 *)hero_a, (const h_0opt_a8ea2 *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_0opt_a8ea2_desc = {
     sizeof(h_0opt_a8ea2),
@@ -133,10 +133,10 @@ void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main(void);
 HERO_TU_LOCAL h_0opt_a8ea2 h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(h_0opt_a8ea2 h0_r);
 
 #line 18 "tests/golden/run/fixedbugs-2682-a-records-unit-option-field-passes-through.hero"
-void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main(void) { h_0opt_a8ea2 h0_x = {0}; h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box h1_b = {0}; HERO_NODEBUG h_0opt_a8ea2 h2_f0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h6_own6 = {0}, t1, t2, t3, t5, t6, t7, t11, t12, t13, t16, t17; HERO_NODEBUG h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box h5_own5 = {0}, t4, t14, t15; HERO_NODEBUG int64_t t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t11 = h3_own3; h3_own3 = t1; h_0opt_a8ea2_release(&t11); t12 = h0_x; h_0opt_a8ea2_retain(&t1); h0_x = t1; h_0opt_a8ea2_release(&t12);
+void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main(void) { h_0opt_a8ea2 h0_x = {0}; h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box h1_b = {0}; HERO_NODEBUG h_0opt_a8ea2 h2_f0 = {0}, h3_own3 = {0}, h4_own4 = {0}, h6_own6 = {0}, t1, t2, t3, t5, t6, t7, t11, t12, t13, t16, t17; HERO_NODEBUG h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box h5_own5 = {0}, t4, t14, t15; HERO_NODEBUG int64_t t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t11 = h3_own3; h3_own3 = t1; h_0opt_a8ea2_release(&t11); t12 = h0_x; h_0opt_a8ea2_retain(&t1); h0_x = t1; h_0opt_a8ea2_release(&t12);
     t2 = h0_x; t3 = h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(t2); t13 = h4_own4; h4_own4 = t3; h_0opt_a8ea2_release(&t13); h_0opt_a8ea2_retain(&t3); t4 = (h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box){.f_r = t3}; t14 = h5_own5; h5_own5 = t4; h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(&t14); t15 = h1_b; h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_retain(&t4); h1_b = t4; h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(&t15);
-    t5 = h1_b.f_r; t6 = h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(t5); t16 = h6_own6; h6_own6 = t6; h_0opt_a8ea2_release(&t16); t17 = h2_f0; h_0opt_a8ea2_retain(&t6); h2_f0 = t6; h_0opt_a8ea2_release(&t17); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(1); t10 = t8 == t9; hero_print_bool(t10); hero_print_end();
+    t5 = h1_b.f_r; t6 = h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(t5); t16 = h6_own6; h6_own6 = t6; h_0opt_a8ea2_release(&t16); t17 = h2_f0; h_0opt_a8ea2_retain(&t6); h2_f0 = t6; h_0opt_a8ea2_release(&t17); t7 = h2_f0; t8 = t7.hero_tag; t9 = INT64_C(1); t10 = t8 == t9; hero_print_bool(t10); hero_print_end();
 #line 141 "fixedbugs2682arecordsunitoptionfieldpassesthrough.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h0_x));
     h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(hero_slot_escape(&h1_b));
@@ -149,10 +149,10 @@ void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main(void) { h_0opt_a8e
 }
 
 #line 13 "tests/golden/run/fixedbugs-2682-a-records-unit-option-field-passes-through.hero"
-/* pass<()> */ HERO_TU_LOCAL h_0opt_a8ea2 h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(h_0opt_a8ea2 h0_r) { HERO_NODEBUG h_0opt_a8ea2 h1_s0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t2, t7, t8, t12, t13, t14, t15, t17; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t9, t16; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_r; t14 = h1_s0; h_0opt_a8ea2_retain(&t1); h1_s0 = t1; h_0opt_a8ea2_release(&t14); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb2:
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t15 = h5_own5; h5_own5 = t7; h_0opt_a8ea2_release(&t15); h4_ret0 = t7; goto bb4; bb3:
-    t8 = h1_s0; t9 = t8.as.err; t16 = h3_e; hero_failure_retain(&t9); h3_e = t9; hero_failure_release(&t16); t10 = h3_e.code; t11 = h3_e.msg; hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t17 = h6_own6; h6_own6 = t12; h_0opt_a8ea2_release(&t17); h4_ret0 = t12; goto bb4; bb4:
+/* pass<()> */ HERO_TU_LOCAL h_0opt_a8ea2 h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0pass_14a1(h_0opt_a8ea2 h0_r) { HERO_NODEBUG h_0opt_a8ea2 h1_s0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t2, t7, t8, t12, t13, t14, t15, t17; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t9, t16; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_r; t14 = h1_s0; h_0opt_a8ea2_retain(&t1); h1_s0 = t1; h_0opt_a8ea2_release(&t14); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb3; default: hero_unreachable(); } hero_bb2:
+    t7 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t15 = h5_own5; h5_own5 = t7; h_0opt_a8ea2_release(&t15); h4_ret0 = t7; goto hero_bb4; hero_bb3:
+    t8 = h1_s0; t9 = t8.hero_as.hero_err; t16 = h3_e; hero_failure_retain(&t9); h3_e = t9; hero_failure_release(&t16); t10 = h3_e.code; t11 = h3_e.msg; hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t10, .msg = t11}}; t17 = h6_own6; h6_own6 = t12; h_0opt_a8ea2_release(&t17); h4_ret0 = t12; goto hero_bb4; hero_bb4:
 #line 157 "fixedbugs2682arecordsunitoptionfieldpassesthrough.c"
     t13 = h4_ret0;
     h_0opt_a8ea2_retain(&t13);
@@ -162,126 +162,126 @@ void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main(void) { h_0opt_a8e
     h_0opt_a8ea2_release(hero_slot_escape(&h6_own6));
     return t13;
 }
-HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_retain(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *v) {
-    h_0opt_a8ea2_retain(&v->f_r);
+HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_retain(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_v) {
+    h_0opt_a8ea2_retain(&hero_v->f_r);
 }
 
-HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *v) {
-    h_0opt_a8ea2_release(&v->f_r);
+HERO_TU_LOCAL void h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_release(h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_v) {
+    h_0opt_a8ea2_release(&hero_v->f_r);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_eq(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *a, const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *b) {
-    if (!(h_0opt_a8ea2_eq(&a->f_r, &b->f_r))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_eq(const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_a, const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_b) {
+    if (!(h_0opt_a8ea2_eq(&hero_a->f_r, &hero_b->f_r))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_hash(const void *elem) {
-    const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&h_0opt_a8ea2_desc)->hash(&v->f_r)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2682arecordsunitoptionfieldpassesthrough_0Box_hash(const void *hero_elem) {
+    const h_fixedbugs2682arecordsunitoptionfieldpassesthrough_Box *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&h_0opt_a8ea2_desc)->hash(&hero_v->f_r)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("340089b548f89aca", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("402a50e522ac2a9e", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2682arecordsunitoptionfieldpassesthrough\tfixedbugs-2682-a-records-unit-option-field-passes-through\n");
     h_fixedbugs2682arecordsunitoptionfieldpassesthrough_main();
     hero_runtime_check_leaks();

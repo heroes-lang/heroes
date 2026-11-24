@@ -150,7 +150,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     quiet_line: str @= "#define HERO_TU_QUIET"
 
     if tu_local.len() > 0
-        quiet_line @ quiet_line + " __attribute__((unused))"
+        quiet_line @ quiet_line + " __attribute__((__unused__))"
     writer.line(@w, text: quiet_line)
 
     # The word a declaration the debugger is not shown carries, a local the

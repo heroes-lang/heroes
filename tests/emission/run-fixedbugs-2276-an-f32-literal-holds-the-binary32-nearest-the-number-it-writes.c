@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -58,34 +58,34 @@ typedef struct h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrit
 } h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe;
 
 typedef struct h_0opt_db86062 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        float ok;
-        HeroFailure err;
-    } as;
+        float hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_db86062;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -94,35 +94,35 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 106 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_eq(const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *a, const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v);
-HERO_TU_LOCAL void h_0opt_db86062_release(h_0opt_db86062 *v);
-HERO_TU_LOCAL bool h_0opt_db86062_eq(const h_0opt_db86062 *a, const h_0opt_db86062 *b);
-HERO_TU_LOCAL uint64_t h_0opt_db86062_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_eq(const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *hero_a, const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *hero_v);
+HERO_TU_LOCAL void h_0opt_db86062_release(h_0opt_db86062 *hero_v);
+HERO_TU_LOCAL bool h_0opt_db86062_eq(const h_0opt_db86062 *hero_a, const h_0opt_db86062 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_db86062_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_NEAR(void);
 HeroArrayHeader * h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(void);
@@ -131,7 +131,7 @@ float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_given(
 void h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_NEAR(void) { HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto bb0; bb0:
+float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_NEAR(void) { HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = 0x1.5c87fap-84; return t1;
 #line 137 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
 }
@@ -144,7 +144,7 @@ HERO_ARRAY_STATIC(hero_constant_h_fixedbugs2276anf32literalholdsthebinary32neare
 #else
 
 #line 15 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-HeroArrayHeader * h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG float t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(void) { HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG float t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = 0x1.5c87fap-84; t2 = 0x1.fdc95ep+114; t3 = hero_array_new(&hero_desc_f32, 2); hero_array_push_owned(&t3, &t1); hero_array_push_owned(&t3, &t2); t4 = h0_own0; h0_own0 = t3; hero_array_decref(t4);
 #line 150 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
     hero_array_incref(t3);
@@ -154,19 +154,19 @@ HeroArrayHeader * h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitw
 #endif
 
 #line 21 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-double h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_widened(float h0_x) { HERO_NODEBUG float t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto bb0; bb0:
+double h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_widened(float h0_x) { HERO_NODEBUG float t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x; t2 = hero_f32_to_f64(t1); return t2;
 #line 160 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_given(void) { HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto bb0; bb0:
+float h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_given(void) { HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = 0x1.5c87fap-84; return t1;
 #line 166 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-void h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main(void) { float h0_exact; float h1_bound; float h2_cell; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; HERO_NODEBUG h_0opt_db86062 h5_f0 = {0}, h14_own14 = {0}, t49, t50, t54, t56, t108, t109; float h6_big; HeroArrayHeader * h7_nine = {0}; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h12_own12 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *t37, *t41, *t65, *t74, *t88, *t89, *t92, *t95, *t104, *t105, *t110, *t111, *t112, *t113, *t114; HERO_NODEBUG int64_t h9_i0, t42, t51, t52, t66, t75, t90, t91, t93, t96, t100, t101, t102; float h10_x; HERO_NODEBUG HeroStr h11_own11 = {0}, t6, t8, t10, t11, t32, t38, t46, t48, t60, t64, t73, t103; HERO_NODEBUG HeroMapHeader *h13_own13 = {0}, *t40, *t47, *t106, *t107; HERO_NODEBUG float t1, t2, t3, t4, t7, t9, t12, t14, t16, t19, t21, t22, t24, t25, t27, t28, t29, t30, t33, t34, t36, t39, t43, t44, t57, t58, t61, t62, t67, t68, t70, t71, t76, t77, t79, t80, t81, t82, t83, t84, t85, t86, t87, t97, t98; HERO_NODEBUG bool t5, t18, t23, t26, t31, t35, t45, t53, t59, t63, t69, t78, t94; HERO_NODEBUG double t13, t15, t17, t72, t99; HERO_NODEBUG h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe t20; HERO_NODEBUG HeroFailure t55; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main(void) { float h0_exact; float h1_bound; float h2_cell; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; HERO_NODEBUG h_0opt_db86062 h5_f0 = {0}, h14_own14 = {0}, t49, t50, t54, t56, t108, t109; float h6_big; HeroArrayHeader * h7_nine = {0}; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h12_own12 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *t37, *t41, *t65, *t74, *t88, *t89, *t92, *t95, *t104, *t105, *t110, *t111, *t112, *t113, *t114; HERO_NODEBUG int64_t h9_i0, t42, t51, t52, t66, t75, t90, t91, t93, t96, t100, t101, t102; float h10_x; HERO_NODEBUG HeroStr h11_own11 = {0}, t6, t8, t10, t11, t32, t38, t46, t48, t60, t64, t73, t103; HERO_NODEBUG HeroMapHeader *h13_own13 = {0}, *t40, *t47, *t106, *t107; HERO_NODEBUG float t1, t2, t3, t4, t7, t9, t12, t14, t16, t19, t21, t22, t24, t25, t27, t28, t29, t30, t33, t34, t36, t39, t43, t44, t57, t58, t61, t62, t67, t68, t70, t71, t76, t77, t79, t80, t81, t82, t83, t84, t85, t86, t87, t97, t98; HERO_NODEBUG bool t5, t18, t23, t26, t31, t35, t45, t53, t59, t63, t69, t78, t94; HERO_NODEBUG double t13, t15, t17, t72, t99; HERO_NODEBUG h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe t20; HERO_NODEBUG HeroFailure t55; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = 0x1.5c87fap-84; h0_exact = t1;
 #line 31
     t2 = 0x1.5c87fap-84; h1_bound = t2;
@@ -180,8 +180,8 @@ void h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main(vo
     t29 = h2_cell; t30 = h0_exact; t31 = t29 == t30; t32 = HERO_STR_LIT(hero_str_20); t33 = h0_exact; t34 = 0x1.5c87fap-84; t35 = t33 == t34; hero_print_bool(t31); hero_print_str(t32); hero_print_bool(t35); hero_print_end();
 #line 43
     t36 = 0x1.5c87fap-84; t37 = hero_array_new(&hero_desc_f32, 1); hero_array_push_owned(&t37, &t36); t104 = h12_own12; h12_own12 = t37; hero_array_decref(t104); t105 = h3_xs; hero_array_incref(t37); h3_xs = t37; hero_array_decref(t105);
-    t38 = HERO_STR_LIT(hero_str_6b); t39 = 0x1.5c87fap-84; t40 = hero_map_new(&hero_desc_str, &hero_desc_f32, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 44, 21}; hero_map_put_at(t40, &t38, &t39, &hero_here); } t106 = h13_own13; h13_own13 = t40; hero_map_decref(t106); t107 = h4_m; hero_map_incref(t40); h4_m = t40; hero_map_decref(t107);
-    t41 = h3_xs; t42 = INT64_C(0); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 11) : (void)0), (void)(t41->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t41 + 1))[t42]); t44 = h0_exact; t45 = t43 == t44; t46 = HERO_STR_LIT(hero_str_20); t47 = h4_m; t48 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 32}; HERO_NODEBUG const void *found = hero_map_find_at(t47, &t48, &hero_here); if (found == NULL) { t49 = (h_0opt_db86062){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t49 = (h_0opt_db86062){.tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t49.as.ok, found); } } t108 = h14_own14; h14_own14 = t49; h_0opt_db86062_release(&t108); t109 = h5_f0; h_0opt_db86062_retain(&t49); h5_f0 = t49; h_0opt_db86062_release(&t109); t50 = h5_f0; t51 = t50.tag; t52 = INT64_C(0); t53 = t51 == t52; if (t53) goto bb1; else goto bb2; bb1: t56 = h5_f0; t57 = t56.as.ok; t58 = h0_exact; t59 = t57 == t58; t60 = HERO_STR_LIT(hero_str_20); t61 = h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_NEAR(); t62 = h0_exact; t63 = t61 == t62; t64 = HERO_STR_LIT(hero_str_20); t65 = h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(); t110 = h15_own15; h15_own15 = t65; hero_array_decref(t110); t66 = INT64_C(0); t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? hero_panic_index_at(t65, t66, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 81) : (void)0), (void)(t65->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t65 + 1))[t66]); t68 = h0_exact; t69 = t67 == t68; hero_print_bool(t45); hero_print_str(t46); hero_print_bool(t59); hero_print_str(t60); hero_print_bool(t63); hero_print_str(t64); hero_print_bool(t69); hero_print_end();
+    t38 = HERO_STR_LIT(hero_str_6b); t39 = 0x1.5c87fap-84; t40 = hero_map_new(&hero_desc_str, &hero_desc_f32, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 44, 21}; hero_map_put_at(t40, &t38, &t39, &hero_here); } t106 = h13_own13; h13_own13 = t40; hero_map_decref(t106); t107 = h4_m; hero_map_incref(t40); h4_m = t40; hero_map_decref(t107);
+    t41 = h3_xs; t42 = INT64_C(0); t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? hero_panic_index_at(t41, t42, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 11) : (void)0), (void)(t41->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t41 + 1))[t42]); t44 = h0_exact; t45 = t43 == t44; t46 = HERO_STR_LIT(hero_str_20); t47 = h4_m; t48 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 32}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t47, &t48, &hero_here); if (hero_found == NULL) { t49 = (h_0opt_db86062){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t49 = (h_0opt_db86062){.hero_tag = INT64_C(0)}; (&hero_desc_f32)->copy(&t49.hero_as.hero_ok, hero_found); } } t108 = h14_own14; h14_own14 = t49; h_0opt_db86062_release(&t108); t109 = h5_f0; h_0opt_db86062_retain(&t49); h5_f0 = t49; h_0opt_db86062_release(&t109); t50 = h5_f0; t51 = t50.hero_tag; t52 = INT64_C(0); t53 = t51 == t52; if (t53) goto hero_bb1; else goto hero_bb2; hero_bb1: t56 = h5_f0; t57 = t56.hero_as.hero_ok; t58 = h0_exact; t59 = t57 == t58; t60 = HERO_STR_LIT(hero_str_20); t61 = h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_NEAR(); t62 = h0_exact; t63 = t61 == t62; t64 = HERO_STR_LIT(hero_str_20); t65 = h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(); t110 = h15_own15; h15_own15 = t65; hero_array_decref(t110); t66 = INT64_C(0); t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? hero_panic_index_at(t65, t66, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 81) : (void)0), (void)(t65->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t65 + 1))[t66]); t68 = h0_exact; t69 = t67 == t68; hero_print_bool(t45); hero_print_str(t46); hero_print_bool(t59); hero_print_str(t60); hero_print_bool(t63); hero_print_str(t64); hero_print_bool(t69); hero_print_end();
 #line 48
     t70 = 0x1.fdc95ep+114; h6_big = t70;
     t71 = h6_big; t72 = hero_f32_to_f64(t71); t73 = HERO_STR_LIT(hero_str_20); t74 = h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_ROW(); t111 = h16_own16; h16_own16 = t74; hero_array_decref(t111); t75 = INT64_C(1); t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? hero_panic_index_at(t74, t75, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 49, 29) : (void)0), (void)(t74->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t74 + 1))[t75]); t77 = h6_big; t78 = t76 == t77; hero_print_f64(t72); hero_print_str(t73); hero_print_bool(t78); hero_print_end();
@@ -198,18 +198,18 @@ void h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main(vo
 #line 54
     t88 = hero_array_new(&hero_desc_f32, 9); hero_array_push_owned(&t88, &t79); hero_array_push_owned(&t88, &t80); hero_array_push_owned(&t88, &t81); hero_array_push_owned(&t88, &t82); hero_array_push_owned(&t88, &t83); hero_array_push_owned(&t88, &t84); hero_array_push_owned(&t88, &t85); hero_array_push_owned(&t88, &t86); hero_array_push_owned(&t88, &t87); t112 = h17_own17; h17_own17 = t88; hero_array_decref(t112); t113 = h7_nine; hero_array_incref(t88); h7_nine = t88; hero_array_decref(t113);
 #line 66
-    t89 = h7_nine; t114 = h8_xs0; hero_array_incref(t89); h8_xs0 = t89; hero_array_decref(t114); t90 = INT64_C(0); h9_i0 = t90; goto bb3; bb2:
+    t89 = h7_nine; t114 = h8_xs0; hero_array_incref(t89); h8_xs0 = t89; hero_array_decref(t114); t90 = INT64_C(0); h9_i0 = t90; goto hero_bb3; hero_bb2:
 #line 45
-    t54 = h5_f0; t55 = t54.as.err;
+    t54 = h5_f0; t55 = t54.hero_as.hero_err;
 #line 205 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
     hero_panic_must_at(t55, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 45, 32);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 66 "tests/golden/run/fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero"
-    t91 = h9_i0; t92 = h8_xs0; t93 = ((void)(t92 == NULL ? ((void)hero_array_len(t92), hero_unreachable()) : (void)0), t92->len); t94 = t91 < t93; if (t94) goto bb4; else goto bb6; bb4: t95 = h8_xs0; t96 = h9_i0; t97 = ((void)((t95 == NULL || t96 < 0 || t96 >= t95->len) ? hero_panic_index_at(t95, t96, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 66, 9) : (void)0), (void)(t95->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t95 + 1))[t96]); h10_x = t97;
-    t98 = h10_x; t99 = hero_f32_to_f64(t98); hero_print_f64(t99); hero_print_end(); goto bb5; bb5:
+    t91 = h9_i0; t92 = h8_xs0; t93 = ((void)(t92 == NULL ? ((void)hero_array_len(t92), hero_unreachable()) : (void)0), t92->len); t94 = t91 < t93; if (t94) goto hero_bb4; else goto hero_bb6; hero_bb4: t95 = h8_xs0; t96 = h9_i0; t97 = ((void)((t95 == NULL || t96 < 0 || t96 >= t95->len) ? hero_panic_index_at(t95, t96, "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 66, 9) : (void)0), (void)(t95->elem->size != sizeof(float) ? hero_unreachable() : (void)0), ((float const *)(const void *)(t95 + 1))[t96]); h10_x = t97;
+    t98 = h10_x; t99 = hero_f32_to_f64(t98); hero_print_f64(t99); hero_print_end(); goto hero_bb5; hero_bb5:
 #line 66
-    t100 = h9_i0; t101 = INT64_C(1); if (__builtin_add_overflow(t100, t101, &t102)) hero_panic_overflow_at("fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 66, 9); h9_i0 = t102; goto bb3; bb6:
+    t100 = h9_i0; t101 = INT64_C(1); if (__builtin_add_overflow(t100, t101, &t102)) hero_panic_overflow_at("fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.hero", "fixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes.main", 66, 9); h9_i0 = t102; goto hero_bb3; hero_bb6:
 #line 214 "fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
@@ -225,150 +225,150 @@ bb3:
     hero_array_release_at(&h17_own17);
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_eq(const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *a, const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *b) {
-    if (!(a->f_value == b->f_value)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_eq(const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *hero_a, const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *hero_b) {
+    if (!(hero_a->f_value == hero_b->f_value)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_hash(const void *elem) {
-    const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_f32)->hash(&v->f_value)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_0Probe_hash(const void *hero_elem) {
+    const h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_Probe *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_f32)->hash(&hero_v->f_value)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_db86062_retain(const h_0opt_db86062 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_db86062_release(h_0opt_db86062 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_db86062_release(h_0opt_db86062 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_db86062_eq(const h_0opt_db86062 *a, const h_0opt_db86062 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_f32)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_db86062_eq(const h_0opt_db86062 *hero_a, const h_0opt_db86062 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_f32)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_db86062_hash(const void *elem) {
-    const h_0opt_db86062 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_db86062_hash(const void *hero_elem) {
+    const h_0opt_db86062 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_f32)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_f32)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d1fe99f29122ed8", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1868db4200209088", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites\tfixedbugs-2276-an-f32-literal-holds-the-binary32-nearest-the-number-it-writes\n");
     h_fixedbugs2276anf32literalholdsthebinary32nearestthenumberitwrites_main();
     hero_runtime_check_leaks();

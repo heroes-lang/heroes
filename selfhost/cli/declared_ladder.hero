@@ -201,7 +201,7 @@ function appended(@lines: [str], more: [str])
 # A rung's question: one function referring to each name, each referring
 # line marked with the rung and the name's index.
 function question_lines(rung: i64, asked: [Asked]) -> [str]
-    out: [str] @= ["__attribute__((unused)) static void hero_asked_" + rung.to_str() + "(void) {"]
+    out: [str] @= ["__attribute__((__unused__)) static void hero_asked_" + rung.to_str() + "(void) {"]
     at: i64 @= 0
 
     for one in asked
@@ -308,7 +308,7 @@ function undeclared(row: str, one: Asked) -> bool
 test "a rung refers to each name, a macro passed over and a record by its size, each line marked (defect 2429)"
     asked = [Asked(name: "sqrt", sized: ""), Asked(name: "tm", sized: "struct tm")]
     lines = question_lines(rung: 3, asked: asked)
-    assert lines.join("\n") == "__attribute__((unused)) static void hero_asked_3(void) {\n#if !defined(sqrt)\n    (void)(sqrt); /* hero-asked 3 0 */\n#endif\n    (void)sizeof(struct tm); /* hero-asked 3 1 */\n}"
+    assert lines.join("\n") == "__attribute__((__unused__)) static void hero_asked_3(void) {\n#if !defined(sqrt)\n    (void)(sqrt); /* hero-asked 3 0 */\n#endif\n    (void)sizeof(struct tm); /* hero-asked 3 1 */\n}"
     q = plain_question(headers: ["first.h", "stdio.h"], asked: asked)
     assert q.rungs.len() == 1 && q.rungs[0].header == "stdio.h"
     marks = marked(q.text)

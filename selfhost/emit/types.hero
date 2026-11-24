@@ -183,20 +183,25 @@ function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
 # is a plain int64_t rather than an enum: the IR's tag read is an i64
 # and lowering already compares it against const 0, so an enum here
 # would be a name the switch could not use. ok is case 0, err is case
-# 1 — the IR's own numbering.
+# 1 — the IR's own numbering. The members are named in the compiler's
+# own form, `hero_tag`, `hero_as`, `hero_ok` and `hero_err`, and so are a
+# variant's below (`mangle.case_member`): this C stands after every
+# header the program's groups name, and a header's `#define tag 1` made
+# `int64_t tag;` an internal error at exit 2 until 2026-11-24, a correct
+# program refused for a word the header had every right to define.
 function option(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, payload: i64)
     spelling = ctype.c_type(names, c: c, ty: payload)
     writer.at_generated(@w)
     writer.line(@w, text: "typedef struct " + name + " {")
-    writer.line(@w, text: "    int64_t tag;")
+    writer.line(@w, text: "    int64_t hero_tag;")
     writer.line(@w, text: "    union {")
 
     # A unit payload has no declaration (the unit rule), so ()? carries
     # nothing on its ok side and the union holds the failure alone.
     if !spelling.is_err()
-        writer.line(@w, text: "        " + spelling.must() + " ok;")
-    writer.line(@w, text: "        HeroFailure err;")
-    writer.line(@w, text: "    } as;")
+        writer.line(@w, text: "        " + spelling.must() + " hero_ok;")
+    writer.line(@w, text: "        HeroFailure hero_err;")
+    writer.line(@w, text: "    } hero_as;")
     writer.line(@w, text: "} " + name + ";")
     writer.blank(@w)
 
@@ -239,7 +244,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
             writer.blank(@w)
 
     writer.line(@w, text: "typedef struct " + name + " {")
-    writer.line(@w, text: "    " + tag + " tag;")
+    writer.line(@w, text: "    " + tag + " hero_tag;")
     carrying: i64 @= 0
 
     for one_case in cases
@@ -257,7 +262,7 @@ function variant_definition(@w: writer.Writer, c: state.Checked, names: ctype.Na
                     text: "        " + mangle.case_type(ty: companion, case_name: case_name) + " " + mangle.case_member(case_name) + ";"
                 )
 
-        writer.line(@w, text: "    } as;")
+        writer.line(@w, text: "    } hero_as;")
     writer.line(@w, text: "} " + name + ";")
     writer.blank(@w)
 
@@ -298,7 +303,7 @@ test "a variant is enum, payload structs, and a union that skips bare cases"
     w: writer.Writer @= writer.new_writer("t")
     declared(@w, got.c, got.names, got.s, got.decls, decl: 0)
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\ntypedef enum h_t_0Tok_tag {\n    h_t_0Tok_tag_word = 0,\n    h_t_0Tok_tag_plus = 1,\n} h_t_0Tok_tag;\n\ntypedef struct h_t_0Tok_c_word {\n    HeroStr f_text;\n} h_t_0Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_0Tok_tag tag;\n    union {\n        h_t_0Tok_c_word c_word;\n    } as;\n} h_t_Tok;\n\n"
+    assert text == "#line 2 \"t.c\"\ntypedef enum h_t_0Tok_tag {\n    h_t_0Tok_tag_word = 0,\n    h_t_0Tok_tag_plus = 1,\n} h_t_0Tok_tag;\n\ntypedef struct h_t_0Tok_c_word {\n    HeroStr f_text;\n} h_t_0Tok_c_word;\n\ntypedef struct h_t_Tok {\n    h_t_0Tok_tag hero_tag;\n    union {\n        h_t_0Tok_c_word hero_c_word;\n    } hero_as;\n} h_t_Tok;\n\n"
 
 test "an all-bare variant has no union, and a group's record no definition"
     got = ready(
@@ -319,7 +324,7 @@ test "an option carries ok and err, a unit option only err, and (void) guards ar
     w: writer.Writer @= writer.new_writer("t")
     option(@w, got.c, got.names, name: "h_0opt_e201354", payload: table.int_ty_id(got.c.types))
     with_ok = writer.finish(w)
-    assert with_ok == "#line 2 \"t.c\"\ntypedef struct h_0opt_e201354 {\n    int64_t tag;\n    union {\n        int64_t ok;\n        HeroFailure err;\n    } as;\n} h_0opt_e201354;\n\n"
+    assert with_ok == "#line 2 \"t.c\"\ntypedef struct h_0opt_e201354 {\n    int64_t hero_tag;\n    union {\n        int64_t hero_ok;\n        HeroFailure hero_err;\n    } hero_as;\n} h_0opt_e201354;\n\n"
     bare: writer.Writer @= writer.new_writer("t")
     option(@bare, got.c, got.names, name: "h_t_0opt1", payload: table.unit_ty(got.c.types))
     unit_text = writer.finish(bare)

@@ -147,7 +147,7 @@ test "both branch edges are written, and a switch carries C's default"
     emit(@w, f, c, term: .switch_term(tag: 1, cases: [3, 5]), released: [], out: false)
     emit(@w, f, c, term: .return_term(value: fail(code: "none", msg: "bare")), released: [], out: false)
     got = writer.finish(w)
-    assert got == "    if (t1) goto bb2; else goto bb4;\n    switch (t1) {\n        case 0: goto bb3;\n        case 1: goto bb5;\n        default: hero_unreachable();\n    }\n    return;\n"
+    assert got == "    if (t1) goto hero_bb2; else goto hero_bb4;\n    switch (t1) {\n        case 0: goto hero_bb3;\n        case 1: goto hero_bb5;\n        default: hero_unreachable();\n    }\n    return;\n"
 
 test "returning the unit value is a bare return"
     text = "function t()\n    return\n"
