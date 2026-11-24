@@ -1,0 +1,431 @@
+# The password-based encryption a PKCS #12 file names for a shrouded key or
+# an encrypted safe, read from its AlgorithmIdentifier and undone: RFC 7292
+# appendix C's six schemes of PKCS #12 itself, PKCS #5's PBES1 (RFC 8018
+# § 6.1) and PBES2 (§ 6.2) with PBKDF2 or scrypt and a cipher in CBC. The
+# two schemes this package writes are PBES2 with PBKDF2 over HMAC-SHA-256
+# and AES-256, and PKCS #12's triple DES of three keys, for the readers that
+# know nothing newer.
+
+use asn1
+use bytes
+use crypto
+use os
+use x509
+use x509/pkcs12/internal/aes
+use x509/pkcs12/internal/cbc
+use x509/pkcs12/internal/derive
+use x509/pkcs12/internal/des
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/rc
+use x509/pkcs12/internal/written
+
+# PBES2's identifier.
+constant PBES2: str
+    "1.2.840.113549.1.5.13"
+
+# PBKDF2's identifier.
+constant PBKDF2: str
+    "1.2.840.113549.1.5.12"
+
+# scrypt's identifier (RFC 7914 § 7).
+constant SCRYPT: str
+    "1.3.6.1.4.1.11591.4.11"
+
+# The identifier of PKCS #12's `pbeWithSHAAnd3-KeyTripleDES-CBC`.
+constant TRIPLE_DES: str
+    "1.2.840.113549.1.12.1.3"
+
+# The identifier of AES-256 in CBC.
+constant AES256_CBC: str
+    "2.16.840.1.101.3.4.1.42"
+
+# The identifier of HMAC-SHA-256 as PBKDF2's pseudorandom function.
+constant HMAC_SHA256: str
+    "1.2.840.113549.2.9"
+
+# A password in the two forms the schemes take.
+record Password
+    # As RFC 7292 appendix B.1 gives it: UTF-16 and two zero bytes, or, for
+    # an empty password, the nothing some writers take instead.
+    bmp: [u8]
+    # Its UTF-8 bytes, which PBES1 and PBES2 take as OpenSSL, Java and
+    # Windows write them.
+    utf8: [u8]
+
+# A content enciphered: the AlgorithmIdentifier that says how, and the bytes.
+record Sealed
+    # The AlgorithmIdentifier.
+    algorithm: asn1.Value
+    # The ciphertext.
+    data: [u8]
+
+# A cipher, the key length it takes, the IV it takes, and the effective
+# bits of RC2.
+record Plan
+    # The cipher's name in a refusal.
+    name: str
+    # `aes`, `des`, `rc2` or `rc4`.
+    family: str
+    # The key's bytes.
+    key_length: i64
+    # The IV's bytes; 0 for RC4.
+    iv_length: i64
+    # RC2's effective key bits; 0 for the others.
+    bits: i64
+
+# The value `v` as an AlgorithmIdentifier, `what` naming it in a refusal.
+function algorithm_of(v: asn1.Value, what: str) -> x509.Algorithm?
+    match x509.to_algorithm(v)
+        .ok a  => return ok(a)
+        .err e => return fail(code: e.code, msg: f"{what}: {e.msg}")
+
+# The parameters of `algorithm`, which must be written, `what` naming them.
+function parameters_of(algorithm: x509.Algorithm, what: str) -> asn1.Value?
+    match algorithm.parameters
+        .ok p  => return ok(p)
+        .err _ => return fail(code: "invalid", msg: f"{what}: its parameters are not written")
+
+# The elements of `v`, a SEQUENCE of `least` to `most` of them.
+function items(v: asn1.Value, least: i64, most: i64, what: str) -> [asn1.Value]?
+    match asn1.items_of(v)
+        .ok list =>
+            if asn1.tag_of(v).number != asn1.SEQUENCE || list.len() < least || list.len() > most
+                return fail(code: "invalid", msg: f"{what}: a SEQUENCE of {least} to {most} elements was expected")
+            return ok(list)
+        .err _ => return fail(code: "invalid", msg: f"{what}: a SEQUENCE was expected")
+
+# The bytes of `v`, an OCTET STRING, `what` naming it.
+function octets_of(v: asn1.Value, what: str) -> [u8]?
+    match v
+        .octet_string s => return ok(s.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ =>
+            return fail(code: "invalid", msg: f"{what}: an OCTET STRING was expected")
+
+# The integer of `v`, from `least` to `most`, `what` naming it.
+function count_of(v: asn1.Value, least: i64, most: i64, what: str) -> i64?
+    match asn1.int_of(v)
+        .ok n =>
+            if n < least
+                return fail(code: "invalid", msg: f"{what}: {n}, below {least}")
+
+            if n > most
+                return fail(code: "unsupported", msg: f"{what}: {n}, above the {most} this package reads")
+            return ok(n)
+        .err _ => return fail(code: "invalid", msg: f"{what}: an INTEGER was expected")
+
+# The iteration count `v`, from 1 to `derive.MAX_ITERATIONS`.
+function iterations_of(v: asn1.Value) -> i64?
+    return count_of(v: v, least: 1, most: derive.MAX_ITERATIONS, what: "the iteration count")
+
+# The cipher `plan` names, under `key`.
+function cipher_of(plan: Plan, key: [u8]) -> cbc.Cipher
+    if plan.family == "aes"
+        return .aes(schedule: aes.expand(key))
+
+    if plan.family == "des"
+        return .des(schedule: des.expand(key))
+
+    if plan.family == "rc2"
+        return .rc2(words: rc.expand(key: key, bits: plan.bits))
+    return .rc4(key: key)
+
+# The plan of PKCS #12's scheme `dotted`, `1.2.840.113549.1.12.1.1` to `.6`.
+function pkcs12_plan(dotted: str) -> Plan?
+    if dotted == "1.2.840.113549.1.12.1.1"
+        return ok(Plan(name: "pbeWithSHAAnd128BitRC4", family: "rc4", key_length: 16, iv_length: 0, bits: 0))
+
+    if dotted == "1.2.840.113549.1.12.1.2"
+        return ok(Plan(name: "pbeWithSHAAnd40BitRC4", family: "rc4", key_length: 5, iv_length: 0, bits: 0))
+
+    if dotted == TRIPLE_DES
+        return ok(Plan(name: "pbeWithSHAAnd3-KeyTripleDES-CBC", family: "des", key_length: 24, iv_length: 8, bits: 0))
+
+    if dotted == "1.2.840.113549.1.12.1.4"
+        return ok(Plan(name: "pbeWithSHAAnd2-KeyTripleDES-CBC", family: "des", key_length: 16, iv_length: 8, bits: 0))
+
+    if dotted == "1.2.840.113549.1.12.1.5"
+        return ok(Plan(name: "pbeWithSHAAnd128BitRC2-CBC", family: "rc2", key_length: 16, iv_length: 8, bits: 128))
+
+    if dotted == "1.2.840.113549.1.12.1.6"
+        return ok(Plan(name: "pbewithSHAAnd40BitRC2-CBC", family: "rc2", key_length: 5, iv_length: 8, bits: 40))
+    return fail(code: "unsupported", msg: f"the encryption {dotted}, which this package does not read")
+
+# `data` deciphered by the scheme `v`, an AlgorithmIdentifier, under
+# `password`.
+function decrypt(v: asn1.Value, password: Password, data: [u8]) -> [u8]?
+    algorithm = algorithm_of(v: v, what: "the encryption")?
+    dotted = algorithm.oid.dotted
+
+    if dotted == PBES2
+        return pbes2(parameters: parameters_of(algorithm: algorithm, what: "PBES2")?, password: password, data: data)
+
+    if bytes.has_prefix(s: bytes.from_text(dotted), prefix: bytes.from_text("1.2.840.113549.1.12.1."))
+        plan = pkcs12_plan(dotted)?
+        fields = items(v: parameters_of(algorithm: algorithm, what: plan.name)?, least: 2, most: 2, what: plan.name)?
+        salt = octets_of(v: fields[0], what: "the salt")?
+        count = iterations_of(fields[1])?
+        key = derive.pkcs12_key(
+            digest: .sha1,
+            password: password.bmp,
+            salt: salt,
+            id: 1,
+            iterations: count,
+            length: plan.key_length
+        )
+        iv: [u8] @= []
+
+        if plan.iv_length > 0
+            iv @ derive.pkcs12_key(
+                digest: .sha1,
+                password: password.bmp,
+                salt: salt,
+                id: 2,
+                iterations: count,
+                length: plan.iv_length
+            )
+        return cbc.decrypt(cipher: cipher_of(plan: plan, key: key), iv: iv, data: data)
+    return pbes1(algorithm: algorithm, password: password, data: data)
+
+# `data` deciphered by PKCS #5's PBES1, `algorithm` naming which.
+function pbes1(algorithm: x509.Algorithm, password: Password, data: [u8]) -> [u8]?
+    dotted = algorithm.oid.dotted
+    digest: crypto.Algorithm @= .sha1
+    plan: Plan @= Plan(name: "PBES1", family: "des", key_length: 8, iv_length: 8, bits: 0)
+
+    if dotted == "1.2.840.113549.1.5.3" || dotted == "1.2.840.113549.1.5.6"
+        digest @ .md5
+    else if dotted != "1.2.840.113549.1.5.10" && dotted != "1.2.840.113549.1.5.11"
+        return fail(code: "unsupported", msg: f"the encryption {dotted}, which this package does not read")
+
+    if dotted == "1.2.840.113549.1.5.6" || dotted == "1.2.840.113549.1.5.11"
+        plan @ Plan(name: "PBES1", family: "rc2", key_length: 8, iv_length: 8, bits: 64)
+    fields = items(v: parameters_of(algorithm: algorithm, what: "PBES1")?, least: 2, most: 2, what: "PBES1")?
+    salt = octets_of(v: fields[0], what: "the salt")?
+
+    if salt.len() != 8
+        return fail(code: "invalid", msg: f"PBES1's salt of {salt.len()} bytes, where it takes 8")
+    stretched = derive.pbkdf1(
+        digest: digest,
+        password: password.utf8,
+        salt: salt,
+        iterations: iterations_of(fields[1])?
+    )
+    return cbc.decrypt(
+        cipher: cipher_of(plan: plan, key: stretched.slice(from: 0, to: 8)),
+        iv: stretched.slice(from: 8, to: 16),
+        data: data
+    )
+
+# The plan of PBES2's cipher `algorithm` and the IV it writes; RC2's key
+# length is `key_length`, or 16 where PBKDF2 writes none.
+function cipher_plan(algorithm: x509.Algorithm, key_length: i64) -> Plan?
+    dotted = algorithm.oid.dotted
+
+    if dotted == "2.16.840.1.101.3.4.1.2"
+        return ok(Plan(name: "aes128-CBC", family: "aes", key_length: 16, iv_length: 16, bits: 0))
+
+    if dotted == "2.16.840.1.101.3.4.1.22"
+        return ok(Plan(name: "aes192-CBC", family: "aes", key_length: 24, iv_length: 16, bits: 0))
+
+    if dotted == AES256_CBC
+        return ok(Plan(name: "aes256-CBC", family: "aes", key_length: 32, iv_length: 16, bits: 0))
+
+    if dotted == "1.2.840.113549.3.7"
+        return ok(Plan(name: "des-EDE3-CBC", family: "des", key_length: 24, iv_length: 8, bits: 0))
+
+    if dotted == "1.3.14.3.2.7"
+        return ok(Plan(name: "desCBC", family: "des", key_length: 8, iv_length: 8, bits: 0))
+
+    if dotted == "1.2.840.113549.3.2"
+        length: i64 @= key_length
+
+        if length == 0
+            length @ 16
+        return ok(Plan(name: "rc2CBC", family: "rc2", key_length: length, iv_length: 8, bits: 32))
+    return fail(code: "unsupported", msg: f"PBES2's cipher {dotted}, which this package does not read")
+
+# RC2's effective bits as `fields`, its parameters, encode them (RFC 8018
+# appendix B.2.3): 32 where no version is written.
+function rc2_bits(fields: [asn1.Value]) -> i64?
+    if fields.len() == 1
+        return ok(32)
+    version = count_of(v: fields[0], least: 1, most: 1024, what: "RC2's version")?
+
+    if version == 160
+        return ok(40)
+
+    if version == 120
+        return ok(64)
+
+    if version == 58
+        return ok(128)
+
+    if version >= 256
+        return ok(version)
+    return fail(code: "unsupported", msg: f"RC2's version {version}, which RFC 8018 does not name")
+
+# `data` deciphered by PBES2 of `parameters` under `password`'s UTF-8 form.
+function pbes2(parameters: asn1.Value, password: Password, data: [u8]) -> [u8]?
+    fields = items(v: parameters, least: 2, most: 2, what: "PBES2's parameters")?
+    kdf = algorithm_of(v: fields[0], what: "PBES2's key derivation")?
+    scheme = algorithm_of(v: fields[1], what: "PBES2's cipher")?
+    kdf_fields = items(v: parameters_of(algorithm: kdf, what: kdf.oid.dotted)?, least: 2, most: 5, what: "the key derivation's parameters")?
+    salt = octets_of(v: kdf_fields[0], what: "the salt; one from another source is not read")?
+    key_length: i64 @= 0
+    prf: crypto.Algorithm @= .sha1
+
+    if kdf.oid.dotted == PBKDF2
+        rest: [asn1.Value] @= kdf_fields.slice(from: 2, to: kdf_fields.len())
+
+        if rest.len() > 0 && asn1.tag_of(rest[0]).number == asn1.INTEGER
+            key_length @ count_of(v: rest[0], least: 1, most: 128, what: "PBKDF2's key length")?
+            rest @ rest.slice(from: 1, to: rest.len())
+
+        if rest.len() > 0
+            prf @ derive.prf_of(algorithm_of(v: rest[0], what: "PBKDF2's function")?.oid.dotted)?
+    else if kdf.oid.dotted == SCRYPT
+        if kdf_fields.len() == 5
+            key_length @ count_of(v: kdf_fields[4], least: 1, most: 128, what: "scrypt's key length")?
+    else
+        return fail(
+            code: "unsupported",
+            msg: f"PBES2's key derivation {kdf.oid.dotted}, which this package does not read"
+        )
+    plan: Plan @= cipher_plan(algorithm: scheme, key_length: key_length)?
+
+    if key_length > 0 && key_length != plan.key_length
+        return fail(
+            code: "invalid",
+            msg: f"a key length of {key_length} for {plan.name}, which takes {plan.key_length}"
+        )
+    iv: [u8] @= []
+    cipher_parameters = parameters_of(algorithm: scheme, what: plan.name)?
+
+    if plan.family == "rc2"
+        rc2_fields = items(v: cipher_parameters, least: 1, most: 2, what: "RC2's parameters")?
+        plan @ Plan(
+            name: plan.name,
+            family: plan.family,
+            key_length: plan.key_length,
+            iv_length: 8,
+            bits: rc2_bits(rc2_fields)?
+        )
+        iv @ octets_of(v: rc2_fields[rc2_fields.len() - 1], what: "RC2's IV")?
+    else
+        iv @ octets_of(v: cipher_parameters, what: f"{plan.name}'s IV")?
+
+    if iv.len() != plan.iv_length
+        return fail(code: "invalid", msg: f"{plan.name}'s IV of {iv.len()} bytes, where it takes {plan.iv_length}")
+    key = derived(kdf: kdf, fields: kdf_fields, prf: prf, password: password.utf8, salt: salt, length: plan.key_length)?
+    return cbc.decrypt(cipher: cipher_of(plan: plan, key: key), iv: iv, data: data)
+
+# The key PBES2's `kdf` derives from `password` and `salt`, `length` bytes.
+function derived(kdf: x509.Algorithm, fields: [asn1.Value], prf: crypto.Algorithm, password: [u8], salt: [u8], length: i64) -> [u8]?
+    if kdf.oid.dotted == PBKDF2
+        return crypto.pbkdf2(
+            algorithm: prf,
+            password: password,
+            salt: salt,
+            iterations: iterations_of(fields[1])?,
+            length: length
+        )
+    n = count_of(v: fields[1], least: 2, most: 1 << 24, what: "scrypt's cost")?
+    r = count_of(v: fields[2], least: 1, most: 1 << 16, what: "scrypt's block size")?
+    p = count_of(v: fields[3], least: 1, most: 1 << 16, what: "scrypt's parallelization")?
+    return crypto.scrypt(password: password, salt: salt, n: n, r: r, p: p, length: length)
+
+# An AlgorithmIdentifier of `dotted` and `parameters`.
+function identifier(dotted: str, parameters: asn1.Value) -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: dotted)), parameters])
+
+# `text` enciphered by PBES2: PBKDF2 over HMAC-SHA-256 with a salt of 16
+# drawn bytes and `iterations`, AES-256 in CBC from a drawn IV.
+function encrypt_aes256(password: Password, iterations: i64, text: [u8]) -> Sealed?
+    salt = os.random_bytes(16)?
+    iv = os.random_bytes(16)?
+    key = crypto.pbkdf2(algorithm: .sha256, password: password.utf8, salt: salt, iterations: iterations, length: 32)?
+    kdf = identifier(
+        dotted: PBKDF2,
+        parameters: .sequence(items: [.octet_string(v: salt), .integer(v: iterations), identifier(dotted: HMAC_SHA256, parameters: .null_value)])
+    )
+    algorithm = identifier(
+        dotted: PBES2,
+        parameters: .sequence(items: [kdf, identifier(dotted: AES256_CBC, parameters: .octet_string(v: iv))])
+    )
+    return ok(
+        Sealed(algorithm: algorithm, data: cbc.encrypt(cipher: .aes(schedule: aes.expand(key)), iv: iv, text: text))
+    )
+
+# `text` enciphered by PKCS #12's triple DES of three keys, SHA-1 deriving
+# its key and IV from a salt of 8 drawn bytes and `iterations`.
+function encrypt_triple_des(password: Password, iterations: i64, text: [u8]) -> Sealed?
+    salt = os.random_bytes(8)?
+    key = derive.pkcs12_key(
+        digest: .sha1,
+        password: password.bmp,
+        salt: salt,
+        id: 1,
+        iterations: iterations,
+        length: 24
+    )
+    iv = derive.pkcs12_key(digest: .sha1, password: password.bmp, salt: salt, id: 2, iterations: iterations, length: 8)
+    algorithm = identifier(
+        dotted: TRIPLE_DES,
+        parameters: .sequence(items: [.octet_string(v: salt), .integer(v: iterations)])
+    )
+    return ok(
+        Sealed(algorithm: algorithm, data: cbc.encrypt(cipher: .des(schedule: des.expand(key)), iv: iv, text: text))
+    )
+
+# The algorithm and the ciphertext of `file`, an EncryptedPrivateKeyInfo.
+function shrouded(file: [u8]) -> [asn1.Value]
+    return items(v: asn1.decode_der(file).must(), least: 2, most: 2, what: "an EncryptedPrivateKeyInfo").must()
+
+test "decrypt: the leaf's key under PBES1 of MD5 and DES and of SHA-1 and RC2, PBES2 with scrypt, with HMAC-SHA-512 and triple DES, and with RC2"
+    password = Password(bmp: derive.bmp("hero"), utf8: bytes.from_text("hero"))
+    files: [[u8]] = [
+        written.key_md5_des()
+        written.key_sha1_rc2()
+        written.key_scrypt()
+        written.key_des3_sha512()
+        written.key_rc2()
+    ]
+
+    for file in files
+        fields = shrouded(file)
+        assert decrypt(v: fields[0], password: password, data: octets_of(v: fields[1], what: "").must()).must() == written.key_plain()
+
+test "decrypt: a wrong password refused permission, under each of the five"
+    password = Password(bmp: derive.bmp("Hero"), utf8: bytes.from_text("Hero"))
+    files: [[u8]] = [
+        written.key_md5_des()
+        written.key_sha1_rc2()
+        written.key_scrypt()
+        written.key_des3_sha512()
+        written.key_rc2()
+    ]
+
+    for file in files
+        fields = shrouded(file)
+        opened = decrypt(v: fields[0], password: password, data: octets_of(v: fields[1], what: "").must())
+        assert octets.code_of(opened) == "permission" || octets.code_of(opened) == "invalid"
+
+test "decrypt: an unknown scheme, no iteration, and more than the most, refused"
+    password = Password(bmp: derive.bmp("hero"), utf8: bytes.from_text("hero"))
+    unknown = identifier(dotted: "1.2.3.4", parameters: .null_value)
+    assert octets.code_of(decrypt(v: unknown, password: password, data: [])) == "unsupported"
+    none = identifier(dotted: TRIPLE_DES, parameters: .sequence(items: [.octet_string(v: [1, 2]), .integer(v: 0)]))
+    assert octets.code_of(decrypt(v: none, password: password, data: [])) == "invalid"
+    many = identifier(
+        dotted: TRIPLE_DES,
+        parameters: .sequence(items: [.octet_string(v: [1, 2]), .integer(v: derive.MAX_ITERATIONS + 1)])
+    )
+    assert octets.code_of(decrypt(v: many, password: password, data: [])) == "unsupported"
+
+test "encrypt_aes256 and encrypt_triple_des: read back by decrypt, and a fresh salt each time"
+    password = Password(bmp: derive.bmp("hero"), utf8: bytes.from_text("hero"))
+    first = encrypt_aes256(password: password, iterations: 1000, text: [1, 2, 3]).must()
+    assert decrypt(v: first.algorithm, password: password, data: first.data).must() == [1, 2, 3]
+    assert encrypt_aes256(password: password, iterations: 1000, text: [1, 2, 3]).must().data != first.data
+    old = encrypt_triple_des(password: password, iterations: 1000, text: []).must()
+    assert decrypt(v: old.algorithm, password: password, data: old.data).must() == []

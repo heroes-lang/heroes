@@ -253,7 +253,6 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "html/sanitize/internal/values.is_integer, regex/internal/template.all_digits", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "http/internal/policy.ms_of, llm/anthropic/internal/transport.deadline_ms_of, llm/openai/internal/transport.deadline_ms_of, s3/internal/transport.deadline_ms_of, websocket/internal/engine.ms_of", why: SPANS_TO_DOORS)
         Kept(check: "bodies", key: "http/internal/socks.has_zero, keyring/internal/names.has_zero, os/internal/codes.has_zero, serial/internal/calls.holds_zero, sql/mysql/internal/wire.has_zero, sql/postgres/internal/wire.has_zero, tls/internal/text.has_zero", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "i18n/collate/internal/root.digit_of, i18n/dates/internal/date_data.digit_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "ical/internal/tree.open_one, openapi/internal/shape.push_item, url/internal/paths.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "image/png/internal/samples.format_named, image/tiff/internal/expect.format_named", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "json.format_indented, xml.format_indented", why: NO_PUBLIC_HOME)

@@ -1,0 +1,142 @@
+# The ledger of `barcode`: linear and two-dimensional barcodes made by their
+# standards, one block per capability, and what Heroes answers to each.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no barcode in their standard
+# libraries (Go's `image` names none, Python's modules hold none, Rust's std
+# documentation has no page). The yardsticks are the queue's, each read this
+# session, 2026-11-24, from its own documentation: Go's
+# github.com/boombuler/barcode v1.1.1 (`go doc -all` over its packages
+# `barcode`, `ean`, `code128`, `datamatrix` and `pdf417`, run as README § A9
+# runs Go), Rust's barcoders 2.0.0 (its README, the crate downloaded by
+# `cargo info`), and Python's python-barcode 0.16.1 and zxing-cpp 3.1.1
+# (installed in the lane's scratch folder, listed by `dir()`; each entry
+# prefixed by its module, `barcode.` and `zxingcpp.`).
+#
+# The oracles the tests were held to, run the same day: zxing-cpp 3.1.1's
+# reader decoded every symbol the package wrote, from the PNG `image/png`
+# wrote of `to_image_with_text` and from its `to_svg` rendered by CairoSVG
+# 2.9.1 and by resvg 0.5.0; python-barcode 0.16.1 wrote the modules the
+# EAN, UPC-A and Code 128 tests expect.
+
+## EAN and UPC
+
+capability barcode/ean13  an EAN-13 of a GTIN-13, an ISBN or an ISSN's EAN form, the check digit added or checked
+  heroes  barcode.ean13
+  go      ean.Encode
+  rust    barcoders::sym::ean13::EAN13::new, EAN13::encode
+  python  barcode.EAN13, barcode.ISBN13, barcode.ISSN, barcode.JAN, barcode.get, barcode.get_barcode, barcode.get_class, barcode.get_barcode_class, barcode.PROVIDED_BARCODES, zxingcpp.create_barcode (EAN13)
+  note    twelve digits take their check digit, thirteen are checked: a wrong one is `invalid`, where python-barcode silently replaces it; an ISBN, an ISSN and a JAN are EAN-13s of their own prefixes, so no maker of their own; the first digit stands in the left quiet zone; 120 of 120 readings of the oracle's 40 symbols decoded
+
+capability barcode/ean8  an EAN-8 of a GTIN-8
+  heroes  barcode.ean8
+  go      ean.Encode
+  rust    barcoders::sym::ean8::EAN8
+  python  barcode.EAN8, zxingcpp.create_barcode (EAN8)
+
+capability barcode/upca  a UPC-A of a GTIN-12, its first and last digits beside the bars
+  heroes  barcode.upca
+  go      -
+  rust    barcoders::sym::ean13::EAN13 (UPC-A)
+  python  barcode.UPCA, zxingcpp.create_barcode (UPCA)
+  note    the bars are an EAN-13's of a leading 0, and zxing-cpp reads them as that EAN-13, as every reader may
+
+capability barcode/upce  a UPC-E of a GTIN-12 whose zeros its six digits leave out, number system 0 or 1
+  heroes  barcode.upce
+  go      -
+  rust    -
+  python  zxingcpp.create_barcode (UPCE)
+  note    the check digit is the expanded UPC-A's, written by the digits' parities alone; read back by zxing-cpp as its expanded EAN-13
+
+capability barcode/check-digit  the GS1 check digit of a number, by the rule every GTIN, SSCC and GLN shares
+  heroes  barcode.check_digit
+  go      -
+  rust    -
+  python  barcode.EAN13.calculate_checksum
+  note    the digits before the check digit, any count; empty answers 0
+
+capability barcode/add-on  a two- or five-digit add-on after an EAN-13, a UPC-A or a UPC-E: a periodical's issue, a book's price
+  heroes  barcode.with_add_on
+  go      -
+  rust    barcoders::sym::ean_supp::EANSUPP (EAN-2, EAN-5)
+  python  zxingcpp.EanAddOnSymbol
+  note    9 modules after the symbol, its digits above its bars; after an EAN-8 refused, as GS1 writes none there
+
+## Code 128
+
+capability barcode/code128  a Code 128 of a text of ISO/IEC 8859-1 or of any bytes, its code sets changed where the symbol is shortest
+  heroes  barcode.code128, barcode.code128_bytes
+  go      code128.Encode, code128.EncodeWithoutChecksum
+  rust    barcoders::sym::code128::Code128::new
+  python  barcode.Code128, zxingcpp.create_barcode (Code128)
+  note    the fewest symbol characters over sets A, B and C, shifts and FNC4 included, by a search over every place and set; a tie keeps the set and starts in B. A symbol without its check character (Go's `EncodeWithoutChecksum`) is refused: ISO/IEC 15417 makes the check character mandatory. Barcoders asks the caller to choose the sets by hand; Heroes chooses them
+
+capability barcode/gs1-128  a GS1-128 of element strings: FNC1 first and after each element of no fixed length but the last
+  heroes  barcode.gs1_128, barcode.Element
+  go      -
+  rust    -
+  python  barcode.Gs1_128, zxingcpp.create_barcode (Code128 with GS1)
+  note    each element checked for GS1's 82 characters, the lengths GS1 fixes and the check digits of an SSCC, a GTIN and a GLN; past 48 data characters `unsupported`. GS1's dictionary of identifiers, each one's own format, is not checked: an identifier unknown to GS1 of the right shape is written
+
+capability barcode/gs1-elements  element strings read from and written as the text a person reads under a symbol
+  heroes  barcode.parse_elements, barcode.format_elements
+  go      -
+  rust    -
+  python  -
+
+## Two-dimensional
+
+capability barcode/data-matrix  a Data Matrix ECC 200 of a text, bytes or GS1 element strings, every square and rectangular size
+  heroes  barcode.data_matrix, barcode.data_matrix_bytes, barcode.gs1_data_matrix, barcode.Shape, barcode.Size
+  go      datamatrix.Encode
+  rust    -
+  python  zxingcpp.create_barcode (DataMatrix)
+  note    the encodations ASCII, C40, Text, X12, EDIFACT and Base 256 chosen by a search for the fewest codewords over every place and encodation, where the standard's informative look-ahead guesses; a text of more than ASCII behind ECI 000026, which zxing-cpp reads back as UTF-8; all 30 ECC 200 sizes, the smallest of a shape or one fixed. zxing-cpp read all 44 Data Matrix symbols of the oracle (every size, each encodation, all 256 bytes, 3116 digits in 144 by 144, a text of 1,090 characters, a rectangle, GS1) from PNG, CairoSVG and resvg, and its own writer made the same modules for "123456", a lone letter, a text in Text and fifty digits; for capitals and digits it chose another encodation of the same size. Empty data is `invalid`, as zxing-cpp's writer refuses it. Reader programming, structured append and the rectangular extension of ISO/IEC 21471 are not written
+
+capability barcode/pdf417  a PDF417 of a text or bytes, at a level of error correction and a count of columns
+  heroes  pending
+  go      pdf417.Encode
+  rust    -
+  python  zxingcpp.create_barcode (PDF417)
+
+## Written out
+
+capability barcode/svg  a symbol written as SVG: its modules crisp at every scale, its quiet zone, the digits a person reads as text
+  heroes  barcode.to_svg, barcode.SvgOptions, barcode.default_svg_options
+  go      -
+  rust    barcoders::generators::svg::SVG
+  python  barcode.writer.SVGWriter, zxingcpp.write_barcode_to_svg, zxingcpp.Barcode.to_svg
+  note    CairoSVG 2.9.1 and resvg 0.5.0 rendered every symbol of the oracle, and zxing-cpp read each rendering
+
+capability barcode/image  a symbol drawn into an image, with or without its digits set in a font
+  heroes  barcode.to_image, barcode.to_image_with_text, barcode.ImageOptions, barcode.default_image_options
+  go      barcode.Scale, barcode.ScaleWithFill, barcode.Barcode, barcode.ColorScheme, ean.EncodeWithColor, code128.EncodeWithColor, code128.EncodeWithoutChecksumWithColor, datamatrix.EncodeWithColor, pdf417.EncodeWithColor
+  rust    barcoders::generators::image::Image
+  python  barcode.writer.ImageWriter, zxingcpp.write_barcode_to_image, zxingcpp.write_barcode, zxingcpp.Barcode.to_image
+  note    a whole number of pixels a module, so every bar is crisp; the digits are set in the `font.Font` the caller gives, since Rebel carries no font; a PNG or another file is `image/png`'s and its neighbours'
+
+capability barcode/model  a symbol as data: its modules, its quiet zone, its captions, what a reader gives back
+  heroes  barcode.Symbol, barcode.Symbology, barcode.Caption, barcode.Quiet
+  go      barcode.Metadata, barcode.BarcodeIntCS
+  rust    -
+  python  zxingcpp.Barcode, zxingcpp.BarcodeFormat
+
+## Not made here
+
+capability barcode/read  a barcode found and read in an image or a photograph
+  heroes  refused: a task of vision, as `qr` refuses it; zxing-cpp is the reader this package was checked with
+  go      -
+  rust    -
+  python  zxingcpp.read_barcode, zxingcpp.read_barcodes
+
+capability barcode/other-linear  Code 39, Code 93, Code 11, Codabar, Interleaved and Standard 2 of 5, ITF-14, EAN-14
+  heroes  pending
+  go      -
+  rust    barcoders::sym::code39::Code39, barcoders::sym::code93::Code93, barcoders::sym::code11::Code11, barcoders::sym::codabar::Codabar, barcoders::sym::tf::TF
+  python  barcode.Code39, barcode.CODABAR, barcode.ITF, barcode.EAN14, barcode.PZN, barcode.ISBN10
+  note    the symbologies the yardsticks offer beyond the four GS1 and ISO name for trade and logistics
+
+## dropped
+
+dropped  barcode.EAN13_GUARD, barcode.EAN8_GUARD  python-barcode's guard-bar variants: every EAN here draws its guards long when its digits are written
+dropped  barcode.generate, barcode.base, barcode.writer.BaseWriter  writing a file by name and the base class a writer extends: `image/png` writes the file, and Heroes has no classes
+dropped  barcode.version, barcode.errors, barcode.BarcodeNotFoundError, barcode.charsets, barcode.codex, barcode.ean, barcode.upc, barcode.isxn, barcode.itf, barcode.codabar  python-barcode's version and its modules' names; its errors are this package's `invalid` and `unsupported`

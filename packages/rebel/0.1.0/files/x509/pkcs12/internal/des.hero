@@ -1,0 +1,212 @@
+# DES (FIPS 46-3) and triple DES (SP 800-67), the blocks of 8 bytes the
+# older PKCS #12 files and PBES2's `des-ede3-cbc` encipher under. A block is
+# held as its 64 bits, the first byte's highest bit first, so every table of
+# the standard (`tables`) reads as written there, counted from 1. A lookup into an
+# S-box, whose index is a secret, walks the box's 64 entries and keeps its
+# one by a mask. The parity bit of each key byte is ignored, as the standard
+# says.
+
+use x509/pkcs12/internal/aes
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/tables
+
+# The bytes of a block.
+constant BLOCK: i64
+    8
+
+# What a key of 8, 16 or 24 bytes expands to: the round keys of each DES
+# it runs, 48 bits each, in the order the rounds take them.
+record Schedule
+    # One DES's sixteen round keys, or three's for triple DES: the first,
+    # the second and the third key's, each 768 bits.
+    material: [[i64]]
+
+# The bits of the 8 bytes of `data` from `at`, the highest of each first.
+function bits_of(data: [u8] lent, at: i64) -> [i64]
+    bits: [i64] @= []
+    i: i64 @= 0
+
+    while i < 64
+        bits @ bits.push(to_i64(data[at + i / 8]).must() >> 7 - i % 8 & 1)
+        i @ i + 1
+
+    return bits
+
+# The bytes `bits` write, eight to a byte, the highest first.
+function bytes_of(bits: [i64] lent) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < bits.len()
+        byte: i64 @= 0
+        k: i64 @= 0
+
+        while k < 8
+            byte @ byte << 1 | bits[i + k]
+            k @ k + 1
+
+        out @ out.push(byte)
+        i @ i + 8
+
+    return out
+
+# `bits` chosen by `table`, whose entries count from 1.
+function choose(bits: [i64] lent, table: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    for at in table
+        out @ out.push(bits[at - 1])
+
+    return out
+
+# The table that undoes `table`, a permutation of 1 to its length.
+function undo(table: [i64]) -> [i64]
+    back: [i64] @= []
+
+    while back.len() < table.len()
+        back @ back.push(0)
+
+    i: i64 @= 0
+
+    while i < table.len()
+        back[table[i] - 1] @ i + 1
+        i @ i + 1
+
+    return back
+
+# The S-box `box` laid out by the six bits that index it: the outer two
+# choose the row, the inner four the column.
+function box_by_index(box: [i64] lent) -> [i64]
+    out: [i64] @= []
+    v: i64 @= 0
+
+    while v < 64
+        out @ out.push(box[16 * (v >> 4 & 2 | v & 1) + (v >> 1 & 15)])
+        v @ v + 1
+
+    return out
+
+# The sixteen round keys of the 8 bytes of `key` from `at`, 48 bits each,
+# end to end.
+function round_keys(key: [u8] lent, at: i64) -> [i64]
+    chosen = choose(bits: bits_of(data: key, at: at), table: tables.CHOICE1)
+    c: [i64] @= chosen.slice(from: 0, to: 28)
+    d: [i64] @= chosen.slice(from: 28, to: 56)
+    material: [i64] @= []
+
+    for shift in tables.SHIFTS
+        c @ octets.joined(a: c.slice(from: shift, to: 28), b: c.slice(from: 0, to: shift))
+        d @ octets.joined(a: d.slice(from: shift, to: 28), b: d.slice(from: 0, to: shift))
+        material @ octets.joined(a: material, b: choose(bits: octets.joined(a: c, b: d), table: tables.CHOICE2))
+
+    return material
+
+# The schedule of `key`: 8 bytes for DES, 16 for triple DES of two keys (the
+# third the first), 24 for triple DES of three. The caller checks the length.
+function expand(key: [u8] lent) -> Schedule
+    if key.len() == 8
+        return Schedule(material: [round_keys(key: key, at: 0)])
+    first = round_keys(key: key, at: 0)
+    second = round_keys(key: key, at: 8)
+
+    if key.len() == 16
+        return Schedule(material: [first, second, first])
+    return Schedule(material: [first, second, round_keys(key: key, at: 16)])
+
+# The 32 bits of the function f of FIPS 46-3 on `right`, under the round key
+# `round` of `keys`.
+function feistel(right: [i64] lent, material: [i64] lent, round: i64) -> [i64]
+    expanded = choose(bits: right, table: tables.EXPANSION)
+    out: [i64] @= []
+    b: i64 @= 0
+
+    while b < 8
+        index: i64 @= 0
+        k: i64 @= 0
+
+        while k < 6
+            index @ index << 1 | expanded[6 * b + k] ^ material[48 * round + 6 * b + k]
+            k @ k + 1
+
+        table = box_by_index(tables.BOXES[b])
+        found: i64 @= 0
+        v: i64 @= 0
+
+        while v < 64
+            found @ found | table[v] & aes.same(a: v, b: index)
+            v @ v + 1
+
+        k @ 3
+
+        while k >= 0
+            out @ out.push(found >> k & 1)
+            k @ k - 1
+
+        b @ b + 1
+
+    return choose(bits: out, table: tables.PERMUTATION)
+
+# `bits`, a block, through one DES under `keys`, its rounds in order where
+# `back` is false and reversed where it is true.
+function crypt(bits: [i64], material: [i64] lent, back: bool) -> [i64]
+    permuted = choose(bits: bits, table: tables.INITIAL)
+    left: [i64] @= permuted.slice(from: 0, to: 32)
+    right: [i64] @= permuted.slice(from: 32, to: 64)
+    round: i64 @= 0
+
+    while round < 16
+        index: i64 @= round
+
+        if back
+            index @ 15 - round
+        mixed = feistel(right: right, material: material, round: index)
+        next: [i64] @= []
+        i: i64 @= 0
+
+        while i < 32
+            next @ next.push(left[i] ^ mixed[i])
+            i @ i + 1
+
+        left @ right
+        right @ next
+        round @ round + 1
+
+    return choose(bits: octets.joined(a: right, b: left), table: undo(tables.INITIAL))
+
+# The block of `data` from `at` enciphered under `schedule`: DES, or triple
+# DES's encipher, decipher, encipher.
+function encrypt(schedule: Schedule lent, data: [u8] lent, at: i64) -> [i64]
+    bits: [i64] @= crypt(bits: bits_of(data: data, at: at), material: schedule.material[0], back: false)
+
+    if schedule.material.len() == 3
+        bits @ crypt(bits: bits, material: schedule.material[1], back: true)
+        bits @ crypt(bits: bits, material: schedule.material[2], back: false)
+    return bytes_of(bits)
+
+# The block of `data` from `at` deciphered under `schedule`.
+function decrypt(schedule: Schedule lent, data: [u8] lent, at: i64) -> [i64]
+    bits: [i64] @= bits_of(data: data, at: at)
+
+    if schedule.material.len() == 3
+        bits @ crypt(bits: bits, material: schedule.material[2], back: true)
+        bits @ crypt(bits: bits, material: schedule.material[1], back: false)
+    return bytes_of(crypt(bits: bits, material: schedule.material[0], back: true))
+
+test "undo: the initial permutation's inverse, as FIPS 46-3 prints it"
+    assert undo(tables.INITIAL).slice(from: 0, to: 8) == [40, 8, 48, 16, 56, 24, 64, 32]
+    assert undo(tables.INITIAL).slice(from: 56, to: 64) == [33, 1, 41, 9, 49, 17, 57, 25]
+
+test "encrypt and decrypt: one DES, the key 133457799bbcdff1 and its classic block, and a key of every bit set"
+    one = expand(octets.unhex("133457799bbcdff1"))
+    assert octets.bytes_of(encrypt(schedule: one, data: octets.unhex("0123456789abcdef"), at: 0)) == octets.unhex("85e813540f0ab405")
+    assert octets.bytes_of(decrypt(schedule: one, data: octets.unhex("85e813540f0ab405"), at: 0)) == octets.unhex("0123456789abcdef")
+    full = expand(octets.unhex("ffffffffffffffff"))
+    assert octets.bytes_of(encrypt(schedule: full, data: octets.unhex("ffffffffffffffff"), at: 0)) == octets.unhex("7359b2163e4edc58")
+
+test "encrypt and decrypt: triple DES of two keys and of three, as Python's cryptography 50.0.2 answers"
+    two = expand(octets.unhex("0123456789abcdeffedcba9876543210"))
+    assert octets.bytes_of(encrypt(schedule: two, data: octets.unhex("0123456789abcdef"), at: 0)) == octets.unhex("1a4d672dca6cb335")
+    assert octets.bytes_of(decrypt(schedule: two, data: octets.unhex("1a4d672dca6cb335"), at: 0)) == octets.unhex("0123456789abcdef")
+    three = expand(octets.unhex("0123456789abcdeffedcba987654321089abcdef01234567"))
+    assert octets.bytes_of(encrypt(schedule: three, data: octets.unhex("0123456789abcdef"), at: 0)) == octets.unhex("691747fd88b6d228")
+    assert octets.bytes_of(decrypt(schedule: three, data: octets.unhex("691747fd88b6d228"), at: 0)) == octets.unhex("0123456789abcdef")

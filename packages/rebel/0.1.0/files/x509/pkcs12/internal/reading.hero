@@ -1,0 +1,244 @@
+# A file opened below `x509/pkcs12`'s records: its MAC checked where it
+# writes one and its bags read with the password's forms that open them;
+# a bag's attributes read, each once (PKCS #9's friendlyName and
+# localKeyId, Oracle's trustedKeyUsage, the others kept as written); a
+# certificate bag's or a list bag's DER; and the certificate a key belongs
+# to, by its public key or, where `crypto/keypairs` does not read the key's
+# kind here, by its localKeyId.
+
+use asn1
+use bytes
+use crypto
+use crypto/keypairs
+use x509
+use x509/pkcs12/internal/bags
+use x509/pkcs12/internal/macs
+use x509/pkcs12/internal/schemes
+
+# The friendlyName's identifier (PKCS #9).
+constant FRIENDLY_NAME: str
+    "1.2.840.113549.1.9.20"
+
+# The localKeyId's identifier (PKCS #9).
+constant LOCAL_KEY_ID: str
+    "1.2.840.113549.1.9.21"
+
+# Oracle's trustedKeyUsage, which Java's trust stores write.
+constant TRUSTED_KEY_USAGE: str
+    "2.16.840.1.113894.746875.1.1"
+
+# A certificate bag's type of X.509.
+constant X509_CERTIFICATE: str
+    "1.2.840.113549.1.9.22.1"
+
+# A revocation list bag's type of X.509.
+constant X509_CRL: str
+    "1.2.840.113549.1.9.23.1"
+
+# A file opened.
+record Opened
+    # Its bags, in order, its keys deciphered.
+    bags: [bags.Bag]
+    # Whether it writes a MAC, which held.
+    mac: bool
+    # Whether the MAC is RFC 9579's PBMAC1.
+    pbmac1: bool
+    # The MAC's digest; SHA-256 where there is none.
+    digest: crypto.Algorithm
+    # The MAC's iterations; 0 where there is none.
+    iterations: i64
+
+# An attribute none of the fields reads.
+record Other
+    # Its identifier.
+    oid: str
+    # Its values, as written.
+    values: [asn1.Value]
+
+# What a bag's attributes say.
+record Said
+    # The friendlyName; "" where none.
+    name: str
+    # The localKeyId; [] where none.
+    id: [u8]
+    # Oracle's trustedKeyUsage; [] where none.
+    trusted_for: [str]
+    # The others.
+    others: [Other]
+
+# Whether the file `der` writes a MAC.
+function has_mac(der: [u8]) -> bool?
+    return ok(!bags.pfx(der)?.mac.is_err())
+
+# The file `der` opened by `password`: a MAC written checked, then its safes.
+function open_file(der: [u8], password: str) -> Opened?
+    pfx = bags.pfx(der)?
+    utf8 = bytes.from_text(password)
+
+    match pfx.mac
+        .ok mac =>
+            checked = macs.check(v: mac, password: password, content: pfx.content)?
+            found = bags.bags_of(content: pfx.content, passwords: [checked.password], checked: true)?
+            return ok(
+                Opened(bags: found, mac: true, pbmac1: checked.pbmac1, digest: checked.digest, iterations: checked.iterations)
+            )
+        .err _ =>
+            passwords: [schemes.Password] @= []
+
+            for form in macs.bmp_forms(password)
+                passwords @ passwords.push(schemes.Password(bmp: form, utf8: utf8))
+
+            found = bags.bags_of(content: pfx.content, passwords: passwords, checked: false)?
+            return ok(Opened(bags: found, mac: false, pbmac1: false, digest: .sha256, iterations: 0))
+
+# Whether `list` holds `one`.
+function has(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# What `attributes`, a bag's, say: each written once.
+function said_of(attributes: [asn1.Value]) -> Said?
+    said: Said @= Said(name: "", id: [], trusted_for: [], others: [])
+    seen: [str] @= []
+
+    for one in attributes
+        fields = schemes.items(v: one, least: 2, most: 2, what: "an attribute")?
+        oid = bags.oid_text(v: fields[0], what: "an attribute's type")?
+
+        if has(list: seen, one: oid)
+            return fail(code: "invalid", msg: f"the attribute {oid} stands twice in one bag")
+        seen @ seen.push(oid)
+        values: [asn1.Value] @= []
+
+        match fields[1]
+            .set s => values @ s.items
+            .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .primitive _ | .constructed _ =>
+                return fail(code: "invalid", msg: f"the attribute {oid}: a SET of values was expected")
+
+        if oid == FRIENDLY_NAME || oid == LOCAL_KEY_ID
+            if values.len() != 1
+                return fail(code: "invalid", msg: f"the attribute {oid} with {values.len()} values, where it takes one")
+
+            if oid == FRIENDLY_NAME
+                match asn1.text_of(values[0])
+                    .ok text => said.name @ text
+                    .err _   => return fail(code: "invalid", msg: "a friendlyName that is no BMPString")
+            else
+                said.id @ schemes.octets_of(v: values[0], what: "a localKeyId")?
+        else if oid == TRUSTED_KEY_USAGE
+            for v in values
+                said.trusted_for @ said.trusted_for.push(bags.oid_text(v: v, what: "a trusted key usage")?)
+        else
+            said.others @ said.others.push(Other(oid: oid, values: values))
+
+    return ok(said)
+
+# The DER of `v`, a CertBag's or CRLBag's value of the type `expected`,
+# `what` naming it.
+function typed_der(v: asn1.Value, expected: str, what: str) -> [u8]?
+    fields = schemes.items(v: v, least: 2, most: 2, what: what)?
+    kind = bags.oid_text(v: fields[0], what: f"{what}'s type")?
+
+    if kind != expected
+        return fail(code: "unsupported", msg: f"{what} of type {kind}, where this package reads {expected}")
+    return schemes.octets_of(v: bags.explicit(v: fields[1], what: what)?, what: what)
+
+# The DER of `v`, a PrivateKeyInfo of version 0 or 1 (RFC 5958).
+function key_der(v: asn1.Value) -> [u8]?
+    fields = schemes.items(v: v, least: 3, most: 5, what: "a PrivateKeyInfo")?
+    _ = schemes.count_of(v: fields[0], least: 0, most: 1, what: "a PrivateKeyInfo's version")?
+    return asn1.encode_der(v)
+
+# The type and the value of `v`, a SecretBag.
+function secret_of(v: asn1.Value) -> [asn1.Value]?
+    fields = schemes.items(v: v, least: 2, most: 2, what: "a secret bag")?
+    return ok([fields[0], bags.explicit(v: fields[1], what: "a secret")?])
+
+# The SubjectPublicKeyInfo of the key `der`, a PrivateKeyInfo, as
+# `crypto/keypairs` writes it.
+function public_of(der: [u8]) -> [u8]?
+    key @= keypairs.decode_private_der(der)?
+    public @= keypairs.public_of(key)?
+    spki = keypairs.encode_public_der(public)
+    keypairs.close_public(@public)?
+    keypairs.close_private(@key)?
+    return spki
+
+# Whether the certificate's key `spki` is the key whose
+# SubjectPublicKeyInfo `crypto/keypairs` wrote as `expected`: alike as
+# written, or once `crypto/keypairs` has read and written it again.
+function is_same_key(spki: [u8], expected: [u8]) -> bool
+    if spki == expected
+        return true
+
+    match keypairs.decode_public_der(spki)
+        .ok key =>
+            open @= key
+            again = keypairs.encode_public_der(open)
+            closed = keypairs.close_public(@open)
+
+            if closed.is_err()
+                return false
+
+            match again
+                .ok rewritten => return rewritten == expected
+                .err _        => return false
+        .err _ => return false
+
+# The place in `certificates`, whose localKeyIds are `ids`, of the one that
+# is the key `key`'s, of the localKeyId `key_id`: by its public key, the
+# one of the same localKeyId first, or by the localKeyId alone where
+# `crypto/keypairs` does not read the key's kind on this system.
+function leaf_index(key: [u8], key_id: [u8], certificates: [x509.Certificate], ids: [[u8]]) -> i64?
+    match public_of(key)
+        .ok expected =>
+            found: [i64] @= []
+            i: i64 @= 0
+
+            while i < certificates.len()
+                if is_same_key(spki: certificates[i].public_key.der, expected: expected)
+                    found @ found.push(i)
+                i @ i + 1
+
+            for at in found
+                if key_id.len() > 0 && ids[at] == key_id
+                    return ok(at)
+
+            if found.len() > 0
+                return ok(found[0])
+            return fail(code: "not_found", msg: "no certificate of the file is the key's")
+        .err e =>
+            if key_id.len() > 0
+                i: i64 @= 0
+
+                while i < ids.len()
+                    if ids[i] == key_id
+                        return ok(i)
+                    i @ i + 1
+            return fail(code: e.code, msg: f"the key's certificate is sought by its public key: {e.msg}")
+
+test "has: nothing, the first, the last, and absent"
+    assert !has(list: [], one: "a")
+    assert has(list: ["a", "b"], one: "a")
+    assert has(list: ["a", "b"], one: "b")
+    assert !has(list: ["a", "b"], one: "c")
+
+test "said_of: nothing, a name and an id, another kept, and an attribute twice refused"
+    assert said_of([]).must().name == ""
+    name: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: FRIENDLY_NAME)), .set(items: [.text(kind: .bmp, v: "Hëro")])]
+    )
+    id: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: LOCAL_KEY_ID)), .set(items: [.octet_string(v: [1, 2])])]
+    )
+    other: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: "1.3.6.1.4.1.311.17.1")), .set(items: [.text(kind: .bmp, v: "CSP")])]
+    )
+    said = said_of([name, id, other]).must()
+    assert said.name == "Hëro"
+    assert said.id == [1, 2]
+    assert said.others[0].oid == "1.3.6.1.4.1.311.17.1"
+    assert said_of([name, name]).is_err()

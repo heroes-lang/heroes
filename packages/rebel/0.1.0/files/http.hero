@@ -80,6 +80,7 @@
 
 use bytes
 use compress
+use http/internal/body as framings
 use http/internal/canned
 use http/internal/charset
 use http/internal/coding
@@ -96,6 +97,7 @@ use http/internal/policy
 use http/internal/proxying
 use http/internal/read
 use http/internal/ready
+use http/internal/relaying
 use http/internal/settings
 use http/internal/status as texts
 use http/internal/streaming
@@ -1839,6 +1841,210 @@ function write_response_head(s: io.Stream, response: Response) -> ()?
     if response.body.len() > 0
         return io.write(s, data: response.body)
     return ok()
+
+## Bodies relayed as they come
+
+# How a body ends, as a message relayed as it comes is framed: what
+# `framing_of` reads of a body being read, and what `write_request_head` and
+# `write_response_head_framed` write.
+variant Framing
+    # There is no body.
+    none
+    # A body of a length, written with its `Content-Length`.
+    length
+        # How many bytes, 0 or more.
+        bytes: i64
+    # A body written as chunks, with `Transfer-Encoding: chunked`, ended by
+    # the last chunk.
+    chunked
+    # A body ended by the connection's end, written with `Connection: close`:
+    # a response's alone.
+    to_end
+
+# What writes a body relayed as it comes: answered by `write_request_head`
+# and `write_response_head_framed` with the head they wrote, and moved on by
+# `write_piece` and `end_pieces`, so a piece past a length and an end before
+# it are refused rather than sent.
+record BodyWriter
+    # The framing and what it still owes. Only this package reads it.
+    state: relaying.Owed
+
+# How the body of the request `h` heads is read as it comes, before a byte
+# of it: what a gateway reads to pass a body on without holding it whole.
+#
+# - `h`: the head, as `read_request_head` answered it.
+# - `limits`: its `field_count` bounds a chunked body's trailer; the body
+#   itself has no bound here, the caller counting what it passes on.
+#
+# The body is none where neither `Content-Length` nor `Transfer-Encoding`
+# frames one, RFC 9112 § 6.3. `100 Continue` is not written: a caller that
+# reads the body of a head asking for it writes `write_continue` first.
+# Fails `invalid` where both `Content-Length` and `Transfer-Encoding` stand,
+# or the lengths differ or are no number; `limit` where a length is past an
+# `i64`; `unsupported` for a transfer coding other than chunked. See also
+# `read_piece`, `framing_of`.
+function request_body_reader(h: RequestHead, limits: Limits) -> BodyReader?
+    fields: [wire.Field] @= []
+
+    for one in h.request.headers
+        fields @ fields.push(wire.Field(name: one.name, value: one.value))
+
+    return ok(BodyReader(state: streaming.request_body_of(fields, most_fields: limits.field_count)?))
+
+# How the body `body` reads ends, as it was framed before a byte of it was
+# read: the framing a relay writes it on in.
+#
+# - `body`: the body's reader, as `body_reader` or `request_body_reader`
+#   made it.
+#
+# See also `write_request_head`, `write_response_head_framed`.
+function framing_of(body: BodyReader) -> Framing
+    return match body.state.framing
+        .none     => .none
+        .length l => .length(bytes: l.n)
+        .chunked  => .chunked
+        .to_end   => .to_end
+
+# Writes the head of `r` to `s` for a body that follows in `framing`, written
+# piece by piece with `write_piece` and ended by `end_pieces`: the request
+# line with `url.request_target(r.url)`, `Host` as `r` names it or else as
+# its URL does, the fields but the framing's, `Connection: close` where
+# `r.closing`, and the framing's own field.
+#
+# - `s`: the connection's stream.
+# - `r`: the request; its `body` is not written, and its `Content-Length`
+#   and `Transfer-Encoding` are replaced by the framing's.
+# - `framing`: how the body ends: none, a length, or chunks.
+#
+# Answers the writer of the body. Fails `invalid` before writing a byte
+# where the method or a name is no token, the target holds a space or a
+# control byte, no host is named, a value holds a line end, the length is
+# below zero, or the body would run to the connection's end, which a
+# request's cannot; and as `io.write` fails. See also `write_request`, which
+# writes a body held whole.
+function write_request_head(s: io.Stream, r: Request, framing: Framing) -> BodyWriter?
+    inner = inner_framing(framing)?
+    fields: [wire.Field] @= []
+
+    for h in r.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    host = value_of(r.headers, name: "Host").default(
+        policy.host_field(scheme: r.url.scheme, host: r.url.host, port: r.url.port)
+    )
+    data = relaying.request_head(method: r.method, target: url.request_target(r.url), host: host, fields: fields, framing: inner, closing: r.closing)?
+    io.write(s, data: data)?
+    return ok(BodyWriter(state: relaying.owed_of(inner)))
+
+# Writes the head of `response` to `s` for a body that follows in `framing`,
+# written piece by piece with `write_piece` and ended by `end_pieces`: the
+# status line, the fields but the framing's, a `Date` where it has none,
+# `Connection: close` where `response.closing` or the body runs to the
+# connection's end, and the framing's own field. A 101 is written with no
+# body, the connection then carrying the protocol it switched to.
+#
+# - `s`: the connection's stream.
+# - `response`: the status, 101 or 200 to 999, and the fields; its `body` is
+#   not written, and its `Content-Length` and `Transfer-Encoding` are
+#   replaced by the framing's.
+# - `framing`: how the body ends; chunks only to a client of HTTP/1.1, which
+#   the caller knows from the request's head.
+#
+# Answers the writer of the body. Fails `invalid` before writing a byte
+# where the status is another, 101 is framed with a body, the reason or a
+# value holds a line end, a name is no token, or the length is below zero;
+# and as `io.write` fails. See also `write_response_head`, whose body always
+# runs to the connection's end.
+function write_response_head_framed(s: io.Stream, response: Response, framing: Framing) -> BodyWriter?
+    inner = inner_framing(framing)?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    data = relaying.response_head(status_code: response.status, reason: response.reason, fields: fields, framing: inner, closing: response.closing, date: policy.date_now().default(""))?
+    io.write(s, data: data)?
+    return ok(BodyWriter(state: relaying.owed_of(inner)))
+
+# The framing `framing` says, as the internal writers read it.
+#
+# - `framing`: the framing asked for.
+#
+# Fails `invalid` for a length below zero.
+function inner_framing(framing: Framing) -> framings.Framing?
+    match framing
+        .none    => return ok(.none)
+        .chunked => return ok(.chunked)
+        .to_end  => return ok(.to_end)
+        .length l =>
+            if l.bytes < 0
+                return fail(code: INVALID, msg: f"writing a head: a body of {l.bytes} bytes, below zero")
+            return ok(.length(n: l.bytes))
+
+# Writes `data` to `s` as the next piece of the body `body` frames: the bytes
+# themselves, or one chunk holding them; nothing for no bytes.
+#
+# - `s`: the stream the head was written to.
+# - `body`: the body's writer, lessened by the piece.
+# - `data`: the piece's bytes.
+#
+# Fails `invalid` before writing a byte where the body has ended, has none,
+# or is owed fewer bytes than `data` holds; and as `io.write` fails. See also
+# `end_pieces`, `read_piece`.
+function write_piece(s: io.Stream, @body: BodyWriter, data: [u8]) -> ()?
+    out = relaying.piece(@body.state, data: data)?
+
+    if out.len() == 0
+        return ok()
+    return io.write(s, data: out)
+
+# Ends the body `body` frames on `s`: the last chunk with an empty trailer
+# for chunks, nothing else.
+#
+# - `s`: the stream the head was written to.
+# - `body`: the body's writer, ended.
+#
+# Fails `invalid` where a body of a length is still owed bytes, which only
+# the connection's end can tell its reader, so its writer closes the
+# connection; where its end was written already; and as `io.write` fails.
+# See also `write_piece`.
+function end_pieces(s: io.Stream, @body: BodyWriter) -> ()?
+    out = relaying.end(@body.state)?
+
+    if out.len() == 0
+        return ok()
+    return io.write(s, data: out)
+
+# The head of the next response `reader` holds that is final or a 101, the
+# other informational ones before it skipped, its body left unread: what a
+# gateway reads after passing on a request that asked to switch protocols
+# (`Upgrade`).
+#
+# - `reader`: the reader of the connection, advanced past the head alone;
+#   after a 101 it stands at the first bytes of the new protocol.
+# - `method`: the method of the request answered.
+# - `limits`: what the head may hold.
+#
+# A 101 is answered with no body and `closing` false. Fails as
+# `read_response_head` does, 101 aside. See also `read_response_head`.
+function read_switch_head(@reader: io.Reader, method: str, limits: Limits) -> Response?
+    m = streaming.switch_or_response_head(@reader, method: method, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes))?
+    headers: [Header] @= []
+
+    for f in m.head.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(Response(status: m.head.status, reason: m.head.reason, headers: headers, body: [], closing: m.closing))
+
+# Writes `100 Continue` to `s`, RFC 9110 § 15.2.1: what a server writes
+# before reading the body of a request whose head asked for it with
+# `Expect: 100-continue`, the client then sending it.
+#
+# - `s`: the connection's stream.
+#
+# Fails as `io.write` does. See also `request_body_reader`.
+function write_continue(s: io.Stream) -> ()?
+    return policy.write_continue(s)
 
 ## Server-sent events
 

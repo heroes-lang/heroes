@@ -7,7 +7,8 @@
 # them: `app`, the one function of a program with no state, which `web.serve`
 # calls with the router; and `serve_conn`, the loop of a program with state,
 # which hands its `App` to its own `handle` by `@`. Their tests run them on
-# the loopback.
+# the loopback, and so does the test of a reverse proxy, which passes a
+# request to `app` served on a thread of its own and its answer back.
 
 use <rebel>/http
 use <rebel>/io
@@ -79,6 +80,17 @@ function serve_conn(@state: App, stream: io.Stream) -> i64
         if r.closing || response.closing
             return answered
 
+# An upstream for the proxy's test: one connection accepted on the loopback,
+# its port told on `ports`, served by `app`; answers how many it answered.
+function upstream_once(ports: (mailbox i64)) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = ports.send(l.address.port).is_err()
+    conn @= net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    answered = web.serve_stream(http.default_server(), stream: conn.stream, remote: "", router: routes(), handler: app)
+    io.close(@conn.stream).must()
+    return answered
+
 function main()
     print(web.sniff([60, 104, 116, 109, 108, 62]))
 
@@ -124,5 +136,24 @@ test "serve_conn: a program's loop answers 100 Continue, and 431 for a head past
     _ = io.read_line(@reader).must()
     assert http.text_of(http.read_response(@reader, method: "POST", limits: http.default_limits()).must()).must() == "1"
     assert http.read_response(@reader, method: "GET", limits: http.default_limits()).must().status == 431
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_proxy_stream: a program's own reverse proxy passes a request to its upstream and the answer back"
+    ports: (mailbox i64) = mailbox()
+    up = spawn(upstream_once, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    state @= web.proxy_state(web.reverse_proxy([web.upstream_of(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /users/7 HTTP/1.1\r\nHost: shop.example\r\nConnection: close\r\n\r\n"
+    ).must()
+    served = web.serve_proxy_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000")
+    assert served.requests == 1 && served.relayed == 1 && served.refused == 0
+    reader @= io.reader(two.first.stream)
+    answer = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    assert http.text_of(answer).must() == "user 7" && answer.closing
+    assert up.wait() == 1
     io.close(@two.second.stream).must()
     io.close(@reader.stream).must()
