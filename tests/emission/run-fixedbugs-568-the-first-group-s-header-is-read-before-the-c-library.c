@@ -26,6 +26,7 @@
 #pragma float_control(push)
 #include "heroes_guard_open.h"
 #include <fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library.h>
+#pragma push_macro("answer")
 #include "heroes_guard_close.h"
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
@@ -50,7 +51,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("answer")
+#undef answer
 #include "heroes_standard.h"
+#pragma pop_macro("answer")
 
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -98,7 +102,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
+#line 106 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -148,7 +152,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 123
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 152 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
+#line 156 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -169,7 +173,7 @@ void h_fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary_main(void);
 #line 20 "tests/golden/run/fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library.hero"
 void h_fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary_main(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
     { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library.hero", "fixedbugs-568-the-first-group-s-header-is-read-before-the-c-library.main", 21, 11}; t1 = answer(); } hero_print_int(t1); hero_print_end(); return;
-#line 173 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
+#line 177 "fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
@@ -268,7 +272,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("290daeba2f26f706", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("752ebd5e718c9491", 16); }
 int main(int argc, char **argv) {
     hero_args_set(argc, argv);
     hero_stack_spell("fixedbugs568thefirstgroupsheaderisreadbeforetheclibrary\tfixedbugs-568-the-first-group-s-header-is-read-before-the-c-library\n");
