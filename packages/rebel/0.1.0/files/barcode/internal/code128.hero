@@ -1,0 +1,457 @@
+# Code 128 by ISO/IEC 15417: data written in the three code sets, the set
+# changed where that makes the symbol shortest, its check character and its
+# stop. A piece of data here is a byte, 0 to 255, or `FNC1`; a byte from 128
+# up is written as `FNC4` and the byte 128 below it, as the standard writes
+# ISO/IEC 8859-1's upper half.
+
+use barcode/internal/codes
+use bytes
+
+# The data piece that stands for the function character FNC1, which GS1-128
+# writes first and between two element strings.
+constant FNC1: i64
+    -1
+
+# The bars and spaces of each symbol character from value 0 to 105, widths
+# in modules, a bar first; the stop is `STOP`.
+constant PATTERNS: [str]
+    [
+        "212222"
+        "222122"
+        "222221"
+        "121223"
+        "121322"
+        "131222"
+        "122213"
+        "122312"
+        "132212"
+        "221213"
+        "221312"
+        "231212"
+        "112232"
+        "122132"
+        "122231"
+        "113222"
+        "123122"
+        "123221"
+        "223211"
+        "221132"
+        "221231"
+        "213212"
+        "223112"
+        "312131"
+        "311222"
+        "321122"
+        "321221"
+        "312212"
+        "322112"
+        "322211"
+        "212123"
+        "212321"
+        "232121"
+        "111323"
+        "131123"
+        "131321"
+        "112313"
+        "132113"
+        "132311"
+        "211313"
+        "231113"
+        "231311"
+        "112133"
+        "112331"
+        "132131"
+        "113123"
+        "113321"
+        "133121"
+        "313121"
+        "211331"
+        "231131"
+        "213113"
+        "213311"
+        "213131"
+        "311123"
+        "311321"
+        "331121"
+        "312113"
+        "312311"
+        "332111"
+        "314111"
+        "221411"
+        "431111"
+        "111224"
+        "111422"
+        "121124"
+        "121421"
+        "141122"
+        "141221"
+        "112214"
+        "112412"
+        "122114"
+        "122411"
+        "142112"
+        "142211"
+        "241211"
+        "221114"
+        "413111"
+        "241112"
+        "134111"
+        "111242"
+        "121142"
+        "121241"
+        "114212"
+        "124112"
+        "124211"
+        "411212"
+        "421112"
+        "421211"
+        "212141"
+        "214121"
+        "412121"
+        "111143"
+        "111341"
+        "131141"
+        "114113"
+        "114311"
+        "411113"
+        "411311"
+        "113141"
+        "114131"
+        "311141"
+        "411131"
+        "211412"
+        "211214"
+        "211232"
+    ]
+
+# The stop character's widths, its last bar two modules wide.
+constant STOP: str
+    "2331112"
+
+# The code sets, as indices.
+constant SET_A: i64
+    0
+
+constant SET_B: i64
+    1
+
+constant SET_C: i64
+    2
+
+# A cost no path reaches.
+constant NEVER: i64
+    1000000000
+
+# The value of `piece` in code set `set` (`SET_A` or `SET_B`), its byte's
+# lower half where it is 128 or more, or -1 where the set has no such
+# character.
+function value_in(piece: i64, set: i64) -> i64
+    if piece == FNC1
+        return 102
+
+    low = piece % 128
+
+    if set == SET_A
+        if low < 32
+            return low + 64
+
+        if low < 96
+            return low - 32
+        return -1
+
+    if low >= 32
+        return low - 32
+    return -1
+
+# The symbol characters `piece` takes in `set`, `SET_A` or `SET_B`: 1, 2
+# with FNC4 before it, or `NEVER`.
+function cost_in(piece: i64, set: i64) -> i64
+    if value_in(piece: piece, set: set) < 0
+        return NEVER
+
+    if piece >= 128
+        return 2
+    return 1
+
+# Whether `pieces[i]` and `pieces[i + 1]` are both ASCII digits, which set C
+# writes as one character.
+function is_pair(pieces: [i64] lent, i: i64) -> bool
+    if i + 1 >= pieces.len()
+        return false
+    first = pieces[i]
+    second = pieces[i + 1]
+    return first >= 48 && first <= 57 && second >= 48 && second <= 57
+
+# The fewest characters that write `pieces` from `i` on, the symbol being in
+# `set` before them, for every `i` and set: `best[i * 3 + set]`.
+function costs(pieces: [i64] lent) -> [i64]
+    n = pieces.len()
+    best: [i64] @= []
+
+    for _ in range(from: 0, to: (n + 1) * 3)
+        best @ best.push(NEVER)
+
+    best[n * 3] @ 0
+    best[n * 3 + 1] @ 0
+    best[n * 3 + 2] @ 0
+    i: i64 @= n - 1
+
+    while i >= 0
+        for set in range(from: 0, to: 3)
+            here: i64 @= NEVER
+
+            for next in range(from: 0, to: 3)
+                change: i64 @= 0
+
+                if next != set
+                    change @ 1
+                step = step_cost(pieces, i: i, set: next)
+
+                if step < NEVER
+                    width = step_width(pieces, i: i, set: next)
+                    here @ min_of(a: here, b: change + step + best[(i + width) * 3 + next])
+
+            if set != SET_C
+                other = 1 - set
+                shifted = cost_in(piece: pieces[i], set: other)
+
+                if shifted == 1 && pieces[i] != FNC1
+                    here @ min_of(a: here, b: 1 + shifted + best[(i + 1) * 3 + set])
+
+            best[i * 3 + set] @ here
+
+        i @ i - 1
+
+    return best
+
+# The characters set `set` spends on the next piece of `pieces` at `i`, or
+# `NEVER`.
+function step_cost(pieces: [i64] lent, i: i64, set: i64) -> i64
+    if set == SET_C
+        if pieces[i] == FNC1 || is_pair(pieces, i: i)
+            return 1
+        return NEVER
+    return cost_in(piece: pieces[i], set: set)
+
+# The pieces set `set` writes in its next character at `i`: two for a pair
+# of digits in set C, else one.
+function step_width(pieces: [i64] lent, i: i64, set: i64) -> i64
+    if set == SET_C && pieces[i] != FNC1
+        return 2
+    return 1
+
+# The lesser of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The values of the symbol characters that write `pieces`, its start
+# character first and its check character and stop left out, choosing at each
+# step a set change or a shift only where it makes the whole shortest; a tie
+# keeps the set, and the start prefers B, then C, then A.
+function values_of(pieces: [i64] lent) -> [i64]
+    best = costs(pieces)
+    n = pieces.len()
+    set: i64 @= SET_B
+
+    if n > 0 && best[2] < best[1]
+        set @ SET_C
+
+    if n > 0 && best[0] < best[set]
+        set @ SET_A
+
+    out: [i64] @= [103 + set]
+    i: i64 @= 0
+
+    while i < n
+        stay = step_cost(pieces, i: i, set: set)
+        target = best[i * 3 + set]
+
+        if stay < NEVER && stay + best[(i + step_width(pieces, i: i, set: set)) * 3 + set] == target
+            i @ write_piece(out: @out, pieces: pieces, i: i, set: set)
+        else if set != SET_C && cost_in(piece: pieces[i], set: 1 - set) == 1 && pieces[i] != FNC1 && 2 + best[(i + 1) * 3 + set] == target
+            out @ out.push(98)
+            out @ out.push(value_in(piece: pieces[i], set: 1 - set))
+            i @ i + 1
+        else
+            next: i64 @= -1
+
+            for candidate in [SET_B, SET_C, SET_A]
+                step = step_cost(pieces, i: i, set: candidate)
+
+                if next < 0 && candidate != set && step < NEVER && 1 + step + best[(i + step_width(pieces, i: i, set: candidate)) * 3 + candidate] == target
+                    next @ candidate
+
+            assert next >= 0
+            out @ out.push(latch_value(from: set, to: next))
+            set @ next
+
+    return out
+
+# The value of the character that changes the set from `from` to `to`.
+function latch_value(from: i64, to: i64) -> i64
+    if to == SET_C
+        return 99
+
+    if to == SET_B
+        return 100
+
+    assert from != SET_A
+    return 101
+
+# Writes the piece of `pieces` at `i` in `set` onto `out`, FNC4 before a
+# byte from 128 up, and answers the index after what it wrote.
+function write_piece(@out: [i64], pieces: [i64] lent, i: i64, set: i64) -> i64
+    piece = pieces[i]
+
+    if piece == FNC1
+        out @ out.push(102)
+        return i + 1
+
+    if set == SET_C
+        out @ out.push((piece - 48) * 10 + pieces[i + 1] - 48)
+        return i + 2
+
+    if piece >= 128
+        out @ out.push(101 - set)
+    out @ out.push(value_in(piece: piece, set: set))
+    return i + 1
+
+# The check character of `values`, the start first: the start's value and
+# each other value times its place, modulo 103.
+function check_of(values: [i64] lent) -> i64
+    sum: i64 @= values[0]
+
+    for i in range(from: 1, to: values.len())
+        sum @ (sum + values[i] * i) % 103
+
+    return sum
+
+# The modules of a symbol whose characters are `values`, its start first:
+# then its check character and its stop.
+function modules_of(values: [i64] lent) -> [bool]
+    out: [bool] @= []
+
+    for v in values
+        add_widths(@out, widths: PATTERNS[v])
+
+    add_widths(@out, widths: PATTERNS[check_of(values)])
+    add_widths(@out, widths: STOP)
+    return out
+
+# `widths`, a bar first and then spaces and bars by turns, each digit a
+# width in modules, added to `out`.
+function add_widths(@out: [bool], widths: str)
+    dark: bool @= true
+
+    for i in range(from: 0, to: widths.len())
+        for _ in range(from: 0, to: to_i64(widths[i] - '0').must())
+            out @ out.push(dark)
+
+        dark @ !dark
+
+# The bytes of `text` in ISO/IEC 8859-1, the set Code 128 writes.
+#
+# Fails `invalid` where `text` holds a character past U+00FF.
+function latin1_of(text: str) -> [u8]?
+    out: [u8] @= []
+
+    for c in text.chars()
+        if c.len() == 1
+            out @ out.push(c[0])
+        else if c.len() == 2 && (c[0] == 0xc2 || c[0] == 0xc3)
+            out @ out.push(to_u8((to_i64(c[0]).must() & 0x1f) << 6 | to_i64(c[1]).must() & 0x3f).must())
+        else
+            return fail(code: codes.INVALID, msg: f"Code 128 writes ISO/IEC 8859-1, and \"{c}\" is past U+00FF")
+
+    return ok(out)
+
+# `data` read as ISO/IEC 8859-1 and written as UTF-8.
+function latin1_text(data: [u8] lent) -> str
+    out: [u8] @= []
+
+    for b in data
+        if b < 128
+            out @ out.push(b)
+        else
+            out @ out.push(to_u8(0xc0 | to_i64(b).must() >> 6).must())
+            out @ out.push(to_u8(0x80 | to_i64(b).must() & 0x3f).must())
+
+    return bytes.to_text(out).must()
+
+# The caption of `data`: its bytes read as ISO/IEC 8859-1, each control
+# character, C0, DEL and C1, written as a space, since no font draws one.
+function caption_of(data: [u8] lent) -> str
+    shown: [u8] @= []
+
+    for b in data
+        if b < 32 || b >= 127 && b < 160
+            shown @ shown.push(32)
+        else
+            shown @ shown.push(b)
+
+    return latin1_text(shown)
+
+# The height of the bars of a symbol `width` modules long: 15 % of it,
+# rounded up, and 20 modules at least.
+function height_of(width: i64) -> i64
+    height = (width * 15 + 99) / 100
+
+    if height < 20
+        return 20
+    return height
+
+## Tests
+
+test "value_in: sets A and B, FNC1, and the upper half by its lower"
+    assert value_in(piece: 0, set: SET_A) == 64
+    assert value_in(piece: 31, set: SET_A) == 95
+    assert value_in(piece: 32, set: SET_A) == 0
+    assert value_in(piece: 95, set: SET_A) == 63
+    assert value_in(piece: 96, set: SET_A) == -1
+    assert value_in(piece: 0, set: SET_B) == -1
+    assert value_in(piece: 127, set: SET_B) == 95
+    assert value_in(piece: 200, set: SET_B) == 40
+    assert value_in(piece: FNC1, set: SET_B) == 102
+
+test "values_of: empty, one letter, digits in set C, and an odd digit left in B"
+    assert values_of([]) == [104]
+    assert values_of([65]) == [104, 33]
+    assert values_of([49, 50, 51, 52]) == [105, 12, 34]
+    assert values_of([49, 50, 51]) == [104, 17, 18, 19]
+    assert values_of([65, 49, 50, 51, 52, 53, 54]) == [104, 33, 99, 12, 34, 56]
+
+test "values_of: a control character in B is a shift, two are a change to A"
+    assert values_of([97, 1, 98]) == [104, 65, 98, 65, 66]
+    assert values_of([0, 31]) == [103, 64, 95]
+    assert values_of([FNC1, 48, 49]) == [105, 102, 1]
+
+test "values_of: a byte from 128 up is FNC4 and its lower half"
+    assert values_of([233]) == [104, 100, 73]
+    assert values_of([128 + 5]) == [103, 101, 69]
+
+test "check_of: the start counts once and each value by its place"
+    assert check_of([104, 33]) == (104 + 33) % 103
+    assert check_of([105, 102, 1, 9, 50, 11, 1, 53, 0, 3]) == 71
+
+# python-barcode 0.16.1 wrote these modules for the same data on 2026-11-24.
+test "modules_of: python-barcode's symbol of GS1's 01 09501101530003"
+    m = modules_of([105, 102, 1, 9, 50, 11, 1, 53, 0, 3])
+    assert m.len() == 11 * 11 + 13
+    assert m[0] && m[1] && !m[2]
+    assert m[m.len() - 1] && m[m.len() - 2] && !m[m.len() - 3]
+
+test "latin1_of and latin1_text: ASCII, the upper half, and a character past it"
+    assert latin1_of("Ab").must() == [65, 98]
+    assert latin1_of("éÿ").must() == [233, 255]
+    assert latin1_of("Ā").is_err()
+    assert latin1_text([233, 65, 255]) == "éAÿ"
+
+test "height_of: the floor of 20 and 15 % past it"
+    assert height_of(0) == 20
+    assert height_of(134) == 21
+    assert height_of(200) == 30
+
+test "caption_of: C0, DEL and C1 as spaces, the rest as text"
+    assert caption_of([65, 9, 127, 128, 159, 233]) == "A    é"

@@ -1,0 +1,12 @@
+# Reaches Rebel's `barcode`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints a product's EAN-13 as SVG.
+
+use <rebel>/barcode
+
+function main()
+    match barcode.ean13("590123412345")
+        .ok symbol =>
+            match barcode.to_svg(symbol: symbol, options: barcode.default_svg_options())
+                .ok svg => print(svg)
+                .err e  => print(e.msg)
+        .err e => print(e.msg)
