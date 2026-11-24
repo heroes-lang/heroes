@@ -16,5 +16,11 @@ function connect() -> redis.Client?
         .err _ => return fail(code: redis.NOT_FOUND, msg: "REBEL_REDIS_URL names no server")
 
     c @= redis.connect(redis.parse_url(url)?)?
-    _ = redis.call(@c, ["EVAL", "for _, k in ipairs(redis.call('KEYS', ARGV[1] .. '*')) do redis.call('DEL', k) end return 0", "0", redis_store.PREFIX])?
-    return ok(c)
+
+    match redis.call(@c, ["EVAL", "for _, k in ipairs(redis.call('KEYS', ARGV[1] .. '*')) do redis.call('DEL', k) end return 0", "0", redis_store.PREFIX])
+        .ok _ => return ok(c)
+        .err e =>
+            # A test that is told this skips, and a client left open would
+            # end its run in a panic at the return of `main`.
+            _ = redis.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)

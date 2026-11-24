@@ -18,9 +18,8 @@ function connect() -> postgres.Db?
         .err _ => return fail(code: sql.NOT_FOUND, msg: "REBEL_POSTGRES_URL names no server")
 
     db @= postgres.open(postgres.parse_url(url)?)?
-    _ = postgres.exec(@db, "SET search_path TO pg_temp", [])?
-    postgres.exec_script(@db, statements.SCHEMA)?
-    return ok(db)
+    prepared = made(@db, schema: "")
+    return kept(@db, prepared: prepared)
 
 # A connection to the same server sharing the tables of the schema `schema`,
 # made there where they are not, for the tests of two workers. Fails as
@@ -31,8 +30,36 @@ function connect_shared(schema: str) -> postgres.Db?
         .err _ => return fail(code: sql.NOT_FOUND, msg: "REBEL_POSTGRES_URL names no server")
 
     db @= postgres.open(postgres.parse_url(url)?)?
-    quoted = sql.quote_identifier(schema)?
-    _ = postgres.exec(@db, f"CREATE SCHEMA IF NOT EXISTS {quoted}", [])?
-    _ = postgres.exec(@db, f"SET search_path TO {quoted}", [])?
-    postgres.exec_script(@db, statements.SCHEMA)?
-    return ok(db)
+    prepared = made(@db, schema: schema)
+    return kept(@db, prepared: prepared)
+
+# The store's tables made in the schema `schema`, made where it is not, and
+# the session's search path set to it; the session's temporary schema where
+# `schema` is "".
+#
+# - `db`: the connection.
+# - `schema`: the schema's name, "" for the temporary one.
+#
+# Fails as `sql.quote_identifier`, `postgres.exec` and `postgres.exec_script`
+# fail.
+function made(@db: postgres.Db, schema: str) -> ()?
+    path: str @= "pg_temp"
+
+    if schema != ""
+        path @ sql.quote_identifier(schema)?
+        _ = postgres.exec(@db, f"CREATE SCHEMA IF NOT EXISTS {path}", [])?
+    _ = postgres.exec(@db, f"SET search_path TO {path}", [])?
+    return postgres.exec_script(@db, statements.SCHEMA)
+
+# `db` where `prepared` is a success, else its failure with `db` closed
+# first: a test that is told the failure skips, and a connection left open
+# would end its run in a panic at the return of `main`.
+#
+# - `db`: the connection, open.
+# - `prepared`: what `made` answered of it.
+function kept(@db: postgres.Db, prepared: ()?) -> postgres.Db?
+    match prepared
+        .ok _ => return ok(db)
+        .err e =>
+            _ = postgres.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
