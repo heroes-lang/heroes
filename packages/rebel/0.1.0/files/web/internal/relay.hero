@@ -264,6 +264,11 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
         return false
     headers @= gateway.hop_by_hop_removed(r.headers)
 
+    if r.method == "OPTIONS" && r.url.path == "*"
+        final(stream, r: r)
+        tally.refused @ tally.refused + 1
+        return false
+
     if r.method == "TRACE" || r.method == "OPTIONS"
         match gateway.max_forwards_of(r.headers)
             .ok n =>
@@ -334,9 +339,10 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
     )
     return tried(@c, plan: plan, stream: stream, reader: @reader, body: @body, trip: trip, tally: @tally)
 
-# Answers `r` as the final recipient, RFC 9110 § 7.6.2: `Max-Forwards` was
-# 0. `TRACE` is echoed as `http.respond_trace` echoes it, `OPTIONS` answered
-# 200 with no body.
+# Answers `r` as the final recipient: `Max-Forwards` was 0 (RFC 9110 §
+# 7.6.2), or it is `OPTIONS *`, which asks the server the client reached and
+# which no upstream's path can carry. `TRACE` is echoed as
+# `http.respond_trace` echoes it, `OPTIONS` answered 200 with no body.
 function final(s: io.Stream, r: http.Request)
     answer @= http.respond_status(200)
 
@@ -1174,7 +1180,7 @@ test "serve_client: a WebSocket's upgrade passed on, the 101 relayed, then bytes
 test "serve_client: a loop, both framings, Max-Forwards 0 and a body past its bound answered by the proxy"
     plan @= plan_for([dead_port()], read_ms: 2_000)
     plan.limits.body_bytes @ 4
-    px = front(plan, weights: [1], connections: 4)
+    px = front(plan, weights: [1], connections: 5)
     looped = exchanged(px.port, asked: "GET / HTTP/1.1\r\nHost: h\r\nVia: 1.1 edge:1\r\n\r\n", until: "")
     both = exchanged(
         px.port,
@@ -1183,7 +1189,9 @@ test "serve_client: a loop, both framings, Max-Forwards 0 and a body past its bo
     )
     options = exchanged(px.port, asked: "OPTIONS * HTTP/1.1\r\nHost: h\r\nMax-Forwards: 0\r\n\r\n", until: "")
     large = exchanged(px.port, asked: "PUT / HTTP/1.1\r\nHost: h\r\nContent-Length: 10\r\n\r\n0123456789", until: "")
+    star = exchanged(px.port, asked: "OPTIONS * HTTP/1.1\r\nHost: h\r\n\r\n", until: "")
     _ = px.thread.wait()
+    assert strings.has_prefix(s: star, prefix: "HTTP/1.1 200 OK\r\n")
     assert strings.has_prefix(s: looped, prefix: "HTTP/1.1 508 Loop Detected\r\n")
     assert strings.has_prefix(s: both, prefix: "HTTP/1.1 400 Bad Request\r\n")
     assert strings.has_prefix(s: options, prefix: "HTTP/1.1 200 OK\r\n")
