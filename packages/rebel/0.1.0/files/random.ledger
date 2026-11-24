@@ -89,12 +89,68 @@ capability random/secure  a number below a bound from the system's generator for
   python  secrets.randbelow, secrets.randbits, random.SystemRandom
   note    random bytes for a key are `os.random_bytes`, Python's `token_bytes`; a token written as text is `secure_token_hex` or `secure_token_base64_url`
 
-capability random/distributions  numbers drawn by a distribution other than the uniform one
-  heroes  pending
-  go      rand.NormFloat64, rand.Rand.NormFloat64, rand.ExpFloat64, rand.Rand.ExpFloat64, rand.Zipf, rand.NewZipf, rand.Zipf.Uint64
+capability random/uniform-float  a float drawn from a range, every one as likely
+  heroes  random.uniform, random.Distribution, random.draw, random.draw_chacha8
+  go      -
   rust    -
-  python  random.gauss, random.normalvariate, random.lognormvariate, random.expovariate, random.vonmisesvariate, random.gammavariate, random.betavariate, random.paretovariate, random.weibullvariate, random.triangular, random.binomialvariate, random.uniform
-  note    each needs its own method and a test by its own moments; `uniform` is a line of arithmetic over `next_f64`
+  python  random.uniform
+  note    the end is left out as `int_in` leaves it, and a draw that rounding carries to the end is drawn again; Python's `uniform(5.0, 1.0)` answered 4.62 on 2026-11-23, where here a range whose end is not above its start is `invalid`. A width beyond the largest float, -MAX to MAX, is drawn in halves
+
+capability random/normal  numbers of the bell curve of a mean and a deviation, and of a curve whose logarithm is one
+  heroes  random.normal, random.lognormal
+  go      rand.NormFloat64, rand.Rand.NormFloat64
+  rust    -
+  python  random.gauss, random.normalvariate, random.lognormvariate
+  note    one way for Python's two: nothing is kept from one draw for the next, and the draw is the ziggurat of Marsaglia and Tsang (2000), 128 layers chosen by 7 bits of one number, its sign by another and the point across the layer by its top 53, whose widths the tests compute again; Python's `normalvariate(0.0, -1.0)` answered -1.23 on 2026-11-23, where here a deviation below 0 is `invalid`. Java's `nextGaussian(mean, stddev)` (the catalogue's row) is the same draw. The tests hold 100,000 draws to Kolmogorov and Smirnov's bound of one in ten thousand and a million to the share of the tail past 3.44
+
+capability random/exponential  the wait for an event that comes at a rate
+  heroes  random.exponential
+  go      rand.ExpFloat64, rand.Rand.ExpFloat64
+  rust    -
+  python  random.expovariate
+  note    the ziggurat of 256 layers, the tail past 7.70 the same distribution shifted; Python's `expovariate(-1.0)` answered -0.144 on 2026-11-23, where here a rate not above 0 is `invalid`. Java's `nextExponential` is rate 1
+
+capability random/gamma-beta  numbers of the gamma distribution of a shape and a scale, and of the beta of two shapes
+  heroes  random.gamma, random.beta
+  go      -
+  rust    -
+  python  random.gammavariate, random.betavariate
+  note    Marsaglia and Tsang's method (2000), a shape below 1 as the shape plus 1 lowered by a fraction's power, its acceptance and its value written so that a shape of 10^300 answers its spread rather than its mean every time; the beta through the logarithms of two gammas, so that Python's `betavariate(1e-300, 2e-300)` answered 0.0 three thousand times out of three thousand on 2026-11-23 where here a third of the draws are 1.0, the share the first shape's weight gives
+
+capability random/von-mises  angles around a mean angle, closer the higher the concentration
+  heroes  random.von_mises
+  go      -
+  rust    -
+  python  random.vonmisesvariate
+  note    Best and Fisher's method (1979), r written as 1 / (2 kappa) + sqrt(1 + 1 / (4 kappa^2)) and acos(f) as 2 asin(sqrt((1 - f) / 2)), so that a concentration of 10^8 draws its bell curve of deviation 10^-4; a concentration below 2^-60 draws every angle as likely
+
+capability random/heavy-tails  the Pareto and Weibull distributions
+  heroes  random.pareto, random.weibull
+  go      -
+  rust    -
+  python  random.paretovariate, random.weibullvariate
+  note    Python's `paretovariate(alpha)` is a scale of 1, which `pareto` names; both from the exponential's ziggurat. A draw past the largest float fails `does_not_fit`, where Python's `paretovariate(0.0)` raised ZeroDivisionError on 2026-11-23 and a shape of 0 is `invalid` here
+
+capability random/triangular  numbers rising from a low end to a mode and falling to a high one
+  heroes  random.triangular
+  go      -
+  rust    -
+  python  random.triangular
+  note    the mode is always named, where Python's defaults to the middle (no default values in Heroes); Python's `triangular(1.0, 1.0, 1.0)` answered 1.0 on 2026-11-23, where here a high end not above the low is `invalid`
+
+capability random/binomial  the successes among trials of one probability
+  heroes  random.binomial, random.Discrete, random.draw_discrete, random.draw_discrete_chacha8
+  go      -
+  rust    -
+  python  random.binomialvariate
+  note    geometric waits counted where fewer than 10 successes are expected, else Hormann's BTRS (1993), its acceptance through Stirling's corrections so that 2^53 - 1 trials of 1/2 keep their bell curve; the trials stop at 2^53 - 1, since past it a float holds no longer every count and Python's `binomialvariate(2**60, 0.5)` answered 576460752736931968, a multiple of 128, on 2026-11-23
+
+capability random/zipf  a rank as likely as a power of it falls
+  heroes  random.zipf
+  go      rand.Zipf, rand.NewZipf, rand.Zipf.Uint64
+  rust    -
+  python  -
+  note    Hormann and Derflinger's rejection-inversion (1996); Go's `NewZipf` asks `s > 1` (its `go doc`, Go 1.27.4), where here any exponent above 0 is drawn, Zipf's own 1 among them, H written through expm1 and ln1p so that an exponent near 1 keeps its digits; the squeeze of the method is left out, its proof covering fewer exponents. The largest value stops at 2^53 - 1, as the binomial's trials
 
 capability random/chacha8  a generator whose numbers cannot be told from the ones before
   heroes  random.ChaCha8, random.from_seed_chacha8, random.from_system_chacha8, random.next_u64_chacha8, random.next_f64_chacha8, random.below_chacha8, random.int_in_chacha8, random.shuffle_chacha8, random.choose_chacha8, random.sample_chacha8, random.choose_weighted_chacha8

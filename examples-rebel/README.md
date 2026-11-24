@@ -56,7 +56,7 @@ package moves its row in the same change. There is no cycle.
 | 1 | `strings` | text searched, cut, trimmed, replaced, padded, cased | `unicode` |  |
 | 1 | `bytes` | the same for `[u8]`, and bytes as hexadecimal and base 64 | `math`, `unicode` |  |
 | 1 | `regex` | a regular expression matched in linear time | `unicode` |  |
-| 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
+| 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling, numbers drawn from twelve distributions; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/complex` | complex numbers and their functions as C11's Annex G computes them: arithmetic, the polar form, exponentials, logarithms, powers, the circular and hyperbolic functions and their inverses | `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |

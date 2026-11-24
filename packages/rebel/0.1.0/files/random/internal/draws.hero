@@ -1,0 +1,250 @@
+# The arithmetic of each draw of `laws`'s distributions that does not depend
+# on the generator, so that `law_pick` and `law_strong` hold only the loops
+# that take numbers from their own one.
+#
+# The methods: the uniform by a line over a fraction, drawn again in the rare
+# case rounding reaches the end left out; the triangular by its inverse; the
+# normal and the exponential by the ziggurat (`ziggurat`), the lognormal, the
+# Pareto and the Weibull from them; the gamma by Marsaglia and Tsang's method
+# (2000), a shape below 1 lowered by a fraction's power; the beta as a ratio
+# of two gammas, taken through their logarithms so that small shapes never
+# make 0 / 0; von Mises by Best and Fisher's (1979), its constants written so
+# that no digit is lost at either end of the concentration; the binomial by
+# counting geometric waits where it expects fewer than 10 successes, and by
+# Hormann's BTRS (1993) above, its acceptance through Stirling's corrections
+# so that nothing large is subtracted; Zipf by Hormann and Derflinger's
+# rejection-inversion (1996), without its squeeze, whose proof covers fewer
+# shapes than the distribution has.
+
+use math
+use random/internal/codes
+use random/internal/laws
+
+# The inverse of `laws.zipf_h`: the x whose H is `h`, through ln1p(t) / t.
+function zipf_h_inverse(law: laws.Zipf, h: f64) -> f64
+    t = (1.0 - law.exponent) * h
+
+    if t == 0.0
+        return math.exp(h) - law.offset
+    return math.exp(h * math.ln_1_plus(t) / t) - law.offset
+
+# The weight (offset + k)^-exponent of the value `k`.
+function zipf_weight(law: laws.Zipf, k: f64) -> f64
+    return math.exp(-law.exponent * math.ln(law.offset + k))
+
+# Whether Zipf's candidate `k`, from 0 to `law.largest`, inverted from `h`, is
+# kept: `h` falls in the top `h(k)` of the cell of `k`.
+function zipf_keeps(law: laws.Zipf, k: f64, h: f64) -> bool
+    return h >= laws.zipf_h(exponent: law.exponent, offset: law.offset, x: k + 0.5) - zipf_weight(law, k)
+
+# `x` where it is a float, else `does_not_fit`: a draw beyond the largest.
+function fits(x: f64) -> f64?
+    if math.is_finite(x)
+        return ok(x)
+    return fail(code: codes.DOES_NOT_FIT, msg: f"a number drawn beyond the largest float ({x})")
+
+# The point a fraction `u` of the way across `span`.
+function span_at(span: laws.Span, u: f64) -> f64
+    return span.factor * (span.from + span.width * u)
+
+# The point of `triangle` at which its distribution reaches `u`, held to its
+# ends against rounding.
+function triangle_at(triangle: laws.Triangle, u: f64) -> f64
+    x = if u < triangle.split
+        triangle.low + triangle.width * math.sqrt(u * triangle.split)
+    else
+        triangle.high - triangle.width * math.sqrt((1.0 - u) * (1.0 - triangle.split))
+    return triangle.factor * math.clamp(x: x, low: triangle.low, high: triangle.high)
+
+# ln(1 + t) - t + t^2 / 2 - t^3 / 3, by its series for a small `t` where the
+# subtraction would lose every digit. `t` is above -1.
+function log_rest(t: f64) -> f64
+    if math.abs(t) >= 0.05
+        return math.ln_1_plus(t) - t + t * t / 2.0 - t * t * t / 3.0
+    sum @= 0.0
+    k @= 15
+
+    while k >= 4
+        term = if k % 2 == 0
+            -1.0 / to_f64(k)
+        else
+            1.0 / to_f64(k)
+        sum @ term + t * sum
+        k @ k - 1
+
+    return sum * t * t * t * t
+
+# Whether Marsaglia and Tsang's candidate of the normal `x` is kept by the
+# fraction `u`, from above 0 to 1: the squeeze, else the logarithm of the
+# ratio, 3 d log_rest(c x), which is their test written without subtracting
+# two near numbers.
+function gamma_keeps(base: laws.Gamma, x: f64, u: f64) -> bool
+    t = base.c * x
+
+    if t <= -1.0
+        return false
+
+    if u < 1.0 - 0.0331 * x * x * x * x
+        return true
+    return math.ln(u) < 3.0 * base.d * log_rest(t)
+
+# The gamma number of `base` from the kept normal `x` and, for a lowered
+# shape, the fraction `lower` from above 0 to 1: d (1 + t)^3, t = c x, times
+# lower^(1 / shape). A small t is added as d + d t (3 + 3 t + t^2), which
+# keeps every digit the answer's float can hold, where (1 + t)^3 would first
+# round t to the last digit of 1, three times coarser for a large shape.
+function gamma_value(base: laws.Gamma, x: f64, lower: f64) -> f64
+    t = base.c * x
+
+    value = if math.abs(t) < 0.5
+        base.d + base.d * t * (3.0 + t * (3.0 + t))
+    else
+        base.d * (1.0 + t) * (1.0 + t) * (1.0 + t)
+
+    if base.lowered
+        return value * math.exp(math.ln(lower) / base.shape)
+    return value
+
+# The share of the first gamma in the sum of two, from their kept normals and
+# lowering fractions, through logarithms: 1 / (1 + exp(ln y - ln x)), where a
+# difference of two lowered shapes is taken over their product so that two
+# logarithms beyond the floats still compare.
+function beta_value(first: laws.Gamma, x: f64, lower_x: f64, second: laws.Gamma, y: f64, lower_y: f64) -> f64
+    base = 3.0 * (math.ln_1_plus(second.c * y) - math.ln_1_plus(first.c * x)) + math.ln(second.d / first.d)
+    gap @= base
+
+    if first.lowered && second.lowered
+        shift = (first.shape * math.ln(lower_y) - second.shape * math.ln(lower_x)) / (first.shape * second.shape)
+
+        if !math.is_nan(shift)
+            gap @ base + shift
+    else if first.lowered
+        gap @ base - math.ln(lower_x) / first.shape
+    else if second.lowered
+        gap @ base + math.ln(lower_y) / second.shape
+    return 1.0 / (1.0 + math.exp(gap))
+
+# Whether Best and Fisher's candidate of `z` = cos(pi u1) is kept by the
+# fraction `u2`, from above 0 to 1. Their c = kappa (r - f) is r / (r + z),
+# written so that no two near numbers are subtracted.
+function von_mises_keeps(circle: laws.Circle, z: f64, u2: f64) -> bool
+    c = circle.r / (circle.r + z)
+
+    if c * (2.0 - c) - u2 > 0.0
+        return true
+    return math.ln(c / u2) + 1.0 - c >= 0.0
+
+# The angle of the kept candidate of `u1`, on the side `negative` says, from 0
+# to 2 pi: their acos(f) written as 2 asin(sqrt(delta / 2)), delta = 1 - f =
+# 2 (r - 1) sin^2(pi u1 / 2) / (r + z), which a large concentration keeps.
+function von_mises_angle(circle: laws.Circle, u1: f64, z: f64, negative: bool) -> f64
+    half = math.sin(math.PI * u1 / 2.0)
+    delta = 2.0 * circle.r_less_one * half * half / (circle.r + z)
+    away = 2.0 * math.asin(math.sqrt(math.min(a: delta / 2.0, b: 1.0)))
+
+    turned = if negative
+        circle.mean - away
+    else
+        circle.mean + away
+    return laws.around(turned)
+
+# Stirling's correction to ln(k!): ln(k!) - ((k + 1/2) ln(k + 1) - (k + 1) +
+# ln(2 pi) / 2), directly below 20 and by its series above.
+function stirling_rest(k: f64) -> f64
+    if k < 20.0
+        return math.ln_gamma(k + 1.0) - ((k + 0.5) * math.ln(k + 1.0) - (k + 1.0) + 0.5 * math.ln(math.TAU))
+    y = k + 1.0
+    y2 = y * y
+    return (1.0 / 12.0 - (1.0 / 360.0 - (1.0 / 1260.0 - 1.0 / (1680.0 * y2)) / y2) / y2) / y
+
+# ln(f(k) / f(m)) for the binomial `law`'s probabilities f at `k` and its mode
+# m: the ratio of the factorials through Stirling's corrections, each
+# logarithm of a ratio near 1 taken by ln1p, so that nothing large is
+# subtracted at any number of trials.
+function binomial_log_ratio(law: laws.Binomial, k: f64) -> f64
+    n = to_f64(law.trials)
+    m = law.mode
+    q = 1.0 - law.p
+    first = (m + 0.5) * math.ln_1_plus((m - k) / (k + 1.0))
+    second = (n - m + 0.5) * math.ln_1_plus((k - m) / (n - k + 1.0))
+    third = (k - m) * math.ln((n - k + 1.0) * law.p / ((k + 1.0) * q))
+    rests = stirling_rest(m) - stirling_rest(k) + (stirling_rest(n - m) - stirling_rest(n - k))
+    return first + second + third + rests
+
+# BTRS's candidate from `u`, from -1/2 to 1/2: a float, below 0 or above the
+# trials where it is refused.
+function btrs_candidate(law: laws.Binomial, u: f64) -> f64
+    us = 0.5 - math.abs(u)
+    return math.floor((2.0 * law.a / us + law.b) * u + law.c)
+
+# Whether BTRS keeps the candidate `k` of `u` with the fraction `v`.
+function btrs_keeps(law: laws.Binomial, u: f64, v: f64, k: f64) -> bool
+    if !(k >= 0.0) || !(k <= to_f64(law.trials))
+        return false
+    us = 0.5 - math.abs(u)
+
+    if us >= 0.07 && v <= law.v_r
+        return true
+    return math.ln(v * law.alpha / (law.a / (us * us) + law.b)) <= binomial_log_ratio(law, k)
+
+# The count a draw answers for `k` successes of the drawn side.
+function binomial_answer(law: laws.Binomial, k: i64) -> i64
+    if law.flipped
+        return law.trials - k
+    return k
+
+test "log_rest: the series and the subtraction meet at 0.05, and a small t's first terms"
+    series = log_rest(0.0499999999)
+    direct = math.ln_1_plus(0.0499999999) - 0.0499999999 + 0.0499999999 * 0.0499999999 / 2.0 - 0.0499999999 * 0.0499999999 * 0.0499999999 / 3.0
+    assert math.abs(series - direct) <= 0.0000001 * math.abs(direct)
+
+    # Python 3.15.2's decimal at 60 digits, ln(1 + t) - t + t^2 / 2 - t^3 / 3
+    # at the float nearest 0.0001.
+    assert math.abs(log_rest(0.0001) - -0.000000000000000024998000166652387) <= 0.0000000000001 * 0.000000000000000025
+    assert log_rest(0.0) == 0.0
+
+test "stirling_rest: 0, and the series and ln_gamma meeting at 20"
+    # Python 3.15.2: 1 - ln(2 pi) / 2, and lgamma(21) less Stirling's terms.
+    assert math.abs(stirling_rest(0.0) - 0.08106146679532733) <= 0.000000000000001
+    assert math.abs(stirling_rest(20.0) - 0.003967954218637715) <= 0.0000000000001
+
+test "binomial_log_ratio: 0 at the mode, and Python's lgamma about it"
+    law = match laws.binomial(trials: 1000, probability: 0.4).must()
+        .binomial b => b.law
+        .zipf _ => laws.Binomial(
+            trials: 0,
+            p: 0.0,
+            flipped: false,
+            waits: true,
+            log_q: 0.0,
+            b: 0.0,
+            a: 0.0,
+            c: 0.0,
+            v_r: 0.0,
+            alpha: 0.0,
+            mode: 0.0
+        )
+
+    assert law.mode == 400.0 && !law.waits
+    assert binomial_log_ratio(law, k: 400.0) == 0.0
+
+    # Python 3.15.2's math.lgamma of the four factorials, 2026-11-23.
+    assert math.abs(binomial_log_ratio(law, k: 350.0) - -5.265047304866606) <= 0.0000000001
+    assert math.abs(binomial_log_ratio(law, k: 401.0) - -0.002496880198923024) <= 0.0000000001
+    assert math.abs(binomial_log_ratio(law, k: 450.0) - -5.161484008533513) <= 0.0000000001
+    assert math.abs(binomial_log_ratio(law, k: 520.0) - -29.340109894162232) <= 0.0000000001
+
+test "around: 2 pi and a hair below 0 turn to 0, and a mean of 10^20 to its place on the circle"
+    assert laws.around(math.TAU) == 0.0
+    assert laws.around(-0.00000000000000000001) == 0.0
+    assert laws.around(-1.0) == math.TAU - 1.0
+    assert laws.around(100000000000000000000.0) == math.rem_euclid(x: 100000000000000000000.0, by: math.TAU)
+
+test "fits: a float, an infinity and a nan"
+    assert fits(1.5).must() == 1.5
+
+    match fits(math.INF)
+        .ok _  => assert false
+        .err e => assert e.code == codes.DOES_NOT_FIT && e.msg == "a number drawn beyond the largest float (inf)"
+
+    assert fits(math.NAN).is_err()

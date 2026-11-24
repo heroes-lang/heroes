@@ -1,0 +1,571 @@
+# The draws of `laws`'s distributions from a PCG generator's two words, `high`
+# and `low`, which the caller holds: the loops that take its numbers, the
+# arithmetic of each draw being `laws`'s and `ziggurat`'s. `law_strong` holds
+# the same loops for a ChaCha8 generator, written again for the reason
+# `strong` gives.
+
+use math
+use random/internal/draws
+use random/internal/fit
+use random/internal/laws
+use random/internal/pcg
+use random/internal/pick
+use random/internal/wide
+use random/internal/ziggurat
+
+# A fraction above 0 and up to 1: one minus `pick.fraction`'s, for a
+# logarithm or a quotient that 0 would make infinite.
+function open_fraction(@high: u64, @low: u64) -> f64
+    return 1.0 - pick.fraction(high: @high, low: @low)
+
+# A number of the standard normal distribution, by the ziggurat.
+function normal(@high: u64, @low: u64) -> f64
+    while true
+        word = wide.from_unsigned(pcg.next(high: @high, low: @low))
+        x = ziggurat.normal_point(word)
+
+        if ziggurat.normal_inside(word, x)
+            return ziggurat.signed(word, x)
+        layer = word & 127
+
+        if layer == 0
+            return ziggurat.signed(word, normal_tail(high: @high, low: @low))
+
+        if ziggurat.normal_wedge(layer, x: x, w: pick.fraction(high: @high, low: @low))
+            return ziggurat.signed(word, x)
+
+# A number of the normal's tail beyond R, by Marsaglia's method: x = e1 / R,
+# kept where 2 e2 > x^2, e1 and e2 two exponentials.
+function normal_tail(@high: u64, @low: u64) -> f64
+    while true
+        x = exponential(high: @high, low: @low) / ziggurat.NORMAL_R
+
+        if 2.0 * exponential(high: @high, low: @low) > x * x
+            return ziggurat.NORMAL_R + x
+
+# A number of the standard exponential distribution, by the ziggurat: the
+# tail beyond R is R plus another exponential, which it is.
+function exponential(@high: u64, @low: u64) -> f64
+    shift @= 0.0
+
+    while true
+        word = wide.from_unsigned(pcg.next(high: @high, low: @low))
+        x = ziggurat.exponential_point(word)
+
+        if ziggurat.exponential_inside(word, x)
+            return shift + x
+        layer = word & 255
+
+        if layer == 0
+            shift @ shift + ziggurat.EXPONENTIAL_R
+        else if ziggurat.exponential_wedge(layer, x: x, w: pick.fraction(high: @high, low: @low))
+            return shift + x
+
+# A number from `span`, drawn again in the rare case rounding reaches its end.
+function uniform(@high: u64, @low: u64, span: laws.Span) -> f64
+    while true
+        x = draws.span_at(span, u: pick.fraction(high: @high, low: @low))
+
+        if x < span.to
+            return x
+
+# The normal Marsaglia and Tsang's method keeps for `base`.
+function gamma_normal(@high: u64, @low: u64, base: laws.Gamma) -> f64
+    while true
+        x = normal(high: @high, low: @low)
+
+        if draws.gamma_keeps(base, x: x, u: open_fraction(high: @high, low: @low))
+            return x
+
+# The fraction that lowers a shape below 1, or 1 for a shape from 1 up, which
+# draws nothing.
+function lowering(@high: u64, @low: u64, base: laws.Gamma) -> f64
+    if base.lowered
+        return open_fraction(high: @high, low: @low)
+    return 1.0
+
+# A number of the gamma distribution of `base` and scale 1.
+function gamma(@high: u64, @low: u64, base: laws.Gamma) -> f64
+    x = gamma_normal(high: @high, low: @low, base)
+    return draws.gamma_value(base, x: x, lower: lowering(high: @high, low: @low, base))
+
+# A number of the beta distribution of two gamma shapes.
+function beta(@high: u64, @low: u64, first: laws.Gamma, second: laws.Gamma) -> f64
+    x = gamma_normal(high: @high, low: @low, base: first)
+    lower_x = lowering(high: @high, low: @low, base: first)
+    y = gamma_normal(high: @high, low: @low, base: second)
+    lower_y = lowering(high: @high, low: @low, base: second)
+    return draws.beta_value(first: first, x: x, lower_x: lower_x, second: second, y: y, lower_y: lower_y)
+
+# An angle of the von Mises distribution of `circle`, from 0 to 2 pi.
+function von_mises(@high: u64, @low: u64, circle: laws.Circle) -> f64
+    if circle.even
+        return laws.around(math.TAU * pick.fraction(high: @high, low: @low))
+
+    while true
+        u1 = pick.fraction(high: @high, low: @low)
+        z = math.cos(math.PI * u1)
+
+        if draws.von_mises_keeps(circle, z: z, u2: open_fraction(high: @high, low: @low))
+            negative = pick.fraction(high: @high, low: @low) < 0.5
+            return draws.von_mises_angle(circle, u1: u1, z: z, negative)
+
+# A count of the binomial distribution of `law`: geometric waits counted
+# until they pass the trials, or BTRS.
+function binomial(@high: u64, @low: u64, law: laws.Binomial) -> i64
+    if law.p == 0.0
+        return draws.binomial_answer(law, k: 0)
+
+    if law.waits
+        trials = to_f64(law.trials)
+        count @= 0
+        spent @= 0.0
+
+        while true
+            spent @ spent + math.floor(math.ln(open_fraction(high: @high, low: @low)) / law.log_q) + 1.0
+
+            if spent > trials
+                return draws.binomial_answer(law, k: count)
+            count @ count + 1
+
+    while true
+        u = pick.fraction(high: @high, low: @low) - 0.5
+        v = pick.fraction(high: @high, low: @low)
+        k = draws.btrs_candidate(law, u)
+
+        if draws.btrs_keeps(law, u: u, v: v, k: k)
+            return draws.binomial_answer(law, k: to_i64(k).must())
+
+# A value of the Zipf distribution of `law`, by rejection-inversion.
+function zipf(@high: u64, @low: u64, law: laws.Zipf) -> i64
+    if law.largest == 0
+        return 0
+    largest = to_f64(law.largest)
+
+    while true
+        h = law.top + pick.fraction(high: @high, low: @low) * (law.bottom - law.top)
+        k = math.floor(draws.zipf_h_inverse(law, h) + 0.5)
+
+        if k >= 0.0 && k <= largest && draws.zipf_keeps(law, k: k, h: h)
+            return to_i64(k).must()
+
+# A number of the distribution `law`; fails as `laws.fits` fails.
+function draw(@high: u64, @low: u64, law: laws.Law) -> f64?
+    return match law
+        .uniform l     => ok(uniform(high: @high, low: @low, span: l.span))
+        .normal l      => draws.fits(l.mean + l.deviation * normal(high: @high, low: @low))
+        .lognormal l   => draws.fits(math.exp(l.mean + l.deviation * normal(high: @high, low: @low)))
+        .exponential l => draws.fits(exponential(high: @high, low: @low) / l.rate)
+        .gamma l       => draws.fits(l.scale * gamma(high: @high, low: @low, base: l.base))
+        .beta l        => ok(beta(high: @high, low: @low, first: l.first, second: l.second))
+        .von_mises l   => ok(von_mises(high: @high, low: @low, circle: l.circle))
+        .pareto l      => draws.fits(l.scale * math.exp(exponential(high: @high, low: @low) / l.shape))
+        .weibull l     => draws.fits(l.scale * math.pow(base: exponential(high: @high, low: @low), exponent: l.power))
+        .triangular l  => ok(draws.triangle_at(l.triangle, u: pick.fraction(high: @high, low: @low)))
+
+# A count of the distribution `law`.
+function draw_count(@high: u64, @low: u64, law: laws.Count) -> i64
+    return match law
+        .binomial l => binomial(high: @high, low: @low, law: l.law)
+        .zipf l     => zipf(high: @high, low: @low, law: l.law)
+
+# `count` numbers drawn from `law`, for the tests; a draw that fails aborts.
+function sample(@high: u64, @low: u64, law: laws.Law, count: i64) -> [f64]
+    out: [f64] @= []
+
+    while out.len() < count
+        out @ out.push(draw(high: @high, low: @low, law).must())
+
+    return out
+
+# `count` counts drawn from `law`, for the tests.
+function sample_counts(@high: u64, @low: u64, law: laws.Count, count: i64) -> [i64]
+    out: [i64] @= []
+
+    while out.len() < count
+        out @ out.push(draw_count(high: @high, low: @low, law))
+
+    return out
+
+test "normal: the bell curve by Kolmogorov and Smirnov, its mean and its variance"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.normal(mean: 10.0, deviation: 2.0).must(), count: fit.SIZE)
+    z: [f64] @= []
+
+    for x in xs
+        z @ z.push((x - 10.0) / 2.0)
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+    assert math.abs(fit.mean(xs) - 10.0) < 5.0 * 2.0 / math.sqrt(100000.0)
+    assert math.abs(fit.variance(xs) - 4.0) < 5.0 * 4.0 * math.sqrt(2.0 / 100000.0)
+
+test "normal: the tails past 3.44, where the ziggurat's tail begins, and past 4 hold their share"
+    high: u64 @= 3
+    low: u64 @= 4
+    beyond_r @= 0
+    beyond_far @= 0
+
+    for _ in range(from: 0, to: 1000000)
+        x = math.abs(normal(high: @high, low: @low))
+
+        if x > ziggurat.NORMAL_R
+            beyond_r @ beyond_r + 1
+
+        if x > 4.0
+            beyond_far @ beyond_far + 1
+
+    near = 2.0 * (1.0 - fit.standard_normal(ziggurat.NORMAL_R))
+    far = 2.0 * (1.0 - fit.standard_normal(4.0))
+    assert fit.counts_agree(counts: [beyond_r, 1000000 - beyond_r], weights: [near, 1.0 - near], draws: 1000000)
+    assert fit.counts_agree(counts: [beyond_far, 1000000 - beyond_far], weights: [far, 1.0 - far], draws: 1000000)
+
+test "exponential: rate 2 by Kolmogorov and Smirnov, its mean, and the tail past 7.70 where the ziggurat's begins"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.exponential(2.0).must(), count: fit.SIZE)
+    scaled: [f64] @= []
+
+    for x in xs
+        scaled @ scaled.push(2.0 * x)
+
+    assert fit.ks_distance(scaled, cumulative: fit.standard_exponential) < fit.KS_BOUND
+    assert math.abs(fit.mean(xs) - 0.5) < 5.0 * 0.5 / math.sqrt(100000.0)
+    tail @= 0
+
+    for _ in range(from: 0, to: 1000000)
+        if exponential(high: @high, low: @low) > ziggurat.EXPONENTIAL_R
+            tail @ tail + 1
+
+    share = math.exp(-ziggurat.EXPONENTIAL_R)
+    assert fit.counts_agree(counts: [tail, 1000000 - tail], weights: [share, 1.0 - share], draws: 1000000)
+
+test "uniform: from -2 to 5, and across every float, the end left out"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.uniform(from: -2.0, to: 5.0).must(), count: fit.SIZE)
+    unit: [f64] @= []
+
+    for x in xs
+        assert x >= -2.0 && x < 5.0
+        unit @ unit.push((x + 2.0) / 7.0)
+
+    assert fit.ks_distance(unit, cumulative: fit.unit) < fit.KS_BOUND
+    wide_xs = sample(
+        high: @high,
+        low: @low,
+        law: laws.uniform(from: -math.MAX_F64, to: math.MAX_F64).must(),
+        count: fit.SIZE
+    )
+    wide_unit: [f64] @= []
+
+    for x in wide_xs
+        assert x >= -math.MAX_F64 && x < math.MAX_F64
+        wide_unit @ wide_unit.push(x / math.MAX_F64 / 2.0 + 0.5)
+
+    assert fit.ks_distance(wide_unit, cumulative: fit.unit) < fit.KS_BOUND
+
+test "lognormal: its logarithm is the bell curve"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.lognormal(mean: 0.5, deviation: 0.25).must(), count: fit.SIZE)
+    z: [f64] @= []
+
+    for x in xs
+        z @ z.push((math.ln(x) - 0.5) / 0.25)
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+
+test "gamma: shape 3 and shape 1/2 by Kolmogorov and Smirnov, and their means and variances"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.gamma(shape: 3.0, scale: 1.5).must(), count: fit.SIZE)
+    unit_scale: [f64] @= []
+
+    for x in xs
+        unit_scale @ unit_scale.push(x / 1.5)
+
+    assert fit.ks_distance(unit_scale, cumulative: fit.gamma_3) < fit.KS_BOUND
+    assert math.abs(fit.mean(xs) - 4.5) < 5.0 * math.sqrt(6.75 / 100000.0)
+    halves = sample(high: @high, low: @low, law: laws.gamma(shape: 0.5, scale: 2.0).must(), count: fit.SIZE)
+    half_unit: [f64] @= []
+
+    for x in halves
+        half_unit @ half_unit.push(x / 2.0)
+
+    assert fit.ks_distance(half_unit, cumulative: fit.gamma_half) < fit.KS_BOUND
+    assert math.abs(fit.mean(halves) - 1.0) < 5.0 * math.sqrt(2.0 / 100000.0)
+
+test "gamma: shapes of 10^12 and 10^24 are the bell curve their mean and deviation give, 10^300 the float of its mean, and 0.001 keeps its mean"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.gamma(shape: 1000000000000.0, scale: 1.0).must(), count: fit.SIZE)
+    z: [f64] @= []
+
+    for x in xs
+        z @ z.push((x - 1000000000000.0) / 1000000.0)
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+    shape = math.pow(base: 10.0, exponent: 24.0)
+    ys = sample(high: @high, low: @low, law: laws.gamma(shape: shape, scale: 1.0).must(), count: fit.SIZE)
+    zy: [f64] @= []
+
+    for y in ys
+        zy @ zy.push((y - shape) / 1000000000000.0)
+
+    assert fit.ks_distance(zy, cumulative: fit.standard_normal) < fit.KS_BOUND
+
+    # At 10^300 the deviation, 10^150, is far below the float's step there,
+    # about 10^284: every draw is the float of the mean.
+    huge = math.pow(base: 10.0, exponent: 300.0)
+
+    for y in sample(high: @high, low: @low, law: laws.gamma(shape: huge, scale: 1.0).must(), count: 1000)
+        assert y == huge
+
+    small = sample(high: @high, low: @low, law: laws.gamma(shape: 0.001, scale: 1.0).must(), count: fit.SIZE)
+
+    for s in small
+        assert s >= 0.0
+
+    assert math.abs(fit.mean(small) - 0.001) < 5.0 * math.sqrt(0.001 / 100000.0)
+
+test "beta: shapes 2 and 5, the arcsine law of 1/2 and 1/2, shapes of 10^12 that are the bell curve, and shapes too small for a float that still split as they should"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.beta(a: 2.0, b: 5.0).must(), count: fit.SIZE)
+    assert fit.ks_distance(xs, cumulative: fit.beta_2_5) < fit.KS_BOUND
+    arcs = sample(high: @high, low: @low, law: laws.beta(a: 0.5, b: 0.5).must(), count: fit.SIZE)
+    assert fit.ks_distance(arcs, cumulative: fit.arcsine) < fit.KS_BOUND
+    a = 1000000000000.0
+    b = 3000000000000.0
+    deviation = math.sqrt(a * b / ((a + b) * (a + b) * (a + b + 1.0)))
+    narrow = sample(high: @high, low: @low, law: laws.beta(a: a, b: b).must(), count: fit.SIZE)
+    z: [f64] @= []
+
+    for x in narrow
+        z @ z.push((x - 0.25) / deviation)
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+    tiny = 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001
+    split = sample(high: @high, low: @low, law: laws.beta(a: tiny, b: 2.0 * tiny).must(), count: 30000)
+    ones @= 0
+
+    for x in split
+        assert x == 0.0 || x == 1.0
+
+        if x == 1.0
+            ones @ ones + 1
+
+    assert fit.counts_agree(counts: [ones, 30000 - ones], weights: [1.0, 2.0], draws: 30000)
+
+test "von_mises: the mean of the cosine and the sine about the mean, no concentration, and one of 10^8 that is the bell curve"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.von_mises(mean: 1.0, concentration: 2.0).must(), count: fit.SIZE)
+    cosines: [f64] @= []
+    sines: [f64] @= []
+
+    for x in xs
+        assert x >= 0.0 && x < math.TAU
+        cosines @ cosines.push(math.cos(x - 1.0))
+        sines @ sines.push(math.sin(x - 1.0))
+
+    # Python 3.15.2's I1(2) / I0(2) from their series, 2026-11-23.
+    assert math.abs(fit.mean(cosines) - 0.697774657964008) < 5.0 * math.sqrt(0.5 / 100000.0)
+    assert math.abs(fit.mean(sines)) < 5.0 * math.sqrt(0.5 / 100000.0)
+    loose = sample(high: @high, low: @low, law: laws.von_mises(mean: 1.0, concentration: 0.5).must(), count: fit.SIZE)
+    loose_cosines: [f64] @= []
+
+    for x in loose
+        loose_cosines @ loose_cosines.push(math.cos(x - 1.0))
+
+    assert math.abs(fit.mean(loose_cosines) - 0.2424996125808019) < 5.0 * math.sqrt(0.5 / 100000.0)
+    even = sample(high: @high, low: @low, law: laws.von_mises(mean: 1.0, concentration: 0.0).must(), count: fit.SIZE)
+    turns: [f64] @= []
+
+    for x in even
+        turns @ turns.push(x / math.TAU)
+
+    assert fit.ks_distance(turns, cumulative: fit.unit) < fit.KS_BOUND
+    tight = sample(
+        high: @high,
+        low: @low,
+        law: laws.von_mises(mean: 1.0, concentration: 100000000.0).must(),
+        count: fit.SIZE
+    )
+    z: [f64] @= []
+
+    for x in tight
+        z @ z.push((x - 1.0) * 10000.0)
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+
+test "pareto and weibull: each turned into the standard exponential"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.pareto(shape: 3.0, scale: 2.0).must(), count: fit.SIZE)
+    turned: [f64] @= []
+
+    for x in xs
+        assert x >= 2.0
+        turned @ turned.push(3.0 * math.ln(x / 2.0))
+
+    assert fit.ks_distance(turned, cumulative: fit.standard_exponential) < fit.KS_BOUND
+    ws = sample(high: @high, low: @low, law: laws.weibull(scale: 2.0, shape: 1.5).must(), count: fit.SIZE)
+    powered: [f64] @= []
+
+    for w in ws
+        powered @ powered.push(math.pow(base: w / 2.0, exponent: 1.5))
+
+    assert fit.ks_distance(powered, cumulative: fit.standard_exponential) < fit.KS_BOUND
+
+test "triangular: from 1 to 4 peaking at 2, and across every float"
+    high: u64 @= 1
+    low: u64 @= 2
+    xs = sample(high: @high, low: @low, law: laws.triangular(low: 1.0, high: 4.0, mode: 2.0).must(), count: fit.SIZE)
+    assert fit.ks_distance(xs, cumulative: fit.triangle_1_4_2) < fit.KS_BOUND
+    wide_xs = sample(
+        high: @high,
+        low: @low,
+        law: laws.triangular(low: -math.MAX_F64, high: math.MAX_F64, mode: 0.0).must(),
+        count: 1000
+    )
+
+    for x in wide_xs
+        assert math.is_finite(x)
+
+test "binomial: geometric waits, BTRS, both flipped, each count against its probability"
+    high: u64 @= 1
+    low: u64 @= 2
+    waits = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: 20, probability: 0.3).must(),
+        count: fit.SIZE
+    )
+    weights: [f64] @= []
+
+    for k in range(from: 0, to: 21)
+        weights @ weights.push(fit.binomial_weight(n: 20, p: 0.3, k: k))
+
+    assert fit.counts_agree(counts: fit.tally(values: waits, last: 20), weights, draws: fit.SIZE)
+    btrs = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: 1000, probability: 0.4).must(),
+        count: fit.SIZE
+    )
+    spread: [f64] @= []
+
+    for k in range(from: 0, to: 1001)
+        spread @ spread.push(fit.binomial_weight(n: 1000, p: 0.4, k: k))
+
+    assert fit.counts_agree(counts: fit.tally(values: btrs, last: 1000), weights: spread, draws: fit.SIZE)
+    flipped = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: 100, probability: 0.9).must(),
+        count: fit.SIZE
+    )
+    high_p: [f64] @= []
+
+    for k in range(from: 0, to: 101)
+        high_p @ high_p.push(fit.binomial_weight(n: 100, p: 0.9, k: k))
+
+    assert fit.counts_agree(counts: fit.tally(values: flipped, last: 100), weights: high_p, draws: fit.SIZE)
+    flipped_waits = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: 30, probability: 0.8).must(),
+        count: fit.SIZE
+    )
+    eight: [f64] @= []
+
+    for k in range(from: 0, to: 31)
+        eight @ eight.push(fit.binomial_weight(n: 30, p: 0.8, k: k))
+
+    assert fit.counts_agree(counts: fit.tally(values: flipped_waits, last: 30), weights: eight, draws: fit.SIZE)
+
+test "binomial: 2^53 - 1 trials, of a probability that expects 9 successes and of 1/2, and the edges"
+    high: u64 @= 1
+    low: u64 @= 2
+    n = laws.LARGEST_COUNT
+    rare = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: n, probability: 0.000000000000001).must(),
+        count: fit.SIZE
+    )
+    poisson: [f64] @= []
+    expected = to_f64(n) * 0.000000000000001
+
+    for k in range(from: 0, to: 40)
+        poisson @ poisson.push(fit.poisson_weight(average: expected, k: k))
+
+    assert fit.counts_agree(counts: fit.tally(values: rare, last: 39), weights: poisson, draws: fit.SIZE)
+    halves = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.binomial(trials: n, probability: 0.5).must(),
+        count: fit.SIZE
+    )
+    z: [f64] @= []
+
+    for k in halves
+        z @ z.push((to_f64(k) - to_f64(n) / 2.0) / math.sqrt(to_f64(n) / 4.0))
+
+    assert fit.ks_distance(z, cumulative: fit.standard_normal) < fit.KS_BOUND
+    assert draw_count(high: @high, low: @low, laws.binomial(trials: 0, probability: 0.5).must()) == 0
+    assert draw_count(high: @high, low: @low, laws.binomial(trials: 7, probability: 0.0).must()) == 0
+    assert draw_count(high: @high, low: @low, laws.binomial(trials: 7, probability: 1.0).must()) == 7
+
+test "zipf: exponents 1, 2, 1/2 and 1.5 up to 2^53 - 1, each value against its weight"
+    high: u64 @= 1
+    low: u64 @= 2
+    ones = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.zipf(exponent: 1.0, offset: 1.0, largest: 9).must(),
+        count: fit.SIZE
+    )
+    assert fit.counts_agree(
+        counts: fit.tally(values: ones, last: 9),
+        weights: fit.zipf_weights(exponent: 1.0, offset: 1.0, largest: 9),
+        draws: fit.SIZE
+    )
+    twos = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.zipf(exponent: 2.0, offset: 1.0, largest: 1000).must(),
+        count: fit.SIZE
+    )
+    assert fit.counts_agree(
+        counts: fit.tally(values: twos, last: 1000),
+        weights: fit.zipf_weights(exponent: 2.0, offset: 1.0, largest: 1000),
+        draws: fit.SIZE
+    )
+    halves = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.zipf(exponent: 0.5, offset: 3.0, largest: 20).must(),
+        count: fit.SIZE
+    )
+    assert fit.counts_agree(
+        counts: fit.tally(values: halves, last: 20),
+        weights: fit.zipf_weights(exponent: 0.5, offset: 3.0, largest: 20),
+        draws: fit.SIZE
+    )
+    far = sample_counts(
+        high: @high,
+        low: @low,
+        law: laws.zipf(exponent: 1.5, offset: 1.0, largest: laws.LARGEST_COUNT).must(),
+        count: fit.SIZE
+    )
+
+    # The last weight is what lies past 50: zeta(3/2) less the first 51
+    # terms, Python 3.15.2's sum on 2026-11-23, the 2 / sqrt(2^53) past the
+    # largest value left out as below the test's grain.
+    lumped @= fit.zipf_weights(exponent: 1.5, offset: 1.0, largest: 50)
+    lumped @ lumped.push(0.2786899223440913)
+    assert fit.counts_agree(counts: fit.tally(values: far, last: 51), weights: lumped, draws: fit.SIZE)
+    assert draw_count(high: @high, low: @low, laws.zipf(exponent: 2.0, offset: 1.0, largest: 0).must()) == 0
