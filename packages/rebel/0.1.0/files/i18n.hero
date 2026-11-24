@@ -1253,11 +1253,9 @@ test "catalog_paths: a language with a region"
     paths = catalog_paths(dir: "/usr/share/locale", domain: "app", languages: ["de_DE"])
     assert paths == ["/usr/share/locale/de_DE/LC_MESSAGES/app.mo", "/usr/share/locale/de/LC_MESSAGES/app.mo"]
 
-# The settings of the system the tests run on: a list of well-formed locales,
-# each once, and a locale for the formats or none set; never `failed` on the
-# three systems, macOS's and Windows' calls answering and the environment
-# read elsewhere.
-test "system_languages and system_locale: the system the tests run on"
+# The languages the person chose, each a well-formed locale and each once,
+# on whichever system the tests run.
+test "system_languages: the system the tests run on"
     chosen = system_languages().must()
 
     for i in range(from: 0, to: chosen.len())
@@ -1266,6 +1264,9 @@ test "system_languages and system_locale: the system the tests run on"
         for j in range(from: i + 1, to: chosen.len())
             assert chosen[i] != chosen[j]
 
+# The locale of the person's formats, or none set, on whichever system the
+# tests run; never `failed` on the three systems.
+test "system_locale: the system the tests run on"
     match system_locale()
         .ok shown => assert parse_locale(format_locale(shown)).must() == shown
         .err e    => assert e.code == NOT_FOUND
