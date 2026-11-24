@@ -21,6 +21,7 @@ use image/webp/internal/tokens
 use image/webp/internal/vp8
 use image/webp/internal/vp8write
 use image/webp/internal/yuv
+use math
 
 # How a picture is written.
 record Settings
@@ -42,11 +43,11 @@ function pad(plane: [i64] lent, width: i64, height: i64, stride: i64, rows: i64)
     j @= 0
 
     while j < rows
-        jj = loopfilter.clamp(v: j, lo: 0, hi: height - 1)
+        jj = math.clamp_i64(x: j, low: 0, high: height - 1)
         i @= 0
 
         while i < stride
-            out @ out.push(plane[jj * width + loopfilter.clamp(v: i, lo: 0, hi: width - 1)])
+            out @ out.push(plane[jj * width + math.clamp_i64(x: i, low: 0, high: width - 1)])
             i @ i + 1
 
         j @ j + 1
@@ -100,7 +101,7 @@ function segments_of(y: [i64] lent, stride: i64, across: i64, down: i64, count: 
 function prob_of(part: i64, whole: i64) -> i64
     if whole == 0
         return 255
-    return loopfilter.clamp(v: (256 * part + whole / 2) / whole, lo: 1, hi: 255)
+    return math.clamp_i64(x: (256 * part + whole / 2) / whole, low: 1, high: 255)
 
 # The VP8 frame of the RGBA pixels `px`, `width` by `height`, written as `s`
 # says. Fails as `vp8write.frame` fails.
@@ -129,7 +130,7 @@ function frame_of(px: [u8] lent, width: i64, height: i64, s: Settings) -> [u8]?
 
     for k in range(from: 0, to: 4)
         d = if k < s.segments
-            loopfilter.clamp(v: base + (2 * k - (s.segments - 1)) * spread / 2, lo: 0, hi: 127) - base
+            math.clamp_i64(x: base + (2 * k - (s.segments - 1)) * spread / 2, low: 0, high: 127) - base
         else
             0
         q_deltas @ q_deltas.push(d)
@@ -141,7 +142,7 @@ function frame_of(px: [u8] lent, width: i64, height: i64, s: Settings) -> [u8]?
         f_deltas @ f_deltas.push(f)
         m = quant.matrix(base + d, d: none)
         matrices @ matrices.push(m)
-        lambdas @ lambdas.push(loopfilter.clamp(v: m.y1_ac * m.y1_ac / 16, lo: 1, hi: 1 << 30))
+        lambdas @ lambdas.push(math.clamp_i64(x: m.y1_ac * m.y1_ac / 16, low: 1, high: 1 << 30))
 
     level = if s.filter == 0
         0

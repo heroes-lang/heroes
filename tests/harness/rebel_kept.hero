@@ -12,7 +12,10 @@
 # the keep held (L-E02). The rules lane of the D wave (step 86g, 2026-11-21)
 # took out the 58 rows the D wave retired, 30 of them the abbreviations
 # README § A3 lets stand since D06, and kept the 22 findings its lanes made,
-# the spans' helpers and the test servers' fixtures among them.
+# the spans' helpers and the test servers' fixtures among them. Lane
+# rebel-suite3a (2026-11-24) widened the spans' row to `mail/imap`, whose
+# helper joined it, and kept the bodies of `mail/imap`, `mail/smtp`, `sftp`
+# and `ssh` that no public function below them holds or reads in place.
 
 # A finding the review keeps: the instrument's check, the key it is kept
 # under (what the readout prints after `under`), and the reason.
@@ -116,6 +119,10 @@ constant A_TOTAL_STEP: str
 # A table looked up by a direct comparison.
 constant A_DIRECT_COMPARISON: str
     "`lists.upper_bound` is the public home, through a function value at every comparison; each copy looks up a table of its own by a direct comparison, a speed kept until it is timed (fix-plan § 10, unrun)"
+
+# A public reader of the same bytes that takes them as a copy.
+constant READ_IN_PLACE: str
+    "`bytes.decode_u32_be` reads the same four bytes publicly, but takes its bytes as a copy where these read a packet in place through `lent` (spec § 9); made one where `bytes`' decoders take `lent`, which is the readers' choice"
 
 # A span made into a door's milliseconds or a protocol's seconds.
 constant SPANS_TO_DOORS: str
@@ -247,7 +254,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "crypto/keypairs/internal/operations.close, crypto/seal/internal/sealing.close", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "csv/internal/scan.line_end_len, toml/internal/scalar.line_end_len", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "dns/internal/canned.told, http/internal/canned.told, jsonrpc/internal/fixture.told, llm/anthropic/internal/canned.told, llm/openai/internal/canned.told, mcp/internal/fixture.told, oauth2/internal/loopback.told", why: TEST_FIXTURES)
-        Kept(check: "bodies", key: "dns/internal/transport.try_ms, ldap/internal/session.net_ms, mail/smtp/internal/wire.net_ms", why: SPANS_TO_DOORS)
+        Kept(check: "bodies", key: "dns/internal/transport.try_ms, ldap/internal/session.net_ms, mail/imap/internal/wire.net_ms, mail/smtp/internal/wire.net_ms", why: SPANS_TO_DOORS)
         Kept(check: "bodies", key: "graphql/internal/lexer.hex_digit, grpc/internal/texts.value_of_digit, i18n/internal/po_file.hex_value, ldap/internal/dn.hex_value, pdf/internal/parse.hex_value, protobuf/internal/lexer.hex_value, xlsx/internal/text.hex_value", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "grpc/internal/fixture.told, http2/internal/fixture.told, ldap/internal/fake.told, mail/smtp/internal/fake.told, sql/postgres/internal/tls_peer.told, tls/internal/loopback.told", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "html/sanitize/internal/values.is_integer, regex/internal/template.all_digits", why: NO_PUBLIC_HOME)
@@ -276,6 +283,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "llm/anthropic/internal/transport.attempt_open, llm/openai/internal/transport.attempt_open", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "llm/anthropic/internal/transport.headed, llm/openai/internal/transport.headed", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mail/internal/params.hex_value, mail/internal/transfer.hex_value, mail/internal/words.hex_value, sql/postgres/internal/target.hex_of", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "mail/imap/internal/signin.is_loopback, mail/smtp/internal/protocol.is_loopback", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "markdown/internal/html_reading.put_work, web/internal/tree.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "mcp/internal/fixture.silent_port, net/internal/fixture.silent_port", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "mqtt/internal/dialing.closed_failure, nats/internal/session.closed_failure", why: NO_PUBLIC_HOME)
@@ -293,6 +301,9 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "sql/mysql/internal/script.finish, sql/postgres/internal/script.finish", why: TEST_FIXTURES)
         Kept(check: "bodies", key: "sql/mysql/internal/wire.push_cstr, sql/postgres/internal/wire.push_cstr", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "sql/odbc/internal/values.zero_at, sql/sqlite/internal/values.zero_at", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "sftp/internal/wire.read_byte, ssh/internal/wire.read_byte", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "sftp/internal/wire.take, ssh/internal/wire.take", why: NO_PUBLIC_HOME)
+        Kept(check: "bodies", key: "sftp/internal/wire.u32_of, ssh/internal/wire.u32_of", why: READ_IN_PLACE)
         Kept(check: "bodies", key: "time/internal/cron_next.changes_up_to, unicode/internal/search.count_at_or_below, unicode/names/internal/naming.count_at_or_below, unicode/normalize/internal/lookup.count_at_or_below, unicode/segment/internal/text.count_at_or_below", why: A_DIRECT_COMPARISON)
         Kept(check: "bodies", key: "unicode/internal/utf8.len_of, unicode/segment/internal/text.utf8_len", why: A_TOTAL_STEP)
         Kept(check: "one-layer", key: "amqp & kafka", why: ONE_LAYER)
@@ -310,6 +321,7 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "jsonrpc & oauth2", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "kafka & mongodb", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "ldap & mail/smtp", why: ONE_LAYER)
+        Kept(check: "one-layer", key: "ldap & mail/imap", why: SPANS_TO_DOORS)
         Kept(check: "one-layer", key: "ldap & pdf", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & sql/postgres", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "llm/anthropic & llm/openai", why: ONE_LAYER)
@@ -319,6 +331,7 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "llm/openai & oauth2", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "llm/openai & s3", why: SPANS_TO_DOORS)
         Kept(check: "one-layer", key: "llm/openai & websocket", why: SPANS_TO_DOORS)
+        Kept(check: "one-layer", key: "mail/imap & mail/smtp", why: ONE_LAYER)
         Kept(check: "one-layer", key: "mail/smtp & sql/postgres", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "mqtt & nats", why: ONE_LAYER)
         Kept(check: "one-layer", key: "os & path", why: ONE_LAYER)

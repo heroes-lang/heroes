@@ -6,19 +6,11 @@
 # touches luma alone; the normal one luma and chroma.
 
 use image/webp/internal/header
-
-# `v` held to `lo` to `hi`.
-function clamp(v: i64, lo: i64, hi: i64) -> i64
-    if v < lo
-        return lo
-
-    if v > hi
-        return hi
-    return v
+use math
 
 # `v` held to 0 to 255.
 function pixel(v: i64) -> i64
-    return clamp(v: v, lo: 0, hi: 255)
+    return math.clamp_i64(x: v, low: 0, high: 255)
 
 # The distance of `v` from 0.
 function abs(v: i64) -> i64
@@ -49,9 +41,9 @@ function high_variance(px: [i64] lent, p: i64, s: i64, hev: i64) -> bool
 function filter2(@px: [i64], p: i64, s: i64)
     p0 = px[p - s]
     q0 = px[p]
-    a = 3 * (q0 - p0) + clamp(v: px[p - 2 * s] - px[p + s], lo: -128, hi: 127)
-    a1 = clamp(v: a + 4 >> 3, lo: -16, hi: 15)
-    a2 = clamp(v: a + 3 >> 3, lo: -16, hi: 15)
+    a = 3 * (q0 - p0) + math.clamp_i64(x: px[p - 2 * s] - px[p + s], low: -128, high: 127)
+    a1 = math.clamp_i64(x: a + 4 >> 3, low: -16, high: 15)
+    a2 = math.clamp_i64(x: a + 3 >> 3, low: -16, high: 15)
     px[p - s] @ pixel(p0 + a2)
     px[p] @ pixel(q0 - a1)
 
@@ -63,8 +55,8 @@ function filter4(@px: [i64], p: i64, s: i64)
     q0 = px[p]
     q1 = px[p + s]
     a = 3 * (q0 - p0)
-    a1 = clamp(v: a + 4 >> 3, lo: -16, hi: 15)
-    a2 = clamp(v: a + 3 >> 3, lo: -16, hi: 15)
+    a1 = math.clamp_i64(x: a + 4 >> 3, low: -16, high: 15)
+    a2 = math.clamp_i64(x: a + 3 >> 3, low: -16, high: 15)
     a3 = a1 + 1 >> 1
     px[p - 2 * s] @ pixel(p1 + a3)
     px[p - s] @ pixel(p0 + a2)
@@ -79,7 +71,7 @@ function filter6(@px: [i64], p: i64, s: i64)
     q0 = px[p]
     q1 = px[p + s]
     q2 = px[p + 2 * s]
-    a = clamp(v: 3 * (q0 - p0) + clamp(v: p1 - q1, lo: -128, hi: 127), lo: -128, hi: 127)
+    a = math.clamp_i64(x: 3 * (q0 - p0) + math.clamp_i64(x: p1 - q1, low: -128, high: 127), low: -128, high: 127)
     a1 = 27 * a + 63 >> 7
     a2 = 18 * a + 63 >> 7
     a3 = 9 * a + 63 >> 7

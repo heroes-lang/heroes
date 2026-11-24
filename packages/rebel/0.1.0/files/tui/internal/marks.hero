@@ -1,6 +1,8 @@
 # What a selection keeps between frames: the row selected, the column
 # selected, and the first row shown, each with whether it stands.
 
+use math
+
 # The marks of a selection.
 record Marks
     # Whether a row is selected.
@@ -18,15 +20,6 @@ record Marks
 function none() -> Marks
     return Marks(has_row: false, row: 0, has_column: false, column: 0, offset: 0)
 
-# `n` kept between `low` and `high`, `high` at least `low`.
-function between(n: i64, low: i64, high: i64) -> i64
-    if n < low
-        return low
-
-    if n > high
-        return high
-    return n
-
 # Moves the place `at` (where `has` says one stands) `by` among `count`,
 # stopping at the ends; with none standing a move down takes the first and a
 # move up the last. Answers whether one stands after, and where.
@@ -41,8 +34,8 @@ function moved(has: bool, at: i64, count: i64, by: i64) -> [i64]
         if by < 0
             return [1, count - 1]
         return [0, 0]
-    step = between(n: by, low: -count, high: count)
-    return [1, between(n: between(n: at, low: 0, high: count - 1) + step, low: 0, high: count - 1)]
+    step = math.clamp_i64(x: by, low: -count, high: count)
+    return [1, math.clamp_i64(x: math.clamp_i64(x: at, low: 0, high: count - 1) + step, low: 0, high: count - 1)]
 
 test "moved: nothing to move in, a first move each way, a move by 0, past each end, a huge step"
     assert moved(has: true, at: 2, count: 0, by: 1) == [0, 0]
