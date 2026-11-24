@@ -3,7 +3,7 @@
 # script written as its A-label (`xn--` and Punycode), sorted by bytes, and
 # whether it stands in the list's ICANN section.
 #
-# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/http_suffixes/`
 # read the list as it stands at that commit of github.com/publicsuffix/list,
 # kept in its folder `publicsuffix/`, held it to the copy publicsuffix.org served
 # of that version (SHA-256 da4e972c64017bea...), and wrote this module whole; its

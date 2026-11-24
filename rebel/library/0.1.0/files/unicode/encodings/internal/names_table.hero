@@ -2,7 +2,7 @@
 # and every label that names one: the tables `registry.hero` reads.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_encodings/` read the WHATWG Encoding Standard's
+# `rebel/generators/unicode_encodings/` read the WHATWG Encoding Standard's
 # resources, kept in its folder `whatwg/` as encoding.spec.whatwg.org
 # served them on 2026-11-22, as the standard says to read them, packed
 # them, held every packed value to the value it read, and wrote this

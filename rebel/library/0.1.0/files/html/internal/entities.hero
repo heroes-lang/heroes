@@ -2,7 +2,7 @@
 # each to the one or two code points it stands for. `refs.hero` reads them.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/html_entities/` read the standard's `entities.json`, kept
+# `rebel/generators/html_entities/` read the standard's `entities.json`, kept
 # in its folder `whatwg/` as html.spec.whatwg.org served it on 2026-11-22
 # (SHA-256 d741d877ac77c4194c4ad526b5b4a19aef8dfe411ab840a466891cdbb9f362e6),
 # sorted its names by their bytes and wrote this module whole; its `check`

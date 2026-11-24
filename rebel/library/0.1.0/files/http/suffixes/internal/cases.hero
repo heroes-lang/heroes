@@ -4,7 +4,7 @@
 # gives it, "" where it gives none. A name in another script is written in
 # A-labels; the case of a null host is left out, no `str` being null.
 #
-# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/http_suffixes/`
 # read the file, kept in its folder `publicsuffix/`, and wrote this module
 # whole; its `check` command says whether this module is still what it writes.
 
