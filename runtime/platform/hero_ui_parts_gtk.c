@@ -39,6 +39,12 @@
 
 #include "hero_ui_parts_gtk.h"
 
+/* This member is GTK 4's: `runtime.c` includes it on every system, so everything below, the POSIX
+ * headers (`<dlfcn.h>`, `<pthread.h>`) first of all, stands inside the guard `hero_ui_canvas_gtk.c`,
+ * its only caller, keeps, and the file compiles to nothing on Windows and macOS. Defect d-gap-os2-1: it
+ * stood unguarded and no program built on Windows. */
+#if !defined(_WIN32) && !defined(__APPLE__)
+
 #include <dlfcn.h>
 #include <math.h>
 #include <pthread.h>
@@ -1259,3 +1265,5 @@ int64_t hero_ui_parts_gtk_act(void *area, int64_t part, int64_t act, char *words
         return hero_ui_parts_gtk_said(HERO_UI_INVALID, words, room, "an act is HERO_UI_PART_PRESS to _DECREASE");
     }
 }
+
+#endif /* !defined(_WIN32) && !defined(__APPLE__) */
