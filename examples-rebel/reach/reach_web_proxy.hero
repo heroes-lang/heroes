@@ -1,0 +1,13 @@
+# Reaches Rebel's `web/proxy`, so that `heroes test` on this file runs the
+# tests of its face and its private modules (spec § 12). It prints what a
+# reverse proxy over one upstream starts from, `1 upstream, 3 tries, 32
+# workers`, on every run, touching no network and no file.
+
+use <rebel>/web/proxy
+
+function main()
+    match proxy.upstream("http://127.0.0.1:8080/app", weight: 2)
+        .err e => print(e.code, ": ", e.msg)
+        .ok up =>
+            p = proxy.reverse_proxy([up])
+            print(p.upstreams.len(), " upstream, ", p.tries, " tries, ", p.workers, " workers")

@@ -7,13 +7,16 @@
 # them: `app`, the one function of a program with no state, which `web.serve`
 # calls with the router; and `serve_conn`, the loop of a program with state,
 # which hands its `App` to its own `handle` by `@`. Their tests run them on
-# the loopback, and so does the test of a reverse proxy, which passes a
-# request to `app` served on a thread of its own and its answer back.
+# the loopback, and so does the test of a reverse proxy of `web/proxy`,
+# which passes a request to `app` served on a thread of its own and its
+# answer back; so `heroes test` on this file runs `web/proxy`'s tests too,
+# which `reach_web_proxy.hero` runs alone.
 
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
 use <rebel>/web
+use <rebel>/web/proxy
 
 # A program's state: its routes and a count it keeps between requests.
 record App
@@ -139,17 +142,17 @@ test "serve_conn: a program's loop answers 100 Continue, and 431 for a head past
     io.close(@two.second.stream).must()
     io.close(@reader.stream).must()
 
-test "serve_proxy_stream: a program's own reverse proxy passes a request to its upstream and the answer back"
+test "serve_stream: a program's own reverse proxy passes a request to its upstream and the answer back"
     ports: (mailbox i64) = mailbox()
     up = spawn(upstream_once, ports).must()
     port = ports.receive(within_ms: 5_000).must()
-    state @= web.proxy_state(web.reverse_proxy([web.upstream_of(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    state @= proxy.new_state(proxy.reverse_proxy([proxy.upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
     two @= net.pair(deadline_ms: 5_000).must()
     io.write_text(
         two.first.stream,
         text: "GET /users/7 HTTP/1.1\r\nHost: shop.example\r\nConnection: close\r\n\r\n"
     ).must()
-    served = web.serve_proxy_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000")
+    served = proxy.serve_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000")
     assert served.requests == 1 && served.relayed == 1 && served.refused == 0
     reader @= io.reader(two.first.stream)
     answer = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()

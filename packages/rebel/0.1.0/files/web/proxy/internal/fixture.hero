@@ -1,0 +1,21 @@
+# What the examples of `web/proxy` share and cannot declare in a test: an
+# upstream run on a thread of its own.
+
+use http
+use io
+use net
+
+# An upstream for the reverse proxy's examples, run on a thread of its own:
+# one connection accepted on the loopback address, its port told on `ports`,
+# its one request read and answered 200 with the text `upstream`. Answers the
+# requests it read.
+function upstream_once(ports: (mailbox i64)) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = ports.send(l.address.port).is_err()
+    conn = net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    reader @= io.reader(conn.stream)
+    _ = http.read_request_head(@reader, limits: http.default_limits()).must()
+    io.write_text(conn.stream, text: "HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\nupstream").must()
+    io.close(@reader.stream).must()
+    return 1

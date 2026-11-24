@@ -468,48 +468,6 @@ capability middleware/timeout  a handler stopped past a time
   rust    -
   python  -
 
-capability middleware/proxy  requests passed to another server
-  heroes  web.serve_proxy, web.serve_proxy_stream, web.ReverseProxy, web.reverse_proxy, web.Upstream, web.upstream_of, web.ProxyState, web.proxy_state, web.ProxyServed
-  go      echo/middleware.Proxy, echo/middleware.ProxyBalancer, net/http/httputil.ReverseProxy, NewSingleHostReverseProxy, ProxyRequest.SetURL, ProxyRequest.SetXForwarded
-  rust    -
-  python  -
-  note    a server of its own and not a step over a request held whole, since the bodies go both ways as they come (`http.request_body_reader`, `http.write_piece`), never held whole; one upstream connection a request, `Connection: close`, as nginx's `proxy_set_header Connection close` default; connections served by `workers` threads, the balancer's counts owned by the accepting thread; against Go 1.27.4's `ReverseProxy` with `SetURL` and `SetXForwarded`, a Python 3.15.2 `http.server` behind both and curl 8.7.1 in front (2026-11-24): the same hop-by-hop fields removed both ways, a spoofed `X-Forwarded-For` replaced, `X-Forwarded-Host` the client's `Host`, the upstream's own `Host`, the paths joined, a chunked body passed on chunked, 502 for an upstream not reached; where Go differs: it keeps `TE: trailers` and adds `Accept-Encoding: gzip`, where a trailer is not passed on here and the client's own `Accept-Encoding` is; it writes no `Via`, which RFC 9110 § 7.6.3 asks of a gateway, nor RFC 7239's `Forwarded`; refused: `CONNECT` (501, no tunnel opened), an `Expect` other than `100-continue` (417), both `Content-Length` and `Transfer-Encoding` or a coding other than chunked (400, 501: RFC 9112 § 6.3's smuggling), a head past `limits` (431), a body past `limits.body_bytes` (413), a request naming this proxy in `Via` (508); requests in flight at the stop are cut, every wait then answering `stopped`
-
-capability proxy/forwarded  the client told to the upstream, the hop-by-hop fields removed
-  heroes  web.serve_proxy, ReverseProxy.trusted, ReverseProxy.keep_host, ReverseProxy.via
-  go      net/http/httputil.ProxyRequest.SetXForwarded, ProxyRequest.SetURL
-  rust    -
-  python  -
-  note    RFC 9110 § 7.6.1's fields with Go's list (`Connection`, `Proxy-Connection`, `Keep-Alive`, `Proxy-Authenticate`, `Proxy-Authorization`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade`) and every field `Connection` names, removed from the request after it is read and from the answer, so a client can never make a field the proxy adds vanish (Go's `Director` was insecure for that); from a client no `trusted` network holds, every `Forwarded` and `X-Forwarded-*` is replaced, as Go's `Rewrite` replaces them; from a trusted one they are added to, as nginx's `$proxy_add_x_forwarded_for`; `Forwarded` as RFC 7239 writes it, an IPv6 node quoted in brackets; `Via` with the machine's name and the listener's port, a loop told 508; `Max-Forwards` counted down, a `TRACE` or `OPTIONS` at 0 answered here (RFC 9110 § 7.6.2)
-
-capability proxy/balance  the upstream of each request chosen among several
-  heroes  web.Choosing, Upstream.weight, ReverseProxy.choosing
-  go      echo/middleware.ProxyBalancer
-  rust    -
-  python  -
-  note    nginx's two methods as its upstream module documents them: the smooth weighted round-robin (weights 5, 1 and 1 give its seven turns) and `least_conn`, the fewest in flight for a weight, ties in turn; checked against those turns computed by nginx's algorithm in Python 3.15.2
-
-capability proxy/health  an upstream that fails kept out for a while, and a request tried on the next
-  heroes  ReverseProxy.max_fails, ReverseProxy.fail_timeout, ReverseProxy.tries
-  go      -
-  rust    -
-  python  -
-  note    passive marks as nginx's `max_fails` and `fail_timeout` (1 and 10 s by default), a lone upstream never kept out, an answer clearing the count; the next upstream is tried where the connection could not be made, and, for an idempotent request with no body (RFC 9110 § 9.2.2), where the answer's head did not come, as nginx's `proxy_next_upstream error timeout` with `proxy_request_buffering off`; never once a byte is passed back, as nginx's page says of its own; no active probe of an upstream: the marks come from the requests alone
-
-capability proxy/upgrade  a switched protocol, a WebSocket, relayed both ways
-  heroes  web.serve_proxy, http.read_switch_head
-  go      net/http/httputil.ReverseProxy's 101 handling
-  rust    -
-  python  -
-  note    the request's `Upgrade` passed on with `Connection: Upgrade`, as nginx's WebSocket page asks and Go does; a 101 switching to another protocol than the one asked is answered 502, as Go answers; then bytes both ways until either end closes, or both are silent past `read_timeout` (nginx's `proxy_read_timeout`, 60 s); over a TLS upstream, which `poll` cannot wait on, the client's socket is waited on 5 ms at a time and the upstream read without waiting between
-
-capability proxy/errors  an upstream's failure told as the right status
-  heroes  web.serve_proxy
-  go      net/http/httputil.ReverseProxy.ErrorHandler
-  rust    -
-  python  -
-  note    502 for an upstream not reached or whose answer is no HTTP (RFC 9110 § 15.6.3), 504 where its time ran out (`timeout`, § 15.6.5), 503 with `Retry-After` where every upstream is kept out (§ 15.6.4), the code of Rebel's vocabulary under each; Go's default `ErrorHandler` answers 502 for every failure, and nginx's upstream page names 502 where no server can be chosen within its queue's time; the body says what failed and never where, an upstream's address being nobody's business outside
-
 capability serve/stateless  a listener's connections served by a router and one function of the program
   heroes  web.serve, web.serve_stream, http.serve_with
   go      echo.Echo.Start, gin.Engine.Run, net/http.ListenAndServe with a ServeMux
