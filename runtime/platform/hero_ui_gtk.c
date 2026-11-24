@@ -14,11 +14,9 @@
  *
  * ITS OWN HEADER FIRST (held by the net's `runtime` suite), so a definition
  * with another signature than the header's is `conflicting types` where it
- * is compiled. */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+ * is compiled. So it defines no `_GNU_SOURCE`, which glibc reads at the first
+ * header and would come too late after it: the two names this arm takes from
+ * glibc's GNU half are declared below, as `hero_ipc.c` declares them. */
 
 #include "hero_ui_gtk.h"
 
@@ -50,8 +48,23 @@
 #include "hero_ui_print_gtk.h"
 #include "hero_ui_web_gtk.h"
 
+#if defined(__linux__)
+/* Linux makes a socket close-on-exec in the call that takes it; glibc
+ * declares `accept4` only under `_GNU_SOURCE`, which this member cannot
+ * define before its own header. */
+int accept4(int fd, struct sockaddr *address, socklen_t *length, int flags);
+#endif
+
+/* `SO_PEERCRED`'s answer, `struct ucred` in glibc under `_GNU_SOURCE` alone:
+ * three numbers in this order (socket(7)). */
+typedef struct {
+    pid_t pid;
+    uid_t uid;
+    gid_t gid;
+} hero_ui_gtk_ucred;
+
 /* ==========================================================================
- * THE GTK ARM: GTK 4's own widgets, `GtkButton`, `GtkEntry`, `GtkTextView`,
+ * THE GTK ARM:GTK 4's own widgets, `GtkButton`, `GtkEntry`, `GtkTextView`,
  * `GtkCheckButton`, `GtkListBox`, `GtkDropDown`, `GtkProgressBar`,
  * `GtkScale`, `GtkPicture`, `GtkLabel`, and GMenu's models in a
  * `GtkPopoverMenuBar`, on every system that is neither Apple's nor Windows;
@@ -4745,8 +4758,11 @@ static int64_t hero_ui_gtk_now(void) {
 
 /* The set's or the mailbox's events the watched descriptors queued
  * (A SET AND A MAILBOX IN THE APP'S WAIT), which the common part queues
- * without counting them among the arm's own. */
-static uint64_t hero_ui_gtk_readied;
+ * without counting them among the arm's own. The UI thread's, as
+ * `hero_ui.c`'s `hero_ui_pushed` it is added to: the watches' sources stand
+ * on the default main context, which only the arm's own functions iterate,
+ * and `hero_ui.c` calls those on the UI thread alone. */
+static _Thread_local uint64_t hero_ui_gtk_readied;
 
 /* What `pump` compares to know that something was queued. */
 static uint64_t hero_ui_gtk_queued(void) {
@@ -9969,9 +9985,10 @@ static const char hero_ui_gtk_tray_menu_xml[] =
     "</interface></node>";
 
 /* The two interfaces as GIO reads them, the item's and the menu's, parsed
- * once and kept for the process, as the library is. */
-static void *hero_ui_gtk_tray_nodes[2];
-static void *hero_ui_gtk_tray_interfaces[2];
+ * once by the UI thread, the one thread that makes a tray, and kept for its
+ * life, as the library is. */
+static _Thread_local void *hero_ui_gtk_tray_nodes[2];
+static _Thread_local void *hero_ui_gtk_tray_interfaces[2];
 
 static bool hero_ui_gtk_tray_described(void) {
     static const char *const xml[2] = {hero_ui_gtk_tray_item_xml, hero_ui_gtk_tray_menu_xml};
@@ -11126,8 +11143,8 @@ static int hero_ui_gtk_hand_told(void *data) {
         }
         hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, hand->arguments, (int64_t)hand->count);
     }
-    free(hand->arguments);
-    free(hand);
+    hero_layer_free(hand->arguments);
+    hero_layer_free(hand);
     return 0;
 }
 
@@ -11155,7 +11172,7 @@ static void *hero_ui_gtk_hand_read(void *data) {
         good = hand->count <= HERO_UI_TEXT_MOST;
     }
     if (good && hand->count > 0) {
-        hand->arguments = malloc(hand->count);
+        hand->arguments = hero_layer_alloc(hand->count);
         good = hand->arguments != NULL && hero_ui_gtk_whole(hand->socket, hand->arguments, hand->count, false);
         if (good) {
             uint32_t start = 0;
@@ -11176,8 +11193,8 @@ static void *hero_ui_gtk_hand_read(void *data) {
     }
     (void)close(hand->socket);
     if (!good) {
-        free(hand->arguments);
-        free(hand);
+        hero_layer_free(hand->arguments);
+        hero_layer_free(hand);
         return NULL;
     }
     (void)hero_ui_gtk.idle_add(hero_ui_gtk_hand_told, hand);
@@ -11202,7 +11219,7 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
     (void)data;
     for (;;) {
         int socket_id = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
-        struct ucred peer;
+        hero_ui_gtk_ucred peer;
         socklen_t size = sizeof peer;
         hero_ui_gtk_hand *hand;
 
@@ -11211,9 +11228,9 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
         }
         hero_ui_gtk_hand_socket(socket_id);
         (void)fcntl(socket_id, F_SETFL, fcntl(socket_id, F_GETFL) & ~O_NONBLOCK);
-        hand = calloc(1, sizeof *hand);
+        hand = hero_layer_alloc_zero(1, sizeof *hand);
         if (hand == NULL || getsockopt(socket_id, SOL_SOCKET, SO_PEERCRED, &peer, &size) != 0 || peer.uid != geteuid()) {
-            free(hand);
+            hero_layer_free(hand);
             (void)close(socket_id);
             continue;
         }
@@ -11222,7 +11239,7 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
         (void)snprintf(hand->identity, sizeof hand->identity, "%s", hero_ui_gtk_instance_identity);
         if (!hero_ui_gtk_thread(hero_ui_gtk_hand_read, hand)) {
             (void)close(socket_id);
-            free(hand);
+            hero_layer_free(hand);
         }
     }
 }
@@ -11316,8 +11333,8 @@ static void *hero_ui_gtk_hand_own(void *data) {
     hero_ui_gtk_own_hand *own = data;
 
     (void)hero_ui_gtk_hand_to(own->path, own->identity, own->arguments, own->count);
-    free(own->arguments);
-    free(own);
+    hero_layer_free(own->arguments);
+    hero_layer_free(own);
     return NULL;
 }
 
@@ -11327,14 +11344,14 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
     if (hero_ui_gtk_instance_listener < 0) {
         return HERO_UI_INVALID;
     }
-    own = calloc(1, sizeof *own);
-    if (own == NULL || (count > 0 && (own->arguments = malloc((size_t)count)) == NULL)) {
-        free(own);
+    own = hero_layer_alloc_zero(1, sizeof *own);
+    if (own == NULL || (count > 0 && (own->arguments = hero_layer_alloc((size_t)count)) == NULL)) {
+        hero_layer_free(own);
         return HERO_UI_LIMIT;
     }
     if (!hero_ui_gtk_instance_path(hero_ui_gtk_instance_identity, ".sock", own->path, sizeof own->path)) {
-        free(own->arguments);
-        free(own);
+        hero_layer_free(own->arguments);
+        hero_layer_free(own);
         return hero_ui_refused(HERO_UI_OTHER, "the claim's local socket has no path");
     }
     (void)snprintf(own->identity, sizeof own->identity, "%s", hero_ui_gtk_instance_identity);
@@ -11343,8 +11360,8 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
     }
     own->count = (uint32_t)count;
     if (!hero_ui_gtk_thread(hero_ui_gtk_hand_own, own)) {
-        free(own->arguments);
-        free(own);
+        hero_layer_free(own->arguments);
+        hero_layer_free(own);
         return hero_ui_refused(HERO_UI_OTHER, "no thread could be made to hand the arguments over");
     }
     return HERO_UI_OK;
@@ -11381,7 +11398,7 @@ static bool hero_ui_gtk_items_add(uint8_t **items, size_t *length, size_t *room,
 
     if (*length + more > *room) {
         size_t wanted = (*length + more) * 2;
-        uint8_t *grown = realloc(*items, wanted);
+        uint8_t *grown = hero_layer_grow(*items, wanted);
 
         if (grown == NULL) {
             return false;
@@ -11441,8 +11458,8 @@ static void hero_ui_gtk_app_open(void *uris) {
     for (size_t from = 0; from < urls_length; from += strlen((const char *)urls + from) + 1) {
         hero_ui_gtk_opened(HERO_UI_OPEN_URLS, urls + from, strlen((const char *)urls + from) + 1, 1);
     }
-    free(files);
-    free(urls);
+    hero_layer_free(files);
+    hero_layer_free(urls);
 }
 
 /* The interface's methods, on the UI thread. */
