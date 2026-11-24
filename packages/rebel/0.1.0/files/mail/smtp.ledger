@@ -8,74 +8,74 @@
 # sends, the dot-stuffing and the CRAM-MD5 answer of the tests were observed
 # from Python's `base64`, `hmac` and `smtplib.quotedata` the same day.
 
-capability connect/plain  a session over plain TCP, its greeting read and EHLO said
+capability smtp/plain  a session over plain TCP, its greeting read and EHLO said
   heroes  smtp.connect, smtp.Security.plain, smtp.PORT_SMTP
   go      net/smtp.Dial, net/smtp.NewClient, net/smtp.Client.Hello, net/smtp.Client.Text
   rust    lettre::transport::smtp::SmtpTransport, lettre::transport::smtp::SmtpTransportBuilder, lettre::transport::smtp::client::SmtpConnection, lettre::transport::smtp::SMTP_PORT
   python  smtplib.SMTP, smtplib.SMTP.connect, smtplib.SMTP.ehlo, smtplib.SMTP.helo, smtplib.SMTP.ehlo_or_helo_if_needed, smtplib.SMTP.ehlo_msg, smtplib.SMTP.does_esmtp, smtplib.SMTP.default_port, smtplib.SMTP.sock, smtplib.SMTP.file, smtplib.SMTP_PORT, smtplib.SMTPConnectError, smtplib.SMTPHeloError
   note    EHLO first, HELO where a plain server refuses EHLO with 500 or 502, as Python falls back; the client's name is `localhost` unless given, as Go's, where Python asks the machine's name
 
-capability connect/starttls  a plain connection made secure by STARTTLS, EHLO said again after
+capability smtp/starttls  a plain connection made secure by STARTTLS, EHLO said again after
   heroes  smtp.connect, smtp.Security.starttls, smtp.PORT_SUBMISSION
   go      net/smtp.Client.StartTLS
   rust    lettre::transport::smtp::client::Tls, lettre::transport::smtp::commands::Starttls, lettre::transport::smtp::SUBMISSION_PORT
   python  smtplib.SMTP.starttls
   note    through `tls.connect_after` on every platform, macOS included where `tls` cannot begin TLS over a stream the program holds: the greeting, the first EHLO and STARTTLS are `tls`'s plain steps, so their text is not kept, only that they succeeded; STARTTLS refused is the step's failure with what the server said. Extensions are read from the EHLO after TLS alone, as RFC 3207 asks
 
-capability connect/implicit-tls  a session over TLS from the first byte (RFC 8314)
+capability smtp/implicit-tls  a session over TLS from the first byte (RFC 8314)
   heroes  smtp.connect, smtp.Security.implicit, smtp.PORT_SUBMISSIONS
   go      net/smtp.NewClient
   rust    lettre::transport::smtp::client::Tls, lettre::transport::smtp::SUBMISSIONS_PORT
   python  smtplib.SMTP_SSL, smtplib.SMTP_SSL_PORT
   note    Go asks the program to make the TLS connection and hand it over; here `connect` makes it through `tls.connect`
 
-capability connect/certificate  the server's certificate checked, against the system's store or roots the program names
+capability smtp/certificate  the server's certificate checked, against the system's store or roots the program names
   heroes  smtp.Options.roots
   go      net/smtp.Client.StartTLS
   rust    lettre::transport::smtp::client::TlsParameters, lettre::transport::smtp::client::TlsParametersBuilder, lettre::transport::smtp::client::Certificate, lettre::transport::smtp::client::CertificateStore
   python  smtplib.SMTP.starttls, smtplib.SMTP_SSL
   note    always checked, for its authority, its dates and the host, by `tls`; roots are PEM text, as `tls.Client` takes them
 
-capability connect/no-verification  the server's certificate not checked
+capability smtp/no-verification  the server's certificate not checked
   heroes  refused: verification is never turned off, as `http` refuses it; a test trusts `tls.TEST_ROOT` through `Options.roots`
   go      -
   rust    lettre::transport::smtp::client::TlsParametersBuilder
   python  smtplib.SMTP.starttls
 
-capability connect/client-certificate  a certificate of the client presented to the server
+capability smtp/client-certificate  a certificate of the client presented to the server
   heroes  pending
   go      -
   rust    lettre::transport::smtp::client::Identity
   python  smtplib.SMTP_SSL, smtplib.SMTP.starttls
   note    `tls.Client` takes no certificate of the client yet
 
-capability connect/tls-version  the TLS versions allowed chosen
+capability smtp/tls-version  the TLS versions allowed chosen
   heroes  refused: `tls` allows TLS 1.2 and 1.3 and nothing weaker, and takes no version, so no program weakens it
   go      -
   rust    lettre::transport::smtp::client::TlsVersion
   python  -
 
-capability connect/opportunistic  STARTTLS where the server offers it, plain text otherwise
+capability smtp/opportunistic  STARTTLS where the server offers it, plain text otherwise
   heroes  refused: an attacker between the two strips the offer and reads the password and the message; a program chooses `.starttls` or `.plain`, as RFC 8314 asks of submission
   go      -
   rust    lettre::transport::smtp::client::Tls
   python  -
 
-capability connect/state  whether TLS protects the session, and its version and peer
+capability smtp/state  whether TLS protects the session, and its version and peer
   heroes  smtp.Client.is_tls
   go      net/smtp.Client.TLSConnectionState
   rust    -
   python  -
   note    the version and the peer's certificate are not handed out: the stream is the session's own; `tls.version_of` reads them of a stream a program holds
 
-capability connect/deadline  a time limit on every step
+capability smtp/deadline  a time limit on every step
   heroes  smtp.Options.deadline
   go      -
   rust    lettre::transport::smtp::SmtpTransportBuilder
   python  smtplib.SMTP
   note    each step its own deadline: the connection and its handshake, each command and its reply, each 65,536 bytes of the message (RFC 5321 § 4.5.3.2 times each block); Go has no deadline of its own, Python one timeout per socket operation, lettre one per command
 
-capability connect/name  the name the client gives itself in EHLO
+capability smtp/name  the name the client gives itself in EHLO
   heroes  smtp.Options.local_name
   go      net/smtp.Client.Hello
   rust    lettre::transport::smtp::extension::ClientId
