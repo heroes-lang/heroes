@@ -283,7 +283,14 @@ test "the platform layer's members are the names runtime.c gives under platform/
     assert has(members, "runtime/platform/hero_net.c")
     assert has(members, "runtime/platform/hero_time.c")
 
-    # Each member stands right after its own header, `runtime/<name>.h`.
+    # Each member stands right after its own header, the one clang finds for
+    # the quoted `#include "<name>.h"` the member opens with: beside the
+    # member first, `runtime/platform/<name>.h`, a header of the members alone
+    # that no group names (the two print arms' since step 105z15), else
+    # `runtime/<name>.h`, the one a group names; never one in both places,
+    # where the member would compile against the first and a program's C
+    # against the second (the runtime suite's `own_header`, step 163a). So
+    # the file the key hashes is the file the member reads.
     for member in members
         at: i64 @= 0
 
@@ -291,8 +298,15 @@ test "the platform layer's members are the names runtime.c gives under platform/
             at @ at + 1
 
         name = member.slice(from: "runtime/platform/".len(), to: member.len() - 2)
+        beside = "runtime/platform/" + name + ".h"
+        shared = "runtime/" + name + ".h"
+        assert !(process.path_exists(beside) && process.path_exists(shared))
+        own: str @= shared
+
+        if process.path_exists(beside)
+            own @ beside
         assert at > 0
-        assert made[at - 1] == "runtime/" + name + ".h"
+        assert made[at - 1] == own
 
     for name in ["platform/hero_net.c", "platform/x.c"]
         assert is_member(name)
