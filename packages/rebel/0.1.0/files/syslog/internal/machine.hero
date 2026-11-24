@@ -1,0 +1,39 @@
+# What `syslog` asks of the machine it runs on: whether a socket's path
+# stands, which chooses the journal or `/dev/log` on Linux, and the local
+# time a classic syslog line is stamped with. Private to the package (README
+# § A2).
+
+use fs
+use time
+
+# Whether `path` names something, a socket among them; a path the system
+# cannot be asked about stands for nothing.
+#
+# - `path`: the path asked about.
+function stands(path: str) -> bool
+    match fs.exists(path)
+        .ok found => return found
+        .err _    => return false
+
+# The machine's local time now, UTC's where the system names no zone, as
+# `syslog(3)` stamps a line.
+#
+# Fails as `time.now` does.
+function local_now() -> time.DateTime?
+    now = time.now()?
+
+    match time.local_zone()
+        .ok zone => return ok(time.to_date_time_in(now, zone: zone))
+        .err _   => return ok(time.to_date_time(now))
+
+## Tests
+
+test "stands: a folder made stands, a path in it that names nothing does not"
+    folder = fs.make_temp_dir(dir: "", pattern: "hero-syslog-machine-*").must()
+    assert stands(folder)
+    assert !stands(folder + "/none")
+    fs.remove_all(folder).must()
+
+test "local_now: a date of this century, its month and day in range"
+    now = local_now().must()
+    assert now.year >= 2026 && now.month >= 1 && now.month <= 12 && now.day >= 1 && now.day <= 31

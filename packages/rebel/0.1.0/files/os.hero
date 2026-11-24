@@ -2249,6 +2249,8 @@ test "reveal_path: a file that is not there"
         .ok _  => print("shown")
         .err e => print(e.code)
 
+# A server's first line: from here Ctrl-C asks the stop, which every wait of
+# the library then ends on, instead of ending the program where it stands.
 test "catch_stop: Ctrl-C asks the stop from now on"
     catch_stop().must()
     assert !is_stop_asked()

@@ -42,7 +42,10 @@ extern "hero_syslog.h"
     function hero_syslog_last_os_error() -> i64
     function hero_syslog_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
 
-# 1 where this system has `what`, one of the `HERO_SYSLOG_HAS_*`, else 0.
+# 1 where this system has `what`, else 0.
+#
+# - `what`: what is asked, one of the `HERO_SYSLOG_HAS_*`: the local datagram
+#   socket, the unified log or the Event Log; any other number answers 0.
 function has(what: i64) -> i64
     return hero_syslog_has(what)
 
