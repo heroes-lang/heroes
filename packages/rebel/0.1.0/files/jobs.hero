@@ -669,18 +669,15 @@ function cancel(limit: Bucket, taken: Reservation, at: time.Instant) -> Bucket?
 function tokens(limit: Bucket, at: time.Instant) -> f64
     return gcra.tokens(limit: limit, at: at)
 
-# The whole tokens the bucket holds at `at`, never below none.
+# The whole tokens the bucket holds at `at`, never below none: the most
+# `allow` grants at that time, counted on whole numbers.
 #
 # - `limit`: the bucket.
 # - `at`: the time.
 #
 # See also `tokens`.
 function available(limit: Bucket, at: time.Instant) -> i64
-    held = gcra.tokens(limit: limit, at: at)
-
-    if held < 1.0
-        return 0
-    return to_i64(held).must()
+    return gcra.available(limit: limit, at: at)
 
 # The bucket with another rate and another burst, holding at `at` the tokens it held, as many as the new burst allows.
 #
