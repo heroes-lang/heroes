@@ -90,7 +90,7 @@ does. It is what the author may choose instead of R2.
 
 ## What is open and unrun
 
-Nothing ran on Windows (UCRT's `longjmp` and whether it runs termination handlers: the box's question); the compiler-engineer ran on
+**On Windows** the ffi-pragmatist ran a C program on the box and **UCRT's `longjmp` ran the `__finally` of a frame between the jump and the save, 1,000 of 1,000** (so the brief's *the jump runs no code* is false there, by Microsoft's documentation and by that run, and (d)'s Windows arm is a `__try/__finally`, which answers the compiler-engineer's second condition on UCRT; no Heroes program ran on Windows, and the four test files the seat left on the box at `C:\w\258-ffi` are still to be removed under the box's lock); the compiler-engineer ran on
 Darwin only, the ffi-pragmatist on Darwin and Linux arm64 (glibc 2.41, a stand-in library for libpng's error model there, the
 container having no libpng); the deferred release list of R2, the lend regions' healing (read, not prototyped), D1 to D4 and D8 of the
 critic's doors (read), and (d)'s cost over a whole program and on the compiler's own build are unmeasured. The sitting had no historian,
@@ -102,4 +102,4 @@ The compiler-engineer's and the ffi-pragmatist's (table above), at the landing o
 
 ## The author's verdict
 
-**Pending.** Decision issue: opened with this sitting as `panel 258`.
+**Pending.** Decision issue 2758, opened with this sitting as `panel 258`.

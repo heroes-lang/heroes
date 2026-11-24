@@ -415,7 +415,10 @@ Darwin door and every shape; the forced route A; the fortified shared library; s
 `hazard/sigfree.c` ten runs a mode on both systems plus ASan; the (d) prototype on both, with and without
 `-fexceptions`, with the library's unwind tables stripped; `clang -dM -E` under `-fexceptions`; `objdump` of
 one function both ways, and of `__builtin_longjmp` for two x86-64 targets; `win/winjmp.c` on the Windows box
-under the lock, twice, `-O0` and `-O2`, three runs each.
+under the lock, twice, `-O0` and `-O2`, three runs each. **Left on the box**: `C:\w\258-ffi` (`winjmp.c`,
+`winlib.c`, two `.exe` and two build logs). A loop tried 30 times from 02:24 to 02:34 to take the lock and
+remove the folder, and `lane-box-fixes` held the lock every time; the folder is this seat's alone and
+removing it is one `rm -r` under the lock. The container `hero258-ffi-arm64` was removed (`docker rm -f`).
 
 **Read only**: `sigjump_record.c` (route A's record), `rebind.c` and `rebind_jump.c`, `callback.c`,
 `sigguard.c:560-660`, `heroes_runtime.h:15-30, 108, 131`, `spec/heroes-spec.md` lines 427, 456-475,
