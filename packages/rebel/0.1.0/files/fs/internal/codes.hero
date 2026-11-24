@@ -2,7 +2,10 @@
 # into a code and a message: a door of `hero_disk.h` that answered -1 is read
 # here, right after the call, before any other call of that floor on the
 # thread. A path is checked here before any door is handed it, since C reads a
-# zero byte as its end and `cstr` aborts on one.
+# zero byte as its end and `cstr` aborts on one; `fs/acl` and `fs/xattr`
+# check their paths, names and ids here too, a private module of the folder
+# being its subpackages' as well (README § A2), since neither may use the
+# other's.
 
 use os/hero_disk
 
@@ -137,12 +140,25 @@ function last_was(kind: i64) -> bool
 
 # Nothing where `path` can be handed to C, or `invalid` where it holds a zero
 # byte, which C reads as its end.
+#
+# - `path`: the path.
+# - `asked`: what was asked, for the message.
 function checked(path: str, asked: str) -> ()?
+    return checked_text(text: path, what: "path", asked: asked)
+
+# Nothing where `text` can be handed to C, or `invalid` where it holds a zero
+# byte, which C reads as its end, the message naming what `text` is and where
+# the byte stands.
+#
+# - `text`: a path, an attribute's name, a user's or a group's name or id.
+# - `what`: what `text` is, for the message: `path`, `name`.
+# - `asked`: what was asked, for the message.
+function checked_text(text: str, what: str, asked: str) -> ()?
     at: i64 @= 0
 
-    while at < path.len()
-        if path[at] == 0
-            return fail(code: INVALID, msg: f"{asked}: the path holds a zero byte at {at}, which no system reads")
+    while at < text.len()
+        if text[at] == 0
+            return fail(code: INVALID, msg: f"{asked}: the {what} holds a zero byte at {at}, which no system reads")
         at @ at + 1
 
     return ok()
@@ -196,3 +212,18 @@ test "checked: an empty path, a plain one, one of more than one byte a character
     match checked(path: zero_last.validated_bytes().must(), asked: "reading")
         .ok _  => assert false
         .err e => assert e.code == INVALID
+
+test "checked_text: what the text is named in the message, a zero byte at the start, the middle and the end"
+    assert !checked_text(text: "abc", what: "name", asked: "x").is_err()
+    zero_first: [u8] = [0, 'a', 'b']
+    zero_middle: [u8] = ['a', 0, 'c']
+    zero_last: [u8] = ['a', 'b', 0]
+
+    match checked_text(text: zero_middle.validated_bytes().must(), what: "id of an entry", asked: "writing")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "writing: the id of an entry holds a zero byte at 1, which no system reads"
+
+    for octets in [zero_first, zero_last]
+        match checked_text(text: octets.validated_bytes().must(), what: "name", asked: "x")
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

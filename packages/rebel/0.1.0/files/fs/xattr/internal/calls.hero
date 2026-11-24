@@ -1,10 +1,12 @@
 # The calls `fs/xattr` makes on its floor, `fs/xattr/hero_xattr`, and the one
 # place a kind of the floor becomes a code of README § A4 with a message
 # saying what was asked and what the system answered. A path and a name are
-# checked here for a zero byte before C is handed them, since C reads one as
-# their end and `cstr` aborts on it.
+# checked for a zero byte before C is handed them, since C reads one as their
+# end and `cstr` aborts on it, by `fs/internal/codes`, which `fs` and
+# `fs/acl` check theirs with too.
 
 use bytes as octets
+use fs/internal/codes
 use fs/xattr/hero_xattr
 
 constant INVALID: str
@@ -122,27 +124,11 @@ function failed<T>(asked: str) -> T?
     kind = hero_xattr.last_error()
     return fail(code: code_of(kind), msg: f"{asked}: {words_of(kind: kind, number: hero_xattr.last_os_error())}")
 
-# Nothing where `text` can be handed to C, or `invalid` where it holds a zero
-# byte, which C reads as its end.
-#
-# - `text`: a path or a name.
-# - `what`: what `text` is, for the message.
-# - `asked`: what was asked, for the message.
-function checked(text: str, what: str, asked: str) -> ()?
-    at: i64 @= 0
-
-    while at < text.len()
-        if text[at] == 0
-            return fail(code: INVALID, msg: f"{asked}: the {what} holds a zero byte at {at}, which no system reads")
-        at @ at + 1
-
-    return ok()
-
 # The bytes of a list of names (`name` empty) or of one value, read once and
 # asked again with more room where they did not fit.
 function filled(path: str, name: str, follow: i64, asked: str) -> [u8]?
-    checked(text: path, what: "path", asked: asked)?
-    checked(text: name, what: "name", asked: asked)?
+    codes.checked(path: path, asked: asked)?
+    codes.checked_text(text: name, what: "name", asked: asked)?
     room: i64 @= FIRST_ROOM
     tries: i64 @= 0
 
@@ -206,8 +192,8 @@ function value_of(path: str, name: str, follow: i64) -> [u8]?
 # itself where `follow` is 0.
 function written(path: str, name: str, value: [u8], mode: i64, follow: i64) -> ()?
     asked = f"writing the extended attribute \"{name}\" of \"{path}\""
-    checked(text: path, what: "path", asked: asked)?
-    checked(text: name, what: "name", asked: asked)?
+    codes.checked(path: path, asked: asked)?
+    codes.checked_text(text: name, what: "name", asked: asked)?
 
     if name.len() == 0
         return fail(code: INVALID, msg: f"{asked}: an attribute's name is never empty")
@@ -220,8 +206,8 @@ function written(path: str, name: str, value: [u8], mode: i64, follow: i64) -> (
 # `path`'s attribute `name` removed, the link's own where `follow` is 0.
 function removed(path: str, name: str, follow: i64) -> ()?
     asked = f"removing the extended attribute \"{name}\" of \"{path}\""
-    checked(text: path, what: "path", asked: asked)?
-    checked(text: name, what: "name", asked: asked)?
+    codes.checked(path: path, asked: asked)?
+    codes.checked_text(text: name, what: "name", asked: asked)?
 
     if name.len() == 0
         return fail(code: INVALID, msg: f"{asked}: an attribute's name is never empty")
@@ -260,15 +246,3 @@ test "names_of: none, one, several, an empty list, a name that is not UTF-8, and
     match names_of([97, 0, 98], asked: "x")
         .ok _  => assert false
         .err e => assert e.code == FAILED
-
-test "checked: a zero byte at the start, the middle and the end is invalid, and none passes"
-    assert !checked(text: "abc", what: "path", asked: "x").is_err()
-
-    zero_first: [u8] = [0, 'a', 'b']
-    zero_middle: [u8] = ['a', 0, 'c']
-    zero_last: [u8] = ['a', 'b', 0]
-
-    for bytes in [zero_first, zero_middle, zero_last]
-        match checked(text: bytes.validated_bytes().must(), what: "path", asked: "x")
-            .ok _  => assert false
-            .err e => assert e.code == INVALID

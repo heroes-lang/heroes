@@ -7,6 +7,7 @@
 use bytes as octets
 use fs/acl
 use fs/acl/hero_acl
+use fs/internal/codes
 
 constant INVALID: str
     "invalid"
@@ -139,22 +140,6 @@ function if_entry(place: i64) -> str
         return f"the entry at {place}: "
     return ""
 
-# Nothing where `text` can be handed to C, or `invalid` where it holds a zero
-# byte, which C reads as its end.
-#
-# - `text`: a path, a name or an id.
-# - `what`: what `text` is, for the message.
-# - `asked`: what was asked, for the message.
-function checked(text: str, what: str, asked: str) -> ()?
-    at: i64 @= 0
-
-    while at < text.len()
-        if text[at] == 0
-            return fail(code: INVALID, msg: f"{asked}: the {what} holds a zero byte at {at}, which no system reads")
-        at @ at + 1
-
-    return ok()
-
 # The bytes the layer answered, read once and asked again with more room
 # where they did not fit: a list (`name` empty) or an id.
 function filled(path: str, name: str, follow: i64, group: i64, asked: str) -> [u8]?
@@ -258,7 +243,7 @@ function bytes_of(list: Rows, asked: str) -> [u8]?
         put_field(@bytes, text: "0")
 
     for row in list.rows
-        checked(text: row.id, what: "id of an entry", asked: asked)?
+        codes.checked_text(text: row.id, what: "id of an entry", asked: asked)?
 
         if row.rights < 0 || row.flags < 0
             return fail(code: INVALID, msg: f"{asked}: an entry's rights and flags are never below 0")
@@ -279,13 +264,13 @@ function bytes_of(list: Rows, asked: str) -> [u8]?
 # `path`'s list, the link's own where `follow` is 0.
 function read_rows(path: str, follow: i64) -> Rows?
     asked = f"reading the access list of \"{path}\""
-    checked(text: path, what: "path", asked: asked)?
+    codes.checked(path: path, asked: asked)?
     return rows_of(filled(path: path, name: "", follow: follow, group: 0, asked: asked)?, asked: asked)
 
 # `path`'s list replaced by `list`, the link's own where `follow` is 0.
 function write_rows(path: str, follow: i64, list: Rows) -> ()?
     asked = f"writing the access list of \"{path}\""
-    checked(text: path, what: "path", asked: asked)?
+    codes.checked(path: path, asked: asked)?
     bytes @= bytes_of(list, asked: asked)?
 
     if hero_acl.write(path, follow: follow, @bytes, size: bytes.len().to_u64().must()) < 0
@@ -296,7 +281,7 @@ function write_rows(path: str, follow: i64, list: Rows) -> ()?
 # `name`.
 function id_named(name: str, group: i64) -> str?
     asked = if_group(group) + f" \"{name}\""
-    checked(text: name, what: "name", asked: asked)?
+    codes.checked_text(text: name, what: "name", asked: asked)?
 
     if name.len() == 0
         return fail(code: INVALID, msg: f"{asked}: a name is never empty")

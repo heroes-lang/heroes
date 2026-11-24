@@ -16,6 +16,10 @@
 # rebel-suite3a (2026-11-24) widened the spans' row to `mail/imap`, whose
 # helper joined it, and kept the bodies of `mail/imap`, `mail/smtp`, `sftp`
 # and `ssh` that no public function below them holds or reads in place.
+# Lane rebel-suite3b (2026-11-24) kept four twins of the faces merged that
+# day, each one word for two things: `copy` of an access list and of
+# extended attributes, `is_name` of a log's name and of an object of `ipc`,
+# `read` and `remove` of an extended attribute and of a secret.
 
 # A finding the review keeps: the instrument's check, the key it is kept
 # under (what the readout prints after `under`), and the reason.
@@ -168,6 +172,7 @@ function kept() -> [Kept]
         Kept(check: "ledgers", key: "vector/normalize in math/linear, vectors", why: TWO_SHAPES_OF_VECTOR)
         Kept(check: "ledgers", key: "write/json in openapi, websocket", why: TWO_MEANINGS)
         Kept(check: "twins", key: "compare in path, strings", why: TWO_MEANINGS)
+        Kept(check: "twins", key: "copy in fs/acl, fs/xattr", why: TWO_MEANINGS)
         Kept(check: "twins", key: "decode in image/bmp, image/netpbm", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "decode_image in image/bmp, image/gif, image/ico, image/jpeg, image/netpbm, image/png, image/tiff, image/webp", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "decompress in compress/brotli, compress/bzip2, compress/lz4, compress/xz, compress/zstd", why: ONE_API_BY_DESIGN)
@@ -179,6 +184,7 @@ function kept() -> [Kept]
         Kept(check: "twins", key: "frame_size in compress/lz4, compress/zstd", why: ONE_API_BY_DESIGN)
         Kept(check: "twins", key: "is_ascii in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "is_lower in strings, unicode", why: CHARACTER_AND_TEXT)
+        Kept(check: "twins", key: "is_name in ipc, syslog", why: TWO_MEANINGS)
         Kept(check: "twins", key: "is_upper in strings, unicode", why: CHARACTER_AND_TEXT)
         Kept(check: "twins", key: "is_valid in json, json/jq, json/path, semver, yaml", why: EACH_ITS_GRAMMAR)
         Kept(check: "twins", key: "is_valid_filter in mqtt, nats", why: EACH_ITS_GRAMMAR)
@@ -190,6 +196,8 @@ function kept() -> [Kept]
         Kept(check: "twins", key: "parse_date in http, pdf", why: EACH_ITS_GRAMMAR)
         Kept(check: "twins", key: "quote in json, process", why: TWO_MEANINGS)
         Kept(check: "twins", key: "quote_identifier in sql, sql/mysql", why: EACH_ITS_GRAMMAR)
+        Kept(check: "twins", key: "read in fs/xattr, keyring", why: TWO_MEANINGS)
+        Kept(check: "twins", key: "remove in fs/xattr, keyring", why: TWO_MEANINGS)
         Kept(check: "twins", key: "remove_all in fs, keyring", why: TWO_MEANINGS)
         Kept(check: "twins", key: "set_deadline in ipc, tls", why: EACH_ITS_STREAM)
         Kept(check: "twins", key: "skippable_frame in compress/lz4, compress/zstd", why: ONE_API_BY_DESIGN)
