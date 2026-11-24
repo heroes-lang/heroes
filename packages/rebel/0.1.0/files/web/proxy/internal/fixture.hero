@@ -1,9 +1,13 @@
-# What the examples of `web/proxy` share and cannot declare in a test: an
-# upstream run on a thread of its own.
+# What the examples and tests of `web/proxy` share and cannot declare in a
+# test: an upstream and a client over TLS, each run on a thread of its own.
 
+use bytes
 use http
 use io
 use net
+use strings
+use time
+use tls
 
 # An upstream for the reverse proxy's examples, run on a thread of its own:
 # one connection accepted on the loopback address, its port told on `ports`,
@@ -19,3 +23,130 @@ function upstream_once(ports: (mailbox i64)) -> i64
     io.write_text(conn.stream, text: "HTTP/1.1 200 OK\r\nContent-Length: 8\r\nConnection: close\r\n\r\nupstream").must()
     io.close(@reader.stream).must()
     return 1
+
+# What an upstream of the tests read of the client in the fields that tell
+# it: `X-Forwarded-Proto`, `X-Forwarded-For`, `X-Forwarded-Host` and
+# `Forwarded`, one line each, "" for a field not sent.
+function told_of(headers: [http.Header]) -> str
+    lines: [str] @= []
+
+    for name in ["X-Forwarded-Proto", "X-Forwarded-For", "X-Forwarded-Host", "Forwarded"]
+        lines @ lines.push(f"{name}: {http.values_of(headers, name: name).join(" | ")}")
+
+    return lines.join("\n")
+
+# An upstream for the tests, run on a thread of its own: one connection
+# accepted on the loopback address, its port told on `ports`, its one request
+# read and answered 200 with `told_of` its fields, which it also answers.
+function upstream_told(ports: (mailbox i64)) -> str
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = ports.send(l.address.port).is_err()
+    conn = net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    reader @= io.reader(conn.stream)
+    head = http.read_request_head(@reader, limits: http.default_limits()).must()
+    told = told_of(head.request.headers)
+    answer = f"HTTP/1.1 200 OK\r\nContent-Length: {told.len()}\r\nConnection: close\r\n\r\n{told}"
+    _ = io.write_text(conn.stream, text: answer).is_err()
+    io.close(@reader.stream).must()
+    return told
+
+# An upstream for the tests that switches protocols, run on a thread of its
+# own: one connection accepted on the loopback address, its port told on
+# `ports`, and served as `echoed` serves it. Answers the bytes it wrote back.
+function upstream_echo(ports: (mailbox i64)) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = ports.send(l.address.port).is_err()
+    conn = net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    return echoed(conn)
+
+# `upstream_echo` over TLS, presenting `tls`'s test chain for `localhost`.
+function upstream_echo_tls(ports: (mailbox i64)) -> i64
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    _ = ports.send(l.port).is_err()
+    conn = tls.accept(l, deadline: time.seconds(5).must()).must()
+    tls.close_listener(@l).must()
+    return echoed(conn)
+
+# What an upstream that switches protocols does with `conn`: its one request
+# read and answered `101` to `websocket`, then every byte that comes written
+# back until the proxy closes or 5 seconds pass, and the connection closed.
+# Answers the bytes it wrote back.
+function echoed(conn: net.Conn) -> i64
+    reader @= io.reader(conn.stream)
+    _ = http.read_request_head(@reader, limits: http.default_limits()).must()
+    switching = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
+    _ = io.write_text(conn.stream, text: switching).is_err()
+    _ = tls.set_deadline(conn.stream, deadline: time.seconds(5).must()).is_err()
+    held = io.buffered(reader)
+    _ = io.skip(@reader, n: held.len()).is_err()
+    total: i64 @= 0
+
+    if held.len() > 0 && !io.write(conn.stream, data: held).is_err()
+        total @ held.len()
+
+    while true
+        match io.read(conn.stream, n: 1_024)
+            .ok got =>
+                if got.len() == 0 || io.write(conn.stream, data: got).is_err()
+                    break
+                total @ total + got.len()
+            .err _ => break
+
+    io.close(@reader.stream).must()
+    return total
+
+# What a client of the tests asks a proxy over TLS.
+record Asking
+    # The proxy's port on the loopback address.
+    port: i64
+    # What it writes once connected; "" writes nothing.
+    asked: str
+    # The text whose coming ends its reading; "" reads to the end.
+    until: str
+    # The milliseconds it reads for at most.
+    hold_ms: i64
+
+# A client over TLS to `localhost` at `a.port`, trusting `tls`'s test
+# authority alone, run on a thread of its own: `a.asked` written, then what
+# comes read until `a.until` stands in it, the proxy closes, or `a.hold_ms`
+# passes. Answers what it read, the code of a failure that ended its reading
+# after it in angle brackets.
+function tls_client(a: Asking) -> str
+    deadline = time.seconds(5).must()
+    conn = tls.connect(
+        host: "localhost",
+        port: a.port,
+        deadline: deadline,
+        client: tls.Client(roots: tls.TEST_ROOT, protocols: [])
+    ).must()
+
+    if a.asked != ""
+        _ = io.write_text(conn.stream, text: a.asked).is_err()
+    _ = tls.set_deadline(conn.stream, deadline: time.milliseconds(a.hold_ms).must()).is_err()
+    got: [u8] @= []
+    ended: str @= ""
+
+    while true
+        match io.read(conn.stream, n: 4_096)
+            .ok more =>
+                if more.len() == 0
+                    break
+
+                for b in more
+                    got @ got.push(b)
+
+                if a.until != "" && strings.contains(s: bytes.to_text(got).default(""), substr: a.until)
+                    break
+            .err e =>
+                ended @ f"<{e.code}>"
+                break
+
+    closing @= conn.stream
+    _ = io.close(@closing).is_err()
+    return bytes.to_text(got).default("") + ended
