@@ -3142,7 +3142,6 @@ constant RETIRED_ROOTS: [str]
         "docs/ref"
         "docs/design"
         "harness"
-        "packages"
         "examples-rebel"
         "generators"
     ]

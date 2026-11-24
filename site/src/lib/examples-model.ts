@@ -8,10 +8,11 @@
  * a directory holding a `main.hero` IS a program, so a program joins by
  * existing and cannot be forgotten. One directory is not a program
  * directory: `gallery/`, because each of its files is its own program. The
- * local static index (panel 235's R15) stands beside `examples/` at the
- * repository's root, `packages/` (panel 238's R10), and holds Rebel's tree
- * today; it is checked for its shape on every build, and Rebel's page and its
- * reference pages read it (`reference.ts`).
+ * local static index (panel 235's R15), at the repository's root since panel
+ * 238's R10, held Rebel's tree in `packages/` until 2026-11-24, when the
+ * library moved to `rebel/library/`; it is checked for its shape on every
+ * build where it stands (`checkIndex`), and Rebel's page and its reference
+ * pages read the library (`reference.ts`).
  *
  * **The examples are two groups** (`.claude/rules/rebel.md`, decision 7 of
  * M-rebel-library): `examples/` uses no library, and `rebel/examples/` holds
