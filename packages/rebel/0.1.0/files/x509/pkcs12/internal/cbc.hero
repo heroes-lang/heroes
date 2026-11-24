@@ -1,0 +1,169 @@
+# Cipher block chaining (SP 800-38A § 6.2) over AES, DES and RC2, with the
+# padding of RFC 8018 § 6.1.1: from 1 to a block's length of bytes, each the
+# count. RC4, a stream, is the one cipher with no chaining. A padding that
+# does not hold is refused with the same words as a wrong key, since the two
+# cannot be told apart and a reader telling them apart would be an oracle.
+
+use bytes
+use x509/pkcs12/internal/aes
+use x509/pkcs12/internal/des
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/rc
+
+# A cipher with its key expanded.
+variant Cipher
+    # AES under a key of 16, 24 or 32 bytes.
+    aes
+        # The schedule.
+        schedule: aes.Schedule
+    # DES, or triple DES of two or three keys.
+    des
+        # The schedule.
+        schedule: des.Schedule
+    # RC2 under so many effective bits.
+    rc2
+        # The 64 words of the expanded key.
+        words: [i64]
+    # RC4, a stream.
+    rc4
+        # The key.
+        key: [u8]
+
+# The words a ciphertext refused for its padding is told with.
+constant DOES_NOT_OPEN: str
+    "the password does not open it, or its bytes are damaged"
+
+# The bytes of `cipher`'s block: 16, 8, or 1 for RC4.
+function block_of(cipher: Cipher lent) -> i64
+    match cipher
+        .aes _          => return aes.BLOCK
+        .des _ | .rc2 _ => return des.BLOCK
+        .rc4 _          => return 1
+
+# The block of `data` from `at` through `cipher`, enciphered or, where
+# `back` is true, deciphered.
+function through(cipher: Cipher lent, data: [u8] lent, at: i64, back: bool) -> [i64]
+    match cipher
+        .aes a =>
+            if back
+                return aes.decrypt(schedule: a.schedule, data: data, at: at)
+            return aes.encrypt(schedule: a.schedule, data: data, at: at)
+        .des d =>
+            if back
+                return des.decrypt(schedule: d.schedule, data: data, at: at)
+            return des.encrypt(schedule: d.schedule, data: data, at: at)
+        .rc2 r =>
+            if back
+                return rc.decrypt(k: r.words, data: data, at: at)
+            return rc.encrypt(k: r.words, data: data, at: at)
+        .rc4 _ => return []
+
+# `text` padded and enciphered by `cipher` in CBC from `iv`, of a block's
+# length, which the caller checks; RC4 enciphers it as it stands.
+function encrypt(cipher: Cipher, iv: [u8], text: [u8]) -> [u8]
+    match cipher
+        .rc4 s                   => return rc.rc4(key: s.key, data: text)
+        .aes _ | .des _ | .rc2 _ => return chain(cipher: cipher, iv: iv, text: text)
+
+# `text` padded and enciphered by `cipher`, a block cipher, in CBC from `iv`.
+function chain(cipher: Cipher, iv: [u8], text: [u8]) -> [u8]
+    size = block_of(cipher)
+    pad = size - text.len() % size
+    padded: [u8] @= text
+
+    while padded.len() % size != 0 || padded.len() == text.len()
+        padded @ padded.push(to_u8(pad).must())
+
+    out: [u8] @= []
+    previous: [u8] @= iv
+    at: i64 @= 0
+
+    while at < padded.len()
+        mixed: [u8] @= []
+        k: i64 @= 0
+
+        while k < size
+            mixed @ mixed.push(to_u8(to_i64(padded[at + k]).must() ^ to_i64(previous[k]).must()).must())
+            k @ k + 1
+
+        previous @ octets.bytes_of(through(cipher: cipher, data: mixed, at: 0, back: false))
+        out @ bytes.concat([out, previous])
+        at @ at + size
+
+    return out
+
+# `data` deciphered by `cipher` in CBC from `iv` and its padding taken off;
+# RC4 deciphers it as it stands. Fails `permission` where `data` is no whole
+# number of blocks or its padding does not hold.
+function decrypt(cipher: Cipher, iv: [u8], data: [u8]) -> [u8]?
+    match cipher
+        .rc4 s                   => return ok(rc.rc4(key: s.key, data: data))
+        .aes _ | .des _ | .rc2 _ => return unchain(cipher: cipher, iv: iv, data: data)
+
+# `data` deciphered by `cipher`, a block cipher, in CBC from `iv`, its
+# padding checked and taken off.
+function unchain(cipher: Cipher, iv: [u8], data: [u8]) -> [u8]?
+    size = block_of(cipher)
+
+    if data.len() == 0 || data.len() % size != 0
+        return fail(code: "permission", msg: DOES_NOT_OPEN)
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        plain = through(cipher: cipher, data: data, at: at, back: true)
+        k: i64 @= 0
+
+        while k < size
+            before: u8 @= iv[k]
+
+            if at > 0
+                before @ data[at - size + k]
+            out @ out.push(to_u8(plain[k] ^ to_i64(before).must()).must())
+            k @ k + 1
+
+        at @ at + size
+
+    pad = to_i64(out[out.len() - 1]).must()
+    wrong: i64 @= 0
+
+    if pad < 1 || pad > size
+        return fail(code: "permission", msg: DOES_NOT_OPEN)
+    k: i64 @= 1
+
+    while k <= pad
+        wrong @ wrong | to_i64(out[out.len() - k]).must() ^ pad
+        k @ k + 1
+
+    if wrong != 0
+        return fail(code: "permission", msg: DOES_NOT_OPEN)
+    return ok(out.slice(from: 0, to: out.len() - pad))
+
+test "encrypt and decrypt: SP 800-38A F.2.1's first block under AES-128, and the padding of a whole block after it"
+    cipher: Cipher = .aes(schedule: aes.expand(octets.unhex("2b7e151628aed2a6abf7158809cf4f3c")))
+    iv = octets.unhex("000102030405060708090a0b0c0d0e0f")
+    text = octets.unhex("6bc1bee22e409f96e93d7e117393172a")
+    sealed = encrypt(cipher: cipher, iv: iv, text: text)
+    assert sealed.len() == 32
+    assert sealed.slice(from: 0, to: 16) == octets.unhex("7649abac8119b246cee98e9b12e9197d")
+    assert decrypt(cipher: cipher, iv: iv, data: sealed).must() == text
+
+test "decrypt: nothing, a part of a block, a padding of 0, and one longer than the block, all refused alike"
+    cipher: Cipher = .des(schedule: des.expand(octets.unhex("0123456789abcdef")))
+    iv = octets.unhex("0000000000000000")
+    assert octets.message_of(decrypt(cipher: cipher, iv: iv, data: [])) == DOES_NOT_OPEN
+    assert octets.code_of(decrypt(cipher: cipher, iv: iv, data: [1, 2, 3])) == "permission"
+    assert decrypt(cipher: cipher, iv: iv, data: encrypt(cipher: cipher, iv: iv, text: [])).must() == []
+    zero = encrypt(cipher: cipher, iv: iv, text: [1, 2, 3, 4, 5, 6, 7, 0]).slice(from: 0, to: 8)
+    assert octets.message_of(decrypt(cipher: cipher, iv: iv, data: zero)) == DOES_NOT_OPEN
+    long = encrypt(cipher: cipher, iv: iv, text: [1, 2, 3, 4, 5, 6, 7, 9]).slice(from: 0, to: 8)
+    assert octets.message_of(decrypt(cipher: cipher, iv: iv, data: long)) == DOES_NOT_OPEN
+
+test "encrypt and decrypt: RC2 and RC4 both ways, and a text of more than one block"
+    rc2: Cipher = .rc2(words: rc.expand(key: octets.unhex("88bca90e90875a7f0f79c384627bafb2"), bits: 128))
+    iv = octets.unhex("0102030405060708")
+    text = octets.unhex("00112233445566778899aabbccddeeff00")
+    assert decrypt(cipher: rc2, iv: iv, data: encrypt(cipher: rc2, iv: iv, text: text)).must() == text
+    rc4: Cipher = .rc4(key: octets.unhex("0102030405"))
+    assert encrypt(cipher: rc4, iv: [], text: octets.unhex("00000000000000000000000000000000")) == octets.unhex("b2396305f03dc027ccc3524a0a1118a8")
+    assert decrypt(cipher: rc4, iv: [], data: octets.unhex("b2396305f03dc027ccc3524a0a1118a8")).must() == octets.unhex("00000000000000000000000000000000")

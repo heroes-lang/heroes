@@ -1,0 +1,279 @@
+# AES (FIPS 197): a block of 16 bytes enciphered and deciphered under a key
+# of 16, 24 or 32 bytes, which PBES2 names in CBC mode. The S-box is computed
+# from its definition, the inverse in GF(2^8) followed by the affine map, and
+# every lookup whose index is a secret walks the whole table and keeps its one
+# entry by a mask, and every product in the field is taken without a branch,
+# so neither the time it takes nor the memory it reads depends on the key or
+# the data.
+
+use x509/pkcs12/internal/octets
+
+# The bytes of a block.
+constant BLOCK: i64
+    16
+
+# What a key expands to: the round keys and the S-box and its inverse.
+record Schedule
+    # The round keys, 16 bytes each, one more than the rounds, end to end.
+    material: [i64]
+    # The rounds: 10, 12 or 14 for a key of 16, 24 or 32 bytes.
+    rounds: i64
+    # The S-box, 256 entries.
+    sbox: [i64]
+    # The S-box's inverse, 256 entries.
+    inverse: [i64]
+
+# All ones where `a` and `b`, two bytes, are equal, and 0 where they differ,
+# with no branch.
+function same(a: i64, b: i64) -> i64
+    return 0 - ((a ^ b) - 1 >> 63 & 1)
+
+# The entry `at` of `table`, of 256 entries, read by walking every entry.
+function pick(table: [i64] lent, at: i64) -> i64
+    found: i64 @= 0
+    i: i64 @= 0
+
+    while i < 256
+        found @ found | table[i] & same(a: i, b: at)
+        i @ i + 1
+
+    return found
+
+# `x` times 2 in GF(2^8) modulo x^8 + x^4 + x^3 + x + 1, with no branch.
+function twice(x: i64) -> i64
+    return x << 1 & 0xff ^ 0x1b & 0 - (x >> 7 & 1)
+
+# `a` times `b` in GF(2^8), with no branch on either.
+function times(a: i64, b: i64) -> i64
+    product: i64 @= 0
+    x: i64 @= a
+    y: i64 @= b
+    i: i64 @= 0
+
+    while i < 8
+        product @ product ^ x & 0 - (y & 1)
+        x @ twice(x)
+        y @ y >> 1
+        i @ i + 1
+
+    return product
+
+# The S-box: each byte's inverse in GF(2^8), 0 for 0, through FIPS 197's
+# affine map.
+function sbox() -> [i64]
+    table: [i64] @= []
+    n: i64 @= 0
+
+    while n < 256
+        inverse: i64 @= 1
+        power: i64 @= n
+        bits: i64 @= 254
+
+        while bits > 0
+            if bits & 1 == 1
+                inverse @ times(a: inverse, b: power)
+            power @ times(a: power, b: power)
+            bits @ bits >> 1
+
+        if n == 0
+            inverse @ 0
+        mapped: i64 @= inverse
+        turn: i64 @= 1
+
+        while turn < 5
+            mapped @ mapped ^ (inverse << turn | inverse >> 8 - turn) & 0xff
+            turn @ turn + 1
+
+        table @ table.push(mapped ^ 0x63)
+        n @ n + 1
+
+    return table
+
+# The inverse of `table`, a permutation of the 256 bytes.
+function inverse_of(table: [i64]) -> [i64]
+    back: [i64] @= []
+
+    while back.len() < 256
+        back @ back.push(0)
+
+    i: i64 @= 0
+
+    while i < 256
+        back[table[i]] @ i
+        i @ i + 1
+
+    return back
+
+# The schedule of `key`, of 16, 24 or 32 bytes, which the caller checks.
+function expand(key: [u8] lent) -> Schedule
+    table = sbox()
+    words = key.len() / 4
+    rounds = words + 6
+    material: [i64] @= []
+
+    for b in key
+        material @ material.push(to_i64(b).must())
+
+    constant_word: i64 @= 1
+
+    while material.len() < 16 * (rounds + 1)
+        at = material.len()
+        t: [i64] @= [material[at - 4], material[at - 3], material[at - 2], material[at - 1]]
+
+        if at / 4 % words == 0
+            t @ [
+                pick(table: table, at: t[1]) ^ constant_word
+                pick(table: table, at: t[2])
+                pick(table: table, at: t[3])
+                pick(table: table, at: t[0])
+            ]
+            constant_word @ twice(constant_word)
+        else if words > 6 && at / 4 % words == 4
+            t @ [
+                pick(table: table, at: t[0])
+                pick(table: table, at: t[1])
+                pick(table: table, at: t[2])
+                pick(table: table, at: t[3])
+            ]
+        j: i64 @= 0
+
+        while j < 4
+            material @ material.push(material[at - 4 * words + j] ^ t[j])
+            j @ j + 1
+
+    return Schedule(material: material, rounds: rounds, sbox: table, inverse: inverse_of(table))
+
+# `state` with the round key `round` added.
+function add_key(state: [i64], schedule: Schedule lent, round: i64) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < 16
+        out @ out.push(state[i] ^ schedule.material[16 * round + i])
+        i @ i + 1
+
+    return out
+
+# Each byte of `state` through `table`, and its rows shifted: row `r` left
+# by `r` places where `back` is false, right where it is true.
+function substitute_and_shift(state: [i64], table: [i64] lent, back: bool) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < 16
+        row = i % 4
+        column = i / 4
+        from: i64 @= (column + row) % 4
+
+        if back
+            from @ (column - row + 4) % 4
+        out @ out.push(pick(table: table, at: state[row + 4 * from]))
+        i @ i + 1
+
+    return out
+
+# `state`'s columns multiplied by FIPS 197's matrix, or by its inverse where
+# `back` is true.
+function mix(state: [i64], back: bool) -> [i64]
+    out: [i64] @= []
+    factors: [i64] @= [2, 3, 1, 1]
+
+    if back
+        factors @ [14, 11, 13, 9]
+    column: i64 @= 0
+
+    while column < 4
+        row: i64 @= 0
+
+        while row < 4
+            sum: i64 @= 0
+            k: i64 @= 0
+
+            while k < 4
+                sum @ sum ^ times(a: factors[(k - row + 4) % 4], b: state[4 * column + k])
+                k @ k + 1
+
+            out @ out.push(sum)
+            row @ row + 1
+
+        column @ column + 1
+
+    return out
+
+# The block of `data` from `at` enciphered under `schedule`.
+function encrypt(schedule: Schedule lent, data: [u8] lent, at: i64) -> [i64]
+    state: [i64] @= []
+    i: i64 @= 0
+
+    while i < 16
+        state @ state.push(to_i64(data[at + i]).must())
+        i @ i + 1
+
+    state @ add_key(state: state, schedule: schedule, round: 0)
+    round: i64 @= 1
+
+    while round < schedule.rounds
+        state @ mix(state: substitute_and_shift(state: state, table: schedule.sbox, back: false), back: false)
+        state @ add_key(state: state, schedule: schedule, round: round)
+        round @ round + 1
+
+    state @ substitute_and_shift(state: state, table: schedule.sbox, back: false)
+    return add_key(state: state, schedule: schedule, round: schedule.rounds)
+
+# The block of `data` from `at` deciphered under `schedule`.
+function decrypt(schedule: Schedule lent, data: [u8] lent, at: i64) -> [i64]
+    state: [i64] @= []
+    i: i64 @= 0
+
+    while i < 16
+        state @ state.push(to_i64(data[at + i]).must())
+        i @ i + 1
+
+    state @ add_key(state: state, schedule: schedule, round: schedule.rounds)
+    round: i64 @= schedule.rounds - 1
+
+    while round > 0
+        state @ substitute_and_shift(state: state, table: schedule.inverse, back: true)
+        state @ mix(state: add_key(state: state, schedule: schedule, round: round), back: true)
+        round @ round - 1
+
+    state @ substitute_and_shift(state: state, table: schedule.inverse, back: true)
+    return add_key(state: state, schedule: schedule, round: 0)
+
+test "sbox: FIPS 197's 0x00, 0x53 and 0xff, and its inverse undoes it at every byte"
+    table = sbox()
+    assert table[0] == 0x63
+    assert table[0x53] == 0xed
+    assert table[0xff] == 0x16
+    back = inverse_of(table)
+    i: i64 @= 0
+
+    while i < 256
+        assert back[table[i]] == i
+        i @ i + 1
+
+test "pick: the first entry, the last, and an entry inside"
+    table = sbox()
+    assert pick(table: table, at: 0) == 0x63
+    assert pick(table: table, at: 255) == 0x16
+    assert pick(table: table, at: 0x53) == 0xed
+
+test "encrypt and decrypt: FIPS 197 appendix C's three keys, of 16, 24 and 32 bytes"
+    plain = octets.unhex("00112233445566778899aabbccddeeff")
+    short = expand(octets.unhex("000102030405060708090a0b0c0d0e0f"))
+    assert octets.bytes_of(encrypt(schedule: short, data: plain, at: 0)) == octets.unhex("69c4e0d86a7b0430d8cdb78070b4c55a")
+    assert octets.bytes_of(decrypt(schedule: short, data: octets.unhex("69c4e0d86a7b0430d8cdb78070b4c55a"), at: 0)) == plain
+    middle = expand(octets.unhex("000102030405060708090a0b0c0d0e0f1011121314151617"))
+    assert octets.bytes_of(encrypt(schedule: middle, data: plain, at: 0)) == octets.unhex("dda97ca4864cdfe06eaf70a0ec0d7191")
+    assert octets.bytes_of(decrypt(schedule: middle, data: octets.unhex("dda97ca4864cdfe06eaf70a0ec0d7191"), at: 0)) == plain
+    long = expand(octets.unhex("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"))
+    assert octets.bytes_of(encrypt(schedule: long, data: plain, at: 0)) == octets.unhex("8ea2b7ca516745bfeafc49904b496089")
+    assert octets.bytes_of(decrypt(schedule: long, data: octets.unhex("8ea2b7ca516745bfeafc49904b496089"), at: 0)) == plain
+
+test "encrypt: a block that begins inside the data, and a key of every byte 0xff"
+    data = octets.unhex("aa00112233445566778899aabbccddeeff")
+    short = expand(octets.unhex("000102030405060708090a0b0c0d0e0f"))
+    assert octets.bytes_of(encrypt(schedule: short, data: data, at: 1)) == octets.unhex("69c4e0d86a7b0430d8cdb78070b4c55a")
+    full = expand(octets.unhex("ffffffffffffffffffffffffffffffff"))
+    sealed = encrypt(schedule: full, data: octets.unhex("00000000000000000000000000000000"), at: 0)
+    assert octets.bytes_of(decrypt(schedule: full, data: octets.bytes_of(sealed), at: 0)) == octets.unhex("00000000000000000000000000000000")

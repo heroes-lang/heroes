@@ -81,11 +81,11 @@ capability tls/identity  a server's certificate chain and private key read from 
   note    PKCS #8, PKCS #1 and SEC 1 keys, RSA and ECDSA on P-256, P-384 and P-521; an encrypted key is refused `invalid`, as Go refuses it, where Python asks for its password. Text, not a path: `fs.read_file` reads one
 
 capability tls/identity-pkcs12  an identity read from a PKCS #12 file
-  heroes  pending
+  heroes  pkcs12.decode, pkcs12.identities_of, pkcs12.chain_pem, pkcs12.key_pem
   go      -
   rust    native_tls::Identity::from_pkcs12
   python  -
-  note    Only native-tls takes it; Windows and macOS read it natively, OpenSSL by its own call. Not written: a PEM key does what it does
+  note    `x509/pkcs12` reads the file, checks its MAC and answers the PEM of the chain and of the key that `Server` takes, so the one route of PEM serves both; native-tls hands the file to the platform instead
 
 capability tls/alpn  application protocols offered and taken, and the one chosen
   heroes  tls.protocol_of
