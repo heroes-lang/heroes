@@ -227,11 +227,14 @@ test "a program reaches a member written in Swift only through the C member that
     assert reached(t, named: ["hero_net.h", "hero_time.h", "stdio.h"]).must().len() == 0
     assert reached(t, named: ["hero_crypto.h"]).must() == [t.runtime + "/platform/hero_crypto_cryptokit.swift"]
 
-    # `hero_ui.c` includes the four AppKit members' headers (the app's window
-    # code, its dialogs, its system services and the rest), so the C member
-    # that `hero_ui.h` opens into reaches each of the four, in the order
-    # `runtime/runtime.c` includes them (`runtime_key.swift_members`).
+    # `hero_ui.c` includes the five AppKit members' headers (the print and
+    # page-setup dialogs since step 105v17, the app's window code, its
+    # dialogs, its system services and the rest), so the C member that
+    # `hero_ui.h` opens into reaches each of the five, in the order
+    # `runtime/runtime.c` includes them (`runtime_key.swift_members`): the
+    # print member stands with the printing capability's, before `hero_ui.c`.
     appkit = [
+        t.runtime + "/platform/hero_ui_appkit_print.swift"
         t.runtime + "/platform/hero_ui_appkit.swift"
         t.runtime + "/platform/hero_ui_appkit_windows.swift"
         t.runtime + "/platform/hero_ui_appkit_dialogs.swift"
