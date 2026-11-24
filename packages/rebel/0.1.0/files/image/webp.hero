@@ -449,6 +449,22 @@ test "decode: every lossy sample, pixel for pixel as dwebp reads it"
         assert to_i64(hash.crc32(image.convert(i, to: .rgba).pixels)).must() == s.rgba_crc
         assert !info_of(bytes.parse_hex(s.file).must()).must().lossless
 
+test "decode: a lossy animation's frames, places, times and flags, each as dwebp reads it alone"
+    w = decode(bytes.parse_hex(samples.animation()).must(), image.default_limits()).must()
+    assert w.animated && w.loops == 3 && w.frames.len() == 2
+    assert w.width == 21 && w.height == 27
+    first = w.frames[0]
+    assert first.x == 0 && first.y == 0 && first.duration_ms == 80 && !first.replaces && !first.clears
+    second = w.frames[1]
+    assert second.x == 2 && second.y == 4 && second.duration_ms == 120 && second.replaces && second.clears
+    assert first.image.format == .rgb && second.image.format == .rgba
+
+    for i in range(from: 0, to: 2)
+        rgba = image.convert(w.frames[i].image, to: .rgba)
+        assert to_i64(hash.crc32(rgba.pixels)).must() == samples.animation_crcs()[i]
+
+    assert composite(w, limits: image.default_limits()).must().len() == 2
+
 test "encode_lossy: every setting writes the file dwebp read, read back to dwebp's pixels"
     for f in written.files()
         img = written.image_of(f.source)
