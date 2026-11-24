@@ -1,0 +1,472 @@
+# The extended attributes of a file or a folder: named values it carries
+# beside its bytes, listed, read, written, removed and copied to another path,
+# so a backup keeps a macOS file's tags (`com.apple.metadata:_kMDItemUserTags`)
+# and quarantine (`com.apple.quarantine`), a Linux file's SELinux label
+# (`security.selinux`), and what a program stored beside a file of its own.
+# What Python's `os.getxattr` family and Go's `syscall.Getxattr` family give
+# on Linux alone, and Java's `UserDefinedFileAttributeView` on every system.
+#
+# **What an attribute is, on each system** (`hero_xattr.h`): on Darwin and
+# Linux the system's own, a name of bytes and a value of bytes. A Linux name
+# carries its namespace, and an attribute a program stores goes under
+# `user.`; `security.` and `trusted.` are the system's and root's, and
+# `system.` holds a file's access list, which `fs/acl` reads. Darwin's names
+# have no namespace. On Windows an attribute is a named data stream of NTFS,
+# `file:name`: its name is the stream's, which holds no `:`, `\` or `/` and
+# is compared without regard to case, its value the stream's bytes, and
+# `Zone.Identifier` is Windows' quarantine. A name like `user.notes` is good
+# on all three.
+#
+# What it does NOT do: a file's own bytes, its permission and times (`fs`);
+# who may read or write it (`fs/acl`); a value as text, which `bytes.to_text`
+# reads.
+#
+# **Every function follows a link at the path's end**, but the `link_`
+# functions and `write_with` told `follow: false`, which work on the link
+# itself; Linux keeps no `user.` attribute on a link. A value is read whole,
+# at most a GiB of it.
+#
+# It fails with `invalid`, `file_not_found`, `not_found`, `exists`,
+# `permission`, `not_a_directory`, `not_text`, `limit`, `unsupported` and
+# `failed` (README § A4): `unsupported` where the volume keeps no extended
+# attribute of that kind (a FAT drive, a Linux file system without `user.`
+# attributes, a Windows volume with no named streams) or the system keeps
+# none that is read here, a POSIX system neither Darwin nor Linux.
+
+use bytes as octets
+use fs
+use fs/xattr/hero_xattr
+use fs/xattr/internal/calls
+use fs/xattr/internal/fixture
+
+## Codes
+
+# A name that is empty, holds a zero byte, is longer than the system takes,
+# or on Windows holds `:`, `\` or `/`; a path that holds a zero byte; a value
+# of a form the name keeps for itself (Darwin's `com.apple.FinderInfo` is 32
+# bytes).
+constant INVALID: str
+    calls.INVALID
+
+# The path names nothing.
+constant FILE_NOT_FOUND: str
+    calls.FILE_NOT_FOUND
+
+# The path has no attribute of that name.
+constant NOT_FOUND: str
+    calls.NOT_FOUND
+
+# The path has an attribute of that name, and `write_with` was told `.only_new`.
+constant EXISTS: str
+    calls.EXISTS
+
+# The system refuses the call to this program: the file's permission, a
+# namespace this user may not write, a name the system keeps for itself, a
+# `user.` attribute on a Linux link.
+constant PERMISSION: str
+    calls.PERMISSION
+
+# A part of the path on its way is not a folder.
+constant NOT_A_DIRECTORY: str
+    calls.NOT_A_DIRECTORY
+
+# A name the system lists is not UTF-8, or on Windows the path or the name
+# handed is not.
+constant NOT_TEXT: str
+    calls.NOT_TEXT
+
+# The system has no room for the attribute, the value is larger than the
+# volume keeps for one, or one read is past a GiB.
+constant LIMIT: str
+    calls.LIMIT
+
+# The volume keeps no extended attribute of that kind, or the system keeps
+# none that is read here.
+constant UNSUPPORTED: str
+    calls.UNSUPPORTED
+
+# The system refused for a reason none of the codes above names; the message
+# carries its number.
+constant FAILED: str
+    calls.FAILED
+
+## Attributes
+
+# What `write_with` does where the attribute is there, or is not.
+variant When
+    # Writes it either way, made or replaced.
+    always
+    # Writes it only where it is not there, failing `exists` where it is.
+    only_new
+    # Writes it only where it is there, failing `not_found` where it is not.
+    only_existing
+
+# The names of `path`'s extended attributes, in the order the system lists
+# them.
+#
+# - `path`: the file or folder asked.
+#
+# A Linux name this user may not read (`trusted.`, for a user who is not
+# root) is not listed, nor a Windows file's unnamed stream, its bytes. Fails
+# `file_not_found` where nothing is at `path`, `not_text` where a name the
+# system lists is not UTF-8, and as the module's comment says.
+function names(path: str) -> [str]?
+    return calls.listed(path, follow: 1)
+
+# The names of the extended attributes of the link at `path` itself, as
+# `names` lists them.
+#
+# - `path`: the link asked, or a path that is not a link, which is asked as
+#   `names` asks it.
+#
+# Fails as `names` does.
+function link_names(path: str) -> [str]?
+    return calls.listed(path, follow: 0)
+
+# The value of `path`'s extended attribute `name`, its bytes, which may be
+# none.
+#
+# - `path`: the file or folder asked.
+# - `name`: the attribute's name.
+#
+# Fails `not_found` where `path` has no attribute of that name,
+# `file_not_found` where nothing is at `path`, `invalid` where `name` is
+# empty, `limit` past a GiB, and as the module's comment says.
+function read(path: str, name: str) -> [u8]?
+    return calls.value_of(path: path, name: name, follow: 1)
+
+# The value of the extended attribute `name` of the link at `path` itself.
+#
+# - `path`: the link asked.
+# - `name`: the attribute's name.
+#
+# Fails as `read` does.
+function link_read(path: str, name: str) -> [u8]?
+    return calls.value_of(path: path, name: name, follow: 0)
+
+# Writes `value` as `path`'s extended attribute `name`, made where it is not
+# there and replaced where it is.
+#
+# - `path`: the file or folder written.
+# - `name`: the attribute's name.
+# - `value`: its bytes, which may be none.
+#
+# On Darwin and Linux the system writes the value at once or not at all; on
+# Windows the stream is written and then cut to its length, so a failure
+# part way may leave it short. Fails `limit` where the value is larger than
+# the volume keeps for one attribute (a Linux ext4 volume keeps about a
+# block), `permission` where the system keeps the name for itself, and as
+# `read` does.
+function write(path: str, name: str, value: [u8]) -> ()?
+    return calls.written(path: path, name: name, value: value, mode: hero_xattr.HERO_XATTR_EITHER, follow: 1)
+
+# Writes `value` as `path`'s extended attribute `name` where `when` says, on
+# the link itself where `follow` is false.
+#
+# - `path`: the file, folder or link written.
+# - `name`: the attribute's name.
+# - `value`: its bytes, which may be none.
+# - `when`: `.always`, `.only_new` or `.only_existing`.
+# - `follow`: true follows a link at the path's end, as `write` does; false
+#   writes on the link itself.
+#
+# Fails `exists` for `.only_new` where the attribute is there, `not_found`
+# for `.only_existing` where it is not, `permission` for a `user.` attribute
+# on a Linux link, and as `write` does.
+function write_with(path: str, name: str, value: [u8], when: When, follow: bool) -> ()?
+    mode = match when
+        .always        => hero_xattr.HERO_XATTR_EITHER
+        .only_new      => hero_xattr.HERO_XATTR_ONLY_NEW
+        .only_existing => hero_xattr.HERO_XATTR_ONLY_EXISTING
+
+    through: i64 @= 0
+
+    if follow
+        through @ 1
+    return calls.written(path: path, name: name, value: value, mode: mode, follow: through)
+
+# Removes `path`'s extended attribute `name`.
+#
+# - `path`: the file or folder written.
+# - `name`: the attribute's name.
+#
+# Fails `not_found` where `path` has no attribute of that name, and as `read`
+# does.
+function remove(path: str, name: str) -> ()?
+    return calls.removed(path: path, name: name, follow: 1)
+
+# Removes the extended attribute `name` of the link at `path` itself.
+#
+# - `path`: the link written.
+# - `name`: the attribute's name.
+#
+# Fails as `remove` does.
+function link_remove(path: str, name: str) -> ()?
+    return calls.removed(path: path, name: name, follow: 0)
+
+# Writes every extended attribute of `from` on `to`, each made or replaced;
+# an attribute `to` has and `from` has not stays.
+#
+# - `from`: the file or folder whose attributes are read.
+# - `to`: the file or folder written.
+#
+# A copy between systems keeps what both keep: a Linux name's namespace is
+# part of its name, so `user.notes` from Linux is `user.notes` on Darwin.
+# Fails at the first attribute that cannot be read or written, the message
+# naming it, `permission` where the system keeps a name of `from`'s for
+# itself on `to` (Linux's `security.selinux` for a user who is not root), and
+# as `names`, `read` and `write` do.
+function copy(from: str, to: str) -> ()?
+    for name in names(from)?
+        write(path: to, name: name, value: read(path: from, name: name)?)?
+
+    return ok()
+
+## Tests
+
+test "names, read, write and remove: a path that is not there is file_not_found"
+    dir = fixture.folder("absent")
+    gone = dir + "/nothing"
+
+    match names(gone)
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match read(path: gone, name: "user.a")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match write(path: gone, name: "user.a", value: [1])
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match remove(path: gone, name: "user.a")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    assert !fs.exists(gone).must()
+    fs.remove_all(dir).must()
+
+test "an empty name, and a zero byte in a path or a name, are invalid before the system is asked"
+    dir = fixture.folder("invalid")
+    file = dir + "/f"
+    fs.write_bytes(file, data: []).must()
+    zero_name: [u8] = ['u', 's', 'e', 'r', '.', 0, 'a']
+    zero_path: [u8] = ['b', 0, 'x']
+
+    match read(path: file, name: "")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match write(path: file, name: "", value: [1])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match remove(path: file, name: "")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match write(path: file, name: zero_name.validated_bytes().must(), value: [1])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match names(zero_path.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    fs.remove_all(dir).must()
+
+test "write and read: an empty value, every byte from 0 to 255, and a value of three thousand bytes come back whole"
+    dir = fixture.folder("values")
+    file = dir + "/f"
+    fs.write_bytes(file, data: [7]).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    write(path: file, name: "user.rebel.empty", value: []).must()
+    assert read(path: file, name: "user.rebel.empty").must().len() == 0
+    every: [u8] @= []
+
+    for b in range(from: 0, to: 256)
+        every @ every.push(b.to_u8().must())
+
+    write(path: file, name: "user.rebel.every", value: every).must()
+    assert read(path: file, name: "user.rebel.every").must() == every
+    large: [u8] @= []
+
+    for i in range(from: 0, to: 3000)
+        large @ large.push((i % 251).to_u8().must())
+
+    write(path: file, name: "user.rebel.large", value: large).must()
+    assert read(path: file, name: "user.rebel.large").must() == large
+
+    # The file's own bytes are not touched.
+    assert fs.read_bytes(file).must() == [7]
+    fs.remove_all(dir).must()
+
+test "a value of two hundred thousand bytes, where the volume keeps one that large"
+    dir = fixture.folder("huge")
+    file = dir + "/f"
+    fs.write_bytes(file, data: []).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+    huge: [u8] @= []
+
+    for i in range(from: 0, to: 200000)
+        huge @ huge.push((i % 253).to_u8().must())
+
+    match write(path: file, name: "user.rebel.huge", value: huge)
+        .ok _ => assert read(path: file, name: "user.rebel.huge").must() == huge
+        .err e =>
+            assert e.code == LIMIT
+            fs.remove_all(dir).must()
+            skip_test(reason: "this volume keeps no attribute of 200000 bytes: write answers limit")
+
+    fs.remove_all(dir).must()
+
+test "names: what was written is listed once, a name of more than one byte a character too, and what was removed is not"
+    dir = fixture.folder("names")
+    file = dir + "/f"
+    fs.write_bytes(file, data: []).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    write(path: file, name: "user.rebel.one", value: [1]).must()
+    write(path: file, name: "user.rebel.caffè", value: [2]).must()
+    write(path: file, name: "user.rebel.one", value: [3]).must()
+    found = names(file).must()
+    assert fixture.count_of(found, name: "user.rebel.one") == 1
+    assert fixture.count_of(found, name: "user.rebel.caffè") == 1
+    assert read(path: file, name: "user.rebel.one").must() == [3]
+    remove(path: file, name: "user.rebel.one").must()
+    assert fixture.count_of(names(file).must(), name: "user.rebel.one") == 0
+
+    match read(path: file, name: "user.rebel.one")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match remove(path: file, name: "user.rebel.one")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    fs.remove_all(dir).must()
+
+test "write_with: only_new where it is there is exists, only_existing where it is not is not_found, and neither writes"
+    dir = fixture.folder("when")
+    file = dir + "/f"
+    fs.write_bytes(file, data: []).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    match write_with(path: file, name: "user.rebel.w", value: [1], when: .only_existing, follow: true)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert read(path: file, name: "user.rebel.w").is_err()
+    write_with(path: file, name: "user.rebel.w", value: [2], when: .only_new, follow: true).must()
+
+    match write_with(path: file, name: "user.rebel.w", value: [3], when: .only_new, follow: true)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert read(path: file, name: "user.rebel.w").must() == [2]
+    write_with(path: file, name: "user.rebel.w", value: [4], when: .only_existing, follow: true).must()
+    assert read(path: file, name: "user.rebel.w").must() == [4]
+    fs.remove_all(dir).must()
+
+test "a folder carries attributes as a file does"
+    dir = fixture.folder("folder")
+    inner = dir + "/inner"
+    fs.make_dir(inner).must()
+
+    if !fixture.kept(inner)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    write(path: inner, name: "user.rebel.d", value: [9, 8]).must()
+    assert read(path: inner, name: "user.rebel.d").must() == [9, 8]
+    assert fixture.count_of(names(inner).must(), name: "user.rebel.d") == 1
+    fs.remove_all(dir).must()
+
+test "the link_ functions ask the link itself, and the others what it names"
+    dir = fixture.folder("link")
+    file = dir + "/f"
+    link = dir + "/l"
+    fs.write_bytes(file, data: []).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    match fs.symlink(target: "f", name: link)
+        .ok _ => assert fs.is_link(link).must()
+        .err e =>
+            assert e.code == fs.PERMISSION
+            fs.remove_all(dir).must()
+            skip_test(reason: "this user may not make a symbolic link: symlink answers permission")
+
+    write(path: link, name: "user.rebel.t", value: [5]).must()
+    assert read(path: file, name: "user.rebel.t").must() == [5]
+    assert read(path: link, name: "user.rebel.t").must() == [5]
+    assert fixture.count_of(names(link).must(), name: "user.rebel.t") == 1
+    assert fixture.count_of(link_names(link).must(), name: "user.rebel.t") == 0
+
+    match link_read(path: link, name: "user.rebel.t")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match link_remove(path: link, name: "user.rebel.t")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert read(path: file, name: "user.rebel.t").must() == [5]
+    fs.remove_all(dir).must()
+
+test "copy: every attribute of one file on another, the other's own kept"
+    dir = fixture.folder("copy")
+    from = dir + "/from"
+    to = dir + "/to"
+    fs.write_bytes(from, data: []).must()
+    fs.write_bytes(to, data: []).must()
+
+    if !fixture.kept(from)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    write(path: from, name: "user.rebel.a", value: [1]).must()
+    write(path: from, name: "user.rebel.b", value: [2, 2]).must()
+    write(path: to, name: "user.rebel.b", value: [9]).must()
+    write(path: to, name: "user.rebel.c", value: [3]).must()
+    copy(from: from, to: to).must()
+    assert read(path: to, name: "user.rebel.a").must() == [1]
+    assert read(path: to, name: "user.rebel.b").must() == [2, 2]
+    assert read(path: to, name: "user.rebel.c").must() == [3]
+
+    match copy(from: dir + "/nothing", to: to)
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    fs.remove_all(dir).must()
+
+## Examples
+
+# A note kept beside a file, read back as text.
+test "write: a note beside a file"
+    fs.make_dir_all("build").must()
+    dir = fs.make_temp_dir(dir: "build", pattern: "xattr-note-*").must()
+    file = dir + "/report.txt"
+    fs.write_bytes(file, data: octets.from_text("figures")).must()
+
+    match write(path: file, name: "user.notes", value: octets.from_text("checked by Ann"))
+        .ok _  => assert octets.to_text(read(path: file, name: "user.notes").must()).must() == "checked by Ann"
+        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()

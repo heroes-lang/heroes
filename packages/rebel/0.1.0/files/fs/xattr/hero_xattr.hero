@@ -1,0 +1,112 @@
+# The platform layer's extended attributes, `hero_xattr.h`, bound thin: one
+# function per C function, in C's order, each answering what C answers. The
+# floor of `fs/xattr`: where a call fails its answer is -1 and `last_error`
+# then the kind, which the face turns into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. A
+# list of names and a value are the header's fill form: `buffer` is left `n`
+# bytes long and the answer is how many bytes the whole answer has; where that
+# is above `n` the buffer was too short and holds nothing to read, and the
+# caller asks again with that many.
+
+extern "hero_xattr.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform; the header says what each means.
+    constant HERO_XATTR_OK: i64
+    constant HERO_XATTR_INVALID: i64
+    constant HERO_XATTR_NOT_FOUND: i64
+    constant HERO_XATTR_EXISTS: i64
+    constant HERO_XATTR_DENIED: i64
+    constant HERO_XATTR_NOT_A_DIRECTORY: i64
+    constant HERO_XATTR_LIMIT: i64
+    constant HERO_XATTR_UNSUPPORTED: i64
+    constant HERO_XATTR_OTHER: i64
+    constant HERO_XATTR_NOT_TEXT: i64
+    constant HERO_XATTR_ABSENT: i64
+    constant HERO_XATTR_TOO_LARGE: i64
+    # What a write does where the attribute is there, or not.
+    constant HERO_XATTR_EITHER: i64
+    constant HERO_XATTR_ONLY_NEW: i64
+    constant HERO_XATTR_ONLY_EXISTING: i64
+    function hero_xattr_names(path: cstr lent, follow: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_xattr_read(path: cstr lent, name: cstr lent, follow: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_xattr_write(path: cstr lent, name: cstr lent, @value: [u8] counted_by size lent, size: u64, follow: i64, mode: i64) -> i64
+    function hero_xattr_remove(path: cstr lent, name: cstr lent, follow: i64) -> i64
+    function hero_xattr_last_error() -> i64
+    function hero_xattr_last_os_error() -> i64
+
+# How many bytes the names of `path`'s attributes have, or -1. They are
+# written into `buffer` where `n` bytes hold them, each followed by a zero
+# byte.
+#
+# - `path`: the file or folder asked; it holds no zero byte.
+# - `follow`: 1 follows a link at the path's end, 0 asks the link itself.
+# - `buffer`: where the names are written, where `n` bytes hold them; left
+#   `n` long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read.
+function names(path: str, follow: i64, @buffer: [u8], n: u64) -> i64
+    return hero_xattr_names(path.cstr(), follow: follow, @buffer, n: n)
+
+# How many bytes the value of `path`'s attribute `name` has, or -1. It is
+# written into `buffer` where `n` bytes hold it.
+#
+# - `path`: the file or folder asked; it holds no zero byte.
+# - `name`: the attribute's name; it holds no zero byte.
+# - `follow`: 1 follows a link at the path's end, 0 asks the link itself.
+# - `buffer`: where the value is written, where `n` bytes hold it; left `n`
+#   long.
+# - `n`: the bytes `buffer` holds; an answer above it says `buffer` was too
+#   short and holds nothing to read.
+function read(path: str, name: str, follow: i64, @buffer: [u8], n: u64) -> i64
+    return hero_xattr_read(path: path.cstr(), name: name.cstr(), follow: follow, @buffer, n: n)
+
+# 0 where the first `size` bytes of `value` are now `path`'s attribute
+# `name`, or -1.
+#
+# - `path`: the file or folder written; it holds no zero byte.
+# - `name`: the attribute's name; it holds no zero byte.
+# - `value`: the bytes written, from its first; left as it was handed.
+# - `size`: how many bytes of `value` are the attribute's value.
+# - `follow`: 1 follows a link at the path's end, 0 writes on the link itself.
+# - `mode`: `HERO_XATTR_EITHER`, `HERO_XATTR_ONLY_NEW` or
+#   `HERO_XATTR_ONLY_EXISTING`.
+function write(path: str, name: str, @value: [u8], size: u64, follow: i64, mode: i64) -> i64
+    return hero_xattr_write(path: path.cstr(), name: name.cstr(), @value, size: size, follow: follow, mode: mode)
+
+# 0 where `path`'s attribute `name` is removed, or -1.
+#
+# - `path`: the file or folder written; it holds no zero byte.
+# - `name`: the attribute's name; it holds no zero byte.
+# - `follow`: 1 follows a link at the path's end, 0 works on the link itself.
+function remove(path: str, name: str, follow: i64) -> i64
+    return hero_xattr_remove(path: path.cstr(), name: name.cstr(), follow: follow)
+
+# The kind of the last call's failure on this thread, `HERO_XATTR_OK` after
+# one that did not fail.
+function last_error() -> i64
+    return hero_xattr_last_error()
+
+# The platform's own number for the last failure on this thread, 0 where the
+# layer itself refused.
+function last_os_error() -> i64
+    return hero_xattr_last_os_error()
+
+## Tests
+
+test "names: a path that is not there is the layer's not-found kind, and an empty path is refused before the system is asked"
+    room: [u8] @= []
+    assert names("hero-xattr-floor-no-such-path", follow: 1, @room, n: 64) == -1
+    assert last_error() == HERO_XATTR_NOT_FOUND
+    assert last_os_error() != 0
+    assert names("", follow: 1, @room, n: 64) == -1
+    assert last_error() == HERO_XATTR_INVALID
+    assert last_os_error() == 0
+
+test "write: a mode the header does not name, and an empty name, are refused before the system is asked"
+    value: [u8] @= [1, 2]
+    assert write(path: "hero-xattr-floor-no-such-path", name: "user.a", @value, size: 2, follow: 1, mode: 7) == -1
+    assert last_error() == HERO_XATTR_INVALID
+    assert write(path: "hero-xattr-floor-no-such-path", name: "", @value, size: 2, follow: 1, mode: HERO_XATTR_EITHER) == -1
+    assert last_error() == HERO_XATTR_INVALID

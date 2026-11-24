@@ -1,0 +1,28 @@
+# Reaches Rebel's `fs/xattr`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a note beside a file of its own
+# making under `build/`, prints the note read back and the names the file
+# carries that it wrote, then removes the folder.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/fs/xattr
+
+function main()
+    _ = fs.make_dir_all("build").is_err()
+
+    match fs.make_temp_dir(dir: "build", pattern: "reach-xattr-*")
+        .err e => print(e.code, ": ", e.msg)
+        .ok root =>
+            file = root + "/report.txt"
+            _ = fs.write_bytes(file, data: bytes.from_text("figures")).is_err()
+
+            match xattr.write(path: file, name: "user.notes", value: bytes.from_text("checked"))
+                .err e => print(e.code, ": ", e.msg)
+                .ok _ =>
+                    print(bytes.to_text_lossy(xattr.read(path: file, name: "user.notes").default([])))
+
+                    for name in xattr.names(file).default([])
+                        if name == "user.notes"
+                            print(name)
+
+            _ = fs.remove_all(root).is_err()

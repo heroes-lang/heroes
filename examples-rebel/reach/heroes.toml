@@ -43,6 +43,8 @@ packages = [
     "fs/hero_volumes",
     "fs/watch",
     "fs/watch/hero_watch",
+    "fs/xattr",
+    "fs/xattr/hero_xattr",
     "graphql",
     "graphs",
     "grpc",
