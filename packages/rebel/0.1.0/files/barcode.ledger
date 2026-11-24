@@ -92,11 +92,12 @@ capability barcode/data-matrix  a Data Matrix ECC 200 of a text, bytes or GS1 el
   python  zxingcpp.create_barcode (DataMatrix)
   note    the encodations ASCII, C40, Text, X12, EDIFACT and Base 256 chosen by a search for the fewest codewords over every place and encodation, where the standard's informative look-ahead guesses; a text of more than ASCII behind ECI 000026, which zxing-cpp reads back as UTF-8; all 30 ECC 200 sizes, the smallest of a shape or one fixed. zxing-cpp read all 44 Data Matrix symbols of the oracle (every size, each encodation, all 256 bytes, 3116 digits in 144 by 144, a text of 1,090 characters, a rectangle, GS1) from PNG, CairoSVG and resvg, and its own writer made the same modules for "123456", a lone letter, a text in Text and fifty digits; for capitals and digits it chose another encodation of the same size. Empty data is `invalid`, as zxing-cpp's writer refuses it. Reader programming, structured append and the rectangular extension of ISO/IEC 21471 are not written
 
-capability barcode/pdf417  a PDF417 of a text or bytes, at a level of error correction and a count of columns
-  heroes  pending
+capability barcode/pdf417  a PDF417 or compact PDF417 of a text or bytes, at a level of error correction and a count of columns
+  heroes  barcode.pdf417, barcode.pdf417_bytes, barcode.Pdf417Options, barcode.default_pdf417_options, barcode.Count
   go      pdf417.Encode
   rust    -
-  python  zxingcpp.create_barcode (PDF417)
+  python  zxingcpp.create_barcode (PDF417, CompactPDF417)
+  note    runs of 13 digits or more in numeric compaction, of 5 text characters or more in text compaction (and a shorter run where the symbol is in text already), the rest in byte compaction, as the standard's informative rule cuts them; levels 0 to 8, the standard's recommended level by default; 1 to 30 columns, chosen for a symbol about three times as wide as tall; a text of more than ASCII behind ECI 000026. The 2787 codeword patterns were read from pdf417gen 0.8.1's symbols, each paired with a codeword computed independently (323 symbols, no conflict). zxing-cpp read all 27 PDF417 symbols of the oracle (every level, 1 to 30 columns, compact, all 256 bytes, UTF-8, a text of 1,070 characters) from PNG, CairoSVG and resvg, and pdf417gen made the same modules for two texts at fixed columns and levels. Empty data is `invalid`. Macro PDF417 and MicroPDF417 are not written
 
 ## Written out
 

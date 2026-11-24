@@ -1,0 +1,286 @@
+# A PDF417 symbol made from its data codewords, by ISO/IEC 15438: the
+# level of error correction, the columns and the rows chosen, the padding,
+# the error correction codewords of Reed and Solomon's code over the
+# integers modulo 929, the generator's roots the powers of 3 from 3^1, and
+# each row written as its start pattern, its left row indicator, its data
+# in the row's cluster, its right row indicator and its stop pattern; a
+# compact symbol ends each row with one bar instead.
+
+use barcode/internal/codes
+use barcode/internal/pdf_tables
+
+# The start pattern's 17 modules and the stop pattern's 18.
+constant START: i64
+    0x1fea8
+
+constant STOP: i64
+    0x3fa29
+
+# The most codewords a symbol holds, and its most rows and columns.
+constant MOST_WORDS: i64
+    928
+
+constant MOST_ROWS: i64
+    90
+
+constant MOST_COLUMNS: i64
+    30
+
+# The level of error correction the standard recommends for `count` data
+# codewords: 2 up to 40, 3 up to 160, 4 up to 320, else 5.
+function recommended_level(count: i64) -> i64
+    if count <= 40
+        return 2
+
+    if count <= 160
+        return 3
+
+    if count <= 320
+        return 4
+    return 5
+
+# The `count` error correction codewords of `data`: the remainder of
+# `data` times x to that power divided by the generator, each negated.
+function correction(data: [i64] lent, count: i64) -> [i64]
+    generator: [i64] @= [1]
+    root: i64 @= 1
+
+    for _ in range(from: 0, to: count)
+        root @ root * 3 % 929
+        next: [i64] @= []
+
+        for j in range(from: 0, to: generator.len() + 1)
+            here: i64 @= 0
+
+            if j < generator.len()
+                here @ generator[j]
+
+            if j > 0
+                here @ (here + 929 - generator[j - 1] * root % 929) % 929
+            next @ next.push(here)
+
+        generator @ next
+
+    rest: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        rest @ rest.push(0)
+
+    for word in data
+        factor = (word + rest[0]) % 929
+
+        for j in range(from: 0, to: count)
+            following: i64 @= 0
+
+            if j + 1 < count
+                following @ rest[j + 1]
+            rest[j] @ (following + 929 - factor * generator[j + 1] % 929) % 929
+
+    out: [i64] @= []
+
+    for r in rest
+        out @ out.push((929 - r) % 929)
+
+    return out
+
+# The rows a symbol of `columns` data columns needs for `total` codewords,
+# 3 at least.
+function rows_for(total: i64, columns: i64) -> i64
+    rows = (total + columns - 1) / columns
+
+    if rows < 3
+        return 3
+    return rows
+
+# The data columns of a symbol of `total` codewords whose width is nearest
+# three times its height, `row_height` modules a row; a tie takes fewer
+# columns. Answers 0 where no count from 1 to 30 keeps the rows within 90.
+function automatic_columns(total: i64, row_height: i64, compact: bool) -> i64
+    best: i64 @= 0
+    best_score: f64 @= 0.0
+
+    for columns in range(from: 1, to: MOST_COLUMNS + 1)
+        rows = rows_for(total: total, columns: columns)
+
+        if rows <= MOST_ROWS && rows * columns <= MOST_WORDS
+            width: i64 @= 17 * columns + 69
+
+            if compact
+                width @ 17 * columns + 35
+            ratio = to_f64(width) / to_f64(rows * row_height)
+            score: f64 @= ratio - 3.0
+
+            if score < 0.0
+                score @ 0.0 - score
+
+            if best == 0 || score < best_score
+                best @ columns
+                best_score @ score
+
+    return best
+
+# The rows of modules of the PDF417 whose data codewords, the length
+# descriptor left out, are `words`.
+#
+# - `level`: the level of error correction, 0 to 8, read where
+#   `choose_level` does not hold.
+# - `choose_level`: whether the level is the one the standard recommends.
+# - `columns`: the data columns, 1 to 30, read where `choose_columns` does
+#   not hold.
+# - `choose_columns`: whether the columns are chosen for the shape.
+# - `row_height`: the modules a row is tall, which the choice of columns
+#   weighs.
+# - `compact`: whether each row ends with one bar instead of its right row
+#   indicator and stop pattern.
+#
+# Fails `invalid` where `level` or `columns` is out of its range;
+# `unsupported` where the codewords pass 928 or the rows 90.
+function rows_of(words: [i64] lent, level: i64, choose_level: bool, columns: i64, choose_columns: bool, row_height: i64, compact: bool) -> [[bool]]?
+    if !choose_level && (level < 0 || level > 8)
+        return fail(code: codes.INVALID, msg: f"a PDF417's level of error correction is 0 to 8, not {level}")
+
+    if !choose_columns && (columns < 1 || columns > MOST_COLUMNS)
+        return fail(code: codes.INVALID, msg: f"a PDF417 has 1 to 30 data columns, not {columns}")
+    chosen_level: i64 @= level
+
+    if choose_level
+        chosen_level @ recommended_level(words.len() + 1)
+    ecc = 2 << chosen_level
+    total = words.len() + 1 + ecc
+
+    if total > MOST_WORDS
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: f"a PDF417 holds 928 codewords, and this data needs {total} at level {chosen_level}"
+        )
+    chosen_columns: i64 @= columns
+
+    if choose_columns
+        chosen_columns @ automatic_columns(total: total, row_height: row_height, compact: compact)
+    rows = rows_for(total: total, columns: chosen_columns)
+
+    if chosen_columns == 0 || rows > MOST_ROWS || rows * chosen_columns > MOST_WORDS
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: f"{total} codewords take more than 90 rows of {chosen_columns} columns, or no count of columns holds them"
+        )
+    data: [i64] @= [rows * chosen_columns - ecc]
+
+    for w in words
+        data @ data.push(w)
+
+    while data.len() < rows * chosen_columns - ecc
+        data @ data.push(900)
+
+    every: [i64] @= data
+
+    for w in correction(data: data, count: ecc)
+        every @ every.push(w)
+
+    out: [[bool]] @= []
+
+    for r in range(from: 0, to: rows)
+        cluster = r % 3
+        base = 30 * (r / 3)
+        left: i64 @= base + (rows - 1) / 3
+        right: i64 @= base + chosen_columns - 1
+
+        if cluster == 1
+            left @ base + chosen_level * 3 + (rows - 1) % 3
+            right @ base + (rows - 1) / 3
+        else if cluster == 2
+            left @ base + chosen_columns - 1
+            right @ base + chosen_level * 3 + (rows - 1) % 3
+        line: [bool] @= []
+        add_bits(line: @line, bits: START, count: 17)
+        add_bits(line: @line, bits: pdf_tables.pattern_of(cluster: cluster, value: left), count: 17)
+
+        for c in range(from: 0, to: chosen_columns)
+            add_bits(
+                line: @line,
+                bits: pdf_tables.pattern_of(cluster: cluster, value: every[r * chosen_columns + c]),
+                count: 17
+            )
+
+        if compact
+            line @ line.push(true)
+        else
+            add_bits(line: @line, bits: pdf_tables.pattern_of(cluster: cluster, value: right), count: 17)
+            add_bits(line: @line, bits: STOP, count: 18)
+        out @ out.push(line)
+
+    return ok(out)
+
+# The `count` lowest bits of `bits`, its highest first, added to `line`.
+function add_bits(@line: [bool], bits: i64, count: i64)
+    k: i64 @= count - 1
+
+    while k >= 0
+        line @ line.push(bits >> k & 1 == 1)
+        k @ k - 1
+
+## Tests
+
+test "recommended_level: the standard's four steps"
+    assert recommended_level(1) == 2
+    assert recommended_level(40) == 2
+    assert recommended_level(41) == 3
+    assert recommended_level(320) == 4
+    assert recommended_level(321) == 5
+
+test "rows_of: three rows at least, every row as wide, out of range refused"
+    rows = rows_of(
+        words: [1, 63],
+        level: 0,
+        choose_level: false,
+        columns: 2,
+        choose_columns: false,
+        row_height: 3,
+        compact: false
+    ).must()
+    assert rows.len() == 3
+    assert rows[0].len() == 17 * 2 + 69 && rows[2].len() == rows[0].len()
+    compact = rows_of(
+        words: [1, 63],
+        level: 0,
+        choose_level: false,
+        columns: 2,
+        choose_columns: false,
+        row_height: 3,
+        compact: true
+    ).must()
+    assert compact[0].len() == 17 * 2 + 35
+    assert rows_of(
+        words: [1],
+        level: 9,
+        choose_level: false,
+        columns: 2,
+        choose_columns: false,
+        row_height: 3,
+        compact: false
+    ).is_err()
+    assert rows_of(
+        words: [1],
+        level: 0,
+        choose_level: false,
+        columns: 31,
+        choose_columns: false,
+        row_height: 3,
+        compact: false
+    ).is_err()
+
+test "rows_of: more than 928 codewords is unsupported"
+    words: [i64] @= []
+
+    for _ in range(from: 0, to: 900)
+        words @ words.push(1)
+
+    assert rows_of(
+        words: words,
+        level: 8,
+        choose_level: false,
+        columns: 0,
+        choose_columns: true,
+        row_height: 3,
+        compact: false
+    ).is_err()
