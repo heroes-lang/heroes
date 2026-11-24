@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-four packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-six packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -92,7 +92,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
 | 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image`, `math` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
-| 2 | `i18n` | locales, the languages and formats chosen in the system's settings, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` | `hero_locale.h` |
+| 2 | `i18n` | locales, the languages and formats chosen in the system's settings, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering, names and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` | `hero_locale.h` |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings`, `threads` | `hero_net.h`, `hero_stream_net.h` |
@@ -114,6 +114,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `bytes`, `i18n`, `strings`, `unicode` |  |
 | 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `bytes`, `i18n`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
+| 3 | `i18n/names` | languages, scripts, regions and whole locales named in words in a language, CLDR's display names | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `scram` | both sides of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, a server's verifiers in PostgreSQL's form, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
@@ -186,7 +187,7 @@ package moves its row in the same change. There is no cycle.
 | 6 | `xmldsig` | XML Signature checked against a trusted key and made, enveloped or detached, over Canonical XML; SHA-1 refused | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `strings`, `x509`, `xml` |  |
 | 6 | `x509/pkcs12` | PKCS #12 (`.pfx`, `.p12`) read and written: keys, certificates, lists and secrets under a password, the MAC checked first, every scheme the writers use; a key and its chain, and Java's trust stores, written | `asn1`, `bytes`, `crypto`, `crypto/keypairs`, `os`, `pem`, `unicode`, `x509` |  |
 | 6 | `sftp` | an SFTP version 3 client over an `ssh` channel, as OpenSSH's server speaks it: files opened, read and written by requests kept in flight, attributes read and set, folders listed, made and removed, renames, links, paths resolved, and OpenSSH's extensions (POSIX rename, hard links, fsync, a link's own attributes, volumes, limits, `~`, copies by the server, names by number) | `bytes`, `fs`, `numbers`, `os`, `ssh`, `strings`, `time` |  |
-| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
+| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state; a reverse proxy streaming bodies both ways over balanced upstreams | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `poll`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
 | 7 | `saml` | SAML 2.0's service provider: an identity provider's metadata read and its own written, a request sent by redirect or by a form, signed or not, a response's signature, conditions and audience checked and the login answered once, single logout both ways | `bytes`, `compress`, `crypto/keypairs`, `html`, `random`, `strings`, `time`, `url`, `x509`, `xml`, `xmldsig` |  |

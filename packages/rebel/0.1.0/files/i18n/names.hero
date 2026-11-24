@@ -1,0 +1,333 @@
+# Languages, scripts, regions and whole locales named in words in a language,
+# as a language menu or a settings window lists them: German is "German" in
+# English, "Deutsch" in German and "tedesco" in Italian; `en-GB` is "British
+# English" or "English (United Kingdom)". The names are CLDR's display names,
+# release `i18n.CLDR_VERSION`, for every locale CLDR holds, which this
+# package carries apart from `i18n` so that only its users carry them.
+#
+# A name is looked up down `i18n.fallback_chain` of the language it is written
+# in, so `en-AU` finds Australian English's names and then English's, and a
+# language CLDR has no data for is written in the root's, where nothing is
+# named. A code CLDR names in no language fails `not_found`, and a code that
+# is not well formed `invalid`; `locale_name` never fails, writing a part it
+# has no name for as its code, as ICU does.
+#
+# What it does NOT do: name a currency, which `i18n/numbers` writes; read a
+# tag or match one, which is `i18n`'s.
+#
+# Not written yet, each a `pending` block of its ledger: a name put in the
+# case of the place it stands, a time zone's and a subdivision's names.
+
+use i18n
+use i18n/names/internal/icu_cases
+use i18n/names/internal/name_data
+use i18n/names/internal/naming
+use strings
+
+## Forms
+
+# Which of CLDR's names of a code is asked for. Where CLDR has no name in the
+# form asked, the standard one answers.
+variant NameForm
+    # The name a list shows: "United Kingdom", "Chinese".
+    standard
+    # A shorter name: "UK" for `GB`, "US English" for `en-US`.
+    short
+    # A longer name: "Mandarin Chinese" for `zh`, "Simplified Mandarin
+    # Chinese" for `zh-Hans`.
+    long
+    # Another name in use: "Czech Republic" for `CZ`, "Congo (DRC)" for `CD`.
+    alternative
+    # The name a menu sorts by: "Chinese, Mandarin" for `zh`; "Kurdish
+    # (Kurmanji)" for `ku`, built from its core and its extension by the
+    # locale's pattern where CLDR gives those.
+    menu
+    # The official name, where it is not the usual one.
+    official
+    # The name standing alone, outside a locale's name: "Simplified Han" for
+    # `Hans`, which a locale's name writes "Simplified".
+    stand_alone
+
+# How `locale_name` writes a locale's name.
+record LocaleNaming
+    # A language and its region or script CLDR names together, "British
+    # English", in place of "English (United Kingdom)"; a locale with both
+    # a script and a region takes the three together or neither, as ICU.
+    dialects: bool
+    # The short names of the language and the region, "English (UK)".
+    short: bool
+
+# The standard naming: neither dialects nor short names, as ICU's default.
+function standard_naming() -> LocaleNaming
+    return LocaleNaming(dialects: false, short: false)
+
+## Names
+
+# The name of the language `code` in the language `written_in`: `de` in
+# Italian is "tedesco".
+#
+# - `code`: a language, `de`, or one with a script or region CLDR names
+#   together with it, `en-GB`, `zh-Hans`; any case.
+# - `written_in`: the language the name is written in.
+# - `form`: which of its names.
+#
+# Fails `invalid` where `code` is not a well-formed tag, and `not_found` where
+# CLDR names it in no language of the chain; a whole tag is
+# `locale_name`'s. See also `language_name_self`.
+function language_name(code: str, written_in: i18n.Locale, form: NameForm) -> str?
+    tag = i18n.format_locale(i18n.parse_locale(code)?)
+    return naming.name_in_form(key: "l " + tag, suffix: naming.suffix_of(form), locale: written_in)
+
+# The name of the language of `locale` in that language itself, as a language
+# menu lists each language: "Deutsch", "italiano", "日本語".
+#
+# - `locale`: the language; its script and region choose a dialect's name
+#   where CLDR has one, "British English" for `en-GB`.
+#
+# Fails `not_found` where CLDR does not name the language in itself. See also
+# `locale_name`.
+function language_name_self(locale: i18n.Locale) -> str?
+    for code in naming.self_codes(locale)
+        match naming.name_in_form(key: "l " + code, suffix: "", locale: locale)
+            .ok found => return ok(found)
+            .err _    => _ = 0
+
+    return fail(code: i18n.NOT_FOUND, msg: f"CLDR does not name `{i18n.format_locale(locale)}` in itself")
+
+# The name of the script `code` in `written_in`: `Cyrl` in English is
+# "Cyrillic".
+#
+# - `code`: four letters, ISO 15924's; any case.
+# - `written_in`: the language the name is written in.
+# - `form`: which of its names.
+#
+# Fails `invalid` where `code` is not four ASCII letters, and `not_found` where
+# CLDR names it in no language of the chain.
+function script_name(code: str, written_in: i18n.Locale, form: NameForm) -> str?
+    if code.len() != 4 || !naming.ascii_only(code, digits: false)
+        return fail(code: i18n.INVALID, msg: f"`{code}` is not a script's four letters")
+    lower = strings.to_lower_ascii(code)
+    titled = strings.to_upper_ascii(lower.slice(from: 0, to: 1)) + lower.slice(from: 1, to: 4)
+    return naming.name_in_form(key: "s " + titled, suffix: naming.suffix_of(form), locale: written_in)
+
+# The name of the region `code` in `written_in`: `DE` in Italian is
+# "Germania", `419` in English "Latin America".
+#
+# - `code`: two letters, ISO 3166's, or three digits, UN M49's; any case.
+# - `written_in`: the language the name is written in.
+# - `form`: which of its names.
+#
+# Fails `invalid` where `code` is neither, and `not_found` where CLDR names it
+# in no language of the chain.
+function region_name(code: str, written_in: i18n.Locale, form: NameForm) -> str?
+    letters = code.len() == 2 && naming.ascii_only(code, digits: false)
+    digits = code.len() == 3 && naming.ascii_only(code, digits: true)
+
+    if !letters && !digits
+        return fail(code: i18n.INVALID, msg: f"`{code}` is not a region's two letters or three digits")
+    return naming.name_in_form(
+        key: "r " + strings.to_upper_ascii(code),
+        suffix: naming.suffix_of(form),
+        locale: written_in
+    )
+
+# The name of the variant `code` in `written_in`: `valencia` in English is
+# "Valencian", `1901` in German "Alte deutsche Rechtschreibung".
+#
+# - `code`: a variant subtag; any case.
+# - `written_in`: the language the name is written in.
+#
+# Fails `not_found` where CLDR names it in no language of the chain.
+function variant_name(code: str, written_in: i18n.Locale) -> str?
+    return name_data.name_of("v " + strings.to_lower_ascii(code), locale: written_in)
+
+# The name of the Unicode locale keyword `key` in `written_in`: `ca` in
+# English is "Calendar".
+#
+# - `key`: the key, BCP 47's two characters; any case.
+# - `written_in`: the language the name is written in.
+#
+# Fails `not_found` where CLDR names it in no language of the chain.
+function keyword_name(key: str, written_in: i18n.Locale) -> str?
+    return name_data.name_of("k " + strings.to_lower_ascii(key), locale: written_in)
+
+# The name of the value `value` of the keyword `key` in `written_in`: `ca`
+# `gregory` in English is "Gregorian Calendar", its core name "Gregorian".
+#
+# - `key`: the key, BCP 47's two characters; any case.
+# - `value`: the value as BCP 47 writes it, `gregory`, `phonebk`; any case.
+# - `written_in`: the language the name is written in.
+# - `core`: the name without its key's word, as a menu under the key lists
+#   it, where CLDR has one; else the full name.
+#
+# Fails `not_found` where CLDR names it in no language of the chain.
+function keyword_value_name(key: str, value: str, written_in: i18n.Locale, core: bool) -> str?
+    name = f"t {strings.to_lower_ascii(key)} {strings.to_lower_ascii(value)}"
+
+    if core
+        match name_data.name_of(name + "-alt-core", locale: written_in)
+            .ok found => return ok(found)
+            .err _    => _ = 0
+    return name_data.name_of(name, locale: written_in)
+
+# The name of the whole `locale` in `written_in`, as ICU's
+# `LocaleDisplayNames` writes it: `zh-Hant-TW-u-ca-gregory` in Italian is
+# "cinese (tradizionale, Taiwan, Calendario gregoriano)".
+#
+# - `locale`: the locale named.
+# - `written_in`: the language the name is written in.
+# - `how`: dialects or not, short names or not; `standard_naming()` is ICU's
+#   default.
+#
+# The language comes first, then its script, region, variants and Unicode
+# keywords in the parentheses of `written_in`'s pattern, joined by its
+# separator, a parenthesis inside a part written as a bracket. A part CLDR
+# has no name for is written as its code; a keyword whose value CLDR does not
+# name as its key's name and the value as ICU's identifiers write it, by the
+# locale's pattern ("Sort Order: phonebook"), and one whose key it does not
+# name either as ICU's long names, `colnumeric=yes`. Other extensions and
+# private use are not named.
+function locale_name(locale: i18n.Locale, written_in: i18n.Locale, how: LocaleNaming) -> str
+    return naming.locale_name(locale: locale, written_in: written_in, dialects: how.dialects, short: how.short)
+
+## Tests
+
+# Edges first: a code not well formed, one CLDR does not name, a form CLDR
+# has no name in, the root, a language CLDR has no data for.
+test "language_name: the edges"
+    en = i18n.parse_locale("en").must()
+    assert language_name(code: "not a tag", written_in: en, form: .standard).is_err()
+    assert language_name(code: "qqq", written_in: en, form: .standard).is_err()
+    assert language_name(code: "DE", written_in: en, form: .short).must() == "German"
+    assert language_name(code: "de", written_in: i18n.parse_locale("und").must(), form: .standard).is_err()
+    assert language_name(code: "de", written_in: i18n.parse_locale("en-x-private").must(), form: .standard).must() == "German"
+
+# A script's and a region's codes in any case, and codes of the wrong shape.
+test "script_name and region_name: any case, the edges"
+    en = i18n.parse_locale("en").must()
+    assert script_name(code: "cyrl", written_in: en, form: .standard).must() == "Cyrillic"
+    assert script_name(code: "Cyr", written_in: en, form: .standard).is_err()
+    assert region_name(code: "gb", written_in: en, form: .short).must() == "UK"
+    assert region_name(code: "4x9", written_in: en, form: .standard).is_err()
+    assert region_name(code: "QQ", written_in: en, form: .standard).is_err()
+
+# Each form, as CLDR 49's English file writes it: a longer name, a menu's
+# name written and one built from a core and an extension, a name with no
+# menu form, another name, a script standing alone and inside a name, a
+# value's core name.
+test "the forms: long, menu, alternative, stand-alone and core names"
+    en = i18n.parse_locale("en").must()
+    assert language_name(code: "zh", written_in: en, form: .long).must() == "Mandarin Chinese"
+    assert language_name(code: "zh", written_in: en, form: .menu).must() == "Chinese, Mandarin"
+    assert language_name(code: "ku", written_in: en, form: .menu).must() == "Kurdish (Kurmanji)"
+    assert language_name(code: "de", written_in: en, form: .menu).must() == "German"
+    assert region_name(code: "CZ", written_in: en, form: .alternative).must() == "Czech Republic"
+    assert script_name(code: "Hans", written_in: en, form: .standard).must() == "Simplified"
+    assert script_name(code: "Hans", written_in: en, form: .stand_alone).must() == "Simplified Han"
+    assert keyword_value_name(key: "CA", value: "Gregory", written_in: en, core: true).must() == "Gregorian"
+
+# A dialect's own name first, a language CLDR names only alone, the root.
+test "language_name_self: a dialect, a language alone, the root"
+    assert language_name_self(i18n.parse_locale("en-GB").must()).must() == "British English"
+    assert language_name_self(i18n.parse_locale("it-CH").must()).must() == "italiano"
+    assert language_name_self(i18n.parse_locale("und").must()).is_err()
+
+# Whole locales in short names and with dialects, and a pattern of full-width
+# parentheses, as ICU 79.1 wrote them on 2026-11-24.
+test "locale_name: short names, dialects, full-width parentheses"
+    en = i18n.parse_locale("en").must()
+    gb = i18n.parse_locale("en-GB").must()
+    assert locale_name(locale: gb, written_in: en, how: LocaleNaming(dialects: false, short: true)) == "English (UK)"
+    assert locale_name(locale: gb, written_in: en, how: LocaleNaming(dialects: true, short: true)) == "UK English"
+    hk = i18n.parse_locale("zh-Hans-HK").must()
+    assert locale_name(locale: hk, written_in: en, how: LocaleNaming(dialects: false, short: true)) == "Chinese (Simplified, Hong Kong)"
+    assert locale_name(locale: i18n.parse_locale("en-US").must(), written_in: i18n.parse_locale("fr").must(), how: LocaleNaming(dialects: true, short: true)) == "anglais américain"
+    assert locale_name(locale: i18n.parse_locale("ar-001").must(), written_in: i18n.parse_locale("de").must(), how: LocaleNaming(dialects: true, short: true)) == "Modernes Hocharabisch"
+    assert locale_name(locale: gb, written_in: i18n.parse_locale("zh").must(), how: standard_naming()) == "英语（英国）"
+
+# Expected values are what ICU 79.1 (CLDR 49) wrote for the same input,
+# observed 2026-11-24; `icu_cases` holds a thousand and eighty-three of them
+# over fifty locales, and this test runs each through the face. Where ICU has
+# no name it answers the code itself, where this package fails.
+test "every name: the cases as ICU writes them"
+    failures @= 0
+
+    for line in icu_cases.CASES
+        f = strings.split(s: line, sep: "\t")
+        written_in = i18n.parse_locale(f[1]).must()
+        expected = f[f.len() - 1]
+
+        form: NameForm = if f.len() == 5 && f[3] == "short"
+            .short
+        else
+            .standard
+        got: str? @= fail(code: i18n.NOT_FOUND, msg: "")
+
+        if f[0] == "lang"
+            got @ language_name(code: f[2], written_in: written_in, form: form)
+        else if f[0] == "script"
+            got @ script_name(code: f[2], written_in: written_in, form: form)
+        else if f[0] == "region"
+            got @ region_name(code: f[2], written_in: written_in, form: form)
+        else if f[0] == "variant"
+            got @ variant_name(code: f[2], written_in: written_in)
+        else if f[0] == "key"
+            got @ keyword_name(key: f[2], written_in: written_in)
+        else if f[0] == "value"
+            got @ keyword_value_name(key: f[2], value: f[3], written_in: written_in, core: false)
+        else
+            how = LocaleNaming(dialects: f[3] == "dialect", short: false)
+            got @ ok(locale_name(locale: i18n.parse_locale(f[2]).must(), written_in: written_in, how: how))
+
+        same = match got
+            .ok text => text == expected
+            .err _   => expected == f[2] || f[0] == "value" && expected == f[3]
+
+        if !same
+            print("differs from ICU: ", line)
+            failures @ failures + 1
+
+    assert failures == 0
+
+## Examples
+
+# German named in English, in German and in Italian.
+test "language_name: German in three languages"
+    assert language_name(code: "de", written_in: i18n.parse_locale("en").must(), form: .standard).must() == "German"
+    assert language_name(code: "de", written_in: i18n.parse_locale("de").must(), form: .standard).must() == "Deutsch"
+    assert language_name(code: "de", written_in: i18n.parse_locale("it").must(), form: .standard).must() == "tedesco"
+
+# A language menu's entries, each language in itself.
+test "language_name_self: a menu of languages"
+    assert language_name_self(i18n.parse_locale("de").must()).must() == "Deutsch"
+    assert language_name_self(i18n.parse_locale("ja").must()).must() == "日本語"
+
+# Cyrillic named in English.
+test "script_name: Cyrillic"
+    assert script_name(code: "Cyrl", written_in: i18n.parse_locale("en").must(), form: .standard).must() == "Cyrillic"
+
+# Germany named in Italian, and Latin America in English.
+test "region_name: a country and a continent's part"
+    assert region_name(code: "DE", written_in: i18n.parse_locale("it").must(), form: .standard).must() == "Germania"
+    assert region_name(code: "419", written_in: i18n.parse_locale("en").must(), form: .standard).must() == "Latin America"
+
+# Valencian, the variant `valencia`, named in English.
+test "variant_name: Valencian"
+    assert variant_name(code: "valencia", written_in: i18n.parse_locale("en").must()).must() == "Valencian"
+
+# The calendar keyword named in English.
+test "keyword_name: the calendar"
+    assert keyword_name(key: "ca", written_in: i18n.parse_locale("en").must()).must() == "Calendar"
+
+# The Gregorian calendar named in English, whole.
+test "keyword_value_name: the Gregorian calendar"
+    assert keyword_value_name(key: "ca", value: "gregory", written_in: i18n.parse_locale("en").must(), core: false).must() == "Gregorian Calendar"
+
+# British English named in English, the standard way.
+test "locale_name: British English"
+    gb = i18n.parse_locale("en-GB").must()
+    assert locale_name(locale: gb, written_in: i18n.parse_locale("en").must(), how: standard_naming()) == "English (United Kingdom)"
+
+# The standard naming, which writes `en-GB` "English (United Kingdom)".
+test "standard_naming: neither dialects nor short names"
+    assert standard_naming() == LocaleNaming(dialects: false, short: false)

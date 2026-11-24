@@ -470,6 +470,13 @@ capability client/streaming-read  a response's body read as it comes, not held w
   python  requests' stream argument, requests.Response.iter_content, iter_lines, raw, close, http.client.HTTPResponse.read with an amount, urllib.request.urlretrieve, urlcleanup, requests.exceptions.StreamConsumedError, ChunkedEncodingError
   note    on a connection the program holds, as `round_trip`'s: `write_request`, then the head alone, then pieces of a length, of chunks or to the connection's end, a piece answering what the reader holds without waiting for more; no bound on the whole body, which is the point, a chunk's line bounded at 4,096 bytes and its trailer by `field_count`; a `Content-Encoding` is not undone as it comes; lines are `iter_lines`' work, done by `io` over the pieces the program keeps
 
+capability relay/streaming  a message passed on as it comes, as a gateway passes it: a request's body read in pieces on the server, a head written with the framing its body will have, the body written in pieces, a 101 read
+  heroes  http.request_body_reader, http.framing_of, http.Framing, http.BodyWriter, http.write_request_head, http.write_response_head_framed, http.write_piece, http.end_pieces, http.read_switch_head, http.write_continue
+  go      net/http.Request.Body as a reader on a server, net/http.ResponseController.Flush, SetReadDeadline, SetWriteDeadline, Hijack, net/http/httputil.ReverseProxy
+  rust    -
+  python  -
+  note    added 2026-11-24 for `web`'s reverse proxy; the framing is the program's choice, never read from the fields it passes, so a `Content-Length` or `Transfer-Encoding` a peer sent is replaced by what is written; a `BodyWriter` refuses a piece past a length and an end before it, so a short body can never be framed as whole; a chunked body's trailer is read and checked and not passed on; `100 Continue` is the program's to write, `request_body_reader` writing nothing
+
 capability client/streaming-send  a request's body sent as it is made, not held whole
   heroes  pending
   go      net/http.Request.Body, net/http.NoBody, net/http.Request.GetBody

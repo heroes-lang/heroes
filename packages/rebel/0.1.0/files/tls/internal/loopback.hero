@@ -353,6 +353,33 @@ function held_elsewhere(port: i64) -> bool
             return false
         .err e => return e.code == net.EXISTS
 
+# How long, in seconds, a test asking one question of a loopback port round
+# after round goes on asking it past its third round. A refused connect is
+# answered at once on macOS and Linux, 200 rounds of two in about 2 s on a
+# Mac, and on Windows only after the system has sent the port two more SYNs,
+# 2.04 s a connect (measured on the Windows box, 2026-11-23); so rounds
+# counted alone make such a test's time the platform's refusal delay times
+# its count, 816 s there for 200 rounds of two.
+constant ROUNDS_SECONDS: i64
+    30
+
+# Whether a test asking one question of a loopback port round after round
+# asks it again: fewer than `most` rounds done, and fewer than three or less
+# than `ROUNDS_SECONDS` spent since `began`. The count is the question's
+# power where a round is quick; the time bounds it where a refusal is slow,
+# and every platform asks it three times at least.
+#
+# - `done`: the rounds done.
+# - `most`: the rounds the question asks where a round is quick.
+# - `began`: the mark taken before the first round.
+function another_round(done: i64, most: i64, began: time.Mark) -> bool
+    if done >= most
+        return false
+
+    if done < 3
+        return true
+    return time.is_shorter(a: time.elapsed(began).must(), b: time.seconds(ROUNDS_SECONDS).must())
+
 # One connect over TLS to the port the system gives next, where nothing of
 # this test listens, and what it answered, for defect 2623's test: `closed`
 # where it was refused as nothing listening there; `itself` where it was
@@ -741,3 +768,16 @@ test "set_accept_deadline: an accept with no client coming ends at its deadline,
             .err e => assert e.code == "timeout"
 
         connections.close_listener(@l.handle, asked: "closing").must()
+
+# The rounds' bound: the count where rounds are quick, three rounds at
+# least, then the time. A test begun past `ROUNDS_SECONDS` ago stops at its
+# fourth round, where a count alone would run it to its two hundredth.
+test "another_round: the count where rounds are quick, three at least, then the time"
+    now = time.mark().must()
+    long_ago = time.Mark(nanoseconds: now.nanoseconds - (ROUNDS_SECONDS + 1) * 1000000000)
+    assert another_round(done: 0, most: 200, began: now)
+    assert another_round(done: 199, most: 200, began: now)
+    assert !another_round(done: 200, most: 200, began: now)
+    assert another_round(done: 2, most: 200, began: long_ago)
+    assert !another_round(done: 3, most: 200, began: long_ago)
+    assert !another_round(done: 3, most: 3, began: now)

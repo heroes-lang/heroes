@@ -1,7 +1,7 @@
 # The ledger of `i18n`: languages named and matched (BCP 47), CLDR's plural
 # rules, and gettext's message catalogs. One block per capability, and what
 # Heroes answers to each. Its subpackages keep their own ledgers:
-# `i18n/numbers`, `i18n/dates`, `i18n/collate`, `i18n/locales`.
+# `i18n/numbers`, `i18n/dates`, `i18n/collate`, `i18n/locales`, `i18n/names`.
 #
 # The census, by the author's decision of 2026-11-17, is wider than README
 # § A8's three libraries, since Go's and Rust's standard libraries hold no
@@ -144,16 +144,6 @@ capability locale/set-default  the process's own locale changed
   dotnet  CultureInfo.CurrentCulture, CultureInfo.DefaultThreadCurrentCulture, CultureInfo.DefaultThreadCurrentUICulture
   odin    -
   icu     uloc_setDefault
-
-capability locale/display-name  a language, script or region named in words in a language
-  heroes  pending: CLDR's display names are its largest tables after annotations, 35 MB of JSON; not carried yet
-  go      display.Tags, display.Languages, display.Scripts, display.Regions, display.Language, display.Region, display.Script, display.Tag, display.Self, display.Dictionary
-  rust    -
-  python  -
-  java    Locale.getDisplayName, Locale.getDisplayLanguage, Locale.getDisplayScript, Locale.getDisplayCountry, Locale.getDisplayVariant
-  dotnet  CultureInfo.DisplayName, CultureInfo.NativeName, CultureInfo.EnglishName, RegionInfo.DisplayName, RegionInfo.NativeName, RegionInfo.EnglishName
-  odin    -
-  icu     ULocale.getDisplayName, LocaleDisplayNames
 
 capability locale/available  every locale CLDR has data for, and every ISO code
   heroes  pending: each subpackage reads its own list of locales and none is offered yet

@@ -7,6 +7,7 @@ use i18n
 use i18n/dates/internal/date_tables
 use i18n/internal/locale_syntax
 use i18n/internal/matching
+use i18n/internal/table_codes
 use strings
 
 # The blocks of a locale, in the order of a row of `LOCALE_DATA`.
@@ -70,25 +71,10 @@ function number_at(codes: str, at: i64) -> i64
     i @= at
 
     while i < at + 3
-        value @ value * 64 + digit_of(codes[i])
+        value @ value * 64 + table_codes.digit_of(codes[i])
         i @ i + 1
 
     return value
-
-# The value of one character of `ALPHABET`.
-function digit_of(b: u8) -> i64
-    if b >= '0' && b <= '9'
-        return to_i64(b - '0').must()
-
-    if b >= 'A' && b <= 'Z'
-        return to_i64(b - 'A').must() + 10
-
-    if b >= 'a' && b <= 'z'
-        return to_i64(b - 'a').must() + 36
-
-    if b == '+'
-        return 62
-    return 63
 
 # Text `id` of `STRINGS`.
 function text_of(id: i64) -> str

@@ -1,0 +1,90 @@
+# The ledger of `i18n/names`: languages, scripts, regions, variants, keywords
+# and whole locales named in words, CLDR 49's display names. One block per
+# capability. The census is the one `i18n.ledger` names. Expected names are
+# what ICU 79.1 answered (`uldn_*` of `uldnames.h`), run on this machine.
+
+capability names/language  a language named in words in a language
+  heroes  names.language_name, names.NameForm
+  go      display.Languages, display.Language, display.Dictionary
+  rust    -
+  python  -
+  java    Locale.getDisplayLanguage
+  dotnet  CultureInfo.DisplayName, CultureInfo.EnglishName
+  icu     LocaleDisplayNames.languageDisplayName, uldn_languageDisplayName
+  note    a code CLDR names in no language of the chain fails `not_found`, where ICU answers the code itself; `locale_name` writes the code, as ICU. The forms are CLDR's alternatives: short, long, another name (`-alt-variant`), a menu's (built from its core and extension where CLDR gives those), the official one and the one standing alone; ICU offers the short one alone, by its length context. Three of CLDR's alternatives are not carried: `secondary`, the second names of five codes, and `IO`'s `chagos` and `biot`, chosen by a context of their own; the generator refuses an alternative it knows neither way, so a new one is read by a person first
+
+capability names/self  a language named in itself, as a language menu lists it
+  heroes  names.language_name_self
+  go      display.Self
+  rust    -
+  python  -
+  java    -
+  dotnet  CultureInfo.NativeName
+  icu     -
+  note    the dialect's name first, the language with its script and region, then with either, then alone
+
+capability names/script  a script named in words in a language
+  heroes  names.script_name
+  go      display.Scripts, display.Script
+  rust    -
+  python  -
+  java    Locale.getDisplayScript
+  dotnet  -
+  icu     LocaleDisplayNames.scriptDisplayName, uldn_scriptDisplayName
+
+capability names/region  a region named in words in a language
+  heroes  names.region_name
+  go      display.Regions, display.Region
+  rust    -
+  python  -
+  java    Locale.getDisplayCountry
+  dotnet  RegionInfo.DisplayName, RegionInfo.NativeName, RegionInfo.EnglishName
+  icu     LocaleDisplayNames.regionDisplayName, uldn_regionDisplayName
+
+capability names/variant  a variant named in words in a language
+  heroes  names.variant_name
+  go      -
+  rust    -
+  python  -
+  java    Locale.getDisplayVariant
+  dotnet  -
+  icu     LocaleDisplayNames.variantDisplayName, uldn_variantDisplayName
+
+capability names/keyword  a Unicode locale keyword and its value named in words in a language
+  heroes  names.keyword_name, names.keyword_value_name
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     LocaleDisplayNames.keyDisplayName, LocaleDisplayNames.keyValueDisplayName, uldn_keyDisplayName, uldn_keyValueDisplayName
+  note    by BCP 47's names, `ca` and `gregory`, where ICU takes its own long ones, `calendar` and `gregorian`; a value's core name (CLDR's `_core`, "Gregorian" beside "Gregorian Calendar") where `core` is asked
+
+capability names/locale  a whole locale named in words in a language
+  heroes  names.locale_name, names.LocaleNaming, names.standard_naming
+  go      display.Tags, display.Tag
+  rust    -
+  python  -
+  java    Locale.getDisplayName
+  dotnet  -
+  icu     LocaleDisplayNames.localeDisplayName, uldn_localeDisplayName, ULocale.getDisplayName, UDialectHandling, UDisplayContext (its dialect and length values)
+  note    ICU's algorithm, as ICU 79.1 answers: with dialects the language with its script and region where it has both, else with the one it has, as CLDR names them together; then the script, the region, the variants and the `u` keywords, ordered by ICU's long key names, joined by the locale's separator inside its pattern, a part's parentheses written as brackets. A keyword CLDR names is named, where ICU, looking a key up by its own long name, misses a name its data holds under BCP 47's (`hours=h23` for `hc`, `measure=imperial` for `ms`, `colnumeric=yes` for `kn`): the 17 cases ICU wrote so were left out of the oracle's; `und` is CLDR's name of it ("Unknown language"), where ICU writes "root". A currency keyword is written by its code, where ICU writes the currency's name from its currency data (`i18n/numbers`' area); the `t` extension and private use are not named. Held to ICU on 1,083 cases over fifty locales, every one answered alike
+
+capability names/pending  a name put in the case of the place it stands, a time zone's and a subdivision's names
+  heroes  pending: CLDR's `contextTransforms` (a name capitalised at the start of a sentence or in a menu), its time zones' names (`i18n/dates`' area) and its subdivisions' names (`cldr-subdivisions`) are not carried yet
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     UDisplayContext (its capitalization values), LocaleDisplayNames.getContext
+
+capability names/version  the release of CLDR the names are
+  heroes  i18n.CLDR_VERSION
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     -
+  note    a program using this package carries the names of every locale CLDR 49 holds, each locale only the names that differ from what the locales after it in its fallback chain answer (`generators/i18n_names/`, which refuses a table that would not answer every locale's resolved names): its driver is 7,605,440 bytes against 4,664,768 for `i18n/locales`' (measured 2026-11-24, `heroes build` at its default level on macOS)
