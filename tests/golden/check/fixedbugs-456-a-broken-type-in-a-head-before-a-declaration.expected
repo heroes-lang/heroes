@@ -1,1 +1,1 @@
-tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-before-a-declaration.hero:6:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-a-broken-type-in-a-head-before-a-declaration.hero:6:9: error[expected_function_type]: expected `function` — in a type, `(` opens `()`, a function type, `(function(A) -> B)`, a thread, `(thread T)`, or a mailbox, `(mailbox T)`, found a name (`bool`)

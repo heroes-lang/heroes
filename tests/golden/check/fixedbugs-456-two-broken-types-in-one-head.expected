@@ -1,2 +1,2 @@
-tests/golden/check/fixedbugs-456-two-broken-types-in-one-head.hero:7:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
-tests/golden/check/fixedbugs-456-two-broken-types-in-one-head.hero:8:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-two-broken-types-in-one-head.hero:7:9: error[expected_function_type]: expected `function` — in a type, `(` opens `()`, a function type, `(function(A) -> B)`, a thread, `(thread T)`, or a mailbox, `(mailbox T)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-two-broken-types-in-one-head.hero:8:9: error[expected_function_type]: expected `function` — in a type, `(` opens `()`, a function type, `(function(A) -> B)`, a thread, `(thread T)`, or a mailbox, `(mailbox T)`, found a name (`bool`)

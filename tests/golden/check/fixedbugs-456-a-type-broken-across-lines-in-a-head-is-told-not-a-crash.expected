@@ -1,1 +1,1 @@
-tests/golden/check/fixedbugs-456-a-type-broken-across-lines-in-a-head-is-told-not-a-crash.hero:13:9: error[expected_function_type]: expected `function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`, found a name (`bool`)
+tests/golden/check/fixedbugs-456-a-type-broken-across-lines-in-a-head-is-told-not-a-crash.hero:13:9: error[expected_function_type]: expected `function` — in a type, `(` opens `()`, a function type, `(function(A) -> B)`, a thread, `(thread T)`, or a mailbox, `(mailbox T)`, found a name (`bool`)
