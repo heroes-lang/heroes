@@ -30,9 +30,9 @@
 # status, and `last_status_of` answers it whole.
 #
 # Not written yet, each a `pending` block of its ledger: SORT and THREAD
-# (RFC 5256), QUOTA (RFC 9208), ACL (RFC 4314), METADATA (RFC 5464),
-# NAMESPACE (RFC 2342), and CONDSTORE's and QRESYNC's resynchronisation (RFC
-# 7162) beyond the MODSEQ a fetch reads.
+# (RFC 5256); QUOTA (RFC 9208); ACL (RFC 4314); METADATA and ANNOTATEMORE
+# (RFC 5464); NAMESPACE (RFC 2342, part of IMAP4rev2); CONDSTORE's and
+# QRESYNC's resynchronisation (RFC 7162).
 
 use bytes
 use io
@@ -1476,3 +1476,535 @@ test "fetch: the subjects of the unseen messages"
 
     assert found.len() == 0
     _ = fake.heard(@c.conn, @server)
+
+# The options of a connection to a provider's server over TLS from the first
+# byte, on port 993.
+test "options: TLS from the first byte on port 993"
+    o = options(host: "imap.example.org", security: .implicit)
+    assert o.port == PORT_IMAPS && o.roots == "" && o.deadline == time.minutes(1).must()
+    assert options(host: "imap.example.org", security: .starttls).port == PORT_IMAP
+
+# A session with a server on this machine, in plain text: its greeting read
+# and its capabilities known.
+test "connect: a plain server on the loopback address"
+    started = fake.start("* OK [CAPABILITY IMAP4rev1 IDLE] ready\r\n* BYE logging out\r\nA0001 OK LOGOUT completed\r\n")
+    server = started.thread
+    c @= connect(
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+    ).must()
+    assert has_capability(c, name: "IDLE")
+    logout(@c).must()
+    assert server.wait() == "A0001 LOGOUT\r\n"
+
+# A session ended politely: LOGOUT said, the server's BYE read, and the
+# connection closed.
+test "logout: LOGOUT, then closed"
+    started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n* BYE logging out\r\nA0001 OK LOGOUT completed\r\n")
+    server = started.thread
+    c @= connect(
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+    ).must()
+    logout(@c).must()
+    assert server.wait() == "A0001 LOGOUT\r\n"
+
+# A session ended without a word: the server sees the connection end.
+test "close: the connection closed without LOGOUT"
+    started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n")
+    server = started.thread
+    c @= connect(
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+    ).must()
+    close(@c).must()
+    assert server.wait() == ""
+
+# NOOP said to hear the server's news: here a message arrived.
+test "noop: a message arrived"
+    p = fake.play(script: "* 23 EXISTS\r\nA0001 OK NOOP completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    noop(@c).must()
+    assert take_updates(@c) == [.exists(count: 23)]
+    assert fake.heard(@c.conn, @server) == "A0001 NOOP\r\n"
+
+# A checkpoint of the mailbox selected, on an IMAP4rev1 server.
+test "check: CHECK on IMAP4rev1"
+    p = fake.play(script: "A0001 OK CHECK completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    check(@c).must()
+    assert fake.heard(@c.conn, @server) == "A0001 CHECK\r\n"
+
+# The greeting a server opened with.
+test "greeting_of: OK and the server's words"
+    started = fake.start("* OK [CAPABILITY IMAP4rev1] Dovecot ready.\r\n")
+    server = started.thread
+    c @= connect(
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+    ).must()
+    g = greeting_of(c)
+    assert g.condition == "OK" && g.text == "Dovecot ready."
+    close(@c).must()
+    _ = server.wait()
+
+# The status a refusal ended with, its response code read.
+test "last_status_of: a mailbox that does not exist"
+    p = fake.play(script: "A0001 NO [NONEXISTENT] Unknown mailbox\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert select(@c, name: "Nope").is_err()
+    s = last_status_of(c)
+    assert s.condition == "NO" && s.code == "NONEXISTENT" && s.text == "Unknown mailbox"
+    _ = fake.heard(@c.conn, @server)
+
+# A status as one line for a log.
+test "format_status: a refusal and its code"
+    s = Status(condition: "NO", code: "NONEXISTENT", args: "", text: "Unknown mailbox")
+    assert format_status(s) == "NO [NONEXISTENT] Unknown mailbox"
+
+# The capabilities a server named, in upper case.
+test "capabilities_of: IMAP4rev1 and IDLE"
+    p = fake.play(script: "", capabilities: ["IMAP4REV1", "IDLE"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert capabilities_of(c) == ["IMAP4REV1", "IDLE"]
+    _ = fake.heard(@c.conn, @server)
+
+# Whether the server can MOVE, asked in any case.
+test "has_capability: MOVE, in any case"
+    p = fake.play(script: "", capabilities: ["IMAP4REV1", "MOVE"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert has_capability(c, name: "move") && !has_capability(c, name: "IDLE")
+    _ = fake.heard(@c.conn, @server)
+
+# The capabilities asked of the server anew.
+test "capability: CAPABILITY asked"
+    p = fake.play(
+        script: "* CAPABILITY IMAP4rev1 IDLE MOVE\r\nA0001 OK done\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert capability(@c).must() == ["IMAP4REV1", "IDLE", "MOVE"]
+    assert fake.heard(@c.conn, @server) == "A0001 CAPABILITY\r\n"
+
+# IMAP4rev2 enabled by the login, on a server that offers it.
+test "is_rev2: enabled after LOGIN"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1 IMAP4rev2] Logged in\r\n* ENABLED IMAP4rev2\r\nA0002 OK Enabled\r\n",
+        capabilities: ["IMAP4REV1", "IMAP4REV2"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    login(@c, user: "ana", password: "secret").must()
+    assert is_rev2(c)
+    _ = fake.heard(@c.conn, @server)
+
+# A plain connection to a server on this machine, which TLS does not
+# protect.
+test "is_tls: not over a plain connection"
+    started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n")
+    server = started.thread
+    c @= connect(
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+    ).must()
+    assert !is_tls(c)
+    close(@c).must()
+    _ = server.wait()
+
+# A login by name and password, the capabilities learnt anew.
+test "login: a user and a password"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1 IDLE] Logged in\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    login(@c, user: "ana", password: "secret").must()
+    assert has_capability(c, name: "IDLE")
+    assert fake.heard(@c.conn, @server) == "A0001 LOGIN ana secret\r\n"
+
+# A login by AUTHENTICATE PLAIN, its answer sent with the command.
+test "auth_plain: with SASL-IR"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1] done\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=PLAIN", "SASL-IR"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    auth_plain(@c, identity: "", user: "tim", password: "tanstaaftanstaaf").must()
+    assert fake.heard(@c.conn, @server) == "A0001 AUTHENTICATE PLAIN AHRpbQB0YW5zdGFhZnRhbnN0YWFm\r\n"
+
+# A login with an OAuth 2.0 access token, as Google's and Microsoft's servers
+# take it.
+test "auth_xoauth2: an access token"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1] done\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=XOAUTH2", "SASL-IR"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    auth_xoauth2(@c, user: "a@b.c", token: "t").must()
+    assert fake.heard(@c.conn, @server) == "A0001 AUTHENTICATE XOAUTH2 dXNlcj1hQGIuYwFhdXRoPUJlYXJlciB0AQE=\r\n"
+
+# A login with an OAuth 2.0 bearer token by RFC 7628's mechanism.
+test "auth_oauthbearer: a bearer token"
+    p = fake.play(
+        script: "A0001 OK [CAPABILITY IMAP4rev1] done\r\n",
+        capabilities: ["IMAP4REV1", "AUTH=OAUTHBEARER", "SASL-IR"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    auth_oauthbearer(@c, user: "ana@example.org", token: "t").must()
+    assert fake.heard(@c.conn, @server) == "A0001 AUTHENTICATE OAUTHBEARER bixhPWFuYUBleGFtcGxlLm9yZywBaG9zdD0xMjcuMC4wLjEBYXV0aD1CZWFyZXIgdAEB\r\n"
+
+# CONDSTORE enabled, so the server tells each message's MODSEQ.
+test "enable: CONDSTORE"
+    p = fake.play(
+        script: "* ENABLED CONDSTORE\r\nA0001 OK Enabled\r\n",
+        capabilities: ["IMAP4REV1", "ENABLE", "CONDSTORE"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert enable(@c, names: ["CONDSTORE"]).must() == ["CONDSTORE"]
+    assert fake.heard(@c.conn, @server) == "A0001 ENABLE CONDSTORE\r\n"
+
+# Every mailbox of the account.
+test "list: every mailbox"
+    p = fake.play(
+        script: "* LIST (\\HasNoChildren) \"/\" INBOX\r\n* LIST (\\HasNoChildren \\Sent) \"/\" Sent\r\nA0001 OK done\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    every = list(@c, reference: "", pattern: "*").must()
+    assert every.len() == 2 && every[1] == Mailbox(name: "Sent", delimiter: "/", attributes: ["\\HasNoChildren", "\\Sent"])
+    assert fake.heard(@c.conn, @server) == "A0001 LIST \"\" *\r\n"
+
+# The mailboxes the user subscribed to, by LSUB on IMAP4rev1.
+test "list_subscribed: the inbox subscribed"
+    p = fake.play(script: "* LSUB () \"/\" INBOX\r\nA0001 OK done\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert list_subscribed(@c, reference: "", pattern: "*").must() == [Mailbox(name: "INBOX", delimiter: "/", attributes: [])]
+    assert fake.heard(@c.conn, @server) == "A0001 LSUB \"\" *\r\n"
+
+# A mailbox made.
+test "create: an archive"
+    p = fake.play(script: "A0001 OK CREATE completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    create(@c, name: "Archive").must()
+    assert fake.heard(@c.conn, @server) == "A0001 CREATE Archive\r\n"
+
+# A mailbox removed.
+test "delete: an archive"
+    p = fake.play(script: "A0001 OK DELETE completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    delete(@c, name: "Archive").must()
+    assert fake.heard(@c.conn, @server) == "A0001 DELETE Archive\r\n"
+
+# A mailbox given a new name.
+test "rename: drafts to an archive"
+    p = fake.play(script: "A0001 OK RENAME completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    rename(@c, from: "Drafts", to: "Archive").must()
+    assert fake.heard(@c.conn, @server) == "A0001 RENAME Drafts Archive\r\n"
+
+# A mailbox subscribed to.
+test "subscribe: an archive"
+    p = fake.play(script: "A0001 OK SUBSCRIBE completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    subscribe(@c, name: "Archive").must()
+    assert fake.heard(@c.conn, @server) == "A0001 SUBSCRIBE Archive\r\n"
+
+# A mailbox unsubscribed from.
+test "unsubscribe: an archive"
+    p = fake.play(script: "A0001 OK UNSUBSCRIBE completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    unsubscribe(@c, name: "Archive").must()
+    assert fake.heard(@c.conn, @server) == "A0001 UNSUBSCRIBE Archive\r\n"
+
+# What a mailbox holds, without selecting it: RFC 9051's example.
+test "status: the messages of a mailbox and the next UID"
+    p = fake.play(
+        script: "* STATUS blurdybloop (MESSAGES 231 UIDNEXT 44292)\r\nA0001 OK STATUS completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    s = status(@c, name: "blurdybloop").must()
+    assert s.messages == 231 && s.uid_next == 44292 && s.unseen == -1
+    _ = fake.heard(@c.conn, @server)
+
+# The inbox selected to read and change it.
+test "select: the inbox"
+    p = fake.play(
+        script: "* 172 EXISTS\r\n* OK [UIDVALIDITY 3857529045] UIDs valid\r\n* OK [UIDNEXT 4392] Predicted next UID\r\n* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft)\r\nA0001 OK [READ-WRITE] SELECT completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    s = select(@c, name: "INBOX").must()
+    assert s.exists == 172 && !s.read_only && s.uid_next == 4392
+    assert fake.heard(@c.conn, @server) == "A0001 SELECT INBOX\r\n"
+
+# A mailbox selected to read it alone, nothing in it changed.
+test "examine: an archive read-only"
+    p = fake.play(
+        script: "* 3 EXISTS\r\nA0001 OK [READ-ONLY] EXAMINE completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    s = examine(@c, name: "Archive").must()
+    assert s.read_only && s.exists == 3
+    assert fake.heard(@c.conn, @server) == "A0001 EXAMINE Archive\r\n"
+
+# The inbox left, its messages marked `\Deleted` removed.
+test "close_mailbox: CLOSE after a SELECT"
+    p = fake.play(
+        script: "* 2 EXISTS\r\nA0001 OK [READ-WRITE] SELECT completed\r\nA0002 OK CLOSE completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    _ = select(@c, name: "INBOX").must()
+    close_mailbox(@c).must()
+    assert fake.heard(@c.conn, @server) == "A0001 SELECT INBOX\r\nA0002 CLOSE\r\n"
+
+# The inbox left, nothing removed.
+test "unselect: UNSELECT after a SELECT"
+    p = fake.play(
+        script: "* 2 EXISTS\r\nA0001 OK [READ-WRITE] SELECT completed\r\nA0002 OK UNSELECT completed\r\n",
+        capabilities: ["IMAP4REV1", "UNSELECT"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    _ = select(@c, name: "INBOX").must()
+    unselect(@c).must()
+    assert fake.heard(@c.conn, @server) == "A0001 SELECT INBOX\r\nA0002 UNSELECT\r\n"
+
+# The first two messages and the last, by message number.
+test "seqs: two messages and the last"
+    assert seqs([1, 2, LAST]) == Set(uid: false, text: "1,2,*")
+
+# Three messages by UID.
+test "uids: three UIDs"
+    assert uids([304, 319, 320]) == Set(uid: true, text: "304,319,320")
+
+# Every message from the tenth to the last.
+test "seq_range: the tenth to the last"
+    assert seq_range(first: 10, last: LAST) == Set(uid: false, text: "10:*")
+
+# The messages of UIDs 42 to 43.
+test "uid_range: UIDs 42 to 43"
+    assert uid_range(first: 42, last: 43) == Set(uid: true, text: "42:43")
+
+# The UIDs a COPYUID named, its range written out.
+test "numbers_of: the UIDs of a copy"
+    assert numbers_of(Set(uid: true, text: "304,319:320"), most: 10).must() == [304, 319, 320]
+
+# The text of a message, read from what a fetch answered.
+test "body_of: a message's text"
+    p = fake.play(
+        script: "* 1 FETCH (BODY[TEXT] {5}\r\nHello)\r\nA0001 OK FETCH completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    got = fetch(@c, which: seqs([1]), items: [.body(section: "TEXT", start: -1, count: 0)]).must()
+    assert body_of(got[0], section: "text").must() == bytes.from_text("Hello")
+    _ = fake.heard(@c.conn, @server)
+
+# The messages not yet seen, by message number.
+test "search: the unseen messages"
+    p = fake.play(
+        script: "* SEARCH 84 2 882\r\nA0001 OK SEARCH completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert search(@c, criteria: [.unseen], by_uid: false).must() == [2, 84, 882]
+    _ = fake.heard(@c.conn, @server)
+
+# A message marked seen, its flags after the change answered.
+test "store: a message marked seen"
+    p = fake.play(
+        script: "* 2 FETCH (FLAGS (\\Seen))\r\nA0001 OK STORE completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    changed = store(@c, which: seqs([2]), change: .add, flags: ["\\Seen"]).must()
+    assert changed.len() == 1 && changed[0].flags == ["\\Seen"]
+    assert fake.heard(@c.conn, @server) == "A0001 STORE 2 +FLAGS (\\Seen)\r\n"
+
+# Three messages copied to another mailbox, the UIDs they took there read.
+test "copy: three messages saved"
+    p = fake.play(
+        script: "A0001 OK [COPYUID 38505 304,319:320 3956:3958] Done\r\n",
+        capabilities: ["IMAP4REV1", "UIDPLUS"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    copied = copy(@c, which: uids([304, 319, 320]), to: "saved").must()
+    assert copied.uid_validity == 38505 && numbers_of(copied.to, most: 10).must() == [3956, 3957, 3958]
+    assert fake.heard(@c.conn, @server) == "A0001 UID COPY 304,319,320 saved\r\n"
+
+# Two messages moved to the trash, their leaving told as news.
+test "move: two messages to the trash"
+    p = fake.play(
+        script: "* OK [COPYUID 432432 42:43 1:2] Moved\r\n* 3 EXPUNGE\r\n* 3 EXPUNGE\r\nA0001 OK Done\r\n",
+        capabilities: ["IMAP4REV1", "MOVE", "UIDPLUS"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    moved = move(@c, which: uid_range(first: 42, last: 43), to: "Trash").must()
+    assert moved.to.text == "1:2" && take_updates(@c) == [.expunge(seq: 3), .expunge(seq: 3)]
+    assert fake.heard(@c.conn, @server) == "A0001 UID MOVE 42:43 Trash\r\n"
+
+# The messages marked `\Deleted` removed, each number as it went.
+test "expunge: two messages removed"
+    p = fake.play(
+        script: "* 3 EXPUNGE\r\n* 8 EXPUNGE\r\nA0001 OK EXPUNGE completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert expunge(@c).must() == [3, 8]
+    assert fake.heard(@c.conn, @server) == "A0001 EXPUNGE\r\n"
+
+# One message marked `\Deleted` removed by its UID, the others left.
+test "expunge_uids: one message by UID"
+    p = fake.play(
+        script: "* 3 EXPUNGE\r\nA0001 OK EXPUNGE completed\r\n",
+        capabilities: ["IMAP4REV1", "UIDPLUS"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    assert expunge_uids(@c, which: uids([1042])).must() == [3]
+    assert fake.heard(@c.conn, @server) == "A0001 UID EXPUNGE 1042\r\n"
+
+# A message saved in a mailbox, seen already, the UID it took read.
+test "append: a message saved"
+    p = fake.play(
+        script: "+ Ready\r\nA0001 OK [APPENDUID 38505 3955] APPEND completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    message = bytes.from_text("Subject: x\r\n\r\nhi\r\n")
+    assert append(@c, to: "saved", message: message, flags: ["\\Seen"]).must() == Appended(uid_validity: 38505, uid: 3955)
+    assert fake.heard(@c.conn, @server) == "A0001 APPEND saved (\\Seen) {18}\r\nSubject: x\r\n\r\nhi\r\n\r\n"
+
+# A message saved as received when it was sent, in its own offset.
+test "append_dated: a message received in 1996"
+    p = fake.play(
+        script: "A0001 OK [APPENDUID 38505 3956] APPEND completed\r\n",
+        capabilities: ["IMAP4REV1", "LITERAL+"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    date = mail.Date(
+        instant: time.from_unix(whole_seconds: 837596665, extra_nanoseconds: 0).must(),
+        offset_minutes: -420,
+        offset_known: true
+    )
+    message = bytes.from_text("Subject: x\r\n\r\nhi\r\n")
+    assert append_dated(@c, to: "saved", message: message, flags: [], date: date).must().uid == 3956
+    assert fake.heard(@c.conn, @server) == "A0001 APPEND saved \"17-Jul-1996 02:44:25 -0700\" {18+}\r\nSubject: x\r\n\r\nhi\r\n\r\n"
+
+# The news a NOOP brought: four messages now, one of them new.
+test "take_updates: a message arrived"
+    p = fake.play(
+        script: "* 4 EXISTS\r\n* 1 RECENT\r\nA0001 OK NOOP completed\r\n",
+        capabilities: ["IMAP4REV1"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    noop(@c).must()
+    assert take_updates(@c) == [.exists(count: 4), .recent(count: 1)]
+    assert take_updates(@c).len() == 0
+    _ = fake.heard(@c.conn, @server)
+
+# No news lost while they were taken in time.
+test "lost_updates_of: none lost"
+    p = fake.play(script: "* 4 EXISTS\r\nA0001 OK NOOP completed\r\n", capabilities: ["IMAP4REV1"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    noop(@c).must()
+    assert lost_updates_of(c) == 0
+    _ = fake.heard(@c.conn, @server)
+
+# Idling until a message arrives, then DONE.
+test "idle: a message arrives while idling"
+    p = fake.play(script: "+ idling\r\n* 4 EXISTS\r\n", capabilities: ["IMAP4REV1", "IDLE"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    idle(@c).must()
+    assert idle_wait(@c, within: time.seconds(2).must()).must() == [.exists(count: 4)]
+    io.write_text(server, text: "A0001 OK IDLE terminated\r\n").must()
+    assert idle_done(@c).must().len() == 0
+    assert fake.heard(@c.conn, @server) == "A0001 IDLE\r\nDONE\r\n"
+
+# The news that came while idling, waited for up to two seconds.
+test "idle_wait: a flag changed"
+    p = fake.play(
+        script: "+ idling\r\n* 2 FETCH (FLAGS (\\Seen))\r\n",
+        capabilities: ["IMAP4REV1", "IDLE"],
+        rev2: false
+    )
+    c @= Client(conn: p.conn)
+    server @= p.server
+    idle(@c).must()
+    news = idle_wait(@c, within: time.seconds(2).must()).must()
+    assert news.len() == 1
+    io.write_text(server, text: "A0001 OK IDLE terminated\r\n").must()
+    _ = idle_done(@c).must()
+    _ = fake.heard(@c.conn, @server)
+
+# The idling ended, the news that came before its end answered.
+test "idle_done: DONE, and a message that arrived before it"
+    p = fake.play(script: "+ idling\r\n", capabilities: ["IMAP4REV1", "IDLE"], rev2: false)
+    c @= Client(conn: p.conn)
+    server @= p.server
+    idle(@c).must()
+    io.write_text(server, text: "* 5 EXISTS\r\nA0001 OK IDLE terminated\r\n").must()
+    assert idle_done(@c).must() == [.exists(count: 5)]
+    assert fake.heard(@c.conn, @server) == "A0001 IDLE\r\nDONE\r\n"
+
+# A German name of drafts as IMAP4rev1 writes it.
+test "format_utf7: Entwürfe"
+    assert format_utf7("Entwürfe") == "Entw&APw-rfe"
+
+# A name a server wrote in modified UTF-7, read.
+test "parse_utf7: Entw&APw-rfe"
+    assert parse_utf7("Entw&APw-rfe").must() == "Entwürfe"

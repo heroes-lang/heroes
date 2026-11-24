@@ -15,7 +15,8 @@
 # tags and 304 for a handler's own responses; a route refusing 406 what it
 # cannot answer; a router tried with no network; serving ended gracefully
 # at the stop; health and readiness answered from the program's own checks;
-# and webhooks signed and verified as Standard Webhooks signs them.
+# requests passed to upstreams by a reverse proxy that balances them; and
+# webhooks signed and verified as Standard Webhooks signs them.
 #
 # **Why the program dispatches.** The language has no closure, and a function
 # value takes no `@` parameter (spec § 9), so no handler a router held could
@@ -53,21 +54,18 @@
 #
 # A WebSocket is `websocket`'s: the program's loop that found the route hands
 # its `io.Reader` and the request to `websocket.upgrade`, so a WebSocket
-# route needs the loop with state, not `serve`. Not done, the ledger saying
-# so of each: a route chosen by its parameter's kind (a parameter takes any
-# segment, and the handler reads it), requests passed on to another server
-# (a reverse proxy), and HTTP sent to HTTPS or a host to its `www.` form.
+# route needs the loop with state, not `serve`. A route's parameter takes
+# any segment, and the handler reads it.
 #
 # The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`,
 # `limit` (a cookie too long), `unsupported` (a cookie sealed on a Linux
 # machine with no `libcrypto.so.3`), and, from the connection, `closed`,
 # `timeout`, `stopped`, `limit` and `failed`.
 #
-# Not written yet, each a `pending` block of its ledger: a parameter matched by
-# its kind or an expression, `/posts/{id:[0-9]+}`; HTTP sent to HTTPS, or a host
-# to its `www.` form and back; requests passed to another server; webhooks
-# signed and verified with Ed25519, the specification's `v1a`, `whsk_` and
-# `whpk_` keys.
+# Not written yet, each a `pending` block of its ledger: a parameter matched
+# by its kind or an expression, `/posts/{id:[0-9]+}`; HTTP sent to HTTPS, or a
+# host to its `www.` form and back; webhooks signed and verified with Ed25519,
+# the specification's `v1a`, `whsk_` and `whpk_` keys.
 
 use bytes
 use compress
@@ -2188,21 +2186,11 @@ function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy
 #
 # - `proxy`: the reverse proxy; `workers` is not read.
 #
-# Fails `invalid` where it has no upstream, `tries` is below 1, `max_fails`
-# below 0, a span below 0, or `via` is neither "" nor a token. See also
+# Fails `invalid` where it has no upstream, an upstream's weight is below 1,
+# `tries` is below 1, `max_fails` below 0, a span below 0, or `via` is
+# neither "" nor a token; and as `time.mark` fails. See also
 # `serve_proxy_stream`.
 function proxy_state(proxy: ReverseProxy) -> ProxyState?
-    plan = plan_of(proxy, received_by: proxy.via)?
-    start = time.mark()?
-    return ok(ProxyState(plan: plan, chooser: .here(state: balance_of(proxy), start: start)))
-
-# The relay's plan for `proxy`.
-#
-# - `proxy`: the reverse proxy.
-# - `received_by`: what `Via` names this proxy by; "" writes none.
-#
-# Fails as `proxy_state` says.
-function plan_of(proxy: ReverseProxy, received_by: str) -> relay.Plan?
     if proxy.upstreams.len() == 0
         return fail(code: INVALID, msg: "a reverse proxy with no upstream")
 
@@ -2228,6 +2216,7 @@ function plan_of(proxy: ReverseProxy, received_by: str) -> relay.Plan?
             return fail(code: INVALID, msg: f"a reverse proxy's span of {time.format_duration(d)}, below zero")
 
     ups: [relay.Upstream] @= []
+    weights: [i64] @= []
 
     for u in proxy.upstreams
         if u.weight < 1
@@ -2242,34 +2231,36 @@ function plan_of(proxy: ReverseProxy, received_by: str) -> relay.Plan?
         else
             url.port_of(u.url)?
         ups @ ups.push(relay.Upstream(base: u.url, port: port, secure: secure))
-
-    return ok(
-        relay.Plan(upstreams: ups, limits: proxy.limits, connect_ms: ms_of(proxy.connect_timeout), read_ms: ms_of(proxy.read_timeout), send_ms: ms_of(proxy.send_timeout), client_ms: ms_of(proxy.client_timeout), idle_ms: ms_of(proxy.idle_timeout), tries: proxy.tries, keep_host: proxy.keep_host, trusted: proxy.trusted, scheme: "http", received_by: received_by, roots: proxy.roots)
-    )
-
-# The balancer `proxy` asks for, nothing counted.
-#
-# - `proxy`: the reverse proxy.
-function balance_of(proxy: ReverseProxy) -> balance.State
-    weights: [i64] @= []
-
-    for u in proxy.upstreams
         weights @ weights.push(u.weight)
 
     least = match proxy.choosing
         .round_robin       => false
         .least_connections => true
 
-    return balance.state_of(weights, least: least, max_fails: proxy.max_fails, fail_ms: ms_of(proxy.fail_timeout))
-
-# `d` in whole milliseconds, a part of one counting as a whole one, and
-# `net.FOREVER` for `time.max_duration()`.
-#
-# - `d`: the span, 0 or more.
-function ms_of(d: time.Duration) -> i64
-    if d == time.max_duration()
-        return net.FOREVER
-    return (d.nanoseconds + 999_999) / 1_000_000
+    counts = balance.state_of(
+        weights,
+        least: least,
+        max_fails: proxy.max_fails,
+        fail_ms: relay.ms_of(proxy.fail_timeout)
+    )
+    plan = relay.Plan(
+        upstreams: ups,
+        limits: proxy.limits,
+        connect_ms: relay.ms_of(proxy.connect_timeout),
+        read_ms: relay.ms_of(proxy.read_timeout),
+        send_ms: relay.ms_of(proxy.send_timeout),
+        client_ms: relay.ms_of(proxy.client_timeout),
+        idle_ms: relay.ms_of(proxy.idle_timeout),
+        tries: proxy.tries,
+        keep_host: proxy.keep_host,
+        trusted: proxy.trusted,
+        scheme: "http",
+        received_by: proxy.via,
+        roots: proxy.roots,
+        counts: counts
+    )
+    start = time.mark()?
+    return ok(ProxyState(plan: plan, chooser: .here(state: counts, start: start)))
 
 # Serves every connection `l` accepts as a reverse proxy over
 # `proxy.upstreams` until the program asks to stop: each request passed to
@@ -2322,12 +2313,11 @@ function serve_proxy(l: net.Listener, proxy: ReverseProxy) -> ProxyServed?
     if proxy.workers < 1
         return fail(code: INVALID, msg: f"a reverse proxy of {proxy.workers} workers, below 1")
 
-    by = if proxy.via == ""
-        ""
-    else
-        f"{proxy.via}:{l.address.port}"
-    plan = plan_of(proxy, received_by: by)?
-    got = relay.serve(l, plan: plan, state: balance_of(proxy), workers: proxy.workers)?
+    plan @= proxy_state(proxy)?.plan
+
+    if proxy.via != ""
+        plan.received_by @ f"{proxy.via}:{l.address.port}"
+    got = relay.serve(l, plan: plan, workers: proxy.workers)?
     t = got.tally
     return ok(
         ProxyServed(connections: got.connections, requests: t.requests, relayed: t.relayed, refused: t.refused, switched: t.switched)
@@ -4598,3 +4588,56 @@ test "verify_webhook: a message received"
     ).must()
     secrets = [new_webhook_secret().must(), "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"]
     assert verify_webhook(fields, payload: body, secrets: secrets, now: sent, tolerance: default_webhook_tolerance()).must() == "msg_1"
+
+# An application server on this machine as an upstream, given two turns in
+# three beside an upstream of weight 1.
+test "upstream_of: an application server and its weight"
+    up = upstream_of("http://127.0.0.1:8080/app", weight: 2).must()
+    assert up.url.host == "127.0.0.1" && up.url.path == "/app" && up.weight == 2
+
+# A reverse proxy over two upstreams, its settings changed where the program
+# needs others: here the upstream with the fewest requests in flight chosen,
+# and the client's `Host` sent on.
+test "reverse_proxy: two upstreams, the least busy chosen"
+    p @= reverse_proxy(
+        [upstream_of("http://10.0.0.1:8080", weight: 1).must(), upstream_of("http://10.0.0.2:8080", weight: 1).must()]
+    )
+    p.choosing @ .least_connections
+    p.keep_host @ true
+    assert p.upstreams.len() == 2 && p.tries == 3 && p.workers == 32
+
+# The state a program's own loop serves a reverse proxy with, its counts kept
+# from one connection to the next; a proxy with no upstream is refused.
+test "proxy_state: a proxy's state, and one with no upstream refused"
+    state @= proxy_state(reverse_proxy([upstream_of("http://127.0.0.1:8080", weight: 1).must()])).must()
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.close(@two.first.stream).must()
+    assert serve_proxy_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000").requests == 0
+    io.close(@two.second.stream).must()
+    assert proxy_state(reverse_proxy([])).is_err()
+
+# The proxy's loop, here over a listener closed already, which ends it.
+test "serve_proxy: a closed listener ends it"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.close_listener(@l).must()
+    assert serve_proxy(l, proxy: reverse_proxy([upstream_of("http://127.0.0.1:8080", weight: 1).must()])).is_err()
+
+# A program's own loop serving one client as a reverse proxy: its request
+# passed to the upstream, and the answer passed back.
+test "serve_proxy_stream: one request passed to its upstream"
+    ports: (mailbox i64) = mailbox()
+    up = spawn(fixture.upstream_once, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    state @= proxy_state(reverse_proxy([upstream_of(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /hello HTTP/1.1\r\nHost: shop.example\r\nConnection: close\r\n\r\n"
+    ).must()
+    served = serve_proxy_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000")
+    reader @= io.reader(two.first.stream)
+    answer = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    assert served.relayed == 1 && http.text_of(answer).must() == "upstream"
+    assert up.wait() == 1
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()

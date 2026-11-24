@@ -34,8 +34,8 @@ function owed_of(framing: body.Framing) -> Owed
 # `Content-Length` for a length and `Transfer-Encoding: chunked` for chunks.
 # Fails `invalid` where the method or a name is no token, the target is empty
 # or holds a space, a control byte or a byte above ASCII, the host is empty
-# or a value holds a line end, and for a body to the connection's end, which
-# a request cannot have (RFC 9112 § 6.3).
+# or a value holds a line end, for a length below zero, and for a body to
+# the connection's end, which a request cannot have (RFC 9112 § 6.3).
 function request_head(method: str, target: str, host: str, fields: [wire.Field], framing: body.Framing, closing: bool) -> [u8]?
     if !syntax.is_token(method)
         return fail(
@@ -57,6 +57,7 @@ function request_head(method: str, target: str, host: str, fields: [wire.Field],
 
     if host == "" || !syntax.is_value(host)
         return fail(code: syntax.INVALID, msg: f"writing a request's head for {syntax.shown(target)}: it names no host")
+    refuse_negative(framing, what: "writing a request's head")?
     lines: [str] @= [f"{method} {target} HTTP/1.1", "Host: " + host]
     write.others(@lines, fields: fields, skip_host: true)?
     closes(@lines, fields: fields, closing: closing)
@@ -80,7 +81,8 @@ function request_head(method: str, target: str, host: str, fields: [wire.Field],
 # then `Content-Length` for a length and `Transfer-Encoding: chunked` for
 # chunks. `reason` "" is the status's text. Fails `invalid` where the status
 # is neither 101 nor 200 to 999, where 101 is framed with a body, or where the
-# reason or a field is not one, as `write.others` says.
+# reason or a field is not one, as `write.others` says, or the length is
+# below zero.
 function response_head(status_code: i64, reason: str, fields: [wire.Field], framing: body.Framing, closing: bool, date: str) -> [u8]?
     if status_code != 101 && (status_code < 200 || status_code > 999)
         return fail(
@@ -94,6 +96,7 @@ function response_head(status_code: i64, reason: str, fields: [wire.Field], fram
 
     if status_code == 101 && framed
         return fail(code: syntax.INVALID, msg: "writing the head of a relayed response: 101 has no body")
+    refuse_negative(framing, what: "writing the head of a relayed response")?
     said: str @= reason
 
     if said == ""
@@ -122,6 +125,17 @@ function response_head(status_code: i64, reason: str, fields: [wire.Field], fram
         .chunked        => lines @ lines.push("Transfer-Encoding: chunked")
 
     return ok(bytes.from_text(lines.join("\r\n") + "\r\n\r\n"))
+
+# Fails `invalid` where `framing` is a length below zero, which no head can
+# write: `what` names the head in the message.
+function refuse_negative(framing: body.Framing, what: str) -> ()?
+    match framing
+        .length l =>
+            if l.n < 0
+                return fail(code: syntax.INVALID, msg: f"{what}: a body of {l.n} bytes, below zero")
+        .none | .chunked | .to_end => _ = 0
+
+    return ok()
 
 # Adds `Connection: close` to `lines` where `closing` and no `Connection`
 # field of `fields` holds `close` already.

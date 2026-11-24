@@ -36,9 +36,9 @@
 # past `MOST_BYTES`) and `unsupported` (a form of SAML not read, saying why).
 #
 # Not written yet, each a `pending` block of its ledger: an encrypted
-# assertion, identifier or attribute read (XML Encryption 1.1); the
-# HTTP-Artifact binding and the SOAP binding's back channel; the identity
-# provider's side.
+# assertion, identifier or attribute read; the HTTP-Artifact binding and the
+# SOAP binding's back channel; the identity provider's side: requests read,
+# assertions issued and signed.
 
 use bytes
 use crypto/keypairs
@@ -57,7 +57,7 @@ use x509
 use xml
 use xmldsig
 
-## Codes and names
+## Codes
 
 # The code of a message not of SAML's form, or a rule that does not hold.
 constant INVALID: str
@@ -79,6 +79,8 @@ constant FAILED: str
 # The code of a message longer than `MOST_BYTES`.
 constant LIMIT: str
     "limit"
+
+## Limits and names
 
 # The most bytes a message read from a binding may hold, once inflated or
 # decoded.
@@ -1111,3 +1113,161 @@ test "check_response: a login"
         @seen
     ).must()
     assert login.name_id == "a7f3e2c19d"
+
+# The service provider a program is, named by its entity identifier and the
+# URL its consumer service is posted to.
+test "service_provider: an entity and its consumer service"
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    assert sp.acs_url == "https://sp.example.com/saml/acs" && sp.logout_url == "" && sp.certificates.len() == 0
+
+# The identity provider a company's metadata file describes, the file one
+# the program was given and trusts.
+test "parse_metadata: an identity provider from a trusted file"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    assert idp.entity_id == "https://idp.example.org/metadata" && idp.certificates.len() == 1
+
+# The metadata a service provider hands its identity provider.
+test "format_metadata: a service provider's descriptor"
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    root = xml.parse(format_metadata(sp).must()).must().root
+    assert root.name.local == "EntityDescriptor" && xml.attribute(root, name: "entityID").must() == sp.entity_id
+
+# What a request asks when the program asks nothing more.
+test "default_request_options: nothing forced, a name made"
+    o = default_request_options()
+    assert !o.force_authn && !o.is_passive && o.allow_create && o.authn_contexts.len() == 0
+
+# A login begun: the request to the identity provider, its identifier kept
+# by the program until the answer comes.
+test "authn_request: a request by HTTP-Redirect"
+    now = time.parse("2026-11-23T22:00:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    m = authn_request(sp, idp: idp, binding: HTTP_REDIRECT, options: default_request_options(), now: now).must()
+    assert m.destination == idp.sso[0].location && m.parameter == "SAMLRequest" && strings.has_prefix(s: m.id, prefix: "_")
+
+# Where the identity provider takes a login by HTTP-POST.
+test "endpoint_of: the single sign-on endpoint by HTTP-POST"
+    now = time.parse("2026-11-23T22:00:00Z", layout: .rfc3339).must()
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    found = endpoint_of(idp.sso, binding: HTTP_POST, response: false, what: "single sign-on").must()
+    assert found == "https://idp.example.org/sso/post"
+
+# The URL the browser is sent to, the request signed over its query by the
+# service provider's key and the page to come back to beside it.
+test "redirect_url: a request signed by the service provider's key"
+    now = time.parse("2026-11-23T22:00:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    m = authn_request(sp, idp: idp, binding: HTTP_REDIRECT, options: default_request_options(), now: now).must()
+    key @= keypairs.parse_private_pem(samples.SP_KEY).must()
+    target = redirect_url(m, relay_state: "/after", signer: .key(v: key, method: .rsa_sha256)).must()
+    keypairs.close_private(@key).must()
+    assert strings.has_prefix(s: target, prefix: m.destination) && strings.contains(s: target, substr: "Signature=")
+
+# The page that posts a request through the browser, the request signed
+# inside by the service provider's key.
+test "post_page: a request posted through the browser"
+    now = time.parse("2026-11-23T22:00:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    m = authn_request(sp, idp: idp, binding: HTTP_POST, options: default_request_options(), now: now).must()
+    key @= keypairs.parse_private_pem(samples.SP_KEY).must()
+    page = post_page(m, relay_state: "", signer: .key(v: key, method: .rsa_sha256)).must()
+    keypairs.close_private(@key).must()
+    assert strings.contains(s: page, substr: "name=\"SAMLRequest\"") && strings.contains(s: page, substr: m.destination)
+
+# The options the answer to the program's own request is checked with.
+test "response_options: the answer to a request sent"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    o = response_options(request_id: "_4f2a9c0e1b7d", now: now)
+    assert o.request_id == "_4f2a9c0e1b7d" && o.skew_seconds == DEFAULT_SKEW_SECONDS && o.want_assertions_signed
+
+# The options of a login the identity provider began itself, no request of
+# the program answered.
+test "unsolicited_options: a login no request asked"
+    o = unsolicited_options(time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must())
+    assert o.request_id == "" && o.want_assertions_signed
+
+# The record a program keeps of the assertions read, so the same response
+# posted twice signs nobody in the second time.
+test "new_seen: a response read once"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    options = response_options(request_id: "_4f2a9c0e1b7d", now: now)
+    seen @= new_seen()
+    _ = check_response(posted, sp: sp, idp: idp, options: options, @seen).must()
+    assert check_response(posted, sp: sp, idp: idp, options: options, @seen).is_err()
+
+# The mail address the identity provider says the user has.
+test "values_of: the user's mail"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    seen @= new_seen()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    login = check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: now),
+        @seen
+    ).must()
+    assert values_of(login, name: "mail") == ["ada@example.com"]
+
+# A session ended from the service provider's side: the logout request for
+# the login it began with, by HTTP-Redirect.
+test "logout_request: the session of a login ended"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    seen @= new_seen()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    login = check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: now),
+        @seen
+    ).must()
+    m = logout_request(sp, idp: idp, login: login, binding: HTTP_REDIRECT, now: now).must()
+    assert m.destination == "https://idp.example.org/slo" && m.parameter == "SAMLRequest"
+
+# The identity provider's answer to the program's logout request, received
+# by HTTP-Redirect.
+test "check_logout_response: the logout done"
+    now = time.parse("2026-11-23T23:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    check_logout_response(
+        .redirect(query: samples.LOGOUT_RESPONSE_QUERY),
+        sp: sp,
+        idp: idp,
+        request_id: "_9c0d",
+        now: now
+    ).must()
+
+# A logout the identity provider asks, received by HTTP-Redirect: the user
+# and the sessions to end.
+test "check_logout_request: a logout the identity provider asks"
+    now = time.parse("2026-11-23T23:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    order = check_logout_request(.redirect(query: samples.LOGOUT_REQUEST_QUERY), sp: sp, idp: idp, now: now).must()
+    assert order.name_id == "a7f3e2c19d" && order.session_indexes == ["_s3b8"]
+
+# The answer to a logout the identity provider asked, by HTTP-Redirect.
+test "logout_response: a logout asked, answered"
+    now = time.parse("2026-11-23T23:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    order = check_logout_request(.redirect(query: samples.LOGOUT_REQUEST_QUERY), sp: sp, idp: idp, now: now).must()
+    answer = logout_response(sp, idp: idp, order: order, binding: HTTP_REDIRECT, now: now).must()
+    assert answer.parameter == "SAMLResponse" && xml.attribute(answer.doc.root, name: "InResponseTo").must() == order.id
