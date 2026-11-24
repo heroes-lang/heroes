@@ -1,0 +1,286 @@
+# A job of launchd, reached through `/bin/launchctl`: the property list
+# written in the user's `Library/LaunchAgents` or the system's
+# `/Library/LaunchDaemons`, loaded into the user's GUI domain or the system's
+# by `bootstrap`, started by `kickstart`, stopped and unloaded by `bootout`,
+# asked by `print`'s exit code and `list`'s three columns. `launchctl(1)` on
+# this Mac says `print`'s output is no interface, so only its exit code is
+# read; `list` documents its columns, the process's id or `-`, the last exit
+# status (minus a signal's number), the label. Measured on this Mac on
+# 2026-11-24: `print` of a job not loaded exits 113, `bootout` of one exits 3
+# and returns before the process has ended, `bootout` of the system's domain
+# by a user exits 1, `bootstrap` into it 5; the system's domain is changed by
+# root alone, and its jobs are listed to root alone.
+
+use fs
+use numbers
+use os
+use service/manage
+use service/manage/internal/failure
+use service/manage/internal/job
+use service/manage/internal/running
+use strings
+use time
+
+# launchctl's path.
+constant LAUNCHCTL: str
+    "/bin/launchctl"
+
+# The system's folder of daemons.
+constant SYSTEM_FOLDER: str
+    "/Library/LaunchDaemons"
+
+# launchctl's exit code where the domain holds no such job.
+constant NO_SUCH_JOB: i64
+    113
+
+# One line of `launchctl list`.
+record Row
+    # The process's id; fails `not_found` where none runs.
+    pid: i64?
+    # The status of its last end: its exit code, or minus the signal's number.
+    status: i64
+
+# The folder of `scope`'s property lists.
+function folder_of(scope: manage.Scope) -> str?
+    match scope
+        .system => return ok(SYSTEM_FOLDER)
+        .user =>
+            home = os.home_dir()?
+            return ok(home + "/Library/LaunchAgents")
+
+# Where the property list of the job `name` of `scope` stands.
+function path_of(name: str, scope: manage.Scope) -> str?
+    folder = folder_of(scope)?
+    return ok(folder + "/" + name + ".plist")
+
+# The domain of `scope`: the user's GUI domain, or the system's.
+function domain_of(scope: manage.Scope) -> str?
+    match scope
+        .system => return ok("system")
+        .user =>
+            uid = os.user_id()?
+            return ok(f"gui/{uid}")
+
+# The job `name` in the domain of `scope`, as launchctl names a service.
+function target_of(name: str, scope: manage.Scope) -> str?
+    domain = domain_of(scope)?
+    return ok(domain + "/" + name)
+
+# Fails `permission` where `scope` is the system's and the program is not
+# root, `asked` saying what was asked.
+function rooted(scope: manage.Scope, asked: str) -> ()?
+    match scope
+        .user => return ok()
+        .system =>
+            if os.effective_user_id()? != 0
+                return fail(
+                    code: failure.PERMISSION,
+                    msg: f"{asked}: launchd's system domain is changed, and its jobs listed, by root alone"
+                )
+            return ok()
+
+# The failure `r`, a run of launchctl that did not end with 0, told with what
+# was asked.
+function refused<T>(r: running.Ran, asked: str) -> T?
+    said = f"{asked}: launchctl answered {r.code}, \"{r.error}\""
+
+    if r.code == NO_SUCH_JOB
+        return fail(code: failure.NOT_FOUND, msg: said)
+
+    if r.code == 1 || r.code == 150
+        return fail(code: failure.PERMISSION, msg: said)
+    return fail(code: failure.FAILED, msg: said)
+
+# launchctl run with `words`, a question that waits on no job.
+function called(words: [str]) -> running.Ran?
+    return running.ran(LAUNCHCTL, arguments: words, limit: running.ask_limit())
+
+# launchctl run with `words`; fails as `refused` tells where it does not end
+# with 0.
+function done(words: [str], asked: str) -> ()?
+    r = called(words)?
+
+    if r.code != 0
+        return refused(r, asked: asked)
+    return ok()
+
+# Whether the job `name` is loaded in the domain of `scope`: `launchctl
+# print`'s exit code, its output unread.
+function is_loaded(name: str, scope: manage.Scope) -> bool?
+    target = target_of(name, scope: scope)?
+    r = called(["print", target])?
+
+    if r.code == 0
+        return ok(true)
+
+    if r.code == NO_SUCH_JOB
+        return ok(false)
+    return refused(r, asked: f"asking launchd for the job \"{target}\"")
+
+# The row of `label` in `list`, launchctl's three columns separated by tabs,
+# its first line their heads. Fails `not_found` where no row has that label.
+function row_of(list: str, label: str) -> Row?
+    for line in strings.lines(list)
+        columns = strings.split(s: line, sep: "\t")
+
+        if columns.len() == 3 && columns[2] == label && columns[0] != "PID"
+            pid: i64? = if columns[0] == "-"
+                fail(code: failure.NOT_FOUND, msg: f"the job \"{label}\" runs no process")
+            else
+                numbers.parse_int(columns[0])
+            status = numbers.parse_int(columns[1]).default(0)
+            return ok(Row(pid: pid, status: status))
+
+    return fail(code: failure.NOT_FOUND, msg: f"launchctl lists no job \"{label}\"")
+
+# The row launchd lists for the job `name`, which is loaded.
+function listed(name: str) -> Row?
+    r = called(["list"])?
+
+    if r.code != 0
+        return refused(r, asked: "listing launchd's jobs")
+    return row_of(list: r.output, label: name)
+
+# Writes the property list `text` of `d`, which `manage.format_job` wrote,
+# new, readable by all and written by its owner alone, as launchd asks of a
+# daemon's. Refused where a job of the name is loaded already. Nothing is
+# loaded: launchd loads the job at the next boot or login, or at `start`.
+function install(d: manage.Definition, text: str) -> ()?
+    asking = f"installing the job \"{d.name}\""
+    rooted(d.scope, asked: asking)?
+
+    if is_loaded(d.name, scope: d.scope)?
+        return fail(code: failure.EXISTS, msg: f"{asking}: launchd has a job of that label loaded already")
+
+    folder = folder_of(d.scope)?
+    at = folder + "/" + d.name + ".plist"
+
+    match d.scope
+        .system => _ = 0
+        .user   => fs.make_dir_all(folder)?
+
+    fs.write_new_text(path: at, text: text)?
+
+    match fs.set_permission(at, permission: 0o644)
+        .ok _ => return ok()
+        .err e =>
+            match fs.remove(at)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# Loads the job `name` where it is not loaded, then starts it.
+function start(name: str, scope: manage.Scope) -> ()?
+    asking = f"starting the job \"{name}\""
+    rooted(scope, asked: asking)?
+    target = target_of(name, scope: scope)?
+
+    if !is_loaded(name, scope: scope)?
+        at = path_of(name, scope: scope)?
+
+        if !fs.exists(at)?
+            return fail(
+                code: failure.NOT_FOUND,
+                msg: f"{asking}: no job of that label is loaded, and no property list stands at \"{at}\""
+            )
+        done(["bootstrap", domain_of(scope)?, at], asked: asking)?
+    return done(["kickstart", target], asked: asking)
+
+# Stops the job `name` and unloads it, waiting at most `limit` for its process
+# to end; a job not loaded whose property list stands is stopped already.
+function stop(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    started = time.mark()?
+    asking = f"stopping the job \"{name}\""
+    rooted(scope, asked: asking)?
+
+    if !is_loaded(name, scope: scope)?
+        at = path_of(name, scope: scope)?
+
+        if fs.exists(at)?
+            return ok()
+        return fail(
+            code: failure.NOT_FOUND,
+            msg: f"{asking}: no job of that label is loaded, and no property list stands at \"{at}\""
+        )
+
+    row = listed(name)?
+    r = called(["bootout", target_of(name, scope: scope)?])?
+
+    if r.code != 0 && r.code != NO_SUCH_JOB
+        return refused(r, asked: asking)
+
+    match row.pid
+        .err _  => return ok()
+        .ok pid => return running.ended(pid, started: started, limit: limit, what: asking)
+
+# Kills the job `name` where it runs and starts it again; a job not loaded is
+# started.
+function restart(name: str, scope: manage.Scope) -> ()?
+    asking = f"restarting the job \"{name}\""
+    rooted(scope, asked: asking)?
+
+    if is_loaded(name, scope: scope)?
+        return done(["kickstart", "-k", target_of(name, scope: scope)?], asked: asking)
+    return start(name, scope: scope)
+
+# Stops the job `name`, at most `limit`, and deletes its property list. Fails
+# `not_found` where no property list stands at `path_of`'s path: a job of the
+# system's own, or another's, is never removed.
+function remove(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
+    asking = f"removing the job \"{name}\""
+    rooted(scope, asked: asking)?
+    at = path_of(name, scope: scope)?
+
+    if !fs.exists(at)?
+        return fail(
+            code: failure.NOT_FOUND,
+            msg: f"{asking}: no property list at \"{at}\", and this package removes only the jobs it installs"
+        )
+    stop(name, scope: scope, limit: limit)?
+    return fs.remove(at)
+
+# What launchd says of the job `name`: its row where it is loaded, `stopped`
+# where only its property list stands.
+function status_of(name: str, scope: manage.Scope) -> manage.Status?
+    asking = f"asking launchd of the job \"{name}\""
+    rooted(scope, asked: asking)?
+    at = path_of(name, scope: scope)?
+    on_disk = fs.exists(at)?
+
+    at_boot = if on_disk
+        job.starts_at_load(fs.read_bytes(at)?)
+    else
+        false
+
+    if !is_loaded(name, scope: scope)?
+        if on_disk
+            return ok(
+                manage.Status(state: .stopped, pid: fail(code: failure.NOT_FOUND, msg: f"the job \"{name}\" is not loaded"), at_boot: at_boot)
+            )
+        return fail(
+            code: failure.NOT_FOUND,
+            msg: f"{asking}: no job of that label is loaded, and no property list stands at \"{at}\""
+        )
+
+    row = listed(name)?
+
+    state: manage.State = if !row.pid.is_err()
+        .running
+    else if row.status != 0
+        .failed(code: row.status)
+    else
+        .stopped
+    return ok(manage.Status(state: state, pid: row.pid, at_boot: at_boot))
+
+test "row_of: a running job, one that never ran, one a signal ended, the heads, a label absent"
+    list = "PID\tStatus\tLabel\n59575\t0\torg.example.a\n-\t0\torg.example.b\n-\t-15\torg.example.c\n"
+    a = row_of(list: list, label: "org.example.a").must()
+    assert a.pid.must() == 59575
+    assert a.status == 0
+    b = row_of(list: list, label: "org.example.b").must()
+    assert b.pid.is_err()
+    assert row_of(list: list, label: "org.example.c").must().status == -15
+    assert row_of(list: list, label: "Label").is_err()
+    assert row_of(list: list, label: "org.example").is_err()
+    assert row_of(list: "", label: "org.example.a").is_err()

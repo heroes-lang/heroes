@@ -1,0 +1,169 @@
+# The platform layer's Service Control Manager, `hero_scm.h`, bound thin: one
+# function per C function, in C's order, each answering what C answers.
+# Rebel's floor of `service/manage` (`examples-rebel/README.md` § A2): where a
+# call fails it answers -1, and `last_error` then names the kind,
+# `last_os_error` the system's number and `last_message` its words; no policy
+# stands here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. Only Windows has the Service Control Manager;
+# every other system answers `HERO_SCM_UNSUPPORTED` to every call but
+# `supported`. Each call opens the manager and the service it needs and closes
+# both before it answers, so no handle reaches the program.
+
+use os
+
+extern "hero_scm.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_SCM_OK: i64
+    constant HERO_SCM_INVALID: i64
+    constant HERO_SCM_UNSUPPORTED: i64
+    constant HERO_SCM_EXISTS: i64
+    constant HERO_SCM_NOT_FOUND: i64
+    constant HERO_SCM_DENIED: i64
+    constant HERO_SCM_MARKED: i64
+    constant HERO_SCM_BUSY: i64
+    constant HERO_SCM_TIMEOUT: i64
+    constant HERO_SCM_LIMIT: i64
+    constant HERO_SCM_OTHER: i64
+    # The states `query` answers, the system's own numbers.
+    constant HERO_SCM_STATE_STOPPED: i64
+    constant HERO_SCM_STATE_START_PENDING: i64
+    constant HERO_SCM_STATE_STOP_PENDING: i64
+    constant HERO_SCM_STATE_RUNNING: i64
+    constant HERO_SCM_STATE_CONTINUE_PENDING: i64
+    constant HERO_SCM_STATE_PAUSE_PENDING: i64
+    constant HERO_SCM_STATE_PAUSED: i64
+    # The longest name and text the layer takes, in bytes.
+    constant HERO_SCM_NAME_MOST: i64
+    constant HERO_SCM_TEXT_MOST: i64
+    function hero_scm_supported() -> i64
+    function hero_scm_install(name: cstr lent, description: cstr lent, command_line: cstr lent, at_boot: i64, restart_delay_ms: i64) -> i64
+    function hero_scm_start(name: cstr lent) -> i64
+    function hero_scm_stop(name: cstr lent) -> i64
+    function hero_scm_query(name: cstr lent, @state: i64 lent, @pid: i64 lent, @at_boot: i64 lent, @exit_code: i64 lent) -> i64
+    function hero_scm_remove(name: cstr lent) -> i64
+    function hero_scm_last_error() -> i64
+    function hero_scm_last_os_error() -> i64
+    function hero_scm_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# 1 where this system has the Service Control Manager, else 0.
+function supported() -> i64
+    return hero_scm_supported()
+
+# Creates the service `name`; 0, or -1 with nothing left behind.
+#
+# - `name`: the service's name and display name, 1 to `HERO_SCM_NAME_MOST`
+#   bytes of UTF-8.
+# - `description`: the text the system shows beside it, "" for none.
+# - `command_line`: the program's path, quoted where it holds a blank, then
+#   its arguments, as the C runtime reads them back; never empty.
+# - `at_boot`: 1 where the system starts it at boot, 0 where only when asked.
+# - `restart_delay_ms`: the milliseconds after which the system restarts it
+#   when it fails, 0 to 4,294,967,295; -1 where it restarts nothing.
+function install(name: str, description: str, command_line: str, at_boot: i64, restart_delay_ms: i64) -> i64
+    return hero_scm_install(
+        name: name.cstr(),
+        description: description.cstr(),
+        command_line: command_line.cstr(),
+        at_boot: at_boot,
+        restart_delay_ms: restart_delay_ms
+    )
+
+# Asks the system to start the service `name`: 0 asked, 1 running already, -1
+# on failure.
+#
+# - `name`: the service's name.
+function start(name: str) -> i64
+    return hero_scm_start(name.cstr())
+
+# Asks the service `name` to stop: 0 asked, 1 stopped already, -1 on failure.
+#
+# - `name`: the service's name.
+function stop(name: str) -> i64
+    return hero_scm_stop(name.cstr())
+
+# What the service `name` is in; 0, or -1 with the four left as they were.
+#
+# - `name`: the service's name.
+# - `state`: where its state is written, one of `HERO_SCM_STATE_*`.
+# - `pid`: where its process's id is written, 0 where none runs.
+# - `at_boot`: where 1 is written where the system starts it at boot, else 0.
+# - `exit_code`: where the code it last stopped with is written, 0 for none.
+function query(name: str, @state: i64, @pid: i64, @at_boot: i64, @exit_code: i64) -> i64
+    return hero_scm_query(name.cstr(), state: @state, pid: @pid, at_boot: @at_boot, exit_code: @exit_code)
+
+# Deletes the service `name`, which the system removes once it has stopped
+# and no program holds it: 0, also where it was deleted already, or -1.
+#
+# - `name`: the service's name.
+function remove(name: str) -> i64
+    return hero_scm_remove(name.cstr())
+
+# The kind of the last call's failure on this thread, `HERO_SCM_OK` after a
+# call that did not fail.
+function last_error() -> i64
+    return hero_scm_last_error()
+
+# The system's own number for the last failure, 0 where the layer itself
+# refused.
+function last_os_error() -> i64
+    return hero_scm_last_os_error()
+
+# The length of the system's words for the last failure's number, written into
+# `buffer` where they fit; 0 where the layer itself refused.
+#
+# - `buffer`: where the words are written, UTF-8, from its first byte where
+#   `n` holds them; left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone.
+function last_message(@buffer: [u8], n: u64) -> i64
+    return hero_scm_last_message(@buffer, n: n)
+
+# Whether the tests run on a system with the Service Control Manager.
+function on_windows() -> bool
+    match os.system()
+        .windows => return true
+        .darwin  => return false
+        .linux   => return false
+        .other   => return false
+
+test "hero_scm supported: Windows alone"
+    if on_windows()
+        assert supported() == 1
+    else
+        assert supported() == 0
+
+test "hero_scm calls off Windows: unsupported, the four left as they were"
+    if on_windows()
+        skip_test(reason: "Windows has the Service Control Manager; the face's tests ask it")
+    state @= 9
+    pid @= 9
+    at_boot @= 9
+    exit_code @= 9
+    assert query("heroes-no-such", state: @state, pid: @pid, at_boot: @at_boot, exit_code: @exit_code) == -1
+    assert last_error() == HERO_SCM_UNSUPPORTED
+    assert state == 9 && pid == 9 && at_boot == 9 && exit_code == 9
+    assert install(name: "heroes-no-such", description: "", command_line: "C:\\x.exe", at_boot: 0, restart_delay_ms: -1) == -1
+    assert last_error() == HERO_SCM_UNSUPPORTED
+    assert start("heroes-no-such") == -1
+    assert stop("heroes-no-such") == -1
+    assert remove("heroes-no-such") == -1
+    assert last_error() == HERO_SCM_UNSUPPORTED
+    assert last_os_error() == 0
+    words: [u8] @= []
+    assert last_message(@words, n: 0) == 0
+
+test "hero_scm names on Windows: an empty name and one not installed"
+    if !on_windows()
+        skip_test(reason: "only Windows has the Service Control Manager")
+    assert start("") == -1
+    assert last_error() == HERO_SCM_INVALID
+    state @= 0
+    pid @= 0
+    at_boot @= 0
+    exit_code @= 0
+    assert query("heroes-surely-not-installed-5150", state: @state, pid: @pid, at_boot: @at_boot, exit_code: @exit_code) == -1
+    assert last_error() == HERO_SCM_NOT_FOUND
+    assert last_os_error() == 1060

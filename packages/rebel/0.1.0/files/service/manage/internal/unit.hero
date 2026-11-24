@@ -1,0 +1,138 @@
+# The unit file systemd reads for a definition, and the quoting each of its
+# settings needs. Measured with systemd 257 on 2026-11-24, by a unit whose
+# program wrote back the words, the folder and the variables it was given:
+# `ExecStart=` reads double-quoted words with C's escapes, expands `%`
+# specifiers and `$` variables, so a word doubles both; `Environment=` reads
+# the same quoting and expands `%` alone, so a `$` stays as it is;
+# `Description=` and `WorkingDirectory=` take the line as it stands, quotes and
+# `\` included, expanding `%` alone, and drop a blank at either end, which
+# `checks.bare_setting_checked` refuses before a text reaches here.
+
+use service/manage
+use service/manage/internal/checks
+
+constant HEX: str
+    "0123456789abcdef"
+
+# `text` written between double quotes as systemd unquotes it back: `\`, `"`,
+# the line ends, tab and every other control character escaped as C escapes
+# them, `%` doubled, and `$` doubled where `dollar_doubled`.
+function quoted(text: str, dollar_doubled: bool) -> str
+    out: [u8] @= ['"']
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        if c == '\\'
+            out @ out.push('\\').push('\\')
+        else if c == '"'
+            out @ out.push('\\').push('"')
+        else if c == '\n'
+            out @ out.push('\\').push('n')
+        else if c == '\t'
+            out @ out.push('\\').push('t')
+        else if c == '\r'
+            out @ out.push('\\').push('r')
+        else if checks.is_control(c)
+            n = to_i64(c).must()
+            out @ out.push('\\').push('x').push(HEX[n / 16]).push(HEX[n % 16])
+        else if c == '%'
+            out @ out.push('%').push('%')
+        else if c == '$' && dollar_doubled
+            out @ out.push('$').push('$')
+        else
+            out @ out.push(c)
+
+    out @ out.push('"')
+    return out.validated_bytes().must()
+
+# One word of `ExecStart=`, read back as `word` whatever it holds.
+function exec_word(word: str) -> str
+    return quoted(word, dollar_doubled: true)
+
+# One `Environment=` assignment, read back as `name` set to `value`.
+function env_word(name: str, value: str) -> str
+    return quoted(name + "=" + value, dollar_doubled: false)
+
+# A text of `Description=` or `WorkingDirectory=`, its `%` doubled.
+function bare(text: str) -> str
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '%'
+            out @ out.push('%')
+        out @ out.push(text[i])
+
+    return out.validated_bytes().must()
+
+# The word of `Restart=` for `restart`.
+function restart_word(restart: manage.Restart) -> str
+    return match restart
+        .never      => "no"
+        .on_failure => "on-failure"
+        .always     => "always"
+
+# The target an enabled unit of `scope` is wanted by: the system's
+# multi-user target, or the user manager's default.
+function wanted_by(scope: manage.Scope) -> str
+    return match scope
+        .system => "multi-user.target"
+        .user   => "default.target"
+
+# The unit file of `d`, which `checks.definition_checked` has passed and whose
+# description and folder `checks.bare_setting_checked` has: `Type=exec`, so a
+# start succeeds only once the program is running, the variables in the order
+# of their names, and an `[Install]` section that `systemctl enable` reads.
+function file_text(d: manage.Definition, delay_ms: i64) -> str
+    lines: [str] @= ["[Unit]"]
+
+    if d.description != ""
+        lines @ lines.push("Description=" + bare(d.description))
+    lines @ lines.push("")
+    lines @ lines.push("[Service]")
+    lines @ lines.push("Type=exec")
+    words: [str] @= [exec_word(d.program)]
+
+    for a in d.arguments
+        words @ words.push(exec_word(a))
+
+    lines @ lines.push("ExecStart=" + join(words, " "))
+
+    if d.dir != ""
+        lines @ lines.push("WorkingDirectory=" + bare(d.dir))
+
+    for name in sort(keys(d.env))
+        lines @ lines.push("Environment=" + env_word(name: name, value: d.env[name].must()))
+
+    lines @ lines.push("Restart=" + restart_word(d.restart))
+
+    match d.restart
+        .never                => _ = 0
+        .on_failure | .always => lines @ lines.push(f"RestartSec={delay_ms}ms")
+
+    lines @ lines.push("")
+    lines @ lines.push("[Install]")
+    lines @ lines.push("WantedBy=" + wanted_by(d.scope))
+    return join(lines, "\n") + "\n"
+
+test "exec_word: plain, a space, empty, a quote, a backslash, the line ends, a control character, a percent, a dollar"
+    assert exec_word("plain") == "\"plain\""
+    assert exec_word("with space") == "\"with space\""
+    assert exec_word("") == "\"\""
+    assert exec_word("quote\"in") == "\"quote\\\"in\""
+    assert exec_word("back\\slash") == "\"back\\\\slash\""
+    assert exec_word("new\nline\r\t") == "\"new\\nline\\r\\t\""
+    assert exec_word("\u{1}ctl\u{7f}") == "\"\\x01ctl\\x7f\""
+    assert exec_word("100%n") == "\"100%%n\""
+    assert exec_word("$HOME ${X}") == "\"$$HOME $${X}\""
+    assert exec_word("café 日本") == "\"café 日本\""
+
+test "env_word: a dollar kept, a percent doubled, a quote and a line end escaped"
+    assert env_word(name: "A", value: "a b") == "\"A=a b\""
+    assert env_word(name: "A", value: "$HOME") == "\"A=$HOME\""
+    assert env_word(name: "A", value: "50%") == "\"A=50%%\""
+    assert env_word(name: "A", value: "q\"\n") == "\"A=q\\\"\\n\""
+
+test "bare: a percent doubled, a backslash and a quote as they stand, empty"
+    assert bare("100% \"up\" \\n") == "100%% \"up\" \\n"
+    assert bare("") == ""

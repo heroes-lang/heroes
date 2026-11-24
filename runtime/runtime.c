@@ -518,4 +518,6 @@
 #include "platform/hero_activation.c"
 #include "hero_syslog.h"
 #include "platform/hero_syslog.c"
+#include "hero_scm.h"
+#include "platform/hero_scm.c"
 #endif

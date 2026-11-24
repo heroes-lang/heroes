@@ -12,10 +12,10 @@
 # launchd's `launch_activate_socket`), each a `net`, `ipc` or `io` value of the
 # program's own.
 #
-# What it does NOT do: install or remove a service (the system's `sc create`
-# and `sc delete` register one by the program's path, and the account it runs
-# as is chosen there); log (`log`); pass a descriptor to systemd's file
-# descriptor store, which asks a descriptor a program does not hold.
+# What it does NOT do: install, start, stop or remove a service from another
+# program (`service/manage`); log (`log`, and the system's own log `syslog`);
+# pass a descriptor to systemd's file descriptor store, which asks a
+# descriptor a program does not hold.
 #
 # **How a program is a service**: `start` makes the program the service the
 # system called, and the service stands in `start_pending`; the program does
@@ -41,8 +41,7 @@
 # Not written yet, each a `pending` block of its ledger: a Windows error
 # number reported as the service's exit code; device arrivals and hardware
 # profile changes told to the program; a power setting's change told with its
-# value; why the system started the service; services installed, started,
-# stopped, queried and removed.
+# value; why the system started the service.
 
 use fs
 use io

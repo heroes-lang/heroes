@@ -1,0 +1,791 @@
+# A service of the system installed, started, stopped, asked and removed by
+# another program: a systemd unit, `--user` or the system's, on Linux; a
+# launchd agent of the user's or a daemon of the system's on macOS; a service
+# of the Service Control Manager on Windows. What Go's `svc/mgr`, Rust's
+# `windows-service` `ServiceManager` and the `systemctl` and `launchctl` a
+# person types give, with one definition, `Definition`, for the three.
+#
+# What it does NOT do: be the service (`service`, the program's own side: its
+# readiness, its controls, the sockets handed to it); run a service as another
+# account, which the system's own tools set (`systemctl edit`, launchd's
+# `UserName`, `sc config obj=`); change an installed definition in place,
+# which is `remove` and `install` again; pause a service, which Windows
+# alone has.
+#
+# **How it reaches each system.** systemd and launchd through their own
+# programs, `systemctl` and `/bin/launchctl`, run with a list of words, never
+# a shell, and their exit codes read; the unit file and the property list are
+# written by this package, every text escaped as its format needs, so a path
+# with a space, a quote or a line end reaches the program whole. The Service
+# Control Manager through its own calls, in the platform layer's `hero_scm.h`.
+# **This package removes only what it can tell it installed**: on systemd
+# and launchd, a unit file or a property list at the path `path_of` names;
+# the Service Control Manager keeps no mark of who installed a service, so
+# there `remove` deletes the service of that name, whoever installed it.
+#
+# **Waiting.** `start`, `stop`, `restart` and `remove` wait, at most the span
+# they are given, until the system says the service reached the state asked;
+# a span of 0 asks and answers at once, `timeout` where the state is not
+# reached yet, and the request stands either way.
+#
+# It fails with `invalid`, `exists`, `not_found`, `permission`, `timeout`,
+# `limit`, `unsupported` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: the services a
+# manager holds, listed.
+
+use fs
+use os
+use plist
+use service/manage/hero_scm
+use service/manage/internal/checks
+use service/manage/internal/failure
+use service/manage/internal/job
+use service/manage/internal/launchd
+use service/manage/internal/scm
+use service/manage/internal/systemd
+use service/manage/internal/unit
+use strings
+use time
+
+## Codes
+
+# An argument out of its range: a name that is not 1 to `NAME_MOST` bytes of
+# ASCII letters, digits, `.`, `_` and `-`; a text holding a zero byte, or a
+# description or a setting systemd reads bare that it would change; a program
+# or a folder that is not absolute; a variable's name that is no name; a
+# restart delay out of range. Every function but `manager` fails with it.
+constant INVALID: str
+    "invalid"
+
+# A service of that name is installed or known to the manager already.
+# `install` fails with it.
+constant EXISTS: str
+    "exists"
+
+# No service of that name is installed: no unit or job the manager knows, no
+# file at `path_of`'s path for `remove`. Every function that names an
+# installed service fails with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The system refuses the program what the call does: a system service is
+# installed, started and removed by an administrator (root on Linux and macOS).
+constant PERMISSION: str
+    "permission"
+
+# The service did not reach the state asked in the span given, or a manager's
+# program did not answer in a minute. `start`, `stop`, `restart` and `remove`
+# fail with it.
+constant TIMEOUT: str
+    "timeout"
+
+# The system has no memory left for the call.
+constant LIMIT: str
+    "limit"
+
+# This system has no manager this package reaches, or the manager has no form
+# for what is asked: a Linux not booted with systemd, a user's service or a
+# working folder on Windows, a restart at every exit on Windows.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system refused for a reason none of the above names; the message carries
+# its own words.
+constant FAILED: str
+    "failed"
+
+# The longest service name, in bytes: systemd's longest unit name, 255 bytes
+# with `.service` (measured with systemd 257 on 2026-11-24).
+constant NAME_MOST: i64
+    247
+
+# The longest description, in bytes.
+constant TEXT_MOST: i64
+    32768
+
+## What a service is
+
+# Whose a service is.
+variant Scope
+    # The machine's: a systemd system unit, a launchd daemon, a service of the
+    # Service Control Manager. Installed, started and removed by an
+    # administrator.
+    system
+    # The user's who runs the program: a systemd user unit, started by the
+    # user's manager; a launchd agent of the user's login session. Windows has
+    # none.
+    user
+
+# When the system starts a service again after it ended by itself.
+variant Restart
+    # Never: an ended service stays ended until it is started.
+    never
+    # When it failed, as each system counts a failure: systemd's
+    # `Restart=on-failure`, launchd's exit with a status other than 0 or a
+    # crash, the Service Control Manager's failure actions, which also count
+    # a stop the service reports with a code other than 0.
+    on_failure
+    # At every end, a success too: systemd's `Restart=always`, launchd's
+    # `KeepAlive`. The Service Control Manager has none.
+    always
+
+# A service's definition: what `install` writes. `definition` makes one with
+# the plain choices; its fields are changed as any record's are.
+record Definition
+    # The service's name: a systemd unit's without `.service`, a launchd
+    # label, the Service Control Manager's name; 1 to `NAME_MOST` bytes of
+    # ASCII letters, digits, `.`, `_` and `-`, the first a letter or a digit,
+    # a reversed domain such as `org.example.web` by launchd's custom.
+    name: str
+    # What the service is, one line, "" for none: systemd's `Description=`,
+    # the Service Control Manager's description; launchd's property list has
+    # no key for one, so it is not written there.
+    description: str
+    # The program's absolute path.
+    program: str
+    # The program's arguments after its name, each reaching it whole.
+    arguments: [str]
+    # The folder the program starts in, absolute, "" for the manager's own
+    # (`/` for systemd's system units and for launchd). Windows has no such
+    # setting.
+    dir: str
+    # Variables set for the program, name to value. Windows has no such
+    # setting.
+    env: {str: str}
+    # Whose the service is.
+    scope: Scope
+    # Whether the system starts it by itself: at boot for a system service,
+    # at the user's login for a user's (a systemd user unit at the start of
+    # the user's manager).
+    at_boot: bool
+    # When the system starts it again after it ended.
+    restart: Restart
+    # How long the system waits before it starts it again: systemd's
+    # `RestartSec=` and the Service Control Manager's delay, to the
+    # millisecond; on launchd the shortest time between two starts,
+    # `ThrottleInterval`, in whole seconds rounded up, at least one. 0 to
+    # 4,294,967,295 milliseconds; read only where `restart` restarts.
+    restart_delay: time.Duration
+
+# The manager a system has.
+variant Manager
+    # systemd, on a Linux booted with it.
+    systemd
+    # launchd, on macOS.
+    launchd
+    # The Service Control Manager, on Windows.
+    windows
+
+# Where a service stands, as `status_of` reads it.
+variant State
+    # Not running, as asked or never started.
+    stopped
+    # Starting: systemd's `activating`, the Service Control Manager's start
+    # pending.
+    starting
+    # Running.
+    running
+    # Stopping: systemd's `deactivating`, the Service Control Manager's stop
+    # pending.
+    stopping
+    # Asked to pause and not yet paused (Windows alone).
+    pausing
+    # Paused (Windows alone).
+    paused
+    # Asked to go on after a pause and not yet going (Windows alone).
+    resuming
+    # Not running, and the system holds that it failed: systemd's `failed`, a
+    # launchd job whose last end had a status other than 0, a service of the
+    # Service Control Manager stopped with an error code.
+    failed
+        # The code it ended with; on POSIX minus the signal's number where a
+        # signal ended it; 0 where it failed otherwise (a start that timed
+        # out, a program that could not be run).
+        code: i64
+
+# What `status_of` answers.
+record Status
+    # Where the service stands.
+    state: State
+    # Its main process's id; fails `not_found` where none runs.
+    pid: i64?
+    # Whether the system starts it by itself, as `Definition.at_boot` says.
+    at_boot: bool
+
+# A definition of the service `name`, of `scope`, running `program` with
+# `arguments`: no description, the manager's own folder, no variables, not
+# started by itself, never restarted, a restart delay of a second.
+#
+# - `name`: the service's name, as `Definition.name` takes it.
+# - `program`: the program's absolute path.
+# - `arguments`: its arguments after its name; empty for none.
+# - `scope`: whose the service is.
+#
+# Nothing is checked here: `install` checks every field.
+function definition(name: str, program: str, arguments: [str], scope: Scope) -> Definition
+    return Definition(
+        name: name,
+        description: "",
+        program: program,
+        arguments: arguments,
+        dir: "",
+        env: {},
+        scope: scope,
+        at_boot: false,
+        restart: .never,
+        restart_delay: time.seconds(1).must()
+    )
+
+## The system's manager
+
+# The manager of the system this program runs on: systemd where Linux was
+# booted with it (`/run/systemd/system` is a folder, `sd_booted(3)`'s test),
+# launchd on macOS, the Service Control Manager on Windows.
+#
+# Fails `unsupported` on a Linux booted with another init (OpenRC, runit,
+# a container's own first process) and on any other system.
+function manager() -> Manager?
+    match os.system()
+        .windows => return ok(.windows)
+        .darwin  => return ok(.launchd)
+        .linux =>
+            match fs.is_dir(systemd.BOOTED)
+                .ok booted =>
+                    if booted
+                        return ok(.systemd)
+                    return fail(
+                        code: UNSUPPORTED,
+                        msg: f"this Linux was not booted with systemd: no folder {systemd.BOOTED}, and no other init is reached by this package"
+                    )
+                .err e => return fail(code: UNSUPPORTED, msg: f"asking whether systemd booted this Linux: {e.msg}")
+        .other => return fail(code: UNSUPPORTED, msg: "this system is neither Linux with systemd, macOS nor Windows")
+
+## Definitions written
+
+# The systemd unit file of `d`: `[Unit]` with its description, `[Service]`
+# with `Type=exec`, the program and its arguments quoted, the folder, the
+# variables in the order of their names, the restart and its delay, and
+# `[Install]` with the target `install` enables it for.
+#
+# - `d`: the definition.
+#
+# Every word of `ExecStart=` is quoted with its `%` and `$` doubled, so the
+# program receives it as it stands; a variable's value keeps its `$`, which
+# `Environment=` does not expand. Fails `invalid` where a field is out of its
+# range, or the description or the folder has a blank at either end or ends
+# with `\`, which systemd would read otherwise. See also `format_job`,
+# `install`.
+function format_unit(d: Definition) -> str?
+    checks.definition_checked(d, rules: .posix)?
+    checks.bare_setting_checked(text: d.description, what: "the description")?
+    checks.bare_setting_checked(text: d.dir, what: "the working folder")?
+    return ok(unit.file_text(d, delay_ms: checks.delay_ms(d.restart_delay)?))
+
+# The launchd property list of `d`, in XML as `plutil -convert xml1` writes
+# one: `Label`, `ProgramArguments`, `WorkingDirectory`,
+# `EnvironmentVariables`, `RunAtLoad`, `KeepAlive` and `ThrottleInterval`.
+#
+# - `d`: the definition.
+#
+# A restart on failure keeps the job waiting to be started where it is not
+# started at boot (`AfterInitialDemand`). Fails `invalid` where a field is out
+# of its range or a text holds a character XML cannot hold; `unsupported`
+# where `d` restarts at every exit and is not started at boot, which launchd
+# cannot hold. See also `format_unit`, `install`.
+function format_job(d: Definition) -> str?
+    checks.definition_checked(d, rules: .posix)?
+    v = job.property_list(d, delay_ms: checks.delay_ms(d.restart_delay)?)?
+    return plist.format_xml(v)
+
+# Where `install` writes the definition of the service `name` of `scope` on
+# this system: `/etc/systemd/system/<name>.service` or the user's
+# `systemd/user` folder under `os.config_dir`; `/Library/LaunchDaemons` or the
+# user's `Library/LaunchAgents`, `<name>.plist`.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+#
+# Nothing is asked of the disk. Fails `invalid` for a name out of its range;
+# `unsupported` on Windows, whose Service Control Manager keeps its services
+# in no file a program writes, and where `manager` does; and as `os.home_dir`
+# does for a user's.
+function path_of(name: str, scope: Scope) -> str?
+    checks.name_checked(name)?
+
+    match manager()?
+        .systemd => return systemd.path_of(name, scope: scope)
+        .launchd => return launchd.path_of(name, scope: scope)
+        .windows =>
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"the Service Control Manager keeps the service \"{name}\" in the system's own database, in no file a program writes"
+            )
+
+## Installing and removing
+
+# Installs `d`, which the system then starts as `d` says, or when asked; the
+# service does not start now.
+#
+# - `d`: the definition.
+#
+# On systemd: the unit file written at `path_of`'s path, `systemctl
+# daemon-reload`, and `systemctl enable` where `d.at_boot`. On launchd: the
+# property list written there, which launchd loads at the next boot or login,
+# or at `start`. On Windows: `CreateServiceW`, the program's path and
+# arguments quoted as the C runtime reads them back, run as the machine's own
+# account, with its description and failure actions; a step the system
+# refuses undoes the steps before it.
+#
+# Fails `invalid` where a field is out of its range; `exists` where a unit, a
+# job or a service of that name is installed or loaded already; `permission`
+# where the system refuses (a system service asks an administrator);
+# `unsupported` where `manager` does, for a user's service, a working folder,
+# a variable or a restart at every exit on Windows, and for a restart at every
+# exit not started at boot on launchd; `failed` with the system's words
+# otherwise. See also `remove`, `format_unit`, `format_job`.
+function install(d: Definition) -> ()?
+    match manager()?
+        .systemd =>
+            text = format_unit(d)?
+            return systemd.install(d, text: text)
+        .launchd =>
+            text = format_job(d)?
+            return launchd.install(d, text: text)
+        .windows =>
+            checks.definition_checked(d, rules: .windows)?
+            return scm.install(d, delay_ms: checks.delay_ms(d.restart_delay)?)
+
+# Stops the service `name` of `scope`, waiting at most `limit`, and removes it.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+# - `limit`: how long the stop may take; 0 asks and waits not at all.
+#
+# On systemd: stopped, `systemctl disable`, the unit file deleted, `systemctl
+# daemon-reload`, and its failed state reset. On launchd: `launchctl bootout`
+# where it is loaded, its process waited for, the property list deleted. On
+# Windows: stopped and `DeleteService`, which the system ends once no program
+# holds the service.
+#
+# Fails `not_found` where no unit file or property list stands at `path_of`'s
+# path, or no service of the name on Windows; `timeout` where the stop takes
+# longer than `limit`, the definition then left in place; and as `stop` does.
+# See also `install`.
+function remove(name: str, scope: Scope, limit: time.Duration) -> ()?
+    checks.name_checked(name)?
+    checks.limit_checked(limit)?
+
+    match manager()?
+        .systemd => return systemd.remove(name, scope: scope, limit: limit)
+        .launchd => return launchd.remove(name, scope: scope, limit: limit)
+        .windows => return scm.remove(name, scope: scope, limit: limit)
+
+## Starting and stopping
+
+# Starts the service `name` of `scope`, waiting at most `limit` until the
+# system says it started; a service that runs already is left running.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+# - `limit`: how long the start may take; 0 asks and answers at once.
+#
+# On systemd `systemctl start`, done once the program runs; on launchd
+# `launchctl bootstrap` where the job is not loaded, then `launchctl
+# kickstart`; on Windows `StartServiceW`, done once the service leaves its
+# start pending.
+#
+# Fails `not_found` where no such service is installed; `timeout` where it is
+# not started in `limit`; `failed` where the system says the start failed,
+# with its words; `permission` and `unsupported` as `install` does. See also
+# `stop`, `restart`, `status_of`.
+function start(name: str, scope: Scope, limit: time.Duration) -> ()?
+    checks.name_checked(name)?
+    checks.limit_checked(limit)?
+
+    match manager()?
+        .systemd => return systemd.start(name, scope: scope, limit: limit)
+        .launchd => return launchd.start(name, scope: scope)
+        .windows => return scm.start(name, scope: scope, limit: limit)
+
+# Stops the service `name` of `scope`, waiting at most `limit` until its
+# process has ended; a stopped service is left stopped. The system does not
+# restart a service it was asked to stop.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+# - `limit`: how long the stop may take; 0 asks and answers at once.
+#
+# On systemd `systemctl stop`; on launchd `launchctl bootout`, which also
+# unloads the job until the next `start`, boot or login, since a job kept
+# alive would be started again; on Windows the stop control, done once the
+# service reports stopped.
+#
+# Fails `not_found` where no such service is installed; `timeout` where it has
+# not stopped in `limit`, the system still stopping it; `permission` and
+# `unsupported` as `install` does. See also `start`, `restart`.
+function stop(name: str, scope: Scope, limit: time.Duration) -> ()?
+    checks.name_checked(name)?
+    checks.limit_checked(limit)?
+
+    match manager()?
+        .systemd => return systemd.stop(name, scope: scope, limit: limit)
+        .launchd => return launchd.stop(name, scope: scope, limit: limit)
+        .windows => return scm.stop(name, scope: scope, limit: limit)
+
+# Stops the service `name` of `scope` where it runs and starts it, waiting at
+# most `limit` for both; a stopped one is started.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+# - `limit`: how long both may take; 0 asks and answers at once.
+#
+# On systemd `systemctl restart`; on launchd `launchctl kickstart -k` where
+# the job is loaded, else as `start`; on Windows `stop` then `start`.
+#
+# Fails as `stop` and `start` do. See also `start`, `stop`.
+function restart(name: str, scope: Scope, limit: time.Duration) -> ()?
+    checks.name_checked(name)?
+    checks.limit_checked(limit)?
+
+    match manager()?
+        .systemd => return systemd.restart(name, scope: scope, limit: limit)
+        .launchd => return launchd.restart(name, scope: scope)
+        .windows => return scm.restart(name, scope: scope, limit: limit)
+
+## Asking
+
+# Where the service `name` of `scope` stands, its main process and whether
+# the system starts it by itself.
+#
+# - `name`: the service's name.
+# - `scope`: whose the service is.
+#
+# On systemd `systemctl show`'s `ActiveState`, `MainPID` and
+# `UnitFileState`; on launchd `launchctl list`'s columns where the job is
+# loaded, `stopped` where only its property list stands, and the list's
+# `RunAtLoad` or `KeepAlive`; on Windows `QueryServiceStatusEx` and
+# `QueryServiceConfigW`.
+#
+# Fails `not_found` where no such service is installed or loaded;
+# `permission` on macOS for a system daemon asked by a program that is not
+# root, since `launchctl list` lists the system's jobs to root alone and the
+# only other answer, `launchctl print`, says its output is no interface;
+# `unsupported` as `install` does; `failed` where systemd answers a state
+# this package does not know. See also `start`, `stop`.
+function status_of(name: str, scope: Scope) -> Status?
+    checks.name_checked(name)?
+
+    match manager()?
+        .systemd => return systemd.status_of(name, scope: scope)
+        .launchd => return launchd.status_of(name, scope: scope)
+        .windows => return scm.status_of(name, scope: scope)
+
+## Tests
+
+test "definition: the plain choices, and a field changed as any record's"
+    d @= definition(name: "org.example.web", program: "/usr/bin/web", arguments: ["--port", "8080"], scope: .user)
+    assert d.description == ""
+    assert d.dir == ""
+    assert d.env.len() == 0
+    assert d.at_boot == false
+    assert d.restart == .never
+    assert d.restart_delay.nanoseconds == 1000000000
+    d.at_boot @ true
+    assert d.at_boot
+
+test "format_unit: every setting, a program with a space, arguments that a shell or systemd would read otherwise"
+    d @= definition(
+        name: "org.example.web",
+        program: "/opt/my web/web",
+        arguments: ["--motd", "100% \"up\" $HOME", ""],
+        scope: .system
+    )
+    d.description @ "A web server, 100% up"
+    d.dir @ "/srv/my web"
+    d.env @ {"PORT": "8080", "GREETING": "a $b\nc"}
+    d.at_boot @ true
+    d.restart @ .on_failure
+    d.restart_delay @ time.milliseconds(1500).must()
+    want = [
+        "[Unit]"
+        "Description=A web server, 100%% up"
+        ""
+        "[Service]"
+        "Type=exec"
+        "ExecStart=\"/opt/my web/web\" \"--motd\" \"100%% \\\"up\\\" $$HOME\" \"\""
+        "WorkingDirectory=/srv/my web"
+        "Environment=\"GREETING=a $b\\nc\""
+        "Environment=\"PORT=8080\""
+        "Restart=on-failure"
+        "RestartSec=1500ms"
+        ""
+        "[Install]"
+        "WantedBy=multi-user.target"
+        ""
+    ]
+    assert format_unit(d).must() == join(want, "\n")
+
+test "format_unit: a user's unit with no description, never restarted, wanted by the user's default target"
+    d = definition(name: "a", program: "/bin/true", arguments: [], scope: .user)
+    want = "[Unit]\n\n[Service]\nType=exec\nExecStart=\"/bin/true\"\nRestart=no\n\n[Install]\nWantedBy=default.target\n"
+    assert format_unit(d).must() == want
+
+test "format_unit: refusals, a relative program, a description of two lines or with a blank at an end, a folder ending in a backslash, a zero byte"
+    d @= definition(name: "a", program: "bin/true", arguments: [], scope: .user)
+    assert format_unit(d).is_err()
+    d.program @ "/bin/true"
+    d.description @ "two\nlines"
+    assert format_unit(d).is_err()
+    d.description @ "blank "
+    assert format_unit(d).is_err()
+    d.description @ ""
+    d.dir @ "/srv/x\\"
+    assert format_unit(d).is_err()
+    d.dir @ "srv"
+    assert format_unit(d).is_err()
+    d.dir @ ""
+    zero: [u8] = [97, 0]
+    d.arguments @ [zero.validated_bytes().must()]
+
+    match format_unit(d)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "format_job: every key, the arguments as strings XML escapes, a restart on failure waiting to be started"
+    d @= definition(name: "org.example.web", program: "/opt/my web/web", arguments: ["<a & b>", "\"q\""], scope: .user)
+    d.description @ "not written"
+    d.dir @ "/srv"
+    d.env @ {"PORT": "8080"}
+    d.restart @ .on_failure
+    d.restart_delay @ time.milliseconds(1500).must()
+    want = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
+        "<plist version=\"1.0\">"
+        "<dict>"
+        "\t<key>Label</key>"
+        "\t<string>org.example.web</string>"
+        "\t<key>ProgramArguments</key>"
+        "\t<array>"
+        "\t\t<string>/opt/my web/web</string>"
+        "\t\t<string>&lt;a &amp; b&gt;</string>"
+        "\t\t<string>\"q\"</string>"
+        "\t</array>"
+        "\t<key>WorkingDirectory</key>"
+        "\t<string>/srv</string>"
+        "\t<key>EnvironmentVariables</key>"
+        "\t<dict>"
+        "\t\t<key>PORT</key>"
+        "\t\t<string>8080</string>"
+        "\t</dict>"
+        "\t<key>RunAtLoad</key>"
+        "\t<false/>"
+        "\t<key>KeepAlive</key>"
+        "\t<dict>"
+        "\t\t<key>SuccessfulExit</key>"
+        "\t\t<false/>"
+        "\t\t<key>Crashed</key>"
+        "\t\t<true/>"
+        "\t\t<key>AfterInitialDemand</key>"
+        "\t\t<true/>"
+        "\t</dict>"
+        "\t<key>ThrottleInterval</key>"
+        "\t<integer>2</integer>"
+        "</dict>"
+        "</plist>"
+        ""
+    ]
+    assert format_job(d).must() == join(want, "\n")
+
+test "format_job: a restart at every exit is kept alive at boot, and refused where the job waits to be started"
+    d @= definition(name: "a", program: "/bin/true", arguments: [], scope: .user)
+    d.restart @ .always
+
+    match format_job(d)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    d.at_boot @ true
+    assert strings.contains(s: format_job(d).must(), substr: "<key>KeepAlive</key>\n\t<true/>")
+
+test "format_job: a control character no XML holds is refused"
+    d = definition(name: "a", program: "/bin/true", arguments: ["bell\u{7}"], scope: .user)
+
+    match format_job(d)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "manager: launchd on macOS, the Service Control Manager on Windows, systemd or a refusal on Linux"
+    match os.system()
+        .darwin  => assert manager().must() == .launchd
+        .windows => assert manager().must() == .windows
+        .linux =>
+            booted = fs.is_dir(systemd.BOOTED).must()
+
+            match manager()
+                .ok m  => assert booted && m == .systemd
+                .err e => assert !booted && e.code == UNSUPPORTED
+        .other => assert manager().is_err()
+
+test "path_of: the user's agents on macOS, the system's units on a systemd Linux, none on Windows"
+    match manager()
+        .err _ => skip_test(reason: "this system has no manager this package reaches")
+        .ok m =>
+            match m
+                .launchd =>
+                    home = os.home_dir().must()
+                    assert path_of("org.example.web", scope: .user).must() == home + "/Library/LaunchAgents/org.example.web.plist"
+                    assert path_of("org.example.web", scope: .system).must() == "/Library/LaunchDaemons/org.example.web.plist"
+                .systemd => assert path_of("web", scope: .system).must() == "/etc/systemd/system/web.service"
+                .windows => assert path_of("web", scope: .system).is_err()
+
+    assert path_of("a/b", scope: .user).is_err()
+
+test "status_of: a service nobody installed is not found, and a name out of range is invalid"
+    match manager()
+        .err _ => skip_test(reason: "this system has no manager this package reaches")
+        .ok _ =>
+            match status_of("org.heroes-lang.surely-not-installed-5150", scope: .user)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+
+    assert status_of("", scope: .user).is_err()
+
+test "remove and stop: a service nobody installed is not found, a limit below zero is invalid"
+    match manager()
+        .err _ => skip_test(reason: "this system has no manager this package reaches")
+        .ok m =>
+            scope: Scope = if m == .windows
+                .system
+            else
+                .user
+
+            match remove("org.heroes-lang.surely-not-installed-5150", scope: scope, limit: time.nanoseconds(0))
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+    assert stop("a", scope: .user, limit: time.nanoseconds(-1)).is_err()
+
+test "install on Windows: a user's service, a working folder and a restart at every exit refused by words"
+    if !hero_scm.on_windows()
+        skip_test(reason: "only Windows has the Service Control Manager")
+    d @= definition(
+        name: "org.heroes-lang.never-made",
+        program: "C:\\Windows\\System32\\cmd.exe",
+        arguments: [],
+        scope: .user
+    )
+
+    match install(d)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == UNSUPPORTED
+            assert e.msg == failure.NO_USER_SERVICES
+
+    d.scope @ .system
+    d.dir @ "C:\\"
+
+    match install(d)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    d.dir @ ""
+    d.restart @ .always
+
+    match install(d)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+## Examples
+
+# The unit file a systemd user unit is written as.
+test "format_unit: a user's web server, restarted on failure"
+    d @= definition(name: "org.example.web", program: "/usr/local/bin/web", arguments: ["--port", "8080"], scope: .user)
+    d.restart @ .on_failure
+    text = format_unit(d).must()
+    assert strings.contains(s: text, substr: "ExecStart=\"/usr/local/bin/web\" \"--port\" \"8080\"")
+    assert strings.contains(s: text, substr: "Restart=on-failure")
+
+# The property list a launchd agent is written as.
+test "format_job: a user's agent started at login"
+    d @= definition(name: "org.example.web", program: "/usr/local/bin/web", arguments: [], scope: .user)
+    d.at_boot @ true
+    assert strings.contains(s: format_job(d).must(), substr: "<key>RunAtLoad</key>\n\t<true/>")
+
+# A definition checked before anything is written: a program given by a
+# relative path is refused, the system untouched.
+test "install: a definition refused before anything is written"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+    d = definition(name: "org.example.web", program: "web", arguments: [], scope: .system)
+
+    match install(d)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# The manager this system has.
+test "manager: launchd on macOS"
+    if os.system() != .darwin
+        skip_test(reason: "this example is macOS's")
+    assert manager().must() == .launchd
+
+# Where a user's agent is written on macOS.
+test "path_of: a user's agent on macOS"
+    if os.system() != .darwin
+        skip_test(reason: "this example is macOS's")
+    assert strings.contains(
+        s: path_of("org.example.web", scope: .user).must(),
+        substr: "/Library/LaunchAgents/org.example.web.plist"
+    )
+
+# A service nobody installed.
+test "status_of: a name nobody installed is not found"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+
+    match status_of("org.example.surely-not-installed", scope: .system)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+# A stop asked of a service nobody installed.
+test "stop: a name nobody installed is not found"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+
+    match stop("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+# A start asked of a service nobody installed.
+test "start: a name nobody installed is not found"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+
+    match start("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+# A restart asked of a service nobody installed.
+test "restart: a name nobody installed is not found"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+
+    match restart("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+# A removal asked of a service nobody installed.
+test "remove: a name nobody installed is not found"
+    if manager().is_err()
+        skip_test(reason: "this system has no manager this package reaches")
+
+    match remove("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
+
+# A definition with the plain choices.
+test "definition: a system service that runs one program"
+    d = definition(name: "org.example.web", program: "/usr/local/bin/web", arguments: ["--quiet"], scope: .system)
+    assert d.arguments == ["--quiet"]
+    assert d.restart == .never
