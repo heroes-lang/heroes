@@ -1,0 +1,135 @@
+# Every answer a mailbox's `receive` or a thread's `wait` gives is written
+# whole before the runtime's take writes its parts (spec § 11; panel 182's
+# item 3): a record holding several handles, a nested record, a variant,
+# an option, a `bool`, a record of one field, a refusal of a mailbox
+# emptied and of one closed, and a thread answering each of those kinds and
+# nothing at all. From step 104b to the early gate of 2026-11-24 the receive
+# wrote the option's tag and its `ok` part alone and the wait handed its
+# answer to the take with nothing written first, so the rest of a union and
+# the padding held the stack's leftovers inside a value the IR calls
+# defined; the output was the same, and only the `wholes` suite, over this
+# program's blessed emission, sees the difference.
+
+record Several
+    name: str
+    parts: [str]
+    weights: {str: i64}
+
+record Inner
+    tag: str
+    n: i64
+
+record Outer
+    inner: Inner
+    more: [Inner]
+    flag: bool
+
+variant Shape
+    circle
+        r: i64
+        label: str
+    square
+        side: i64
+    none
+
+function several()
+    m: (mailbox Several) = mailbox()
+    m.send(Several(name: "a", parts: ["x", "y"], weights: {"k": 3})).must()
+    got = m.receive(within_ms: 0).must()
+    print(got.name + got.parts[1] + got.weights["k"].must().to_str())
+    print(m.receive(within_ms: 0).is_err())
+
+function nested()
+    m: (mailbox Outer) = mailbox()
+    m.send(Outer(inner: Inner(tag: "t", n: 4), more: [Inner(tag: "u", n: 5)], flag: true)).must()
+    got = m.receive(within_ms: 0).must()
+    print(got.inner.tag + got.more[0].tag + (got.inner.n + got.more[0].n).to_str())
+
+function shaped()
+    m: (mailbox Shape) = mailbox()
+    m.send(.circle(r: 2, label: "c")).must()
+    m.send(.none).must()
+
+    match m.receive(within_ms: 0).must()
+        .circle c => print(c.label + c.r.to_str())
+        .square s => print(s.side)
+        .none     => print("none")
+
+    match m.receive(within_ms: 0).must()
+        .circle c => print(c.label)
+        .square s => print(s.side)
+        .none     => print("none")
+
+function optional()
+    m: (mailbox i64?) = mailbox()
+    m.send(ok(9)).must()
+    print(m.receive(within_ms: 0).must().must())
+
+function small()
+    m: (mailbox bool) = mailbox()
+    m.send(true).must()
+    print(m.receive(within_ms: 0).must())
+    m.close()
+    print(m.receive(within_ms: 0).is_err())
+
+function one_field()
+    m: (mailbox Inner) = mailbox()
+    m.send(Inner(tag: "only", n: 0)).must()
+    print(m.receive(within_ms: 0).must().tag)
+
+function shape_of(n: i64) -> Shape
+    if n > 0
+        return .circle(r: n, label: "c")
+    return .none
+
+function outer_of(n: i64) -> Outer
+    return Outer(inner: Inner(tag: "o", n: n), more: [Inner(tag: "m", n: n + 1)], flag: true)
+
+function maybe_of(n: i64) -> i64?
+    if n > 0
+        return ok(n * 2)
+    return fail(code: "none", msg: "not positive")
+
+function flag_of(n: i64) -> bool
+    return n > 1
+
+function quiet(n: i64)
+    if n > 100
+        print(n)
+
+function waited()
+    t = spawn(shape_of, 3).must()
+
+    match t.wait()
+        .circle c => print(c.label + c.r.to_str())
+        .square s => print(s.side)
+        .none     => print("none")
+
+    u = spawn(shape_of, 0).must()
+
+    match u.wait()
+        .circle c => print(c.label)
+        .square s => print(s.side)
+        .none     => print("none")
+
+    w = spawn(outer_of, 5).must()
+    o = w.wait()
+    print(o.inner.tag + o.more[0].tag + (o.inner.n + o.more[0].n).to_str())
+    x = spawn(maybe_of, 6).must()
+    print(x.wait().must())
+    y = spawn(maybe_of, 0).must()
+    print(y.wait().is_err())
+    v = spawn(flag_of, 2).must()
+    print(v.wait())
+    z = spawn(quiet, 1).must()
+    z.wait()
+    print("quiet")
+
+function main()
+    several()
+    nested()
+    shaped()
+    optional()
+    small()
+    one_field()
+    waited()
