@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-eight packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-nine packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -162,6 +162,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read and made and signed, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `net`, `os`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
+| 5 | `fs/xattr` | the extended attributes of a file or a folder, a link's own too, listed, read, written only where new or only where there, removed and copied to another path: Darwin's and Linux's own, the named data streams of NTFS on Windows; other systems answer `unsupported` | `bytes`, `fs` | `hero_xattr.h` |
 | 5 | `service` | the program as a service of the system that starts it: on Windows started by the Service Control Manager, its state reported, and the stop, pause, resume and shutdown the system sends waited on alone or in a poll set; on POSIX systemd's readiness, status and watchdog notices sent, its watchdog timeout read, and the sockets systemd and launchd hand a program taken as `net` values; the other systems answer `unsupported` | `bytes`, `fs`, `net`, `numbers`, `os`, `poll`, `strings`, `time` | `hero_service.h`, `hero_activation.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
