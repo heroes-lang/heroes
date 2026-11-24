@@ -24,7 +24,8 @@
 # `timeout`, `permission` where the server asks for a password.
 #
 # Not written yet, each a `pending` block of its ledger: a worker woken by a
-# blocking pop or a message when a job comes.
+# blocking pop or a message when a job comes; a limit workers share kept in
+# Redis, its tokens taken by a script the server runs whole.
 
 use jobs
 use jobs/internal/limits

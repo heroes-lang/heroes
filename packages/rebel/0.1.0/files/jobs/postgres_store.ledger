@@ -18,7 +18,7 @@ capability jobs-postgres/tables  the store's tables made where they are not, or 
   go      river.Config.Schema, river.Client.Schema
   rust    apalis_sql::postgres::PostgresStorage, apalis_sql::postgres::PgPool, apalis_sql::Config
   python  -
-  note    three tables in the first schema of the connection's `search_path`, where river names its schema in its configuration; the script takes a lock of its transaction first, so two programs installing at once do not collide
+  note    four tables in the first schema of the connection's `search_path`, where river names its schema in its configuration; the script takes a lock of its transaction first, so two programs installing at once do not collide
 
 capability jobs-postgres/in-transaction  a job enqueued, or completed, in the program's own transaction
   heroes  postgres_store.enqueue, postgres_store.enqueue_many, postgres_store.complete

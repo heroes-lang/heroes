@@ -1,0 +1,173 @@
+# What the tests of a limit many workers share stand on: takers on threads
+# of this test's process and of child processes, each taker on a connection
+# of its own to one schema, each saying what it was granted, so a test
+# counts the grants it was told of and never asks the store. A child is this
+# test's own program started again: a test binary runs the test whose number
+# is its first argument (`heroes test` starts one process per test), so the
+# child runs the same test, finds `ROLE` second among its arguments, plays
+# its takers and ends with its code; no program calls this but the tests of
+# `jobs/postgres_store`.
+
+use jobs/postgres_store/internal/buckets
+use jobs/postgres_store/internal/live
+use numbers
+use os
+use process
+use sql/postgres
+use strings
+use threads
+use time
+
+# The argument that makes a run a child of a test.
+constant ROLE: str
+    "jobs-limit-takers"
+
+# The longest a child runs before the system ends it, in nanoseconds, so a
+# test that fails before it waits for its child leaves none running.
+constant CHILD_LIMIT_NS: i64
+    120_000_000_000
+
+# The program's arguments as text, one that is not UTF-8 read as the empty
+# text: no word of a child's role is empty, so such a run is no child.
+function given() -> [str]
+    out: [str] @= []
+
+    for one in args_checked()
+        out @ out.push(one.default(""))
+
+    return out
+
+# Whether this run of the program is a child a test started.
+function is_child() -> bool
+    a = given()
+    return a.len() >= 7 && a[1] == ROLE
+
+# The work of every taker: on `schema`'s tables, `times` takings of one
+# token of the limit `limit`, each `allow`ed or `reserve`d as `mode` says.
+#
+# - `schema`: the schema the takers share.
+# - `limit`: the limit's name.
+# - `mode`: `allow` or `reserve`.
+# - `times`: how many takings each taker makes.
+# - `here`: how many takers run on threads of this process.
+# - `children`: how many child processes run takers.
+# - `each`: how many takers each child runs, on its own threads.
+#
+# Answers what each taker was granted, one text a taker: the number of its
+# grants for `allow`, the instants its reservations are ready at in
+# nanoseconds, separated by commas, for `reserve`, and `error: ` and the
+# failure where it failed. Fails `limit` where a thread is refused.
+function run(schema: str, limit: str, mode: str, times: i64, here: i64, children: i64, each: i64) -> [str]?
+    jobs_given: [str] @= []
+
+    for _ in range(from: 0, to: here)
+        jobs_given @ jobs_given.push(f"take {schema} {limit} {mode} {times}")
+
+    for _ in range(from: 0, to: children)
+        jobs_given @ jobs_given.push(f"child {schema} {limit} {mode} {times} {each}")
+
+    answers = threads.run_all_text(body: dispatch, values: jobs_given, workers: jobs_given.len())?
+    out: [str] @= []
+
+    for one in answers
+        for part in strings.split(s: one, sep: ";")
+            out @ out.push(part)
+
+    return ok(out)
+
+# One thread's part of `run`: a taker, or a child started and waited for.
+#
+# - `work`: `take` or `child` and the words of `run`'s work.
+function dispatch(work: str) -> str
+    words = strings.split(s: work, sep: " ")
+
+    if words[0] == "child"
+        return run_child(words)
+    return take_all(words)
+
+# A child of `each` takers started with `words` and waited for; its takers'
+# answers separated by `;`, or one `error: ` answer.
+#
+# - `words`: `child`, the schema, the limit, the mode, the times and how many takers.
+function run_child(words: [str]) -> str
+    program = match os.executable_path()
+        .ok p  => p
+        .err e => return f"error: {e.code}: {e.msg}"
+
+    arguments @= [given()[0], ROLE]
+
+    for w in words.slice(from: 1, to: words.len())
+        arguments @ arguments.push(w)
+
+    c = process.with_output(
+        process.with_time_limit(process.command(program, arguments: arguments), limit: time.nanoseconds(CHILD_LIMIT_NS)),
+        to: .pipe
+    )
+
+    match process.run(c)
+        .err e => return f"error: {e.code}: {e.msg}"
+        .ok done =>
+            said = strings.trim(done.output.validated_bytes().default("the child wrote bytes that are not UTF-8"))
+
+            if !process.is_success(done.status)
+                return f"error: the child ended with a failure: {said}"
+            return said
+
+# The child's part: its takers run on threads, their answers written on one
+# line separated by `;`. Answers 0 where every taker answered, 1 where one
+# failed.
+function child() -> i64
+    a = given()
+    each = numbers.parse_int(a[6]).default(0)
+    values: [str] @= []
+
+    for _ in range(from: 0, to: each)
+        values @ values.push(f"take {a[2]} {a[3]} {a[4]} {a[5]}")
+
+    match threads.run_all_text(body: dispatch, values: values, workers: each)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            return 1
+        .ok answers =>
+            print(answers.join(";"))
+
+            for one in answers
+                if strings.has_prefix(s: one, prefix: "error")
+                    return 1
+
+            return 0
+
+# One taker, on a connection of its own: its answer as `run` says.
+#
+# - `words`: `take`, the schema, the limit, the mode and the times.
+function take_all(words: [str]) -> str
+    match takings(schema: words[1], limit: words[2], mode: words[3], times: numbers.parse_int(words[4]).default(0))
+        .ok said => return said
+        .err e   => return f"error: {e.code}: {e.msg}"
+
+# The takings of one taker.
+#
+# - `schema`: the schema.
+# - `limit`: the limit's name.
+# - `mode`: `allow` or `reserve`.
+# - `times`: how many.
+function takings(schema: str, limit: str, mode: str, times: i64) -> str?
+    db @= live.connect_shared(schema)?
+    granted: i64 @= 0
+    ready: [str] @= []
+    none = time.Duration(nanoseconds: 0)
+    forever = time.max_duration()
+
+    for _ in range(from: 0, to: times)
+        if mode == "allow"
+            if buckets.allowed(buckets.take(@db, name: limit, n: 1, longest: none, clock: .server)?)?.granted
+                granted @ granted + 1
+        else
+            r = buckets.reserved(buckets.take(@db, name: limit, n: 1, longest: forever, clock: .server)?, within: forever)?
+            ready @ ready.push(to_str(r.ready.unix_nanoseconds))
+
+    postgres.close(@db)?
+
+    if mode == "allow"
+        return ok(to_str(granted))
+    return ok(ready.join(","))
