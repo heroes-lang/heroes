@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <lent-a-record-is-read-by-c-through-const.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,13 +122,13 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 9 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int64_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 69 "lentarecordisreadbycthroughconst.c"
+#line 126 "lentarecordisreadbycthroughconst.c"
 
 #line 8 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
 _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13, "heroes-ffi-union Pt x y");
-#line 73 "lentarecordisreadbycthroughconst.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 130 "lentarecordisreadbycthroughconst.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -118,26 +175,26 @@ typedef struct h_lentarecordisreadbycthroughconst_Holder {
 } h_lentarecordisreadbycthroughconst_Holder;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -158,52 +215,52 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 11 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_lentarecordisreadbycthroughconst_pt_sum(const struct pt * a0) { (void)(pt_sum)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_lentarecordisreadbycthroughconst_pt_scaled(const struct pt * a0, int64_t a1) { (void)(pt_scaled)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_lentarecordisreadbycthroughconst_pt_sum(const struct pt * hero_a0) { (void)(pt_sum)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_lentarecordisreadbycthroughconst_pt_scaled(const struct pt * hero_a0, int64_t hero_a1) { (void)(pt_scaled)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 173 "lentarecordisreadbycthroughconst.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 230 "lentarecordisreadbycthroughconst.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *a, const struct pt *b);
-HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Pt_hash(const void *elem);
-HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Holder_eq(const h_lentarecordisreadbycthroughconst_Holder *a, const h_lentarecordisreadbycthroughconst_Holder *b);
-HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Holder_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *hero_a, const struct pt *hero_b);
+HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Pt_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Holder_eq(const h_lentarecordisreadbycthroughconst_Holder *hero_a, const h_lentarecordisreadbycthroughconst_Holder *hero_b);
+HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Holder_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_lentarecordisreadbycthroughconst_twice(struct pt *ph0_p);
 void h_lentarecordisreadbycthroughconst_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)hero_pad_nowhere()) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct pt *)hero_pad_nowhere()) == 13 ? sizeof(struct pt) : 0), __builtin_offsetof(struct pt, x), sizeof(((struct pt *)0)->x), __builtin_offsetof(struct pt, y), sizeof(((struct pt *)0)->y)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct pt), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 18 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
-int64_t h_lentarecordisreadbycthroughconst_twice(struct pt *ph0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12}; hero_lend_local_name(ph0_p, "pt_sum", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t1 = pt_sum(&(*ph0_p)); } t2 = INT64_C(2); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 24}; hero_lend_local_name(ph0_p, "pt_scaled", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t3 = pt_scaled(&(*ph0_p), t2); } if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12); return t4;
-#line 207 "lentarecordisreadbycthroughconst.c"
+int64_t h_lentarecordisreadbycthroughconst_twice(struct pt *ph0_p) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12}; hero_lend_local_name(ph0_p, "pt_sum", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t1 = pt_sum(&(*ph0_p)); } t2 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 24}; hero_lend_local_name(ph0_p, "pt_scaled", "p"); hero_pad_fill(&(*ph0_p), sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t3 = pt_scaled(&(*ph0_p), t2); } if (__builtin_add_overflow(t1, t3, &t4)) hero_panic_overflow_at("lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.twice", 19, 12); return t4;
+#line 264 "lentarecordisreadbycthroughconst.c"
 }
 
 #line 21 "tests/golden/run/lent-a-record-is-read-by-c-through-const.hero"
@@ -211,144 +268,144 @@ void h_lentarecordisreadbycthroughconst_main(void) {
 #line 21
 #define h0_a (*hero_lend_h0_a)
 #line 21
-    struct pt *const hero_lend_h0_a = (struct pt *)hero_lend_local(sizeof(struct pt), "lentarecordisreadbycthroughconst.main", "a"); h_lentarecordisreadbycthroughconst_Holder h1_h; HERO_NODEBUG int64_t t1, t4, t7, t9, t10, t11, t13, t14, t15, t17; HERO_NODEBUG int32_t t2, t5; HERO_NODEBUG struct pt t3, t6; HERO_NODEBUG h_lentarecordisreadbycthroughconst_Holder t8; HERO_NODEBUG HeroStr t12, t16; HERO_ENTRY_STOP; goto bb0; bb0:
+    struct pt *const hero_lend_h0_a = (struct pt *)hero_lend_local(sizeof(struct pt), "lentarecordisreadbycthroughconst.main", "a"); h_lentarecordisreadbycthroughconst_Holder h1_h; HERO_NODEBUG int64_t t1, t4, t7, t9, t10, t11, t13, t14, t15, t17; HERO_NODEBUG int32_t t2, t5; HERO_NODEBUG struct pt t3, t6; HERO_NODEBUG h_lentarecordisreadbycthroughconst_Holder t8; HERO_NODEBUG HeroStr t12, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(3); t2 = INT64_C(4); t3 = (struct pt){.x = t1, .y = t2}; h0_a = t3; hero_pad_fill(&h0_a, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0);
     t4 = INT64_C(10); t5 = INT64_C(1); t6 = (struct pt){.x = t4, .y = t5}; t7 = INT64_C(3); t8 = (h_lentarecordisreadbycthroughconst_Holder){.f_p = t6, .f_k = t7}; h1_h = t8;
     t9 = INT64_C(4); h1_h.f_k = t9;
     t10 = h_lentarecordisreadbycthroughconst_twice(&h0_a); hero_print_int(t10); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 11}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t11 = pt_sum(&h1_h.f_p); } t12 = HERO_STR_LIT(hero_str_20); t13 = h1_h.f_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 29}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t14 = pt_scaled(&h1_h.f_p, t13); } hero_print_int(t11); hero_print_str(t12); hero_print_int(t14); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 11}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t11 = pt_sum(&h1_h.f_p); } t12 = HERO_STR_LIT(hero_str_20); t13 = h1_h.f_k; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"lent-a-record-is-read-by-c-through-const.hero", "lent-a-record-is-read-by-c-through-const.main", 26, 29}; hero_pad_fill(&h1_h.f_p, sizeof(struct pt), 1, hero_pad_g_0, hero_pad_n_0); t14 = pt_scaled(&h1_h.f_p, t13); } hero_print_int(t11); hero_print_str(t12); hero_print_int(t14); hero_print_end();
     t15 = h0_a.x; t16 = HERO_STR_LIT(hero_str_20); t17 = h1_h.f_p.x; hero_print_int(t15); hero_print_str(t16); hero_print_int(t17); hero_print_end(); hero_lend_local_give(hero_lend_h0_a); return;
-#line 222 "lentarecordisreadbycthroughconst.c"
+#line 279 "lentarecordisreadbycthroughconst.c"
 }
 #undef h0_a
-HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *a, const struct pt *b) {
-    if (!(a->x == b->x)) return false;
-    if (!(a->y == b->y)) return false;
+HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Pt_eq(const struct pt *hero_a, const struct pt *hero_b) {
+    if (!(hero_a->x == hero_b->x)) return false;
+    if (!(hero_a->y == hero_b->y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Pt_hash(const void *elem) {
-    const struct pt *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->y)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Pt_hash(const void *hero_elem) {
+    const struct pt *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->y)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Holder_eq(const h_lentarecordisreadbycthroughconst_Holder *a, const h_lentarecordisreadbycthroughconst_Holder *b) {
-    if (!(h_lentarecordisreadbycthroughconst_0Pt_eq(&a->f_p, &b->f_p))) return false;
-    if (!(a->f_k == b->f_k)) return false;
+HERO_TU_LOCAL bool h_lentarecordisreadbycthroughconst_0Holder_eq(const h_lentarecordisreadbycthroughconst_Holder *hero_a, const h_lentarecordisreadbycthroughconst_Holder *hero_b) {
+    if (!(h_lentarecordisreadbycthroughconst_0Pt_eq(&hero_a->f_p, &hero_b->f_p))) return false;
+    if (!(hero_a->f_k == hero_b->f_k)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Holder_hash(const void *elem) {
-    const h_lentarecordisreadbycthroughconst_Holder *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_lentarecordisreadbycthroughconst_0Pt_hash(&v->f_p)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_k)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_lentarecordisreadbycthroughconst_0Holder_hash(const void *hero_elem) {
+    const h_lentarecordisreadbycthroughconst_Holder *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_lentarecordisreadbycthroughconst_0Pt_hash(&hero_v->f_p)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_k)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("61168ec637716dbe", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("255713253dc59868", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("lentarecordisreadbycthroughconst\tlent-a-record-is-read-by-c-through-const\n");
     h_lentarecordisreadbycthroughconst_main();
     hero_runtime_check_leaks();

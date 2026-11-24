@@ -167,7 +167,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
             continue
         counted = layout.is_refcounted(c, ty)
         writer.at_generated(@w)
-        writer.line(@w, text: "static void " + prefix + "_desc_copy(void *dst, const void *src) {")
+        writer.line(@w, text: "static void " + prefix + "_desc_copy(void *hero_dst, const void *hero_src) {")
 
         # The copy is of bytes, never an assignment of the struct (defect
         # 469): clang asks of every assignment whether its struct holds a
@@ -179,25 +179,25 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
         # levels, and 1.6, 2.9, 5.7 so. The two sides are a void pointer
         # each, so the casts the assignment wrote type-checked nothing, and
         # memmove is defined where a slot is copied onto itself.
-        writer.line(@w, text: "    __builtin_memmove(dst, src, sizeof(" + c_type + "));")
+        writer.line(@w, text: "    __builtin_memmove(hero_dst, hero_src, sizeof(" + c_type + "));")
 
         if counted
             # Shallow plus incref, never deep (panel 022): copy-on-write
             # is what makes a deep copy unnecessary, because sharing is
             # unobservable until somebody mutates.
-            writer.line(@w, text: "    " + prefix + "_retain((" + handles.const_pointer(c_type) + ")dst);")
+            writer.line(@w, text: "    " + prefix + "_retain((" + handles.const_pointer(c_type) + ")hero_dst);")
         writer.line(@w, text: "}")
-        writer.line(@w, text: "static void " + prefix + "_desc_drop(void *elem) {")
+        writer.line(@w, text: "static void " + prefix + "_desc_drop(void *hero_elem) {")
 
         if counted
-            writer.line(@w, text: "    " + prefix + "_release((" + c_type + " *)elem);")
+            writer.line(@w, text: "    " + prefix + "_release((" + c_type + " *)hero_elem);")
         else
-            writer.line(@w, text: "    (void)elem;")
+            writer.line(@w, text: "    (void)hero_elem;")
         writer.line(@w, text: "}")
-        writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *a, const void *b) {")
+        writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *hero_a, const void *hero_b) {")
         writer.line(
             @w,
-            text: "    return " + prefix + "_eq((" + handles.const_pointer(c_type) + ")a, (" + handles.const_pointer(c_type) + ")b);"
+            text: "    return " + prefix + "_eq((" + handles.const_pointer(c_type) + ")hero_a, (" + handles.const_pointer(c_type) + ")hero_b);"
         )
         writer.line(@w, text: "}")
         writer.line(@w, text: "HERO_TU_QUIET static const HeroDesc " + prefix + "_desc = {")
@@ -223,5 +223,5 @@ test "widths get their own descriptors, and an aggregate hashes by its function"
     assert pointer(c, names, ty: table.unit_ty(c.types)).is_err()
     point = table.lookup(c.types, .named(decl: 0)).must()
     assert pointer(c, names, ty: point).must() == "&h_t_0Point_desc"
-    assert hash_call(c, names, ty: point, place: "&v->f_p").must() == "h_t_0Point_hash(&v->f_p)"
-    assert hash_call(c, names, ty: table.int_ty_id(c.types), place: "&v->f_n").must() == "(&hero_desc_int)->hash(&v->f_n)"
+    assert hash_call(c, names, ty: point, place: "&hero_v->f_p").must() == "h_t_0Point_hash(&hero_v->f_p)"
+    assert hash_call(c, names, ty: table.int_ty_id(c.types), place: "&hero_v->f_n").must() == "(&hero_desc_int)->hash(&hero_v->f_n)"

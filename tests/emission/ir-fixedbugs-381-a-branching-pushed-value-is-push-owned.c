@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -53,34 +53,34 @@ HERO_STR_STATIC(hero_str_1d4477, "odd");
 
 #line 55 "fixedbugs381abranchingpushedvalueispushowned.c"
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_2270cbe7 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroArrayHeader * ok;
-        HeroFailure err;
-    } as;
+        HeroArrayHeader * hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_2270cbe7;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -89,33 +89,33 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 101 "fixedbugs381abranchingpushedvalueispushowned.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v);
-HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v);
-HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b);
-HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *hero_v);
+HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *hero_v);
+HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *hero_a, const h_0opt_2270cbe7 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 h_0opt_e201354 h_fixedbugs381abranchingpushedvalueispushowned_half(int64_t h0_n);
 int64_t h_fixedbugs381abranchingpushedvalueispushowned_bump(HeroArrayHeader * *ph0_xs);
@@ -125,12 +125,12 @@ HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(vo
 void h_fixedbugs381abranchingpushedvalueispushowned_main(void);
 
 #line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-h_0opt_e201354 h_fixedbugs381abranchingpushedvalueispushowned_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 11, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 11, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto bb2; else goto bb3; bb1:
+h_0opt_e201354 h_fixedbugs381abranchingpushedvalueispushowned_half(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = INT64_C(2); if (t2 == 0) hero_panic_at("division by zero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 11, 8); if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 11, 8); t3 = t1 % t2; t4 = INT64_C(0); t5 = t3 == t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 13
-    t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto bb4; bb2:
+    t10 = HERO_STR_LIT(hero_str_1d4477); t11 = HERO_STR_LIT(hero_str_1d4477); hero_str_incref(t10); hero_str_incref(t11); t12 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t10, .msg = t11}}; t14 = h2_own2; h2_own2 = t12; h_0opt_e201354_release(&t14); h1_ret0 = t12; goto hero_bb4; hero_bb2:
 #line 12
-    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 12, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 12, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto bb4; bb3: goto bb1; bb4:
+    t6 = h0_n; t7 = INT64_C(2); if (t7 == 0) hero_panic_at("division by zero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 12, 19); if (t6 == INT64_MIN && t7 == INT64_C(-1)) hero_panic_overflow_at("fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.half", 12, 19); t8 = t6 / t7; t9 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t8}; t15 = h3_own3; h3_own3 = t9; h_0opt_e201354_release(&t15); h1_ret0 = t9; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 135 "fixedbugs381abranchingpushedvalueispushowned.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
@@ -140,29 +140,29 @@ h_0opt_e201354 h_fixedbugs381abranchingpushedvalueispushowned_half(int64_t h0_n)
 }
 
 #line 15 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-int64_t h_fixedbugs381abranchingpushedvalueispushowned_bump(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs381abranchingpushedvalueispushowned_bump(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t2 = INT64_C(100); hero_array_push_owned(&(*ph0_xs), &t2);
     t4 = (*ph0_xs); t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); return t5;
 #line 147 "fixedbugs381abranchingpushedvalueispushowned.c"
 }
 
 #line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-h_0opt_2270cbe7 h_fixedbugs381abranchingpushedvalueispushowned_grown(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t9, t11, t16, t17, t21, t28, t29, t33, t36, t44, t45, t46, t47, t48, t49; HERO_NODEBUG int64_t h4_r0, t3, t6, t7, t12, t15, t18, t19, t22, t23, t24, t27, t30, t31, t37; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t35, t40, t41, t50, t51; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t39, *t42, *t43; HERO_NODEBUG bool t8, t20, t32; HERO_NODEBUG HeroFailure t10, t34; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0opt_2270cbe7 h_fixedbugs381abranchingpushedvalueispushowned_grown(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t9, t11, t16, t17, t21, t28, t29, t33, t36, t44, t45, t46, t47, t48, t49; HERO_NODEBUG int64_t h4_r0, t3, t6, t7, t12, t15, t18, t19, t22, t23, t24, t27, t30, t31, t37; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t35, t40, t41, t50, t51; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t39, *t42, *t43; HERO_NODEBUG bool t8, t20, t32; HERO_NODEBUG HeroFailure t10, t34; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t42 = h7_own7; h7_own7 = t1; hero_array_decref(t42); t43 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t43);
-    t3 = h0_n; t4 = h_fixedbugs381abranchingpushedvalueispushowned_half(t3); t44 = h8_own8; h8_own8 = t4; h_0opt_e201354_release(&t44); t45 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t45); t5 = h2_f0; t6 = t5.tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto bb1; else goto bb2; bb1: t11 = h2_f0; t12 = t11.as.ok; hero_array_push_owned(&h1_out, &t12);
-    t15 = h0_n; t16 = h_fixedbugs381abranchingpushedvalueispushowned_half(t15); t46 = h9_own9; h9_own9 = t16; h_0opt_e201354_release(&t46); t47 = h3_f1; h_0opt_e201354_retain(&t16); h3_f1 = t16; h_0opt_e201354_release(&t47); t17 = h3_f1; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2:
+    t3 = h0_n; t4 = h_fixedbugs381abranchingpushedvalueispushowned_half(t3); t44 = h8_own8; h8_own8 = t4; h_0opt_e201354_release(&t44); t45 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t45); t5 = h2_f0; t6 = t5.hero_tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1: t11 = h2_f0; t12 = t11.hero_as.hero_ok; hero_array_push_owned(&h1_out, &t12);
+    t15 = h0_n; t16 = h_fixedbugs381abranchingpushedvalueispushowned_half(t15); t46 = h9_own9; h9_own9 = t16; h_0opt_e201354_release(&t46); t47 = h3_f1; h_0opt_e201354_retain(&t16); h3_f1 = t16; h_0opt_e201354_release(&t47); t17 = h3_f1; t18 = t17.hero_tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 21
-    t9 = h2_f0; t10 = t9.as.err;
+    t9 = h2_f0; t10 = t9.hero_as.hero_err;
 #line 157 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_panic_must_at(t10, "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.grown", 21, 20);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 22 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t21 = h3_f1; t22 = t21.as.ok; h4_r0 = t22; goto bb5; bb4: t23 = INT64_C(0); h4_r0 = t23; goto bb5; bb5: t24 = h4_r0; hero_array_push_owned(&h1_out, &t24);
-    t27 = h0_n; t28 = h_fixedbugs381abranchingpushedvalueispushowned_half(t27); t48 = h10_own10; h10_own10 = t28; h_0opt_e201354_release(&t48); t49 = h5_f2; h_0opt_e201354_retain(&t28); h5_f2 = t28; h_0opt_e201354_release(&t49); t29 = h5_f2; t30 = t29.tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto bb6; else goto bb7; bb6: t36 = h5_f2; t37 = t36.as.ok; hero_array_push_owned(&h1_out, &t37);
-    t39 = h1_out; hero_array_incref(t39); t40 = (h_0opt_2270cbe7){.tag = INT64_C(0), .as.ok = t39}; t50 = h11_own11; h11_own11 = t40; h_0opt_2270cbe7_release(&t50); h6_ret0 = t40; goto bb8; bb7:
+    t21 = h3_f1; t22 = t21.hero_as.hero_ok; h4_r0 = t22; goto hero_bb5; hero_bb4: t23 = INT64_C(0); h4_r0 = t23; goto hero_bb5; hero_bb5: t24 = h4_r0; hero_array_push_owned(&h1_out, &t24);
+    t27 = h0_n; t28 = h_fixedbugs381abranchingpushedvalueispushowned_half(t27); t48 = h10_own10; h10_own10 = t28; h_0opt_e201354_release(&t48); t49 = h5_f2; h_0opt_e201354_retain(&t28); h5_f2 = t28; h_0opt_e201354_release(&t49); t29 = h5_f2; t30 = t29.hero_tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto hero_bb6; else goto hero_bb7; hero_bb6: t36 = h5_f2; t37 = t36.hero_as.hero_ok; hero_array_push_owned(&h1_out, &t37);
+    t39 = h1_out; hero_array_incref(t39); t40 = (h_0opt_2270cbe7){.hero_tag = INT64_C(0), .hero_as.hero_ok = t39}; t50 = h11_own11; h11_own11 = t40; h_0opt_2270cbe7_release(&t50); h6_ret0 = t40; goto hero_bb8; hero_bb7:
 #line 23
-    t33 = h5_f2; t34 = t33.as.err; hero_failure_retain(&t34); t35 = (h_0opt_2270cbe7){.tag = INT64_C(1), .as.err = t34}; t51 = h12_own12; h12_own12 = t35; h_0opt_2270cbe7_release(&t51); h6_ret0 = t35; goto bb8; bb8:
+    t33 = h5_f2; t34 = t33.hero_as.hero_err; hero_failure_retain(&t34); t35 = (h_0opt_2270cbe7){.hero_tag = INT64_C(1), .hero_as.hero_err = t34}; t51 = h12_own12; h12_own12 = t35; h_0opt_2270cbe7_release(&t51); h6_ret0 = t35; goto hero_bb8; hero_bb8:
 #line 167 "fixedbugs381abranchingpushedvalueispushowned.c"
     t41 = h6_ret0;
     h_0opt_2270cbe7_retain(&t41);
@@ -180,10 +180,10 @@ bb3:
 }
 
 #line 26 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_flags(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG bool h2_b0, h3_b1, t5, t8, t9, t14, t17, t18; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20, *t21, *t22; HERO_NODEBUG int64_t t3, t4, t6, t7, t12, t13, t15, t16; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_flags(int64_t h0_n) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG bool h2_b0, h3_b1, t5, t8, t9, t14, t17, t18; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20, *t21, *t22; HERO_NODEBUG int64_t t3, t4, t6, t7, t12, t13, t15, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_bool, 1); t21 = h4_own4; h4_own4 = t1; hero_array_decref(t21); t22 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t22);
-    t3 = h0_n; t4 = INT64_C(1); t5 = t3 > t4; h2_b0 = t5; if (t5) goto bb1; else goto bb2; bb1: t6 = h0_n; t7 = INT64_C(4); t8 = t6 < t7; h2_b0 = t8; goto bb2; bb2: t9 = h2_b0; hero_array_push_owned(&h1_out, &t9);
-    t12 = h0_n; t13 = INT64_C(1); t14 = t12 < t13; h3_b1 = t14; if (t14) goto bb4; else goto bb3; bb3: t15 = h0_n; t16 = INT64_C(3); t17 = t15 > t16; h3_b1 = t17; goto bb4; bb4: t18 = h3_b1; hero_array_push_owned(&h1_out, &t18);
+    t3 = h0_n; t4 = INT64_C(1); t5 = t3 > t4; h2_b0 = t5; if (t5) goto hero_bb1; else goto hero_bb2; hero_bb1: t6 = h0_n; t7 = INT64_C(4); t8 = t6 < t7; h2_b0 = t8; goto hero_bb2; hero_bb2: t9 = h2_b0; hero_array_push_owned(&h1_out, &t9);
+    t12 = h0_n; t13 = INT64_C(1); t14 = t12 < t13; h3_b1 = t14; if (t14) goto hero_bb4; else goto hero_bb3; hero_bb3: t15 = h0_n; t16 = INT64_C(3); t17 = t15 > t16; h3_b1 = t17; goto hero_bb4; hero_bb4: t18 = h3_b1; hero_array_push_owned(&h1_out, &t18);
     t20 = h1_out;
 #line 189 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_array_incref(t20);
@@ -193,10 +193,10 @@ HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_flags(int64_t h
 }
 
 #line 32 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(void) { HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_own5 = {0}, t6, t7, t11, t13, t25, t26; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *t2, *t3, *t4, *t17, *t18, *t20, *t21, *t22, *t23, *t24, *t27, *t28; HERO_NODEBUG int64_t t1, t5, t8, t9, t14, t15, t16, t19; HERO_NODEBUG bool t10; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(void) { HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_own5 = {0}, t6, t7, t11, t13, t25, t26; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *t2, *t3, *t4, *t17, *t18, *t20, *t21, *t22, *t23, *t24, *t27, *t28; HERO_NODEBUG int64_t t1, t5, t8, t9, t14, t15, t16, t19; HERO_NODEBUG bool t10; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(1); t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t21 = h3_own3; h3_own3 = t2; hero_array_decref(t21); t22 = h0_out; hero_array_incref(t2); h0_out = t2; hero_array_decref(t22);
     t3 = h0_out; t23 = h1_kept; hero_array_incref(t3); h1_kept = t3; hero_array_decref(t23);
-    t4 = h0_out; hero_array_incref(t4); t24 = h4_own4; h4_own4 = t4; hero_array_decref(t24); t5 = INT64_C(2); t6 = h_fixedbugs381abranchingpushedvalueispushowned_half(t5); t25 = h5_own5; h5_own5 = t6; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t26); t7 = h2_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t13 = h2_f0; t14 = t13.as.ok; t15 = h_fixedbugs381abranchingpushedvalueispushowned_bump(&h0_out); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.kept_classic", 35, 20); t17 = hero_array_push(t4, &t16); t27 = h6_own6; h6_own6 = t17; hero_array_decref(t27); t28 = h0_out; hero_array_incref(t17); h0_out = t17; hero_array_decref(t28);
+    t4 = h0_out; hero_array_incref(t4); t24 = h4_own4; h4_own4 = t4; hero_array_decref(t24); t5 = INT64_C(2); t6 = h_fixedbugs381abranchingpushedvalueispushowned_half(t5); t25 = h5_own5; h5_own5 = t6; h_0opt_e201354_release(&t25); t26 = h2_f0; h_0opt_e201354_retain(&t6); h2_f0 = t6; h_0opt_e201354_release(&t26); t7 = h2_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1: t13 = h2_f0; t14 = t13.hero_as.hero_ok; t15 = h_fixedbugs381abranchingpushedvalueispushowned_bump(&h0_out); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.kept_classic", 35, 20); t17 = hero_array_push(t4, &t16); t27 = h6_own6; h6_own6 = t17; hero_array_decref(t27); t28 = h0_out; hero_array_incref(t17); h0_out = t17; hero_array_decref(t28);
     t18 = h1_kept; t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len); hero_print_int(t19); hero_print_end();
     t20 = h0_out;
 #line 203 "fixedbugs381abranchingpushedvalueispushowned.c"
@@ -209,162 +209,162 @@ HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(vo
     h_0opt_e201354_release(hero_slot_escape(&h5_own5));
     hero_array_release_at(&h6_own6);
     return t20;
-bb2:
+hero_bb2:
 #line 35 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t11 = h2_f0; t12 = t11.as.err;
+    t11 = h2_f0; t12 = t11.hero_as.hero_err;
 #line 216 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_panic_must_at(t12, "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.kept_classic", 35, 20);
     hero_unreachable();
 }
 
 #line 39 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-void h_fixedbugs381abranchingpushedvalueispushowned_main(void) { HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}, h1_own1 = {0}, t2, t3, t7, t9, t17, t18; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t10, *t13, *t15, *t19, *t20; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t14, t16; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(2); t2 = h_fixedbugs381abranchingpushedvalueispushowned_grown(t1); t17 = h1_own1; h1_own1 = t2; h_0opt_2270cbe7_release(&t17); t18 = h0_f0; h_0opt_2270cbe7_retain(&t2); h0_f0 = t2; h_0opt_2270cbe7_release(&t18); t3 = h0_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t9 = h0_f0; t10 = t9.as.ok; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = INT64_C(2); t13 = h_fixedbugs381abranchingpushedvalueispushowned_flags(t12); t19 = h2_own2; h2_own2 = t13; hero_array_decref(t19); t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(); t20 = h3_own3; h3_own3 = t15; hero_array_decref(t20); t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); hero_print_int(t11); hero_print_int(t14); hero_print_int(t16); hero_print_end();
+void h_fixedbugs381abranchingpushedvalueispushowned_main(void) { HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}, h1_own1 = {0}, t2, t3, t7, t9, t17, t18; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t10, *t13, *t15, *t19, *t20; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t14, t16; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(2); t2 = h_fixedbugs381abranchingpushedvalueispushowned_grown(t1); t17 = h1_own1; h1_own1 = t2; h_0opt_2270cbe7_release(&t17); t18 = h0_f0; h_0opt_2270cbe7_retain(&t2); h0_f0 = t2; h_0opt_2270cbe7_release(&t18); t3 = h0_f0; t4 = t3.hero_tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto hero_bb1; else goto hero_bb2; hero_bb1: t9 = h0_f0; t10 = t9.hero_as.hero_ok; t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len); t12 = INT64_C(2); t13 = h_fixedbugs381abranchingpushedvalueispushowned_flags(t12); t19 = h2_own2; h2_own2 = t13; hero_array_decref(t19); t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(); t20 = h3_own3; h3_own3 = t15; hero_array_decref(t20); t16 = ((void)(t15 == NULL ? ((void)hero_array_len(t15), hero_unreachable()) : (void)0), t15->len); hero_print_int(t11); hero_print_int(t14); hero_print_int(t16); hero_print_end();
 #line 224 "fixedbugs381abranchingpushedvalueispushowned.c"
     h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
     h_0opt_2270cbe7_release(hero_slot_escape(&h1_own1));
     hero_array_release_at(&h2_own2);
     hero_array_release_at(&h3_own3);
     return;
-bb2:
+hero_bb2:
 #line 40 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    t7 = h0_f0; t8 = t7.as.err;
+    t7 = h0_f0; t8 = t7.hero_as.hero_err;
 #line 233 "fixedbugs381abranchingpushedvalueispushowned.c"
     hero_panic_must_at(t8, "fixedbugs-381-a-branching-pushed-value-is-push-owned.hero", "fixedbugs-381-a-branching-pushed-value-is-push-owned.main", 40, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_array_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_2270cbe7_retain(const h_0opt_2270cbe7 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_array_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_array_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_2270cbe7_release(h_0opt_2270cbe7 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_array_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *a, const h_0opt_2270cbe7 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_array)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_2270cbe7_eq(const h_0opt_2270cbe7 *hero_a, const h_0opt_2270cbe7 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_array)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *elem) {
-    const h_0opt_2270cbe7 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_2270cbe7_hash(const void *hero_elem) {
+    const h_0opt_2270cbe7 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_array)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_array)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fe2df7c3ab993a5", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("08abde5d79e16d4e", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs381abranchingpushedvalueispushowned\tfixedbugs-381-a-branching-pushed-value-is-push-owned\n");
     h_fixedbugs381abranchingpushedvalueispushowned_main();
     hero_runtime_check_leaks();

@@ -227,7 +227,7 @@ function declared_names(line: str) -> [str]
 
     return out
 
-test "a whole function prints: signature, prologue, goto bb0, blocks, close"
+test "a whole function prints: signature, prologue, goto hero_bb0, blocks, close"
     text = "function add(a: i64, b: i64) -> i64\n    return a + b\n\nfunction main()\n    print(add(a: 1, b: 2))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
@@ -259,7 +259,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     # next, each on the one before since panel 219's R1.
     assert strings.holds(
         text: got,
-        needle: "#line 1 \"t.hero\"\nint64_t h_t_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:\n"
+        needle: "#line 1 \"t.hero\"\nint64_t h_t_add(int64_t h0_a, int64_t h1_b) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:\n"
     )
 
     # The overflow names its place: `a + b` begins at the second line's twelfth
@@ -315,8 +315,8 @@ test "an unreachable join is omitted entirely, label and all"
 
     # The join block (bb1, created before the arms) has no preds: its
     # label must not appear.
-    assert !strings.holds(text: got, needle: "bb1:")
-    assert strings.holds(text: got, needle: "bb2:")
+    assert !strings.holds(text: got, needle: "hero_bb1:")
+    assert strings.holds(text: got, needle: "hero_bb2:")
 
 # Panel 213's R1: the debugger is shown what the author wrote and nothing the
 # lowering invented. The witness is the program's own names, not the IR's

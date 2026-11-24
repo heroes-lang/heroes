@@ -121,7 +121,7 @@ function construct_case(c: state.Checked, names: ctype.Names, s: source.Source, 
 
     if both.is_err()
         return fail(code: "none", msg: "not a case")
-    tag_text = ".tag = " + mangle.tag_of(ty: ctype.satellite(names, decl: decl), case_name: both.must().case_name)
+    tag_text = ".hero_tag = " + mangle.tag_of(ty: ctype.satellite(names, decl: decl), case_name: both.must().case_name)
 
     match decls[decl].kind
         .variant_decl v =>
@@ -137,7 +137,7 @@ function construct_case(c: state.Checked, names: ctype.Names, s: source.Source, 
             if parts.is_err()
                 return fail(code: "none", msg: "fewer arguments than payload fields")
             return ok(
-                "(" + both.must().holder + "){" + tag_text + ", .as." + mangle.case_member(both.must().case_name) + " = {" + parts.must().join(", ") + "}}"
+                "(" + both.must().holder + "){" + tag_text + ", .hero_as." + mangle.case_member(both.must().case_name) + " = {" + parts.must().join(", ") + "}}"
             )
         .constant_decl | .function_decl | .record_decl | .test_decl => return fail(code: "none", msg: "not a variant")
 
@@ -200,7 +200,7 @@ function written_as(c: state.Checked, value: str, ty: i64, foreign: bool, holder
 
 # t3 = t2.tag; — what a switch reads.
 function tag(base: i64) -> str
-    return mangle.value(base) + ".tag"
+    return mangle.value(base) + ".hero_tag"
 
 # t5 = t4.as.c_num; — the payload of a case the match already selected.
 function payload_member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, at: i64) -> str?
@@ -218,7 +218,7 @@ function payload_member(c: state.Checked, names: ctype.Names, s: source.Source, 
 
     if both.is_err()
         return fail(code: "none", msg: "no such case")
-    return ok(mangle.value(base) + ".as." + mangle.case_member(both.must().case_name))
+    return ok(mangle.value(base) + ".hero_as." + mangle.case_member(both.must().case_name))
 
 # t2 = t1.f_x;
 function read_field(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, index: i64) -> str?
@@ -321,9 +321,9 @@ test "a case writes its tag alone when bare, and the payload member when not"
         "variant Tok\n    word\n        text: str\n    plus\n\nfunction main()\n    t: Tok = .word(text: \"hi\")\n    _ = t\n"
     )
     bare = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 1, arguments: [])
-    assert bare.must() == "(h_t_Tok){.tag = h_t_0Tok_tag_plus}"
+    assert bare.must() == "(h_t_Tok){.hero_tag = h_t_0Tok_tag_plus}"
     carrying = construct_case(got.c, got.names, got.s, got.decls, decl: 0, at: 0, arguments: ["t1"])
-    assert carrying.must() == "(h_t_Tok){.tag = h_t_0Tok_tag_word, .as.c_word = {.f_text = t1}}"
+    assert carrying.must() == "(h_t_Tok){.hero_tag = h_t_0Tok_tag_word, .hero_as.hero_c_word = {.f_text = t1}}"
     tok = table.lookup(got.c.types, .named(decl: 0)).must()
     f = containers.Function(
         name: "t",
@@ -343,8 +343,8 @@ test "a case writes its tag alone when bare, and the payload member when not"
         span: token.Span(start: 0, end: 1)
     )
     read = payload_member(got.c, got.names, got.s, got.decls, f, base: 0, at: 0)
-    assert read.must() == "t0.as.c_word"
-    assert tag(base: 4) == "t4.tag"
+    assert read.must() == "t0.hero_as.hero_c_word"
+    assert tag(base: 4) == "t4.hero_tag"
     same = equality(got.c, got.names, ty: tok, left: 1, right: 2)
     assert same.must() == "h_t_0Tok_eq(&t1, &t2)"
     kept = retain(got.c, got.names, ty: tok, value: 7, keep: true)

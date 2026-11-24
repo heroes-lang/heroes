@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -58,26 +58,26 @@ HERO_STR_STATIC(hero_str_5867114b, "the dot's fallback for b");
 
 #line 60 "fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror.c"
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -86,47 +86,47 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 98 "fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(HeroStr h0_label, int64_t h1_value);
 void h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_main(void);
 
 #line 8 "tests/golden/run/fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero"
-int64_t h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(HeroStr h0_label, int64_t h1_value) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(HeroStr h0_label, int64_t h1_value) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_label; hero_print_str(t1); hero_print_end();
     t2 = h1_value; return t2;
 #line 121 "fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror.c"
 }
 
 #line 12 "tests/golden/run/fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero"
-void h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_main(void) { HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h7_f3 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t6, t7, t11, t19, t20, t24, t32, t33, t37, t45, t46, t50, t58, t59, t60, t61, t62, t63, t64, t65; HERO_NODEBUG int64_t h2_r0, h4_r1, h6_r2, h8_r3, t2, t8, t9, t12, t14, t15, t16, t21, t22, t25, t27, t28, t29, t34, t35, t38, t40, t41, t42, t47, t48, t51, t53, t54, t55; HERO_NODEBUG HeroMapHeader *h9_own9 = {0}, *t3, *t4, *t17, *t30, *t43, *t56, *t57; HERO_NODEBUG HeroStr t1, t5, t13, t18, t26, t31, t39, t44, t52; HERO_NODEBUG bool t10, t23, t36, t49; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_61); t2 = INT64_C(1); t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 13, 21}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t56 = h9_own9; h9_own9 = t3; hero_map_decref(t56); t57 = h0_m; hero_map_incref(t3); h0_m = t3; hero_map_decref(t57);
-    t4 = h0_m; t5 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 14, 19}; HERO_NODEBUG const void *found = hero_map_find_at(t4, &t5, &hero_here); if (found == NULL) { t6 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t6 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t6.as.ok, found); } } t58 = h10_own10; h10_own10 = t6; h_0opt_e201354_release(&t58); t59 = h1_f0; h_0opt_e201354_retain(&t6); h1_f0 = t6; h_0opt_e201354_release(&t59); t7 = h1_f0; t8 = t7.tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto bb1; else goto bb2; bb1: t11 = h1_f0; t12 = t11.as.ok; h2_r0 = t12; goto bb3; bb2: t13 = HERO_STR_LIT(hero_str_5f58d2c3); t14 = INT64_C(9); t15 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t13, t14); h2_r0 = t15; goto bb3; bb3: t16 = h2_r0; hero_print_int(t16); hero_print_end();
-    t17 = h0_m; t18 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 15, 19}; HERO_NODEBUG const void *found = hero_map_find_at(t17, &t18, &hero_here); if (found == NULL) { t19 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t19 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t19.as.ok, found); } } t60 = h11_own11; h11_own11 = t19; h_0opt_e201354_release(&t60); t61 = h3_f1; h_0opt_e201354_retain(&t19); h3_f1 = t19; h_0opt_e201354_release(&t61); t20 = h3_f1; t21 = t20.tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto bb4; else goto bb5; bb4: t24 = h3_f1; t25 = t24.as.ok; h4_r1 = t25; goto bb6; bb5: t26 = HERO_STR_LIT(hero_str_5f58d2c4); t27 = INT64_C(9); t28 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t26, t27); h4_r1 = t28; goto bb6; bb6: t29 = h4_r1; hero_print_int(t29); hero_print_end();
-    t30 = h0_m; t31 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 16, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t30, &t31, &hero_here); if (found == NULL) { t32 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t32 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t32.as.ok, found); } } t62 = h12_own12; h12_own12 = t32; h_0opt_e201354_release(&t62); t63 = h5_f2; h_0opt_e201354_retain(&t32); h5_f2 = t32; h_0opt_e201354_release(&t63); t33 = h5_f2; t34 = t33.tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto bb7; else goto bb8; bb7: t37 = h5_f2; t38 = t37.as.ok; h6_r2 = t38; goto bb9; bb8: t39 = HERO_STR_LIT(hero_str_5867114a); t40 = INT64_C(9); t41 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t39, t40); h6_r2 = t41; goto bb9; bb9: t42 = h6_r2; hero_print_int(t42); hero_print_end();
-    t43 = h0_m; t44 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 17, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t43, &t44, &hero_here); if (found == NULL) { t45 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t45 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t45.as.ok, found); } } t64 = h13_own13; h13_own13 = t45; h_0opt_e201354_release(&t64); t65 = h7_f3; h_0opt_e201354_retain(&t45); h7_f3 = t45; h_0opt_e201354_release(&t65); t46 = h7_f3; t47 = t46.tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto bb10; else goto bb11; bb10: t50 = h7_f3; t51 = t50.as.ok; h8_r3 = t51; goto bb12; bb11: t52 = HERO_STR_LIT(hero_str_5867114b); t53 = INT64_C(9); t54 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t52, t53); h8_r3 = t54; goto bb12; bb12: t55 = h8_r3; hero_print_int(t55); hero_print_end();
+void h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_main(void) { HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h7_f3 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t6, t7, t11, t19, t20, t24, t32, t33, t37, t45, t46, t50, t58, t59, t60, t61, t62, t63, t64, t65; HERO_NODEBUG int64_t h2_r0, h4_r1, h6_r2, h8_r3, t2, t8, t9, t12, t14, t15, t16, t21, t22, t25, t27, t28, t29, t34, t35, t38, t40, t41, t42, t47, t48, t51, t53, t54, t55; HERO_NODEBUG HeroMapHeader *h9_own9 = {0}, *t3, *t4, *t17, *t30, *t43, *t56, *t57; HERO_NODEBUG HeroStr t1, t5, t13, t18, t26, t31, t39, t44, t52; HERO_NODEBUG bool t10, t23, t36, t49; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_61); t2 = INT64_C(1); t3 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 13, 21}; hero_map_put_at(t3, &t1, &t2, &hero_here); } t56 = h9_own9; h9_own9 = t3; hero_map_decref(t56); t57 = h0_m; hero_map_incref(t3); h0_m = t3; hero_map_decref(t57);
+    t4 = h0_m; t5 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 14, 19}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t4, &t5, &hero_here); if (hero_found == NULL) { t6 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t6 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t6.hero_as.hero_ok, hero_found); } } t58 = h10_own10; h10_own10 = t6; h_0opt_e201354_release(&t58); t59 = h1_f0; h_0opt_e201354_retain(&t6); h1_f0 = t6; h_0opt_e201354_release(&t59); t7 = h1_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1: t11 = h1_f0; t12 = t11.hero_as.hero_ok; h2_r0 = t12; goto hero_bb3; hero_bb2: t13 = HERO_STR_LIT(hero_str_5f58d2c3); t14 = INT64_C(9); t15 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t13, t14); h2_r0 = t15; goto hero_bb3; hero_bb3: t16 = h2_r0; hero_print_int(t16); hero_print_end();
+    t17 = h0_m; t18 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 15, 19}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t17, &t18, &hero_here); if (hero_found == NULL) { t19 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t19 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t19.hero_as.hero_ok, hero_found); } } t60 = h11_own11; h11_own11 = t19; h_0opt_e201354_release(&t60); t61 = h3_f1; h_0opt_e201354_retain(&t19); h3_f1 = t19; h_0opt_e201354_release(&t61); t20 = h3_f1; t21 = t20.hero_tag; t22 = INT64_C(0); t23 = t21 == t22; if (t23) goto hero_bb4; else goto hero_bb5; hero_bb4: t24 = h3_f1; t25 = t24.hero_as.hero_ok; h4_r1 = t25; goto hero_bb6; hero_bb5: t26 = HERO_STR_LIT(hero_str_5f58d2c4); t27 = INT64_C(9); t28 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t26, t27); h4_r1 = t28; goto hero_bb6; hero_bb6: t29 = h4_r1; hero_print_int(t29); hero_print_end();
+    t30 = h0_m; t31 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 16, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t30, &t31, &hero_here); if (hero_found == NULL) { t32 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t32 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t32.hero_as.hero_ok, hero_found); } } t62 = h12_own12; h12_own12 = t32; h_0opt_e201354_release(&t62); t63 = h5_f2; h_0opt_e201354_retain(&t32); h5_f2 = t32; h_0opt_e201354_release(&t63); t33 = h5_f2; t34 = t33.hero_tag; t35 = INT64_C(0); t36 = t34 == t35; if (t36) goto hero_bb7; else goto hero_bb8; hero_bb7: t37 = h5_f2; t38 = t37.hero_as.hero_ok; h6_r2 = t38; goto hero_bb9; hero_bb8: t39 = HERO_STR_LIT(hero_str_5867114a); t40 = INT64_C(9); t41 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t39, t40); h6_r2 = t41; goto hero_bb9; hero_bb9: t42 = h6_r2; hero_print_int(t42); hero_print_end();
+    t43 = h0_m; t44 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.hero", "fixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error.main", 17, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t43, &t44, &hero_here); if (hero_found == NULL) { t45 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t45 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t45.hero_as.hero_ok, hero_found); } } t64 = h13_own13; h13_own13 = t45; h_0opt_e201354_release(&t64); t65 = h7_f3; h_0opt_e201354_retain(&t45); h7_f3 = t45; h_0opt_e201354_release(&t65); t46 = h7_f3; t47 = t46.hero_tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto hero_bb10; else goto hero_bb11; hero_bb10: t50 = h7_f3; t51 = t50.hero_as.hero_ok; h8_r3 = t51; goto hero_bb12; hero_bb11: t52 = HERO_STR_LIT(hero_str_5867114b); t53 = INT64_C(9); t54 = h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_noisy(t52, t53); h8_r3 = t54; goto hero_bb12; hero_bb12: t55 = h8_r3; hero_print_int(t55); hero_print_end();
 #line 131 "fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror.c"
     hero_map_release_at(&h0_m);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -140,106 +140,106 @@ void h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_mai
     h_0opt_e201354_release(hero_slot_escape(&h13_own13));
     return;
 }
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("31b5e12306282d36", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("63a361da1c627f05", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror\tfixedbugs-2254-a-default-written-as-a-call-evaluates-its-fallback-only-for-an-error\n");
     h_fixedbugs2254adefaultwrittenasacallevaluatesitsfallbackonlyforanerror_main();
     hero_runtime_check_leaks();

@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -60,26 +60,26 @@ typedef struct h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row {
 } h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -88,43 +88,43 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 100 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v);
-HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v);
-HERO_TU_LOCAL bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *a, const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_v);
+HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_a, const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
-static void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row));
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain((const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)dst);
+static void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row));
+    h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain((const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)hero_dst);
 }
-static void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_drop(void *elem) {
-    h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release((h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)elem);
+static void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_drop(void *hero_elem) {
+    h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release((h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)hero_elem);
 }
-static bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq((const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)a, (const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)b);
+static bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq((const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)hero_a, (const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc = {
     sizeof(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row),
@@ -138,23 +138,23 @@ void h_fixedbugs491nestedplacesandstringbytesarereadinplace_bump(int64_t *ph0_x,
 void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
-void h_fixedbugs491nestedplacesandstringbytesarereadinplace_bump(int64_t *ph0_x, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs491nestedplacesandstringbytesarereadinplace_bump(int64_t *ph0_x, int64_t h1_by) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_x); t2 = h1_by; if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.bump", 20, 9); (*ph0_x) = t3; return;
 #line 144 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
-void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void) { HeroStr h0_text = {0}; HeroArrayHeader * h1_rows = {0}; HeroArrayHeader * h2_grid = {0}; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_before = {0}; int64_t h5_i; int64_t h6_sum; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}, h21_own21 = {0}, t45, t46, t50, t52, t149, t150; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *t5, *t11, *t14, *t17, *t20, *t21, *t24, *t27, *t28, *t29, *t33, *t34, *t75, *t78, *t81, *t83, *t85, *t88, *t91, *t94, *t97, *t99, *t101, *t104, *t107, *t110, *t112, *t114, *t117, *t119, *t121, *t124, *t126, *t128, *t132, *t134, *t136, *t137, *t138, *t139, *t140, *t141, *t142, *t143, *t144, *t145, *t146, *t147, *t148; HERO_NODEBUG h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h9_own9 = {0}, h11_own11 = {0}, t7, t13, t77, t93, t106, t133, t135; HERO_NODEBUG HeroStr t1, t6, t12, t38, t42, t131; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t15, t16, t18, t19, t22, t23, t25, t26, t30, t31, t32, t35, t36, t37, t39, t41, t43, t47, t48, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t76, t79, t80, t82, t84, t86, t87, t89, t90, t92, t95, t96, t98, t100, t102, t103, t105, t108, t109, t111, t113, t115, t116, t118, t120, t122, t123, t125, t127, t129, t130; HERO_NODEBUG bool t40, t49; HERO_NODEBUG uint8_t t44; HERO_NODEBUG HeroFailure t51; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void) { HeroStr h0_text = {0}; HeroArrayHeader * h1_rows = {0}; HeroArrayHeader * h2_grid = {0}; HeroArrayHeader * h3_xs = {0}; HeroArrayHeader * h4_before = {0}; int64_t h5_i; int64_t h6_sum; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}, h21_own21 = {0}, t45, t46, t50, t52, t149, t150; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h10_own10 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *t5, *t11, *t14, *t17, *t20, *t21, *t24, *t27, *t28, *t29, *t33, *t34, *t75, *t78, *t81, *t83, *t85, *t88, *t91, *t94, *t97, *t99, *t101, *t104, *t107, *t110, *t112, *t114, *t117, *t119, *t121, *t124, *t126, *t128, *t132, *t134, *t136, *t137, *t138, *t139, *t140, *t141, *t142, *t143, *t144, *t145, *t146, *t147, *t148; HERO_NODEBUG h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row h9_own9 = {0}, h11_own11 = {0}, t7, t13, t77, t93, t106, t133, t135; HERO_NODEBUG HeroStr t1, t6, t12, t38, t42, t131; HERO_NODEBUG int64_t t2, t3, t4, t8, t9, t10, t15, t16, t18, t19, t22, t23, t25, t26, t30, t31, t32, t35, t36, t37, t39, t41, t43, t47, t48, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t76, t79, t80, t82, t84, t86, t87, t89, t90, t92, t95, t96, t98, t100, t102, t103, t105, t108, t109, t111, t113, t115, t116, t118, t120, t122, t123, t125, t127, t129, t130; HERO_NODEBUG bool t40, t49; HERO_NODEBUG uint8_t t44; HERO_NODEBUG HeroFailure t51; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_2a0b7016); t131 = h0_text; hero_str_incref(t1); h0_text = t1; hero_str_decref(t131);
     t2 = INT64_C(1); t3 = INT64_C(2); t4 = INT64_C(3); t5 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t5, &t2); hero_array_push_owned(&t5, &t3); hero_array_push_owned(&t5, &t4); t132 = h8_own8; h8_own8 = t5; hero_array_decref(t132); t6 = HERO_STR_LIT(hero_str_61); hero_array_incref(t5); hero_str_incref(t6); t7 = (h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row){.f_cells = t5, .f_label = t6}; t133 = h9_own9; h9_own9 = t7; h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(&t133); t8 = INT64_C(4); t9 = INT64_C(5); t10 = INT64_C(6); t11 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t11, &t8); hero_array_push_owned(&t11, &t9); hero_array_push_owned(&t11, &t10); t134 = h10_own10; h10_own10 = t11; hero_array_decref(t134); t12 = HERO_STR_LIT(hero_str_62); hero_array_incref(t11); hero_str_incref(t12); t13 = (h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row){.f_cells = t11, .f_label = t12}; t135 = h11_own11; h11_own11 = t13; h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(&t135); t14 = hero_array_new(&h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_desc, 2); hero_array_push_owned(&t14, &t7); hero_array_push_owned(&t14, &t13); t136 = h12_own12; h12_own12 = t14; hero_array_decref(t136); t137 = h1_rows; hero_array_incref(t14); h1_rows = t14; hero_array_decref(t137);
     t15 = INT64_C(1); t16 = INT64_C(2); t17 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t17, &t15); hero_array_push_owned(&t17, &t16); t138 = h13_own13; h13_own13 = t17; hero_array_decref(t138); t18 = INT64_C(3); t19 = INT64_C(4); t20 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t20, &t18); hero_array_push_owned(&t20, &t19); t139 = h14_own14; h14_own14 = t20; hero_array_decref(t139); t21 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t21, &t17); hero_array_push_owned(&t21, &t20); t140 = h15_own15; h15_own15 = t21; hero_array_decref(t140); t22 = INT64_C(5); t23 = INT64_C(6); t24 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t24, &t22); hero_array_push_owned(&t24, &t23); t141 = h16_own16; h16_own16 = t24; hero_array_decref(t141); t25 = INT64_C(7); t26 = INT64_C(8); t27 = hero_array_new(&hero_desc_int, 2); hero_array_push_owned(&t27, &t25); hero_array_push_owned(&t27, &t26); t142 = h17_own17; h17_own17 = t27; hero_array_decref(t142); t28 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t28, &t24); hero_array_push_owned(&t28, &t27); t143 = h18_own18; h18_own18 = t28; hero_array_decref(t143); t29 = hero_array_new(&hero_desc_array, 2); hero_array_push_owned(&t29, &t21); hero_array_push_owned(&t29, &t28); t144 = h19_own19; h19_own19 = t29; hero_array_decref(t144); t145 = h2_grid; hero_array_incref(t29); h2_grid = t29; hero_array_decref(t145);
     t30 = INT64_C(10); t31 = INT64_C(20); t32 = INT64_C(30); t33 = hero_array_new(&hero_desc_int, 3); hero_array_push_owned(&t33, &t30); hero_array_push_owned(&t33, &t31); hero_array_push_owned(&t33, &t32); t146 = h20_own20; h20_own20 = t33; hero_array_decref(t146); t147 = h3_xs; hero_array_incref(t33); h3_xs = t33; hero_array_decref(t147);
     t34 = h2_grid; t148 = h4_before; hero_array_incref(t34); h4_before = t34; hero_array_decref(t148);
     t35 = INT64_C(0); h5_i = t35;
-    t36 = INT64_C(0); h6_sum = t36; goto bb1; bb1:
+    t36 = INT64_C(0); h6_sum = t36; goto hero_bb1; hero_bb1:
 #line 31
-    t37 = h5_i; t38 = h0_text; t39 = hero_str_len(t38); t40 = t37 < t39; if (t40) goto bb2; else goto bb3; bb2:
-    t41 = h6_sum; t42 = h0_text; t43 = h5_i; t44 = ((void)((t42.ptr == NULL || t43 < 0 || t43 >= t42.len) ? hero_panic_byte_at(t42, t43, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 28) : (void)0), (int64_t)(unsigned char)t42.ptr[t43]); t45 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t44}; t149 = h21_own21; h21_own21 = t45; h_0opt_e201354_release(&t149); t150 = h7_f0; h_0opt_e201354_retain(&t45); h7_f0 = t45; h_0opt_e201354_release(&t150); t46 = h7_f0; t47 = t46.tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto bb4; else goto bb5; bb3:
+    t37 = h5_i; t38 = h0_text; t39 = hero_str_len(t38); t40 = t37 < t39; if (t40) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t41 = h6_sum; t42 = h0_text; t43 = h5_i; t44 = ((void)((t42.ptr == NULL || t43 < 0 || t43 >= t42.len) ? hero_panic_byte_at(t42, t43, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 28) : (void)0), (int64_t)(unsigned char)t42.ptr[t43]); t45 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t44}; t149 = h21_own21; h21_own21 = t45; h_0opt_e201354_release(&t149); t150 = h7_f0; h_0opt_e201354_retain(&t45); h7_f0 = t45; h_0opt_e201354_release(&t150); t46 = h7_f0; t47 = t46.hero_tag; t48 = INT64_C(0); t49 = t47 == t48; if (t49) goto hero_bb4; else goto hero_bb5; hero_bb3:
 #line 35
     t58 = INT64_C(1); t59 = INT64_C(2); t60 = INT64_C(60); hero_array_unshare(&(h1_rows)); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*((void)((h1_rows == NULL || t58 < 0 || t58 >= h1_rows->len) ? hero_panic_index_at(h1_rows, t58, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 35, 5) : (void)0), (void)(h1_rows->elem->size != sizeof(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row) ? hero_unreachable() : (void)0), (h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *)(void *)(h1_rows + 1) + t58)).f_cells); if (*hero_slot == NULL || t59 < 0 || t59 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t59, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 35, 5); hero_array_set(hero_slot, t59, &t60); }
     t61 = INT64_C(1); t62 = INT64_C(0); t63 = INT64_C(1); t64 = INT64_C(99); hero_array_unshare(&(h2_grid)); hero_array_unshare(&((*((void)((h2_grid == NULL || t61 < 0 || t61 >= h2_grid->len) ? hero_panic_index_at(h2_grid, t61, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 36, 5) : (void)0), (void)(h2_grid->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h2_grid + 1) + t61)))); { HERO_NODEBUG HeroArrayHeader **hero_slot = &((*(HeroArrayHeader * *)hero_array_at_mut_at((*((void)((h2_grid == NULL || t61 < 0 || t61 >= h2_grid->len) ? hero_panic_index_at(h2_grid, t61, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 36, 5) : (void)0), (void)(h2_grid->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h2_grid + 1) + t61)), t62, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 36, 5))); if (*hero_slot == NULL || t63 < 0 || t63 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t63, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 36, 5); hero_array_set(hero_slot, t63, &t64); }
@@ -193,140 +193,140 @@ void h_fixedbugs491nestedplacesandstringbytesarereadinplace_main(void) { HeroStr
     hero_array_release_at(&h20_own20);
     h_0opt_e201354_release(hero_slot_escape(&h21_own21));
     return;
-bb4:
+hero_bb4:
 #line 32 "tests/golden/run/fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero"
-    t52 = h7_f0; t53 = t52.as.ok; if (__builtin_add_overflow(t41, t53, &t54)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 15); h6_sum = t54;
-    t55 = h5_i; t56 = INT64_C(1); if (__builtin_add_overflow(t55, t56, &t57)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 33, 13); h5_i = t57; goto bb1; bb5:
+    t52 = h7_f0; t53 = t52.hero_as.hero_ok; if (__builtin_add_overflow(t41, t53, &t54)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 15); h6_sum = t54;
+    t55 = h5_i; t56 = INT64_C(1); if (__builtin_add_overflow(t55, t56, &t57)) hero_panic_overflow_at("fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 33, 13); h5_i = t57; goto hero_bb1; hero_bb5:
 #line 32
-    t50 = h7_f0; t51 = t50.as.err;
+    t50 = h7_f0; t51 = t50.hero_as.hero_err;
 #line 203 "fixedbugs491nestedplacesandstringbytesarereadinplace.c"
     hero_panic_must_at(t51, "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.hero", "fixedbugs-491-nested-places-and-string-bytes-are-read-in-place.main", 32, 21);
     hero_unreachable();
 }
-HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v) {
-    hero_array_incref(v->f_cells);
-    hero_str_incref(v->f_label);
+HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_retain(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_v) {
+    hero_array_incref(hero_v->f_cells);
+    hero_str_incref(hero_v->f_label);
 }
 
-HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v) {
-    hero_array_decref(v->f_cells);
-    hero_str_decref(v->f_label);
+HERO_TU_LOCAL void h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_release(h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_v) {
+    hero_array_decref(hero_v->f_cells);
+    hero_str_decref(hero_v->f_label);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *a, const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *b) {
-    if (!(hero_array_eq(a->f_cells, b->f_cells))) return false;
-    if (!(hero_str_eq(a->f_label, b->f_label))) return false;
+HERO_TU_LOCAL bool h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_eq(const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_a, const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_b) {
+    if (!(hero_array_eq(hero_a->f_cells, hero_b->f_cells))) return false;
+    if (!(hero_str_eq(hero_a->f_label, hero_b->f_label))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_hash(const void *elem) {
-    const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_cells)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_label)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs491nestedplacesandstringbytesarereadinplace_0Row_hash(const void *hero_elem) {
+    const h_fixedbugs491nestedplacesandstringbytesarereadinplace_Row *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_cells)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_label)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("285f8bb02a078aa1", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6501c4d5586410b6", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs491nestedplacesandstringbytesarereadinplace\tfixedbugs-491-nested-places-and-string-bytes-are-read-in-place\n");
     h_fixedbugs491nestedplacesandstringbytesarereadinplace_main();
     hero_runtime_check_leaks();

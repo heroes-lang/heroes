@@ -29,6 +29,44 @@
 #pragma push_macro("name")
 #pragma push_macro("slot")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -72,7 +129,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 36 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 _Static_assert(sizeof(struct slot) - __builtin_offsetof(struct slot, name) != 0, "heroes-ffi-flex Slot name"); _Static_assert(_Generic(&((struct slot *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot name");
-#line 76 "ffiafilledrecordisaskedfor.c"
+#line 133 "ffiafilledrecordisaskedfor.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -111,26 +168,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -151,48 +208,48 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 37 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffiafilledrecordisaskedfor_slot_fill(struct slot * a0) { (void)(slot_fill)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffiafilledrecordisaskedfor_slot_fill(struct slot * hero_a0) { (void)(slot_fill)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "ffiafilledrecordisaskedfor.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 222 "ffiafilledrecordisaskedfor.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *a, const struct slot *b);
-HERO_TU_LOCAL uint64_t h_ffiafilledrecordisaskedfor_0Slot_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *hero_a, const struct slot *hero_b);
+HERO_TU_LOCAL uint64_t h_ffiafilledrecordisaskedfor_0Slot_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 void h_ffiafilledrecordisaskedfor_blank(struct slot *hero_out);
-__attribute__((unused)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blank(void);
+__attribute__((__unused__)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blank(void);
 void h_ffiafilledrecordisaskedfor_main(void);
 void *hero_pad_nowhere(void);
 #pragma push_macro("id")
 #undef id
 #pragma push_macro("name")
 #undef name
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct slot, name), sizeof(((struct slot *)0)->name), __builtin_offsetof(struct slot, id), sizeof(((struct slot *)0)->id)};
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct slot, name), sizeof(((struct slot *)0)->name), __builtin_offsetof(struct slot, id), sizeof(((struct slot *)0)->id)};
 #pragma pop_macro("id")
 #pragma pop_macro("name")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct slot), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
@@ -202,12 +259,12 @@ __attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_blank(struct slo
 #line 42
 #define t10 (*hero_big_t10)
 #line 42
-    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *const hero_big_t10 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot *const hero_big_t10 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); t2 = INT64_C(0); t3 = INT64_C(0); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t10 = *(struct slot *)__builtin_memset(&t10, 0, sizeof t10); t10.name[0] = t1; t10.name[1] = t2; t10.name[2] = t3; t10.name[3] = t4; t10.name[4] = t5; t10.name[5] = t6; t10.name[6] = t7; t10.name[7] = t8; if (hero_out != NULL) *hero_out = t10; hero_frame_give(hero_big_t10); return;
-#line 208 "ffiafilledrecordisaskedfor.c"
+#line 265 "ffiafilledrecordisaskedfor.c"
 }
 #undef t10
-__attribute__((unused)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blank(void) {
+__attribute__((__unused__)) struct slot hero_value_h_ffiafilledrecordisaskedfor_blank(void) {
     HERO_NODEBUG struct slot hero_result;
     h_ffiafilledrecordisaskedfor_blank(&hero_result);
     return hero_result;
@@ -222,19 +279,19 @@ __attribute__((__noinline__)) void h_ffiafilledrecordisaskedfor_main(void) {
 #line 45
 #define t12 (*hero_big_t12)
 #line 45
-    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot *const hero_big_t1 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG struct slot *const hero_big_t12 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
+    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot *const hero_big_t1 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG struct slot *const hero_big_t12 = (struct slot *)hero_frame_take(sizeof(struct slot)); HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     h_ffiafilledrecordisaskedfor_blank(&t1); h0_s = t1; hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9}; hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s"); hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0); t2 = slot_fill(&h0_s); } t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2}; t23 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t23); t24 = h1_f0; h_0opt_e201354_retain(&t3); h1_f0 = t3; h_0opt_e201354_release(&t24); t4 = h1_f0; t5 = t4.tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
-    t12 = h0_s; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t25 = h4_own4; h4_own4 = t14; h_0opt_f87774a_release(&t25); t26 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t26); t15 = h2_f1; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb3; else goto bb4; bb2:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9}; hero_lend_local_name(hero_lend_h0_s, "slot_fill", "s"); hero_pad_fill(&h0_s, sizeof(struct slot), 1, hero_pad_g_0, hero_pad_n_0); t2 = slot_fill(&h0_s); } t3 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t2}; t23 = h3_own3; h3_own3 = t3; h_0opt_e201354_release(&t23); t24 = h1_f0; h_0opt_e201354_retain(&t3); h1_f0 = t3; h_0opt_e201354_release(&t24); t4 = h1_f0; t5 = t4.hero_tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t12 = h0_s; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_not_text()}; } } t25 = h4_own4; h4_own4 = t14; h_0opt_f87774a_release(&t25); t26 = h2_f1; h_0opt_f87774a_retain(&t14); h2_f1 = t14; h_0opt_f87774a_release(&t26); t15 = h2_f1; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 47
-    t8 = h1_f0; t9 = t8.as.err;
-#line 232 "ffiafilledrecordisaskedfor.c"
+    t8 = h1_f0; t9 = t8.hero_as.hero_err;
+#line 289 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t9, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 47, 9);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t21 = h2_f1; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-#line 238 "ffiafilledrecordisaskedfor.c"
+    t21 = h2_f1; t22 = t21.hero_as.hero_ok; hero_print_str(t22); hero_print_end();
+#line 295 "ffiafilledrecordisaskedfor.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -243,124 +300,124 @@ bb3:
     hero_frame_give(hero_big_t12);
     hero_frame_give(hero_big_t1);
     return;
-bb4:
+hero_bb4:
 #line 48 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    t19 = h2_f1; t20 = t19.as.err;
-#line 250 "ffiafilledrecordisaskedfor.c"
+    t19 = h2_f1; t20 = t19.hero_as.hero_err;
+#line 307 "ffiafilledrecordisaskedfor.c"
     hero_panic_must_at(t20, "ffi-a-filled-record-is-asked-for.hero", "ffi-a-filled-record-is-asked-for.main", 48, 11);
     hero_unreachable();
 }
 #undef h0_s
 #undef t1
 #undef t12
-HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *a, const struct slot *b) {
+HERO_TU_LOCAL bool h_ffiafilledrecordisaskedfor_0Slot_eq(const struct slot *hero_a, const struct slot *hero_b) {
     hero_panic("h_ffiafilledrecordisaskedfor_0Slot_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_ffiafilledrecordisaskedfor_0Slot_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffiafilledrecordisaskedfor_0Slot_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_ffiafilledrecordisaskedfor_0Slot_hash(const void *hero_elem) {
+    (void)hero_elem; hero_panic("h_ffiafilledrecordisaskedfor_0Slot_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2157cf7329f978eb", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2801f97a7042f24c", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("ffiafilledrecordisaskedfor\tffi-a-filled-record-is-asked-for\n");
     h_ffiafilledrecordisaskedfor_main();
     hero_runtime_check_leaks();

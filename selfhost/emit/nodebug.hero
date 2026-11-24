@@ -50,7 +50,7 @@ constant MARK: str
 
 # The line each unit's preamble defines the word by.
 constant DEFINE: str
-    "#define HERO_NODEBUG __attribute__((nodebug))"
+    "#define HERO_NODEBUG __attribute__((__nodebug__))"
 
 # The prologue's statements in order, where the hidden declarators of one
 # spelling share one declaration: `heads` holds a statement whole, or a shared
@@ -153,14 +153,14 @@ test "hidden declarations of one spelling share one declaration and one mark, wh
     whole(@d, text: "int64_t h0_width;")
     hidden(@d, words: "", spelling: "HeroArrayHeader *", declared: "h1_own1 = {0}")
     hidden(@d, words: "", spelling: "int64_t", declared: "t2")
-    hidden(@d, words: "__attribute__((unused)) ", spelling: "int64_t", declared: "t3")
+    hidden(@d, words: "__attribute__((__unused__)) ", spelling: "int64_t", declared: "t3")
     hidden(@d, words: "", spelling: "HeroArrayHeader *", declared: "t4")
     got = statements(d)
     assert got.len() == 4
     assert got[0] == "HERO_NODEBUG int64_t t1, t2;"
     assert got[1] == "int64_t h0_width;"
     assert got[2] == "HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4;"
-    assert got[3] == "HERO_NODEBUG __attribute__((unused)) int64_t t3;"
+    assert got[3] == "HERO_NODEBUG __attribute__((__unused__)) int64_t t3;"
 
 test "a spelling C binds to one declarator is written alone, as before"
     d: Declarations @= none()

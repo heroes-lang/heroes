@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -148,26 +148,26 @@ typedef struct h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 {
 } h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -176,67 +176,67 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 188 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make0(int64_t h0_n);
 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make1(int64_t h0_n);
@@ -260,55 +260,55 @@ void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make18(h_fixedbu
 void h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_main(void);
 
 #line 83 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 t5; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h0_n; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make0", 84, 24); t5 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0){.f_a = t1, .f_b = t4}; return t5;
 #line 266 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 86 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make0(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make1", 87, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make0(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1){.f_left = t2, .f_right = t6}; return t7;
 #line 272 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 89 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make1(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make2", 90, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make1(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2){.f_left = t2, .f_right = t6}; return t7;
 #line 278 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 92 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make2(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make3", 93, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make2(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3){.f_left = t2, .f_right = t6}; return t7;
 #line 284 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 95 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make4(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make4(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make3(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make4", 96, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make3(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4){.f_left = t2, .f_right = t6}; return t7;
 #line 290 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 98 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make5(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make5(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make4(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make5", 99, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make4(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5){.f_left = t2, .f_right = t6}; return t7;
 #line 296 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 101 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make6(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make6(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make5(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make6", 102, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make5(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6){.f_left = t2, .f_right = t6}; return t7;
 #line 302 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 104 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make7(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make7(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make6(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make7", 105, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make6(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7){.f_left = t2, .f_right = t6}; return t7;
 #line 308 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
 
 #line 107 "tests/golden/run/fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero"
-h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make8(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 t7; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make8(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make7(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make8", 108, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make7(t5); t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8){.f_left = t2, .f_right = t6}; return t7;
 #line 314 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -318,7 +318,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 110
 #define t7 (*hero_big_t7)
 #line 110
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 t2, t6; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make8(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make9", 111, 44); t6 = h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make8(t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); return;
 #line 324 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -333,7 +333,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 113
 #define t7 (*hero_big_t7)
 #line 113
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make9(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make10", 114, 45); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make9(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 339 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -350,7 +350,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 116
 #define t7 (*hero_big_t7)
 #line 116
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make10(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make11", 117, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make10(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 356 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -367,7 +367,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 119
 #define t7 (*hero_big_t7)
 #line 119
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make11(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make12", 120, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make11(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 373 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -384,7 +384,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 122
 #define t7 (*hero_big_t7)
 #line 122
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make12(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make13", 123, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make12(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 390 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -401,7 +401,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 125
 #define t7 (*hero_big_t7)
 #line 125
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make13(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make14", 126, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make13(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 407 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -418,7 +418,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 128
 #define t7 (*hero_big_t7)
 #line 128
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make14(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make15", 129, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make14(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 424 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -435,7 +435,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 131
 #define t7 (*hero_big_t7)
 #line 131
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make15(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make16", 132, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make15(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 441 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -452,7 +452,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 134
 #define t7 (*hero_big_t7)
 #line 134
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make16(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make17", 135, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make16(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 458 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -469,7 +469,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 137
 #define t7 (*hero_big_t7)
 #line 137
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t2 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *const hero_big_t6 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17)); HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_t7 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make17(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.hero", "fixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level.make18", 138, 47); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make17(&t6, t5); t7 = *(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_left = t2; t7.f_right = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
 #line 475 "fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel.c"
 }
@@ -484,7 +484,7 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 #line 140
 #define t3 (*hero_big_t3)
 #line 140
-    h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_h0_r = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_t3 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_h0_r = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4; HERO_NODEBUG h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *const hero_big_t3 = (h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *)hero_frame_take(sizeof(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(1); h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_make18(&t3, t2); h0_r = t3;
     t4 = h0_r.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_left.f_a; hero_print_int(t4); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h0_r); return;
@@ -492,372 +492,372 @@ __attribute__((__noinline__)) void h_fixedbugs2278arecordofrecordsfourmibdeeprun
 }
 #undef h0_r
 #undef t3
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *b) {
-    if (!(a->f_a == b->f_a)) return false;
-    if (!(a->f_b == b->f_b)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *hero_b) {
+    if (!(hero_a->f_a == hero_b->f_a)) return false;
+    if (!(hero_a->f_b == hero_b->f_b)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R0_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R1_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R2_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R3_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R5 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R4_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R6 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R5_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R7 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R6_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R8 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R7_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R9 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R8_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R10 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R9_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R11 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R10_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R12 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R11_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R13 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R12_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R14 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R13_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R15 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R14_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R16 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R15_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R17 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R16_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *b) {
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(&a->f_left, &b->f_left))) return false;
-    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(&a->f_right, &b->f_right))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_eq(const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_a, const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_b) {
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(&hero_a->f_left, &hero_b->f_left))) return false;
+    if (!(h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_eq(&hero_a->f_right, &hero_b->f_right))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_hash(const void *elem) {
-    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(&v->f_left)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(&v->f_right)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R18_hash(const void *hero_elem) {
+    const h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_R18 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(&hero_v->f_left)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_0R17_hash(&hero_v->f_right)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3267017c30ffb182", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("05603a01406238d1", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel\tfixedbugs-2278-a-record-of-records-four-mib-deep-runs-at-every-level\n");
     h_fixedbugs2278arecordofrecordsfourmibdeeprunsateverylevel_main();
     hero_runtime_check_leaks();

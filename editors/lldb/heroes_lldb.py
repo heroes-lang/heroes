@@ -444,7 +444,7 @@ def classify(proc, sbtype, name):
     fields = field_names(sbtype)
     if OPTION_RE.match(name):
         return "option" if option_shaped(canonical) else None
-    if fields and fields[0] == "tag" and fields[1:] in ([], ["as"]):
+    if fields and fields[0] == "hero_tag" and fields[1:] in ([], ["hero_as"]):
         return "variant" if variant_cases(proc, sbtype) is not None else None
     if not fields or any(not f.startswith("f_") for f in fields):
         return None
@@ -454,16 +454,18 @@ def classify(proc, sbtype, name):
 
 
 def option_shaped(canonical):
-    """A `T?`: `tag`, then a union `as` holding `err` (a HeroFailure) and, but for `()?`, `ok`."""
-    if [canonical.GetFieldAtIndex(i).GetName() for i in range(canonical.GetNumberOfFields())] != ["tag", "as"]:
+    """A `T?`: `hero_tag`, then a union `hero_as` holding `hero_err` (a
+    HeroFailure) and, but for `()?`, `hero_ok`: the compiler's own names since
+    2026-11-24, a header's macro rewriting the bare ones before."""
+    if [canonical.GetFieldAtIndex(i).GetName() for i in range(canonical.GetNumberOfFields())] != ["hero_tag", "hero_as"]:
         return False
     union = canonical.GetFieldAtIndex(1).GetType().GetCanonicalType()
     arms = {}
     for i in range(union.GetNumberOfFields()):
         arms[union.GetFieldAtIndex(i).GetName()] = union.GetFieldAtIndex(i).GetType()
-    if "err" not in arms or type_name(arms["err"]) != FAILURE:
+    if "hero_err" not in arms or type_name(arms["hero_err"]) != FAILURE:
         return False
-    return set(arms) <= set(["ok", "err"])
+    return set(arms) <= set(["hero_ok", "hero_err"])
 
 
 def variant_cases(proc, sbtype):
@@ -496,7 +498,7 @@ def case_parent(proc, name):
         found = proc.find(type_of_companion(parent))
         if found.IsValid() and found.GetCanonicalType().GetTypeClass() == lldb.eTypeClassStruct:
             fields = field_names(found)
-            if fields and fields[0] == "tag":
+            if fields and fields[0] == "hero_tag":
                 cases = variant_cases(proc, found)
                 if cases is not None and case in cases.values():
                     return parent
@@ -718,13 +720,13 @@ def render_option(proc, value, budget, depth):
 
 def option_arm(value):
     """("ok", the value or None for `()?`) or ("err", the HeroFailure)."""
-    tag = signed(member(value, "tag"))
-    union = member(value, "as")
+    tag = signed(member(value, "hero_tag"))
+    union = member(value, "hero_as")
     if tag == 0:
-        ok = union.GetChildMemberWithName("ok")
+        ok = union.GetChildMemberWithName("hero_ok")
         return "ok", (ok if ok.IsValid() else None)
     if tag == 1:
-        err = union.GetChildMemberWithName("err")
+        err = union.GetChildMemberWithName("hero_err")
         if not err.IsValid():
             raise Unread("err")
         return "err", err
@@ -741,12 +743,12 @@ def render_variant(proc, value, budget, depth):
 def variant_case(proc, value):
     """The live case's name and its payload (None for a case with no fields)."""
     cases = variant_cases(proc, value.GetType())
-    tag = signed(member(value, "tag"))
+    tag = signed(member(value, "hero_tag"))
     if cases is None or tag not in cases:
         raise Unread("variant tag")
     case = cases[tag]
-    union = value.GetChildMemberWithName("as")
-    payload = union.GetChildMemberWithName("c_" + case) if union.IsValid() else lldb.SBValue()
+    union = value.GetChildMemberWithName("hero_as")
+    payload = union.GetChildMemberWithName("hero_c_" + case) if union.IsValid() else lldb.SBValue()
     if payload.IsValid():
         return case, payload
     if proc.find(type_name(value.GetType()) + "_c_" + case).IsValid():

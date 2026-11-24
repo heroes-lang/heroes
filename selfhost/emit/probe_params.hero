@@ -10,6 +10,7 @@ use check/freer as freer
 use check/state
 use check/table
 use emit/ctype
+use emit/mangle
 use ir/containers
 use read_lend
 use widths
@@ -71,9 +72,9 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
             spelled @ "const " + spelled
 
         if mutable
-            out @ out.push(spelled + " * a" + index.to_str())
+            out @ out.push(spelled + " * " + mangle.argument(index))
         else
-            out @ out.push(spelled + " a" + index.to_str())
+            out @ out.push(spelled + " " + mangle.argument(index))
         index @ index + 1
 
     return ok(out)

@@ -80,27 +80,27 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
         if one.counted
             writer.line(
                 @w,
-                text: "HERO_TU_LOCAL void " + one.at.prefix + "_retain(const " + one.at.c_type + " *v);"
+                text: "HERO_TU_LOCAL void " + one.at.prefix + "_retain(const " + one.at.c_type + " *hero_v);"
             )
-            writer.line(@w, text: "HERO_TU_LOCAL void " + one.at.prefix + "_release(" + one.at.c_type + " *v);")
+            writer.line(@w, text: "HERO_TU_LOCAL void " + one.at.prefix + "_release(" + one.at.c_type + " *hero_v);")
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "a, " + handles.const_pointer(one.at.c_type) + "b);"
+            text: "HERO_TU_LOCAL bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "hero_a, " + handles.const_pointer(one.at.c_type) + "hero_b);"
         )
-        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + one.at.prefix + "_hash(const void *elem);")
+        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + one.at.prefix + "_hash(const void *hero_elem);")
         wrote @ true
 
     for entry in option_entries.of(names, c)
         if !synth.wants_type(w: want, ty: entry.at)
             continue
         writer.at_generated(@w)
-        writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_retain(const " + entry.name + " *v);")
-        writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_release(" + entry.name + " *v);")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_retain(const " + entry.name + " *hero_v);")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_release(" + entry.name + " *hero_v);")
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *a, const " + entry.name + " *b);"
+            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b);"
         )
-        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *elem);")
+        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *hero_elem);")
         wrote @ true
 
     if wrote
@@ -180,10 +180,13 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         # equality: different tags are never equal.
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *a, const " + entry.name + " *b) {"
+            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b) {"
         )
-        writer.line(@w, text: "    if (a->tag != b->tag) return false;")
-        writer.line(@w, text: "    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);")
+        writer.line(@w, text: "    if (hero_a->hero_tag != hero_b->hero_tag) return false;")
+        writer.line(
+            @w,
+            text: "    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);"
+        )
 
         if has_ok
             desc = descriptors.pointer(c, names, ty: entry.payload)
@@ -191,19 +194,25 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
             if desc.is_err()
                 writer.line(@w, text: "    hero_unreachable();")
             else
-                writer.line(@w, text: "    return (" + desc.must() + ")->eq(&a->as.ok, &b->as.ok);")
+                writer.line(
+                    @w,
+                    text: "    return (" + desc.must() + ")->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
+                )
         else
 
             # Two ()? that are both ok carry nothing to compare.
             writer.line(@w, text: "    return true;")
         writer.line(@w, text: "}")
         writer.blank(@w)
-        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *elem) {")
-        writer.line(@w, text: "    const " + entry.name + " *v = elem;")
-        writer.line(@w, text: "    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)")
+        writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *hero_elem) {")
+        writer.line(@w, text: "    const " + entry.name + " *hero_v = hero_elem;")
+        writer.line(@w, text: "    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)")
         writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
-        writer.line(@w, text: "    if (v->tag != INT64_C(0)) {")
-        writer.line(@w, text: "        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);")
+        writer.line(@w, text: "    if (hero_v->hero_tag != INT64_C(0)) {")
+        writer.line(
+            @w,
+            text: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);"
+        )
         writer.line(@w, text: "    }")
 
         if has_ok
@@ -214,10 +223,10 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
             else
                 writer.line(
                     @w,
-                    text: "    return (h ^ (" + desc.must() + ")->hash(&v->as.ok)) * UINT64_C(0x100000001b3);"
+                    text: "    return (hero_h ^ (" + desc.must() + ")->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);"
                 )
         else
-            writer.line(@w, text: "    return h;")
+            writer.line(@w, text: "    return hero_h;")
         writer.line(@w, text: "}")
         writer.blank(@w)
 
@@ -233,13 +242,13 @@ function one_reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         verb @ "retain"
 
     if keep
-        writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_retain(const " + name + " *v) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_retain(const " + name + " *hero_v) {")
     else
-        writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_release(" + name + " *v) {")
-    writer.line(@w, text: "    if (v->tag == INT64_C(0)) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_release(" + name + " *hero_v) {")
+    writer.line(@w, text: "    if (hero_v->hero_tag == INT64_C(0)) {")
 
     if counted && has_ok
-        found = emit_counted.reference_line(c, names, ty: payload, place: "v->as.ok", keep: keep)
+        found = emit_counted.reference_line(c, names, ty: payload, place: "hero_v->hero_as.hero_ok", keep: keep)
 
         if found.is_err()
             writer.line(@w, text: "        hero_unreachable();")
@@ -248,7 +257,7 @@ function one_reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     else
         writer.line(@w, text: "        return;")
     writer.line(@w, text: "    } else {")
-    writer.line(@w, text: "        hero_failure_" + verb + "(&v->as.err);")
+    writer.line(@w, text: "        hero_failure_" + verb + "(&hero_v->hero_as.hero_err);")
     writer.line(@w, text: "    }")
     writer.line(@w, text: "}")
     writer.blank(@w)
@@ -269,9 +278,12 @@ test "payloads come before their variant, and every option gets four functions"
     protos = writer.finish(w)
     assert strings.holds(
         text: protos,
-        needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h_t_0Tok_c_word *a, const h_t_0Tok_c_word *b);"
+        needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h_t_0Tok_c_word *hero_a, const h_t_0Tok_c_word *hero_b);"
     )
-    assert strings.holds(text: protos, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);")
+    assert strings.holds(
+        text: protos,
+        needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);"
+    )
     bw: writer.Writer @= writer.new_writer("t")
     bodies(@bw, c, names, s, p.decls, want: synth.everything())
     body_text = writer.finish(bw)
@@ -302,9 +314,15 @@ test "payloads come before their variant, and every option gets four functions"
 
     # The i64? four: retain returns on ok (i64 is not counted), eq
     # reaches the payload through its descriptor.
-    assert strings.holds(text: body_text, needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {")
-    assert strings.holds(text: body_text, needle: "    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);")
     assert strings.holds(
         text: body_text,
-        needle: "        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);"
+        needle: "HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {"
+    )
+    assert strings.holds(
+        text: body_text,
+        needle: "    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
+    )
+    assert strings.holds(
+        text: body_text,
+        needle: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);"
     )

@@ -28,6 +28,44 @@
 #include <fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.h>
 #pragma push_macro("a")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -59,7 +116,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -68,7 +125,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 23 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
 _Static_assert(sizeof(struct four) - __builtin_offsetof(struct four, a) != 0, "heroes-ffi-flex Four a"); _Static_assert(_Generic(&((struct four *)0)->a, ob * (*)[4]: 1, default: 0) && sizeof(struct four) - __builtin_offsetof(struct four, a) >= sizeof(ob *[4]), "heroes-ffi-field Four a");
-#line 72 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 129 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -114,26 +171,26 @@ HERO_STR_STATIC(hero_str_727306ec, "sum: ");
 HERO_STR_STATIC(hero_str_3294dee, "released: ");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -154,70 +211,70 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 24 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_ob_new(int64_t a0) { (void)(ob_new)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_ob_free(ob * a0) { (void)(ob_free)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_four_sum(struct four a0) { (void)(four_sum)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_ob_new(int64_t hero_a0) { (void)(ob_new)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_ob_free(ob * hero_a0) { (void)(ob_free)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugsanacquiredhandleiswrittenintoafixedarray_four_sum(struct four hero_a0) { (void)(four_sum)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 227 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(ob * const *a, ob * const *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_eq(const struct four *a, const struct four *b);
-HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(ob * const *hero_a, ob * const *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_eq(const struct four *hero_a, const struct four *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void);
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)hero_pad_nowhere()) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct four *)hero_pad_nowhere()) == 13 ? sizeof(struct four) : 0), __builtin_offsetof(struct four, a), sizeof(((struct four *)0)->a)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct four), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
 }
 
 
 #line 29 "tests/golden/run/fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero"
-void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) { struct four h0_f; int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_xs1 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *t10, *t13, *t16, *t33, *t36, *t39, *t49, *t50, *t51, *t52; HERO_NODEBUG int64_t h3_i0, h6_i1, t7, t8, t9, t11, t12, t14, t17, t18, t19, t20, t22, t23, t24, t25, t26, t27, t30, t31, t32, t34, t35, t37, t40, t41, t42, t44, t45, t46, t48; int64_t h4_i; int64_t h7_i; HERO_NODEBUG ob *t1, *t2, *t3, *t4, *t21, *t43; HERO_NODEBUG struct four t6, t29; HERO_NODEBUG bool t15, t38; HERO_NODEBUG HeroStr t28, t47; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) { struct four h0_f; int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_xs1 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *t10, *t13, *t16, *t33, *t36, *t39, *t49, *t50, *t51, *t52; HERO_NODEBUG int64_t h3_i0, h6_i1, t7, t8, t9, t11, t12, t14, t17, t18, t19, t20, t22, t23, t24, t25, t26, t27, t30, t31, t32, t34, t35, t37, t40, t41, t42, t44, t45, t46, t48; int64_t h4_i; int64_t h7_i; HERO_NODEBUG ob *t1, *t2, *t3, *t4, *t21, *t43; HERO_NODEBUG struct four t6, t29; HERO_NODEBUG bool t15, t38; HERO_NODEBUG HeroStr t28, t47; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = ((void *)0); t2 = ((void *)0); t3 = ((void *)0); t4 = ((void *)0); t6 = (struct four){.a = {t1, t2, t3, t4}}; h0_f = t6; hero_pad_fill(&h0_f, sizeof(struct four), 1, hero_pad_g_1, hero_pad_n_1);
     t7 = INT64_C(1); h1_n = t7;
 #line 33
-    t8 = INT64_C(0); t9 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 14}; t10 = h_library_range(t8, t9, &hero_here); } t49 = h8_own8; h8_own8 = t10; hero_array_decref(t49); t50 = h2_xs0; hero_array_incref(t10); h2_xs0 = t10; hero_array_decref(t50); t11 = INT64_C(0); h3_i0 = t11; goto bb1; bb1: t12 = h3_i0; t13 = h2_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto bb2; else goto bb4; bb2: t16 = h2_xs0; t17 = h3_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h4_i = t18;
-    t19 = h4_i; t20 = h1_n; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 34, 18}; t21 = ob_new(t20); hero_handle_acquired_at(t21, "ob_free", &hero_here); } h0_f.a[((uint64_t)(t19) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 34, 9), (int64_t)0) : (t19))] = t21;
-    t22 = h1_n; t23 = INT64_C(10); if (__builtin_mul_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 35, 13); h1_n = t24; goto bb3; bb3:
+    t8 = INT64_C(0); t9 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 14}; t10 = h_library_range(t8, t9, &hero_here); } t49 = h8_own8; h8_own8 = t10; hero_array_decref(t49); t50 = h2_xs0; hero_array_incref(t10); h2_xs0 = t10; hero_array_decref(t50); t11 = INT64_C(0); h3_i0 = t11; goto hero_bb1; hero_bb1: t12 = h3_i0; t13 = h2_xs0; t14 = ((void)(t13 == NULL ? ((void)hero_array_len(t13), hero_unreachable()) : (void)0), t13->len); t15 = t12 < t14; if (t15) goto hero_bb2; else goto hero_bb4; hero_bb2: t16 = h2_xs0; t17 = h3_i0; t18 = ((void)((t16 == NULL || t17 < 0 || t17 >= t16->len) ? hero_panic_index_at(t16, t17, "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 9) : (void)0), (void)(t16->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t16 + 1))[t17]); h4_i = t18;
+    t19 = h4_i; t20 = h1_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 34, 18}; t21 = ob_new(t20); hero_handle_acquired_at(t21, "ob_free", &hero_here); } h0_f.a[((uint64_t)(t19) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 34, 9), (int64_t)0) : (t19))] = t21;
+    t22 = h1_n; t23 = INT64_C(10); if (__builtin_mul_overflow(t22, t23, &t24)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 35, 13); h1_n = t24; goto hero_bb3; hero_bb3:
 #line 33
-    t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 9); h3_i0 = t27; goto bb1; bb4:
+    t25 = h3_i0; t26 = INT64_C(1); if (__builtin_add_overflow(t25, t26, &t27)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 33, 9); h3_i0 = t27; goto hero_bb1; hero_bb4:
 #line 37
-    t28 = HERO_STR_LIT(hero_str_727306ec); t29 = h0_f; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 37, 20}; hero_handle_alive_at(t29.a[0], "the argument `f` of `four_sum`, at `.a[0]`", &hero_here); hero_handle_alive_at(t29.a[1], "the argument `f` of `four_sum`, at `.a[1]`", &hero_here); hero_handle_alive_at(t29.a[2], "the argument `f` of `four_sum`, at `.a[2]`", &hero_here); hero_handle_alive_at(t29.a[3], "the argument `f` of `four_sum`, at `.a[3]`", &hero_here); t30 = four_sum(t29); } hero_print_str(t28); hero_print_int(t30); hero_print_end();
+    t28 = HERO_STR_LIT(hero_str_727306ec); t29 = h0_f; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 37, 20}; hero_handle_alive_at(t29.a[0], "the argument `f` of `four_sum`, at `.a[0]`", &hero_here); hero_handle_alive_at(t29.a[1], "the argument `f` of `four_sum`, at `.a[1]`", &hero_here); hero_handle_alive_at(t29.a[2], "the argument `f` of `four_sum`, at `.a[2]`", &hero_here); hero_handle_alive_at(t29.a[3], "the argument `f` of `four_sum`, at `.a[3]`", &hero_here); t30 = four_sum(t29); } hero_print_str(t28); hero_print_int(t30); hero_print_end();
 #line 39
-    t31 = INT64_C(0); t32 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 14}; t33 = h_library_range(t31, t32, &hero_here); } t51 = h9_own9; h9_own9 = t33; hero_array_decref(t51); t52 = h5_xs1; hero_array_incref(t33); h5_xs1 = t33; hero_array_decref(t52); t34 = INT64_C(0); h6_i1 = t34; goto bb5; bb5: t35 = h6_i1; t36 = h5_xs1; t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len); t38 = t35 < t37; if (t38) goto bb6; else goto bb8; bb6: t39 = h5_xs1; t40 = h6_i1; t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 9) : (void)0), (void)(t39->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t39 + 1))[t40]); h7_i = t41;
-    t42 = h7_i; t43 = h0_f.a[((uint64_t)(t42) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 40, 20), (int64_t)0) : (t42))]; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 40, 9}; { hero_handle_alive_at(t43, "the argument `o` of `ob_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t43, "ob_free", NULL, &hero_here); (void)ob_free(t43); hero_handle_ended(t43, hero_life_0_0); } } goto bb7; bb7:
+    t31 = INT64_C(0); t32 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 14}; t33 = h_library_range(t31, t32, &hero_here); } t51 = h9_own9; h9_own9 = t33; hero_array_decref(t51); t52 = h5_xs1; hero_array_incref(t33); h5_xs1 = t33; hero_array_decref(t52); t34 = INT64_C(0); h6_i1 = t34; goto hero_bb5; hero_bb5: t35 = h6_i1; t36 = h5_xs1; t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len); t38 = t35 < t37; if (t38) goto hero_bb6; else goto hero_bb8; hero_bb6: t39 = h5_xs1; t40 = h6_i1; t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 9) : (void)0), (void)(t39->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t39 + 1))[t40]); h7_i = t41;
+    t42 = h7_i; t43 = h0_f.a[((uint64_t)(t42) >= UINT64_C(4) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 40, 20), (int64_t)0) : (t42))]; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 40, 9}; { hero_handle_alive_at(t43, "the argument `o` of `ob_free`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t43, "ob_free", NULL, &hero_here); (void)ob_free(t43); hero_handle_ended(t43, hero_life_0_0); } } goto hero_bb7; hero_bb7:
 #line 39
-    t44 = h6_i1; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 9); h6_i1 = t46; goto bb5; bb8:
+    t44 = h6_i1; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at("fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 39, 9); h6_i1 = t46; goto hero_bb5; hero_bb8:
 #line 42
-    t47 = HERO_STR_LIT(hero_str_3294dee); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 42, 25}; t48 = ob_freed(); } hero_print_str(t47); hero_print_int(t48); hero_print_end();
-#line 221 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+    t47 = HERO_STR_LIT(hero_str_3294dee); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.hero", "fixedbugs-an-acquired-handle-is-written-into-a-fixed-array.main", 42, 25}; t48 = ob_freed(); } hero_print_str(t47); hero_print_int(t48); hero_print_end();
+#line 278 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_xs1);
     hero_array_release_at(&h8_own8);
@@ -226,149 +283,149 @@ void h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main(void) { struct fou
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
-    t2 = h0_from; h3_i = t2; goto bb1; bb1:
-    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
+    t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto bb1; bb3:
+    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
-#line 237 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
+#line 294 "fixedbugsanacquiredhandleiswrittenintoafixedarray.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
     return t12;
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t h0_from, int64_t h1_to) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
     return h_library_range(h0_from, h1_to, &hero_here);
 }
-HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(ob * const *a, ob * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(ob * const *hero_a, ob * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(const void *elem) {
-    ob * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(const void *hero_elem) {
+    ob * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_eq(const struct four *a, const struct four *b) {
-    if (!((h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&a->a[0], &b->a[0]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&a->a[1], &b->a[1]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&a->a[2], &b->a[2]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&a->a[3], &b->a[3])))) return false;
+HERO_TU_LOCAL bool h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_eq(const struct four *hero_a, const struct four *hero_b) {
+    if (!((h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&hero_a->a[0], &hero_b->a[0]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&hero_a->a[1], &hero_b->a[1]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&hero_a->a[2], &hero_b->a[2]) && h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_eq(&hero_a->a[3], &hero_b->a[3])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_hash(const void *elem) {
-    const struct four *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&v->a[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&v->a[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&v->a[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&v->a[3])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Four_hash(const void *hero_elem) {
+    const struct four *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&hero_v->a[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&hero_v->a[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&hero_v->a[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugsanacquiredhandleiswrittenintoafixedarray_0Ob_hash(&hero_v->a[3])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2490d7f67a67b39e", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("44efb21107eb8e7d", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsanacquiredhandleiswrittenintoafixedarray\tfixedbugs-an-acquired-handle-is-written-into-a-fixed-array\n");
     h_fixedbugsanacquiredhandleiswrittenintoafixedarray_main();
     hero_runtime_check_leaks();

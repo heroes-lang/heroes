@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <fixedbugs-2337-callback.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -98,7 +155,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 159 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 typedef struct h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 {
     int64_t f_x;
 } h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0;
@@ -144,26 +201,26 @@ typedef struct h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenb
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef void (*h_0fn_344160c5)(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *, int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -184,41 +241,41 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 8 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_fixedbugs_2337_apply(h_0fn_48ac9712 a0, int64_t a1) { (void)(fixedbugs_2337_apply)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_fixedbugs_2337_apply(h_0fn_48ac9712 hero_a0, int64_t hero_a1) { (void)(fixedbugs_2337_apply)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 198 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 255 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(int64_t h0_n);
 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(int64_t h0_n);
@@ -228,43 +285,44 @@ void h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacall
 void h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_main(void);
 int64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
 int64_t h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n);
-__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {
     hero_signal_learn();
-    if (f == (void (*)(void))h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one) return (void (*)(void))h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one;
-    return f;
+    if (hero_f == (void (*)(void))h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one) return (void (*)(void))h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one;
+    return hero_f;
 }
 
 
 #line 49 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t11; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0){.f_x = t1}; h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 243 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 300 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 53 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t11; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e1(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 250 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 307 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 57 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t11; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(int64_t h0_n) { h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 h1_z; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e2(t1); h1_z = t2;
     t3 = h1_z; t4 = h1_z; t5 = h1_z; t6 = h1_z; t7 = h1_z; t8 = h1_z; t9 = h1_z; t10 = h1_z; t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; return t11;
-#line 257 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 314 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 #line 61 "tests/golden/run/fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero"
-int64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) { hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.one"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) { hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.one"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.one", 62, 12); return t3;
-#line 263 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 320 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 
 int64_t h_0cb_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(int64_t h0_n) {
     hero_callback_entered("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.one", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one(h0_n);
+    hero_callback_left();
     return hero_result;
 }
 
@@ -273,9 +331,9 @@ __attribute__((__noinline__)) void h_fixedbugs2337afunctionreturningalargerecord
 #line 64
 #define t7 (*hero_big_t7)
 #line 64
-    hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.build_one"); HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t2, t6; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t7 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_ENTRY_STOP; goto bb0; bb0:
+    hero_thread_guard("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.build_one"); HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t2, t6; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t7 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.build_one", 65, 37); t6 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_e3(t5); t7 = *(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)__builtin_memset(&t7, 0, sizeof t7); t7.f_a = t2; t7.f_b = t6; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); return;
-#line 279 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+#line 337 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef t7
 
@@ -286,219 +344,219 @@ __attribute__((__noinline__)) void h_fixedbugs2337afunctionreturningalargerecord
 #line 67
 #define t11 (*hero_big_t11)
 #line 67
-    h_0fn_344160c5 h0_f; HERO_NODEBUG h_0fn_344160c5 t1, t9; HERO_NODEBUG int64_t t2, t8, t10, t16, t18, t19; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t3 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t4, t12; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t5, t13; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t6, t14; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 t7, t15; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_NODEBUG h_0fn_48ac9712 t17; HERO_ENTRY_STOP; goto bb0; bb0:
+    h_0fn_344160c5 h0_f; HERO_NODEBUG h_0fn_344160c5 t1, t9; HERO_NODEBUG int64_t t2, t8, t10, t16, t18, t19; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t3 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 t4, t12; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 t5, t13; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 t6, t14; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 t7, t15; HERO_NODEBUG h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *const hero_big_t11 = (h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *)hero_frame_take(sizeof(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4)); HERO_NODEBUG h_0fn_48ac9712 t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_build_one; h0_f = t1;
     t2 = INT64_C(4); h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_build_one(&t3, t2); t4 = t3.f_b; t5 = t4.f_h; t6 = t5.f_h; t7 = t6.f_h; t8 = t7.f_x; hero_print_int(t8); hero_print_end();
     t9 = h0_f; t10 = INT64_C(6); t9(&t11, t10); t12 = t11.f_a; t13 = t12.f_a; t14 = t13.f_a; t15 = t14.f_a; t16 = t15.f_x; hero_print_int(t16); hero_print_end();
-    t17 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one; t18 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.main", 71, 11}; t19 = fixedbugs_2337_apply((h_0fn_48ac9712)hero_callback_of((void (*)(void))t17), t18); } hero_print_int(t19); hero_print_end(); hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t3); return;
-#line 295 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
+    t17 = h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_one; t18 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.hero", "fixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback.main", 71, 11}; t19 = fixedbugs_2337_apply((h_0fn_48ac9712)hero_callback_of((void (*)(void))t17), t18); } hero_print_int(t19); hero_print_end(); hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t3); return;
+#line 353 "fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback.c"
 }
 #undef t3
 #undef t11
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *b) {
-    if (!(a->f_x == b->f_x)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(const void *elem) {
-    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(const void *hero_elem) {
+    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *b) {
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *hero_b) {
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(const void *elem) {
-    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(const void *hero_elem) {
+    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E0_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *b) {
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *hero_b) {
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(const void *elem) {
-    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(const void *hero_elem) {
+    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E1_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *b) {
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *hero_b) {
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(const void *elem) {
-    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(const void *hero_elem) {
+    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E2_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *b) {
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(&a->f_b, &b->f_b))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_eq(const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *hero_a, const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *hero_b) {
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_hash(const void *elem) {
-    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E4_hash(const void *hero_elem) {
+    const h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_E4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_0E3_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("690e786b1861db69", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1013ad680b1e945a", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback\tfixedbugs-2337-a-function-returning-a-large-record-whose-address-is-taken-beside-a-callback\n");
     h_fixedbugs2337afunctionreturningalargerecordwhoseaddressistakenbesideacallback_main();
     hero_runtime_check_leaks();

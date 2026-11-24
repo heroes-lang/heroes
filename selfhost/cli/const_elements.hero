@@ -297,7 +297,7 @@ function probed(a: layout_runs.Asking, sum: str, probes: [Reach]) -> ()?
         typed = innermost(k, one: one)
         lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + PLACE + "\"")
         lines @ lines.push(
-            "__attribute__((unused)) static void " + PLACE + "_" + k.to_str() + "(" + typed + " *a, " + typed + " *b) { *a = *b; }"
+            "__attribute__((__unused__)) static void " + PLACE + "_" + k.to_str() + "(" + typed + " *a, " + typed + " *b) { *a = *b; }"
         )
         k @ k + 1
 

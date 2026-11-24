@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <unistd.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -139,36 +196,36 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 143 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 200 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 typedef struct h_0opt_1b9b98 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int8_t ok;
-        HeroFailure err;
-    } as;
+        int8_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_1b9b98;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -189,44 +246,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 14 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_symlink(const char * a0, const char * a1) { (void)(symlink)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_readlink(const char * a0, int8_t * a1, uint64_t a2) { (void)(readlink)(a0, (void *)a1, a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_symlink(const char * hero_a0, const char * hero_a1) { (void)(symlink)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_readlink(const char * hero_a0, int8_t * hero_a1, uint64_t hero_a2) { (void)(readlink)(hero_a0, (void *)hero_a1, hero_a2); }
 #line 19
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_kind(const char * a0) { (void)(hero_fs_kind)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mode(const char * a0) { (void)(hero_fs_mode)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_set_mode(const char * a0, int64_t a1) { (void)(hero_fs_set_mode)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mkdir_all(const char * hero_a0) { (void)(hero_fs_mkdir_all)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_kind(const char * hero_a0) { (void)(hero_fs_kind)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_mode(const char * hero_a0) { (void)(hero_fs_mode)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_fs_set_mode(const char * hero_a0, int64_t hero_a1) { (void)(hero_fs_set_mode)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_scan(const char * hero_a0, int64_t hero_a1, int64_t hero_a2) { (void)(hero_dir_scan)(hero_a0, hero_a1, hero_a2); }
 #line 25
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438alinkiswrittenthroughandstaysalink_hero_dir_remove_tree(const char * hero_a0) { (void)(hero_dir_remove_tree)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 212 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 269 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v);
-HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *v);
-HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b);
-HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *hero_v);
+HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *hero_v);
+HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *hero_a, const h_0opt_1b9b98 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(void);
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void);
@@ -243,13 +300,13 @@ int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 26 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(void) {
-#line 253 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 310 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -261,13 +318,13 @@ int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 26 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return HERO_DIR_FILES;
-#line 265 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 322 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 #pragma clang diagnostic pop
 }
 
 #line 27 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void) {
-#line 271 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 328 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     _Static_assert(HERO_RET_INT(HERO_FS_LINK), "heroes-ffi-return HERO_FS_LINK i64");
     _Static_assert(__builtin_constant_p(HERO_FS_LINK), "heroes-ffi-const HERO_FS_LINK");
 #pragma clang diagnostic push
@@ -279,31 +336,31 @@ int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 27 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return HERO_FS_LINK;
-#line 283 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 340 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 #pragma clang diagnostic pop
 }
 
 #line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 290 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 347 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(HeroStr h0_path) { HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t6, *t12, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5, t7, t8, t9, t13, t16, t17, t18; HERO_NODEBUG bool t10; HERO_NODEBUG int8_t t14; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(HeroStr h0_path) { HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t6, *t12, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5, t7, t8, t9, t13, t16, t17, t18; HERO_NODEBUG bool t10; HERO_NODEBUG int8_t t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_i8, 1); t20 = h5_own5; h5_own5 = t1; hero_array_decref(t20); t21 = h1_buf; hero_array_incref(t1); h1_buf = t1; hero_array_decref(t21);
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 35, 26}; t3 = hero_str_lend_at(t2, &hero_here); } t4 = UINT64_C(256); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 35, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *restrict)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), char) && (char)-1 < 0), "heroes-ffi-buffer readlink buf 873 876 i8 char *restrict"); HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64_at((uint64_t)(t4), "readlink", "buf", &hero_here); HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take_at(h1_buf, hero_lend_e0_1, "readlink", "buf", &hero_here); t5 = readlink(hero_cstr_nonnull_at(t3, &hero_here), (void *)hero_lend_b0_1, t4); h1_buf = hero_lend_give_at(h1_buf, hero_lend_b0_1, hero_lend_e0_1, &hero_here); } } h2_got = t5;
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 35, 26}; t3 = hero_str_lend_at(t2, &hero_here); } t4 = UINT64_C(256); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 35, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *restrict)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *restrict)0), char) && (char)-1 < 0), "heroes-ffi-buffer readlink buf 873 876 i8 char *restrict"); HERO_NODEBUG int64_t hero_lend_e0_1 = hero_lend_count_u64_at((uint64_t)(t4), "readlink", "buf", &hero_here); HERO_NODEBUG void *hero_lend_b0_1 = hero_lend_take_at(h1_buf, hero_lend_e0_1, "readlink", "buf", &hero_here); t5 = readlink(hero_cstr_nonnull_at(t3, &hero_here), (void *)hero_lend_b0_1, t4); h1_buf = hero_lend_give_at(h1_buf, hero_lend_b0_1, hero_lend_e0_1, &hero_here); } } h2_got = t5;
     t6 = hero_array_new(&hero_desc_i8, 1); t22 = h6_own6; h6_own6 = t6; hero_array_decref(t22); t23 = h3_out; hero_array_incref(t6); h3_out = t6; hero_array_decref(t23);
-    t7 = INT64_C(0); h4_i = t7; goto bb1; bb1:
+    t7 = INT64_C(0); h4_i = t7; goto hero_bb1; hero_bb1:
 #line 39
-    t8 = h4_i; t9 = h2_got; t10 = t8 < t9; if (t10) goto bb2; else goto bb3; bb2:
+    t8 = h4_i; t9 = h2_got; t10 = t8 < t9; if (t10) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t12 = h1_buf; t13 = h4_i; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 40, 24) : (void)0), (void)(t12->elem->size != sizeof(int8_t) ? hero_unreachable() : (void)0), ((int8_t const *)(const void *)(t12 + 1))[t13]); hero_array_push_owned(&h3_out, &t14);
-    t16 = h4_i; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 41, 13); h4_i = t18; goto bb1; bb3:
+    t16 = h4_i; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.target_of", 41, 13); h4_i = t18; goto hero_bb1; hero_bb3:
 #line 43
     t19 = h3_out;
-#line 307 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 364 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h3_out);
@@ -313,36 +370,36 @@ HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(Her
 }
 
 #line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}, h5_own5 = {0}, t11, t12, t16, t18, t27, t28; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t24, *t25, *t26; HERO_NODEBUG int64_t t2, t3, t5, t9, t13, t14, t21, t22, t23; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6, t15; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG int8_t t19; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}, h5_own5 = {0}, t11, t12, t16, t18, t27, t28; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t24, *t25, *t26; HERO_NODEBUG int64_t t2, t3, t5, t9, t13, t14, t21, t22, t23; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6, t15; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG int8_t t19; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_i8, 1); t25 = h4_own4; h4_own4 = t1; hero_array_decref(t25); t26 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t26);
-    t2 = INT64_C(0); h2_i = t2; goto bb1; bb1:
+    t2 = INT64_C(0); h2_i = t2; goto hero_bb1; hero_bb1:
 #line 49
-    t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto bb2; else goto bb3; bb2:
-    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.byte_list", 50, 24) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); if (t10 <= 127ULL) { t11 = (h_0opt_1b9b98){.tag = INT64_C(0), .as.ok = (int8_t)t10}; } else { t11 = (h_0opt_1b9b98){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t27 = h5_own5; h5_own5 = t11; h_0opt_1b9b98_release(&t27); t28 = h3_f0; h_0opt_1b9b98_retain(&t11); h3_f0 = t11; h_0opt_1b9b98_release(&t28); t12 = h3_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb4; else goto bb5; bb3:
+    t3 = h2_i; t4 = h0_text; t5 = hero_str_len(t4); t6 = t3 < t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t8 = h0_text; t9 = h2_i; t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? hero_panic_byte_at(t8, t9, "fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.byte_list", 50, 24) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]); if (t10 <= 127ULL) { t11 = (h_0opt_1b9b98){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int8_t)t10}; } else { t11 = (h_0opt_1b9b98){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t27 = h5_own5; h5_own5 = t11; h_0opt_1b9b98_release(&t27); t28 = h3_f0; h_0opt_1b9b98_retain(&t11); h3_f0 = t11; h_0opt_1b9b98_release(&t28); t12 = h3_f0; t13 = t12.hero_tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto hero_bb4; else goto hero_bb5; hero_bb3:
 #line 53
     t24 = h1_out;
-#line 325 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 382 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t24);
     hero_array_release_at(&h1_out);
     h_0opt_1b9b98_release(hero_slot_escape(&h3_f0));
     hero_array_release_at(&h4_own4);
     h_0opt_1b9b98_release(hero_slot_escape(&h5_own5));
     return t24;
-bb4:
+hero_bb4:
 #line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    t18 = h3_f0; t19 = t18.as.ok; hero_array_push_owned(&h1_out, &t19);
-    t21 = h2_i; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.byte_list", 51, 13); h2_i = t23; goto bb1; bb5:
+    t18 = h3_f0; t19 = t18.hero_as.hero_ok; hero_array_push_owned(&h1_out, &t19);
+    t21 = h2_i; t22 = INT64_C(1); if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.byte_list", 51, 13); h2_i = t23; goto hero_bb1; hero_bb5:
 #line 50
-    t16 = h3_f0; t17 = t16.as.err;
-#line 338 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t16 = h3_f0; t17 = t16.hero_as.hero_err;
+#line 395 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_panic_must_at(t17, "fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.byte_list", 50, 24);
     hero_unreachable();
 }
 
 #line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) { HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.holds", 56, 12}; t2 = h_library_read_file(t1, &hero_here); } t13 = h3_own3; h3_own3 = t2; h_0opt_f87774a_release(&t13); t14 = h1_f0; h_0opt_f87774a_retain(&t2); h1_f0 = t2; h_0opt_f87774a_release(&t14); t3 = h1_f0; t4 = t3.tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto bb1; else goto bb2; bb1: t7 = h1_f0; t8 = t7.as.ok; t15 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t15); goto bb3; bb2: t9 = HERO_STR_LIT(hero_str_c328310); t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto bb3; bb3: t10 = h2_r0; t11 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = hero_str_eq(t10, t11);
-#line 346 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) { HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.holds", 56, 12}; t2 = h_library_read_file(t1, &hero_here); } t13 = h3_own3; h3_own3 = t2; h_0opt_f87774a_release(&t13); t14 = h1_f0; h_0opt_f87774a_retain(&t2); h1_f0 = t2; h_0opt_f87774a_release(&t14); t3 = h1_f0; t4 = t3.hero_tag; t5 = INT64_C(0); t6 = t4 == t5; if (t6) goto hero_bb1; else goto hero_bb2; hero_bb1: t7 = h1_f0; t8 = t7.hero_as.hero_ok; t15 = h2_r0; hero_str_incref(t8); h2_r0 = t8; hero_str_decref(t15); goto hero_bb3; hero_bb2: t9 = HERO_STR_LIT(hero_str_c328310); t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto hero_bb3; hero_bb3: t10 = h2_r0; t11 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t17 = h4_own4; h4_own4 = t11; hero_str_decref(t17); t12 = hero_str_eq(t10, t11);
+#line 403 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -351,41 +408,41 @@ bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) { H
 }
 
 #line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 60, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 60, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 61, 5}; (void)hero_dir_release(); }
+int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_dir; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 60, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 60, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.files_in", 61, 5}; (void)hero_dir_release(); }
     t6 = h1_count; return t6;
-#line 359 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 416 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) { HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h9_b2, t13, t19, t20, t27, t28, t40, t41, t43, t46, t52, t58, t63, t64; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h7_f1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t36, t37, t72, t73, t75, t76; int64_t h6_before; bool h8_written; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t14, t21, t23, t29, t30, t31, t34, t35, t42, t44, t45, t47, t48, t53, t54, t59, t61, t65, t66, t68, t69, t70, t71, t74; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h16_own16 = {0}, *t60, *t62, *t77, *t78; HERO_NODEBUG int64_t t11, t12, t16, t17, t18, t33, t38, t39, t50, t51, t56, t57, t67; HERO_NODEBUG const char *t15, *t22, *t24, *t32, *t49, *t55; HERO_NODEBUG int32_t t25, t26; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) { HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h9_b2, t13, t19, t20, t27, t28, t40, t41, t43, t46, t52, t58, t63, t64; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h7_f1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t36, t37, t72, t73, t75, t76; int64_t h6_before; bool h8_written; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t14, t21, t23, t29, t30, t31, t34, t35, t42, t44, t45, t47, t48, t53, t54, t59, t61, t65, t66, t68, t69, t70, t71, t74; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h16_own16 = {0}, *t60, *t62, *t77, *t78; HERO_NODEBUG int64_t t11, t12, t16, t17, t18, t33, t38, t39, t50, t51, t56, t57, t67; HERO_NODEBUG const char *t15, *t22, *t24, *t32, *t49, *t55; HERO_NODEBUG int32_t t25, t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_4c012b42); t3 = hero_str_concat(t1, t2); t68 = h10_own10; h10_own10 = t3; hero_str_decref(t68); t69 = h1_file; hero_str_incref(t3); h1_file = t3; hero_str_decref(t69);
     t4 = h0_dir; t5 = HERO_STR_LIT(hero_str_78dac22a); t6 = hero_str_concat(t4, t5); t70 = h11_own11; h11_own11 = t6; hero_str_decref(t70); t71 = h2_link; hero_str_incref(t6); h2_link = t6; hero_str_decref(t71);
 #line 68
-    t7 = h1_file; t8 = HERO_STR_LIT(hero_str_14d6ef); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 8}; t9 = h_library_write_file(t7, t8, &hero_here); } t72 = h12_own12; h12_own12 = t9; h_0opt_a8ea2_release(&t72); t73 = h5_f0; h_0opt_a8ea2_retain(&t9); h5_f0 = t9; h_0opt_a8ea2_release(&t73); t10 = h5_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; h4_b1 = t13; if (t13) goto bb3; else goto bb2; bb1:
+    t7 = h1_file; t8 = HERO_STR_LIT(hero_str_14d6ef); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 8}; t9 = h_library_write_file(t7, t8, &hero_here); } t72 = h12_own12; h12_own12 = t9; h_0opt_a8ea2_release(&t72); t73 = h5_f0; h_0opt_a8ea2_retain(&t9); h5_f0 = t9; h_0opt_a8ea2_release(&t73); t10 = h5_f0; t11 = t10.hero_tag; t12 = INT64_C(1); t13 = t11 == t12; h4_b1 = t13; if (t13) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 71
-    t31 = h1_file; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 71, 33}; t32 = hero_str_lend_at(t31, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 71, 14}; t33 = hero_fs_mode(hero_cstr_nonnull_at(t32, &hero_here)); } h6_before = t33;
-    t34 = h2_link; t35 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t74 = h13_own13; h13_own13 = t35; hero_str_decref(t74); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 72, 16}; t36 = h_library_write_file(t34, t35, &hero_here); } t75 = h14_own14; h14_own14 = t36; h_0opt_a8ea2_release(&t75); t76 = h7_f1; h_0opt_a8ea2_retain(&t36); h7_f1 = t36; h_0opt_a8ea2_release(&t76); t37 = h7_f1; t38 = t37.tag; t39 = INT64_C(1); t40 = t38 == t39; t41 = !t40; h8_written = t41;
+    t31 = h1_file; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 71, 33}; t32 = hero_str_lend_at(t31, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 71, 14}; t33 = hero_fs_mode(hero_cstr_nonnull_at(t32, &hero_here)); } h6_before = t33;
+    t34 = h2_link; t35 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t74 = h13_own13; h13_own13 = t35; hero_str_decref(t74); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 72, 16}; t36 = h_library_write_file(t34, t35, &hero_here); } t75 = h14_own14; h14_own14 = t36; h_0opt_a8ea2_release(&t75); t76 = h7_f1; h_0opt_a8ea2_retain(&t36); h7_f1 = t36; h_0opt_a8ea2_release(&t76); t37 = h7_f1; t38 = t37.hero_tag; t39 = INT64_C(1); t40 = t38 == t39; t41 = !t40; h8_written = t41;
 #line 74
     t42 = HERO_STR_LIT(hero_str_49e87488);
     t43 = h8_written;
     t44 = HERO_STR_LIT(hero_str_93d4c3d);
     t45 = h1_file; t46 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t45);
     t47 = HERO_STR_LIT(hero_str_54eddff4);
-    t48 = h1_file; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 79, 28}; t49 = hero_str_lend_at(t48, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 79, 9}; t50 = hero_fs_mode(hero_cstr_nonnull_at(t49, &hero_here)); } t51 = h6_before; t52 = t50 == t51;
+    t48 = h1_file; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 79, 28}; t49 = hero_str_lend_at(t48, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 79, 9}; t50 = hero_fs_mode(hero_cstr_nonnull_at(t49, &hero_here)); } t51 = h6_before; t52 = t50 == t51;
     t53 = HERO_STR_LIT(hero_str_1f6a4262);
-    t54 = h2_link; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 81, 28}; t55 = hero_str_lend_at(t54, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 81, 9}; t56 = hero_fs_kind(hero_cstr_nonnull_at(t55, &hero_here)); } t57 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t58 = t56 == t57; h9_b2 = t58; if (t58) goto bb8; else goto bb9; bb2:
+    t54 = h2_link; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 81, 28}; t55 = hero_str_lend_at(t54, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 81, 9}; t56 = hero_fs_kind(hero_cstr_nonnull_at(t55, &hero_here)); } t57 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t58 = t56 == t57; h9_b2 = t58; if (t58) goto hero_bb8; else goto hero_bb9; hero_bb2:
 #line 68
-    t14 = h1_file; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 79}; t15 = hero_str_lend_at(t14, &hero_here); } t16 = INT64_C(416); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 56}; t17 = hero_fs_set_mode(hero_cstr_nonnull_at(t15, &hero_here), t16); } t18 = INT64_C(0); t19 = t17 != t18; h4_b1 = t19; goto bb3; bb3: t20 = h4_b1; h3_b0 = t20; if (t20) goto bb5; else goto bb4; bb4: t21 = HERO_STR_LIT(hero_str_40b1649b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 127}; t22 = hero_str_lend_at(t21, &hero_here); } t23 = h2_link; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 152}; t24 = hero_str_lend_at(t23, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 111}; t25 = symlink(hero_cstr_nonnull_at(t22, &hero_here), hero_cstr_nonnull_at(t24, &hero_here)); } t26 = INT64_C(0); t27 = t25 != t26; h3_b0 = t27; goto bb5; bb5: t28 = h3_b0; if (t28) goto bb6; else goto bb7; bb6:
-    t29 = HERO_STR_LIT(hero_str_552d9e74); t30 = h2_link; hero_print_str(t29); hero_print_str(t30); hero_print_end(); goto bb10; bb7: goto bb1; bb8:
+    t14 = h1_file; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 79}; t15 = hero_str_lend_at(t14, &hero_here); } t16 = INT64_C(416); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 56}; t17 = hero_fs_set_mode(hero_cstr_nonnull_at(t15, &hero_here), t16); } t18 = INT64_C(0); t19 = t17 != t18; h4_b1 = t19; goto hero_bb3; hero_bb3: t20 = h4_b1; h3_b0 = t20; if (t20) goto hero_bb5; else goto hero_bb4; hero_bb4: t21 = HERO_STR_LIT(hero_str_40b1649b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 127}; t22 = hero_str_lend_at(t21, &hero_here); } t23 = h2_link; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 152}; t24 = hero_str_lend_at(t23, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_a_file", 68, 111}; t25 = symlink(hero_cstr_nonnull_at(t22, &hero_here), hero_cstr_nonnull_at(t24, &hero_here)); } t26 = INT64_C(0); t27 = t25 != t26; h3_b0 = t27; goto hero_bb5; hero_bb5: t28 = h3_b0; if (t28) goto hero_bb6; else goto hero_bb7; hero_bb6:
+    t29 = HERO_STR_LIT(hero_str_552d9e74); t30 = h2_link; hero_print_str(t29); hero_print_str(t30); hero_print_end(); goto hero_bb10; hero_bb7: goto hero_bb1; hero_bb8:
 #line 81
-    t59 = h2_link; t60 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t59); t77 = h15_own15; h15_own15 = t60; hero_array_decref(t77); t61 = HERO_STR_LIT(hero_str_40b1649b); t62 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t61); t78 = h16_own16; h16_own16 = t62; hero_array_decref(t78); t63 = hero_array_eq(t60, t62); h9_b2 = t63; goto bb9; bb9: t64 = h9_b2;
+    t59 = h2_link; t60 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t59); t77 = h15_own15; h15_own15 = t60; hero_array_decref(t77); t61 = HERO_STR_LIT(hero_str_40b1649b); t62 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t61); t78 = h16_own16; h16_own16 = t62; hero_array_decref(t78); t63 = hero_array_eq(t60, t62); h9_b2 = t63; goto hero_bb9; hero_bb9: t64 = h9_b2;
     t65 = HERO_STR_LIT(hero_str_5dbce935);
     t66 = h0_dir; t67 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t66);
 #line 73
-    hero_print_str(t42); hero_print_bool(t43); hero_print_str(t44); hero_print_bool(t46); hero_print_str(t47); hero_print_bool(t52); hero_print_str(t53); hero_print_bool(t64); hero_print_str(t65); hero_print_int(t67); hero_print_end(); goto bb10; bb10:
-#line 389 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    hero_print_str(t42); hero_print_bool(t43); hero_print_str(t44); hero_print_bool(t46); hero_print_str(t47); hero_print_bool(t52); hero_print_str(t53); hero_print_bool(t64); hero_print_str(t65); hero_print_int(t67); hero_print_end(); goto hero_bb10; hero_bb10:
+#line 446 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_file);
     hero_str_release_at(&h2_link);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -401,29 +458,29 @@ void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) 
 }
 
 #line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir) { HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_own9 = {0}, t18, t19, t49, t50; bool h4_written; HERO_NODEBUG bool h5_b0, t13, t22, t23, t25, t28, t34, t39, t40; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t9, t14, t15, t16, t17, t24, t26, t27, t29, t30, t35, t37, t41, t42, t44, t45, t46, t47, t48; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t36, *t38, *t51, *t52; HERO_NODEBUG const char *t8, *t10, *t31; HERO_NODEBUG int32_t t11, t12; HERO_NODEBUG int64_t t20, t21, t32, t33, t43; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir) { HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_own9 = {0}, t18, t19, t49, t50; bool h4_written; HERO_NODEBUG bool h5_b0, t13, t22, t23, t25, t28, t34, t39, t40; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t9, t14, t15, t16, t17, t24, t26, t27, t29, t30, t35, t37, t41, t42, t44, t45, t46, t47, t48; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t36, *t38, *t51, *t52; HERO_NODEBUG const char *t8, *t10, *t31; HERO_NODEBUG int32_t t11, t12; HERO_NODEBUG int64_t t20, t21, t32, t33, t43; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_dir; t2 = HERO_STR_LIT(hero_str_79201c1); t3 = hero_str_concat(t1, t2); t44 = h6_own6; h6_own6 = t3; hero_str_decref(t44); t45 = h1_link; hero_str_incref(t3); h1_link = t3; hero_str_decref(t45);
     t4 = h0_dir; t5 = HERO_STR_LIT(hero_str_6446902f); t6 = hero_str_concat(t4, t5); t46 = h7_own7; h7_own7 = t6; hero_str_decref(t46); t47 = h2_named; hero_str_incref(t6); h2_named = t6; hero_str_decref(t47);
 #line 90
-    t7 = HERO_STR_LIT(hero_str_1a73e8af); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 24}; t8 = hero_str_lend_at(t7, &hero_here); } t9 = h1_link; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 50}; t10 = hero_str_lend_at(t9, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 8}; t11 = symlink(hero_cstr_nonnull_at(t8, &hero_here), hero_cstr_nonnull_at(t10, &hero_here)); } t12 = INT64_C(0); t13 = t11 != t12; if (t13) goto bb2; else goto bb3; bb1:
+    t7 = HERO_STR_LIT(hero_str_1a73e8af); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 24}; t8 = hero_str_lend_at(t7, &hero_here); } t9 = h1_link; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 50}; t10 = hero_str_lend_at(t9, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 90, 8}; t11 = symlink(hero_cstr_nonnull_at(t8, &hero_here), hero_cstr_nonnull_at(t10, &hero_here)); } t12 = INT64_C(0); t13 = t11 != t12; if (t13) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 93
-    t16 = h1_link; t17 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t48 = h8_own8; h8_own8 = t17; hero_str_decref(t48); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 93, 16}; t18 = h_library_write_file(t16, t17, &hero_here); } t49 = h9_own9; h9_own9 = t18; h_0opt_a8ea2_release(&t49); t50 = h3_f0; h_0opt_a8ea2_retain(&t18); h3_f0 = t18; h_0opt_a8ea2_release(&t50); t19 = h3_f0; t20 = t19.tag; t21 = INT64_C(1); t22 = t20 == t21; t23 = !t22; h4_written = t23;
+    t16 = h1_link; t17 = h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(); t48 = h8_own8; h8_own8 = t17; hero_str_decref(t48); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 93, 16}; t18 = h_library_write_file(t16, t17, &hero_here); } t49 = h9_own9; h9_own9 = t18; h_0opt_a8ea2_release(&t49); t50 = h3_f0; h_0opt_a8ea2_retain(&t18); h3_f0 = t18; h_0opt_a8ea2_release(&t50); t19 = h3_f0; t20 = t19.hero_tag; t21 = INT64_C(1); t22 = t20 == t21; t23 = !t22; h4_written = t23;
 #line 95
     t24 = HERO_STR_LIT(hero_str_23eb5559);
     t25 = h4_written;
     t26 = HERO_STR_LIT(hero_str_4263828d);
     t27 = h2_named; t28 = h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(t27);
     t29 = HERO_STR_LIT(hero_str_1f6a4262);
-    t30 = h1_link; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 100, 28}; t31 = hero_str_lend_at(t30, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 100, 9}; t32 = hero_fs_kind(hero_cstr_nonnull_at(t31, &hero_here)); } t33 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t34 = t32 == t33; h5_b0 = t34; if (t34) goto bb4; else goto bb5; bb2:
+    t30 = h1_link; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 100, 28}; t31 = hero_str_lend_at(t30, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.to_nothing", 100, 9}; t32 = hero_fs_kind(hero_cstr_nonnull_at(t31, &hero_here)); } t33 = h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(); t34 = t32 == t33; h5_b0 = t34; if (t34) goto hero_bb4; else goto hero_bb5; hero_bb2:
 #line 91
-    t14 = HERO_STR_LIT(hero_str_552d9e74); t15 = h1_link; hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto bb6; bb3: goto bb1; bb4:
+    t14 = HERO_STR_LIT(hero_str_552d9e74); t15 = h1_link; hero_print_str(t14); hero_print_str(t15); hero_print_end(); goto hero_bb6; hero_bb3: goto hero_bb1; hero_bb4:
 #line 100
-    t35 = h1_link; t36 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t35); t51 = h10_own10; h10_own10 = t36; hero_array_decref(t51); t37 = HERO_STR_LIT(hero_str_1a73e8af); t38 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t37); t52 = h11_own11; h11_own11 = t38; hero_array_decref(t52); t39 = hero_array_eq(t36, t38); h5_b0 = t39; goto bb5; bb5: t40 = h5_b0;
+    t35 = h1_link; t36 = h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(t35); t51 = h10_own10; h10_own10 = t36; hero_array_decref(t51); t37 = HERO_STR_LIT(hero_str_1a73e8af); t38 = h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(t37); t52 = h11_own11; h11_own11 = t38; hero_array_decref(t52); t39 = hero_array_eq(t36, t38); h5_b0 = t39; goto hero_bb5; hero_bb5: t40 = h5_b0;
     t41 = HERO_STR_LIT(hero_str_5dbce935);
     t42 = h0_dir; t43 = h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(t42);
 #line 94
-    hero_print_str(t24); hero_print_bool(t25); hero_print_str(t26); hero_print_bool(t28); hero_print_str(t29); hero_print_bool(t40); hero_print_str(t41); hero_print_int(t43); hero_print_end(); goto bb6; bb6:
-#line 427 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    hero_print_str(t24); hero_print_bool(t25); hero_print_str(t26); hero_print_bool(t28); hero_print_str(t29); hero_print_bool(t40); hero_print_str(t41); hero_print_int(t43); hero_print_end(); goto hero_bb6; hero_bb6:
+#line 484 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_link);
     hero_str_release_at(&h2_named);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -437,20 +494,20 @@ void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir)
 }
 
 #line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) { HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0, t15, t20, t21; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t10, t11, t16, t22, t23, t24, t25, t26, t29, t30, t31, t32, t33, t34, t35; HERO_NODEBUG int64_t t2, t13, t14, t18, t19; HERO_NODEBUG const char *t12, *t17, *t27; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_6accdeb7); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 106, 47}; t2 = hero_os_pid(); } t3 = hero_int_to_str(t2); t29 = h4_own4; h4_own4 = t3; hero_str_decref(t29); t4 = hero_str_concat(t1, t3); t30 = h5_own5; h5_own5 = t4; hero_str_decref(t30); t31 = h0_root; hero_str_incref(t4); h0_root = t4; hero_str_decref(t31);
+void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) { HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0, t15, t20, t21; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t10, t11, t16, t22, t23, t24, t25, t26, t29, t30, t31, t32, t33, t34, t35; HERO_NODEBUG int64_t t2, t13, t14, t18, t19; HERO_NODEBUG const char *t12, *t17, *t27; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_6accdeb7); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 106, 47}; t2 = hero_os_pid(); } t3 = hero_int_to_str(t2); t29 = h4_own4; h4_own4 = t3; hero_str_decref(t29); t4 = hero_str_concat(t1, t3); t30 = h5_own5; h5_own5 = t4; hero_str_decref(t30); t31 = h0_root; hero_str_incref(t4); h0_root = t4; hero_str_decref(t31);
     t5 = h0_root; t6 = HERO_STR_LIT(hero_str_669890b); t7 = hero_str_concat(t5, t6); t32 = h6_own6; h6_own6 = t7; hero_str_decref(t32); t33 = h1_one; hero_str_incref(t7); h1_one = t7; hero_str_decref(t33);
     t8 = h0_root; t9 = HERO_STR_LIT(hero_str_66adcdd); t10 = hero_str_concat(t8, t9); t34 = h7_own7; h7_own7 = t10; hero_str_decref(t34); t35 = h2_two; hero_str_incref(t10); h2_two = t10; hero_str_decref(t35);
 #line 110
-    t11 = h1_one; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 32}; t12 = hero_str_lend_at(t11, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 8}; t13 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t12, &hero_here)); } t14 = INT64_C(0); t15 = t13 != t14; h3_b0 = t15; if (t15) goto bb3; else goto bb2; bb1:
+    t11 = h1_one; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 32}; t12 = hero_str_lend_at(t11, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 8}; t13 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t12, &hero_here)); } t14 = INT64_C(0); t15 = t13 != t14; h3_b0 = t15; if (t15) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 113
     t24 = h1_one; h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(t24);
     t25 = h2_two; h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(t25);
-    t26 = h0_root; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 115, 36}; t27 = hero_str_lend_at(t26, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 115, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t27, &hero_here)); } goto bb6; bb2:
+    t26 = h0_root; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 115, 36}; t27 = hero_str_lend_at(t26, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 115, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t27, &hero_here)); } goto hero_bb6; hero_bb2:
 #line 110
-    t16 = h2_two; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 76}; t17 = hero_str_lend_at(t16, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 52}; t18 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t17, &hero_here)); } t19 = INT64_C(0); t20 = t18 != t19; h3_b0 = t20; goto bb3; bb3: t21 = h3_b0; if (t21) goto bb4; else goto bb5; bb4:
-    t22 = HERO_STR_LIT(hero_str_552d9e74); t23 = h0_root; hero_print_str(t22); hero_print_str(t23); hero_print_end(); goto bb6; bb5: goto bb1; bb6:
-#line 454 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t16 = h2_two; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 76}; t17 = hero_str_lend_at(t16, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero", "fixedbugs-438-a-link-is-written-through-and-stays-a-link.main", 110, 52}; t18 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t17, &hero_here)); } t19 = INT64_C(0); t20 = t18 != t19; h3_b0 = t20; goto hero_bb3; hero_bb3: t21 = h3_b0; if (t21) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t22 = HERO_STR_LIT(hero_str_552d9e74); t23 = h0_root; hero_print_str(t22); hero_print_str(t23); hero_print_end(); goto hero_bb6; hero_bb5: goto hero_bb1; hero_bb6:
+#line 511 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
@@ -463,22 +520,22 @@ void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) { HeroStr h0_ro
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 467 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 524 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 472 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 529 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 477 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 534 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 482 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 539 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 166 "<heroes library>"
@@ -486,27 +543,27 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 #line 166
 #define h1_status (*hero_lend_h1_status)
 #line 166
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
-    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 173
-    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 170
-    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto hero_bb13; hero_bb3: goto hero_bb1; hero_bb4:
 #line 175
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 174
-    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto hero_bb13; hero_bb6: goto hero_bb4; hero_bb7:
 #line 180
-    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 176
-    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto hero_bb13; hero_bb9: goto hero_bb7; hero_bb10:
 #line 182
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto hero_bb13; hero_bb11:
 #line 181
-    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 510 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto hero_bb13; hero_bb12: goto hero_bb10; hero_bb13:
+#line 567 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -524,24 +581,24 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     return t38;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
 
 #line 185 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
-    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 189
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 188
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+    t7 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 191
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto hero_bb7; hero_bb5:
 #line 190
-    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 545 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 602 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -550,142 +607,142 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
-HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1b9b98_retain(const h_0opt_1b9b98 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_1b9b98_release(h_0opt_1b9b98 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *a, const h_0opt_1b9b98 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_i8)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_1b9b98_eq(const h_0opt_1b9b98 *hero_a, const h_0opt_1b9b98 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_i8)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *elem) {
-    const h_0opt_1b9b98 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_1b9b98_hash(const void *hero_elem) {
+    const h_0opt_1b9b98 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_i8)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_i8)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("598660ce001428bf", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1ebc6ade22930759", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs438alinkiswrittenthroughandstaysalink\tfixedbugs-438-a-link-is-written-through-and-stays-a-link\n");
     h_fixedbugs438alinkiswrittenthroughandstaysalink_main();
     hero_runtime_check_leaks();

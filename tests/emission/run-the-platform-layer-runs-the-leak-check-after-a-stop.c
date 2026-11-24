@@ -28,6 +28,44 @@
 #include <hero_net.h>
 #include <the-platform-layer-stop.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -56,7 +113,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -119,30 +176,30 @@ HERO_STR_STATIC(hero_str_32909e0a, "a request to end is sent from another thread
 HERO_STR_STATIC(hero_str_37366225, "the worker's accept answered stopped: ");
 HERO_STR_STATIC(hero_str_2af20233, "main returns");
 
-#line 123 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 180 "theplatformlayerrunstheleakcheckafterastop.c"
 typedef int64_t (*h_0fn_65e16c85)(int64_t);
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -163,43 +220,43 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 13 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_listen(const char * a0, int64_t a1) { (void)(hero_net_listen)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_port(hero_net_socket * a0) { (void)(hero_net_port)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_accept(hero_net_socket * a0) { (void)(hero_net_accept)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_close(hero_net_socket * a0) { (void)(hero_net_close)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_listen(const char * hero_a0, int64_t hero_a1) { (void)(hero_net_listen)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_port(hero_net_socket * hero_a0) { (void)(hero_net_port)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_accept(hero_net_socket * hero_a0) { (void)(hero_net_accept)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_net_close(hero_net_socket * hero_a0) { (void)(hero_net_close)(hero_a0); }
 #line 20
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_thread_spawn(h_0fn_65e16c85 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_thread_spawn(h_0fn_65e16c85 hero_a0, int64_t hero_a1) { (void)(hero_thread_spawn)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_hero_thread_join(int64_t hero_a0) { (void)(hero_thread_join)(hero_a0); }
 #line 25
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_begin(int64_t a0) { (void)(stop_begin)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_send_after(int64_t a0, int64_t a1) { (void)(stop_send_after)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_note_port(int64_t a0) { (void)(stop_note_port)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_begin(int64_t hero_a0) { (void)(stop_begin)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_send_after(int64_t hero_a0, int64_t hero_a1) { (void)(stop_send_after)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerrunstheleakcheckafterastop_stop_note_port(int64_t hero_a0) { (void)(stop_note_port)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 187 "theplatformlayerrunstheleakcheckafterastop.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 244 "theplatformlayerrunstheleakcheckafterastop.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_theplatformlayerrunstheleakcheckafterastop_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b);
-HERO_TU_LOCAL uint64_t h_theplatformlayerrunstheleakcheckafterastop_0Socket_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_theplatformlayerrunstheleakcheckafterastop_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b);
+HERO_TU_LOCAL uint64_t h_theplatformlayerrunstheleakcheckafterastop_0Socket_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void);
 int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void);
@@ -207,16 +264,16 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port);
 void h_theplatformlayerrunstheleakcheckafterastop_main(void);
 int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port);
-__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {
     hero_signal_learn();
-    if (f == (void (*)(void))h_theplatformlayerrunstheleakcheckafterastop_serve) return (void (*)(void))h_0cb_theplatformlayerrunstheleakcheckafterastop_serve;
-    return f;
+    if (hero_f == (void (*)(void))h_theplatformlayerrunstheleakcheckafterastop_serve) return (void (*)(void))h_0cb_theplatformlayerrunstheleakcheckafterastop_serve;
+    return hero_f;
 }
 
 
 #line 11 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
 int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
-#line 220 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 277 "theplatformlayerrunstheleakcheckafterastop.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -228,7 +285,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 11 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
     return HERO_NET_STOPPED;
-#line 232 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 289 "theplatformlayerrunstheleakcheckafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -246,7 +303,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(void) {
 
 #line 24 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
 int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void) {
-#line 250 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 307 "theplatformlayerrunstheleakcheckafterastop.c"
     _Static_assert(HERO_RET_INT(STOP_REQUEST), "heroes-ffi-return STOP_REQUEST i64");
     _Static_assert(__builtin_constant_p(STOP_REQUEST), "heroes-ffi-const STOP_REQUEST");
 #pragma clang diagnostic push
@@ -258,7 +315,7 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 24 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
     return STOP_REQUEST;
-#line 262 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 319 "theplatformlayerrunstheleakcheckafterastop.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -275,27 +332,27 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 33 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
-int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) { hero_thread_guard("theplatformlayerrunstheleakcheckafterastop.serve"); hero_net_socket * h1_listener; hero_net_socket * h2_accepted; int64_t h3_kind; HERO_NODEBUG int64_t h4_ret0, t3, t8, t10, t13, t21, t24, t25; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t9, *t11, *t12, *t14, *t15, *t17, *t19, *t22; HERO_NODEBUG bool t7, t16; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 34, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h0_port; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 34, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
+int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) { hero_thread_guard("theplatformlayerrunstheleakcheckafterastop.serve"); hero_net_socket * h1_listener; hero_net_socket * h2_accepted; int64_t h3_kind; HERO_NODEBUG int64_t h4_ret0, t3, t8, t10, t13, t21, t24, t25; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t9, *t11, *t12, *t14, *t15, *t17, *t19, *t22; HERO_NODEBUG bool t7, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 34, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h0_port; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 34, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
 #line 36
-    t5 = h1_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 36, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto bb2; else goto bb3; bb1:
+    t5 = h1_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 36, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 38
-    t9 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 38, 20}; hero_handle_alive_at(t9, "the argument `s` of `hero_net_port`", &hero_here); t10 = hero_net_port(t9); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 38, 5}; (void)stop_note_port(t10); }
-    t11 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 39, 16}; hero_handle_alive_at(t11, "the argument `listener` of `hero_net_accept`", &hero_here); t12 = hero_net_accept(t11); hero_handle_acquired_at(t12, "hero_net_close", &hero_here); } h2_accepted = t12;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 40, 12}; t13 = hero_net_last_error(); } h3_kind = t13;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 41, 5}; (void)stop_note_done(); }
+    t9 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 38, 20}; hero_handle_alive_at(t9, "the argument `s` of `hero_net_port`", &hero_here); t10 = hero_net_port(t9); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 38, 5}; (void)stop_note_port(t10); }
+    t11 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 39, 16}; hero_handle_alive_at(t11, "the argument `listener` of `hero_net_accept`", &hero_here); t12 = hero_net_accept(t11); hero_handle_acquired_at(t12, "hero_net_close", &hero_here); } h2_accepted = t12;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 40, 12}; t13 = hero_net_last_error(); } h3_kind = t13;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 41, 5}; (void)stop_note_done(); }
 #line 43
-    t14 = h2_accepted; t15 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 43, 8}; t16 = !hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto bb5; else goto bb6; bb2:
+    t14 = h2_accepted; t15 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 43, 8}; t16 = !hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 37
-    t8 = INT64_C(-2); h4_ret0 = t8; goto bb7; bb3: goto bb1; bb4:
+    t8 = INT64_C(-2); h4_ret0 = t8; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 47
-    t22 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 47, 9}; { hero_handle_alive_at(t22, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t22, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t22); if (hero_handle_ended(t22, hero_life_0_0) && h1_listener == t22) h1_listener = hero_handle_dead(); } }
-    t24 = h3_kind; h4_ret0 = t24; goto bb7; bb5:
+    t22 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 47, 9}; { hero_handle_alive_at(t22, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t22, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t22); if (hero_handle_ended(t22, hero_life_0_0) && h1_listener == t22) h1_listener = hero_handle_dead(); } }
+    t24 = h3_kind; h4_ret0 = t24; goto hero_bb7; hero_bb5:
 #line 44
-    t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 44, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
-    t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 45, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
-    t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 299 "theplatformlayerrunstheleakcheckafterastop.c"
+    t17 = h2_accepted; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 44, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
+    t19 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.serve", 45, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
+    t21 = INT64_C(-1); h4_ret0 = t21; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 356 "theplatformlayerrunstheleakcheckafterastop.c"
     t25 = h4_ret0;
     return t25;
 }
@@ -303,21 +360,22 @@ int64_t h_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) { he
 int64_t h_0cb_theplatformlayerrunstheleakcheckafterastop_serve(int64_t h0_port) {
     hero_callback_entered("theplatformlayerrunstheleakcheckafterastop.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerrunstheleakcheckafterastop_serve(h0_port);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 50 "tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero"
-void h_theplatformlayerrunstheleakcheckafterastop_main(void) { hero_net_socket * h0_kept; int64_t h1_worker; int64_t h2_kind; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t3, t4, t5, t7, t8, t9, t10, t18, t19, t20, t27, t28, t29, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t6, t12, t15, t16, t22, t23, t24, t25, t26, t30, t31, t32, t33; HERO_NODEBUG const char *t11; HERO_NODEBUG hero_net_socket *t13, *t14; HERO_NODEBUG bool t17, t34; HERO_NODEBUG h_0fn_48ac9712 t21; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 51, 73}; t2 = stop_begin(t1); } t3 = HERO_STR_LIT(hero_str_3d09994f); t4 = hero_int_to_str(t2); t39 = h3_own3; h3_own3 = t4; hero_str_decref(t39); t5 = hero_str_concat(t3, t4); t40 = h4_own4; h4_own4 = t5; hero_str_decref(t40); hero_print_str(t5); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 52, 34}; t6 = hero_net_catch_stop(); } t7 = HERO_STR_LIT(hero_str_64d754d7); t8 = hero_int_to_str(t6); t41 = h5_own5; h5_own5 = t8; hero_str_decref(t41); t9 = hero_str_concat(t7, t8); t42 = h6_own6; h6_own6 = t9; hero_str_decref(t42); hero_print_str(t9); hero_print_end();
-    t10 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 53, 37}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 53, 12}; t13 = hero_net_listen(hero_cstr_nonnull_at(t11, &hero_here), t12); hero_handle_acquired_at(t13, "hero_net_close", &hero_here); } h0_kept = t13;
-    t14 = h0_kept; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 54, 68}; hero_handle_alive_at(t14, "the argument `s` of `hero_net_port`", &hero_here); t15 = hero_net_port(t14); } t16 = INT64_C(0); t17 = t15 > t16; t18 = HERO_STR_LIT(hero_str_6cd66b3); t19 = hero_bool_to_str(t17); t43 = h7_own7; h7_own7 = t19; hero_str_decref(t43); t20 = hero_str_concat(t18, t19); t44 = h8_own8; h8_own8 = t20; hero_str_decref(t44); hero_print_str(t20); hero_print_end();
-    t21 = h_theplatformlayerrunstheleakcheckafterastop_serve; t22 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 55, 14}; t23 = hero_thread_spawn((h_0fn_65e16c85)hero_callback_of((void (*)(void))t21), t22); } h1_worker = t23;
-    t24 = h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(); t25 = INT64_C(300); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 56, 60}; t26 = stop_send_after(t24, t25); } t27 = HERO_STR_LIT(hero_str_32909e0a); t28 = hero_int_to_str(t26); t45 = h9_own9; h9_own9 = t28; hero_str_decref(t45); t29 = hero_str_concat(t27, t28); t46 = h10_own10; h10_own10 = t29; hero_str_decref(t46); hero_print_str(t29); hero_print_end();
-    t30 = h1_worker; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 57, 12}; t31 = hero_thread_join(t30); } h2_kind = t31;
+void h_theplatformlayerrunstheleakcheckafterastop_main(void) { hero_net_socket * h0_kept; int64_t h1_worker; int64_t h2_kind; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t3, t4, t5, t7, t8, t9, t10, t18, t19, t20, t27, t28, t29, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48; HERO_NODEBUG int64_t t1, t2, t6, t12, t15, t16, t22, t23, t24, t25, t26, t30, t31, t32, t33; HERO_NODEBUG const char *t11; HERO_NODEBUG hero_net_socket *t13, *t14; HERO_NODEBUG bool t17, t34; HERO_NODEBUG h_0fn_48ac9712 t21; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 51, 73}; t2 = stop_begin(t1); } t3 = HERO_STR_LIT(hero_str_3d09994f); t4 = hero_int_to_str(t2); t39 = h3_own3; h3_own3 = t4; hero_str_decref(t39); t5 = hero_str_concat(t3, t4); t40 = h4_own4; h4_own4 = t5; hero_str_decref(t40); hero_print_str(t5); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 52, 34}; t6 = hero_net_catch_stop(); } t7 = HERO_STR_LIT(hero_str_64d754d7); t8 = hero_int_to_str(t6); t41 = h5_own5; h5_own5 = t8; hero_str_decref(t41); t9 = hero_str_concat(t7, t8); t42 = h6_own6; h6_own6 = t9; hero_str_decref(t42); hero_print_str(t9); hero_print_end();
+    t10 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 53, 37}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 53, 12}; t13 = hero_net_listen(hero_cstr_nonnull_at(t11, &hero_here), t12); hero_handle_acquired_at(t13, "hero_net_close", &hero_here); } h0_kept = t13;
+    t14 = h0_kept; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 54, 68}; hero_handle_alive_at(t14, "the argument `s` of `hero_net_port`", &hero_here); t15 = hero_net_port(t14); } t16 = INT64_C(0); t17 = t15 > t16; t18 = HERO_STR_LIT(hero_str_6cd66b3); t19 = hero_bool_to_str(t17); t43 = h7_own7; h7_own7 = t19; hero_str_decref(t43); t20 = hero_str_concat(t18, t19); t44 = h8_own8; h8_own8 = t20; hero_str_decref(t44); hero_print_str(t20); hero_print_end();
+    t21 = h_theplatformlayerrunstheleakcheckafterastop_serve; t22 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 55, 14}; t23 = hero_thread_spawn((h_0fn_65e16c85)hero_callback_of((void (*)(void))t21), t22); } h1_worker = t23;
+    t24 = h_theplatformlayerrunstheleakcheckafterastop_STOP_REQUEST(); t25 = INT64_C(300); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 56, 60}; t26 = stop_send_after(t24, t25); } t27 = HERO_STR_LIT(hero_str_32909e0a); t28 = hero_int_to_str(t26); t45 = h9_own9; h9_own9 = t28; hero_str_decref(t45); t29 = hero_str_concat(t27, t28); t46 = h10_own10; h10_own10 = t29; hero_str_decref(t46); hero_print_str(t29); hero_print_end();
+    t30 = h1_worker; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-runs-the-leak-check-after-a-stop.hero", "the-platform-layer-runs-the-leak-check-after-a-stop.main", 57, 12}; t31 = hero_thread_join(t30); } h2_kind = t31;
     t32 = h2_kind; t33 = h_theplatformlayerrunstheleakcheckafterastop_HERO_NET_STOPPED(); t34 = t32 == t33; t35 = HERO_STR_LIT(hero_str_37366225); t36 = hero_bool_to_str(t34); t47 = h11_own11; h11_own11 = t36; hero_str_decref(t47); t37 = hero_str_concat(t35, t36); t48 = h12_own12; h12_own12 = t37; hero_str_decref(t48); hero_print_str(t37); hero_print_end();
     t38 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t38); hero_print_end();
-#line 321 "theplatformlayerrunstheleakcheckafterastop.c"
+#line 379 "theplatformlayerrunstheleakcheckafterastop.c"
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -330,117 +388,117 @@ void h_theplatformlayerrunstheleakcheckafterastop_main(void) { hero_net_socket *
     hero_str_release_at(&h12_own12);
     return;
 }
-HERO_TU_LOCAL bool h_theplatformlayerrunstheleakcheckafterastop_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_theplatformlayerrunstheleakcheckafterastop_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_theplatformlayerrunstheleakcheckafterastop_0Socket_hash(const void *elem) {
-    hero_net_socket * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_theplatformlayerrunstheleakcheckafterastop_0Socket_hash(const void *hero_elem) {
+    hero_net_socket * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3bf59bd857918073", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("353fbb6c4294daaf", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("theplatformlayerrunstheleakcheckafterastop\tthe-platform-layer-runs-the-leak-check-after-a-stop\n");
     h_theplatformlayerrunstheleakcheckafterastop_main();
     hero_runtime_check_leaks();

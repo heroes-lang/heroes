@@ -207,6 +207,16 @@ constant MATH_LINES: [str]
 # after them, and around the headers of every probe an emitter module writes
 # (`reserved_around`); `macro_guard`'s tests hold the two files to this list
 # and every emitter module and runtime header to it. Sorted by bytes.
+#
+# **And C's keywords, every one, and the reserved spellings of the
+# attributes the unit writes** (2026-11-24): a header's `#define default 1`
+# made every `switch` and `_Generic` of the unit an internal error at exit
+# 2, and `#define unused 1` every `__attribute__((unused))`, the unit
+# spelling the attribute in the plain form a header may define. So the unit
+# writes `__unused__`, `__used__`, `__nodebug__`, `__constructor__` and
+# `__no_sanitize__`, names no header has to define, and each is saved and
+# given back with the rest; a keyword is saved whether or not the unit
+# writes it today, since none is a header's to redefine.
 constant RESERVED_LINES: [str]
     [
         "_Alignof _Atomic _Bool _CRT_SECURE_NO_WARNINGS _Generic _Noreturn"
@@ -220,12 +230,15 @@ constant RESERVED_LINES: [str]
         "__UINT64_C_SUFFIX__ __UINT64_TYPE__ __UINT8_TYPE__ __UINTPTR_TYPE__"
         "__asm__ __atomic_always_lock_free __attribute__ __builtin_add_overflow"
         "__builtin_choose_expr __builtin_classify_type __builtin_constant_p"
-        "__builtin_frame_address"
-        "__builtin_huge_val __builtin_memcpy __builtin_memmove __builtin_memset"
-        "__builtin_mul_overflow __builtin_offsetof __builtin_return_address"
-        "__builtin_strlen"
+        "__builtin_frame_address __builtin_huge_val __builtin_memcpy"
+        "__builtin_memmove __builtin_memset __builtin_mul_overflow"
+        "__builtin_offsetof __builtin_return_address __builtin_strlen"
         "__builtin_sub_overflow __builtin_types_compatible_p __cleanup__"
-        "__has_feature __noinline__ __optnone__ __typeof__"
+        "__constructor__ __has_feature __no_sanitize__ __nodebug__ __noinline__"
+        "__optnone__ __typeof__ __unused__ __used__ auto break case char const"
+        "continue default do double else enum extern float for goto if inline"
+        "int long register restrict return short signed sizeof static struct"
+        "switch typedef union unsigned void volatile while"
     ]
 
 # The line that saves the reserved names, and the one that gives them back.

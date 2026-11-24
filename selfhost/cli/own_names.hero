@@ -32,6 +32,8 @@
 # (the compiler-engineer's W4).
 
 use ast
+use check/state
+use checker
 use cli/caret_bytes
 use cli/clang_excerpt
 use cli/clang_first
@@ -45,10 +47,20 @@ use cli/standard_name
 use cli/strings
 use cli/toolchain
 use diag
+use emit
 use emit/clang_place
 use emit/ffi_lookup
+use emit/guarded_names
+use emit/macro_guard
 use emit/shadowed
+use emit/unit_names
+use ir/containers
+use ir/lower
+use ir/mono
+use ir/own as ir_own
+use ir/place_store
 use parse
+use resolve
 use source
 
 constant FORMS: str
@@ -330,6 +342,58 @@ test "the runtime's names and macros are of the compiler's own forms or C's own 
             stray @ stray.push(name)
 
     assert stray.join(" ") == ""
+
+# **Every name the C this compiler writes after a program's groups is one a
+# header's macro cannot rewrite unblamed** (2026-11-24, lane macro-members;
+# lane selfhost-reds's finding): of the forms above, one the guard or the
+# reserved pair gives back after the groups, C's keywords among them, or a
+# name the program binds. And every name that C DECLARES, a member, a
+# label, a parameter or a local, is of the forms above or the program's: a
+# word the guard gives back is the program's to bind, a header's macro over
+# it then pushed again past the close. Until that day the unit wrote `tag`,
+# `as`, `ok` and `err` in every `T?`, `head` in a thread's box, `c_<case>`,
+# `bb<N>`, `a<N>`, `o`, `found`, `v`, `elem` and the attributes' plain
+# spellings, each an internal error at exit 2 or a correct program refused
+# under a header defining it. Read from the unit a program of every shape
+# compiles to, its program and its tests alike; the pragma lines are held
+# by `emit/header_state.hero`'s test, which plants a macro over each word.
+test "every name the unit writes after its groups is one a header's macro cannot rewrite unblamed"
+    text = "extern \"scan.h\"\n    function scan_add(x: i64, y: i64) -> i64\n    function scan_apply(callback: (function(i64) -> i64), x: i64) -> i64\n    record Pair tag scan_pair\n        left: i64\n        right: i64\n    function scan_grow(@pair: Pair)\n    constant SCAN_LIMIT: i64\n\nvariant Shape\n    circle\n        r: i64\n    none\n\nfunction twice(x: i64) -> i64\n    return x * 2\n\nfunction shout(word: str) -> str\n    return word + \"!\"\n\nfunction half(x: i64) -> i64?\n    if x % 2 != 0\n        return fail(code: \"odd\", msg: \"odd\")\n    return ok(x / 2)\n\nfunction area(s: Shape) -> i64\n    return match s\n        .circle c => c.r\n        .none     => 0\n\nfunction main()\n    t = spawn(twice, 1).must()\n    w = spawn(shout, \"a\").must()\n    m: (mailbox i64) = mailbox()\n    m.send(1).must()\n    got = m.receive(within_ms: 0).must()\n    places = {\"a\": 1}\n    pair: Pair @= Pair(left: 1, right: 2)\n    scan_grow(@pair)\n    xs = [1, 2]\n    assert xs == [1, 2]\n    print(t.wait(), w.wait(), got, places[\"a\"].default(0), half(2).default(0), area(.circle(r: 1)), scan_add(x: 1, y: 2), scan_apply(callback: twice, x: 1), pair.left, SCAN_LIMIT)\n\ntest \"half\"\n    assert half(4).default(0) == 2\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    p: containers.Program @= low.program
+    cc: state.Checked @= c
+    assert mono.run(@p, @cc, s, parsed.decls).len() == 0
+    place_store.run(@p)
+    ir_own.run(@p, cc)
+    allowed: {str: bool} @= macro_guard.bound_names(s, parsed.decls)
+
+    for name in strings.with_all(list: guarded_names.names(), more: guarded_names.reserved())
+        allowed[name] @ true
+
+    outside: [str] @= []
+    declared: [str] @= []
+
+    for target in [emit.emit_for(target: .program_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test", sources: "0123456789abcdef"), emit.emit_for(target: .tests_build, p: p, c: cc, s: s, decls: parsed.decls, version: "0.0.0-test", sources: "0123456789abcdef")]
+        assert target.diagnostics.len() == 0
+        at = clang_place.offset_of(text: target.c, needle: macro_guard.CLOSE_LINE).must()
+        words = unit_names.unit_words(target.c.slice(from: at + macro_guard.CLOSE_LINE.len(), to: target.c.len()))
+
+        for one in words
+            blamed = reserved(one.name) || emitted_form(one.name) != "" || !allowed[one.name].is_err()
+
+            if !blamed && !holds(outside, one.name)
+                outside @ outside.push(one.name)
+
+            if one.declared && !reserved(one.name) && emitted_form(one.name) == "" && macro_guard.bound_names(s, parsed.decls)[one.name].is_err() && !holds(declared, one.name)
+                declared @ declared.push(one.name)
+
+    assert outside.join(" ") == ""
+    assert declared.join(" ") == ""
 
 constant C11: str
     "assert.h complex.h ctype.h errno.h fenv.h float.h inttypes.h iso646.h limits.h locale.h math.h setjmp.h signal.h stdalign.h stdarg.h stdatomic.h stdbool.h stddef.h stdint.h stdio.h stdlib.h string.h time.h wchar.h wctype.h"

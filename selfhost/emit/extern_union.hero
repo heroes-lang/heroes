@@ -176,11 +176,11 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
         # them it is a build failure that names what depends on it.
         writer.line(
             @w,
-            text: "_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");"
+            text: "_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, \"a union must classify as 13, or every heroes-ffi-union assertion above is vacuous\");"
         )
         writer.line(
             @w,
-            text: "_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");"
+            text: "_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, \"a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record\");"
         )
         writer.blank(@w)
 

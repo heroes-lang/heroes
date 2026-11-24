@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -121,26 +121,26 @@ typedef struct h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetoo
 } h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -149,43 +149,43 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 161 "fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_helper(int64_t h0_n);
 void h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_fill(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_out, int64_t h0_n);
@@ -199,7 +199,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2316aprogramrecordpastamebibyte
 #line 72
 #define t2 (*hero_big_t2)
 #line 72
-    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h1_e = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h1_e = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_fill(&t2, t1); h1_e = t2;
     t3 = h1_e.f_a.f_a.f_a.f_a.f_a.f_a.f_x; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_e); return t3;
 #line 206 "fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns.c"
@@ -252,7 +252,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibyteret
 #line 76
 #define t56 (*hero_big_t56)
 #line 76
-    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 h1_e0; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 h2_e1; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 h3_e2; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 h4_e3; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_h5_e4 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_h6_e5 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 t11, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 t20, t21, t22, t23, t24, t25, t26, t27, t28; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 t29, t30, t31, t32, t33, t34, t35, t36, t37; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t38 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t39 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t40 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t41 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t42 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t43 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t44 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t45 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t46 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t47 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t48 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t49 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t50 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t51 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t52 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t53 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t54 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t55 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t56 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 h1_e0; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 h2_e1; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 h3_e2; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 h4_e3; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_h5_e4 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_h6_e5 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 t11, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 t20, t21, t22, t23, t24, t25, t26, t27, t28; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 t29, t30, t31, t32, t33, t34, t35, t36, t37; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t38 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t39 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t40 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t41 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t42 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t43 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t44 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t45 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *const hero_big_t46 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t47 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t48 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t49 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t50 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t51 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t52 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t53 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t54 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *const hero_big_t55 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t56 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0){.f_x = t1}; h1_e0 = t2;
     t3 = h1_e0; t4 = h1_e0; t5 = h1_e0; t6 = h1_e0; t7 = h1_e0; t8 = h1_e0; t9 = h1_e0; t10 = h1_e0; t11 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; h2_e1 = t11;
     t12 = h2_e1; t13 = h2_e1; t14 = h2_e1; t15 = h2_e1; t16 = h2_e1; t17 = h2_e1; t18 = h2_e1; t19 = h2_e1; t20 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2){.f_a = t12, .f_b = t13, .f_c = t14, .f_d = t15, .f_e = t16, .f_f = t17, .f_g = t18, .f_h = t19}; h3_e2 = t20;
@@ -293,7 +293,7 @@ __attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibyteret
 #line 85
 #define t7 (*hero_big_t7)
 #line 85
-    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h1_out = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3, t4, t5, t6; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t7 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h1_out = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3, t4, t5, t6; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t7 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_fill(&t2, t1); h1_out = t2;
     t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.hero", "fixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs.make", 87, 21); t6 = h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_helper(t5); hero_print_int(t6); hero_print_end();
     t7 = h1_out; if (hero_out != NULL) *hero_out = t7; hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_out); return;
@@ -310,281 +310,281 @@ __attribute__((__noinline__)) void h_fixedbugs2316aprogramrecordpastamebibyteret
 #line 90
 #define t2 (*hero_big_t2)
 #line 90
-    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h0_e = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto bb0; bb0:
+    h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_h0_e = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *const hero_big_t2 = (h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *)hero_frame_take(sizeof(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(7); h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_make(&t2, t1); h0_e = t2;
     t3 = h0_e.f_h.f_h.f_h.f_h.f_h.f_h.f_x; hero_print_int(t3); hero_print_end(); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h0_e); return;
 #line 317 "fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns.c"
 }
 #undef h0_e
 #undef t2
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *b) {
-    if (!(a->f_x == b->f_x)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E0_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E1_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E2_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E3_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E5 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E4_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *b) {
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_a, &b->f_a))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_b, &b->f_b))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_c, &b->f_c))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_d, &b->f_d))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_e, &b->f_e))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_f, &b->f_f))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_g, &b->f_g))) return false;
-    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&a->f_h, &b->f_h))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_eq(const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_a, const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_b) {
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_a, &hero_b->f_a))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_b, &hero_b->f_b))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_c, &hero_b->f_c))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_d, &hero_b->f_d))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_e, &hero_b->f_e))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_f, &hero_b->f_f))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_g, &hero_b->f_g))) return false;
+    if (!(h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_eq(&hero_a->f_h, &hero_b->f_h))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_hash(const void *elem) {
-    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_a)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_b)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_c)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_d)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_e)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_g)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&v->f_h)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E6_hash(const void *hero_elem) {
+    const h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_E6 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_0E5_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0199d0cf116efb85", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7879c4b8311c6021", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns\tfixedbugs-2316-a-program-record-past-a-mebibyte-returned-after-a-callee-took-one-runs\n");
     h_fixedbugs2316aprogramrecordpastamebibytereturnedafteracalleetookoneruns_main();
     hero_runtime_check_leaks();

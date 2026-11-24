@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -70,26 +70,26 @@ typedef struct h_fixedbugs016anassertonrecordswritesbothconstructions_Named {
 } h_fixedbugs016anassertonrecordswritesbothconstructions_Named;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -98,47 +98,47 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 110 "fixedbugs016anassertonrecordswritesbothconstructions.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v);
-HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v);
-HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v);
+HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-HERO_TU_LOCAL void h_0show_4a9e335d(HeroShow *o, const void *p);
-HERO_TU_LOCAL void h_0show_4ce7463f(HeroShow *o, const void *p);
-HERO_TU_LOCAL void h_0show_610c13af(HeroShow *o, const void *p);
+HERO_TU_LOCAL void h_0show_4a9e335d(HeroShow *hero_o, const void *hero_p);
+HERO_TU_LOCAL void h_0show_4ce7463f(HeroShow *hero_o, const void *hero_p);
+HERO_TU_LOCAL void h_0show_610c13af(HeroShow *hero_o, const void *hero_p);
 
 void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void);
 
 #line 17 "tests/golden/run/fixedbugs-016-an-assert-on-records-writes-both-constructions.hero"
-void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void) { h_fixedbugs016anassertonrecordswritesbothconstructions_Named h0_a = {0}; h_fixedbugs016anassertonrecordswritesbothconstructions_Named h1_b = {0}; HERO_NODEBUG h_fixedbugs016anassertonrecordswritesbothconstructions_Named h2_assert0 = {0}, h3_assert1 = {0}, h5_own5 = {0}, h7_own7 = {0}, t10, t18, t20, t21, t23, t24, t26, t27, t29, t30, t31, t32; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t7, *t15, *t25, *t28; HERO_NODEBUG HeroStr t1, t5, t6, t11, t19; HERO_NODEBUG int64_t t2, t3, t12, t13; HERO_NODEBUG h_fixedbugs016anassertonrecordswritesbothconstructions_Point t4, t14; HERO_NODEBUG double t8, t16; HERO_NODEBUG bool t9, t17, t22; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void) { h_fixedbugs016anassertonrecordswritesbothconstructions_Named h0_a = {0}; h_fixedbugs016anassertonrecordswritesbothconstructions_Named h1_b = {0}; HERO_NODEBUG h_fixedbugs016anassertonrecordswritesbothconstructions_Named h2_assert0 = {0}, h3_assert1 = {0}, h5_own5 = {0}, h7_own7 = {0}, t10, t18, t20, t21, t23, t24, t26, t27, t29, t30, t31, t32; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h6_own6 = {0}, *t7, *t15, *t25, *t28; HERO_NODEBUG HeroStr t1, t5, t6, t11, t19; HERO_NODEBUG int64_t t2, t3, t12, t13; HERO_NODEBUG h_fixedbugs016anassertonrecordswritesbothconstructions_Point t4, t14; HERO_NODEBUG double t8, t16; HERO_NODEBUG bool t9, t17, t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_28123646); t2 = INT64_C(0); t3 = INT64_C(0); t4 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Point){.f_x = t2, .f_y = t3}; t5 = HERO_STR_LIT(hero_str_74); t6 = HERO_STR_LIT(hero_str_75); t7 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t25 = h4_own4; h4_own4 = t7; hero_array_decref(t25); t8 = 0x1.8p+0; t9 = true; hero_str_incref(t1); hero_array_incref(t7); t10 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Named){.f_label = t1, .f_at = t4, .f_tags = t7, .f_weight = t8, .f_open = t9}; t26 = h5_own5; h5_own5 = t10; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t26); t27 = h0_a; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t10); h0_a = t10; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t27);
     t11 = HERO_STR_LIT(hero_str_61); t12 = INT64_C(0); t13 = INT64_C(1); t14 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Point){.f_x = t12, .f_y = t13}; t15 = hero_array_new(&hero_desc_str, 1); t28 = h6_own6; h6_own6 = t15; hero_array_decref(t28); t16 = 0x1p+1; t17 = false; hero_str_incref(t11); hero_array_incref(t15); t18 = (h_fixedbugs016anassertonrecordswritesbothconstructions_Named){.f_label = t11, .f_at = t14, .f_tags = t15, .f_weight = t16, .f_open = t17}; t29 = h7_own7; h7_own7 = t18; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t29); t30 = h1_b; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t18); h1_b = t18; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t30);
-    t19 = HERO_STR_LIT(hero_str_713ef5c); t20 = h0_a; t21 = h1_b; t22 = h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(&t20, &t21); t31 = h2_assert0; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t20); h2_assert0 = t20; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t31); t32 = h3_assert1; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t21); h3_assert1 = t21; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t32); if (t22) goto bb1; else goto bb2; bb1:
+    t19 = HERO_STR_LIT(hero_str_713ef5c); t20 = h0_a; t21 = h1_b; t22 = h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(&t20, &t21); t31 = h2_assert0; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t20); h2_assert0 = t20; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t31); t32 = h3_assert1; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(&t21); h3_assert1 = t21; h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(&t32); if (t22) goto hero_bb1; else goto hero_bb2; hero_bb1:
 #line 143 "fixedbugs016anassertonrecordswritesbothconstructions.c"
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h0_a));
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h1_b));
@@ -149,191 +149,191 @@ void h_fixedbugs016anassertonrecordswritesbothconstructions_main(void) { h_fixed
     hero_array_release_at(&h6_own6);
     h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(hero_slot_escape(&h7_own7));
     return;
-bb2:
+hero_bb2:
 #line 20 "tests/golden/run/fixedbugs-016-an-assert-on-records-writes-both-constructions.hero"
     t23 = h2_assert0; t24 = h3_assert1;
 #line 156 "fixedbugs016anassertonrecordswritesbothconstructions.c"
     hero_panic_assert_shown_at(t19, h_0show_610c13af, &t23, &t24, 1, "fixedbugs-016-an-assert-on-records-writes-both-constructions.hero", "fixedbugs-016-an-assert-on-records-writes-both-constructions.main", 20, 12);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *b) {
-    if (!(a->f_x == b->f_x)) return false;
-    if (!(a->f_y == b->f_y)) return false;
+HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
+    if (!(hero_a->f_y == hero_b->f_y)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(const void *elem) {
-    const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_y)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(const void *hero_elem) {
+    const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_y)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v) {
-    hero_str_incref(v->f_label);
-    hero_array_incref(v->f_tags);
+HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_retain(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v) {
+    hero_str_incref(hero_v->f_label);
+    hero_array_incref(hero_v->f_tags);
 }
 
-HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v) {
-    hero_str_decref(v->f_label);
-    hero_array_decref(v->f_tags);
+HERO_TU_LOCAL void h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_release(h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v) {
+    hero_str_decref(hero_v->f_label);
+    hero_array_decref(hero_v->f_tags);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *b) {
-    if (!(hero_str_eq(a->f_label, b->f_label))) return false;
-    if (!(h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(&a->f_at, &b->f_at))) return false;
-    if (!(hero_array_eq(a->f_tags, b->f_tags))) return false;
-    if (!(a->f_weight == b->f_weight)) return false;
-    if (!(a->f_open == b->f_open)) return false;
+HERO_TU_LOCAL bool h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_eq(const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_a, const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_b) {
+    if (!(hero_str_eq(hero_a->f_label, hero_b->f_label))) return false;
+    if (!(h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_eq(&hero_a->f_at, &hero_b->f_at))) return false;
+    if (!(hero_array_eq(hero_a->f_tags, hero_b->f_tags))) return false;
+    if (!(hero_a->f_weight == hero_b->f_weight)) return false;
+    if (!(hero_a->f_open == hero_b->f_open)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_hash(const void *elem) {
-    const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_label)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(&v->f_at)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_array)->hash(&v->f_tags)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_f64)->hash(&v->f_weight)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_bool)->hash(&v->f_open)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs016anassertonrecordswritesbothconstructions_0Named_hash(const void *hero_elem) {
+    const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_label)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs016anassertonrecordswritesbothconstructions_0Point_hash(&hero_v->f_at)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_tags)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_f64)->hash(&hero_v->f_weight)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_bool)->hash(&hero_v->f_open)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0show_4a9e335d(HeroShow *o, const void *p) {
-    const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *v = p;
-    hero_show_text(o, "Point(");
-    hero_show_open(o);
-    hero_show_text(o, "x: ");
-    hero_show_child(o, hero_show_i64, &v->f_x);
-    hero_show_text(o, ", y: ");
-    hero_show_child(o, hero_show_i64, &v->f_y);
-    hero_show_close(o);
-    hero_show_text(o, ")");
+HERO_TU_LOCAL void h_0show_4a9e335d(HeroShow *hero_o, const void *hero_p) {
+    const h_fixedbugs016anassertonrecordswritesbothconstructions_Point *hero_v = hero_p;
+    hero_show_text(hero_o, "Point(");
+    hero_show_open(hero_o);
+    hero_show_text(hero_o, "x: ");
+    hero_show_child(hero_o, hero_show_i64, &hero_v->f_x);
+    hero_show_text(hero_o, ", y: ");
+    hero_show_child(hero_o, hero_show_i64, &hero_v->f_y);
+    hero_show_close(hero_o);
+    hero_show_text(hero_o, ")");
 }
 
-HERO_TU_LOCAL void h_0show_4ce7463f(HeroShow *o, const void *p) {
-    hero_show_array(o, p, hero_show_str);
+HERO_TU_LOCAL void h_0show_4ce7463f(HeroShow *hero_o, const void *hero_p) {
+    hero_show_array(hero_o, hero_p, hero_show_str);
 }
 
-HERO_TU_LOCAL void h_0show_610c13af(HeroShow *o, const void *p) {
-    const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *v = p;
-    hero_show_text(o, "Named(");
-    hero_show_open(o);
-    hero_show_text(o, "label: ");
-    hero_show_child(o, hero_show_str, &v->f_label);
-    hero_show_text(o, ", at: ");
-    hero_show_child(o, h_0show_4a9e335d, &v->f_at);
-    hero_show_text(o, ", tags: ");
-    hero_show_child(o, h_0show_4ce7463f, &v->f_tags);
-    hero_show_text(o, ", weight: ");
-    hero_show_child(o, hero_show_f64, &v->f_weight);
-    hero_show_text(o, ", open: ");
-    hero_show_child(o, hero_show_bool, &v->f_open);
-    hero_show_close(o);
-    hero_show_text(o, ")");
+HERO_TU_LOCAL void h_0show_610c13af(HeroShow *hero_o, const void *hero_p) {
+    const h_fixedbugs016anassertonrecordswritesbothconstructions_Named *hero_v = hero_p;
+    hero_show_text(hero_o, "Named(");
+    hero_show_open(hero_o);
+    hero_show_text(hero_o, "label: ");
+    hero_show_child(hero_o, hero_show_str, &hero_v->f_label);
+    hero_show_text(hero_o, ", at: ");
+    hero_show_child(hero_o, h_0show_4a9e335d, &hero_v->f_at);
+    hero_show_text(hero_o, ", tags: ");
+    hero_show_child(hero_o, h_0show_4ce7463f, &hero_v->f_tags);
+    hero_show_text(hero_o, ", weight: ");
+    hero_show_child(hero_o, hero_show_f64, &hero_v->f_weight);
+    hero_show_text(hero_o, ", open: ");
+    hero_show_child(hero_o, hero_show_bool, &hero_v->f_open);
+    hero_show_close(hero_o);
+    hero_show_text(hero_o, ")");
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4577e2515ac2efc6", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("48b91d8d30c9f424", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs016anassertonrecordswritesbothconstructions\tfixedbugs-016-an-assert-on-records-writes-both-constructions\n");
     h_fixedbugs016anassertonrecordswritesbothconstructions_main();
     hero_runtime_check_leaks();
