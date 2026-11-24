@@ -1,0 +1,146 @@
+# The intra predictions of VP8 (RFC 6386, section 12), as libwebp 1.6.0 makes
+# them: a 16x16 luma block, an 8x8 chroma block, or a 4x4 luma block filled
+# from the pixels above it and to its left, in a work area `BPS` wide whose
+# row above and column to the left the caller has filled. A DC prediction on
+# the picture's top row or left column averages only the side it has.
+
+use image/webp/internal/idct
+use image/webp/internal/modes
+
+# The width of a row of the work area.
+constant BPS: i64
+    32
+
+# The 16x16 luma prediction `mode` at `pos` of `px`, for the macroblock in
+# column `x` and row `y` of the picture.
+function luma(@px: [i64], pos: i64, mode: i64, x: i64, y: i64)
+    whole(px: @px, pos: pos, mode: mode, x: x, y: y, size: 16)
+
+# The 8x8 chroma prediction `mode` at `pos` of `px`.
+function chroma(@px: [i64], pos: i64, mode: i64, x: i64, y: i64)
+    whole(px: @px, pos: pos, mode: mode, x: x, y: y, size: 8)
+
+# A square of `size` predicted by a whole-macroblock `mode`.
+function whole(@px: [i64], pos: i64, mode: i64, x: i64, y: i64, size: i64)
+    if mode == modes.V_PRED
+        for j in range(from: 0, to: size)
+            for i in range(from: 0, to: size)
+                px[pos + j * BPS + i] @ px[pos - BPS + i]
+    else if mode == modes.H_PRED
+        for j in range(from: 0, to: size)
+            v = px[pos + j * BPS - 1]
+
+            for i in range(from: 0, to: size)
+                px[pos + j * BPS + i] @ v
+    else if mode == modes.TM_PRED
+        true_motion(px: @px, pos: pos, size: size)
+    else
+        shift = if size == 16
+            4
+        else
+            3
+        sum @= 0
+
+        for k in range(from: 0, to: size)
+            if y > 0
+                sum @ sum + px[pos - BPS + k]
+
+            if x > 0
+                sum @ sum + px[pos + k * BPS - 1]
+
+        v = if x > 0 && y > 0
+            sum + size >> shift + 1
+        else if x > 0 || y > 0
+            sum + (size >> 1) >> shift
+        else
+            128
+        fill(px: @px, pos: pos, size: size, v: v)
+
+# Every pixel of a square of `size` at `pos` set to `v`.
+function fill(@px: [i64], pos: i64, size: i64, v: i64)
+    for j in range(from: 0, to: size)
+        for i in range(from: 0, to: size)
+            px[pos + j * BPS + i] @ v
+
+# The row above plus the column to the left, less the corner, held to 0 to
+# 255.
+function true_motion(@px: [i64], pos: i64, size: i64)
+    corner = px[pos - BPS - 1]
+
+    for j in range(from: 0, to: size)
+        left = px[pos + j * BPS - 1] - corner
+
+        for i in range(from: 0, to: size)
+            px[pos + j * BPS + i] @ idct.clip(px[pos - BPS + i] + left)
+
+# The 4x4 predictions other than DC and TM, one row of sixteen codes a mode
+# (rows 0 and 1, DC and TM, unused), a pixel's code reading the pixels around
+# the block laid on one line, `edge_of`'s: below 100 the 3-tap average
+# `(e[c - 1] + 2 * e[c] + e[c + 1] + 2) >> 2` centred at `c`, from 100 the
+# 2-tap average `(e[c] + e[c + 1] + 1) >> 1` from `c - 100`, from 200 the
+# pixel `e[c - 200]` (libwebp's `VE4`, `HE4`, `LD4`, `RD4`, `VR4`, `VL4`,
+# `HD4`, `HU4`, in the RFC's order of the modes).
+constant PATTERNS: [[i64]]
+    [
+        []
+        []
+        [6, 7, 8, 9, 6, 7, 8, 9, 6, 7, 8, 9, 6, 7, 8, 9]
+        [4, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1]
+        [7, 8, 9, 10, 8, 9, 10, 11, 9, 10, 11, 12, 10, 11, 12, 13]
+        [5, 6, 7, 8, 4, 5, 6, 7, 3, 4, 5, 6, 2, 3, 4, 5]
+        [105, 106, 107, 108, 5, 6, 7, 8, 4, 105, 106, 107, 3, 5, 6, 7]
+        [106, 107, 108, 109, 7, 8, 9, 10, 107, 108, 109, 11, 8, 9, 10, 12]
+        [104, 5, 6, 7, 103, 4, 104, 5, 102, 3, 103, 4, 101, 2, 102, 3]
+        [103, 3, 102, 2, 102, 2, 101, 1, 101, 1, 201, 201, 201, 201, 201, 201]
+    ]
+
+# The pixels around the 4x4 block at `pos` on one line: the bottom-left pixel
+# twice, the column to the left from the bottom, the corner, the eight above
+# and the last of them again (L L K J I X A B C D E F G H H).
+function edge_of(px: [i64] lent, pos: i64) -> [i64]
+    b = BPS
+    l = px[pos + 3 * b - 1]
+    h = px[pos - b + 7]
+    return [
+        l
+        l
+        px[pos + 2 * b - 1]
+        px[pos + b - 1]
+        px[pos - 1]
+        px[pos - b - 1]
+        px[pos - b]
+        px[pos - b + 1]
+        px[pos - b + 2]
+        px[pos - b + 3]
+        px[pos - b + 4]
+        px[pos - b + 5]
+        px[pos - b + 6]
+        h
+        h
+    ]
+
+# The 4x4 prediction `mode` (`modes.B_DC` to 9) at `pos` of `px`, the eight
+# pixels above it and the four to its left read from the work area.
+function sub(@px: [i64], pos: i64, mode: i64)
+    if mode == modes.B_TM
+        true_motion(px: @px, pos: pos, size: 4)
+        return
+    e = edge_of(px, pos: pos)
+
+    if mode == modes.B_DC
+        fill(px: @px, pos: pos, size: 4, v: e[1] + e[2] + e[3] + e[4] + e[6] + e[7] + e[8] + e[9] + 4 >> 3)
+        return
+    codes = PATTERNS[mode]
+    k @= 0
+
+    while k < 16
+        c = codes[k]
+
+        v = if c >= 200
+            e[c - 200]
+        else if c >= 100
+            e[c - 100] + e[c - 99] + 1 >> 1
+        else
+            e[c - 1] + 2 * e[c] + e[c + 1] + 2 >> 2
+        px[pos + k / 4 * BPS + k % 4] @ v
+        k @ k + 1

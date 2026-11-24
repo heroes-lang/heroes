@@ -1,0 +1,213 @@
+# The coefficients of a macroblock read from its token partition (RFC 6386,
+# section 13), dequantized as they are read, as libwebp 1.6.0 reads them: the
+# DC block first where the macroblock has one, spread over the luma blocks by
+# the Walsh-Hadamard transform, then the sixteen luma blocks, the four of U and
+# the four of V, each block's first token read in the context of whether the
+# block above and the block to the left had any.
+
+use image/webp/internal/boolread
+use image/webp/internal/idct
+use image/webp/internal/quant
+
+# The order the tokens of a block fill its coefficients.
+constant ZIGZAG: [i64]
+    [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15]
+
+# The band of each position, and of the place past the last.
+constant BANDS: [i64]
+    [0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0]
+
+# The probabilities of the extra bits of the categories 3 to 6 (RFC 6386,
+# section 13.2, `Pcat3` to `Pcat6`).
+constant CATEGORIES: [[i64]]
+    [
+        [173, 148, 140]
+        [176, 155, 140, 135]
+        [180, 157, 141, 134, 130]
+        [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129]
+    ]
+
+# Where block type `t`, band `b`, context `c` begins in the flattened
+# probabilities.
+function at_band(t: i64, b: i64, c: i64) -> i64
+    return ((t * 8 + b) * 3 + c) * 11
+
+# The tokens of one block read into `out` from `at`, dequantized by `dc` for
+# the first position and `ac` for the others: type `t`, the first token in
+# context `ctx`, starting at position `first`. Answers the position after the
+# last token read before the end of the block, 16 where the block runs to its
+# end; libwebp's count, which says what the block holds.
+function block(@r: boolread.Reader, coeff: [i64] lent, t: i64, ctx: i64, first: i64, dc: i64, ac: i64, @out: [i64], at: i64) -> i64
+    n @= first
+    p @= at_band(t: t, b: BANDS[n], c: ctx)
+
+    while n < 16
+        if boolread.bit(r: @r, prob: coeff[p]) == 0
+            return n
+
+        while boolread.bit(r: @r, prob: coeff[p + 1]) == 0
+            n @ n + 1
+
+            if n == 16
+                return 16
+            p @ at_band(t: t, b: BANDS[n], c: 0)
+
+        v @= 1
+        next @= 1
+
+        if boolread.bit(r: @r, prob: coeff[p + 2]) == 1
+            v @ large(r: @r, coeff: coeff, p: p)
+            next @ 2
+
+        if boolread.bit(r: @r, prob: 128) == 1
+            v @ -v
+
+        step = if n > 0
+            ac
+        else
+            dc
+        out[at + ZIGZAG[n]] @ idct.wrap16(v * step)
+        n @ n + 1
+        p @ at_band(t: t, b: BANDS[n], c: next)
+
+    return 16
+
+# A token's value of 2 or more, its extra bits read (libwebp's
+# `GetLargeValue`).
+function large(@r: boolread.Reader, coeff: [i64] lent, p: i64) -> i64
+    if boolread.bit(r: @r, prob: coeff[p + 3]) == 0
+        if boolread.bit(r: @r, prob: coeff[p + 4]) == 0
+            return 2
+        return 3 + boolread.bit(r: @r, prob: coeff[p + 5])
+
+    if boolread.bit(r: @r, prob: coeff[p + 6]) == 0
+        if boolread.bit(r: @r, prob: coeff[p + 7]) == 0
+            return 5 + boolread.bit(r: @r, prob: 159)
+        v = 7 + 2 * boolread.bit(r: @r, prob: 165)
+        return v + boolread.bit(r: @r, prob: 145)
+    high = boolread.bit(r: @r, prob: coeff[p + 8])
+    low = boolread.bit(r: @r, prob: coeff[p + 9 + high])
+    cat = 2 * high + low
+    v @= 0
+
+    for prob in CATEGORIES[cat]
+        v @ v + v + boolread.bit(r: @r, prob: prob)
+
+    return v + 3 + (8 << cat)
+
+# Whether a block holds anything to add, as libwebp's count says: more than
+# one position read, or a first coefficient that is not zero.
+function holds(count: i64, first_value: i64) -> bool
+    return count > 1 || first_value != 0
+
+# The coefficients of one macroblock, 384 of them, read into `out` (sixteen
+# luma blocks, four of U, four of V, sixteen each). `top` holds the contexts
+# along the bottom of the row above, nine a macroblock from `x * 9` (four
+# luma, two U, two V, the DC block); `left` holds the nine of the macroblock
+# to the left. Both are left holding this macroblock's. Answers whether the
+# macroblock holds nothing to add.
+function read(@r: boolread.Reader, coeff: [i64] lent, m: quant.Matrix, split: bool, @top: [i64], x: i64, @left: [i64], @out: [i64]) -> bool
+    for i in range(from: 0, to: 384)
+        out[i] @ 0
+
+    t = x * 9
+    first @= 0
+    luma_type @= 3
+
+    if !split
+        dc @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        n = block(
+            r: @r,
+            coeff: coeff,
+            t: 1,
+            ctx: top[t + 8] + left[8],
+            first: 0,
+            dc: m.y2_dc,
+            ac: m.y2_ac,
+            out: @dc,
+            at: 0
+        )
+
+        flag = if n > 0
+            1
+        else
+            0
+        top[t + 8] @ flag
+        left[8] @ flag
+
+        if n > 1
+            idct.wht(dc: dc, out: @out, at: 0)
+        else
+            d0 = dc[0] + 3 >> 3
+
+            for i in range(from: 0, to: 16)
+                out[16 * i] @ d0
+
+        first @ 1
+        luma_type @ 0
+    empty @= true
+
+    for y in range(from: 0, to: 4)
+        for x4 in range(from: 0, to: 4)
+            b = (y * 4 + x4) * 16
+            n = block(
+                r: @r,
+                coeff: coeff,
+                t: luma_type,
+                ctx: top[t + x4] + left[y],
+                first: first,
+                dc: m.y1_dc,
+                ac: m.y1_ac,
+                out: @out,
+                at: b
+            )
+
+            flag = if n > first
+                1
+            else
+                0
+            top[t + x4] @ flag
+            left[y] @ flag
+
+            if holds(count: n, first_value: out[b])
+                empty @ false
+
+    for c in range(from: 0, to: 2)
+        for y in range(from: 0, to: 2)
+            for x2 in range(from: 0, to: 2)
+                b = 256 + c * 64 + (y * 2 + x2) * 16
+                k = 4 + c * 2
+                n = block(
+                    r: @r,
+                    coeff: coeff,
+                    t: 2,
+                    ctx: top[t + k + x2] + left[k + y],
+                    first: 0,
+                    dc: m.uv_dc,
+                    ac: m.uv_ac,
+                    out: @out,
+                    at: b
+                )
+
+                flag = if n > 0
+                    1
+                else
+                    0
+                top[t + k + x2] @ flag
+                left[k + y] @ flag
+
+                if holds(count: n, first_value: out[b])
+                    empty @ false
+
+    return empty
+
+# The contexts of a macroblock that says it has no coefficients: every block
+# beside it reads as empty, and the DC block's too where it has one.
+function skipped(@top: [i64], x: i64, @left: [i64], split: bool)
+    for i in range(from: 0, to: 8)
+        top[x * 9 + i] @ 0
+        left[i] @ 0
+
+    if !split
+        top[x * 9 + 8] @ 0
+        left[8] @ 0
