@@ -925,14 +925,15 @@ int64_t hero_disk_temp_folder(void *buffer, uint64_t count) {
     return hero_disk_fill(buffer, count, folder, (size_t)length);
 }
 
-int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_bytes) {
+int64_t hero_disk_space(const char *path, int64_t *available_bytes, int64_t *free_bytes, int64_t *total_bytes) {
     wchar_t wide[HERO_DISK_WIDE];
     wchar_t root[HERO_DISK_WIDE];
     ULARGE_INTEGER available;
     ULARGE_INTEGER whole;
+    ULARGE_INTEGER unreserved;
 
     hero_disk_clear();
-    if (free_bytes == NULL || total_bytes == NULL) {
+    if (available_bytes == NULL || free_bytes == NULL || total_bytes == NULL) {
         return hero_disk_refused(HERO_DISK_INVALID);
     }
     if (!hero_disk_wide(path, NULL, wide)) {
@@ -947,13 +948,15 @@ int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_by
     if (!GetVolumePathNameW(wide, root, (DWORD)HERO_DISK_WIDE)) {
         return hero_disk_failed();
     }
-    if (!GetDiskFreeSpaceExW(root, &available, &whole, NULL)) {
+    if (!GetDiskFreeSpaceExW(root, &available, &whole, &unreserved)) {
         return hero_disk_failed();
     }
-    if (available.QuadPart > (ULONGLONG)INT64_MAX || whole.QuadPart > (ULONGLONG)INT64_MAX) {
+    if (available.QuadPart > (ULONGLONG)INT64_MAX || whole.QuadPart > (ULONGLONG)INT64_MAX ||
+        unreserved.QuadPart > (ULONGLONG)INT64_MAX) {
         return hero_disk_refused(HERO_DISK_OTHER);
     }
-    *free_bytes = (int64_t)available.QuadPart;
+    *available_bytes = (int64_t)available.QuadPart;
+    *free_bytes = (int64_t)unreserved.QuadPart;
     *total_bytes = (int64_t)whole.QuadPart;
     return 0;
 }
@@ -1306,8 +1309,9 @@ int64_t hero_disk_temp_folder(void *buffer, uint64_t count) {
     return hero_disk_fill(buffer, count, folder, length);
 }
 
-int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_bytes) {
+int64_t hero_disk_space(const char *path, int64_t *available_bytes, int64_t *free_bytes, int64_t *total_bytes) {
     int64_t available = 0;
+    int64_t unreserved = 0;
     int64_t whole = 0;
 #if defined(__APPLE__)
     struct statfs info;
@@ -1317,7 +1321,7 @@ int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_by
 #endif
 
     hero_disk_clear();
-    if (free_bytes == NULL || total_bytes == NULL) {
+    if (available_bytes == NULL || free_bytes == NULL || total_bytes == NULL) {
         return hero_disk_refused(HERO_DISK_INVALID);
     }
     if (!hero_disk_path_ok(path)) {
@@ -1328,6 +1332,7 @@ int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_by
         return hero_disk_failed();
     }
     if (__builtin_mul_overflow((uint64_t)info.f_bavail, (uint64_t)info.f_bsize, &available) ||
+        __builtin_mul_overflow((uint64_t)info.f_bfree, (uint64_t)info.f_bsize, &unreserved) ||
         __builtin_mul_overflow((uint64_t)info.f_blocks, (uint64_t)info.f_bsize, &whole)) {
         return hero_disk_refused(HERO_DISK_OTHER);
     }
@@ -1339,11 +1344,13 @@ int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_by
      * volume reports no fragment. */
     unit = info.f_frsize != 0 ? (uint64_t)info.f_frsize : (uint64_t)info.f_bsize;
     if (__builtin_mul_overflow((uint64_t)info.f_bavail, unit, &available) ||
+        __builtin_mul_overflow((uint64_t)info.f_bfree, unit, &unreserved) ||
         __builtin_mul_overflow((uint64_t)info.f_blocks, unit, &whole)) {
         return hero_disk_refused(HERO_DISK_OTHER);
     }
 #endif
-    *free_bytes = available;
+    *available_bytes = available;
+    *free_bytes = unreserved;
     *total_bytes = whole;
     return 0;
 }

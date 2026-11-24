@@ -232,10 +232,12 @@ int64_t hero_disk_enter(const char *path);
  * The folder is named, never made nor asked for. */
 int64_t hero_disk_temp_folder(void *buffer, uint64_t count);
 
-/* The bytes of the volume `path` stands on: into `*free_bytes` those this
- * user may still write, into `*total_bytes` the volume's size. 0, or -1
- * with nothing written. */
-int64_t hero_disk_space(const char *path, int64_t *free_bytes, int64_t *total_bytes);
+/* The bytes of the volume `path` stands on: into `*available_bytes` those
+ * this user may still write, into `*free_bytes` those free to any user, the
+ * system's reserve included (`f_bfree`; `GetDiskFreeSpaceExW`'s
+ * `lpTotalNumberOfFreeBytes`), and into `*total_bytes` the volume's size.
+ * 0, or -1 with nothing written. */
+int64_t hero_disk_space(const char *path, int64_t *available_bytes, int64_t *free_bytes, int64_t *total_bytes);
 
 /* Changes the owner of what `path` names, links followed, to the user and
  * the group of those numbers, -1 leaving either as it is: 0 or -1. Windows

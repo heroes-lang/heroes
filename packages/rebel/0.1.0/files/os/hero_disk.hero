@@ -67,7 +67,7 @@ extern "hero_disk.h"
     function hero_disk_set_length(path: cstr lent, length: i64) -> i64
     function hero_disk_enter(path: cstr lent) -> i64
     function hero_disk_temp_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
-    function hero_disk_space(path: cstr lent, @free_bytes: i64, @total_bytes: i64) -> i64
+    function hero_disk_space(path: cstr lent, @available_bytes: i64, @free_bytes: i64, @total_bytes: i64) -> i64
     function hero_disk_set_owner(path: cstr lent, user: i64, group: i64) -> i64
     function hero_disk_set_link_owner(path: cstr lent, user: i64, group: i64) -> i64
     function hero_disk_last_error() -> i64
@@ -267,16 +267,23 @@ function enter(path: str) -> i64
 function temp_folder(@buffer: [u8], n: u64) -> i64
     return hero_disk_temp_folder(@buffer, n: n)
 
-# 0 once `free_bytes` holds the bytes this user may still write on the volume
-# `path` stands on and `total_bytes` the volume's size, or -1 with neither
-# written.
+# 0 once `available_bytes` holds the bytes this user may still write on the
+# volume `path` stands on, `free_bytes` those free to any user and
+# `total_bytes` the volume's size, or -1 with none written.
 #
 # - `path`: anything on the volume asked about.
-# - `free_bytes`: set to the bytes this user may still write there; left as it
-#   was on -1.
+# - `available_bytes`: set to the bytes this user may still write there; left
+#   as it was on -1.
+# - `free_bytes`: set to the bytes free there to any user, the system's
+#   reserve included; left as it was on -1.
 # - `total_bytes`: set to the volume's size in bytes; left as it was on -1.
-function space(path: str, @free_bytes: i64, @total_bytes: i64) -> i64
-    return hero_disk_space(path.cstr(), free_bytes: @free_bytes, total_bytes: @total_bytes)
+function space(path: str, @available_bytes: i64, @free_bytes: i64, @total_bytes: i64) -> i64
+    return hero_disk_space(
+        path.cstr(),
+        available_bytes: @available_bytes,
+        free_bytes: @free_bytes,
+        total_bytes: @total_bytes
+    )
 
 # 0 once what `path` names, links followed, belongs to the user and the group
 # of those numbers, -1 leaving either as it is, or -1. Windows has no such
@@ -918,22 +925,25 @@ test "temp_folder: no room measures it, the right room takes it, and it names a 
     assert facts_through(name, @through, n: 1) == HERO_DISK_FACTS
     assert through[0] == HERO_DISK_KIND_DIRECTORY
 
-test "space: the free bytes are at most the volume's, a file's volume is its folder's, and a name not there"
+test "space: the bytes this user may write are at most those free to anyone, which are at most the volume's, a file's volume is its folder's, and a name not there"
     dir = test_folder("space", holds: ["f"])
     assert !write_file(path: dir + "/f", text: "x").is_err()
+    available_bytes: i64 @= -1
     free_bytes: i64 @= -1
     total_bytes: i64 @= -1
-    assert space(dir, free_bytes: @free_bytes, total_bytes: @total_bytes) == 0
-    assert total_bytes > 0 && free_bytes >= 0 && free_bytes <= total_bytes
+    assert space(dir, available_bytes: @available_bytes, free_bytes: @free_bytes, total_bytes: @total_bytes) == 0
+    assert total_bytes > 0 && available_bytes >= 0 && available_bytes <= free_bytes && free_bytes <= total_bytes
     of_file: i64 @= -1
+    file_free: i64 @= -1
     file_total: i64 @= -1
-    assert space(dir + "/f", free_bytes: @of_file, total_bytes: @file_total) == 0
-    assert file_total == total_bytes && of_file >= 0
+    assert space(dir + "/f", available_bytes: @of_file, free_bytes: @file_free, total_bytes: @file_total) == 0
+    assert file_total == total_bytes && of_file >= 0 && file_free >= of_file
     kept: i64 @= -7
+    kept_free: i64 @= -7
     kept_total: i64 @= -7
-    assert space(dir + "/none", free_bytes: @kept, total_bytes: @kept_total) == -1
+    assert space(dir + "/none", available_bytes: @kept, free_bytes: @kept_free, total_bytes: @kept_total) == -1
     assert last_error() == HERO_DISK_NOT_FOUND
-    assert kept == -7 && kept_total == -7
+    assert kept == -7 && kept_free == -7 && kept_total == -7
     test_clear(dir, holds: ["f"])
 
 # Windows has no owner by number and answers `HERO_DISK_UNSUPPORTED` whatever
