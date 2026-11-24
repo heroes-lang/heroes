@@ -1,0 +1,1656 @@
+# A client of SSH 2 (RFC 4250 to 4254): a server reached, its host key
+# checked against a `known_hosts` file the program names, a sign-in by a
+# key or a password, programs run with their output, errors and exit
+# status, a shell or a subsystem in a terminal or without, and connections
+# forwarded both ways; with SSH's key formats, public key lines, OpenSSH's
+# private key files and `known_hosts` lines, read and written.
+#
+# **What it speaks**: the key exchanges `curve25519-sha256` (RFC 8731; where
+# the system has X25519, not Windows) and `ecdh-sha2-nistp256` and `-384`
+# (RFC 5656), OpenSSH's strict key exchange asked for; host and user keys
+# Ed25519 (RFC 8709), ECDSA on P-256 and P-384 (RFC 5656) and RSA signing
+# with SHA-512 or SHA-256 (RFC 8332), never SHA-1; the ciphers
+# `aes256-gcm@openssh.com` and `aes128-gcm@openssh.com` (RFC 5647 § 7), their
+# nonces counted by `crypto/seal`'s keys. Every computation on a secret is
+# the system's, through `crypto/keypairs` and `crypto/seal`. Keys are
+# exchanged again when the server asks and after 1 GiB either way.
+#
+# **One connection, many channels, one thread**: a channel is a number this
+# package gives, and every call that waits reads the connection's messages
+# until its own answer stands, keeping each other channel's data for it, so
+# a channel is not an `io.Stream`, which is a handle C issues, and is read
+# and written by this package's own functions. Data the server sends is
+# kept within a window of 2 MiB per channel, opened again as the program
+# reads, so no server fills the memory past it. Every call waits at most
+# the connection's `wait`.
+#
+# It does not serve SSH, transfer files (`sftp`, over this package), or
+# talk to an SSH agent.
+#
+# It fails with `invalid` (bytes, a key, a line or a message that are not
+# what they must be; a host key that changed or is revoked), `not_found` (a
+# host `known_hosts` does not name; a name a lookup does not find),
+# `permission` (a sign-in, a channel or a request the server refused),
+# `closed` (the connection or the channel closed), `timeout` (the wait ran
+# out), `limit` (a channel holding 2 MiB nobody read), `unsupported` (a key
+# type, an algorithm or a key file this package does not take, an X25519
+# or Ed25519 key on Windows) and `failed` (the system failed, its words in
+# the message).
+#
+# Not written yet, each a `pending` block of its ledger: the hybrid exchanges
+# mlkem768x25519-sha256 and sntrup761x25519-sha512, OpenSSH 10's first
+# choices; the cipher chacha20-poly1305@openssh.com; keyboard-interactive with
+# questions other than one hidden password: a second factor; a sign-in by
+# Kerberos through GSSAPI (RFC 4462); a terminal's modes set: echo, the erase
+# character, the line discipline's flags (RFC 4254 § 8); a Unix socket
+# forwarded either way, OpenSSH's streamlocal extensions; a global or channel
+# request of a kind the program names, and one the server makes answered by
+# the program; a private key file under a passphrase, read and written;
+# OpenSSH's certificates of hosts and users, read, checked and signed; an SSH
+# agent's keys signed with, and its forwarding; the server's side: host keys,
+# sign-ins checked, channels served.
+
+use bytes
+use crypto/keypairs
+use io
+use net
+use ssh/internal/auth
+use ssh/internal/blobs
+use ssh/internal/channels
+use ssh/internal/kex
+use ssh/internal/keyfile
+use ssh/internal/known
+use ssh/internal/opening
+use ssh/internal/ops
+use ssh/internal/session
+use ssh/internal/wire
+use strings
+use time
+
+## Codes
+
+# Bytes, a key, a line or a message that are not what they must be, and a
+# host key that changed or is revoked: the readers, `connect`.
+constant INVALID: str
+    "invalid"
+
+# A host the `known_hosts` file does not name, where the options do not add
+# it: `connect`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A sign-in, a channel or a request the server refused: the `sign_in_*`
+# functions, `open_session`, `dial`, the requests.
+constant PERMISSION: str
+    "permission"
+
+# The connection or the channel is closed: every call on a client.
+constant CLOSED: str
+    "closed"
+
+# The wait ran out: every call on a client.
+constant TIMEOUT: str
+    "timeout"
+
+# A channel holds 2 MiB of output nobody read: `wait_exit`.
+constant LIMIT: str
+    "limit"
+
+# A key type, an algorithm or a key file this package does not take.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system failed, its words in the message.
+constant FAILED: str
+    "failed"
+
+## Keys
+
+# A public key as SSH writes it.
+record PublicKey
+    # Its type as SSH names it: `ssh-ed25519`, `ecdsa-sha2-nistp256`,
+    # `ecdsa-sha2-nistp384`, `ssh-rsa`, or another a line names.
+    key_type: str
+    # Its blob, the wire form (RFC 4253 § 6.6).
+    blob: [u8]
+    # The comment its line or file held, empty for none.
+    comment: str
+
+# A private key to sign in with, made by `parse_private_key`,
+# `generate_key` or `private_key_of`. It holds a handle: `close_key` closes
+# it.
+record PrivateKey
+    # The key, in the system's cryptography.
+    key: keypairs.PrivateKey
+    # Its public half.
+    public: PublicKey
+
+# Which kind of key `generate_key` makes.
+variant KeyKind
+    # Ed25519, `ssh-ed25519`.
+    ed25519
+    # ECDSA on P-256, `ecdsa-sha2-nistp256`.
+    ecdsa_p256
+    # ECDSA on P-384, `ecdsa-sha2-nistp384`.
+    ecdsa_p384
+    # RSA, `ssh-rsa`.
+    rsa
+        # The modulus's bits: 2048, 3072 or 4096.
+        bits: i64
+
+# The public key a line of `authorized_keys` or a `.pub` file holds: a key
+# type, the blob in base 64 and an optional comment.
+#
+# - `line`: the line, with or without its line end; options before the key
+#   type, as `authorized_keys` may hold, are not read.
+#
+# Fails `invalid` for a line of fewer than two fields, base 64 that does not
+# read, a blob of another type than the line names, or a blob of a known
+# type whose fields do not hold. See also `format_public_key`.
+function parse_public_key(line: str) -> PublicKey?
+    words: [str] @= []
+
+    for word in strings.split(s: strings.trim(line), sep: " ")
+        if word != ""
+            words @ words.push(word)
+
+    if words.len() < 2
+        return fail(
+            code: INVALID,
+            msg: f"a public key line of {words.len()} fields: a type and a key in base 64 at least"
+        )
+
+    match bytes.parse_base64(words[1])
+        .err _ => return fail(code: INVALID, msg: "a public key line whose key is not base 64")
+        .ok blob =>
+            key = decode_public_key(blob)?
+
+            if key.key_type != words[0]
+                return fail(code: INVALID, msg: f"a line naming {words[0]} over a key of type {key.key_type}")
+            rest = words.slice(from: 2, to: words.len())
+            return ok(PublicKey(key_type: key.key_type, blob: blob, comment: join(rest, " ")))
+
+# `key` as a line of `authorized_keys`: its type, its blob in base 64 and
+# its comment where it has one.
+#
+# - `key`: the key.
+#
+# See also `parse_public_key`.
+function format_public_key(key: PublicKey) -> str
+    line = key.key_type + " " + bytes.format_base64(key.blob)
+
+    if key.comment == ""
+        return line
+    return line + " " + key.comment
+
+# The public key `blob`, its wire form, holds, with no comment.
+#
+# - `blob`: the blob, as a server sends a host key.
+#
+# Fails `invalid` where a known type's fields do not hold; a type this
+# package does not know is kept as its name and its bytes. See also
+# `parse_public_key`.
+function decode_public_key(blob: [u8]) -> PublicKey?
+    parts = blobs.parts_of(blob)?
+    return ok(PublicKey(key_type: parts.key_type, blob: blob, comment: ""))
+
+# `key`'s fingerprint as `ssh-keygen -l` prints it: `SHA256:` and the digest
+# of its blob in base 64 with no padding.
+#
+# - `key`: the key.
+#
+# See also `fingerprint_md5`.
+function fingerprint(key: PublicKey) -> str
+    return blobs.fingerprint(key.blob)
+
+# `key`'s fingerprint as OpenSSH printed it before 6.8: `MD5:` and the
+# digest's bytes in hexadecimal joined by colons.
+#
+# - `key`: the key.
+#
+# See also `fingerprint`.
+function fingerprint_md5(key: PublicKey) -> str
+    return blobs.fingerprint_md5(key.blob)
+
+# The private key `text` holds: OpenSSH's own file, `-----BEGIN OPENSSH
+# PRIVATE KEY-----` with no passphrase, or PKCS #8, `-----BEGIN PRIVATE
+# KEY-----`.
+#
+# - `text`: the file's text.
+#
+# The key is the caller's to close. Fails `invalid` for text of neither
+# form or a file whose parts do not agree, `unsupported` for a file under a
+# passphrase or a key type this package does not take, an Ed25519 key on
+# Windows among them. See also `format_private_key`, `close_key`.
+function parse_private_key(text: str) -> PrivateKey?
+    found = keyfile.parse(text)?
+    return ok(
+        PrivateKey(key: found.key, public: PublicKey(key_type: blobs.parts_of(found.blob)?.key_type, blob: found.blob, comment: found.comment))
+    )
+
+# `key` written as OpenSSH's own file with no passphrase, as `ssh-keygen`
+# writes one, its comment the public key's.
+#
+# - `key`: the key, which stays open.
+#
+# The text holds the secret: the caller keeps it as a secret. Fails as the
+# system fails to hand the key's bytes. See also `parse_private_key`.
+function format_private_key(key: PrivateKey) -> str?
+    return keyfile.format(key.key, blob: key.public.blob, comment: key.public.comment)
+
+# A new key of `kind` drawn by the system, with `comment`.
+#
+# - `kind`: the kind of key.
+# - `comment`: the comment its public line and its file carry, often
+#   `user@host`; empty for none.
+#
+# The key is the caller's to close. Fails `unsupported` where the system
+# lacks the kind (Ed25519 on Windows), `invalid` for an RSA size other than
+# 2048, 3072 or 4096. See also `close_key`, `format_private_key`.
+function generate_key(kind: KeyKind, comment: str) -> PrivateKey?
+    made = match kind
+        .ed25519    => keypairs.generate(.ed25519)
+        .ecdsa_p256 => keypairs.generate(.p256)
+        .ecdsa_p384 => keypairs.generate(.p384)
+        .rsa r      => keypairs.generate(.rsa(bits: r.bits))
+
+    key @= made?
+    return private_key_of(@key, comment: comment)
+
+# `key`, a key of `crypto/keypairs`, as a key to sign in with.
+#
+# - `key`: an Ed25519, P-256, P-384 or RSA private key, emptied: its life
+#   goes into the answer, which closes it.
+# - `comment`: the comment its public line carries.
+#
+# Fails `unsupported` for an X25519 key, which never signs, and then `key`
+# is closed. See also `generate_key`.
+function private_key_of(@key: keypairs.PrivateKey, comment: str) -> PrivateKey?
+    held = key
+    key @ keypairs.PrivateKey(handle: nullptr, kind: held.kind)
+
+    match keyfile.blob_of_key(held)
+        .ok blob => return ok(
+            PrivateKey(key: held, public: PublicKey(key_type: blobs.parts_of(blob)?.key_type, blob: blob, comment: comment))
+        )
+        .err e =>
+            closing @= held
+            keypairs.close_private(@closing)?
+            return fail(code: e.code, msg: e.msg)
+
+# Closes `key`, overwriting its secret.
+#
+# - `key`: the key, emptied.
+#
+# Fails `closed` where it is closed already. See also `parse_private_key`.
+function close_key(@key: PrivateKey) -> ()?
+    return keypairs.close_private(@key.key)
+
+# `key`'s signature of `data` as SSH writes one: the algorithm's name and
+# the signature, Ed25519's, ECDSA's over SHA-256 or SHA-384 by its curve,
+# or RSA's over SHA-512.
+#
+# - `key`: the key, which stays open.
+# - `data`: the bytes signed.
+#
+# Fails `closed` where `key` is closed. See also `verify`.
+function sign(key: PrivateKey, data: [u8]) -> [u8]?
+    algorithm: str @= key.public.key_type
+
+    if algorithm == "ssh-rsa"
+        algorithm @ "rsa-sha2-512"
+    return blobs.sign(key.key, algorithm: algorithm, data: data)
+
+# Whether `signature`, a signature as SSH writes one, is `key`'s of
+# `data`.
+#
+# - `key`: the public key.
+# - `data`: the bytes signed.
+# - `signature`: the algorithm's name and the signature; an RSA signature
+#   over SHA-512 or SHA-256.
+#
+# False for one that does not hold. Fails `unsupported` for an algorithm
+# this package does not check (`ssh-rsa` over SHA-1 among them), `invalid`
+# for bytes of no signature's form. See also `sign`.
+function verify(key: PublicKey, data: [u8], signature: [u8]) -> bool?
+    r @= wire.reader(signature)
+    algorithm = wire.read_text(@r, what: "a signature's algorithm")?
+    return blobs.verify(blob: key.blob, algorithm: algorithm, data: data, signature: signature)
+
+## Known hosts
+
+# What a `known_hosts` file says of a host's key.
+variant HostKnown
+    # A line names the host with this very key.
+    known
+    # No line names the host.
+    unknown
+    # Lines name the host, none with this key.
+    changed
+        # The first such line, counted from 1.
+        line: i64
+    # A `@revoked` line holds the key.
+    revoked
+        # That line, counted from 1.
+        line: i64
+
+# What `text`, a `known_hosts` file's contents, says of `key` for `host` at
+# `port`, as OpenSSH reads the file: patterns with `*`, `?` and `!`,
+# `[host]:port` for a port other than 22, hashed names, `@revoked` lines;
+# names compared in lower case.
+#
+# - `text`: the file's text; empty for none.
+# - `host`: the host's name or address as the program connects to it.
+# - `port`: its port.
+# - `key`: the key the host presented.
+#
+# See also `known_host_line`, `connect`.
+function check_known_host(text: str, host: str, port: i64, key: PublicKey) -> HostKnown
+    return match known.lookup(text: text, host: host, port: port, key_type: key.key_type, blob: key.blob)
+        .known     => .known
+        .unknown   => .unknown
+        .changed c => .changed(line: c.line)
+        .revoked r => .revoked(line: r.line)
+
+# The line of `known_hosts` that names `key` for `host` at `port`, with no
+# line end.
+#
+# - `host`: the host's name or address.
+# - `port`: its port; one other than 22 writes `[host]:port`.
+# - `key`: its key.
+# - `hashed`: whether the name is hashed with a salt drawn from the system,
+#   as `ssh-keygen -H` writes it, so the file does not tell where its owner
+#   connects.
+#
+# Fails where the system draws no salt. See also `check_known_host`.
+function known_host_line(host: str, port: i64, key: PublicKey, hashed: bool) -> str?
+    return known.line_of(host: host, port: port, key_type: key.key_type, blob: key.blob, hashed: hashed)
+
+## Connecting
+
+# What `connect` does with a host its `known_hosts` file does not name.
+variant UnknownHosts
+    # Refuse it, `not_found`, telling its key's fingerprint: OpenSSH's
+    # `StrictHostKeyChecking yes`.
+    refuse
+    # Trust it on first use and add its line: `accept-new`.
+    add
+    # The same, its name hashed in the line added.
+    add_hashed
+
+# How a client connects and signs in.
+record Options
+    # The server's name or address.
+    host: str
+    # Its port, 22 by default.
+    port: i64
+    # The user to sign in as.
+    user: str
+    # The path of the `known_hosts` file the server's key is checked
+    # against; one that does not exist names no host.
+    known_hosts: str
+    # What a host the file does not name meets.
+    unknown_hosts: UnknownHosts
+    # How long each call on the client may wait; `time.max_duration()` for
+    # no bound.
+    wait: time.Duration
+
+# The options to reach `host` on port 22 as `user`, its key checked against
+# `known_hosts`, an unknown host refused, each call waiting 30 seconds.
+#
+# - `host`: the server's name or address.
+# - `user`: the user to sign in as.
+# - `known_hosts`: the path of the `known_hosts` file, often
+#   `~/.ssh/known_hosts` written whole.
+#
+# See also `connect`.
+function options(host: str, user: str, known_hosts: str) -> Options
+    return Options(
+        host: host,
+        port: 22,
+        user: user,
+        known_hosts: known_hosts,
+        unknown_hosts: .refuse,
+        wait: time.seconds(30).must()
+    )
+
+# A client connected to a server: its transport, its channels, its
+# sign-in. Made by `connect`; `close` closes it.
+record Client
+    # The connection's state, which this package's functions alone read.
+    state: session.Session
+    # The user it signs in as.
+    user: str
+
+# A client connected to `opts.host`, the server's host key checked against
+# `opts.known_hosts` before anything is sent under the keys agreed, and the
+# sign-in service asked for: the next call signs in.
+#
+# - `opts`: where, as whom, and how the host key is judged.
+#
+# The client is the caller's to close. Fails `not_found` for a host the
+# file does not name where `opts` refuses it, the key's fingerprint in the
+# message; `invalid` for a host key that changed, a revoked one, or a
+# signature of the exchange that does not hold; `unsupported` where the
+# server speaks no algorithm this client does; `invalid` for an empty
+# `known_hosts` path; and as `net.connect` fails. See also `options`,
+# `fetch_host_key`, `sign_in_with_key`, `close`.
+function connect(opts: Options) -> Client?
+    if opts.known_hosts == ""
+        return fail(
+            code: INVALID,
+            msg: "connecting with no known_hosts path: the server's key would be checked against nothing"
+        )
+    none: [str] = []
+    check = kex.Check(
+        host: opts.host,
+        port: opts.port,
+        known_hosts: opts.known_hosts,
+        add_unknown: opts.unknown_hosts != .refuse,
+        hashed: opts.unknown_hosts == .add_hashed,
+        kexes: none,
+        host_keys: none,
+        ciphers: none
+    )
+    s = opening.open(check, wait_ms: session.milliseconds_of(opts.wait))?
+    return ok(Client(state: s, user: opts.user))
+
+# The host key `host` at `port` presents, fetched by a key exchange and the
+# connection closed: what a program shows a person before adding a host to
+# `known_hosts`, as `ssh-keyscan` does. Nothing is trusted by it.
+#
+# - `host`: the server's name or address.
+# - `port`: its port.
+# - `wait`: how long each step may wait.
+#
+# Fails as `connect` does, never for the key itself. See also
+# `known_host_line`, `fingerprint`.
+function fetch_host_key(host: str, port: i64, wait: time.Duration) -> PublicKey?
+    none: [str] = []
+    check = kex.Check(
+        host: host,
+        port: port,
+        known_hosts: "",
+        add_unknown: false,
+        hashed: false,
+        kexes: none,
+        host_keys: none,
+        ciphers: none
+    )
+    s @= opening.open(check, wait_ms: session.milliseconds_of(wait))?
+    blob = s.host_key
+    session.close(@s)?
+    return decode_public_key(blob)
+
+# The host key `c`'s server presented and `known_hosts` trusted.
+#
+# - `c`: the client.
+#
+# See also `connect`.
+function host_key(c: Client) -> PublicKey
+    return decode_public_key(c.state.host_key).must()
+
+# The text of the banners the server sent while `c` signed in, empty for
+# none: what a server shows before a login, a warning or a notice.
+#
+# - `c`: the client.
+#
+# See also `sign_in_methods`.
+function banner(c: Client) -> str
+    return c.state.banner
+
+# Sets how long each later call on `c` may wait.
+#
+# - `c`: the client, changed.
+# - `wait`: the bound; `time.max_duration()` for none.
+#
+# Fails `closed` where the connection is closed. See also `options`.
+function set_wait(@c: Client, wait: time.Duration) -> ()?
+    return session.set_wait(@c.state, wait_ms: session.milliseconds_of(wait))
+
+# Closes `c`: a DISCONNECT sent, the connection and its keys closed.
+#
+# - `c`: the client, closed.
+#
+# Fails as closing the connection fails; the client is closed either way.
+# See also `connect`.
+function close(@c: Client) -> ()?
+    return session.close(@c.state)
+
+## Signing in
+
+# The methods the server takes for `c`'s user, asked by the `none` method;
+# empty where the server let the user in with none, `c` then signed in.
+#
+# - `c`: the client, not signed in.
+#
+# Fails as the connection fails. See also `sign_in_with_key`,
+# `sign_in_with_password`.
+function sign_in_methods(@c: Client) -> [str]?
+    session.rearm(c.state)?
+    got = auth.by_none(@c.state, user: c.user)?
+    return ok(got.methods)
+
+# Signs `c` in with `key` by the `publickey` method: the key offered, then
+# the session signed where the server takes it.
+#
+# - `c`: the client, signed in after.
+# - `key`: the key, which stays open.
+#
+# Fails `permission` where the server refuses the key, naming the methods
+# it would take, or takes it as one step of several. See also
+# `sign_in_with_password`.
+function sign_in_with_key(@c: Client, key: PrivateKey) -> ()?
+    session.rearm(c.state)?
+    got = auth.by_key(@c.state, user: c.user, key: key.key, blob: key.public.blob)?
+    return auth.judged(got, method: "the key " + fingerprint(key.public))
+
+# Signs `c` in with `password` by the `password` method, or by
+# `keyboard-interactive` answering its one hidden prompt where the server
+# takes that alone, as a server checking passwords through PAM does.
+#
+# - `c`: the client, signed in after.
+# - `password`: the password, sent under the connection's cipher.
+#
+# Fails `permission` where the server refuses it or asks for a new one.
+# See also `sign_in_with_key`.
+function sign_in_with_password(@c: Client, password: str) -> ()?
+    session.rearm(c.state)?
+    got = auth.by_password(@c.state, user: c.user, password: password)?
+
+    if got.accepted || !known.any_is(got.methods, x: "keyboard-interactive")
+        return auth.judged(got, method: "the password")
+    asked = auth.by_interactive(@c.state, user: c.user, password: password)?
+    return auth.judged(asked, method: "the password")
+
+# Whether `c` has signed in.
+#
+# - `c`: the client.
+#
+# See also `sign_in_with_key`.
+function is_signed_in(c: Client) -> bool
+    return c.state.signed_in
+
+## Sessions
+
+# A channel of a client: a session, a forwarded connection. Its number is
+# this package's, given by the call that opened it.
+record Channel
+    # The client's number for the channel.
+    number: i64
+
+# A terminal asked for a session (RFC 4254 § 6.2).
+record Terminal
+    # The terminal's type, the remote `TERM`: `xterm-256color`, `vt100`.
+    term: str
+    # Its width in characters.
+    columns: i64
+    # Its height in lines.
+    rows: i64
+
+# What a program run by `run` gave.
+record Output
+    # What it wrote to its output.
+    output: [u8]
+    # What it wrote to its errors.
+    errors: [u8]
+    # Its exit status, `not_found` where the server told none.
+    status: i64?
+    # The signal that ended it, without `SIG`, `not_found` where none did.
+    signal: str?
+
+# How a channel's program ended.
+record Exit
+    # Its exit status, `not_found` where the server told none.
+    status: i64?
+    # The signal that ended it, `not_found` where none did.
+    signal: str?
+
+# A new session channel of `c`, before any program runs in it: the place to
+# ask a terminal and set variables before `exec`, `shell` or `subsystem`.
+#
+# - `c`: the client, signed in.
+#
+# Fails `permission` where the server refuses a session. See also `run`,
+# `start`.
+function open_session(@c: Client) -> Channel?
+    session.rearm(c.state)?
+    none: [u8] = []
+    number = ops.open(@c.state, kind: "session", extra: none)?
+    return ok(Channel(number: number))
+
+# Asks a terminal of `terminal`'s type and size for `channel`, before its
+# program starts.
+#
+# - `c`: the client.
+# - `channel`: a session opened by `open_session`.
+# - `terminal`: the terminal.
+#
+# Fails `permission` where the server refuses. See also `resize`.
+function ask_terminal(@c: Client, channel: Channel, terminal: Terminal) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_text(@data, text: terminal.term)
+    wire.put_u32(@data, n: terminal.columns)
+    wire.put_u32(@data, n: terminal.rows)
+    wire.put_u32(@data, n: 0)
+    wire.put_u32(@data, n: 0)
+    wire.put_string(out: @data, data: [0])
+    return ops.request(@c.state, local: channel.number, name: "pty-req", data: data)
+
+# Sets the variable `name` to `value` for `channel`'s program, before it
+# starts.
+#
+# - `c`: the client.
+# - `channel`: a session opened by `open_session`.
+# - `name`: the variable's name.
+# - `value`: its value.
+#
+# Fails `permission` where the server refuses it, as OpenSSH does for a
+# name its `AcceptEnv` does not list. See also `exec`.
+function set_env(@c: Client, channel: Channel, name: str, value: str) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_text(@data, text: name)
+    wire.put_text(@data, text: value)
+    return ops.request(@c.state, local: channel.number, name: "env", data: data)
+
+# Runs `command` in `channel`, through the user's shell on the server.
+#
+# - `c`: the client.
+# - `channel`: a session opened by `open_session`, which runs nothing yet.
+# - `command`: the command line, as the user's shell reads it.
+#
+# Fails `permission` where the server refuses. See also `start`, `run`.
+function exec(@c: Client, channel: Channel, command: str) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_text(@data, text: command)
+    return ops.request(@c.state, local: channel.number, name: "exec", data: data)
+
+# Starts the user's shell in `channel`.
+#
+# - `c`: the client.
+# - `channel`: a session opened by `open_session`, often with a terminal.
+#
+# Fails `permission` where the server refuses. See also `ask_terminal`.
+function shell(@c: Client, channel: Channel) -> ()?
+    session.rearm(c.state)?
+    none: [u8] = []
+    return ops.request(@c.state, local: channel.number, name: "shell", data: none)
+
+# Starts the subsystem `name` in `channel`, such as `sftp`.
+#
+# - `c`: the client.
+# - `channel`: a session opened by `open_session`.
+# - `name`: the subsystem's name.
+#
+# Fails `permission` where the server has no such subsystem. See also
+# `exec`.
+function subsystem(@c: Client, channel: Channel, name: str) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_text(@data, text: name)
+    return ops.request(@c.state, local: channel.number, name: "subsystem", data: data)
+
+# A session running `command`, its output to read: `open_session` and
+# `exec` in one call.
+#
+# - `c`: the client, signed in.
+# - `command`: the command line.
+#
+# The channel is the caller's to close. Fails as `open_session` and `exec`
+# do. See also `run`, `read`, `wait_exit`.
+function start(@c: Client, command: str) -> Channel?
+    channel = open_session(@c)?
+
+    match exec(@c, channel: channel, command: command)
+        .ok _ => return ok(channel)
+        .err e =>
+            _ = close_channel(@c, channel: channel).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# `command` run to its end with no input: its output, its errors and its
+# exit status, the channel closed.
+#
+# - `c`: the client, signed in.
+# - `command`: the command line.
+#
+# The output is held whole in memory. Fails as `start` does. See also
+# `start`.
+function run(@c: Client, command: str) -> Output?
+    channel = start(@c, command: command)?
+    ops.end(@c.state, local: channel.number)?
+    output: [u8] @= []
+    errors: [u8] @= []
+
+    while true
+        session.rearm(c.state)?
+        taken = ops.take_all(@c.state, local: channel.number)?
+
+        for b in taken.output
+            output @ output.push(b)
+
+        for b in taken.errors
+            errors @ errors.push(b)
+
+        at = channels.place_of(c.state, local: channel.number)
+
+        if c.state.channels[at].closed && c.state.channels[at].output.len() == 0 && c.state.channels[at].errors.len() == 0
+            status = c.state.channels[at].status
+            signal = c.state.channels[at].signal
+            ops.close(@c.state, local: channel.number)?
+            return ok(Output(output: output, errors: errors, status: status, signal: signal))
+
+## Channels
+
+# `data` written to `channel`'s program, waiting while the server's window
+# for it is spent.
+#
+# - `c`: the client.
+# - `channel`: an open channel.
+# - `data`: the bytes, any length.
+#
+# Fails `closed` where the channel is closed. See also `read`,
+# `close_write`.
+function write(@c: Client, channel: Channel, data: [u8]) -> ()?
+    session.rearm(c.state)?
+    return ops.write(@c.state, local: channel.number, data: data)
+
+# Up to `n` bytes of `channel`'s output, waiting for one: empty once the
+# server sent its end and nothing is left.
+#
+# - `c`: the client.
+# - `channel`: an open channel.
+# - `n`: the most bytes answered, at least 1.
+#
+# Fails `timeout` where nothing came within the wait, `closed` where the
+# connection closed. See also `read_errors`, `write`.
+function read(@c: Client, channel: Channel, n: i64) -> [u8]?
+    session.rearm(c.state)?
+    return ops.read(@c.state, local: channel.number, n: n, errors: false)
+
+# Up to `n` bytes of what `channel`'s program wrote to its errors, waiting
+# for one: empty once the server sent its end and nothing is left.
+#
+# - `c`: the client.
+# - `channel`: an open channel.
+# - `n`: the most bytes answered, at least 1.
+#
+# Fails as `read` does. See also `read`.
+function read_errors(@c: Client, channel: Channel, n: i64) -> [u8]?
+    session.rearm(c.state)?
+    return ops.read(@c.state, local: channel.number, n: n, errors: true)
+
+# Tells `channel`'s program that its input has ended: the EOF it reads.
+#
+# - `c`: the client.
+# - `channel`: an open channel, which can still be read.
+#
+# Fails as the connection fails. See also `write`.
+function close_write(@c: Client, channel: Channel) -> ()?
+    session.rearm(c.state)?
+    return ops.end(@c.state, local: channel.number)
+
+# Tells `channel`'s terminal its new size.
+#
+# - `c`: the client.
+# - `channel`: a session given a terminal.
+# - `terminal`: the size; its type is not sent again.
+#
+# Fails as the connection fails. See also `ask_terminal`.
+function resize(@c: Client, channel: Channel, terminal: Terminal) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_u32(@data, n: terminal.columns)
+    wire.put_u32(@data, n: terminal.rows)
+    wire.put_u32(@data, n: 0)
+    wire.put_u32(@data, n: 0)
+    return ops.tell(@c.state, local: channel.number, name: "window-change", data: data)
+
+# Sends the signal `name` to `channel`'s program (RFC 4254 § 6.9), which
+# OpenSSH delivers since 8.0.
+#
+# - `c`: the client.
+# - `channel`: a session running a program.
+# - `name`: the signal without `SIG`: `INT`, `TERM`, `KILL`, `HUP`.
+#
+# Fails as the connection fails. See also `wait_exit`.
+function send_signal(@c: Client, channel: Channel, name: str) -> ()?
+    session.rearm(c.state)?
+    data: [u8] @= []
+    wire.put_text(@data, text: name)
+    return ops.tell(@c.state, local: channel.number, name: "signal", data: data)
+
+# Waits until the server closes `channel` and tells how its program ended;
+# its output and errors not read are kept for `read`.
+#
+# - `c`: the client.
+# - `channel`: a session.
+#
+# Fails `limit` where the channel holds 2 MiB of output nobody read, which
+# the server then waits on: read it first. See also `run`, `close_channel`.
+function wait_exit(@c: Client, channel: Channel) -> Exit?
+    while true
+        session.rearm(c.state)?
+        at = channels.place_of(c.state, local: channel.number)
+        held = c.state.channels[at]
+
+        if held.closed
+            return ok(Exit(status: held.status, signal: held.signal))
+
+        if held.in_window == 0 && held.output.len() + held.errors.len() >= session.WINDOW
+            return fail(
+                code: LIMIT,
+                msg: "the channel holds 2 MiB of output nobody read, which the server waits on: read it before waiting"
+            )
+        channels.dispatch(@c.state)?
+
+# Closes `channel` and waits for the server's close; what it held unread is
+# dropped.
+#
+# - `c`: the client.
+# - `channel`: the channel, closed.
+#
+# Fails as the connection fails. See also `wait_exit`.
+function close_channel(@c: Client, channel: Channel) -> ()?
+    session.rearm(c.state)?
+    return ops.close(@c.state, local: channel.number)
+
+## Forwarding
+
+# A channel to `host` at `port` as the server reaches them (RFC 4254 §
+# 7.2, `direct-tcpip`): what `ssh -L` forwards one connection through. Read
+# and written as any channel.
+#
+# - `c`: the client, signed in.
+# - `host`: the name or address the server connects to.
+# - `port`: its port.
+#
+# The channel is the caller's to close. Fails `permission` where the server
+# refuses, its words in the message. See also `listen_remote`.
+function dial(@c: Client, host: str, port: i64) -> Channel?
+    session.rearm(c.state)?
+    extra: [u8] @= []
+    wire.put_text(@extra, text: host)
+    wire.put_u32(@extra, n: port)
+    wire.put_text(@extra, text: "127.0.0.1")
+    wire.put_u32(@extra, n: 0)
+    number = ops.open(@c.state, kind: "direct-tcpip", extra: extra)?
+    return ok(Channel(number: number))
+
+# A connection the server forwarded, accepted.
+record Forwarded
+    # The channel it arrived on.
+    channel: Channel
+    # The address it came from.
+    origin_host: str
+    # The port it came from.
+    origin_port: i64
+
+# Asks the server to listen on `host` at `port` and forward each connection
+# to this client (RFC 4254 § 7.1, `tcpip-forward`): what `ssh -R` asks. The
+# port it listens on.
+#
+# - `c`: the client, signed in.
+# - `host`: the address the server listens on: `localhost`, "" for every
+#   address, as the server's `GatewayPorts` allows.
+# - `port`: its port, 0 for one the server chooses.
+#
+# Fails `permission` where the server refuses. See also `accept_remote`,
+# `cancel_remote`.
+function listen_remote(@c: Client, host: str, port: i64) -> i64?
+    session.rearm(c.state)?
+    asked = c.state.global_answers.len()
+    message: [u8] @= [80]
+    wire.put_text(@message, text: "tcpip-forward")
+    wire.put_bool(@message, v: true)
+    wire.put_text(@message, text: host)
+    wire.put_u32(@message, n: port)
+    session.send(@c.state, payload: message)?
+
+    while c.state.global_answers.len() <= asked
+        channels.dispatch(@c.state)?
+
+    reply = c.state.global_answers[asked]?
+    bound: i64 @= port
+
+    if port == 0
+        r @= wire.reader(reply)
+        bound @ wire.read_u32(@r, what: "the port the server bound")?
+    c.state.forwards @ c.state.forwards.push(f"{host}:{bound}")
+    return ok(bound)
+
+# The next connection the server forwarded for `listen_remote`, accepted,
+# waiting for one.
+#
+# - `c`: the client.
+#
+# The channel is the caller's to close. Fails `timeout` where none came
+# within the wait. See also `listen_remote`.
+function accept_remote(@c: Client) -> Forwarded?
+    session.rearm(c.state)?
+
+    while c.state.offered.len() == 0
+        channels.dispatch(@c.state)?
+
+    offer = c.state.offered[0]
+    c.state.offered @ c.state.offered.slice(from: 1, to: c.state.offered.len())
+    number = ops.accept_offered(@c.state, offer: offer)?
+    return ok(
+        Forwarded(channel: Channel(number: number), origin_host: offer.origin_host, origin_port: offer.origin_port)
+    )
+
+# Asks the server to stop listening on `host` at `port` for this client.
+#
+# - `c`: the client.
+# - `host`: the address `listen_remote` was given.
+# - `port`: the port it answered.
+#
+# Fails `permission` where the server refuses. See also `listen_remote`.
+function cancel_remote(@c: Client, host: str, port: i64) -> ()?
+    session.rearm(c.state)?
+    asked = c.state.global_answers.len()
+    message: [u8] @= [80]
+    wire.put_text(@message, text: "cancel-tcpip-forward")
+    wire.put_bool(@message, v: true)
+    wire.put_text(@message, text: host)
+    wire.put_u32(@message, n: port)
+    session.send(@c.state, payload: message)?
+
+    while c.state.global_answers.len() <= asked
+        channels.dispatch(@c.state)?
+
+    _ = c.state.global_answers[asked]?
+    kept: [str] @= []
+
+    for each in c.state.forwards
+        if each != f"{host}:{port}"
+            kept @ kept.push(each)
+
+    c.state.forwards @ kept
+    return ok()
+
+## Tests
+
+test "parse_public_key, fingerprint and fingerprint_md5: ssh-keygen 10.5's keys and fingerprints, a line with no comment, and lines of no form"
+    ed = parse_public_key(
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+ fixture-ed25519\n"
+    ).must()
+    assert ed.key_type == "ssh-ed25519" && ed.comment == "fixture-ed25519" && ed.blob.len() == 51
+    assert fingerprint(ed) == "SHA256:3iXqItVwQZmJsblR59hxUfHpwQkzyCTO1Cax1PqA7fE"
+    assert fingerprint_md5(ed) == "MD5:6c:80:59:5d:fc:08:44:04:08:9d:d8:3f:ad:fb:89:c3"
+    ec = parse_public_key(
+        "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLvXeJE2HRCO+XGiY+xAzo6vTozxbBFY/4glhSl3dqZTPYF9akLcol1V3/KVjqGmAEycSIENlcimv+cwIhkVJpw="
+    ).must()
+    assert ec.comment == "" && fingerprint(ec) == "SHA256:NUkctFfCzGk8pnO2RUHlZcSwX+T8K9wGSrnt5rHB9o0"
+    assert format_public_key(ed) == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+ fixture-ed25519"
+    assert parse_public_key("").is_err()
+    assert parse_public_key("ssh-ed25519").is_err()
+    assert parse_public_key("ssh-ed25519 !!!").is_err()
+    assert parse_public_key("ssh-rsa AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").is_err()
+    assert parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAH5+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJM=").is_err()
+
+test "parse_private_key and format_private_key: ssh-keygen 10.5's Ed25519 and P-256 files read, their public halves the .pub's, and a file written read back to the same key"
+    if !keypairs.is_available(.ed25519)
+        return
+    files = [
+        "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACCflKsAoBeEv5UmzM7OG7MsfxqzT1vOSmO6WsIT6zCTvgAAAJhVwuSlVcLk\npQAAAAtzc2gtZWQyNTUxOQAAACCflKsAoBeEv5UmzM7OG7MsfxqzT1vOSmO6WsIT6zCTvg\nAAAEAJ8NNEnRJeJL6mImnfj1st1igOGlCYWOfZnk4JaC2VqJ+UqwCgF4S/lSbMzs4bsyx/\nGrNPW85KY7pawhPrMJO+AAAAD2ZpeHR1cmUtZWQyNTUxOQECAwQFBg==\n-----END OPENSSH PRIVATE KEY-----\n"
+        "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS\n1zaGEyLW5pc3RwMjU2AAAACG5pc3RwMjU2AAAAQQS713iRNh0QjvlxomPsQM6Or06M8WwR\nWP+IJYUpd3amUz2BfWpC3KJdVd/ylY6hpgBMnEiBDZXIpr/nMCIZFSacAAAAqOqRN6bqkT\nemAAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLvXeJE2HRCO+XGi\nY+xAzo6vTozxbBFY/4glhSl3dqZTPYF9akLcol1V3/KVjqGmAEycSIENlcimv+cwIhkVJp\nwAAAAgKZ7Ovy4KUkV7kMQZmBF+7tqC5CqBa6GJLxcdNc7DBnMAAAAMZml4dHVyZS1wMjU2\nAQIDBA==\n-----END OPENSSH PRIVATE KEY-----\n"
+    ]
+    prints = [
+        "SHA256:3iXqItVwQZmJsblR59hxUfHpwQkzyCTO1Cax1PqA7fE"
+        "SHA256:NUkctFfCzGk8pnO2RUHlZcSwX+T8K9wGSrnt5rHB9o0"
+    ]
+    comments = ["fixture-ed25519", "fixture-p256"]
+
+    for which in range(from: 0, to: 2)
+        key @= parse_private_key(files[which]).must()
+        assert fingerprint(key.public) == prints[which]
+        assert key.public.comment == comments[which]
+        again @= parse_private_key(format_private_key(key).must()).must()
+        assert again.public == key.public
+        signature = sign(again, data: [1, 2, 3]).must()
+        assert verify(key.public, data: [1, 2, 3], signature: signature).must()
+        assert !verify(key.public, data: [1, 2, 4], signature: signature).must()
+        close_key(@again).must()
+        close_key(@key).must()
+
+test "parse_private_key: a file under a passphrase is unsupported, a broken check and another label invalid"
+    under = "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABCbXkS+Fh\ncGHtLaK7z0jFflAAAAGAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIFerMQpxZxOVykms\nOH3yZYwHZywcdEd7zeeiOn+FovRDAAAAkIBZEVon9DBb3+QOSeIQ7CgU5XlL4jK62kFyBH\nzPloMUQOLrqJQ5R6o5u+S8iAg81btUwqIJvH+0c3mhfzIeuI8BBbkFbU51S2gR3Lllp7jE\n5LqKJvFCfNREoZPIcWyUtUp9XA9fNnkaaxFtLP3cwuUHAa1My1cS/u+Gst2aDc3ri7cl0z\nVfuBjvEXd/GSNiHQ==\n-----END OPENSSH PRIVATE KEY-----\n"
+
+    match parse_private_key(under)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert parse_private_key("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n").is_err()
+    assert parse_private_key("no key here").is_err()
+
+test "check_known_host and known_host_line: names and ports in clear, ssh-keygen 10.5's hashed lines, negation, wildcards, a changed key and a revoked one"
+    ed = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    ec = parse_public_key(
+        "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLvXeJE2HRCO+XGiY+xAzo6vTozxbBFY/4glhSl3dqZTPYF9akLcol1V3/KVjqGmAEycSIENlcimv+cwIhkVJpw="
+    ).must()
+    hashed = "|1|03hAWzPvfdUnBq0wHGBg/IGmDxY=|pDHLAWmTxo7xqqTXoWg/pUdFLFc= " + format_public_key(ed) + "\n|1|MbWhfrCd9QqIVg29dvjUEVaHLV0=|vSjQQemsTu4hxng7MzRNFJQPtHA= " + format_public_key(ec) + "\n"
+    assert check_known_host(text: hashed, host: "example.org", port: 22, key: ed) == .known
+    assert check_known_host(text: hashed, host: "EXAMPLE.org", port: 22, key: ed) == .known
+    assert check_known_host(text: hashed, host: "example.org", port: 2222, key: ec) == .known
+    assert check_known_host(text: hashed, host: "example.org", port: 22, key: ec) == .changed(line: 1)
+    assert check_known_host(text: hashed, host: "example.net", port: 22, key: ed) == .unknown
+    clear = "# a comment\n\n*.example.org,!bad.example.org " + format_public_key(ed) + "\n@revoked * " + format_public_key(ec) + "\n"
+    assert check_known_host(text: clear, host: "a.example.org", port: 22, key: ed) == .known
+    assert check_known_host(text: clear, host: "bad.example.org", port: 22, key: ed) == .unknown
+    assert check_known_host(text: clear, host: "a.example.org", port: 22, key: ec) == .revoked(line: 4)
+    assert check_known_host(text: "", host: "a", port: 22, key: ed) == .unknown
+    line = known_host_line(host: "Example.org", port: 2222, key: ed, hashed: false).must()
+    assert line == "[example.org]:2222 " + format_public_key(ed)
+    secret = known_host_line(host: "example.org", port: 22, key: ed, hashed: true).must()
+    assert strings.has_prefix(s: secret, prefix: "|1|")
+    assert check_known_host(text: secret, host: "example.org", port: 22, key: ed) == .known
+    assert check_known_host(text: secret, host: "example.com", port: 22, key: ed) == .unknown
+
+test "connect: a host known_hosts does not name is refused with its fingerprint, a changed key is invalid, a new one added where asked, and an empty path invalid"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            fresh = found.dir + "/known_hosts_test_" + to_str(found.port)
+            write_file(path: fresh, text: "").must()
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: fresh)
+            opts.port @ found.port
+
+            match connect(opts)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == NOT_FOUND
+                    assert strings.index_of(s: e.msg, substr: "SHA256:").is_err() == false
+
+            other = parse_public_key(
+                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+"
+            ).must()
+            write_file(
+                path: fresh,
+                text: known_host_line(host: "127.0.0.1", port: found.port, key: other, hashed: false).must() + "\n"
+            ).must()
+
+            match connect(opts)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            write_file(path: fresh, text: "").must()
+            opts.unknown_hosts @ .add_hashed
+            c @= connect(opts).must()
+            close(@c).must()
+            opts.unknown_hosts @ .refuse
+            again @= connect(opts).must()
+            close(@again).must()
+            opts.known_hosts @ ""
+            assert connect(opts).is_err()
+
+test "sign_in_with_key: every key type of ssh-keygen 10.5 against its sshd, and a key the server does not know refused"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+
+            for name in ["id_ed25519", "id_ecdsa", "id_p384", "id_rsa"]
+                if name == "id_ed25519" && !keypairs.is_available(.ed25519)
+                    continue
+                c @= connect(opts).must()
+                key @= parse_private_key(read_file(found.dir + "/" + name).must()).must()
+                sign_in_with_key(@c, key: key).must()
+                assert is_signed_in(c)
+                assert run(@c, command: "printf signed").must().output == [115, 105, 103, 110, 101, 100]
+                close_key(@key).must()
+                close(@c).must()
+
+            c @= connect(opts).must()
+            stranger @= generate_key(.ecdsa_p256, comment: "stranger").must()
+
+            match sign_in_with_key(@c, key: stranger)
+                .ok _  => assert false
+                .err e => assert e.code == PERMISSION
+
+            assert sign_in_methods(@c).must() == ["publickey"]
+
+            match sign_in_with_password(@c, password: "not a password")
+                .ok _  => assert false
+                .err e => assert e.code == PERMISSION
+
+            close_key(@stranger).must()
+            close(@c).must()
+
+test "run, start, write, read and wait_exit: 3 MB of output through the window, 300 KB echoed through cat across the server's rekeys, errors apart, an exit status and a signal"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            key @= parse_private_key(read_file(found.dir + "/id_ecdsa").must()).must()
+            sign_in_with_key(@c, key: key).must()
+            big = run(@c, command: "head -c 3000000 /dev/zero; echo done 1>&2; exit 7").must()
+            assert big.output.len() == 3000000
+            assert big.errors == [100, 111, 110, 101, 10]
+            assert big.status.must() == 7
+            cat = start(@c, command: "cat").must()
+            sent: [u8] @= []
+
+            while sent.len() < 300000
+                sent @ sent.push(to_u8(sent.len() % 251).must())
+
+            write(@c, channel: cat, data: sent).must()
+            close_write(@c, channel: cat).must()
+            back: [u8] @= []
+
+            while true
+                part = read(@c, channel: cat, n: 65536).must()
+
+                if part.len() == 0
+                    break
+
+                for b in part
+                    back @ back.push(b)
+
+            assert back == sent
+            assert wait_exit(@c, channel: cat).must().status.must() == 0
+            close_channel(@c, channel: cat).must()
+            sleeper = start(@c, command: "sleep 30").must()
+            send_signal(@c, channel: sleeper, name: "TERM").must()
+            ended = wait_exit(@c, channel: sleeper).must()
+            assert ended.signal.must() == "TERM"
+            assert ended.status.is_err()
+            close_channel(@c, channel: sleeper).must()
+            close_key(@key).must()
+            close(@c).must()
+
+test "open_session, set_env, ask_terminal, resize, exec, read_errors: a variable sshd accepts and one it refuses, a terminal, a subsystem it lacks"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            key @= parse_private_key(read_file(found.dir + "/id_rsa").must()).must()
+            sign_in_with_key(@c, key: key).must()
+            session_channel = open_session(@c).must()
+            set_env(@c, channel: session_channel, name: "REBEL_SSH_TEST", value: "kept").must()
+
+            match set_env(@c, channel: session_channel, name: "REBEL_SSH_OTHER", value: "x")
+                .ok _  => assert false
+                .err e => assert e.code == PERMISSION
+
+            ask_terminal(@c, channel: session_channel, terminal: Terminal(term: "vt100", columns: 80, rows: 24)).must()
+            resize(@c, channel: session_channel, terminal: Terminal(term: "vt100", columns: 100, rows: 30)).must()
+            exec(
+                @c,
+                channel: session_channel,
+                command: "printf %s \"$REBEL_SSH_TEST\"; test -t 0 && printf ' tty'; printf x 1>&2"
+            ).must()
+            words: [u8] @= []
+
+            while true
+                part = read(@c, channel: session_channel, n: 100).must()
+
+                if part.len() == 0
+                    break
+
+                for b in part
+                    words @ words.push(b)
+
+            assert strings.has_prefix(s: bytes.to_text(words).must(), prefix: "kept tty")
+            assert read_errors(@c, channel: session_channel, n: 10).must().len() == 0
+            close_channel(@c, channel: session_channel).must()
+            bare = open_session(@c).must()
+
+            match subsystem(@c, channel: bare, name: "no-such-subsystem")
+                .ok _  => assert false
+                .err e => assert e.code == PERMISSION
+
+            close_channel(@c, channel: bare).must()
+            close_key(@key).must()
+            close(@c).must()
+
+test "dial, listen_remote, accept_remote and cancel_remote: the server's own port reached through it, and a connection it forwards back"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            key @= parse_private_key(read_file(found.dir + "/id_ecdsa").must()).must()
+            sign_in_with_key(@c, key: key).must()
+            tunnel = dial(@c, host: "127.0.0.1", port: found.port).must()
+            hello = read(@c, channel: tunnel, n: 8).must()
+            assert hello == bytes.from_text("SSH-2.0-")
+            close_channel(@c, channel: tunnel).must()
+            bound = listen_remote(@c, host: "127.0.0.1", port: 0).must()
+            assert bound > 0
+            conn @= net.connect("127.0.0.1", port: bound, deadline_ms: 10000).must()
+            io.write(conn.stream, data: bytes.from_text("ping")).must()
+            forwarded = accept_remote(@c).must()
+            assert read(@c, channel: forwarded.channel, n: 4).must() == bytes.from_text("ping")
+            write(@c, channel: forwarded.channel, data: bytes.from_text("pong")).must()
+            assert io.read_exact(conn.stream, n: 4).must() == bytes.from_text("pong")
+            io.close(@conn.stream).must()
+            close_channel(@c, channel: forwarded.channel).must()
+            cancel_remote(@c, host: "127.0.0.1", port: bound).must()
+            assert fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10).must()).must() == host_key(c)
+            close_key(@key).must()
+            close(@c).must()
+
+## Examples
+
+# A line of `authorized_keys` read.
+test "parse_public_key: a line of a .pub file"
+    key = parse_public_key(
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+ ana@laptop"
+    ).must()
+    assert key.key_type == "ssh-ed25519" && key.comment == "ana@laptop"
+
+# A key written back as its line.
+test "format_public_key: a key as its line"
+    key = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    assert format_public_key(key) == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+"
+
+# A key read from its blob, as a server sends one.
+test "decode_public_key: a blob's key type"
+    line = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    assert decode_public_key(line.blob).must().key_type == "ssh-ed25519"
+
+# The fingerprint a person compares with `ssh-keygen -l`'s.
+test "fingerprint: as ssh-keygen -l prints it"
+    key = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    assert fingerprint(key) == "SHA256:3iXqItVwQZmJsblR59hxUfHpwQkzyCTO1Cax1PqA7fE"
+
+# The fingerprint of before OpenSSH 6.8.
+test "fingerprint_md5: as ssh-keygen -l -E md5 prints it"
+    key = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    assert fingerprint_md5(key) == "MD5:6c:80:59:5d:fc:08:44:04:08:9d:d8:3f:ad:fb:89:c3"
+
+# A key made, written as OpenSSH's file and read back.
+test "parse_private_key: a file written by format_private_key"
+    key @= generate_key(.ecdsa_p256, comment: "deploy").must()
+    again @= parse_private_key(format_private_key(key).must()).must()
+    assert again.public == key.public
+    close_key(@again).must()
+    close_key(@key).must()
+
+# A key written as OpenSSH's file.
+test "format_private_key: the armour ssh-keygen writes"
+    key @= generate_key(.ecdsa_p384, comment: "").must()
+    assert strings.has_prefix(s: format_private_key(key).must(), prefix: "-----BEGIN OPENSSH PRIVATE KEY-----\n")
+    close_key(@key).must()
+
+# A new key and its public line for `authorized_keys`.
+test "generate_key: a key and its line"
+    key @= generate_key(.rsa(bits: 2048), comment: "ci").must()
+    assert strings.has_prefix(s: format_public_key(key.public), prefix: "ssh-rsa ")
+    close_key(@key).must()
+
+# A key of `crypto/keypairs` taken to sign in with.
+test "private_key_of: a key made elsewhere"
+    made @= keypairs.generate(.p256).must()
+    key @= private_key_of(@made, comment: "elsewhere").must()
+    assert key.public.key_type == "ecdsa-sha2-nistp256"
+    close_key(@key).must()
+
+# A key closed, its secret overwritten.
+test "close_key: a key made and closed"
+    key @= generate_key(.ecdsa_p256, comment: "").must()
+    close_key(@key).must()
+
+# Bytes signed as SSH signs them.
+test "sign: a signature verify holds"
+    key @= generate_key(.ecdsa_p256, comment: "").must()
+    signature = sign(key, data: bytes.from_text("release 1.0")).must()
+    assert verify(key.public, data: bytes.from_text("release 1.0"), signature: signature).must()
+    close_key(@key).must()
+
+# A signature that does not hold is false.
+test "verify: another text"
+    key @= generate_key(.ecdsa_p256, comment: "").must()
+    signature = sign(key, data: [1]).must()
+    assert !verify(key.public, data: [2], signature: signature).must()
+    close_key(@key).must()
+
+# A host looked up in a `known_hosts` file's text.
+test "check_known_host: a host the file names"
+    key = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    text = "git.example.org " + format_public_key(key) + "\n"
+    assert check_known_host(text: text, host: "git.example.org", port: 22, key: key) == .known
+
+# The line that adds a host on another port.
+test "known_host_line: a host on port 2222"
+    key = parse_public_key("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ+UqwCgF4S/lSbMzs4bsyx/GrNPW85KY7pawhPrMJO+").must()
+    assert known_host_line(host: "git.example.org", port: 2222, key: key, hashed: false).must() == "[git.example.org]:2222 " + format_public_key(key)
+
+# Options for a server on another port.
+test "options: a port changed"
+    opts @= options(host: "git.example.org", user: "git", known_hosts: "/home/ana/.ssh/known_hosts")
+    opts.port @ 2222
+    assert opts.unknown_hosts == .refuse && opts.port == 2222
+
+# A server reached, its key checked, the connection closed.
+test "connect: a server known_hosts names"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            close(@c).must()
+
+# A host key fetched to be shown before it is trusted.
+test "fetch_host_key: the key a person checks"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            key = fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10).must()).must()
+            assert strings.has_prefix(s: fingerprint(key), prefix: "SHA256:")
+
+# The host key a client trusted.
+test "host_key: the server's key"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            assert host_key(c).key_type != ""
+            close(@c).must()
+
+# The banner a server shows, empty where it shows none.
+test "banner: none from this server"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            assert banner(c) == ""
+            close(@c).must()
+
+# Each later call bounded by a minute.
+test "set_wait: a minute"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            set_wait(@c, wait: time.seconds(60).must()).must()
+            close(@c).must()
+
+# A client closed.
+test "close: a client"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            close(@c).must()
+
+# What a server takes before trying a method.
+test "sign_in_methods: a server taking keys"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            assert sign_in_methods(@c).must() == ["publickey"]
+            close(@c).must()
+
+# A sign-in by the user's key file.
+test "sign_in_with_key: the user's key"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            key @= parse_private_key(read_file(found.dir + "/id_ecdsa").must()).must()
+            sign_in_with_key(@c, key: key).must()
+            close_key(@key).must()
+            close(@c).must()
+
+# A password a server that takes keys alone refuses.
+test "sign_in_with_password: refused by a server taking keys alone"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            opts @= options(host: "127.0.0.1", user: found.user, known_hosts: found.dir + "/known_hosts")
+            opts.port @ found.port
+            c @= connect(opts).must()
+            assert sign_in_with_password(@c, password: "secret").is_err()
+            close(@c).must()
+
+# Whether a client has signed in.
+test "is_signed_in: after a key"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            assert is_signed_in(c)
+            close(@c).must()
+
+# A program's output read whole.
+test "run: a command's output and exit status"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            done = run(@c, command: "echo hello").must()
+            assert done.output == bytes.from_text("hello\n") && done.status.must() == 0
+            close(@c).must()
+
+# A program started, its output read as it comes.
+test "start: a program read as it runs"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "echo one").must()
+            assert read(@c, channel: channel, n: 100).must() == bytes.from_text("one\n")
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A session opened, a program run in it.
+test "open_session: then exec"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            exec(@c, channel: channel, command: "true").must()
+            assert wait_exit(@c, channel: channel).must().status.must() == 0
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A terminal asked for a program.
+test "ask_terminal: a vt100"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            ask_terminal(@c, channel: channel, terminal: Terminal(term: "vt100", columns: 80, rows: 24)).must()
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A variable set for the program, where the server accepts its name.
+test "set_env: a name sshd's AcceptEnv lists"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            set_env(@c, channel: channel, name: "REBEL_SSH_TEST", value: "1").must()
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A command run in a session.
+test "exec: a command"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            exec(@c, channel: channel, command: "exit 2").must()
+            assert wait_exit(@c, channel: channel).must().status.must() == 2
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# The user's shell fed a line.
+test "shell: a line typed"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            shell(@c, channel: channel).must()
+            write(@c, channel: channel, data: bytes.from_text("exit 4\n")).must()
+            assert wait_exit(@c, channel: channel).must().status.must() == 4
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# The file transfer subsystem started.
+test "subsystem: sftp"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            subsystem(@c, channel: channel, name: "sftp").must()
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# Bytes written to a program's input.
+test "write: a line to cat"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "cat").must()
+            write(@c, channel: channel, data: bytes.from_text("hi\n")).must()
+            assert read(@c, channel: channel, n: 3).must() == bytes.from_text("hi\n")
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A program's output read.
+test "read: what a program printed"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "printf ok").must()
+            assert read(@c, channel: channel, n: 2).must() == bytes.from_text("ok")
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A program's errors read apart from its output.
+test "read_errors: what a program wrote to its errors"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "printf no 1>&2").must()
+            assert read_errors(@c, channel: channel, n: 2).must() == bytes.from_text("no")
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A program's input ended, so it ends.
+test "close_write: cat ends"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "cat").must()
+            close_write(@c, channel: channel).must()
+            assert wait_exit(@c, channel: channel).must().status.must() == 0
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A terminal grown.
+test "resize: a terminal grown"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            ask_terminal(@c, channel: channel, terminal: Terminal(term: "vt100", columns: 80, rows: 24)).must()
+            resize(@c, channel: channel, terminal: Terminal(term: "vt100", columns: 120, rows: 40)).must()
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A program stopped by a signal.
+test "send_signal: TERM"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "sleep 30").must()
+            send_signal(@c, channel: channel, name: "TERM").must()
+            assert wait_exit(@c, channel: channel).must().signal.must() == "TERM"
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A program waited for.
+test "wait_exit: an exit status"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = start(@c, command: "exit 5").must()
+            assert wait_exit(@c, channel: channel).must().status.must() == 5
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A channel closed.
+test "close_channel: a session"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            channel = open_session(@c).must()
+            close_channel(@c, channel: channel).must()
+            close(@c).must()
+
+# A port reached through the server.
+test "dial: the server's own SSH port"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            tunnel = dial(@c, host: "127.0.0.1", port: found.port).must()
+            assert read(@c, channel: tunnel, n: 4).must() == bytes.from_text("SSH-")
+            close_channel(@c, channel: tunnel).must()
+            close(@c).must()
+
+# A port the server listens on for this client.
+test "listen_remote: a port the server chooses"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            port = listen_remote(@c, host: "127.0.0.1", port: 0).must()
+            cancel_remote(@c, host: "127.0.0.1", port: port).must()
+            close(@c).must()
+
+# A connection the server forwarded.
+test "accept_remote: one connection"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            port = listen_remote(@c, host: "127.0.0.1", port: 0).must()
+            conn @= net.connect("127.0.0.1", port: port, deadline_ms: 10000).must()
+            forwarded = accept_remote(@c).must()
+            assert forwarded.origin_host != ""
+            io.close(@conn.stream).must()
+            close_channel(@c, channel: forwarded.channel).must()
+            close(@c).must()
+
+# A remote forward ended.
+test "cancel_remote: a forward ended"
+    match opening.server()
+        .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
+        .ok found =>
+            c @= Client(state: opening.signed_in(found).must(), user: found.user)
+            port = listen_remote(@c, host: "127.0.0.1", port: 0).must()
+            cancel_remote(@c, host: "127.0.0.1", port: port).must()
+            close(@c).must()

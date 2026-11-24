@@ -1,0 +1,239 @@
+# Whether a SAML message or assertion is signed by a key the program trusts,
+# and the signature covers the very element it stands in: SAML Core § 5.4.2
+# asks one reference, `#` and the element's `ID`, which is what keeps a
+# signature over one element from being read as vouching for another.
+
+use bytes
+use saml/internal/names
+use saml/internal/transport
+use x509
+use xml
+use xmldsig
+
+# Whether the element at `at` in `doc` carries a signature among its children
+# that holds for one of `certificates` and covers that element alone.
+#
+# - `doc`: the document, as parsed.
+# - `at`: the element's place.
+# - `certificates`: the signing certificates the identity provider's
+#   metadata gives.
+# - `what`: the element, named in the messages.
+#
+# False where it carries none. Fails `invalid` where it carries two, where
+# the element has no `ID`, where no certificate is given, where the value
+# holds for none of them, or where the reference names another element;
+# `unsupported` as `xmldsig.check` fails.
+function enveloped(doc: xml.Document, at: [i64], certificates: [x509.Certificate], what: str) -> bool?
+    if certificates.len() == 0
+        return fail(code: names.INVALID, msg: "the identity provider's metadata gives no signing certificate")
+    verifiers: [xmldsig.Verifier] @= []
+
+    for c in certificates
+        verifiers @ verifiers.push(.certificate(v: c))
+
+    return enveloped_by(doc, at: at, verifiers: verifiers, what: what)
+
+# Whether the element at `at` carries a signature among its children that
+# holds for one of `verifiers` and covers that element alone, as `enveloped`
+# says: the metadata's signature is checked by the key the program gives.
+function enveloped_by(doc: xml.Document, at: [i64], verifiers: [xmldsig.Verifier], what: str) -> bool?
+    e = xml.element_at_place(doc, place: at)?
+    found: [[i64]] @= []
+    index: i64 @= 0
+
+    for c in e.children
+        match c
+            .element x =>
+                if x.v.name.space == names.DSIG && x.v.name.local == "Signature"
+                    place: [i64] @= at
+                    place @ place.push(index)
+                    found @ found.push(place)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+        index @ index + 1
+
+    if found.len() == 0
+        return ok(false)
+
+    if found.len() > 1
+        return fail(code: names.INVALID, msg: f"{what} carries {found.len()} signatures")
+    id = xml.attribute(e, name: "ID")
+
+    if id.is_err()
+        return fail(code: names.INVALID, msg: f"{what} is signed but has no ID for its signature to name")
+
+    options = xmldsig.CheckOptions(id_attributes: ["ID"])
+    last: bool? @= fail(code: names.INVALID, msg: f"{what}'s signature holds for no certificate")
+
+    for verifier in verifiers
+        match xmldsig.check(doc, signature: found[0], verifier: verifier, options: options)
+            .ok checked =>
+                if checked.signed.len() != 1
+                    return fail(
+                        code: names.INVALID,
+                        msg: f"{what}'s signature has {checked.signed.len()} references where SAML Core § 5.4.2 asks one"
+                    )
+
+                if checked.signed[0].uri != "#" + id.must() || checked.signed[0].place != at
+                    return fail(
+                        code: names.INVALID,
+                        msg: f"{what}'s signature covers \"{checked.signed[0].uri}\", not the element it stands in"
+                    )
+                return ok(true)
+            .err why => last @ fail(code: why.code, msg: f"{what}'s signature: {why.msg}")
+
+    return last
+
+# Whether a redirect's query carries a signature over SAML Bindings
+# § 3.4.4.1's bytes that holds for one of `certificates`.
+#
+# - `pairs`: the query's pairs, as written and as read.
+# - `parameter`: `SAMLRequest` or `SAMLResponse`, the one the query holds.
+# - `certificates`: the signing certificates the metadata gives.
+# - `what`: the message, named in the messages.
+#
+# False where it carries neither `Signature` nor `SigAlg`. Fails `invalid`
+# where it carries one without the other, the signature is not base 64, no
+# certificate is given or it holds for none; `unsupported` for a method
+# `xmldsig.check_bytes` does not check.
+function query_holds(pairs: [transport.RawPair], parameter: str, certificates: [x509.Certificate], what: str) -> bool?
+    signature = transport.pair_named(pairs, key: "Signature")
+    method = transport.pair_named(pairs, key: "SigAlg")
+
+    if signature.key == "" && method.key == ""
+        return ok(false)
+
+    if signature.key == "" || method.key == ""
+        return fail(code: names.INVALID, msg: f"{what}'s query writes one of Signature and SigAlg without the other")
+
+    if certificates.len() == 0
+        return fail(code: names.INVALID, msg: "the identity provider's metadata gives no signing certificate")
+
+    value = match bytes.parse_base64(signature.value)
+        .ok v  => v
+        .err _ => return fail(code: names.INVALID, msg: f"{what}'s Signature is not base 64")
+
+    message = transport.pair_named(pairs, key: parameter)
+    relay = transport.pair_named(pairs, key: "RelayState")
+    part = transport.signed_part(
+        parameter: parameter,
+        message: message.raw,
+        relay_state: relay.raw,
+        sig_alg: method.raw
+    )
+    last: bool? @= fail(code: names.INVALID, msg: f"{what}'s signature holds for no certificate")
+
+    for certificate in certificates
+        match xmldsig.check_bytes(message: bytes.from_text(part), value: value, method: method.value, verifier: .certificate(v: certificate))
+            .ok _    => return ok(true)
+            .err why => last @ fail(code: why.code, msg: f"{what}'s signature: {why.msg}")
+
+    return last
+
+# The status of the message `root`: success, or `failed` with the codes the
+# identity provider wrote, the inner one after the outer, and its message.
+function status_success(root: xml.Element) -> ()?
+    status = names.one_child(root, space: names.PROTOCOL, local: "Status", what: "the message's Status")?
+    code = names.one_child(status, space: names.PROTOCOL, local: "StatusCode", what: "the Status's StatusCode")?
+    value = names.attribute_or_empty(code, name: "Value")
+
+    if value == names.SUCCESS
+        return ok()
+    codes @= value
+
+    match xml.child_in(code, space: names.PROTOCOL, local: "StatusCode")
+        .ok inner => codes @ codes + " / " + names.attribute_or_empty(inner, name: "Value")
+        .err _    => _ = 0
+
+    said @= ""
+
+    match xml.child_in(status, space: names.PROTOCOL, local: "StatusMessage")
+        .ok m  => said @ ": " + names.plain(m, what: "the StatusMessage").default("")
+        .err _ => _ = 0
+
+    return fail(code: names.FAILED, msg: f"the identity provider answered {codes}{said}")
+
+# The place of the one assertion the response `root` holds, a child of it.
+#
+# Fails `invalid` where it holds none, `unsupported` where it holds several:
+# which one speaks for the user would be the reader's guess.
+function assertion_place(root: xml.Element) -> [i64]?
+    found: [[i64]] @= []
+    index: i64 @= 0
+
+    for c in root.children
+        match c
+            .element x =>
+                if x.v.name.space == names.ASSERTION && x.v.name.local == "Assertion"
+                    found @ found.push([index])
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+        index @ index + 1
+
+    if found.len() == 0
+        return fail(code: names.INVALID, msg: "the response holds no assertion")
+
+    if found.len() > 1
+        return fail(
+            code: names.UNSUPPORTED,
+            msg: f"the response holds {found.len()} assertions, and which one speaks for the user would be a guess"
+        )
+    return ok(found[0])
+
+# Whether the metadata `doc` carries a signature on its root that holds for
+# `verifier`.
+function metadata_signed(doc: xml.Document, verifier: xmldsig.Verifier) -> bool?
+    return enveloped_by(doc, at: [], verifiers: [verifier], what: "the metadata")
+
+# Fails `invalid` unless `root` is the protocol message `local` of SAML 2.0
+# with an `ID` and an `IssueInstant`, issued by `idp_entity` and sent to
+# `sp_logout_url`, which a signed message must name (SAML Bindings
+# § 3.4.5.2, § 3.5.5.2).
+function logout_message(root: xml.Element, local: str, sp_logout_url: str, idp_entity: str) -> ()?
+    if root.name.space != names.PROTOCOL || root.name.local != local
+        return fail(code: names.INVALID, msg: f"the message is <{root.name.local}>, not a SAML {local}")
+
+    if names.attribute_or_empty(root, name: "Version") != "2.0" || names.attribute_or_empty(root, name: "ID") == ""
+        return fail(code: names.INVALID, msg: f"the {local} is not of SAML 2.0 or has no ID")
+    _ = names.instant_of(s: names.attribute_or_empty(root, name: "IssueInstant"), what: f"the {local}'s IssueInstant")?
+    destination = names.attribute_or_empty(root, name: "Destination")
+
+    if destination != sp_logout_url
+        return fail(code: names.INVALID, msg: f"the {local} is for \"{destination}\", not \"{sp_logout_url}\"")
+    return names.check_issuer(root, expected: idp_entity, required: true, what: f"the {local}")
+
+# A message as a binding delivered it.
+record Delivered
+    # Whether it came by HTTP-Redirect, `text` then the query.
+    redirect: bool
+    # The query as received, or the posted field.
+    text: str
+
+# The message `d` holds, once it is signed by one of `certificates`: over
+# the query's bytes by HTTP-Redirect, enveloped by HTTP-POST.
+#
+# Fails `not_found` where the query holds no `parameter`, `invalid` where
+# the message is unsigned (SAML Profiles § 4.4.4 asks a logout message
+# signed) or its signature does not hold, `limit` past the binding's bound.
+function received(d: Delivered, parameter: str, certificates: [x509.Certificate]) -> xml.Document?
+    doc @= xml.document(xml.element("none"))
+    signed @= false
+
+    if d.redirect
+        pairs = transport.raw_pairs(d.text)?
+        message = transport.pair_named(pairs, key: parameter)
+
+        if message.key == ""
+            return fail(code: names.NOT_FOUND, msg: f"the query holds no {parameter}")
+        doc @ xml.parse(transport.inflated(message.value)?)?
+        signed @ query_holds(pairs, parameter: parameter, certificates: certificates, what: "the message")?
+    else
+        doc @ xml.parse(transport.decoded(d.text)?)?
+        signed @ enveloped(doc, at: [], certificates: certificates, what: "the message")?
+
+    if !signed
+        return fail(
+            code: names.INVALID,
+            msg: "the logout message is unsigned, and SAML Profiles § 4.4.4 asks it signed"
+        )
+    return ok(doc)

@@ -1,0 +1,203 @@
+# The names SAML 2.0 writes its messages in, and the readers of the values
+# every message holds: a time, a text, an issuer. Kept apart from the face so
+# that each of its modules reads a value the same way.
+
+use strings
+use time
+use xml
+
+# The code of a message or a value not of SAML's form.
+constant INVALID: str
+    "invalid"
+
+# The code of something a message must hold and does not.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a status other than success, answered by the identity
+# provider.
+constant FAILED: str
+    "failed"
+
+# The code of a form of SAML this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The namespace of SAML's protocol messages, `samlp`.
+constant PROTOCOL: str
+    "urn:oasis:names:tc:SAML:2.0:protocol"
+
+# The namespace of SAML's assertions, `saml`.
+constant ASSERTION: str
+    "urn:oasis:names:tc:SAML:2.0:assertion"
+
+# The namespace of SAML's metadata, `md`.
+constant METADATA: str
+    "urn:oasis:names:tc:SAML:2.0:metadata"
+
+# The namespace of XML Signature, `ds`.
+constant DSIG: str
+    "http://www.w3.org/2000/09/xmldsig#"
+
+# The namespace of XML Encryption, whose elements this package does not read.
+constant XENC: str
+    "http://www.w3.org/2001/04/xmlenc#"
+
+# The namespace of XML Schema's instance attributes, `xsi`.
+constant XSI: str
+    "http://www.w3.org/2001/XMLSchema-instance"
+
+# The format of an issuer's name, the only one an issuer may write.
+constant ENTITY: str
+    "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
+
+# The method of a bearer subject confirmation.
+constant BEARER: str
+    "urn:oasis:names:tc:SAML:2.0:cm:bearer"
+
+# The status of a request that succeeded.
+constant SUCCESS: str
+    "urn:oasis:names:tc:SAML:2.0:status:Success"
+
+# The instant `s` writes, an `xs:dateTime` in UTC: SAML Core § 1.3.3 writes it
+# with no zone, read as UTC, and every identity provider writes `Z`; an
+# offset is taken out.
+#
+# - `s`: the attribute's value.
+# - `what`: the attribute, named in the message.
+#
+# Fails `invalid` where `s` is no such time.
+function instant_of(s: str, what: str) -> time.Instant?
+    zoned = strings.has_suffix(s: s, suffix: "Z") || strings.has_suffix(s: s, suffix: "z") || has_offset(s)
+
+    text = if zoned
+        s
+    else
+        s + "Z"
+
+    match time.parse(text, layout: .rfc3339)
+        .ok t  => return ok(t)
+        .err e => return fail(code: INVALID, msg: f"{what} \"{s}\" is not an xs:dateTime: {e.msg}")
+
+# Whether the time `s` ends with a numeric offset, `+hh:mm` or `-hh:mm`,
+# after its `T`.
+function has_offset(s: str) -> bool
+    at = strings.index_of(s: s, substr: "T").default(-1)
+
+    if at < 0 || s.len() < 6
+        return false
+    sign = s.slice(from: s.len() - 6, to: s.len() - 5)
+    return s.len() - 6 > at && (sign == "+" || sign == "-")
+
+# The text `e` holds, every piece of it joined, a comment between two pieces
+# left out: what a signature over a form without comments covers, so a
+# comment put inside a signed name cannot cut the name a program reads.
+#
+# - `e`: the element.
+# - `what`: the element, named in the message.
+#
+# Fails `invalid` where `e` holds an element: SAML's simple values hold none.
+function plain(e: xml.Element, what: str) -> str?
+    for c in e.children
+        match c
+            .element _ => return fail(code: INVALID, msg: f"{what} holds an element where it holds only text")
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return ok(xml.text_of(e))
+
+# The one child of `e` named `local` in `space`, or `not_found`; two are
+# refused, since which one counts would be the reader's guess.
+#
+# - `e`: the element.
+# - `space`: the child's namespace.
+# - `local`: the child's local name.
+# - `what`: the child, named in the message.
+function one_child(e: xml.Element, space: str, local: str, what: str) -> xml.Element?
+    found = xml.children_in(e, space: space, local: local)
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"{what} is absent")
+
+    if found.len() > 1
+        return fail(code: INVALID, msg: f"{what} is written {found.len()} times where SAML allows one")
+    return ok(found[0])
+
+# Whether `e` holds a child named `local` in `space`.
+function has_child(e: xml.Element, space: str, local: str) -> bool
+    return xml.children_in(e, space: space, local: local).len() > 0
+
+# The value of the attribute `name`, written with no prefix, or "" where `e`
+# writes none.
+function attribute_or_empty(e: xml.Element, name: str) -> str
+    return xml.attribute(e, name: name).default("")
+
+# Fails `invalid` unless `e`'s `Issuer` child names `expected` in the entity
+# format: SAML Profiles § 4.1.4.2 and § 4.4.4, where `required` says the
+# message must carry one.
+#
+# - `e`: the message or the assertion.
+# - `expected`: the identity provider's entity identifier.
+# - `required`: whether an absent issuer is refused.
+# - `what`: the message, named in the failure.
+function check_issuer(e: xml.Element, expected: str, required: bool, what: str) -> ()?
+    found = xml.children_in(e, space: ASSERTION, local: "Issuer")
+
+    if found.len() == 0
+        if required
+            return fail(code: INVALID, msg: f"{what} names no issuer")
+        return ok()
+
+    if found.len() > 1
+        return fail(code: INVALID, msg: f"{what} names {found.len()} issuers")
+    format = attribute_or_empty(found[0], name: "Format")
+
+    if format != "" && format != ENTITY
+        return fail(code: INVALID, msg: f"{what}'s issuer is of the format \"{format}\" where an entity's is required")
+    issuer = plain(found[0], what: f"{what}'s issuer")?
+
+    if issuer != expected
+        return fail(code: INVALID, msg: f"{what} is issued by \"{issuer}\" where \"{expected}\" was expected")
+    return ok()
+
+# The code of `r`'s failure, or "" where it succeeded: what a test reads.
+function code_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code
+
+# The message of `r`'s failure, or "" where it succeeded.
+function message_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.msg
+
+## Tests
+
+test "instant_of: Z, no zone, an offset, a fraction, and no time at all"
+    assert time.unix_seconds(instant_of(s: "2026-11-23T22:00:00Z", what: "t").must()) == 1795471200
+    assert time.unix_seconds(instant_of(s: "2026-11-23T22:00:00", what: "t").must()) == 1795471200
+    assert time.unix_seconds(instant_of(s: "2026-11-23T23:00:00+01:00", what: "t").must()) == 1795471200
+    assert time.unix_seconds(instant_of(s: "2026-11-23T22:00:00.123Z", what: "t").must()) == 1795471200
+    assert strings.has_prefix(
+        s: message_of(instant_of(s: "tomorrow", what: "NotOnOrAfter")),
+        prefix: "NotOnOrAfter \"tomorrow\""
+    )
+    assert code_of(instant_of(s: "", what: "t")) == INVALID
+
+test "plain: a comment inside the text is left out and the pieces joined, and an element refused"
+    e = xml.parse("<a>ada@example.com<!---->.evil.org</a>").must().root
+    assert plain(e, what: "a").must() == "ada@example.com.evil.org"
+    nested = xml.parse("<a>x<b/></a>").must().root
+    assert code_of(plain(nested, what: "the name")) == INVALID
+
+test "check_issuer: the one expected, another, two, another format, and none where one is required"
+    one = xml.parse("<m xmlns:s=\"urn:oasis:names:tc:SAML:2.0:assertion\"><s:Issuer>idp</s:Issuer></m>").must().root
+    assert !check_issuer(one, expected: "idp", required: true, what: "the response").is_err()
+    assert code_of(check_issuer(one, expected: "other", required: true, what: "the response")) == INVALID
+    two = xml.parse("<m xmlns:s=\"urn:oasis:names:tc:SAML:2.0:assertion\"><s:Issuer>idp</s:Issuer><s:Issuer>idp</s:Issuer></m>").must().root
+    assert code_of(check_issuer(two, expected: "idp", required: false, what: "the response")) == INVALID
+    mail = xml.parse("<m xmlns:s=\"urn:oasis:names:tc:SAML:2.0:assertion\"><s:Issuer Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\">idp</s:Issuer></m>").must().root
+    assert code_of(check_issuer(mail, expected: "idp", required: false, what: "the response")) == INVALID
+    none = xml.parse("<m/>").must().root
+    assert !check_issuer(none, expected: "idp", required: false, what: "the response").is_err()
+    assert code_of(check_issuer(none, expected: "idp", required: true, what: "the assertion")) == INVALID

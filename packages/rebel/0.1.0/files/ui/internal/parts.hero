@@ -1,0 +1,478 @@
+# A drawing area's parts as a screen reader reads them (`ui.set_parts`,
+# `ui.parts_of`), as wxWidgets' `wxAccessible` and Qt's
+# `QAccessibleInterface` give a widget the program draws: a chart, a board or
+# a custom control is one picture to a person who cannot see it until the
+# program names its parts. The program's `ui.Part`s are written out as the
+# records `hero_ui.h`'s A DRAWING AREA'S PARTS, READ BY A SCREEN READER
+# defines and kept on the area's node; the native side builds the system's
+# accessibility objects of them, and a screen reader's act on one comes back
+# as `.part_acted`. The headless side keeps them and tells an injected act as
+# the native side would.
+
+use bytes
+use math
+use time
+use ui
+use ui/hero_ui
+use ui/internal/canvas as canvas_of
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/model
+
+# The bytes of a part's record before its name and description.
+constant FIXED: i64
+    48
+
+# The most a name or a description is, in bytes: its length is a `u16`.
+constant WORDS_MOST: i64
+    65535
+
+# Gives drawing area `widget` the parts `parts` (`ui.set_parts`).
+function given(@app: ui.App, widget: ui.Widget, parts: [ui.Part]) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+    list = encode(parts)?
+
+    if app.native
+        kept @= list
+
+        if hero_ui.set_parts(app.handle, id: n.id, @kept, count: to_u64(kept.len()).must()) < 0
+            return failure.last(f"giving area {n.id} its parts")
+    n.parts @ list
+    model.put(@app.table, n: n)
+    return ok()
+
+# The parts of drawing area `widget` (`ui.parts_of`): on the native side read
+# back from the system's accessibility objects, the windows laid out first so
+# each box is where the reader finds it; on the headless side as given.
+function read(@app: ui.App, widget: ui.Widget) -> [ui.Part]?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+
+    if !app.native
+        return decode(n.parts)
+    canvas_of.loop_settled(@app)?
+    room: i64 @= n.parts.len() + 256
+
+    for _ in range(from: 0, to: 4)
+        buffer: [u8] @= []
+        got = hero_ui.parts(app.handle, id: n.id, @buffer, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last(f"reading the parts of area {n.id}")
+
+        if got <= room
+            return decode(buffer.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: f"the parts of area {n.id} kept growing while they were read")
+
+## The records
+
+# The code of `role`, as `hero_ui.h` numbers it.
+function role_code(role: ui.PartRole) -> i64
+    match role
+        .group       => return hero_ui.HERO_UI_PART_GROUP
+        .text        => return hero_ui.HERO_UI_PART_TEXT
+        .image       => return hero_ui.HERO_UI_PART_IMAGE
+        .button      => return hero_ui.HERO_UI_PART_BUTTON
+        .check_box _ => return hero_ui.HERO_UI_PART_CHECK_BOX
+        .radio _     => return hero_ui.HERO_UI_PART_RADIO
+        .slider _    => return hero_ui.HERO_UI_PART_SLIDER
+        .progress _  => return hero_ui.HERO_UI_PART_PROGRESS
+        .link        => return hero_ui.HERO_UI_PART_LINK
+
+# The value, least and most `role` carries: a slider's and a progress bar's,
+# zeros for every other role.
+function range_of(role: ui.PartRole) -> [f64]
+    match role
+        .slider s                                                           => return [s.value, s.least, s.most]
+        .progress p                                                         => return [p.value, p.least, p.most]
+        .group | .text | .image | .button | .check_box _ | .radio _ | .link => return [0.0, 0.0, 0.0]
+
+# Whether `role` is a check box or a radio button that is checked.
+function checked(role: ui.PartRole) -> bool
+    match role
+        .check_box c                                                        => return c.checked
+        .radio r                                                            => return r.checked
+        .group | .text | .image | .button | .slider _ | .progress _ | .link => return false
+
+# Whether a screen reader presses a part of `role`: a control that acts.
+function pressed(role: ui.PartRole) -> bool
+    match role
+        .button | .check_box _ | .radio _ | .link         => return true
+        .group | .text | .image | .slider _ | .progress _ => return false
+
+# Whether `role` is a slider, the role a step moves.
+function stepped(role: ui.PartRole) -> bool
+    match role
+        .slider _                                                                         => return true
+        .group | .text | .image | .button | .check_box _ | .radio _ | .progress _ | .link => return false
+
+# Whether `part`, the `number`th of its list, is one `hero_ui.h` takes.
+function part_ok(part: ui.Part, number: i64) -> ()?
+    what = f"part {number}"
+
+    if part.name == ""
+        return fail(code: failure.INVALID, msg: f"{what} has no name, and a screen reader says every part by its name")
+    check.text_ok(text: part.name, one_line: true, what: f"{what}'s name")?
+    check.text_ok(text: part.description, one_line: true, what: f"{what}'s description")?
+
+    if part.name.len() > WORDS_MOST || part.description.len() > WORDS_MOST
+        return fail(code: failure.INVALID, msg: f"{what} has a name or a description past {WORDS_MOST} bytes")
+
+    if part.within < 0 || part.within >= number
+        return fail(
+            code: failure.INVALID,
+            msg: f"{what} is within part {part.within}, and a part is within the area (0) or an earlier part"
+        )
+
+    if part.box.width < 0 || part.box.height < 0
+        return fail(code: failure.INVALID, msg: f"{what} has a box of width or height below 0")
+
+    if part.focused && !part.focusable
+        return fail(code: failure.INVALID, msg: f"{what} is focused and not focusable")
+    ends = range_of(part.role)
+
+    for x in ends
+        if !math.is_finite(x)
+            return fail(code: failure.INVALID, msg: f"{what} has a value or an end that is not finite")
+
+    if role_code(part.role) == hero_ui.HERO_UI_PART_SLIDER || role_code(part.role) == hero_ui.HERO_UI_PART_PROGRESS
+        if !(ends[1] < ends[2]) || ends[0] < ends[1] || ends[0] > ends[2]
+            return fail(
+                code: failure.INVALID,
+                msg: f"{what} runs from {ends[1]} to {ends[2]} with the value {ends[0]}: its least is below its most and the value between them"
+            )
+    return ok()
+
+# The records `parts` are, as `hero_ui.h` lays them out.
+function encode(parts: [ui.Part]) -> [u8]?
+    if parts.len() > hero_ui.HERO_UI_PARTS_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"{parts.len()} parts; an area holds at most {hero_ui.HERO_UI_PARTS_MOST}"
+        )
+    out: [[u8]] @= []
+    focused @= 0
+
+    for i in range(from: 0, to: parts.len())
+        part = parts[i]
+        part_ok(part, number: i + 1)?
+
+        if part.focused
+            if focused > 0
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"parts {focused} and {i + 1} are both focused, and the program's focus stands on one"
+                )
+            focused @ i + 1
+        states @= 0
+
+        if part.focusable
+            states @ states + hero_ui.HERO_UI_PART_FOCUSABLE
+
+        if part.focused
+            states @ states + hero_ui.HERO_UI_PART_FOCUSED
+
+        if checked(part.role)
+            states @ states + hero_ui.HERO_UI_PART_CHECKED
+        box = canvas_of.reals([to_f64(part.box.x), to_f64(part.box.y), to_f64(part.box.width), to_f64(part.box.height)], what: f"part {i + 1}'s box")?
+        ends = range_of(part.role)
+        out @ out.push([to_u8(role_code(part.role)).must(), to_u8(states).must()])
+        out @ out.push(bytes.encode_u16_le(to_u16(part.within).must()))
+        out @ out.push(box)
+
+        for x in ends
+            out @ out.push(bytes.encode_f64_le(x))
+
+        out @ out.push(bytes.encode_u16_le(to_u16(part.name.len()).must()))
+        out @ out.push(bytes.encode_u16_le(to_u16(part.description.len()).must()))
+        out @ out.push(bytes.from_text(part.name))
+        out @ out.push(bytes.from_text(part.description))
+
+    return ok(bytes.concat(out))
+
+# The role of code `code`, with what the record carries for it: `states`
+# for a check box and a radio button, `ends` for a slider and a progress bar.
+function role_of(code: i64, states: i64, ends: [f64]) -> ui.PartRole?
+    on = states / hero_ui.HERO_UI_PART_CHECKED % 2 == 1
+
+    if code == hero_ui.HERO_UI_PART_GROUP
+        return ok(.group)
+
+    if code == hero_ui.HERO_UI_PART_TEXT
+        return ok(.text)
+
+    if code == hero_ui.HERO_UI_PART_IMAGE
+        return ok(.image)
+
+    if code == hero_ui.HERO_UI_PART_BUTTON
+        return ok(.button)
+
+    if code == hero_ui.HERO_UI_PART_CHECK_BOX
+        return ok(.check_box(checked: on))
+
+    if code == hero_ui.HERO_UI_PART_RADIO
+        return ok(.radio(checked: on))
+
+    if code == hero_ui.HERO_UI_PART_SLIDER
+        return ok(.slider(value: ends[0], least: ends[1], most: ends[2]))
+
+    if code == hero_ui.HERO_UI_PART_PROGRESS
+        return ok(.progress(value: ends[0], least: ends[1], most: ends[2]))
+
+    if code == hero_ui.HERO_UI_PART_LINK
+        return ok(.link)
+    return fail(code: failure.FAILED, msg: f"a part's record carried the role {code}, which is none")
+
+# The parts the records of `list` are.
+function decode(list: [u8]) -> [ui.Part]?
+    parts: [ui.Part] @= []
+    at @= 0
+
+    while at < list.len()
+        if list.len() - at < FIXED
+            return fail(code: failure.FAILED, msg: f"a part's record at byte {at} ends before its words")
+        states = to_i64(list[at + 1]).must()
+        within = to_i64(bytes.decode_u16_le(list, at: at + 2)?).must()
+        box: [i64] @= []
+
+        for k in range(from: 0, to: 4)
+            box @ box.push(to_i64(math.round(to_f64(bytes.decode_f32_le(list, at: at + 4 + 4 * k)?))).must())
+
+        ends: [f64] @= []
+
+        for k in range(from: 0, to: 3)
+            ends @ ends.push(bytes.decode_f64_le(list, at: at + 20 + 8 * k)?)
+
+        named = to_i64(bytes.decode_u16_le(list, at: at + 44)?).must()
+        described = to_i64(bytes.decode_u16_le(list, at: at + 46)?).must()
+
+        if list.len() - at - FIXED < named + described
+            return fail(code: failure.FAILED, msg: f"a part's record at byte {at} ends before its words")
+        name = bytes.to_text(list.slice(from: at + FIXED, to: at + FIXED + named))?
+        description = bytes.to_text(list.slice(from: at + FIXED + named, to: at + FIXED + named + described))?
+        parts @ parts.push(
+            ui.Part(role: role_of(code: to_i64(list[at]).must(), states: states, ends: ends)?, name: name, description: description, box: ui.Rect(x: box[0], y: box[1], width: box[2], height: box[3]), within: within, focusable: states / hero_ui.HERO_UI_PART_FOCUSABLE % 2 == 1, focused: states / hero_ui.HERO_UI_PART_FOCUSED % 2 == 1)
+        )
+        at @ at + FIXED + named + described
+
+    return ok(parts)
+
+## A screen reader's acts
+
+# The code of `act`, as `hero_ui.h` numbers it.
+function act_code(act: ui.PartAct) -> i64
+    match act
+        .press    => return hero_ui.HERO_UI_PART_PRESS
+        .focus    => return hero_ui.HERO_UI_PART_FOCUS
+        .increase => return hero_ui.HERO_UI_PART_INCREASE
+        .decrease => return hero_ui.HERO_UI_PART_DECREASE
+
+# The act of code `code`.
+function act_of(code: i64) -> ui.PartAct?
+    if code == hero_ui.HERO_UI_PART_PRESS
+        return ok(.press)
+
+    if code == hero_ui.HERO_UI_PART_FOCUS
+        return ok(.focus)
+
+    if code == hero_ui.HERO_UI_PART_INCREASE
+        return ok(.increase)
+
+    if code == hero_ui.HERO_UI_PART_DECREASE
+        return ok(.decrease)
+    return fail(code: failure.FAILED, msg: f"a part's act carried the code {code}, which is none")
+
+# Whether a screen reader may take `act` on part `number` of drawing area
+# `widget`, as `ui.Input.act_on_part` gives it.
+function act_ok(app: ui.App, widget: ui.Widget, number: i64, act: ui.PartAct) -> ()?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CANVAS], what: "a drawing area")?
+    parts = decode(n.parts)?
+
+    if number < 1 || number > parts.len()
+        return fail(
+            code: failure.INVALID,
+            msg: f"the drawing area has {parts.len()} parts, and part {number} is none of them"
+        )
+    part = parts[number - 1]
+
+    allowed = match act
+        .press                => pressed(part.role)
+        .focus                => part.focusable
+        .increase | .decrease => stepped(part.role)
+
+    if !allowed
+        return fail(
+            code: failure.INVALID,
+            msg: f"part {number} takes no such act: a press is a button's, a link's, a check box's or a radio button's, a focus a focusable part's, a step a slider's"
+        )
+    return ok()
+
+# The act a screen reader took, told by the native side for area `id`,
+# `taken` its four numbers: the part's number and the act's code.
+function told(app: ui.App, id: i64, taken: [i64]) -> ui.Event?
+    return ok(.part_acted(widget: check.widget_of(app, id: id), part: taken[2], act: act_of(taken[3])?))
+
+## Tests
+
+# A chart's parts of every role: a group holding a title, two bars, a check
+# box, a radio button and a link, then a slider and a progress bar of the area.
+function every_role() -> [ui.Part]
+    return [
+        ui.Part(role: .group, name: "Sales", description: "", box: ui.Rect(x: 0, y: 0, width: 200, height: 60), within: 0, focusable: false, focused: false)
+        ui.Part(role: .text, name: "Sales by month", description: "", box: ui.Rect(x: 4, y: 2, width: 120, height: 14), within: 1, focusable: false, focused: false)
+        ui.Part(role: .button, name: "March", description: "40 units", box: ui.Rect(x: 10, y: 20, width: 30, height: 30), within: 1, focusable: true, focused: true)
+        ui.Part(role: .check_box(checked: true), name: "Show April", description: "", box: ui.Rect(x: 50, y: 20, width: 30, height: 30), within: 1, focusable: true, focused: false)
+        ui.Part(role: .radio(checked: false), name: "By week", description: "", box: ui.Rect(x: 90, y: 20, width: 30, height: 30), within: 1, focusable: true, focused: false)
+        ui.Part(role: .link, name: "Details", description: "opens the report", box: ui.Rect(x: 130, y: 20, width: 60, height: 14), within: 1, focusable: true, focused: false)
+        ui.Part(role: .image, name: "Trend", description: "rising", box: ui.Rect(x: 0, y: 62, width: 40, height: 20), within: 0, focusable: false, focused: false)
+        ui.Part(role: .slider(value: 5.0, least: 0.0, most: 10.0), name: "Zoom", description: "", box: ui.Rect(x: 50, y: 62, width: 100, height: 20), within: 0, focusable: true, focused: false)
+        ui.Part(role: .progress(value: 0.25, least: 0.0, most: 1.0), name: "Loaded", description: "", box: ui.Rect(x: 0, y: 90, width: 200, height: 8), within: 0, focusable: false, focused: false)
+    ]
+
+test "set_parts and parts_of: the parts written as `hero_ui.h`'s records byte by byte, read back as given, taken back by an empty list, and refused for a part no screen reader could read (catalogue AX04)"
+    one = ui.Part(
+        role: .slider(value: 2.5, least: 0.0, most: 10.0),
+        name: "Zoom",
+        description: "x",
+        box: ui.Rect(x: 1, y: 2, width: 3, height: 4),
+        within: 0,
+        focusable: true,
+        focused: true
+    )
+    written = encode([one]).must()
+    assert written.len() == FIXED + 5
+    assert written.slice(from: 0, to: 4) == [7, 3, 0, 0]
+    assert written.slice(from: 4, to: 8) == bytes.encode_f32_le(to_f32(1.0))
+    assert written.slice(from: 16, to: 20) == bytes.encode_f32_le(to_f32(4.0))
+    assert written.slice(from: 20, to: 28) == bytes.encode_f64_le(2.5)
+    assert written.slice(from: 36, to: 44) == bytes.encode_f64_le(10.0)
+    assert written.slice(from: 44, to: FIXED) == [4, 0, 1, 0]
+    assert written.slice(from: FIXED, to: written.len()) == [90, 111, 111, 109, 120]
+    assert decode(written).must() == [one]
+
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    chart = ui.canvas(@app, into: w, width: 200, height: 100).must()
+    ui.set_parts(@app, widget: chart, parts: every_role()).must()
+    assert ui.parts_of(@app, widget: chart).must() == every_role()
+    ui.set_parts(@app, widget: chart, parts: []).must()
+    assert ui.parts_of(@app, widget: chart).must().len() == 0
+
+    # What a screen reader could not read, each refused and the last parts kept.
+    ui.set_parts(@app, widget: chart, parts: every_role()).must()
+    box = ui.Rect(x: 0, y: 0, width: 10, height: 10)
+    plain = ui.Part(role: .image, name: "Bar", description: "", box: box, within: 0, focusable: false, focused: false)
+    refused = [
+        [ui.Part(role: .image, name: "", description: "", box: box, within: 0, focusable: false, focused: false)]
+        [ui.Part(role: .image, name: "Two\nlines", description: "", box: box, within: 0, focusable: false, focused: false)]
+        [ui.Part(role: .image, name: "Bar", description: "a\nb", box: box, within: 0, focusable: false, focused: false)]
+        [ui.Part(role: .image, name: "Bar", description: "", box: box, within: 1, focusable: false, focused: false)]
+        [plain, ui.Part(role: .image, name: "Bar", description: "", box: box, within: 3, focusable: false, focused: false)]
+        [ui.Part(role: .image, name: "Bar", description: "", box: ui.Rect(x: 0, y: 0, width: -1, height: 10), within: 0, focusable: false, focused: false)]
+        [ui.Part(role: .button, name: "Go", description: "", box: box, within: 0, focusable: false, focused: true)]
+        [ui.Part(role: .button, name: "Go", description: "", box: box, within: 0, focusable: true, focused: true), ui.Part(role: .button, name: "Stop", description: "", box: box, within: 0, focusable: true, focused: true)]
+        [ui.Part(role: .slider(value: 11.0, least: 0.0, most: 10.0), name: "Zoom", description: "", box: box, within: 0, focusable: true, focused: false)]
+        [ui.Part(role: .slider(value: 0.0, least: 0.0, most: 0.0), name: "Zoom", description: "", box: box, within: 0, focusable: true, focused: false)]
+        [ui.Part(role: .progress(value: math.NAN, least: 0.0, most: 1.0), name: "Loaded", description: "", box: box, within: 0, focusable: false, focused: false)]
+    ]
+
+    for parts in refused
+        assert fixture.code_of(ui.set_parts(@app, widget: chart, parts: parts)) == ui.INVALID
+
+    many: [ui.Part] @= []
+
+    for _ in range(from: 0, to: hero_ui.HERO_UI_PARTS_MOST + 1)
+        many @ many.push(plain)
+
+    assert fixture.code_of(ui.set_parts(@app, widget: chart, parts: many)) == ui.INVALID
+    assert fixture.code_of(ui.set_parts(@app, widget: w, parts: [plain])) == ui.INVALID
+    assert ui.parts_of(@app, widget: chart).must() == every_role()
+    ui.close(@app).must()
+
+test "act_on_part: a screen reader's press, focus and steps told as `.part_acted` once each, and refused where the part's role or state takes none (catalogue AX04)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    chart = ui.canvas(@app, into: w, width: 200, height: 100).must()
+    ui.set_parts(@app, widget: chart, parts: every_role()).must()
+    pressed_acts: [ui.Input] = [
+        .act_on_part(widget: chart, part: 3, act: .press)
+        .act_on_part(widget: chart, part: 4, act: .press)
+        .act_on_part(widget: chart, part: 5, act: .focus)
+        .act_on_part(widget: chart, part: 6, act: .press)
+        .act_on_part(widget: chart, part: 8, act: .increase)
+        .act_on_part(widget: chart, part: 8, act: .decrease)
+    ]
+
+    for input in pressed_acts
+        ui.inject(@app, input: input).must()
+
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 3, act: .press)
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 4, act: .press)
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 5, act: .focus)
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 6, act: .press)
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 8, act: .increase)
+    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 8, act: .decrease)
+
+    # The parts are the program's: a press changed nothing.
+    assert ui.parts_of(@app, widget: chart).must() == every_role()
+    refused_acts: [ui.Input] = [
+        .act_on_part(widget: chart, part: 0, act: .press)
+        .act_on_part(widget: chart, part: 10, act: .press)
+        .act_on_part(widget: chart, part: 1, act: .press)
+        .act_on_part(widget: chart, part: 2, act: .press)
+        .act_on_part(widget: chart, part: 7, act: .focus)
+        .act_on_part(widget: chart, part: 9, act: .increase)
+        .act_on_part(widget: chart, part: 3, act: .decrease)
+        .act_on_part(widget: w, part: 1, act: .press)
+    ]
+
+    for input in refused_acts
+        assert fixture.code_of(ui.inject(@app, input: input)) == ui.INVALID
+
+    ui.close(@app).must()
+
+test "set_parts: on the native side the parts read back from the system's own accessibility objects as given, boxes and all, an image again with none, and a screen reader's press, focus and steps through the system's actions told once each (catalogue AX04)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Chart", width: 260, height: 160).must()
+    chart = ui.canvas(@app, into: w, width: 200, height: 100).must()
+    offered = ui.set_parts(@app, widget: chart, parts: every_role())
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    offered.must()
+    assert ui.parts_of(@app, widget: chart).must() == every_role()
+
+    # Each act through the system's own action on the part's object.
+    acts: [ui.Input] = [
+        .act_on_part(widget: chart, part: 3, act: .press)
+        .act_on_part(widget: chart, part: 5, act: .focus)
+        .act_on_part(widget: chart, part: 6, act: .press)
+        .act_on_part(widget: chart, part: 8, act: .increase)
+        .act_on_part(widget: chart, part: 8, act: .decrease)
+    ]
+
+    for input in acts
+        ui.inject(@app, input: input).must()
+
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 3, act: .press)
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 5, act: .focus)
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 6, act: .press)
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 8, act: .increase)
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 8, act: .decrease)
+    assert fixture.code_of(ui.inject(@app, input: .act_on_part(widget: chart, part: 2, act: .press))) == ui.INVALID
+    assert ui.parts_of(@app, widget: chart).must() == every_role()
+
+    # The parts taken back, and given again after a window move.
+    ui.set_parts(@app, widget: chart, parts: []).must()
+    assert ui.parts_of(@app, widget: chart).must().len() == 0
+    ui.set_parts(@app, widget: chart, parts: every_role().slice(from: 6, to: 9)).must()
+    assert ui.parts_of(@app, widget: chart).must() == every_role().slice(from: 6, to: 9)
+    ui.close(@app).must()

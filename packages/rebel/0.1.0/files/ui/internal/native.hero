@@ -13,6 +13,7 @@ use ui/internal/desk
 use ui/internal/drops
 use ui/internal/failure
 use ui/internal/model
+use ui/internal/parts as area_parts
 use ui/internal/session
 
 # The bytes a text is first read into; a longer one is read again with room
@@ -509,6 +510,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
             )
         .drop_files d => return drops.injected(app, window: d.window, x: d.x, y: d.y, paths: d.paths)
         .hand h       => return session.injected(app, what: h.what, items: h.items)
+        .act_on_part a =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_PART,
+                id: a.widget.id,
+                value: a.part,
+                second: area_parts.act_code(a.act),
+                text: ""
+            )
         .point p =>
             return canvas_of.point_given(
                 app,

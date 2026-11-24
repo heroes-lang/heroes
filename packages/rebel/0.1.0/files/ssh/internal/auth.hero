@@ -1,0 +1,201 @@
+# Signing in (RFC 4252): the `ssh-userauth` service asked for, then a
+# public key (asked first without a signature, then signed over the
+# session's identifier, § 7), a password (§ 8), or keyboard-interactive
+# (RFC 4256) answering a password's one hidden prompt. A banner the server
+# sends is kept. An RSA key signs with SHA-512 or SHA-256 as the server's
+# `server-sig-algs` allows (RFC 8332 § 3.3), never SHA-1.
+
+use crypto/keypairs
+use ssh/internal/blobs
+use ssh/internal/session
+use ssh/internal/wire
+
+## Codes
+
+# A message that is not what signing in allows.
+constant INVALID: str
+    "invalid"
+
+# The server refused the sign-in.
+constant PERMISSION: str
+    "permission"
+
+# What a sign-in got: success, or the methods the server would go on with.
+record Answer
+    # Whether the server accepted.
+    accepted: bool
+    # The methods that can continue, where it did not.
+    methods: [str]
+    # Whether the method succeeded and more are needed (§ 5.1).
+    partial: bool
+
+## The service
+
+# Asks for the `ssh-userauth` service (RFC 4253 § 10).
+function ask_service(@s: session.Session) -> ()?
+    message: [u8] @= [5]
+    wire.put_text(@message, text: "ssh-userauth")
+    session.send(@s, payload: message)?
+    reply = session.next(@s)?
+
+    if reply[0] != 6
+        return fail(code: INVALID, msg: f"message {reply[0]} where the service's acceptance was due")
+    return ok()
+
+# The start of every request: the user, the service, the method.
+function head(user: str, method: str) -> [u8]
+    out: [u8] @= [50]
+    wire.put_text(@out, text: user)
+    wire.put_text(@out, text: "ssh-connection")
+    wire.put_text(@out, text: method)
+    return out
+
+# The server's next message of signing in, the banners before it kept.
+function answer(@s: session.Session) -> [u8]?
+    while true
+        reply = session.next(@s)?
+
+        if reply[0] != 53
+            return ok(reply)
+        r @= wire.reader(reply)
+        _ = wire.take(@r, n: 1, what: "a banner")?
+        s.banner @ s.banner + wire.read_text(@r, what: "a banner's text")?
+
+# The SUCCESS or FAILURE `reply` holds.
+function verdict(@s: session.Session, reply: [u8]) -> Answer?
+    if reply[0] == 52
+        s.signed_in @ true
+        none: [str] = []
+        return ok(Answer(accepted: true, methods: none, partial: false))
+
+    if reply[0] != 51
+        return fail(code: INVALID, msg: f"message {reply[0]} where the sign-in's answer was due")
+    r @= wire.reader(reply)
+    _ = wire.take(@r, n: 1, what: "a refusal")?
+    methods = wire.read_name_list(@r, what: "the methods that can continue")?
+    partial = wire.read_bool(@r, what: "a partial success")?
+    return ok(Answer(accepted: false, methods: methods, partial: partial))
+
+## Methods
+
+# The `none` method: accepted where the server asks nothing, else the
+# methods it takes.
+function by_none(@s: session.Session, user: str) -> Answer?
+    session.send(@s, payload: head(user: user, method: "none"))?
+    reply = answer(@s)?
+    return verdict(@s, reply: reply)
+
+# The `password` method with `password`.
+function by_password(@s: session.Session, user: str, password: str) -> Answer?
+    message @= head(user: user, method: "password")
+    wire.put_bool(@message, v: false)
+    wire.put_text(@message, text: password)
+    session.send(@s, payload: message)?
+    reply = answer(@s)?
+
+    if reply[0] == 60
+        return fail(code: PERMISSION, msg: "the server asks for a new password, which this client does not set")
+    return verdict(@s, reply: reply)
+
+# The `keyboard-interactive` method answering each hidden prompt with
+# `password`; a prompt shown as typed, or more than one, is refused.
+function by_interactive(@s: session.Session, user: str, password: str) -> Answer?
+    message @= head(user: user, method: "keyboard-interactive")
+    wire.put_text(@message, text: "")
+    wire.put_text(@message, text: "")
+    session.send(@s, payload: message)?
+    rounds: i64 @= 0
+
+    while rounds < 8
+        reply = answer(@s)?
+
+        if reply[0] != 60
+            return verdict(@s, reply: reply)
+        r @= wire.reader(reply)
+        _ = wire.take(@r, n: 1, what: "an information request")?
+        _ = wire.read_text(@r, what: "the request's name")?
+        _ = wire.read_text(@r, what: "the request's instruction")?
+        _ = wire.read_string(@r, what: "the request's language")?
+        count = wire.read_u32(@r, what: "the count of prompts")?
+
+        if count > 1
+            return fail(
+                code: PERMISSION,
+                msg: f"the server asks {count} questions, and this client answers a password alone"
+            )
+        response: [u8] @= [61]
+        wire.put_u32(@response, n: count)
+
+        if count == 1
+            prompt = wire.read_text(@r, what: "a prompt")?
+            echo = wire.read_bool(@r, what: "a prompt's echo")?
+
+            if echo
+                return fail(
+                    code: PERMISSION,
+                    msg: f"the server asks \"{prompt}\" shown as typed, and this client answers a hidden password alone"
+                )
+            wire.put_text(@response, text: password)
+        session.send(@s, payload: response)?
+        rounds @ rounds + 1
+
+    return fail(code: PERMISSION, msg: "the server asked eight rounds of questions")
+
+# The signature algorithm `key_type` signs in with: the key type itself,
+# or for RSA SHA-512 where `server-sig-algs` names it or names nothing,
+# else SHA-256.
+function algorithm_for(s: session.Session lent, key_type: str) -> str
+    if key_type != "ssh-rsa"
+        return key_type
+
+    if s.server_sig_algs.len() == 0
+        return "rsa-sha2-512"
+
+    for name in s.server_sig_algs
+        if name == "rsa-sha2-512"
+            return name
+
+    return "rsa-sha2-256"
+
+# The `publickey` method with `key`, whose public half's blob is `blob`:
+# asked first without a signature, then signed where the server takes it.
+function by_key(@s: session.Session, user: str, key: keypairs.PrivateKey, blob: [u8]) -> Answer?
+    parts = blobs.parts_of(blob)?
+    algorithm = algorithm_for(s, key_type: parts.key_type)
+    query @= head(user: user, method: "publickey")
+    wire.put_bool(@query, v: false)
+    wire.put_text(@query, text: algorithm)
+    wire.put_string(out: @query, data: blob)
+    session.send(@s, payload: query)?
+    reply = answer(@s)?
+
+    if reply[0] != 60
+        return verdict(@s, reply: reply)
+    signed @= head(user: user, method: "publickey")
+    wire.put_bool(@signed, v: true)
+    wire.put_text(@signed, text: algorithm)
+    wire.put_string(out: @signed, data: blob)
+    data: [u8] @= []
+    wire.put_string(out: @data, data: s.t.session_id)
+
+    for b in signed
+        data @ data.push(b)
+
+    signature = blobs.sign(key, algorithm: algorithm, data: data)?
+    wire.put_string(out: @signed, data: signature)
+    session.send(@s, payload: signed)?
+    final = answer(@s)?
+    return verdict(@s, reply: final)
+
+# Fails `permission` where `got` is no success, saying `method` was refused
+# and what the server would take.
+function judged(got: Answer, method: str) -> ()?
+    if got.accepted
+        return ok()
+
+    if got.partial
+        return fail(
+            code: PERMISSION,
+            msg: f"{method} was accepted as one step: the server asks one of {join(got.methods, ", ")} besides"
+        )
+    return fail(code: PERMISSION, msg: f"the server refused {method}: it takes {join(got.methods, ", ")}")

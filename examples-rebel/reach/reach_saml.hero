@@ -1,0 +1,52 @@
+# Reaches Rebel's `saml`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). It checks a response an
+# identity provider posted, read from a file in base 64, against the
+# provider's metadata, for the service provider and the request named on the
+# command line, and prints who signed in.
+
+use <rebel>/saml
+use <rebel>/time
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"reach_saml: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+# Who signed in, as the response in the file `posted` says it, checked
+# against the metadata in the file `metadata` for the service provider
+# `entity_id` whose consumer service is `acs_url`, answering `request_id`.
+function report(metadata: str, posted: str, entity_id: str, acs_url: str, request_id: str) -> str?
+    now = time.now()?
+    idp = saml.parse_metadata(text: read_file(metadata)?, entity_id: "", source: .trusted, now: now)?
+    sp = saml.service_provider(entity_id: entity_id, acs_url: acs_url)
+    seen @= saml.new_seen()
+    login = saml.check_response(read_file(posted)?, sp: sp, idp: idp, options: saml.response_options(request_id: request_id, now: now), @seen)?
+    lines: [str] @= [f"name: {login.name_id}", f"session: {login.session_index}"]
+
+    for a in login.attributes
+        lines @ lines.push(f"{a.name}: {a.values.join(", ")}")
+
+    return ok(lines.join("\n"))
+
+function main()
+    given = text_arguments()
+
+    if given.len() != 5
+        print("usage: reach_saml <metadata.xml> <response.b64> <sp-entity-id> <acs-url> <request-id>")
+        exit(code: 2)
+
+    match report(metadata: given[0], posted: given[1], entity_id: given[2], acs_url: given[3], request_id: given[4])
+        .ok text => print(text)
+        .err e =>
+            print(f"{e.code}: {e.msg}")
+            exit(code: 1)

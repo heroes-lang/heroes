@@ -1,0 +1,274 @@
+# SSH's transport layer (RFC 4253): the version lines, the binary packet
+# protocol, and the ciphers a key exchange installs. Packets are sealed by
+# AES-GCM as OpenSSH defines `aes128-gcm@openssh.com` and
+# `aes256-gcm@openssh.com` (RFC 5647 § 7): the length in clear as the
+# associated data, the rest sealed, each direction's nonce counted by its key
+# in `crypto/seal`, so the program never holds a nonce. A packet read is
+# bounded before a byte of it is kept, and every length is checked against
+# the bytes read, so a peer's packet fails `invalid` and never grows the
+# memory past `MAX_PACKET`.
+
+use bytes
+use crypto/seal
+use io
+use os
+use ssh/internal/wire
+
+## Codes
+
+# A packet or a version line that is not SSH's.
+constant INVALID: str
+    "invalid"
+
+# The connection closed, or the peer disconnected.
+constant CLOSED: str
+    "closed"
+
+# The client's version line, without its line end (RFC 4253 § 4.2).
+constant CLIENT_VERSION: str
+    "SSH-2.0-HeroesRebel_0.1"
+
+# The most bytes a packet's length may say: OpenSSH's own bound, 256 KiB.
+constant MAX_PACKET: i64
+    262144
+
+## The connection
+
+# One direction's cipher: none before the first key exchange, then the key
+# that seals or opens its packets.
+record Direction
+    # Whether a key exchange has installed `key`.
+    ciphered: bool
+    # The key, counted; a closed place until `ciphered`.
+    key: seal.Key
+    # The packets this direction has carried since its sequence began, as
+    # a `uint32` counts them (RFC 4253 § 6.4).
+    sequence: i64
+    # The bytes it has carried since its last key exchange, which a rekey
+    # bounds.
+    carried: i64
+
+# A connection's transport: the stream, the bytes read and not yet a
+# packet, the two directions, and what the key exchanges established.
+record Transport
+    # The connection's stream, which `close` closes.
+    stream: io.Stream
+    # Bytes read and not yet taken.
+    inbox: [u8]
+    # The client's sending direction.
+    out: Direction
+    # The server's sending direction.
+    incoming: Direction
+    # The server's version line.
+    server_version: str
+    # The first exchange's hash, the session's identifier; empty before it.
+    session_id: [u8]
+    # Whether the first exchange agreed OpenSSH's strict key exchange.
+    strict: bool
+    # Messages read while a key exchange ran, handed on after it in order.
+    held: [[u8]]
+    # The milliseconds every read and write may wait, `net.FOREVER` for no
+    # bound.
+    wait_ms: i64
+
+# A direction with no cipher yet.
+function plain_direction() -> Direction
+    return Direction(ciphered: false, key: seal.Key(handle: nullptr, algorithm: .aes_128_gcm), sequence: 0, carried: 0)
+
+# A transport over `stream`, before its version lines.
+function over(stream: io.Stream, wait_ms: i64) -> Transport
+    no_session: [u8] = []
+    none: [[u8]] = []
+    return Transport(
+        stream: stream,
+        inbox: no_session,
+        out: plain_direction(),
+        incoming: plain_direction(),
+        server_version: "",
+        session_id: no_session,
+        strict: false,
+        held: none,
+        wait_ms: wait_ms
+    )
+
+# Closes `t`'s stream and its two keys, every one tried; the first failure
+# is the answer.
+function close(@t: Transport) -> ()?
+    keys_closed = close_keys(@t)
+    stream_closed = io.close(@t.stream)
+    keys_closed?
+    return stream_closed
+
+# Closes the keys of `t`'s two directions.
+function close_keys(@t: Transport) -> ()?
+    if t.out.ciphered
+        t.out.ciphered @ false
+        out_closed = seal.close(@t.out.key)
+
+        if t.incoming.ciphered
+            t.incoming.ciphered @ false
+            seal.close(@t.incoming.key)?
+        return out_closed
+
+    if t.incoming.ciphered
+        t.incoming.ciphered @ false
+        return seal.close(@t.incoming.key)
+    return ok()
+
+## Reading bytes
+
+# Waits until `t`'s inbox holds `n` bytes.
+function fill(@t: Transport, n: i64) -> ()?
+    while t.inbox.len() < n
+        chunk = io.read(t.stream, n: 65536)?
+
+        if chunk.len() == 0
+            return fail(code: CLOSED, msg: "the server closed the connection")
+        t.inbox @ bytes.concat([t.inbox, chunk])
+
+    return ok()
+
+# The first `n` bytes of `t`'s inbox, taken.
+function take(@t: Transport, n: i64) -> [u8]?
+    fill(@t, n: n)?
+    part = t.inbox.slice(from: 0, to: n)
+    t.inbox @ t.inbox.slice(from: n, to: t.inbox.len())
+    return ok(part)
+
+## Version lines
+
+# Sends the client's version line and reads the server's, passing over the
+# lines a server may send before it (RFC 4253 § 4.2): at most 1024 lines of
+# at most 255 bytes each, so a server that sends no version line cannot
+# hold the client longer.
+function exchange_versions(@t: Transport) -> ()?
+    io.write(t.stream, data: bytes.from_text(CLIENT_VERSION + "\r\n"))?
+    lines: i64 @= 0
+
+    while lines < 1024
+        line = read_line(@t)?
+
+        if line.has_prefix_text(prefix: "SSH-")
+            if !line.has_prefix_text(prefix: "SSH-2.0-") && !line.has_prefix_text(prefix: "SSH-1.99-")
+                return fail(code: INVALID, msg: f"the server speaks another version of SSH: {line}")
+            t.server_version @ line
+            return ok()
+        lines @ lines + 1
+
+    return fail(code: INVALID, msg: "the server sent 1024 lines and no version line")
+
+# Whether `s` begins with `prefix`.
+function has_prefix_text(s: str, prefix: str) -> bool
+    return s.len() >= prefix.len() && s.slice(from: 0, to: prefix.len()) == prefix
+
+# One line of `t`'s inbox, without its line end, of at most 255 bytes.
+function read_line(@t: Transport) -> str?
+    at: i64 @= 0
+
+    while true
+        while at < t.inbox.len()
+            if t.inbox[at] == '\n'
+                raw = t.inbox.slice(from: 0, to: at)
+                t.inbox @ t.inbox.slice(from: at + 1, to: t.inbox.len())
+                end: i64 @= raw.len()
+
+                if end > 0 && raw[end - 1] == '\r'
+                    end @ end - 1
+
+                match bytes.to_text(raw.slice(from: 0, to: end))
+                    .ok line => return ok(line)
+                    .err _   => return fail(code: INVALID, msg: "a line before the version that is not UTF-8")
+
+            if at >= 255
+                return fail(code: INVALID, msg: "a line before the version longer than 255 bytes")
+            at @ at + 1
+
+        fill(@t, n: t.inbox.len() + 1)?
+
+## Packets
+
+# Sends `payload` as one packet, sealed where the direction is ciphered.
+function send(@t: Transport, payload: [u8] lent) -> ()?
+    block: i64 @= 8
+
+    if t.out.ciphered
+        block @ 16
+    covered: i64 @= 5 + payload.len()
+
+    if t.out.ciphered
+        covered @ 1 + payload.len()
+    padding: i64 @= block - covered % block
+
+    if padding < 4
+        padding @ padding + block
+    body: [u8] @= [to_u8(padding).must()]
+
+    for b in payload
+        body @ body.push(b)
+
+    filler = os.random_bytes(padding)?
+
+    for b in filler
+        body @ body.push(b)
+
+    length = wire.u32_bytes(body.len())
+    packet: [u8] @= []
+
+    if t.out.ciphered
+        sealed = seal.seal_counted(key: t.out.key, text: body, associated: length)?
+        packet @ bytes.concat([length, sealed])
+    else
+        packet @ bytes.concat([length, body])
+    io.write(t.stream, data: packet)?
+    t.out.sequence @ (t.out.sequence + 1) % 4294967296
+    t.out.carried @ t.out.carried + packet.len()
+    return ok()
+
+# The payload of the next packet, opened where the direction is ciphered.
+function receive_packet(@t: Transport) -> [u8]?
+    length_bytes = take(@t, n: 4)?
+    length = wire.u32_of(length_bytes, at: 0)
+
+    if length > MAX_PACKET || length < 5
+        return fail(code: INVALID, msg: f"a packet of {length} bytes, outside 5 to {MAX_PACKET}")
+    body: [u8] @= []
+
+    if t.incoming.ciphered
+        if length % 16 != 0
+            return fail(code: INVALID, msg: f"a sealed packet of {length} bytes, no multiple of 16")
+        sealed = take(@t, n: length + 16)?
+
+        match seal.open_counted(key: t.incoming.key, sealed: sealed, associated: length_bytes)
+            .ok opened => body @ opened
+            .err _ => return fail(
+                code: INVALID,
+                msg: "a packet that does not open: changed on the way, or not the server's"
+            )
+    else
+        if (length + 4) % 8 != 0
+            return fail(code: INVALID, msg: f"a packet of {length} bytes and its length, no multiple of 8")
+        body @ take(@t, n: length)?
+    padding = to_i64(body[0]).must()
+
+    if padding < 4 || padding + 1 > body.len()
+        return fail(code: INVALID, msg: f"a packet whose padding of {padding} bytes does not fit it")
+    t.incoming.sequence @ (t.incoming.sequence + 1) % 4294967296
+    t.incoming.carried @ t.incoming.carried + length + 4
+    payload = body.slice(from: 1, to: body.len() - padding)
+
+    if payload.len() == 0
+        return fail(code: INVALID, msg: "a packet with no message in it")
+    return ok(payload)
+
+# Installs `key` on the direction `which` names, closing the key it had,
+# and begins its sequence again where the exchange is strict.
+function install(@d: Direction, key: seal.Key, strict: bool) -> ()?
+    if d.ciphered
+        seal.close(@d.key)?
+    d.key @ key
+    d.ciphered @ true
+    d.carried @ 0
+
+    if strict
+        d.sequence @ 0
+    return ok()

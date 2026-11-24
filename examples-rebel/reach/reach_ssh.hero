@@ -1,0 +1,12 @@
+# Reaches Rebel's `ssh`, so that `heroes test` on this file runs the
+# package's tests and its examples (spec § 12). It prints the fingerprint
+# of a public key line.
+
+use <rebel>/ssh
+
+function main()
+    line = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBmJdM2vxF2bWpD8lM8RzG5nL3oGZ9a2N5z7G6o7bWl4 demo"
+
+    match ssh.parse_public_key(line)
+        .ok key => print(ssh.fingerprint(key))
+        .err e  => print(e.msg)
