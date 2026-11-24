@@ -309,6 +309,20 @@ private struct PwgTable {
 
 @MainActor private var webPrints: [Int64: WebPrint] = [:]
 
+/* The text a Print Manager getter hands back, whichever way this SDK spells its type: an older SDK returns
+ * `Unmanaged<CFString>?` (a Get rule's unretained reference), a newer one an annotated `CFString?` that Swift
+ * bridges to `String?`. Asked of `Any?`, so the same line compiles under both (the CI's macOS runner has the
+ * older one, which refused `as String?` on the call itself). */
+private func pmText(_ value: Any?) -> String? {
+    if let text = value as? String {
+        return text
+    }
+    if let kept = value as? Unmanaged<CFString> {
+        return kept.takeUnretainedValue() as String
+    }
+    return nil
+}
+
 /* The printer queue named `name`, from Core Printing's list. */
 private func printer(named name: String) -> PMPrinter? {
     var list: Unmanaged<CFArray>?
@@ -320,7 +334,7 @@ private func printer(named name: String) -> PMPrinter? {
             continue
         }
         let candidate = OpaquePointer(raw)
-        if (PMPrinterGetID(candidate) as String?) == name {
+        if pmText(PMPrinterGetID(candidate)) == name {
             PMRetain(PMObject(candidate))
             return candidate
         }
@@ -394,7 +408,7 @@ private func ippOrientation(_ pm: PMOrientation) -> Int64 {
     let print = OpaquePointer(info.pmPrintSettings())
     let format = OpaquePointer(info.pmPageFormat())
     var current: PMPrinter?
-    if PMSessionGetCurrentPrinter(session, &current) == noErr, let current = current, let id = PMPrinterGetID(current) as String? {
+    if PMSessionGetCurrentPrinter(session, &current) == noErr, let current = current, let id = pmText(PMPrinterGetID(current)) {
         out.printer = id
     }
     var copies: UInt32 = 1
