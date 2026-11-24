@@ -181,3 +181,12 @@ function takings(@c: redis.Client, limit: str, mode: str, times: i64) -> str?
     if mode == "allow"
         return ok(to_str(granted))
     return ok(ready.join(","))
+
+test "take_all live: a limit that is not there answers its failure, and the taker's connection is closed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            said = take_all(["take", "absent", "allow", "3"])
+            assert strings.has_prefix(s: said, prefix: "error: not_found: ")
+            redis.close(@c).must()

@@ -9,6 +9,7 @@
 use jobs
 use jobs/internal/gcra
 use jobs/internal/limits
+use jobs/internal/taking
 use jobs/postgres_store/internal/live
 use jobs/postgres_store/internal/statements
 use sql
@@ -23,22 +24,6 @@ variant Clock
     scripted
         # The instant.
         at: time.Instant
-
-# What a taking of tokens found.
-record Taken
-    # Whether the tokens were taken.
-    granted: bool
-    # The limit after the tokens were taken, or as read where they were not,
-    # its `seen` the time it was read at.
-    bucket: jobs.Bucket
-    # How many tokens were asked.
-    tokens: i64
-    # Whether the instant the tokens are earned is one an `Instant` holds.
-    fits: bool
-    # The instant the tokens are earned, taken or not, where it `fits`.
-    finish: time.Instant
-    # How long from the reading until `finish`, nothing where it has passed.
-    delay: time.Duration
 
 # The SQL of `clock`: the server's clock, or the parameter `place`.
 #
@@ -117,7 +102,7 @@ function set(@db: postgres.Db, name: str, every: time.Duration, burst: i64, cloc
 #
 # Fails `invalid` where `n` is below 1 or the name is not one a store
 # keeps, and `not_found` where no limit has that name.
-function take(@db: postgres.Db, name: str, n: i64, longest: time.Duration, clock: Clock) -> Taken?
+function take(@db: postgres.Db, name: str, n: i64, longest: time.Duration, clock: Clock) -> taking.Taken?
     check_name(name)?
 
     if n < 1
@@ -147,46 +132,7 @@ function take(@db: postgres.Db, name: str, n: i64, longest: time.Duration, clock
     else
         time.Instant(unix_nanoseconds: sql.integer_at(row, 2)?)
     return ok(
-        Taken(granted: granted, bucket: jobs.Bucket(every: every, burst: burst, empty_at: empty_at, seen: at), tokens: n, fits: sql.boolean_at(row, 5)?, finish: finish, delay: delay)
-    )
-
-# What `jobs.allow` would answer of the same limit: more tokens than the
-# burst are not granted, an instant past an `Instant` fails `does_not_fit`.
-#
-# - `taken`: what `take` found, asked with no wait.
-function allowed(taken: Taken) -> jobs.Allowed?
-    if taken.tokens > taken.bucket.burst
-        return ok(jobs.Allowed(granted: false, bucket: taken.bucket))
-
-    if !taken.fits
-        return fail(code: jobs.DOES_NOT_FIT, msg: f"{taken.tokens} tokens are earned past what an instant holds")
-    return ok(jobs.Allowed(granted: taken.granted, bucket: taken.bucket))
-
-# What `jobs.reserve_within` would answer of the same limit.
-#
-# - `taken`: what `take` found, asked with the wait `within`.
-# - `within`: the longest wait asked.
-#
-# Fails `invalid` where more tokens than the burst were asked,
-# `does_not_fit` where they are earned past what an `Instant` holds, and
-# `timeout` where the wait is longer than `within`, nothing taken in each.
-function reserved(taken: Taken, within: time.Duration) -> jobs.Reservation?
-    if taken.tokens > taken.bucket.burst
-        return fail(
-            code: jobs.INVALID,
-            msg: f"{taken.tokens} tokens asked of a limit whose burst is {taken.bucket.burst}: from 1 to the burst can be"
-        )
-
-    if !taken.fits
-        return fail(code: jobs.DOES_NOT_FIT, msg: f"{taken.tokens} tokens are earned past what an instant holds")
-
-    if !taken.granted
-        return fail(
-            code: jobs.TIMEOUT,
-            msg: f"{taken.tokens} tokens are {time.format_duration(taken.delay)} away, more than the {time.format_duration(within)} allowed"
-        )
-    return ok(
-        jobs.Reservation(bucket: taken.bucket, tokens: taken.tokens, delay: taken.delay, ready: time.add(t: taken.bucket.seen, d: taken.delay)?, finish: taken.finish)
+        taking.Taken(granted: granted, bucket: jobs.Bucket(every: every, burst: burst, empty_at: empty_at, seen: at), tokens: n, fits: sql.boolean_at(row, 5)?, finish: finish, delay: delay)
     )
 
 # Gives reservation `taken` of limit `name` back, as far as no later taking
@@ -258,7 +204,7 @@ function at_ms(ms: i64) -> Clock
 # - `n`: how many tokens.
 # - `ms`: the time.
 function allow_at(@db: postgres.Db, name: str, n: i64, ms: i64) -> jobs.Allowed?
-    return allowed(take(@db, name: name, n: n, longest: time.Duration(nanoseconds: 0), clock: at_ms(ms))?)
+    return taking.allowed(take(@db, name: name, n: n, longest: time.Duration(nanoseconds: 0), clock: at_ms(ms))?)
 
 # `n` tokens of limit `name` reserved at `ms` with no bound on the wait.
 #
@@ -267,7 +213,7 @@ function allow_at(@db: postgres.Db, name: str, n: i64, ms: i64) -> jobs.Allowed?
 # - `n`: how many tokens.
 # - `ms`: the time.
 function reserve_at(@db: postgres.Db, name: str, n: i64, ms: i64) -> jobs.Reservation?
-    return reserved(
+    return taking.reserved(
         take(@db, name: name, n: n, longest: time.max_duration(), clock: at_ms(ms))?,
         within: time.max_duration()
     )
@@ -300,7 +246,7 @@ function reserve_code(r: jobs.Reservation?) -> str
 # The code `r` failed with, or `ok`.
 #
 # - `r`: the answer.
-function taken_code(r: Taken?) -> str
+function taken_code(r: taking.Taken?) -> str
     match r
         .ok _  => return "ok"
         .err e => return e.code
@@ -457,10 +403,10 @@ test "take: time named earlier than an earlier call is read at that call's time,
             _ = set(@db, name: "one", every: time.seconds(1).must(), burst: 1, clock: at_ms(0)).must()
             assert allow_at(@db, name: "one", n: 1, ms: 0).must().granted
             half = time.milliseconds(500).must()
-            assert reserve_code(reserved(take(@db, name: "one", n: 1, longest: half, clock: at_ms(0)).must(), within: half)) == jobs.TIMEOUT
+            assert reserve_code(taking.reserved(take(@db, name: "one", n: 1, longest: half, clock: at_ms(0)).must(), within: half)) == jobs.TIMEOUT
             assert gcra.close(a: tokens_at(@db, name: "one", ms: 0), b: 0.0)
             second = time.seconds(1).must()
-            waited = reserved(
+            waited = taking.reserved(
                 take(@db, name: "one", n: 1, longest: second, clock: at_ms(0)).must(),
                 within: second
             ).must()
