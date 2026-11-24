@@ -815,7 +815,11 @@ function resize(@c: Client, channel: Channel, terminal: Terminal) -> ()?
 # - `channel`: a session running a program.
 # - `name`: the signal without `SIG`: `INT`, `TERM`, `KILL`, `HUP`.
 #
-# Fails as the connection fails. See also `wait_exit`.
+# A signal that reaches the server before the program has started is lost:
+# OpenSSH's `sshd` sends it to a process group not yet made and answers
+# nothing (its log says `killpg ...: No such process`, measured with
+# 10.5p1), so a program to be signalled first writes that it runs. Fails
+# as the connection fails. See also `wait_exit`.
 function send_signal(@c: Client, channel: Channel, name: str) -> ()?
     session.rearm(c.state)?
     data: [u8] @= []
@@ -1155,7 +1159,16 @@ test "run, start, write, read and wait_exit: 3 MB of output through the window, 
             assert back == sent
             assert wait_exit(@c, channel: cat).must().status.must() == 0
             close_channel(@c, channel: cat).must()
-            sleeper = start(@c, command: "sleep 30").must()
+            sleeper = start(@c, command: "echo up; exec sleep 30").must()
+            up: [u8] @= []
+
+            while up.len() < 3
+                part = read(@c, channel: sleeper, n: 3 - up.len()).must()
+                assert part.len() > 0
+
+                for b in part
+                    up @ up.push(b)
+
             send_signal(@c, channel: sleeper, name: "TERM").must()
             ended = wait_exit(@c, channel: sleeper).must()
             assert ended.signal.must() == "TERM"
@@ -1583,7 +1596,16 @@ test "send_signal: TERM"
         .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
         .ok found =>
             c @= Client(state: opening.signed_in(found).must(), user: found.user)
-            channel = start(@c, command: "sleep 30").must()
+            channel = start(@c, command: "echo up; exec sleep 30").must()
+            up: [u8] @= []
+
+            while up.len() < 3
+                part = read(@c, channel: channel, n: 3 - up.len()).must()
+                assert part.len() > 0
+
+                for b in part
+                    up @ up.push(b)
+
             send_signal(@c, channel: channel, name: "TERM").must()
             assert wait_exit(@c, channel: channel).must().signal.must() == "TERM"
             close_channel(@c, channel: channel).must()
