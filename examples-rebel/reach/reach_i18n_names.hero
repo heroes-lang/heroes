@@ -1,0 +1,14 @@
+# Reaches Rebel's `i18n/names`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints German named in Italian and
+# British English named in itself.
+
+use <rebel>/i18n
+use <rebel>/i18n/names
+
+function main()
+    italian = i18n.parse_locale("it").must()
+    print(names.language_name(code: "de", written_in: italian, form: .standard).default("de"))
+    british = i18n.parse_locale("en-GB").must()
+    print(
+        names.locale_name(locale: british, written_in: british, how: names.LocaleNaming(dialects: true, short: false))
+    )

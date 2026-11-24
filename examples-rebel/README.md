@@ -92,7 +92,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
 | 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image`, `math` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
-| 2 | `i18n` | locales, the languages and formats chosen in the system's settings, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` | `hero_locale.h` |
+| 2 | `i18n` | locales, the languages and formats chosen in the system's settings, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering, names and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` | `hero_locale.h` |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings`, `threads` | `hero_net.h`, `hero_stream_net.h` |
@@ -114,6 +114,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `bytes`, `i18n`, `strings`, `unicode` |  |
 | 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `bytes`, `i18n`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
+| 3 | `i18n/names` | languages, scripts, regions and whole locales named in words in a language, CLDR's display names | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `scram` | both sides of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, a server's verifiers in PostgreSQL's form, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |

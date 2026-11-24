@@ -4,8 +4,8 @@
 # is `sr-Latn`). Its tables are CLDR release `i18n.CLDR_VERSION`'s.
 #
 # What it does NOT do: read or write a tag, or match one by RFC 4647's plain
-# rules (`i18n`); name a language in words, "German", "Deutsch", which
-# CLDR's display names would need; choose the best of a program's languages
+# rules (`i18n`); name a language in words, "German", "Deutsch"
+# (`i18n/names`); choose the best of a program's languages
 # by CLDR's language matching, which is not carried yet (the ledger says
 # so).
 #

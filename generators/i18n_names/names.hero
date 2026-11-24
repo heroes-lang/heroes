@@ -1,0 +1,180 @@
+# The display names of one locale of CLDR's `cldr-localenames-full`, read
+# into one map whose keys say what each text names: `l <code>` a language,
+# `s <code>` a script, `r <code>` a region, `v <code>` a variant, each code
+# with its alternative where it has one (`l en-GB-alt-short`); `p pattern`,
+# `p separator` and `p keytype`, the patterns a locale's name is built with;
+# `c language`, `c script` and `c territory`, the patterns that name a code
+# by its kind; `k <key>` a Unicode locale keyword and `t <key> <value>` a
+# value of one, in BCP 47's short names (`t ca gregory`), a value's core
+# name, which a menu shows under its key, after `-alt-core`.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+
+# The package's folder of locales in the JSON release.
+constant FOLDER: str
+    "cldr-localenames-full/main/"
+
+# The alternatives a name is kept in, after `-alt-`.
+constant KEPT_ALTS: [str]
+    ["long", "menu", "official", "short", "stand-alone", "variant"]
+
+# The alternatives left out: the second names of five codes, and the two
+# names of one region (`IO`) chosen by a context of its own.
+constant SKIPPED_ALTS: [str]
+    ["biot", "chagos", "secondary"]
+
+# Whether `items` holds `item`.
+function holds(items: [str] lent, item: str) -> bool
+    for one in items
+        if one == item
+            return true
+
+    return false
+
+# `code` of a names file as a key keeps it, the empty text where its
+# alternative is one `SKIPPED_ALTS` names.
+#
+# Fails `invalid` where the alternative is one neither list names, so a
+# release that adds one is read by a person before a table holds it.
+function kept_code(code: str) -> str?
+    match strings.index_of(s: code, substr: "-alt-")
+        .ok at =>
+            alt = code.slice(from: at + 5, to: code.len())
+
+            if holds(KEPT_ALTS, item: alt)
+                return ok(code)
+
+            if holds(SKIPPED_ALTS, item: alt)
+                return ok("")
+            return fail(
+                code: "invalid",
+                msg: f"the alternative `{alt}` of `{code}` is one this generator does not know"
+            )
+        .err _ => return ok(code)
+
+# `into` with each name of the object `section` under `prefix`, a space and
+# its code, the code in lower case where `lower`.
+#
+# Fails as reading the JSON fails and as `kept_code` fails.
+function add_codes(into: {str: str}, section: json.Value, prefix: str, lower: bool) -> {str: str}?
+    out @= into
+
+    for one in cldrkit.entries(section)?
+        written = if lower
+            strings.to_lower_ascii(one.key)
+        else
+            one.key
+        code = kept_code(written)?
+
+        if code != ""
+            out[prefix + " " + code] @ json.text_of(one.value)?
+
+    return ok(out)
+
+# `long` in BCP 47's short name for a key, by `aliases`, in lower case.
+function short_key(aliases: cldrkit.KeywordAliases lent, long: str) -> str
+    lower = strings.to_lower_ascii(long)
+    return aliases.keys[lower].default(lower)
+
+# `long`, a value of `key`, in BCP 47's short name, by `aliases`, in lower
+# case.
+function short_value(aliases: cldrkit.KeywordAliases lent, key: str, long: str) -> str
+    lower = strings.to_lower_ascii(long)
+    return aliases.values[key + " " + lower].default(lower)
+
+# `into` with the keys and the types of `names`, the object of a locale's
+# `localeDisplayNames.json`.
+#
+# Fails as reading the JSON fails.
+function add_keywords(into: {str: str}, names: json.Value, aliases: cldrkit.KeywordAliases lent) -> {str: str}?
+    out @= into
+
+    match json.member(names, key: "keys")
+        .ok keys_section =>
+            for one in cldrkit.entries(keys_section)?
+                out["k " + short_key(aliases, long: one.key)] @ json.text_of(one.value)?
+        .err _ => _ = 0
+
+    match json.member(names, key: "types")
+        .ok types =>
+            for kind in cldrkit.entries(types)?
+                key = short_key(aliases, long: kind.key)
+
+                for one in cldrkit.entries(kind.value)?
+                    if one.key == "_core"
+                        for core in cldrkit.entries(one.value)?
+                            out[f"t {key} {short_value(aliases, key: key, long: core.key)}-alt-core"] @ json.text_of(core.value)?
+                    else
+                        out[f"t {key} {short_value(aliases, key: key, long: one.key)}"] @ json.text_of(one.value)?
+        .err _ => _ = 0
+
+    return ok(out)
+
+# `into` with the patterns of `names`, the object of a locale's
+# `localeDisplayNames.json`.
+#
+# Fails as reading the JSON fails.
+function add_patterns(into: {str: str}, names: json.Value) -> {str: str}?
+    out @= into
+    shapes = json.member(names, key: "localeDisplayPattern")?
+    out["p pattern"] @ json.text_of(json.member(shapes, key: "localePattern")?)?
+    out["p separator"] @ json.text_of(json.member(shapes, key: "localeSeparator")?)?
+    out["p keytype"] @ json.text_of(json.member(shapes, key: "localeKeyTypePattern")?)?
+
+    match json.member(names, key: "codePatterns")
+        .ok codes =>
+            for one in cldrkit.entries(codes)?
+                out["c " + one.key] @ json.text_of(one.value)?
+        .err _ => _ = 0
+
+    return ok(out)
+
+# The section `section` of the file `file` of `locale`, or an empty object
+# where the locale has no such file or section.
+#
+# Fails as reading the JSON fails.
+function section_of(release: cldrkit.Release lent, locale: str, file: str, section: str) -> json.Value?
+    name = f"{FOLDER}{locale}/{file}.json"
+
+    if release.members[name].is_err()
+        return ok(json.parse("{}").must())
+
+    match cldrkit.member_at(release, name: name, path: ["main", locale, "localeDisplayNames", section])
+        .ok v => return ok(v)
+        .err e =>
+            if e.code == "not_found"
+                return ok(json.parse("{}").must())
+            return fail(code: e.code, msg: e.msg)
+
+# Every name of `locale`, the folder's name in the release, under its key.
+#
+# Fails as reading the files fails.
+function names_of(release: cldrkit.Release lent, locale: str, aliases: cldrkit.KeywordAliases lent) -> {str: str}?
+    out: {str: str} @= {}
+    out @ add_codes(into: out, section: section_of(release, locale: locale, file: "languages", section: "languages")?, prefix: "l", lower: false)?
+    out @ add_codes(into: out, section: section_of(release, locale: locale, file: "scripts", section: "scripts")?, prefix: "s", lower: false)?
+    out @ add_codes(into: out, section: section_of(release, locale: locale, file: "territories", section: "territories")?, prefix: "r", lower: false)?
+    out @ add_codes(into: out, section: section_of(release, locale: locale, file: "variants", section: "variants")?, prefix: "v", lower: true)?
+    names = cldrkit.member_at(release, name: f"{FOLDER}{locale}/localeDisplayNames.json", path: ["main", locale, "localeDisplayNames"])?
+    out @ add_patterns(into: out, names: names)?
+    out @ add_keywords(into: out, names: names, aliases: aliases)?
+    return ok(out)
+
+## Tests
+
+test "kept_code: a code alone, an alternative kept, one left out, one unknown"
+    assert kept_code("de").must() == "de"
+    assert kept_code("en-GB-alt-short").must() == "en-GB-alt-short"
+    assert kept_code("ku-menu-core").must() == "ku-menu-core"
+    assert kept_code("IO-alt-chagos").must() == ""
+    assert kept_code("de-alt-newer").is_err()
+
+test "add_keywords: a key and its values by BCP 47's names, a core name, a key of no alias"
+    aliases = cldrkit.KeywordAliases(keys: {"calendar": "ca"}, values: {"ca gregorian": "gregory"})
+    names = json.parse(
+        "{\"keys\": {\"calendar\": \"Calendar\", \"cf\": \"Currency Format\"}, \"types\": {\"calendar\": {\"gregorian\": \"Gregorian Calendar\", \"_core\": {\"gregorian\": \"Gregorian\"}}}}"
+    ).must()
+    got = add_keywords(into: {}, names: names, aliases: aliases).must()
+    assert got == {"k ca": "Calendar", "k cf": "Currency Format", "t ca gregory": "Gregorian Calendar", "t ca gregory-alt-core": "Gregorian"}

@@ -56,6 +56,7 @@ packages = [
     "i18n/dates",
     "i18n/hero_locale",
     "i18n/locales",
+    "i18n/names",
     "i18n/numbers",
     "ical",
     "ical/vcard",
