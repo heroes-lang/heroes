@@ -3354,7 +3354,11 @@ function moved_under(part: str, known: {str: bool}) -> bool
             continue
         landed = strings.trimmed(row.slice(from: at.must() + 4, to: row.len()))
 
-        if !known[landed + "/" + strings.without_prefix(text: part, prefix: written + "/")].is_err()
+        # A directory under it is cited with its slash as often as without,
+        # `packages/rebel/0.1.0/`, and `known` holds it without.
+        rest = strings.without_prefix(text: part, prefix: written + "/")
+
+        if !known[landed + "/" + rest].is_err() || strings.has_suffix(s: rest, suffix: "/") && !known[landed + "/" + rest.slice(from: 0, to: rest.len() - 1)].is_err()
             return true
 
     return false
@@ -6569,6 +6573,12 @@ test "a file under a directory that moved is found under the directory it moved 
     assert !moved_under(part: "docs/work/milestones/M-never-written.md", known: known)
     assert !moved_under(part: "docs/work/milestones", known: known)
     assert !moved_under(part: "elsewhere/M-issue-files.md", known: known)
+
+    # A directory under a moved one, cited with its slash or without.
+    known["rebel/library/0.1.0"] @ true
+    assert moved_under(part: "packages/rebel/0.1.0/", known: known)
+    assert moved_under(part: "packages/rebel/0.1.0", known: known)
+    assert !moved_under(part: "packages/rebel/0.2.0/", known: known)
 
 test "a question of comprehension lives in its day's folder, holds one item, and carries no card"
     good = "- [ ] **M-ir-lowering.1** | how many instructions | x\n\n    **Origin:** step 1, 2026-08-03.\n"

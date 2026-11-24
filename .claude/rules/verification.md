@@ -141,7 +141,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 command printed 37 names, 31 suites and 6 forms as on 2026-11-13, the
 `packages` suite gone with `core` and `rebel` in its place (the dispatcher's
 lists at `f6c49d84c` and at `f44b7234c`, compared), and what the table
-lacked, written above, five rows and one cell: `rebel` over `packages/**` and
+lacked, written above, five rows and one cell: `rebel` over `packages/**` (its path on 2026-11-19) and
 Rebel's rules page, `fetch` and `generated` over their golden folders,
 `records` over the homes of the new sentence outside `docs/` and `.claude/`,
 and `emission` in the `runtime/**` row. What it printed and is not a row: `units`, `cache` and

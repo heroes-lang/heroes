@@ -400,7 +400,7 @@ shelf*, and its English and Italian pages missing), and its copies under
 panel 235's R15): the thirteen copies left the programs and the canonical
 tree left `examples/packages/` that day (2026-11-08), and the source is `core` 0.1.0 in a local static index,
 then inside `examples/` and read over `file://../index`, at the repository's root
-since panel 238's R10 the same day, `packages/`, read over `file://../../packages`
+since panel 238's R10 the same day, 2026-11-08, `packages/`, read over `file://../../packages`
 (every placed folder renamed with it, the key holding the `index` line as written).
 Each of the fourteen programs
 that uses it holds a catalogue `heroes add core` wrote and the tree it placed
@@ -419,7 +419,7 @@ it.
 **Resumed 2026-11-10**, on the author's word of the evening before, given as they left the
 session for the night (*finish everything the plan holds*): the batches resume with
 `encoding/json`, the first package of the next batch, published as `core` 0.2.0 in the static index
-at `packages/` (`8a660cb32`), 0.1.0 left byte for byte as it was published. Its hand copy in
+at `packages/` (`8a660cb32`, 2026-11-10), 0.1.0 left byte for byte as it was published. Its hand copy in
 `examples/json/` was wrong in five places that night (`0.3` read as `0.30000000000000004`, `1e309`
 written `inf`, `01` and a raw line feed accepted, `\u00e9` refused) and left with the package. Three
 things the steps after it inherit:

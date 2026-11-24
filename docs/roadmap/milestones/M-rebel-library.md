@@ -699,7 +699,7 @@ the block above says the pointer *needs no new form* and draws `packages/rebel/0
 are true of a program's catalogue and false of the index. An index is a protocol the compiler reads, ratified with
 panel 235 (2026-11-07): `<index>/<name>/versions`, `<index>/<name>/<version>/list` and
 `<index>/<name>/<version>/files/<path>`, every file at its own address and never rewritten once published
-(`selfhost/fetch/index_source.hero`); and the site's build refuses any other file under `packages/` as a build error
+(`selfhost/fetch/index_source.hero`); and the site's build refused, on 2026-11-23, any other file under `packages/` as a build error
 (`checkIndex`, `site/src/lib/examples-model.ts`). So an index that holds a pointer in place of the files is a change
 of that protocol, a sitting's, and belongs to M-package-index's opening one. Measured beside it: `packages/rebel/`
 holds neither `versions` nor `list`, so it is a source tree in an index's shape and no index a client can read;
@@ -857,7 +857,7 @@ lanes in flight and the last check on the exact tree pushed.
   contract asks a sitting for: `docs/design.md` §1.11's sentence and the verb
   `heroes doc`.
 - **The landing is one push**, since the CI runs on pushes to `main` alone and
-  a push there that touches `examples/`, `packages/`, `selfhost/` or
+  a push there that touches `examples/`, `rebel/`, `selfhost/` or
   `runtime/` publishes the site.
 
 Decided on 2026-11-16:

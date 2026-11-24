@@ -40,10 +40,10 @@ on:
     #
     # What the build reads beyond site/: examples/ for the programs it shows,
     # rebel/examples/ for those that use Rebel, rebel/library/ for Rebel's own
-    # tree, which its page and its reference pages read, and packages/, the
-    # local static index, whose absence the build asks (it left the tree with
-    # Rebel's library on 2026-11-24, and the push that brings an index back
-    # deploys, so the build holds its shape);
+    # tree, which its page and its reference pages read, and the local static
+    # index packages/, gone since 2026-11-24, whose absence the build asks (it
+    # left the tree with Rebel's library, and the push that brings an index
+    # back deploys, so the build holds its shape);
     # the compiler's own sources for the keywords it colours by, the version
     # and the verbs it prints, the sizes of the project page, and the claims it
     # checks; the spec and its suite for the type words and the ceiling; the
