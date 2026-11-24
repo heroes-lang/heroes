@@ -25,6 +25,7 @@
 # that builds one does not.
 
 use absence
+use case_modules
 use platform_skips
 use report
 use shell
@@ -165,21 +166,31 @@ function skip_of(scratch: str, p: Probe, said: shell.Run) -> Outcome
 # finds no such library (`absence.library_lacked`), `asked` where it finds one
 # or cannot say, so the row runs and is judged; and `failed` where the row's
 # own case binds no such library, since a row's word about its case is a
-# premise, and one that died is told rather than kept as a skip.
+# premise, and one that died is told rather than kept as a skip. The case
+# binds what any module its program reads binds, its own folder's and its
+# `path` packages' (`case_modules`): defect 2636's row binds `z` through the
+# package `zp`, and was told red on every machine while the case's own file
+# alone was asked.
 function library_asked(scratch: str, p: Probe) -> Outcome
     path = case_of(p.argv)
-    source = read_file(path)
+    modules: [case_modules.Module] @= []
 
-    if path.len() == 0 || source.is_err()
+    if path.len() > 0
+        read = case_modules.reached(path)
+
+        if !read.is_err()
+            modules @ read.must()
+
+    if modules.len() == 0
         return Outcome(
             kind: "failed",
             text: "  `" + p.argv + "`: the row says its case binds library `" + p.library + "`, and it names no case that can be read"
         )
 
-    if !absence.links(source: source.must(), library: p.library)
+    if !bound_in(modules: modules, library: p.library)
         return Outcome(
             kind: "failed",
-            text: "  `" + p.argv + "`: the row says its case binds library `" + p.library + "`, and " + path + " names it in no `link` group"
+            text: "  `" + p.argv + "`: the row says its case binds library `" + p.library + "`, and " + named_by(path: path, count: modules.len()) + " it in no `link` group"
         )
     lacked = absence.library_lacked(scratch: scratch, library: p.library)
 
@@ -189,6 +200,25 @@ function library_asked(scratch: str, p: Probe) -> Outcome
             text: "this machine lacks what the case binds, so it is judged where that is: " + lacked.must()
         )
     return Outcome(kind: "asked", text: "")
+
+# Whether any module a case's program reads holds a `link` group naming
+# `library`.
+function bound_in(modules: [case_modules.Module], library: str) -> bool
+    for one in modules
+        if absence.links(source: one.text, library: library)
+            return true
+
+    return false
+
+# Who was read for a row's word about its library, as its refusal says it:
+# the case alone, or the case and the modules its `use` lines reach.
+function named_by(path: str, count: i64) -> str
+    if count <= 1
+        return path + " names"
+
+    if count == 2
+        return path + " and the one module its `use` lines reach name"
+    return path + " and the " + (count - 1).to_str() + " modules its `use` lines reach name"
 
 # The case a row's argv hands the compiler: its first word ending in `.hero`,
 # "" where there is none.
@@ -393,6 +423,26 @@ test "fixedbugs: a row naming a library its case binds is skipped where the mach
     unbound.library @ "heroes_unbound_2481"
     told = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: unbound)
     assert told.kind == "failed" && strings.contains(s: told.text, substr: "names it in no `link` group")
+
+    # And a case whose program binds the library through a `path` package,
+    # defect 2636's row, is asked as one whose own file binds it; told red
+    # until the walk, its own file holding no group at all.
+    through_dir = tree + "/through"
+    assert !shell.mkdir_all(through_dir + "/zq").is_err()
+    assert !write_file(path: through_dir + "/heroes.toml", text: "[dependencies.zq]\npath = \"zq\"\n").is_err()
+    assert !write_file(path: through_dir + "/zq/zq.hero", text: "extern \"stdio.h\" link \"" + absent + "\"\n    function puts(s: cstr) -> i32\n").is_err()
+    assert !write_file(path: through_dir + "/main.hero", text: "use <zq>/zq\n").is_err()
+    through: Probe @= probe(name: "through", argv: "build " + through_dir + "/main.hero", code: 0)
+    through.library @ absent
+    assert outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: through).kind == "skipped"
+    beside: Probe @= through
+    beside.library @ "heroes_unbound_2481"
+    said = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: beside)
+    assert said.kind == "failed"
+    assert strings.contains(
+        s: said.text,
+        substr: through_dir + "/main.hero and the one module its `use` lines reach name it in no `link` group"
+    )
     present: str @= "m"
 
     if shell.exe_suffix() == ".exe"
