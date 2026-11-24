@@ -141,6 +141,7 @@ packages = [
     "regex",
     "retries",
     "s3",
+    "saml",
     "scanner",
     "scram",
     "search",

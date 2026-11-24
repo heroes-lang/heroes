@@ -1,0 +1,1113 @@
+# SAML 2.0's service provider (OASIS, 2005): a program signs its users in
+# through a company's identity server. It reads the identity provider's
+# metadata and writes its own, sends an authentication request by the
+# HTTP-Redirect or the HTTP-POST binding, signed or not, checks the response
+# the browser posts back and answers who signed in, and logs a session out
+# either way, the Web Browser SSO and Single Logout profiles of SAML
+# Profiles § 4.1 and § 4.4.
+#
+# **What is answered is what was signed.** A response is read only once a
+# signature that holds for a certificate of the identity provider's metadata
+# covers it or its assertion, through `xmldsig`, and that signature's one
+# reference names the very element it stands in (SAML Core § 5.4.2), so a
+# signed assertion moved elsewhere in a forged response vouches for nothing.
+# Then every rule of SAML Profiles § 4.1.4.3 is checked: the issuer, the
+# response's destination, the request it answers, a bearer confirmation whose
+# recipient is the consumer service and whose time has not passed, the
+# conditions' window, the audience, a condition not understood refused as
+# SAML Core § 2.5.1.1 asks, and the assertion not seen before (`Seen`). A
+# name is read with every piece of its text, so a comment put inside a
+# signed name cannot cut it.
+#
+# **The safe way is the only way.** The assertion must carry its own
+# signature unless the program says otherwise (SAML Profiles § 4.1.4.5); an
+# unsolicited response is read only by `unsolicited_options`; a logout
+# message is refused unsigned; SHA-1 is refused wherever it is named, as
+# `xmldsig` refuses it.
+#
+# It holds no session and keeps nothing between calls: a request's
+# identifier, the `Seen` record and the login answered are the program's to
+# keep, and an HTTP request and its answer are `http`'s or `web`'s.
+#
+# It fails `invalid` (a message not of SAML's form or a rule of the profile
+# that does not hold, the message naming it), `not_found` (an element or an
+# endpoint absent), `failed` (the identity provider answered a status other
+# than success, its codes and message in the failure), `limit` (a message
+# past `MOST_BYTES`) and `unsupported` (a form of SAML not read, saying why).
+#
+# Not written yet, each a `pending` block of its ledger: an encrypted
+# assertion, identifier or attribute read (XML Encryption 1.1); the
+# HTTP-Artifact binding and the SOAP binding's back channel; the identity
+# provider's side.
+
+use bytes
+use crypto/keypairs
+use random
+use saml/internal/assertion
+use saml/internal/messages
+use saml/internal/metadata
+use saml/internal/names
+use saml/internal/samples
+use saml/internal/transport
+use saml/internal/trust
+use strings
+use time
+use url
+use x509
+use xml
+use xmldsig
+
+## Codes and names
+
+# The code of a message not of SAML's form, or a rule that does not hold.
+constant INVALID: str
+    "invalid"
+
+# The code of an element or an endpoint a message or metadata lacks.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a form of SAML this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a status other than success, answered by the identity
+# provider.
+constant FAILED: str
+    "failed"
+
+# The code of a message longer than `MOST_BYTES`.
+constant LIMIT: str
+    "limit"
+
+# The most bytes a message read from a binding may hold, once inflated or
+# decoded.
+constant MOST_BYTES: i64
+    4194304
+
+# The HTTP-POST binding's identifier.
+constant HTTP_POST: str
+    "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+
+# The HTTP-Redirect binding's identifier.
+constant HTTP_REDIRECT: str
+    "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+
+# The format of a name the identity provider keeps for one user and one
+# service provider, opaque and lasting.
+constant PERSISTENT: str
+    "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
+
+# The format of a name made for one session alone.
+constant TRANSIENT: str
+    "urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
+
+# The format of a name that is a mail address.
+constant EMAIL_ADDRESS: str
+    "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+
+# The clock skew `response_options` allows between the two providers, in
+# seconds.
+constant DEFAULT_SKEW_SECONDS: i64
+    120
+
+## Providers
+
+# The service provider a program is: what its metadata says and what a
+# response is checked against.
+record ServiceProvider
+    # Its entity identifier, the audience every assertion must name.
+    entity_id: str
+    # The URL its assertion consumer service is posted to, the recipient
+    # every assertion must name.
+    acs_url: str
+    # The URL its single logout service answers at, or "" where it has none.
+    logout_url: str
+    # The format of name it asks, or "" for the identity provider's choice.
+    name_id_format: str
+    # The certificates of the keys it signs requests with, in its metadata.
+    certificates: [x509.Certificate]
+
+# A service provider of entity identifier `entity_id` and consumer service
+# `acs_url`, with no logout service, no format asked and no certificate.
+#
+# - `entity_id`: its entity identifier, a URL by custom.
+# - `acs_url`: the URL its assertion consumer service is posted to.
+#
+# See also `format_metadata`.
+function service_provider(entity_id: str, acs_url: str) -> ServiceProvider
+    none: [x509.Certificate] = []
+    return ServiceProvider(
+        entity_id: entity_id,
+        acs_url: acs_url,
+        logout_url: "",
+        name_id_format: "",
+        certificates: none
+    )
+
+# One endpoint of an identity provider.
+record Endpoint
+    # The binding's identifier, `HTTP_REDIRECT` or `HTTP_POST` among them.
+    binding: str
+    # The URL a message is sent to.
+    location: str
+    # The URL a response is sent to, or "" where it is `location`.
+    response_location: str
+
+# An identity provider, as its metadata describes it.
+record IdentityProvider
+    # Its entity identifier, the issuer every response must name.
+    entity_id: str
+    # Its single sign-on endpoints, in order.
+    sso: [Endpoint]
+    # Its single logout endpoints, in order.
+    logout: [Endpoint]
+    # The certificates of the keys it signs with; a response holds where its
+    # signature holds for one of them.
+    certificates: [x509.Certificate]
+    # Whether it asks requests to be signed.
+    want_requests_signed: bool
+    # The formats of name it offers.
+    name_id_formats: [str]
+
+# How far a metadata document is trusted.
+variant Source
+    # It must carry a signature that holds for this key.
+    signed
+        # The key the program trusts for the metadata, a federation's.
+        by: xmldsig.Verifier
+    # It came from a place the program trusts, a file it was given or an
+    # `https://` URL of the identity provider itself.
+    trusted
+
+# The identity provider `entity_id` as the metadata `text` describes it.
+#
+# - `text`: an `EntityDescriptor`, or an `EntitiesDescriptor` holding it at
+#   any depth.
+# - `entity_id`: the entity read; "" where the document describes one alone.
+# - `source`: whether its signature is checked, and by which key.
+# - `now`: the instant its `validUntil` is checked against.
+#
+# Only `KeyDescriptor`s of no `use` or of `use="signing"` give a certificate.
+#
+# Fails `invalid` where the document is not metadata, its signature does not
+# hold or names another element, its `validUntil` has passed, or it gives
+# no signing certificate; `not_found` where it describes no such entity or no
+# identity provider of SAML 2.0.
+#
+# See also `format_metadata`, `check_response`.
+function parse_metadata(text: str, entity_id: str, source: Source, now: time.Instant) -> IdentityProvider?
+    doc = xml.parse(text)?
+
+    match source
+        .signed s =>
+            if !trust.metadata_signed(doc, verifier: s.by)?
+                return fail(code: INVALID, msg: "the metadata carries no signature, and it was to be signed")
+        .trusted => _ = 0
+
+    read = metadata.identity_provider(doc, entity_id: entity_id, now_ms: time.unix_milliseconds(now))?
+    sso: [Endpoint] @= []
+    logout: [Endpoint] @= []
+
+    for e in read.sso
+        sso @ sso.push(Endpoint(binding: e.binding, location: e.location, response_location: e.response_location))
+
+    for e in read.logout
+        logout @ logout.push(Endpoint(binding: e.binding, location: e.location, response_location: e.response_location))
+
+    return ok(
+        IdentityProvider(entity_id: read.entity_id, sso: sso, logout: logout, certificates: read.certificates, want_requests_signed: read.want_requests_signed, name_id_formats: read.name_id_formats)
+    )
+
+# The metadata of `sp`: an `EntityDescriptor` with its `SPSSODescriptor`,
+# its signing certificates, its logout service by both bindings where it has
+# one, the format it asks, and its consumer service by HTTP-POST, asking
+# signed assertions.
+#
+# - `sp`: the service provider.
+#
+# Fails `invalid` where a value is not one XML can write.
+#
+# See also `parse_metadata`.
+function format_metadata(sp: ServiceProvider) -> str?
+    return xml.format(
+        metadata.of_service_provider(entity_id: sp.entity_id, acs_url: sp.acs_url, logout_url: sp.logout_url, name_id_format: sp.name_id_format, certificates: sp.certificates)
+    )
+
+## Messages sent
+
+# A message a service provider sends, built and not yet signed.
+record Outgoing
+    # Its `ID`, which the answer names in `InResponseTo`: the program keeps
+    # it until the answer comes.
+    id: str
+    # `SAMLRequest` or `SAMLResponse`, the parameter it travels in.
+    parameter: str
+    # The binding it is sent by, `HTTP_REDIRECT` or `HTTP_POST`.
+    binding: str
+    # The endpoint's URL, which the message names as its `Destination`.
+    destination: str
+    # The message.
+    doc: xml.Document
+
+# What an authentication request asks beyond its identity.
+record RequestOptions
+    # Whether the user must sign in again, an existing session at the
+    # identity provider notwithstanding.
+    force_authn: bool
+    # Whether the identity provider must answer without asking the user.
+    is_passive: bool
+    # Whether the identity provider may make a name for a user new to this
+    # service provider.
+    allow_create: bool
+    # The classes of authentication context asked, exactly; empty for the
+    # identity provider's choice.
+    authn_contexts: [str]
+
+# Options asking nothing more and letting a name be made.
+function default_request_options() -> RequestOptions
+    return RequestOptions(force_authn: false, is_passive: false, allow_create: true, authn_contexts: [])
+
+# An authentication request of `sp` to `idp`, sent by `binding`, its
+# response asked by HTTP-POST at `sp.acs_url`; its identifier is drawn from
+# the system's generator.
+#
+# - `sp`: the service provider.
+# - `idp`: the identity provider, its first endpoint of `binding` taken.
+# - `binding`: `HTTP_REDIRECT` or `HTTP_POST`.
+# - `options`: what the request asks.
+# - `now`: its `IssueInstant`.
+#
+# Fails `not_found` where `idp` has no single sign-on endpoint of
+# `binding`, `invalid` for another binding, and as `random` fails.
+#
+# See also `redirect_url`, `post_page`, `check_response`.
+function authn_request(sp: ServiceProvider, idp: IdentityProvider, binding: str, options: RequestOptions, now: time.Instant) -> Outgoing?
+    destination = endpoint_of(idp.sso, binding: binding, response: false, what: "single sign-on")?
+    id = "_" + random.secure_token_hex(20)?
+    asked = messages.Asked(
+        force_authn: options.force_authn,
+        is_passive: options.is_passive,
+        name_id_format: sp.name_id_format,
+        allow_create: options.allow_create,
+        contexts: options.authn_contexts
+    )
+    doc = messages.authn_request(
+        id: id,
+        issued: time.format(now, layout: .rfc3339_seconds),
+        destination: destination,
+        issuer: sp.entity_id,
+        acs_url: sp.acs_url,
+        asked: asked
+    )
+    return ok(Outgoing(id: id, parameter: "SAMLRequest", binding: binding, destination: destination, doc: doc))
+
+# The location of the first endpoint of `binding` in `list`, its response
+# location where `response` asks one and it writes one.
+#
+# - `list`: the endpoints, an identity provider's `sso` or `logout`.
+# - `binding`: `HTTP_REDIRECT` or `HTTP_POST`.
+# - `response`: whether the location of responses is asked.
+# - `what`: the service, named in the failure.
+#
+# Fails `invalid` for a binding other than the two, `not_found` where none is
+# of it.
+#
+# See also `authn_request`.
+function endpoint_of(list: [Endpoint], binding: str, response: bool, what: str) -> str?
+    if binding != HTTP_REDIRECT && binding != HTTP_POST
+        return fail(code: INVALID, msg: f"the binding \"{binding}\" is neither HTTP-Redirect nor HTTP-POST")
+
+    for e in list
+        if e.binding == binding
+            if response && e.response_location != ""
+                return ok(e.response_location)
+            return ok(e.location)
+
+    return fail(code: NOT_FOUND, msg: f"the identity provider has no {what} endpoint of the binding {binding}")
+
+# Who signs a message sent.
+variant Signer
+    # The service provider's key, by a method of a key pair.
+    key
+        # The private key, which stays open.
+        v: keypairs.PrivateKey
+        # The method, `.rsa_sha256` the one every identity provider reads.
+        method: xmldsig.Method
+    # Nobody: refused where the identity provider asks requests signed and
+    # for every logout message, which SAML Profiles § 4.4.4 asks signed.
+    unsigned
+
+# The URL that sends `m` by HTTP-Redirect: its message deflated and in base
+# 64 (SAML Bindings § 3.4.4.1), `relay_state` beside it where not empty, and
+# signed over the query's bytes where `signer` is a key.
+#
+# - `m`: a message of the HTTP-Redirect transport.
+# - `relay_state`: what the program gets back with the answer, at most 80
+#   bytes; "" for none.
+# - `signer`: who signs it.
+#
+# Fails `invalid` where `m` is of the other binding, `relay_state` is longer,
+# or the method is an HMAC's or of another kind than the key; `unsupported`
+# as `keypairs.sign` fails.
+#
+# See also `post_page`.
+function redirect_url(m: Outgoing, relay_state: str, signer: Signer) -> str?
+    if m.binding != HTTP_REDIRECT
+        return fail(code: INVALID, msg: "a message of the HTTP-POST binding sent by redirect")
+    transport.check_relay_state(relay_state)?
+    message = url.escape_query(transport.deflated(xml.format(m.doc)?)?)
+
+    relay = if relay_state == ""
+        ""
+    else
+        url.escape_query(relay_state)
+    query @= ""
+
+    match signer
+        .key k =>
+            method = url.escape_query(xmldsig.method_uri(k.method))
+            part = transport.signed_part(parameter: m.parameter, message: message, relay_state: relay, sig_alg: method)
+            value = xmldsig.sign_bytes(bytes.from_text(part), key: k.v, method: k.method)?
+            query @ part + "&Signature=" + url.escape_query(bytes.format_base64(value))
+        .unsigned =>
+            query @ m.parameter + "=" + message
+
+            if relay != ""
+                query @ query + "&RelayState=" + relay
+
+    joiner = if strings.contains(s: m.destination, substr: "?")
+        "&"
+    else
+        "?"
+    return ok(m.destination + joiner + query)
+
+# The page that posts `m` by HTTP-POST (SAML Bindings § 3.5.4), signed
+# inside where `signer` is a key: the signature enveloped after its
+# `Issuer`, over exclusive Canonical XML and SHA-256.
+#
+# - `m`: a message of the HTTP-POST transport.
+# - `relay_state`: what the program gets back with the answer, at most 80
+#   bytes; "" for none.
+# - `signer`: who signs it.
+#
+# Fails as `redirect_url` fails, for a message of the other transport.
+#
+# See also `redirect_url`.
+function post_page(m: Outgoing, relay_state: str, signer: Signer) -> str?
+    if m.binding != HTTP_POST
+        return fail(code: INVALID, msg: "a message of the HTTP-Redirect binding sent by a form")
+    transport.check_relay_state(relay_state)?
+
+    doc = match signer
+        .key k => xmldsig.sign(m.doc, parent: [], before: 1, signed: [[]], key: k.v, options: xmldsig.default_sign_options(k.method))?
+        .unsigned => m.doc
+
+    fields: [url.Pair] @= [url.Pair(key: m.parameter, value: bytes.format_base64(bytes.from_text(xml.format(doc)?)))]
+
+    if relay_state != ""
+        fields @ fields.push(url.Pair(key: "RelayState", value: relay_state))
+    return ok(transport.form_page(action: m.destination, fields: fields))
+
+## A login received
+
+# What a response is checked against beyond the two providers.
+record ResponseOptions
+    # The instant of the check.
+    now: time.Instant
+    # The clock skew allowed either way, in seconds.
+    skew_seconds: i64
+    # The `ID` of the request answered; "" where the response is unsolicited,
+    # which `unsolicited_options` alone writes.
+    request_id: str
+    # Whether the assertion must carry its own signature, as SAML Profiles
+    # § 4.1.4.5 asks of the HTTP-POST binding; false lets a signature of the
+    # whole response stand for it, for an identity provider that signs only
+    # that.
+    want_assertions_signed: bool
+
+# Options for the response to the request `request_id`, checked at `now`
+# with `DEFAULT_SKEW_SECONDS`, its assertion signed.
+#
+# - `request_id`: the `ID` of the request the program sent, `Outgoing.id`.
+# - `now`: the instant of the check.
+#
+# See also `unsolicited_options`, `check_response`.
+function response_options(request_id: str, now: time.Instant) -> ResponseOptions
+    return ResponseOptions(
+        now: now,
+        skew_seconds: DEFAULT_SKEW_SECONDS,
+        request_id: request_id,
+        want_assertions_signed: true
+    )
+
+# Options for a response no request of the program asked (SAML Profiles
+# § 4.1.5), which must then answer none.
+#
+# - `now`: the instant of the check.
+#
+# See also `response_options`.
+function unsolicited_options(now: time.Instant) -> ResponseOptions
+    return response_options(request_id: "", now: now)
+
+# The assertions already read and when each expires, so a bearer assertion
+# is read once (SAML Profiles § 4.1.4.5). A program of several processes
+# keeps it where they all reach it.
+record Seen
+    # Each assertion's `ID`, to its expiry in milliseconds since 1970 in UTC.
+    until: {str: i64}
+
+# A record of no assertion read.
+function new_seen() -> Seen
+    return Seen(until: {})
+
+# One attribute the identity provider says of the user.
+record Attribute
+    # Its `Name`, `urn:oid:0.9.2342.19200300.100.1.3` for one.
+    name: str
+    # Its `NameFormat`, or "".
+    name_format: str
+    # Its `FriendlyName`, `mail` for one, or "".
+    friendly_name: str
+    # Its values in order, a nil value read as "".
+    values: [str]
+
+# Who signed in, as a response that holds says.
+record Login
+    # The identity provider's entity identifier.
+    issuer: str
+    # The user's name, `NameID`.
+    name_id: str
+    # Its format, `PERSISTENT` for one, or "".
+    name_id_format: str
+    # Its `NameQualifier`, or "".
+    name_qualifier: str
+    # Its `SPNameQualifier`, or "".
+    sp_name_qualifier: str
+    # The session's index at the identity provider, which a logout names, or
+    # "".
+    session_index: str
+    # Whether the identity provider limits the session.
+    session_ends: bool
+    # Where it does, the instant the program ends it; otherwise the epoch.
+    session_end: time.Instant
+    # When the user authenticated.
+    authn_instant: time.Instant
+    # The class of the authentication's context, or "".
+    authn_context: str
+    # What the identity provider says of the user.
+    attributes: [Attribute]
+    # The assertion's `ID`.
+    assertion_id: str
+    # The response's `ID`.
+    response_id: str
+    # The request it answers, or "" for an unsolicited response.
+    in_response_to: str
+    # Whether the assertion's conditions write `OneTimeUse`.
+    one_time_use: bool
+
+# Who signed in, once the response the browser posted holds.
+#
+# - `saml_response`: the posted form's `SAMLResponse` field.
+# - `sp`: the service provider it was posted to.
+# - `idp`: the identity provider expected, its certificates trusted.
+# - `options`: the instant, the skew, the request answered, and whether the
+#   assertion's own signature is asked.
+# - `seen`: the assertions read before; the one read is added, those expired
+#   taken out.
+#
+# The status is read first, so a refusal is told as the identity provider
+# wrote it; then the signatures, then SAML Profiles § 4.1.4.3's rules.
+#
+# Fails `failed` with the identity provider's status codes and message;
+# `invalid` where the response is not of SAML 2.0, its signature or its
+# assertion's does not hold or covers another element, neither is signed
+# or the assertion is not where asked, the response is signed and names no
+# destination or another, it answers another request, or a rule of the
+# assertion does not hold, `seen` holding it among them; `unsupported` for an
+# encrypted assertion, several assertions, or what `Login` cannot hold;
+# `limit` past `MOST_BYTES`.
+#
+# See also `authn_request`, `values_of`.
+function check_response(saml_response: str, sp: ServiceProvider, idp: IdentityProvider, options: ResponseOptions, @seen: Seen) -> Login?
+    doc = xml.parse(transport.decoded(saml_response)?)?
+    root = doc.root
+
+    if root.name.space != names.PROTOCOL || root.name.local != "Response"
+        return fail(code: INVALID, msg: f"the message is <{root.name.local}>, not a SAML protocol Response")
+
+    if names.attribute_or_empty(root, name: "Version") != "2.0"
+        return fail(code: INVALID, msg: "the response is not of SAML 2.0")
+    response_id = names.attribute_or_empty(root, name: "ID")
+    destination = names.attribute_or_empty(root, name: "Destination")
+    answered = names.attribute_or_empty(root, name: "InResponseTo")
+
+    if destination != "" && destination != sp.acs_url
+        return fail(code: INVALID, msg: f"the response is for \"{destination}\", not \"{sp.acs_url}\"")
+
+    if answered != options.request_id
+        return fail(
+            code: INVALID,
+            msg: f"the response answers \"{answered}\" where \"{options.request_id}\" was expected"
+        )
+    names.check_issuer(root, expected: idp.entity_id, required: false, what: "the response")?
+    trust.status_success(root)?
+
+    if names.has_child(root, space: names.ASSERTION, local: "EncryptedAssertion")
+        return fail(code: UNSUPPORTED, msg: "the assertion is encrypted, and XML Encryption is not read")
+    at = trust.assertion_place(root)?
+    response_signed = trust.enveloped(doc, at: [], certificates: idp.certificates, what: "the response")?
+    assertion_signed = trust.enveloped(doc, at: at, certificates: idp.certificates, what: "the assertion")?
+
+    if options.want_assertions_signed && !assertion_signed
+        return fail(
+            code: INVALID,
+            msg: "the assertion carries no signature of its own, which SAML Profiles § 4.1.4.5 asks"
+        )
+
+    if !response_signed && !assertion_signed
+        return fail(code: INVALID, msg: "neither the response nor its assertion is signed")
+
+    if response_signed && destination == ""
+        return fail(
+            code: INVALID,
+            msg: "the response is signed and names no Destination, which SAML Bindings § 3.5.5.2 asks"
+        )
+    now_ms = time.unix_milliseconds(options.now)
+    expect = assertion.Expect(
+        sp_entity: sp.entity_id,
+        acs_url: sp.acs_url,
+        idp_entity: idp.entity_id,
+        request_id: options.request_id,
+        now_ms: now_ms,
+        skew_ms: options.skew_seconds * 1000
+    )
+    r = assertion.read(xml.element_at_place(doc, place: at)?, expect: expect)?
+    kept: {str: i64} @= {}
+
+    for id in keys(seen.until)
+        until = seen.until[id].must()
+
+        if until + expect.skew_ms > now_ms
+            kept[id] @ until
+
+    if !kept[r.id].is_err()
+        return fail(code: INVALID, msg: f"the assertion \"{r.id}\" was read before: a bearer assertion is read once")
+    kept[r.id] @ r.expires_ms
+    seen.until @ kept
+    attributes: [Attribute] @= []
+
+    for a in r.attributes
+        attributes @ attributes.push(
+            Attribute(name: a.name, name_format: a.name_format, friendly_name: a.friendly_name, values: a.values)
+        )
+
+    return ok(
+        Login(issuer: idp.entity_id, name_id: r.name_id, name_id_format: r.name_id_format, name_qualifier: r.name_qualifier, sp_name_qualifier: r.sp_name_qualifier, session_index: r.session_index, session_ends: r.session_ends, session_end: time.Instant(unix_nanoseconds: r.session_end_ms * 1000000), authn_instant: time.Instant(unix_nanoseconds: r.authn_ms * 1000000), authn_context: r.authn_context, attributes: attributes, assertion_id: r.id, response_id: response_id, in_response_to: answered, one_time_use: r.one_time_use)
+    )
+
+# The values of the attributes of `login` whose `Name` or `FriendlyName` is
+# `name`, in order; empty where none is.
+#
+# - `login`: the login `check_response` answered.
+# - `name`: the attribute's name or its friendly name.
+#
+# See also `check_response`.
+function values_of(login: Login, name: str) -> [str]
+    out: [str] @= []
+
+    for a in login.attributes
+        if a.name == name || a.friendly_name == name
+            for v in a.values
+                out @ out.push(v)
+
+    return out
+
+## Logout
+
+# A logout message received, as the binding brought it.
+variant Incoming
+    # By HTTP-Redirect.
+    redirect
+        # The request's query as received, its escapes untouched: the
+        # signature covers those bytes.
+        query: str
+    # By HTTP-POST.
+    post
+        # The form's `SAMLRequest` or `SAMLResponse` field.
+        message: str
+
+# A logout the identity provider asks of the service provider.
+record LogoutOrder
+    # The request's `ID`, which the answer names.
+    id: str
+    # The user's name, as the login named it.
+    name_id: str
+    # Its format, or "".
+    name_id_format: str
+    # The sessions to end; empty for every session of the user.
+    session_indexes: [str]
+
+# A logout request of `sp` for the session `login` holds, sent to `idp`'s
+# first single logout endpoint of `binding`.
+#
+# - `sp`: the service provider, the issuer.
+# - `idp`: the identity provider.
+# - `login`: the login the session began with: its name, as it was written,
+#   and its session's index.
+# - `binding`: `HTTP_REDIRECT` or `HTTP_POST`.
+# - `now`: its `IssueInstant`.
+#
+# Fails `invalid` where `login` holds no session index, which SAML Profiles
+# § 4.4.4.1 asks of a session participant, or for another binding;
+# `not_found` where `idp` has no logout endpoint of `binding`.
+#
+# See also `check_logout_response`, `redirect_url`.
+function logout_request(sp: ServiceProvider, idp: IdentityProvider, login: Login, binding: str, now: time.Instant) -> Outgoing?
+    if login.session_index == ""
+        return fail(
+            code: INVALID,
+            msg: "the login holds no SessionIndex, which a logout request of a service provider names"
+        )
+    destination = endpoint_of(idp.logout, binding: binding, response: false, what: "single logout")?
+    id = "_" + random.secure_token_hex(20)?
+    subject = messages.Subject(
+        name_id: login.name_id,
+        format: login.name_id_format,
+        name_qualifier: login.name_qualifier,
+        sp_name_qualifier: login.sp_name_qualifier
+    )
+    doc = messages.logout_request(
+        id: id,
+        issued: time.format(now, layout: .rfc3339_seconds),
+        destination: destination,
+        issuer: sp.entity_id,
+        subject: subject,
+        session_index: login.session_index
+    )
+    return ok(Outgoing(id: id, parameter: "SAMLRequest", binding: binding, destination: destination, doc: doc))
+
+# Succeeds where the identity provider's answer to the logout request
+# `request_id` holds and says it succeeded.
+#
+# - `incoming`: the answer, by either transport.
+# - `sp`: the service provider, its logout URL the destination expected.
+# - `idp`: the identity provider, its certificates trusted.
+# - `request_id`: the `ID` of the request it answers.
+# - `now`: the instant of the check.
+#
+# Fails `invalid` where it is unsigned, its signature does not hold, it is
+# no `LogoutResponse`, names another issuer, destination or request;
+# `failed` where its status is not success; `limit` past `MOST_BYTES`.
+#
+# See also `logout_request`.
+function check_logout_response(incoming: Incoming, sp: ServiceProvider, idp: IdentityProvider, request_id: str, now: time.Instant) -> ()?
+    _ = now
+
+    d = match incoming
+        .redirect r => trust.Delivered(redirect: true, text: r.query)
+        .post p     => trust.Delivered(redirect: false, text: p.message)
+
+    received = trust.received(d, parameter: "SAMLResponse", certificates: idp.certificates)?
+    root = received.root
+    trust.logout_message(root, local: "LogoutResponse", sp_logout_url: sp.logout_url, idp_entity: idp.entity_id)?
+
+    if names.attribute_or_empty(root, name: "InResponseTo") != request_id
+        return fail(code: INVALID, msg: f"the logout response answers another request than \"{request_id}\"")
+    return trust.status_success(root)
+
+# The logout the identity provider asks, once its request holds.
+#
+# - `incoming`: the request, by either transport.
+# - `sp`: the service provider, its logout URL the destination expected.
+# - `idp`: the identity provider, its certificates trusted.
+# - `now`: the instant its `NotOnOrAfter` is checked against, with
+#   `DEFAULT_SKEW_SECONDS`.
+#
+# Fails `invalid` where it is unsigned, its signature does not hold, it is
+# no `LogoutRequest`, names another issuer or destination, or has expired;
+# `unsupported` for an encrypted identifier; `limit` past `MOST_BYTES`.
+#
+# See also `logout_response`.
+function check_logout_request(incoming: Incoming, sp: ServiceProvider, idp: IdentityProvider, now: time.Instant) -> LogoutOrder?
+    d = match incoming
+        .redirect r => trust.Delivered(redirect: true, text: r.query)
+        .post p     => trust.Delivered(redirect: false, text: p.message)
+
+    received = trust.received(d, parameter: "SAMLRequest", certificates: idp.certificates)?
+    root = received.root
+    trust.logout_message(root, local: "LogoutRequest", sp_logout_url: sp.logout_url, idp_entity: idp.entity_id)?
+    limit = xml.attribute(root, name: "NotOnOrAfter")
+
+    if !limit.is_err()
+        at = time.unix_milliseconds(names.instant_of(s: limit.must(), what: "the logout request's NotOnOrAfter")?)
+
+        if time.unix_milliseconds(now) - DEFAULT_SKEW_SECONDS * 1000 >= at
+            return fail(code: INVALID, msg: f"the logout request expired at {limit.must()}")
+
+    if names.has_child(root, space: names.ASSERTION, local: "EncryptedID")
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the logout request's identifier is encrypted, and XML Encryption is not read"
+        )
+    name = names.one_child(root, space: names.ASSERTION, local: "NameID", what: "the logout request's NameID")?
+    indexes: [str] @= []
+
+    for e in xml.children_in(root, space: names.PROTOCOL, local: "SessionIndex")
+        indexes @ indexes.push(names.plain(e, what: "a SessionIndex")?)
+
+    return ok(
+        LogoutOrder(id: names.attribute_or_empty(root, name: "ID"), name_id: names.plain(name, what: "the logout request's NameID")?, name_id_format: names.attribute_or_empty(name, name: "Format"), session_indexes: indexes)
+    )
+
+# The answer of `sp` to the logout `order`, success, sent to `idp`'s first
+# single logout endpoint of `binding`, at its response location where it
+# writes one.
+#
+# - `sp`: the service provider, the issuer.
+# - `idp`: the identity provider.
+# - `order`: the logout `check_logout_request` answered.
+# - `binding`: `HTTP_REDIRECT` or `HTTP_POST`.
+# - `now`: its `IssueInstant`.
+#
+# Fails `not_found` where `idp` has no logout endpoint of `binding`,
+# `invalid` for another transport.
+#
+# See also `check_logout_request`.
+function logout_response(sp: ServiceProvider, idp: IdentityProvider, order: LogoutOrder, binding: str, now: time.Instant) -> Outgoing?
+    destination = endpoint_of(idp.logout, binding: binding, response: true, what: "single logout")?
+    id = "_" + random.secure_token_hex(20)?
+    doc = messages.logout_response(
+        id: id,
+        issued: time.format(now, layout: .rfc3339_seconds),
+        destination: destination,
+        issuer: sp.entity_id,
+        in_response_to: order.id,
+        status: names.SUCCESS
+    )
+    return ok(Outgoing(id: id, parameter: "SAMLResponse", binding: binding, destination: destination, doc: doc))
+
+## Tests
+
+test "parse_metadata: the identity provider's endpoints, its signing certificate alone, and what it asks"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    assert idp.entity_id == "https://idp.example.org/metadata"
+    assert idp.sso.len() == 2 && idp.sso[0].binding == HTTP_REDIRECT && idp.sso[1].location == "https://idp.example.org/sso/post"
+    assert idp.logout.len() == 1 && idp.logout[0].location == "https://idp.example.org/slo"
+    assert idp.certificates.len() == 1
+    assert idp.certificates[0].der == x509.parse_certificate(samples.IDP_CERTIFICATE).must().der
+    assert idp.want_requests_signed && idp.name_id_formats == [PERSISTENT]
+    assert names.code_of(parse_metadata(text: samples.METADATA, entity_id: "https://other.example.org", source: .trusted, now: now)) == NOT_FOUND
+    late = time.parse("2126-01-01T00:00:00Z", layout: .rfc3339).must()
+    assert names.code_of(parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: late)) == INVALID
+    assert names.code_of(parse_metadata(text: "<a/>", entity_id: "", source: .trusted, now: now)) == INVALID
+
+test "parse_metadata: signed metadata checked by its key, refused by another and refused unsigned"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    trusted = x509.parse_certificate(samples.IDP_CERTIFICATE).must()
+    other = x509.parse_certificate(samples.OTHER_CERTIFICATE).must()
+    idp = parse_metadata(
+        text: samples.METADATA_SIGNED,
+        entity_id: "",
+        source: .signed(by: .certificate(v: trusted)),
+        now: now
+    ).must()
+    assert idp.entity_id == "https://idp.example.org/metadata"
+    assert names.code_of(parse_metadata(text: samples.METADATA_SIGNED, entity_id: "", source: .signed(by: .certificate(v: other)), now: now)) == INVALID
+    assert names.code_of(parse_metadata(text: samples.METADATA, entity_id: "", source: .signed(by: .certificate(v: trusted)), now: now)) == INVALID
+    changed = strings.replace_all(s: samples.METADATA_SIGNED, old: "sso/post", new: "sso/evil")
+    assert names.code_of(parse_metadata(text: changed, entity_id: "", source: .signed(by: .certificate(v: trusted)), now: now)) == INVALID
+
+test "parse_metadata: a federation's document of two entities, one named and none named"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    inner = strings.replace_all(s: samples.METADATA, old: " xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\"", new: "")
+    second = strings.replace_all(s: inner, old: "https://idp.example.org/metadata", new: "https://idp2.example.org")
+    both = "<md:EntitiesDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\">" + inner + second + "</md:EntitiesDescriptor>"
+    idp = parse_metadata(text: both, entity_id: "https://idp2.example.org", source: .trusted, now: now).must()
+    assert idp.entity_id == "https://idp2.example.org"
+    assert names.code_of(parse_metadata(text: both, entity_id: "", source: .trusted, now: now)) == INVALID
+
+test "format_metadata: the service provider's descriptor, read back as XML, and not an identity provider's"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    sp.name_id_format @ PERSISTENT
+    sp.certificates @ [x509.parse_certificate(samples.SP_CERTIFICATE).must()]
+    text = format_metadata(sp).must()
+    root = xml.parse(text).must().root
+    assert root.name.local == "EntityDescriptor" && xml.attribute(root, name: "entityID").must() == sp.entity_id
+    d = xml.child_in(root, space: names.METADATA, local: "SPSSODescriptor").must()
+    assert xml.attribute(d, name: "AuthnRequestsSigned").must() == "true"
+    assert xml.children_in(d, space: names.METADATA, local: "SingleLogoutService").len() == 2
+    acs = xml.child_in(d, space: names.METADATA, local: "AssertionConsumerService").must()
+    assert xml.attribute(acs, name: "Location").must() == sp.acs_url && xml.attribute(acs, name: "Binding").must() == HTTP_POST
+    assert names.code_of(parse_metadata(text: text, entity_id: "", source: .trusted, now: now)) == NOT_FOUND
+
+test "authn_request: its identifier drawn, its destination the endpoint of the binding, and a binding the identity provider lacks"
+    now = time.parse("2026-11-23T22:00:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp @= parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    options @= default_request_options()
+    options.force_authn @ true
+    options.authn_contexts @ ["urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"]
+    m = authn_request(sp, idp: idp, binding: HTTP_POST, options: options, now: now).must()
+    other = authn_request(sp, idp: idp, binding: HTTP_POST, options: options, now: now).must()
+    assert m.id.len() == 41 && strings.has_prefix(s: m.id, prefix: "_") && m.id != other.id
+    assert m.destination == "https://idp.example.org/sso/post"
+    root = m.doc.root
+    assert xml.attribute(root, name: "IssueInstant").must() == "2026-11-23T22:00:00Z"
+    assert xml.attribute(root, name: "AssertionConsumerServiceURL").must() == sp.acs_url
+    assert xml.attribute(root, name: "ForceAuthn").must() == "true"
+    assert xml.text_of(xml.child_in(root, space: names.ASSERTION, local: "Issuer").must()) == sp.entity_id
+    assert xml.child_in(root, space: names.PROTOCOL, local: "RequestedAuthnContext").is_err() == false
+    idp.sso @ []
+    assert names.code_of(authn_request(sp, idp: idp, binding: HTTP_POST, options: options, now: now)) == NOT_FOUND
+    assert names.code_of(authn_request(sp, idp: idp, binding: "urn:oasis:names:tc:SAML:2.0:bindings:SOAP", options: options, now: now)) == INVALID
+
+test "redirect_url: the signature OpenSSL made over the same bytes, the message inflated back, and unsigned"
+    key @= keypairs.parse_private_pem(samples.SP_KEY).must()
+    m = Outgoing(
+        id: "_5e1c",
+        parameter: "SAMLRequest",
+        binding: HTTP_REDIRECT,
+        destination: "https://idp.example.org/sso/redirect",
+        doc: xml.parse(samples.REQUEST).must()
+    )
+    target = redirect_url(m, relay_state: "/after", signer: .key(v: key, method: .rsa_sha256)).must()
+    query = target.slice(from: strings.index_of(s: target, substr: "?").must() + 1, to: target.len())
+    pairs = transport.raw_pairs(query).must()
+    assert transport.pair_named(pairs, key: "Signature").value == samples.REQUEST_SIGNATURE
+    assert transport.pair_named(pairs, key: "SigAlg").value == "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+    assert transport.pair_named(pairs, key: "RelayState").value == "/after"
+    assert transport.inflated(transport.pair_named(pairs, key: "SAMLRequest").value).must() == xml.format(m.doc).must()
+    plain = redirect_url(m, relay_state: "", signer: .unsigned).must()
+    assert !strings.contains(s: plain, substr: "Signature=") && !strings.contains(s: plain, substr: "RelayState=")
+    assert names.code_of(redirect_url(m, relay_state: "/afterxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", signer: .unsigned)) == INVALID
+    posted = Outgoing(id: "_5e1c", parameter: "SAMLRequest", binding: HTTP_POST, destination: m.destination, doc: m.doc)
+    assert names.code_of(redirect_url(posted, relay_state: "", signer: .unsigned)) == INVALID
+    keypairs.close_private(@key).must()
+
+test "post_page: the request signed inside, checked by the service provider's certificate, and the RelayState field"
+    key @= keypairs.parse_private_pem(samples.SP_KEY).must()
+    m = Outgoing(
+        id: "_5e1c",
+        parameter: "SAMLRequest",
+        binding: HTTP_POST,
+        destination: "https://idp.example.org/sso/post",
+        doc: xml.parse(samples.REQUEST).must()
+    )
+    page = post_page(m, relay_state: "/after", signer: .key(v: key, method: .rsa_sha256)).must()
+    at = strings.index_of(s: page, substr: "name=\"SAMLRequest\" value=\"").must() + 26
+    value = page.slice(
+        from: at,
+        to: at + strings.index_of(s: page.slice(from: at, to: page.len()), substr: "\"").must()
+    )
+    doc = xml.parse(transport.decoded(value).must()).must()
+    trusted = x509.parse_certificate(samples.SP_CERTIFICATE).must()
+    checked = xmldsig.check(
+        doc,
+        signature: [1],
+        verifier: .certificate(v: trusted),
+        options: xmldsig.default_check_options()
+    ).must()
+    assert checked.signed[0].uri == "#_5e1c"
+    assert strings.contains(s: page, substr: "name=\"RelayState\" value=\"/after\"")
+    assert names.code_of(post_page(m, relay_state: "", signer: .unsigned)) == ""
+    keypairs.close_private(@key).must()
+
+test "check_response: the assertion signed by the identity provider, who signed in and what it says"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    seen @= new_seen()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    login = check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: now),
+        @seen
+    ).must()
+    assert login.issuer == idp.entity_id && login.name_id == "a7f3e2c19d" && login.name_id_format == PERSISTENT
+    assert login.sp_name_qualifier == sp.entity_id && login.session_index == "_s3b8"
+    assert login.session_ends && time.unix_seconds(login.session_end) == 1795500000
+    assert time.unix_seconds(login.authn_instant) == 1795471198
+    assert login.authn_context == "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"
+    assert values_of(login, name: "mail") == ["ada@example.com"]
+    assert values_of(login, name: "urn:oid:0.9.2342.19200300.100.1.3") == ["ada@example.com"]
+    assert values_of(login, name: "groups") == ["staff", "admins"] && values_of(login, name: "none").len() == 0
+    assert login.assertion_id == "_a91e" && login.response_id == "_r7c1" && login.in_response_to == "_4f2a9c0e1b7d"
+    assert !login.one_time_use
+    assert seen.until["_a91e"].must() == 1795471500000
+    again = check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: now),
+        @seen
+    )
+    assert names.code_of(again) == INVALID
+
+test "check_response: both signed, the response alone signed where the assertion's own signature is asked and where it is not"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    seen @= new_seen()
+    options @= response_options(request_id: "_4f2a9c0e1b7d", now: now)
+    both = bytes.format_base64(bytes.from_text(samples.RESPONSE_BOTH_SIGNED))
+    assert check_response(both, sp: sp, idp: idp, options: options, @seen).must().name_id == "a7f3e2c19d"
+    outer = bytes.format_base64(bytes.from_text(samples.RESPONSE_SIGNED))
+    assert names.code_of(check_response(outer, sp: sp, idp: idp, options: options, @seen)) == INVALID
+    options.want_assertions_signed @ false
+    fresh @= new_seen()
+    assert check_response(outer, sp: sp, idp: idp, options: options, @fresh).must().assertion_id == "_a91e"
+    unsigned = bytes.format_base64(bytes.from_text(samples.RESPONSE))
+    assert names.code_of(check_response(unsigned, sp: sp, idp: idp, options: options, @fresh)) == INVALID
+
+test "check_response: another key, a name changed, a comment inside the signed name, and the signed assertion moved under a forged one"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp @= parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    options = response_options(request_id: "_4f2a9c0e1b7d", now: now)
+    seen @= new_seen()
+    changed = strings.replace_all(s: samples.RESPONSE_ASSERTION_SIGNED, old: ">a7f3e2c19d<", new: ">b7f3e2c19d<")
+    assert names.code_of(check_response(bytes.format_base64(bytes.from_text(changed)), sp: sp, idp: idp, options: options, @seen)) == INVALID
+    cut = strings.replace_all(s: samples.RESPONSE_ASSERTION_SIGNED, old: ">a7f3e2c19d<", new: ">a7f3<!---->e2c19d<")
+    assert check_response(bytes.format_base64(bytes.from_text(cut)), sp: sp, idp: idp, options: options, @seen).must().name_id == "a7f3e2c19d"
+    signed = xml.parse(samples.RESPONSE_ASSERTION_SIGNED).must()
+    original = xml.element_at_place(signed, place: [2]).must()
+    forged = xml.with_attribute(original, name: "ID", value: "_evil")
+    stripped @= original
+    kept: [xml.Node] @= []
+
+    for c in original.children
+        match c
+            .element x =>
+                if x.v.name.local != "Signature"
+                    kept @ kept.push(c)
+            .text _ | .comment _ | .instruction _ => kept @ kept.push(c)
+
+    stripped.children @ kept
+    hidden = xml.with_child(e: xml.element_in(space: names.PROTOCOL, name: "samlp:Extensions"), inner: stripped)
+    root @= signed.root
+    root.children @ [root.children[0], .element(v: hidden), root.children[1], .element(v: forged)]
+    wrapped = bytes.format_base64(bytes.from_text(xml.format(xml.document(root)).must()))
+    fresh @= new_seen()
+    assert names.message_of(check_response(wrapped, sp: sp, idp: idp, options: options, @fresh)) == "the assertion's signature covers \"#_a91e\", not the element it stands in"
+    idp.certificates @ [x509.parse_certificate(samples.OTHER_CERTIFICATE).must()]
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    assert names.code_of(check_response(posted, sp: sp, idp: idp, options: options, @fresh)) == INVALID
+
+test "check_response: the window with its skew, the audience, the recipient, the request answered, and an unsolicited reading"
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    early = time.parse("2026-11-23T21:57:29Z", layout: .rfc3339).must()
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: early).must()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    seen @= new_seen()
+    assert names.message_of(check_response(posted, sp: sp, idp: idp, options: response_options(request_id: "_4f2a9c0e1b7d", now: early), @seen)) == "the assertion is not valid before 2026-11-23T21:59:30Z"
+    skewed = time.parse("2026-11-23T21:57:31Z", layout: .rfc3339).must()
+    assert check_response(posted, sp: sp, idp: idp, options: response_options(request_id: "_4f2a9c0e1b7d", now: skewed), @seen).must().name_id == "a7f3e2c19d"
+    late = time.parse("2026-11-23T22:07:00Z", layout: .rfc3339).must()
+    fresh @= new_seen()
+    assert names.message_of(check_response(posted, sp: sp, idp: idp, options: response_options(request_id: "_4f2a9c0e1b7d", now: late), @fresh)) == "the bearer's NotOnOrAfter 2026-11-23T22:05:00Z has passed"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    other = service_provider(entity_id: "https://other.example.com", acs_url: sp.acs_url)
+    assert names.message_of(check_response(posted, sp: other, idp: idp, options: response_options(request_id: "_4f2a9c0e1b7d", now: now), @fresh)) == "an AudienceRestriction does not name this service provider, \"https://other.example.com\""
+    moved = service_provider(entity_id: sp.entity_id, acs_url: "https://sp.example.com/other")
+    assert names.code_of(check_response(posted, sp: moved, idp: idp, options: response_options(request_id: "_4f2a9c0e1b7d", now: now), @fresh)) == INVALID
+    assert names.code_of(check_response(posted, sp: sp, idp: idp, options: response_options(request_id: "_other", now: now), @fresh)) == INVALID
+    assert names.code_of(check_response(posted, sp: sp, idp: idp, options: unsolicited_options(now), @fresh)) == INVALID
+
+test "check_response: the identity provider's refusal, an encrypted assertion, two assertions, none, and a value not base 64"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    options = response_options(request_id: "_4f2a9c0e1b7d", now: now)
+    seen @= new_seen()
+    open = "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_x\" Version=\"2.0\" IssueInstant=\"2026-11-23T22:00:00Z\" InResponseTo=\"_4f2a9c0e1b7d\">"
+    refused = open + "<samlp:Status><samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Responder\"><samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:AuthnFailed\"/></samlp:StatusCode><samlp:StatusMessage>wrong password</samlp:StatusMessage></samlp:Status></samlp:Response>"
+    answer = check_response(bytes.format_base64(bytes.from_text(refused)), sp: sp, idp: idp, options: options, @seen)
+    assert names.code_of(answer) == FAILED
+    assert names.message_of(answer) == "the identity provider answered urn:oasis:names:tc:SAML:2.0:status:Responder / urn:oasis:names:tc:SAML:2.0:status:AuthnFailed: wrong password"
+    success = "<samlp:Status><samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/></samlp:Status>"
+    hidden = open + success + "<saml:EncryptedAssertion/></samlp:Response>"
+    assert names.code_of(check_response(bytes.format_base64(bytes.from_text(hidden)), sp: sp, idp: idp, options: options, @seen)) == UNSUPPORTED
+    empty = open + success + "</samlp:Response>"
+    assert names.code_of(check_response(bytes.format_base64(bytes.from_text(empty)), sp: sp, idp: idp, options: options, @seen)) == INVALID
+    one = xml.element_at_place(xml.parse(samples.RESPONSE).must(), place: [2]).must()
+    root @= xml.parse(samples.RESPONSE).must().root
+    root.children @ root.children.push(.element(v: one))
+    two = bytes.format_base64(bytes.from_text(xml.format(xml.document(root)).must()))
+    assert names.code_of(check_response(two, sp: sp, idp: idp, options: options, @seen)) == UNSUPPORTED
+    assert names.code_of(check_response("not base 64!", sp: sp, idp: idp, options: options, @seen)) == INVALID
+
+test "check_logout_request: by redirect signed over the query, the query changed, unsigned, expired, and by a signed form"
+    now = time.parse("2026-11-23T23:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    order = check_logout_request(.redirect(query: samples.LOGOUT_REQUEST_QUERY), sp: sp, idp: idp, now: now).must()
+    assert order.id == "_lr5" && order.name_id == "a7f3e2c19d" && order.name_id_format == PERSISTENT
+    assert order.session_indexes == ["_s3b8"]
+    changed = strings.replace_all(s: samples.LOGOUT_REQUEST_QUERY, old: "RelayState=back", new: "RelayState=away")
+    assert names.code_of(check_logout_request(.redirect(query: changed), sp: sp, idp: idp, now: now)) == INVALID
+    unsigned = samples.LOGOUT_REQUEST_QUERY.slice(
+        from: strings.index_of(s: samples.LOGOUT_REQUEST_QUERY, substr: "&").must() + 1,
+        to: samples.LOGOUT_REQUEST_QUERY.len()
+    )
+    assert names.code_of(check_logout_request(.redirect(query: unsigned), sp: sp, idp: idp, now: now)) == INVALID
+    late = time.parse("2026-11-23T23:08:00Z", layout: .rfc3339).must()
+    assert names.code_of(check_logout_request(.redirect(query: samples.LOGOUT_REQUEST_QUERY), sp: sp, idp: idp, now: late)) == INVALID
+    form = bytes.format_base64(bytes.from_text(samples.LOGOUT_REQUEST_SIGNED))
+    assert check_logout_request(.post(message: form), sp: sp, idp: idp, now: now).must().id == "_lr5"
+    elsewhere = service_provider(entity_id: sp.entity_id, acs_url: sp.acs_url)
+    assert names.code_of(check_logout_request(.post(message: form), sp: elsewhere, idp: idp, now: now)) == INVALID
+
+test "check_logout_response: the answer to the request sent, to another, and the logout request and response made"
+    now = time.parse("2026-11-23T23:01:00Z", layout: .rfc3339).must()
+    sp @= service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    sp.logout_url @ "https://sp.example.com/saml/logout"
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    assert names.code_of(check_logout_response(.redirect(query: samples.LOGOUT_RESPONSE_QUERY), sp: sp, idp: idp, request_id: "_9c0d", now: now)) == ""
+    assert names.code_of(check_logout_response(.redirect(query: samples.LOGOUT_RESPONSE_QUERY), sp: sp, idp: idp, request_id: "_other", now: now)) == INVALID
+    seen @= new_seen()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    at = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    login @= check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: at),
+        @seen
+    ).must()
+    m = logout_request(sp, idp: idp, login: login, binding: HTTP_REDIRECT, now: now).must()
+    assert m.destination == "https://idp.example.org/slo" && m.parameter == "SAMLRequest"
+    name = xml.child_in(m.doc.root, space: names.ASSERTION, local: "NameID").must()
+    assert xml.text_of(name) == "a7f3e2c19d" && xml.attribute(name, name: "SPNameQualifier").must() == sp.entity_id
+    assert xml.text_of(xml.child_in(m.doc.root, space: names.PROTOCOL, local: "SessionIndex").must()) == "_s3b8"
+    assert names.code_of(logout_request(sp, idp: idp, login: login, binding: HTTP_POST, now: now)) == NOT_FOUND
+    login.session_index @ ""
+    assert names.code_of(logout_request(sp, idp: idp, login: login, binding: HTTP_REDIRECT, now: now)) == INVALID
+    order = LogoutOrder(id: "_lr5", name_id: "a7f3e2c19d", name_id_format: PERSISTENT, session_indexes: ["_s3b8"])
+    answer = logout_response(sp, idp: idp, order: order, binding: HTTP_REDIRECT, now: now).must()
+    assert answer.parameter == "SAMLResponse" && xml.attribute(answer.doc.root, name: "InResponseTo").must() == "_lr5"
+
+## Examples
+
+# A login checked: the response the browser posted, against the identity
+# provider's metadata and the request the program sent.
+test "check_response: a login"
+    now = time.parse("2026-11-23T22:01:00Z", layout: .rfc3339).must()
+    sp = service_provider(entity_id: "https://sp.example.com/saml", acs_url: "https://sp.example.com/saml/acs")
+    idp = parse_metadata(text: samples.METADATA, entity_id: "", source: .trusted, now: now).must()
+    seen @= new_seen()
+    posted = bytes.format_base64(bytes.from_text(samples.RESPONSE_ASSERTION_SIGNED))
+    login = check_response(
+        posted,
+        sp: sp,
+        idp: idp,
+        options: response_options(request_id: "_4f2a9c0e1b7d", now: now),
+        @seen
+    ).must()
+    assert login.name_id == "a7f3e2c19d"

@@ -1,0 +1,24 @@
+extern "alarm.h"
+    function wa_run(work: (function(i64) -> i64), usec: i64) -> i64
+
+# Builds and drops strings and arrays until the timer's handler jumps out of it.
+function spin(n: i64) -> i64
+    acc: str @= f"{n}"
+    xs: [i64] @= []
+
+    while true
+        acc @ f"{xs.len()}-" + "0123456789".repeat(20)
+        xs @ xs.push(acc.len())
+
+        if xs.len() > 1000
+            xs @ []
+
+    return acc.len()
+
+function main()
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 300)
+        total @ total + wa_run(work: spin, usec: 500)
+
+    print("jumped, sum ", total)

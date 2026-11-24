@@ -409,6 +409,51 @@ function sign_hmac(doc: xml.Document, parent: [i64], before: i64, signed: [[i64]
     mac = values.hmac_value(facts: facts, secret: secret, message: prepared.signed_info)
     return building.finished(prepared: prepared, value: mac)
 
+## Bytes signed by a method of XML Signature
+
+# The signature of `message` by `key` under `method`, its value as XML
+# Signature writes one: an ECDSA value as its two halves side by side, not
+# DER. It is what SAML's HTTP-Redirect binding signs a query with, the
+# method's identifier sent beside it as `SigAlg`.
+#
+# - `message`: the bytes signed.
+# - `key`: the private key, which stays open; its kind is the method's.
+# - `method`: a method of a key pair.
+#
+# Fails `invalid` for an HMAC method or a key of another kind; `unsupported`
+# as `keypairs.sign` fails.
+#
+# See also `check_bytes`, `sign`.
+function sign_bytes(message: [u8], key: keypairs.PrivateKey, method: Method) -> [u8]?
+    facts = names.facts_of(method_uri(method))?
+    return values.signature_by(facts: facts, key: key, message: message)
+
+# Succeeds where `value` is a signature of `message` that holds for
+# `verifier` under the method whose identifier is `method`, as a query of
+# SAML's HTTP-Redirect binding names it in `SigAlg`.
+#
+# - `message`: the bytes signed.
+# - `value`: the signature's value as XML Signature writes it.
+# - `method`: the method's identifier, read from outside.
+# - `verifier`: the key the program trusts.
+#
+# Fails `invalid` where the value does not hold, the verifier is of another
+# kind than the method or an HMAC's value is shorter than its whole output;
+# `unsupported` for a method this package does not check, SHA-1's among them.
+#
+# See also `sign_bytes`, `check`.
+function check_bytes(message: [u8], value: [u8], method: str, verifier: Verifier) -> ()?
+    facts = names.facts_of(method)?
+
+    holds = match verifier
+        .certificate c => values.holds(facts: facts, der: c.v.public_key.der, message: message, value: value)?
+        .public_key k  => values.holds(facts: facts, der: k.der, message: message, value: value)?
+        .secret s      => values.hmac_holds(facts: facts, bits: -1, secret: s.key, message: message, value: value)?
+
+    if !holds
+        return fail(code: INVALID, msg: "the signature's value does not hold for the key given")
+    return ok()
+
 ## Tests
 
 test "check: documents the JDK signed, by RSA, RSA-PSS, ECDSA on both curves and Ed25519, each against its certificate"
@@ -619,6 +664,41 @@ test "signature_places and certificates_of: none in a plain document, one inside
     assert certificates_of(response, signature: [0, 1]).must()[0].der == x509.parse_certificate(samples.RSA_CERTIFICATE).must().der
     pss = xml.parse(samples.PSS_SIGNED).must()
     assert certificates_of(pss, signature: [1]).must().len() == 0
+
+test "sign_bytes and check_bytes: RSA and ECDSA made and checked, changed bytes, another key, SHA-1, and an HMAC method of a key pair"
+    rsa @= keypairs.parse_private_pem(samples.RSA_KEY).must()
+    rsa_certificate = x509.parse_certificate(samples.RSA_CERTIFICATE).must()
+    message = bytes.from_text("SAMLRequest=x&RelayState=y&SigAlg=z")
+    value = sign_bytes(message, key: rsa, method: .rsa_sha256).must()
+    assert value.len() == 256
+    uri = method_uri(.rsa_sha256)
+    assert !check_bytes(message: message, value: value, method: uri, verifier: .certificate(v: rsa_certificate)).is_err()
+    other = bytes.from_text("SAMLRequest=x&RelayState=z&SigAlg=z")
+
+    match check_bytes(message: other, value: value, method: uri, verifier: .certificate(v: rsa_certificate))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    p256 @= keypairs.parse_private_pem(samples.P256_KEY).must()
+    p256_certificate = x509.parse_certificate(samples.P256_CERTIFICATE).must()
+    raw = sign_bytes(message, key: p256, method: .ecdsa_sha256).must()
+    assert raw.len() == 64
+    assert !check_bytes(message: message, value: raw, method: method_uri(.ecdsa_sha256), verifier: .certificate(v: p256_certificate)).is_err()
+
+    match check_bytes(message: message, value: value, method: uri, verifier: .certificate(v: p256_certificate))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match check_bytes(message: message, value: value, method: "http://www.w3.org/2000/09/xmldsig#rsa-sha1", verifier: .certificate(v: rsa_certificate))
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match sign_bytes(message, key: rsa, method: .hmac_sha256)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    keypairs.close_private(@rsa).must()
+    keypairs.close_private(@p256).must()
 
 ## Examples
 

@@ -1,5 +1,5 @@
-# Text searched, cut, trimmed, replaced, padded and cased. A position is a
-# byte index, an `i64`, as the language indexes a `str`, and every index a
+# Text searched, cut, trimmed, replaced, padded, indented and cased. A
+# position is a byte index, an `i64`, as the language indexes a `str`, and every index a
 # function here cuts at is a character's first byte, so no text read from
 # outside makes one abort. A search that finds nothing fails `not_found`; none
 # answers -1. A failure's message quotes a text it names where it is 32 bytes
@@ -16,7 +16,7 @@
 # the built-in `repeat`'s, so a negative one does not compile; a width, an
 # index and a count a function answers are `i64`s, as `len()` answers. Text
 # cut where Unicode says its parts end, into graphemes, words and sentences,
-# and measured or padded in the columns a terminal draws, is
+# and measured, wrapped or padded in the columns a terminal draws, is
 # `unicode/segment`'s; text put in a normal form, and cased by the rules of
 # one language (Turkish, Azeri, Lithuanian), is `unicode/normalize`'s.
 #
@@ -29,6 +29,7 @@ use strings/internal/automaton
 use strings/internal/bounds
 use strings/internal/bytewise
 use strings/internal/casing
+use strings/internal/indentation
 use strings/internal/messages
 use strings/internal/multi
 use strings/internal/padding
@@ -696,6 +697,48 @@ function pad_zeros(s: str, width: i64) -> str
 # them.
 function expand_tabs(s: str, tab_width: i64) -> str
     return padding.expand_tabs(s: s, tab_width: tab_width)
+
+## Indentation
+
+# `s` with `prefix` written before each of its lines that is not blank, as a
+# quoted mail or a block of a help text is written.
+#
+# - `s`: the text; a line ends at "\n" or "\r\n", and the ends are kept as
+#   they stand.
+# - `prefix`: the text written before each line; the empty one writes nothing.
+#
+# A blank line holds white space alone, Unicode's White_Space as `trim` reads
+# it, and is left as it is, so no line ends in a prefix's spaces. A text
+# wrapped to a width with an indent on its first line and another on the rest
+# is `unicode/segment.wrap`'s, which measures in columns. See also
+# `indent_where`, `dedent`.
+function indent(s: str, prefix: str) -> str
+    return indentation.indent(s: s, prefix: prefix)
+
+# `s` with `prefix` written before each of its lines that `accepts` accepts.
+#
+# - `s`: the text; its lines are read as `indent` reads them.
+# - `prefix`: the text written before each line accepted.
+# - `accepts`: asked of each line without its end, the empty line included;
+#   one that accepts every line quotes a mail with "> " on its blank lines
+#   too.
+#
+# See also `indent`.
+function indent_where(s: str, prefix: str, accepts: (function(str) -> bool)) -> str
+    return indentation.indent_where(s: s, prefix: prefix, accepts: accepts)
+
+# `s` with the margin of spaces and tabs its lines share taken away: the
+# longest run of spaces and tabs that every line that is not blank begins
+# with, so a block written indented in a program's source reads from the left
+# edge.
+#
+# - `s`: the text; its lines are read as `indent` reads them.
+#
+# A space and a tab are not the same character: "  a" and "\ta" share no
+# margin. A blank line is emptied, its end kept, and takes no part in the
+# margin. See also `indent`.
+function dedent(s: str) -> str
+    return indentation.dedent(s)
 
 ## Case
 
@@ -1729,6 +1772,67 @@ test "pad_zeros: a negative number"
 # Tabs written as the spaces that reach the next stop of four.
 test "expand_tabs: stops every four characters"
     assert expand_tabs(s: "a\tbc\td", tab_width: 4) == "a   bc  d"
+
+# A block of a program's source read from the left edge.
+test "dedent: a function's body"
+    assert dedent("    def f():\n        return 1\n") == "def f():\n    return 1\n"
+
+# Edges first: no text, no margin shared, every line blank, spaces against
+# tabs, a margin of tabs, a blank line inside, ends of both kinds kept.
+test "dedent: the edges, as Python 3.15.2's textwrap.dedent answers them"
+    assert dedent("") == ""
+    assert dedent("a\n  b") == "a\n  b"
+    assert dedent("   \n  ") == "\n"
+    assert dedent("  a\n\t b") == "  a\n\t b"
+    assert dedent("\ta\n\t\tb\n\t") == "a\n\tb\n"
+    assert dedent("  a\n   \n  b") == "a\n\nb"
+    assert dedent("  a\r\n  b\r\n") == "a\r\nb\r\n"
+
+# A no-break space and an ideographic space, built from their bytes since a
+# source may not hold an invisible character as itself, are white space but
+# no margin; a blank line written "\r\n" keeps its end, where Python writes
+# "\n".
+test "dedent: white space that is not a margin, and a blank line's end"
+    no_break: [u8] = [0xc2, 0xa0]
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    hard = no_break.validated_bytes().must()
+    wide = ideographic.validated_bytes().must()
+    assert dedent("  " + hard + "a\n  b") == hard + "a\nb"
+    assert dedent(" " + wide + "x\n y") == wide + "x\ny"
+    assert dedent("  a\r\n  \r\n  b") == "a\r\n\r\nb"
+
+# A mail quoted, its blank line left as it is.
+test "indent: a quoted mail"
+    assert indent(s: "a\n\nb\n", prefix: "> ") == "> a\n\n> b\n"
+
+# Edges first: no text, a line of spaces alone, an empty prefix, a prefix of
+# characters of more than one byte, ends of both kinds kept, a "\r" alone
+# ending no line.
+test "indent: the edges"
+    assert indent(s: "", prefix: "> ") == ""
+    assert indent(s: "a\n  \nb", prefix: "> ") == "> a\n  \n> b"
+    assert indent(s: "a\nb", prefix: "") == "a\nb"
+    assert indent(s: "a\r\nb", prefix: "» ") == "» a\r\n» b"
+    assert indent(s: "a\rb", prefix: "-") == "-a\rb"
+
+# Whether a line is accepted: always.
+#
+# - `line`: the line, without its end.
+function every_line(line: str) -> bool
+    return line.len() >= 0
+
+# Whether `line` begins with a letter "a".
+#
+# - `line`: the line, without its end.
+function starts_with_a(line: str) -> bool
+    return has_prefix(s: line, prefix: "a")
+
+# Every line quoted, the blank ones too, and only some lines indented.
+test "indent_where: every line, and the lines a function chooses"
+    assert indent_where(s: "a\n\nb\n", prefix: "> ", accepts: every_line) == "> a\n> \n> b\n"
+    assert indent_where(s: "a\n  \nb", prefix: "> ", accepts: every_line) == "> a\n>   \n> b"
+    assert indent_where(s: "ab\nba\naa", prefix: "*", accepts: starts_with_a) == "*ab\nba\n*aa"
+    assert indent_where(s: "", prefix: "*", accepts: every_line) == ""
 
 # A text in upper case, its sharp s written as two letters.
 test "to_upper: a German word"

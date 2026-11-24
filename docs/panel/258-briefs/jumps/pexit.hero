@@ -1,0 +1,11 @@
+extern "pexit.h"
+    function px_exit()
+
+function worker(n: i64) -> i64
+    word = f"{n}-held" + "0123456789".repeat(100)
+    px_exit()
+    return word.len()
+
+function main()
+    t = spawn(worker, 7).must()
+    print("answer ", t.wait())
