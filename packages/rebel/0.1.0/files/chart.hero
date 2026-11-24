@@ -1,0 +1,805 @@
+# Plots and charts made: lines, points and areas over two axes, bars side by
+# side or stacked, upright or lying, histograms, pies and donuts, each with
+# its axes' ticks computed (nice numbers, logarithmic scales, the calendar's
+# steps for dates), a grid, a legend, a title and the axes' labels, its text
+# set in a `font.Font` and its colours from a palette made in
+# `image/colorspace`; written as SVG text or drawn into an `image` through
+# `image/vector`, the same drawing either way.
+#
+# It draws a chart once, as a picture: no window, no zoom, no animation and
+# no reading of a picture back into numbers. It reads no font file and finds
+# no font by name: `font.parse` makes the font a caller gives, which must hold
+# every character the chart's text holds. Text is set left to right without
+# shaping, as `image/text` sets it. Writing the SVG or the image to a file is
+# the program's: `write_file`, or `image/png` for the image.
+#
+# It fails with `invalid`, where a value, a size, a colour list or an axis is
+# out of its range, a chart leaves its plot too little room for its text, or a
+# logarithmic axis is asked to place a value at or below zero; `limit`, where
+# an image would pass 16,384 pixels a side; and `not_found`, where the font
+# lacks a character of the chart's text.
+#
+# Not written yet, each a `pending` block of its ledger: an area filled from a
+# series' line to the left axis; lines and bands across a plot at a value;
+# text and arrows placed on a plot, and a bar's value written on it; error
+# bars about a series' points; box plots and violin plots of distributions;
+# step, stair and stem plots, and the empirical distribution as steps; heat
+# maps of a grid of values with a colour bar and colour maps; contour plots,
+# of a grid and of a triangulation; polar plots; several plots in one figure,
+# and a second axis on the right or the top; event plots and broken bars;
+# arrows and streamlines of a vector field.
+
+use chart/internal/bins as cutting
+use chart/internal/build
+use chart/internal/checks
+use chart/internal/codes
+use chart/internal/dates
+use chart/internal/figure
+use chart/internal/pie as pies
+use chart/internal/samples
+use chart/internal/scene
+use chart/internal/ticks as steps
+use font
+use image
+use math
+
+## Codes
+
+# The code of an input the function does not read: a value that is infinite,
+# or not a number where a gap is not taken; a range that does not rise; a
+# count of ticks or bins out of its range; a logarithmic base not above 1 or
+# a value at or below zero on such an axis; a date outside the years 1 to
+# 9999; a size, a text size or a palette out of range; a chart too small for
+# its text. `ticks`, `nice`, `bin`, `palette` and `lay_out` answer it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an image past 16,384 pixels a side, which `lay_out` answers.
+constant LIMIT: str
+    codes.LIMIT
+
+## Axes and their ticks
+
+# How an axis places its values.
+variant Scale
+    # In proportion: equal steps of value are equal steps on the axis.
+    linear
+    # In proportion to the values' logarithms: equal ratios are equal steps,
+    # and only values above zero have a place.
+    log
+        # The base whose powers are ticked, above 1: 10, 2 and the number e
+        # are the usual ones.
+        base: f64
+    # Instants as seconds since 1970-01-01T00:00:00Z, read in UTC and ticked
+    # at the calendar's steps, from year 1 to 9999.
+    time
+
+# Two ends of a range of values.
+record Range
+    # The low end.
+    low: f64
+    # The high end, at or above `low`.
+    high: f64
+
+# A tick of an axis.
+record Tick
+    # Where it stands, in the axis's values: seconds since 1970 on a time
+    # axis.
+    value: f64
+    # Its label, empty where the tick is drawn without one, as the multiples
+    # between two powers of a crowded logarithmic axis are.
+    label: str
+
+# The ticks of an axis over `span`, about `count` of them where the scale
+# can choose.
+#
+# - `span`: the values the axis spans; its ends finite, `low` at or below
+#   `high`, both above zero on a logarithmic axis and within the years 1 to
+#   9999 on a time axis.
+# - `scale`: how the axis places values.
+# - `count`: about how many ticks, 1 to 1,000; a step of 1, 2 or 5 times a
+#   power of ten is taken, so the number found is near it, not it.
+#
+# On a linear axis the ticks are the multiples of that step within the range,
+# as d3-array's `ticks` finds them, labelled with as many digits after the
+# point as the step needs and the whole part grouped by threes with commas, as
+# d3-format's `,f` writes them; a range of one value has one tick. On a
+# logarithmic axis they are the powers of the base and, where the range holds
+# fewer powers than `count`, their whole multiples, as d3-scale's `log.ticks`
+# places them; a multiple is unlabelled where d3-scale's `log.tickFormat`
+# leaves it so, and a label is the value's shortest decimal from 0.0001 to
+# below a million and its exponent form, `1e6`, past either. On a time axis
+# they fall on a step of seconds, minutes, hours, days, Sundays, months or
+# years chosen as d3-time's `utcTicks` chooses it, and are labelled as
+# d3-scale's `scaleUtc` labels them, in English: `:30`, `03:45`, `03 PM`,
+# `Mon 05`, `Jan 05`, `January`, `2026`. The ticks rise.
+#
+# Fails `invalid` where the range, the scale or the count is out of its
+# range. See also `nice`.
+function ticks(span: Range, scale: Scale, count: i64) -> [Tick]?
+    inner: figure.Scale = match scale
+        .linear => .linear
+        .log l  => .log(base: l.base)
+        .time   => .time
+
+    checks.count(count)?
+    checks.span(low: span.low, high: span.high, s: inner)?
+    n = to_f64(count)
+    out: [Tick] @= []
+
+    match scale
+        .linear =>
+            places @= 0
+
+            if span.low == span.high
+                out @ out.push(Tick(value: span.low, label: steps.short_label(span.low)))
+                return ok(out)
+            places @ steps.decimals(steps.step_of(start: span.low, stop: span.high, count: n))
+
+            for t in steps.ticks(start: span.low, stop: span.high, count: n)
+                out @ out.push(Tick(value: t, label: steps.label(x: t, places: places)))
+        .log l =>
+            ts = steps.log_ticks(low: span.low, high: span.high, base: l.base, count: n)
+            shown = steps.log_labelled(values: ts, base: l.base, count: n)
+
+            for i in range(from: 0, to: ts.len())
+                if shown[i]
+                    out @ out.push(Tick(value: ts[i], label: steps.short_label(ts[i])))
+                else
+                    out @ out.push(Tick(value: ts[i], label: ""))
+        .time =>
+            if span.low == span.high
+                t = to_i64(math.floor(span.low * 1000.0)).must()
+                out @ out.push(Tick(value: span.low, label: dates.label(t)))
+            else
+                interval = dates.choose(start: span.low * 1000.0, stop: span.high * 1000.0, count: n)
+
+                for t in dates.ticks_of(start: span.low * 1000.0, stop: span.high * 1000.0, interval: interval)
+                    out @ out.push(Tick(value: to_f64(t) / 1000.0, label: dates.label(t)))
+
+    return ok(out)
+
+# `span` moved out to the ticks of about `count`, so that the axis begins
+# and ends on a tick.
+#
+# - `span`: the values the axis must hold, as `ticks` takes them.
+# - `scale`: how the axis places values.
+# - `count`: about how many ticks, 1 to 1,000.
+#
+# A linear range moves out to the step of its ticks as d3-scale's linear
+# `nice` moves it, at most ten rounds; a logarithmic one to whole powers of
+# its base; a time range to the ticks of the step d3-time would choose. A
+# range of one value is given back as it is. Fails `invalid` as `ticks` does.
+# See also `ticks`.
+function nice(span: Range, scale: Scale, count: i64) -> Range?
+    inner: figure.Scale = match scale
+        .linear => .linear
+        .log l  => .log(base: l.base)
+        .time   => .time
+
+    checks.count(count)?
+    checks.span(low: span.low, high: span.high, s: inner)?
+
+    if span.low == span.high
+        return ok(span)
+    n = to_f64(count)
+
+    niced = match scale
+        .linear => steps.nice(low: span.low, high: span.high, count: n)
+        .log l  => steps.log_nice(low: span.low, high: span.high, base: l.base)
+        .time =>
+            ms = dates.nice(start: span.low * 1000.0, stop: span.high * 1000.0, count: n)
+            steps.Span(low: ms.low / 1000.0, high: ms.high / 1000.0)
+
+    return ok(Range(low: niced.low, high: niced.high))
+
+## Histograms' bins
+
+# How a histogram's values are cut into bins.
+variant Bins
+    # Sturges' count of bins (one more than the base-2 logarithm of the count
+    # of values, rounded up) with edges at the nice ticks of the values'
+    # range, as d3-array's `bin` makes them by default.
+    auto
+    # A count of bins of one width from the least value to the greatest, as
+    # NumPy's `histogram` makes them.
+    count
+        # How many, 1 to 10,000.
+        count: i64
+    # The bins between edges the program gives.
+    edges
+        # The edges, at least two, finite and rising strictly; a value outside
+        # the first and the last is not counted.
+        edges: [f64]
+
+# A bin of a histogram: the values from `low` up to `high`; the last bin also
+# takes a value equal to its `high`.
+record Bin
+    # The low edge.
+    low: f64
+    # The high edge, above `low`.
+    high: f64
+    # How many values fell in it.
+    count: i64
+
+# `values` counted into bins.
+#
+# - `values`: the values; one that is not a number is not counted.
+# - `bins`: how the bins are cut.
+#
+# The bins rise and touch, each a value's from its low edge up to its high
+# one. Where every value is the same, `auto` and `count` make one bin from
+# half below it to half above, as NumPy widens such a range; with no value,
+# `auto` makes no bin and `count` cuts the range 0 to 1, as NumPy does.
+# Fails `invalid` where a value is infinite, a count is out of its range or
+# the edges are fewer than two, not finite or not rising. See also `lay_out`.
+function bin(values: [f64], bins: Bins) -> [Bin]?
+    for i in range(from: 0, to: values.len())
+        v = values[i]
+
+        if v == v && !math.is_finite(v)
+            return fail(code: codes.INVALID, msg: f"the value {v} at {i} is infinite, which no bin holds")
+
+    made: [cutting.Bin] @= []
+
+    match bins
+        .auto => made @ cutting.automatic(values)
+        .count c =>
+            if c.count < 1 || c.count > 10000
+                return fail(code: codes.INVALID, msg: f"the count of bins is 1 to 10000, not {c.count}")
+            made @ cutting.uniform(values: values, count: c.count)
+        .edges e =>
+            if e.edges.len() < 2
+                return fail(code: codes.INVALID, msg: f"the bins need two edges or more, not {e.edges.len()}")
+
+            for i in range(from: 0, to: e.edges.len())
+                if !math.is_finite(e.edges[i])
+                    return fail(code: codes.INVALID, msg: f"the edge {e.edges[i]} at {i} is not a finite number")
+
+                if i > 0 && e.edges[i] <= e.edges[i - 1]
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"the edge {e.edges[i]} at {i} does not rise above the one before it"
+                    )
+
+            made @ cutting.between(values: values, edges: e.edges)
+
+    out: [Bin] @= []
+
+    for b in made
+        out @ out.push(Bin(low: b.low, high: b.high, count: b.count))
+
+    return ok(out)
+
+## Colours
+
+# `count` colours for the series of a chart, of hues evenly spaced around
+# the circle from a blue, as light and as saturated as one another in HLS,
+# taken in an order that sets each far from the one before it.
+#
+# - `count`: how many, 1 to 360.
+#
+# Fails `invalid` where the count is out of its range. See also `look`.
+function palette(count: i64) -> [image.Color]?
+    if count < 1 || count > 360
+        return fail(code: codes.INVALID, msg: f"a palette holds 1 to 360 colours, not {count}")
+    return ok(build.hues(count))
+
+## Charts
+
+# The frame of a chart: its size, its title and how its text and colours
+# look. Built directly, or by `look`.
+record Look
+    # The width in pixels, 1 to 16,384.
+    width: i64
+    # The height in pixels, 1 to 16,384.
+    height: i64
+    # The title over the plot, or empty for none.
+    title: str
+    # The size of the tick labels', axis labels' and legend's em in pixels,
+    # above 0; the title's is 1.4 times as large.
+    text_size: f64
+    # The ground.
+    background: image.Color
+    # The text, the axis lines and the steps.
+    ink: image.Color
+    # The grid's lines.
+    grid: image.Color
+    # The series' colours, at least one, taken in turn and again from the
+    # first once each has been taken.
+    palette: [image.Color]
+    # Whether the named series are listed beside the plot.
+    legend: bool
+
+# The look of an ordinary chart: text 12 pixels to the em in a near black on
+# white, a light gray grid, ten colours of `palette` and a legend.
+#
+# - `title`: the title, or empty for none.
+# - `width`: the width in pixels.
+# - `height`: the height in pixels.
+#
+# See also `palette`.
+function look(title: str, width: i64, height: i64) -> Look
+    return Look(
+        width: width,
+        height: height,
+        title: title,
+        text_size: 12.0,
+        background: image.Color(r: 255, g: 255, b: 255, a: 255),
+        ink: image.Color(r: 34, g: 34, b: 34, a: 255),
+        grid: image.Color(r: 224, g: 224, b: 224, a: 255),
+        palette: build.hues(10),
+        legend: true
+    )
+
+# What range an axis spans.
+variant Extent
+    # The data's, moved out to the steps.
+    data
+    # This range, as given: what falls outside it is cut.
+    fixed
+        # The low end.
+        low: f64
+        # The high end, above `low`.
+        high: f64
+
+# How many ticks an axis takes.
+variant TickCount
+    # As many as its length holds: one each 6.5 text sizes along, one each
+    # 3.5 up, two at least.
+    auto
+    # About this many, 1 to 1,000, as `ticks` takes it.
+    about
+        # The count.
+        count: i64
+
+# An axis of a chart. Built directly, or by `axis`.
+record Axis
+    # The axis's label, or empty for none.
+    label: str
+    # How it places its values.
+    scale: Scale
+    # The range it spans.
+    extent: Extent
+    # How many ticks it takes.
+    ticks: TickCount
+    # Whether a line of the grid crosses the plot at each tick.
+    grid: bool
+
+# A linear axis over the data's range, its ticks as many as its length holds
+# and its grid drawn.
+#
+# - `label`: the axis's label, or empty for none.
+#
+# See also `look`.
+function axis(label: str) -> Axis
+    return Axis(label: label, scale: .linear, extent: .data, ticks: .auto, grid: true)
+
+# How a series is drawn.
+variant Mark
+    # A line through its points in their order, broken where a value is not a
+    # number.
+    line
+    # A disc at each point.
+    points
+    # A line and a disc at each point.
+    line_and_points
+    # A line, and the room between it and zero filled in the series' colour
+    # at two fifths of its strength; stacked, the room between it and the
+    # area below, filled whole.
+    area
+
+# A series of points.
+record Series
+    # The name the legend shows, or empty to leave it out of the legend.
+    name: str
+    # The columns, in the x axis's values; as many as `ys`.
+    xs: [f64]
+    # The rows, in the y axis's values.
+    ys: [f64]
+    # How it is drawn.
+    mark: Mark
+
+# Series over two axes. Built directly.
+record Plot
+    # The frame.
+    look: Look
+    # The axis along the bottom.
+    x: Axis
+    # The axis up the left side.
+    y: Axis
+    # The series, drawn in their order, each in the palette's colour of its
+    # place.
+    series: [Series]
+    # Whether the `area` series stack, each on the ones before it; they then
+    # share their columns.
+    stacked: bool
+
+# How bars of several series share a category.
+variant Grouping
+    # Side by side.
+    grouped
+    # One on another, the positive values up from zero and the negative down.
+    stacked
+
+# Which way bars run.
+variant Direction
+    # Up from the categories along the bottom.
+    vertical
+    # Right from the categories down the left side, the first at the top.
+    horizontal
+
+# The values of one series of bars.
+record BarSeries
+    # The name the legend shows, or empty to leave it out of the legend.
+    name: str
+    # One value a category, in the categories' order; one that is not a
+    # number makes no bar.
+    values: [f64]
+
+# Bars of categories. Built directly.
+record Bars
+    # The frame.
+    look: Look
+    # The categories' names, at least one.
+    categories: [str]
+    # The label of the categories' axis, or empty for none.
+    category_label: str
+    # The axis of the values, which spans zero unless its extent is fixed.
+    value: Axis
+    # The series, each in the palette's colour of its place.
+    series: [BarSeries]
+    # How the series share a category.
+    grouping: Grouping
+    # Which way the bars run.
+    direction: Direction
+
+# The counts of values in bins. Built directly.
+record Histogram
+    # The frame; the bars take the palette's first colour.
+    look: Look
+    # The values counted.
+    values: [f64]
+    # How they are cut into bins.
+    bins: Bins
+    # The axis of the values.
+    x: Axis
+    # The axis of the counts.
+    y: Axis
+
+# A slice of a pie.
+record Slice
+    # The name the legend shows, or empty to leave it out of the legend.
+    name: str
+    # Its value, 0 or more; its share of the pie is its part of the sum.
+    value: f64
+
+# Shares of a whole. Built directly.
+record Pie
+    # The frame.
+    look: Look
+    # The slices, clockwise from twelve o'clock, each in the palette's colour
+    # of its place.
+    slices: [Slice]
+    # The hole's radius as a share of the pie's, 0 for a pie and below 1 for a
+    # donut.
+    hole: f64
+    # Whether each slice's share is written on it, where the text fits inside
+    # the slice.
+    percentages: bool
+
+# A chart.
+variant Chart
+    # Series over two axes: lines, points and areas.
+    plot
+        # The plot.
+        plot: Plot
+    # Bars of categories.
+    bars
+        # The bars.
+        bars: Bars
+    # A histogram.
+    histogram
+        # The histogram.
+        histogram: Histogram
+    # A pie or a donut.
+    pie
+        # The pie.
+        pie: Pie
+
+## Drawn
+
+# A chart laid out, ready to be written as SVG and drawn as an image, the
+# same drawing either way. Made by `lay_out`.
+record Layout
+    # What is drawn, in pixels, in its order.
+    scene: scene.Scene
+    # The font its text is set in.
+    font: font.Font
+
+# How an SVG holds a chart's text.
+variant SvgText
+    # As text elements naming the font's family, then `sans-serif`: a reader
+    # sets the text in the font it has of that name, so the text can be
+    # selected and searched, and is placed as the font measured it.
+    elements
+    # As the outlines of the font's glyphs: every reader draws it alike, and
+    # it is no longer text.
+    outlines
+
+# `c` laid out in `f`: its ranges and ticks found, its margins measured from
+# its text, its shapes mapped to pixels and cut to the plot.
+#
+# - `c`: the chart.
+# - `f`: the font its text is set in; it must hold every character of the
+#   chart's title, labels, legend and steps.
+#
+# Fails `invalid` where the look's size is below 1, its text size is not a
+# finite number above 0 and at most 1,000, its palette is empty, a value or an
+# axis is out of its range (as `ticks` and `bin` say), a series' columns and
+# rows differ in number, stacked areas differ in their columns, a pie's value
+# is below zero or its values sum to zero, its hole is not from 0 up to 1, or
+# the chart leaves its plot less than two text sizes a side; `limit` where a
+# side passes 16,384 pixels; `not_found` where `f` lacks a character. See
+# also `to_svg`, `to_image`.
+function lay_out(c: Chart, f: font.Font) -> Layout?
+    frame = match c
+        .plot p      => p.plot.look
+        .bars b      => b.bars.look
+        .histogram h => h.histogram.look
+        .pie p       => p.pie.look
+
+    if frame.width < 1 || frame.height < 1
+        return fail(code: codes.INVALID, msg: f"a chart is 1 pixel a side or more, not {frame.width} by {frame.height}")
+
+    if frame.width > scene.MOST_PIXELS || frame.height > scene.MOST_PIXELS
+        return fail(
+            code: codes.LIMIT,
+            msg: f"the chart would be {frame.width} by {frame.height} pixels, past {scene.MOST_PIXELS} a side"
+        )
+
+    if !math.is_finite(frame.text_size) || frame.text_size <= 0.0 || frame.text_size > 1000.0
+        return fail(
+            code: codes.INVALID,
+            msg: f"the text size is a finite number above 0 and at most 1000, not {frame.text_size}"
+        )
+
+    if frame.palette.len() == 0
+        return fail(code: codes.INVALID, msg: "the palette is empty")
+    inner_look = figure.Look(
+        width: frame.width,
+        height: frame.height,
+        title: frame.title,
+        text_size: frame.text_size,
+        background: frame.background,
+        ink: frame.ink,
+        grid: frame.grid,
+        legend: frame.legend
+    )
+
+    given: [Axis] = match c
+        .plot p      => [p.plot.x, p.plot.y]
+        .bars b      => [b.bars.value]
+        .histogram h => [h.histogram.x, h.histogram.y]
+        .pie _       => []
+
+    axes: [figure.Axis] @= []
+
+    for a in given
+        scale: figure.Scale = match a.scale
+            .linear => .linear
+            .log l  => .log(base: l.base)
+            .time   => .time
+
+        count = match a.ticks
+            .auto    => 0
+            .about n => n.count
+
+        fixed = match a.extent
+            .data    => Range(low: 0.0, high: 0.0)
+            .fixed r => Range(low: r.low, high: r.high)
+
+        inner = figure.Axis(
+            label: a.label,
+            scale: scale,
+            fixed: a.extent != .data,
+            low: fixed.low,
+            high: fixed.high,
+            count: count,
+            grid: a.grid
+        )
+        checks.axis(inner)?
+        axes @ axes.push(inner)
+
+    made = match c
+        .plot p =>
+            series: [build.Series] @= []
+
+            for s in p.plot.series
+                mark: build.Mark = match s.mark
+                    .line            => .line
+                    .points          => .points
+                    .line_and_points => .line_and_points
+                    .area            => .area
+
+                series @ series.push(build.Series(name: s.name, xs: s.xs, ys: s.ys, mark: mark))
+
+            built = build.plot(series: series, palette: frame.palette, stacked: p.plot.stacked, size: frame.text_size, time_x: p.plot.x.scale == .time, time_y: p.plot.y.scale == .time)?
+            figure.layout(look: inner_look, x: axes[0], y: axes[1], shapes: built.shapes, entries: built.entries, f: f)?
+        .bars b =>
+            if b.bars.categories.len() == 0
+                return fail(code: codes.INVALID, msg: "the bars have no category")
+            names: [str] @= []
+            values: [[f64]] @= []
+
+            for s in b.bars.series
+                names @ names.push(s.name)
+                values @ values.push(s.values)
+
+            horizontal = b.bars.direction == .horizontal
+
+            log = match b.bars.value.scale
+                .log _          => true
+                .linear | .time => false
+
+            built = build.bars(categories: b.bars.categories.len(), names: names, values: values, palette: frame.palette, stacked: b.bars.grouping == .stacked, horizontal: horizontal, log: log)?
+            band = figure.Axis(
+                label: b.bars.category_label,
+                scale: .band(names: b.bars.categories),
+                fixed: false,
+                low: 0.0,
+                high: 0.0,
+                count: 0,
+                grid: false
+            )
+
+            if horizontal
+                figure.layout(look: inner_look, x: axes[0], y: band, shapes: built.shapes, entries: built.entries, f: f)?
+            else
+                figure.layout(look: inner_look, x: band, y: axes[0], shapes: built.shapes, entries: built.entries, f: f)?
+        .histogram h =>
+            log_x = match h.histogram.x.scale
+                .log _          => true
+                .linear | .time => false
+
+            for i in range(from: 0, to: h.histogram.values.len())
+                v = h.histogram.values[i]
+
+                if log_x && v == v && v <= 0.0
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"the value {v} at {i} is at or below zero, where a logarithmic axis has no place"
+                    )
+
+            build.check_values(name: "", what: "the histogram", vs: h.histogram.values, gaps: true, time: h.histogram.x.scale == .time)?
+            shapes: [figure.Shape] @= []
+
+            for b in bin(values: h.histogram.values, bins: h.histogram.bins)?
+                if b.count > 0
+                    shapes @ shapes.push(
+                        .box(x0: b.low, x1: b.high, y0: 0.0, y1: to_f64(b.count), color: frame.palette[0], gap_x: true, gap_y: false)
+                    )
+
+            figure.layout(look: inner_look, x: axes[0], y: axes[1], shapes: shapes, entries: [], f: f)?
+        .pie p =>
+            slices: [pies.Slice] @= []
+            total @= 0.0
+
+            for i in range(from: 0, to: p.pie.slices.len())
+                s = p.pie.slices[i]
+
+                if !math.is_finite(s.value) || s.value < 0.0
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"the slice \"{s.name}\" has {s.value}; a slice's value is a finite number, 0 or more"
+                    )
+                total @ total + s.value
+                slices @ slices.push(
+                    pies.Slice(name: s.name, value: s.value, color: frame.palette[i % frame.palette.len()])
+                )
+
+            if !(total > 0.0) || !math.is_finite(total)
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the slices' values sum to {total}; a pie needs a finite sum above zero"
+                )
+
+            if p.pie.hole != p.pie.hole || p.pie.hole < 0.0 || p.pie.hole >= 1.0
+                return fail(code: codes.INVALID, msg: f"a pie's hole is 0 up to 1 of its radius, not {p.pie.hole}")
+            pies.layout(look: inner_look, slices: slices, hole: p.pie.hole, percentages: p.pie.percentages, f: f)?
+
+    return ok(Layout(scene: made, font: f))
+
+# The SVG document of a laid out chart: one line ending with a line feed, no
+# XML declaration, as wide and as high as its look in pixels.
+#
+# - `l`: the chart laid out.
+# - `text`: how the text is held.
+#
+# Fails `not_found` where the font lacks a character, as `image/text` does.
+# See also `to_image`.
+function to_svg(l: Layout, text: SvgText) -> str?
+    outlines = match text
+        .elements => false
+        .outlines => true
+
+    return scene.svg(s: l.scene, f: l.font, outlines: outlines)
+
+# A laid out chart drawn into an RGBA image as wide and as high as its look,
+# anti-aliased, the text filled from the font's outlines.
+#
+# - `l`: the chart laid out.
+#
+# Fails `limit` where a side passes 16,384 pixels, and `not_found` where the
+# font lacks a character. See also `to_svg`.
+function to_image(l: Layout) -> image.Image?
+    return scene.draw(s: l.scene, f: l.font)
+
+## Examples
+
+# The ticks of a linear axis from 0 to 1, at steps of a tenth.
+test "ticks: a linear axis"
+    ts = ticks(span: Range(low: 0.0, high: 1.0), scale: .linear, count: 5).must()
+    assert ts.len() == 6
+    assert ts[1].label == "0.2"
+
+# A range moved out to whole tens.
+test "nice: a range moved to its ticks"
+    assert nice(span: Range(low: 3.0, high: 97.0), scale: .linear, count: 10).must() == Range(low: 0.0, high: 100.0)
+
+# Eight values cut into Sturges' four bins at nice edges.
+test "bin: the bins d3 makes"
+    bs = bin(values: [1.0, 2.0, 2.0, 3.0, 3.0, 3.0, 4.0, 9.0], bins: .auto).must()
+    assert bs[0] == Bin(low: 0.0, high: 2.0, count: 1)
+
+# Three colours a third of the circle apart.
+test "palette: three hues"
+    assert palette(3).must().len() == 3
+
+# An ordinary look, 640 by 400 pixels.
+test "look: the ordinary frame"
+    assert look(title: "Sales", width: 640, height: 400).text_size == 12.0
+
+# A linear axis over the data.
+test "axis: the ordinary axis"
+    assert axis("Year").scale == .linear
+
+# A line drawn and written as SVG.
+test "lay_out: a line over two axes"
+    f = font.parse(samples.truetype(), 0).must()
+    p = Plot(
+        look: look(title: "Rise", width: 320, height: 200),
+        x: axis("x"),
+        y: axis("y"),
+        series: [Series(name: "a", xs: [0.0, 1.0, 2.0], ys: [1.0, 3.0, 2.0], mark: .line)],
+        stacked: false
+    )
+    l = lay_out(.plot(plot: p), f).must()
+    assert to_svg(l, .elements).must().slice(from: 0, to: 4) == "<svg"
+
+# A pie written with its text as outlines.
+test "to_svg: a pie's text as outlines"
+    f = font.parse(samples.truetype(), 0).must()
+    p = Pie(
+        look: look(title: "", width: 200, height: 160),
+        slices: [Slice(name: "a", value: 1.0), Slice(name: "b", value: 3.0)],
+        hole: 0.0,
+        percentages: true
+    )
+    svg = to_svg(lay_out(.pie(pie: p), f).must(), .outlines).must()
+    assert svg.slice(from: svg.len() - 7, to: svg.len()) == "</svg>\n"
+
+# Bars drawn into an image of the look's size.
+test "to_image: bars as pixels"
+    f = font.parse(samples.truetype(), 0).must()
+    b = Bars(
+        look: look(title: "", width: 240, height: 160),
+        categories: ["a", "b"],
+        category_label: "",
+        value: axis(""),
+        series: [BarSeries(name: "n", values: [2.0, 5.0])],
+        grouping: .grouped,
+        direction: .vertical
+    )
+    img = to_image(lay_out(.bars(bars: b), f).must()).must()
+    assert img.width == 240

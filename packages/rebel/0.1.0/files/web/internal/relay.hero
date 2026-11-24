@@ -74,6 +74,16 @@ record Plan
     # The PEM of the authorities an `https://` upstream's certificate may be
     # signed by; "" trusts the system's store.
     roots: str
+    # The balancer before anything is counted: the upstreams' weights, how
+    # one is chosen, and how failures keep one out.
+    counts: balance.State
+
+# `d` in whole milliseconds, a part of one counting as a whole one, and
+# `net.FOREVER` for `time.max_duration()`.
+function ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    return (d.nanoseconds + 999_999) / 1_000_000
 
 ## Choosing an upstream, here or by asking the thread that owns the counts
 
@@ -405,13 +415,13 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
                 continue
 
         match sent(upstream: conn.stream, plan: plan, up: up, reader: @reader, body: @body, trip: trip, client: stream)
-            .ok _ => _ = 0
-            .err e =>
-                shut(@conn)
-
-                if e.code == "client"
+            .ok whole =>
+                if !whole
+                    shut(@conn)
                     told(@c, upstream: i, outcome: .neither)
                     return false
+            .err e =>
+                shut(@conn)
                 told(@c, upstream: i, outcome: .failed)
                 last @ e.code
 
@@ -505,10 +515,12 @@ function connect(up: Upstream, plan: Plan) -> net.Conn?
     return net.connect(host: up.base.host, port: up.port, deadline_ms: plan.connect_ms)
 
 # Sends the head of `trip` on `upstream` and its body as it comes from the
-# client, `100 Continue` told the client first where it asked. Fails with
-# the code of the upstream's failure, or `client` where the client failed,
-# its answer then written where one is owed.
-function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> ()?
+# client, `100 Continue` told the client first where it asked. Answers
+# whether the client held up its side: false where it went away, failed or
+# passed its bound, its answer then written where one is owed, so the
+# upstream is not blamed for it. Fails with the code of the upstream's
+# failure.
+function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> bool?
     host = if plan.keep_host && trip.asked_host != ""
         trip.asked_host
     else
@@ -527,13 +539,13 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
     writer @= http.write_request_head(upstream, r: out, framing: trip.framing)?
 
     if !has_body(trip.framing)
-        return ok()
+        return ok(true)
 
     if trip.continuing
         within(client, secure: false, ms: plan.client_ms)
 
         if http.write_continue(client).is_err()
-            return fail(code: "client", msg: "the client went away before its body")
+            return ok(false)
     total: i64 @= 0
 
     while true
@@ -548,7 +560,7 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
                     else
                         http.failure_status(code: e.code, in_head: false).default(400)
                     refuse(client, r: trip.r, status: status, why: e.msg, retry_s: 0)
-                return fail(code: "client", msg: f"reading the client's body: {e.msg}")
+                return ok(false)
 
         if piece.len() == 0
             break
@@ -556,11 +568,12 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
 
         if total > plan.limits.body_bytes
             refuse(client, r: trip.r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
-            return fail(code: "client", msg: "the client's body passed its bound")
+            return ok(false)
         within(upstream, secure: up.secure, ms: plan.send_ms)
         http.write_piece(upstream, @writer, data: piece)?
 
-    return http.end_pieces(upstream, @writer)
+    http.end_pieces(upstream, @writer)?
+    return ok(true)
 
 # The `Host` an upstream is asked by its own name: its host, and its port
 # where the scheme's own is not it.
@@ -843,9 +856,9 @@ record Served
     tally: Tally
 
 # Serves every connection `l` accepts with `workers` threads, the balancer's
-# counts owned by this thread, until the program's stop. Fails `limit` where
+# counts, from `plan.counts`, owned by this thread, until the program's stop. Fails `limit` where
 # no thread could be started, and as `poll` fails.
-function serve(l: net.Listener, plan: Plan, state: balance.State, workers: i64) -> Served?
+function serve(l: net.Listener, plan: Plan, workers: i64) -> Served?
     jobs: (mailbox Job) = mailbox()
     asks: (mailbox Ask) = mailbox()
     started: [(thread Tally)] @= []
@@ -861,7 +874,7 @@ function serve(l: net.Listener, plan: Plan, state: balance.State, workers: i64) 
 
                 return fail(code: "limit", msg: f"serving a proxy: a worker could not be started: {e.msg}")
 
-    accepted = coordinate(l, jobs: jobs, asks: asks, state: state, workers: workers)
+    accepted = coordinate(l, jobs: jobs, asks: asks, state: plan.counts, workers: workers)
     jobs.close()
     total @= Tally(requests: 0, relayed: 0, refused: 0, switched: 0)
 
@@ -874,16 +887,27 @@ function serve(l: net.Listener, plan: Plan, state: balance.State, workers: i64) 
 
 # The coordinator's loop: connections accepted while a worker is free, each
 # handed to the workers, and the workers' asks answered from `state`, until
-# the stop. Answers the connections accepted.
+# the stop. Answers the connections accepted. Fails as `time.mark` and
+# `poll` fail, the set it made closed first.
 function coordinate(l: net.Listener, jobs: (mailbox Job), asks: (mailbox Ask), state: balance.State, workers: i64) -> i64?
+    start = time.mark()?
     set @= poll.make(most: 2)?
     counts @= state
-    start = time.mark()?
     accepted: i64 @= 0
     busy: i64 @= 0
     listening: bool @= true
-    listen_key: i64 @= poll.add_listener(set, l: l)?
-    ask_key = poll.add_mailbox(set, m: asks)?
+
+    listen_key: i64 @= match poll.add_listener(set, l: l)
+        .ok key => key
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    ask_key = match poll.add_mailbox(set, m: asks)
+        .ok key => key
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
 
     while true
         events = match poll.wait_forever(set)
@@ -920,7 +944,12 @@ function coordinate(l: net.Listener, jobs: (mailbox Job), asks: (mailbox Ask), s
                                     busy @ busy - 1
 
                                     if !listening
-                                        listen_key @ poll.add_listener(set, l: l)?
+                                        match poll.add_listener(set, l: l)
+                                            .ok key => listen_key @ key
+                                            .err e =>
+                                                _ = poll.close(@set).is_err()
+                                                return fail(code: e.code, msg: e.msg)
+
                                         listening @ true
             else if listening && ev.key == listen_key
                 match net.accept(l, deadline_ms: 0)
@@ -1011,12 +1040,15 @@ function proxy_once(f: Front) -> i64
     net.close_listener(@l).must()
     return requests
 
-# The plan of the tests over upstreams on `ports` of the loopback address.
+# The plan of the tests over upstreams on `ports` of the loopback address,
+# each of weight 1.
 function plan_for(ports: [i64], read_ms: i64) -> Plan
     ups: [Upstream] @= []
+    weights: [i64] @= []
 
     for p in ports
         ups @ ups.push(Upstream(base: url.parse(f"http://127.0.0.1:{p}").must(), port: p, secure: false))
+        weights @ weights.push(1)
 
     return Plan(
         upstreams: ups,
@@ -1031,7 +1063,8 @@ function plan_for(ports: [i64], read_ms: i64) -> Plan
         trusted: [],
         scheme: "http",
         received_by: "edge:1",
-        roots: ""
+        roots: "",
+        counts: balance.state_of(weights, least: false, max_fails: 1, fail_ms: 10_000)
     )
 
 # A port nothing listens on: one listened on and closed.

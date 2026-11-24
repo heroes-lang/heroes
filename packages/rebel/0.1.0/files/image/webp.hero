@@ -756,3 +756,16 @@ test "encode: a picture with its ICC profile"
 test "encode_image: a gray image"
     img = image.blank(width: 8, height: 8, format: .gray).must()
     assert info_of(encode_image(img).must()).must().frames == 1
+
+# The usual settings at a quality of 80, the photographer's middle ground.
+test "lossy: the usual settings at quality 80"
+    how = lossy(80)
+    assert how.quality == 80 && how.filter == 2 && how.segments == 4 && how.partitions == 1
+
+# A picture written lossily, in fewer bytes than its pixels, its file read
+# back at its size and described as lossy.
+test "encode_lossy: a picture at quality 80"
+    img = image.blank(width: 64, height: 48, format: .rgb).must()
+    file = encode_lossy(img, how: lossy(80)).must()
+    i = info_of(file).must()
+    assert i.width == 64 && i.height == 48 && !i.lossless && file.len() < 64 * 48 * 3

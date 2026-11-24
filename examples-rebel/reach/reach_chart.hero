@@ -1,0 +1,12 @@
+# Reaches Rebel's `chart`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the ticks of an axis from 0 to
+# 1,000, as a chart's axis would label them.
+
+use <rebel>/chart
+
+function main()
+    match chart.ticks(span: chart.Range(low: 0.0, high: 1000.0), scale: .linear, count: 5)
+        .ok ts =>
+            for t in ts
+                print(t.label)
+        .err e => print(e.msg)

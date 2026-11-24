@@ -1,0 +1,263 @@
+# A pie or a donut laid out: the slices clockwise from twelve o'clock as
+# d3-shape's `pie` turns them, each the share of the whole its value is, cut
+# from a disc or from a ring whose hole is a fraction of the radius, parted by
+# a line of the ground's colour, its share written on it where the text fits
+# inside the slice, and the legend beside it.
+
+use chart/internal/codes
+use chart/internal/figure
+use chart/internal/scene
+use font
+use image
+use image/colorspace
+use image/vector
+use math
+use numbers
+
+# A slice: its name for the legend, its value, 0 or more, and its colour.
+record Slice
+    name: str
+    value: f64
+    color: image.Color
+
+# The point at `angle` radians clockwise from twelve o'clock, `radius` from
+# (`cx`, `cy`).
+function at(cx: f64, cy: f64, radius: f64, angle: f64) -> vector.Point
+    return vector.Point(x: cx + radius * math.sin(angle), y: cy - radius * math.cos(angle))
+
+# An arc of `radius` from the pen to the point at `to`, turning clockwise
+# where `clockwise`, through `turn` radians.
+function arc(@path: [vector.Segment], cx: f64, cy: f64, radius: f64, to: f64, turn: f64, clockwise: bool)
+    p = at(cx: cx, cy: cy, radius: radius, angle: to)
+    vector.arc_to(
+        @path,
+        radius_x: radius,
+        radius_y: radius,
+        tilt: 0.0,
+        large: turn > math.PI,
+        sweep: clockwise,
+        x: p.x,
+        y: p.y
+    )
+
+# The outline of the slice from `start` to `end` radians of a ring from
+# `inner` to `outer`, a disc's sector where `inner` is 0. A whole turn is two
+# halves, the hole wound the other way.
+function wedge(cx: f64, cy: f64, inner: f64, outer: f64, start: f64, end: f64) -> [vector.Segment]
+    path: [vector.Segment] @= []
+    turn = end - start
+
+    if turn >= math.TAU - 0.000000001
+        top = at(cx: cx, cy: cy, radius: outer, angle: 0.0)
+        vector.move_to(@path, x: top.x, y: top.y)
+        arc(@path, cx: cx, cy: cy, radius: outer, to: math.PI, turn: math.PI, clockwise: true)
+        arc(@path, cx: cx, cy: cy, radius: outer, to: 0.0, turn: math.PI, clockwise: true)
+        vector.close_path(@path)
+
+        if inner > 0.0
+            hole = at(cx: cx, cy: cy, radius: inner, angle: 0.0)
+            vector.move_to(@path, x: hole.x, y: hole.y)
+            arc(@path, cx: cx, cy: cy, radius: inner, to: math.PI, turn: math.PI, clockwise: false)
+            arc(@path, cx: cx, cy: cy, radius: inner, to: 0.0, turn: math.PI, clockwise: false)
+            vector.close_path(@path)
+        return path
+    first = at(cx: cx, cy: cy, radius: outer, angle: start)
+
+    if inner > 0.0
+        vector.move_to(@path, x: first.x, y: first.y)
+        arc(@path, cx: cx, cy: cy, radius: outer, to: end, turn: turn, clockwise: true)
+        back = at(cx: cx, cy: cy, radius: inner, angle: end)
+        vector.line_to(@path, x: back.x, y: back.y)
+        arc(@path, cx: cx, cy: cy, radius: inner, to: start, turn: turn, clockwise: false)
+    else
+        vector.move_to(@path, x: cx, y: cy)
+        vector.line_to(@path, x: first.x, y: first.y)
+        arc(@path, cx: cx, cy: cy, radius: outer, to: end, turn: turn, clockwise: true)
+    vector.close_path(@path)
+    return path
+
+# The angle of the point (`x`, `y`) seen from (`cx`, `cy`), in radians
+# clockwise from twelve o'clock, 0 up to a whole turn.
+function angle_of(x: f64, y: f64, cx: f64, cy: f64) -> f64
+    a = math.atan2(y: x - cx, x: cy - y)
+
+    if a < 0.0
+        return a + math.TAU
+    return a
+
+# Whether a box `width` by `height` centred on (`x`, `y`) lies inside the
+# slice from `start` to `end` of the ring from `inner` to `outer`.
+function fits(x: f64, y: f64, width: f64, height: f64, cx: f64, cy: f64, inner: f64, outer: f64, start: f64, end: f64) -> bool
+    corners = [
+        vector.Point(x: x - width / 2.0, y: y - height / 2.0)
+        vector.Point(x: x + width / 2.0, y: y - height / 2.0)
+        vector.Point(x: x - width / 2.0, y: y + height / 2.0)
+        vector.Point(x: x + width / 2.0, y: y + height / 2.0)
+    ]
+    whole = end - start >= math.TAU - 0.000000001
+
+    for c in corners
+        d = math.hypot(x: c.x - cx, y: c.y - cy)
+
+        if d > outer - 1.0 || d < inner + 1.0
+            return false
+
+        if !whole
+            a = angle_of(x: c.x, y: c.y, cx: cx, cy: cy)
+
+            if a < start || a > end
+                return false
+
+    return true
+
+# Which of `ink` and `ground` reads better on `fill`: the one whose
+# brightness in YIQ is further from the fill's.
+function readable(fill: image.Color, ink: image.Color, ground: image.Color) -> image.Color
+    y = colorspace.to_yiq(fill).y
+
+    if math.abs(colorspace.to_yiq(ink).y - y) >= math.abs(colorspace.to_yiq(ground).y - y)
+        return ink
+    return ground
+
+# The pie laid out: `hole` 0 for a pie and the hole's share of the radius,
+# below 1, for a donut; with `percentages` each slice's share written on it
+# where it fits.
+#
+# Fails `invalid` where the chart leaves the disc less than a text size of
+# radius, and as the font's measure fails.
+function layout(look: figure.Look lent, slices: [Slice] lent, hole: f64, percentages: bool, f: font.Font lent) -> scene.Scene?
+    m = figure.metrics(f: f, size: look.text_size)?
+    title_size = look.text_size * 1.4
+    title_m = figure.metrics(f: f, size: title_size)?
+    width = to_f64(look.width)
+    height = to_f64(look.height)
+    top @= m.pad
+
+    if look.title != ""
+        top @ m.pad + title_m.line + m.pad
+    bottom = height - m.pad
+    entries: [figure.Key] @= []
+
+    for s in slices
+        if s.name != ""
+            entries @ entries.push(figure.Key(name: s.name, color: s.color, mark: .swatch))
+
+    legend = figure.legend_of(entries: entries, f: f, m: m, height: bottom - top, shown: look.legend)?
+    right @= width - m.pad
+
+    if legend.width > 0.0
+        right @ right - legend.width - m.pad
+    radius = math.min(a: right - m.pad, b: bottom - top) / 2.0
+
+    if radius < look.text_size
+        return fail(
+            code: codes.INVALID,
+            msg: f"the chart of {look.width} by {look.height} pixels leaves the pie a radius of {radius} beside its text; make it larger or its text smaller"
+        )
+    cx = (m.pad + right) / 2.0
+    cy = (top + bottom) / 2.0
+    inner = radius * hole
+    total @= 0.0
+
+    for s in slices
+        total @ total + s.value
+
+    items: [scene.Item] @= []
+    visible @= 0
+
+    for s in slices
+        if s.value > 0.0
+            visible @ visible + 1
+
+    start @= 0.0
+
+    for s in slices
+        if s.value > 0.0
+            end = start + s.value / total * math.TAU
+            path = wedge(cx: cx, cy: cy, inner: inner, outer: radius, start: start, end: end)
+            items @ items.push(.fill(path: path, color: s.color))
+
+            if visible > 1
+                items @ items.push(.stroke(path: path, color: look.background, width: 1.0))
+
+            if percentages
+                text = numbers.format_percent(x: s.value / total, precision: 1)
+                text_width = scene.width_of(f: f, text: text, size: look.text_size)?
+                distance @= radius * 0.62
+
+                if inner > 0.0
+                    distance @ (inner + radius) / 2.0
+                angle @= (start + end) / 2.0
+
+                if visible == 1
+                    angle @ math.PI
+                middle = at(cx: cx, cy: cy, radius: distance, angle: angle)
+
+                if fits(x: middle.x, y: middle.y, width: text_width, height: m.cap, cx: cx, cy: cy, inner: inner, outer: radius, start: start, end: end)
+                    items @ items.push(
+                        figure.text_item(text: text, x: middle.x, y: middle.y + m.cap / 2.0, size: look.text_size, anchor: .middle, turned: false, ink: readable(fill: s.color, ink: look.ink, ground: look.background))
+                    )
+            start @ end
+
+    if look.title != ""
+        items @ items.push(
+            figure.text_item(text: look.title, x: width / 2.0, y: m.pad + title_m.ascent, size: title_size, anchor: .middle, turned: false, ink: look.ink)
+        )
+
+    if legend.width > 0.0
+        rows = math.min_i64(a: legend.rows, b: entries.len())
+        y = cy - to_f64(rows) * m.line / 2.0
+
+        for item in figure.legend_items(entries: entries, legend: legend, x: right + m.pad, y: y, m: m, ink: look.ink)
+            items @ items.push(item)
+
+    return ok(scene.Scene(width: look.width, height: look.height, background: look.background, items: items))
+
+## Tests
+
+test "at and angle_of: twelve, three and six o'clock"
+    top = at(cx: 10.0, cy: 10.0, radius: 5.0, angle: 0.0)
+    assert math.abs(top.x - 10.0) < 0.000001 && math.abs(top.y - 5.0) < 0.000001
+    right = at(cx: 10.0, cy: 10.0, radius: 5.0, angle: math.PI / 2.0)
+    assert math.abs(right.x - 15.0) < 0.000001
+    assert math.abs(angle_of(x: 10.0, y: 15.0, cx: 10.0, cy: 10.0) - math.PI) < 0.000001
+
+test "wedge: a whole ring is two contours, its hole wound the other way"
+    path = wedge(cx: 50.0, cy: 50.0, inner: 20.0, outer: 40.0, start: 0.0, end: math.TAU)
+    closes @= 0
+
+    for s in path
+        match s
+            .close                                 => closes @ closes + 1
+            .move _ | .line _ | .quad _ | .cubic _ => _ = 0
+
+    assert closes == 2
+    assert vector.contains(path: path, x: 50.0, y: 15.0, rule: .non_zero).must()
+    assert !vector.contains(path: path, x: 50.0, y: 50.0, rule: .non_zero).must()
+
+test "wedge: a quarter of a disc from twelve to three o'clock"
+    path = wedge(cx: 50.0, cy: 50.0, inner: 0.0, outer: 40.0, start: 0.0, end: math.PI / 2.0)
+    assert vector.contains(path: path, x: 60.0, y: 40.0, rule: .non_zero).must()
+    assert !vector.contains(path: path, x: 40.0, y: 40.0, rule: .non_zero).must()
+    assert !vector.contains(path: path, x: 60.0, y: 60.0, rule: .non_zero).must()
+
+test "fits: a label inside a wide slice, not across its edge"
+    assert fits(
+        x: 50.0,
+        y: 20.0,
+        width: 10.0,
+        height: 6.0,
+        cx: 50.0,
+        cy: 50.0,
+        inner: 0.0,
+        outer: 40.0,
+        start: 0.0 - 0.0,
+        end: math.PI * 2.0
+    )
+    assert !fits(x: 50.0, y: 20.0, width: 10.0, height: 6.0, cx: 50.0, cy: 50.0, inner: 0.0, outer: 40.0, start: 0.0, end: 0.1)
+
+test "readable: dark ink on a light slice, the ground on a dark one"
+    ink = image.Color(r: 34, g: 34, b: 34, a: 255)
+    ground = image.Color(r: 255, g: 255, b: 255, a: 255)
+    assert readable(fill: image.Color(r: 250, g: 230, b: 120, a: 255), ink: ink, ground: ground) == ink
+    assert readable(fill: image.Color(r: 20, g: 40, b: 120, a: 255), ink: ink, ground: ground) == ground

@@ -1,0 +1,87 @@
+# The two texts a line becomes on Linux: the journal's native protocol and the
+# classic syslog line. Pure: each writes bytes and sends nothing, so what a
+# datagram holds is told without a socket. Private to the package (README §
+# A2); the face's `format_journal` and `format_syslog` are these.
+#
+# The journal's, read on 2026-11-24 from systemd's `JOURNAL_NATIVE_PROTOCOL`
+# page: an entry is fields, each `NAME=value` and a newline, or, where the
+# value holds a newline, the name, a newline, the value's length as 64 bits
+# little-endian, the value and a newline; a name is ASCII and holds no `=`
+# and no control character. The classic line is RFC 3164's as the C library's
+# `syslog(3)` writes it to `/dev/log`: `<PRI>Mmm dd hh:mm:ss tag[pid]: line`,
+# PRI the facility times eight and the severity, the day of the month padded
+# with a space. Both carry the facility `daemon` (3), whose lines these are.
+
+use bytes
+use strings
+use time
+
+# The facility of a daemon's lines, RFC 5424's 3.
+constant FACILITY: i64
+    3
+
+# The months as RFC 3164 names them.
+function month_name(month: i64) -> str
+    names: [str] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    return names[month - 1]
+
+# `n` as two digits, a zero first below ten.
+function two(n: i64) -> str
+    if n < 10
+        return f"0{n}"
+    return f"{n}"
+
+# One field of the journal's protocol: the simple form where the value holds
+# no newline, the binary one where it does.
+#
+# - `name`: the field's name, upper-case ASCII.
+# - `value`: its value, any bytes.
+function field(name: str, value: [u8]) -> [u8]
+    for b in value
+        if b == '\n'
+            size = bytes.encode_u64_le(value.len().to_u64().must())
+            return bytes.concat([bytes.from_text(name + "\n"), size, value, bytes.from_text("\n")])
+
+    return bytes.concat([bytes.from_text(name + "="), value, bytes.from_text("\n")])
+
+# The journal entry of one line: its message, its priority, the facility and
+# the identifier.
+#
+# - `identifier`: what the line is filed under, `SYSLOG_IDENTIFIER`.
+# - `level`: the severity, 0 to 7.
+# - `line`: the message.
+function journal(identifier: str, level: i64, line: str) -> [u8]
+    return bytes.concat(
+        [field("MESSAGE", value: bytes.from_text(line)), field("PRIORITY", value: bytes.from_text(f"{level}")), field("SYSLOG_FACILITY", value: bytes.from_text(f"{FACILITY}")), field("SYSLOG_IDENTIFIER", value: bytes.from_text(identifier))]
+    )
+
+# The classic syslog line of one line, stamped with `at`, the machine's local
+# time.
+#
+# - `identifier`: the tag.
+# - `level`: the severity, 0 to 7.
+# - `line`: the message.
+# - `pid`: the process's number.
+# - `at`: the local time the line is stamped with.
+function classic(identifier: str, level: i64, line: str, pid: i64, at: time.DateTime) -> str
+    day = strings.pad_start(s: f"{at.day}", width: 2, pad: " ")
+    stamp = f"{month_name(at.month)} {day} {two(at.hour)}:{two(at.minute)}:{two(at.second)}"
+    return f"<{FACILITY * 8 + level}>{stamp} {identifier}[{pid}]: {line}"
+
+test "field: the simple form where the value holds no newline, the binary one where it does"
+    assert field("MESSAGE", value: bytes.from_text("hello")) == bytes.from_text("MESSAGE=hello\n")
+    assert field("MESSAGE", value: []) == bytes.from_text("MESSAGE=\n")
+    two_lines = field("MESSAGE", value: bytes.from_text("a\nb"))
+    want = bytes.concat([bytes.from_text("MESSAGE\n"), [3, 0, 0, 0, 0, 0, 0, 0], bytes.from_text("a\nb\n")])
+    assert two_lines == want
+
+test "journal: the protocol page's own example's fields, in order, with the daemon facility"
+    got = journal(identifier: "example", level: 6, line: "hello")
+    assert got == bytes.from_text("MESSAGE=hello\nPRIORITY=6\nSYSLOG_FACILITY=3\nSYSLOG_IDENTIFIER=example\n")
+
+test "classic: RFC 3164's line as syslog(3) writes it, the day padded with a space, PRI the facility and the level"
+    at = time.DateTime(year: 2026, month: 11, day: 4, hour: 7, minute: 5, second: 9, nanosecond: 0)
+    assert classic(identifier: "demo", level: 3, line: "it broke", pid: 42, at: at) == "<27>Nov  4 07:05:09 demo[42]: it broke"
+    end = time.DateTime(year: 2026, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 999)
+    assert classic(identifier: "d", level: 0, line: "", pid: 1, at: end) == "<24>Dec 31 23:59:59 d[1]: "
+    assert classic(identifier: "d", level: 7, line: "x", pid: 1, at: end) == "<31>Dec 31 23:59:59 d[1]: x"

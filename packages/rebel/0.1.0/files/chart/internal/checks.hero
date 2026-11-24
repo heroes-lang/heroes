@@ -1,0 +1,92 @@
+# What the face refuses of a range, a scale, a count of ticks and an axis,
+# said in one place so that `ticks`, `nice` and a chart's axes refuse alike.
+
+use chart/internal/build
+use chart/internal/codes
+use chart/internal/figure
+use math
+
+# Refuses a logarithmic base that is not a finite number above 1.
+function scale(s: figure.Scale lent) -> ()?
+    match s
+        .log l =>
+            if !math.is_finite(l.base) || l.base <= 1.0
+                return fail(code: codes.INVALID, msg: f"a logarithmic base is a finite number above 1, not {l.base}")
+        .linear | .time | .band _ => _ = 0
+
+    return ok()
+
+# Refuses a count of ticks outside 1 to 1,000.
+function count(n: i64) -> ()?
+    if n < 1 || n > 1000
+        return fail(code: codes.INVALID, msg: f"the count of ticks is 1 to 1000, not {n}")
+    return ok()
+
+# Refuses a range whose ends are not finite or do not rise (`low` above
+# `high`), that reaches zero on a logarithmic axis, or that passes the years 1
+# to 9999 on a time axis.
+function span(low: f64, high: f64, s: figure.Scale lent) -> ()?
+    if !math.is_finite(low) || !math.is_finite(high)
+        return fail(code: codes.INVALID, msg: f"the range {low} to {high} has an end that is not a finite number")
+
+    if low > high
+        return fail(code: codes.INVALID, msg: f"the range {low} to {high} does not rise")
+    scale(s)?
+
+    match s
+        .log _ =>
+            if low <= 0.0
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the range {low} to {high} reaches zero or below, where a logarithmic axis has no place"
+                )
+        .time =>
+            if low < build.first_second() || high > build.last_second()
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the range {low} to {high} passes the years 1 to 9999 a time axis places"
+                )
+        .linear | .band _ => _ = 0
+
+    return ok()
+
+# Refuses an axis whose scale, count of ticks (0 for as many as fit) or fixed
+# range is out of range, the range rising strictly.
+function axis(a: figure.Axis lent) -> ()?
+    scale(a.scale)?
+
+    if a.count != 0
+        count(a.count)?
+
+    if a.fixed
+        span(low: a.low, high: a.high, s: a.scale)?
+
+        if !(a.low < a.high)
+            return fail(
+                code: codes.INVALID,
+                msg: f"the axis \"{a.label}\" spans {a.low} to {a.high}, which does not rise"
+            )
+    return ok()
+
+## Tests
+
+test "scale: a logarithmic base above 1 and finite"
+    assert scale(.log(base: 1.0)).is_err()
+    assert scale(.log(base: 0.0 / 0.0)).is_err()
+    assert !scale(.log(base: 2.0)).is_err()
+
+test "count: 1 to 1,000 ticks"
+    assert count(0).is_err()
+    assert count(1001).is_err()
+    assert !count(5).is_err()
+
+test "span: finite, rising, above zero on a log axis, within the years on a time axis"
+    assert span(low: 0.0, high: 1.0 / 0.0, s: .linear).is_err()
+    assert span(low: 2.0, high: 1.0, s: .linear).is_err()
+    assert span(low: 0.0, high: 1.0, s: .log(base: 10.0)).is_err()
+    assert span(low: 0.0, high: 300000000000.0, s: .time).is_err()
+    assert !span(low: 1.0, high: 1.0, s: .linear).is_err()
+
+test "axis: a fixed range rises strictly"
+    a = figure.Axis(label: "x", scale: .linear, fixed: true, low: 1.0, high: 1.0, count: 0, grid: true)
+    assert axis(a).is_err()

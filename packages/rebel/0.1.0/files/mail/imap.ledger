@@ -8,34 +8,34 @@
 # `dovecot/dovecot:2.4.2`, run in a container this day) answering the same
 # steps to `imaplib` and to this package.
 
-capability connect/plain  a session over plain TCP, its greeting read and its capabilities known
+capability imap/plain  a session over plain TCP, its greeting read and its capabilities known
   heroes  imap.connect, imap.Security.plain, imap.PORT_IMAP
   go      -
   rust    -
   python  imaplib.IMAP4, imaplib.IMAP4.open, imaplib.IMAP4_PORT, imaplib.IMAP4.welcome
   note    a greeting of BYE fails `closed`, of PREAUTH logs the client in; the capabilities are those the greeting names or CAPABILITY answers
 
-capability connect/starttls  a plain connection made secure by STARTTLS, the capabilities learnt anew after it
+capability imap/starttls  a plain connection made secure by STARTTLS, the capabilities learnt anew after it
   heroes  imap.connect, imap.Security.starttls
   go      -
   rust    -
   python  imaplib.IMAP4.starttls
   note    through `tls.connect_after`, the greeting and STARTTLS `tls`'s plain steps: a greeting that is not OK (PREAUTH among them) or a refusal of STARTTLS fails, never going on in plain text, where Python's `starttls` raises only once asked and a program may skip it
 
-capability connect/implicit-tls  a session over TLS from the first byte (RFC 8314, port 993)
+capability imap/implicit-tls  a session over TLS from the first byte (RFC 8314, port 993)
   heroes  imap.connect, imap.Security.implicit, imap.PORT_IMAPS
   go      -
   rust    -
   python  imaplib.IMAP4_SSL, imaplib.IMAP4_SSL_PORT, imaplib.HAVE_SSL
   note    the certificate is checked by `tls` against the system's store or `Options.roots`, never turned off
 
-capability connect/process  a session with a program's standard streams, as `imaplib.IMAP4_stream` runs a command
+capability imap/process  a session with a program's standard streams, as `imaplib.IMAP4_stream` runs a command
   heroes  refused: a program that speaks IMAP on its standard streams is started by `process` and its streams are not a TLS connection; this client speaks to a server over the network alone, so its every promise on TLS and passwords holds
   go      -
   rust    -
   python  imaplib.IMAP4_stream
 
-capability connect/deadline  each step bounded by a deadline
+capability imap/deadline  each step bounded by a deadline
   heroes  imap.Options.deadline
   go      -
   rust    -

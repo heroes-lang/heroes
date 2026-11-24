@@ -1,0 +1,1119 @@
+# OCSP (RFC 6960): whether a certificate is revoked, asked of the responder
+# its issuer names and the answer checked. A request is made for one
+# certificate or several, its CertID by SHA-1 or SHA-2, with a nonce (RFC
+# 8954), and sent by POST or GET (appendix A); a response is read, its
+# signature checked against the issuer or a responder the issuer delegated
+# to (§ 4.2.2.2), its nonce and its freshness checked, and the certificate's
+# status answered: good, revoked with when and why, or unknown. `check` does
+# all of it over HTTP; a response a TLS server stapled is checked by
+# `status_of` once read. A responder's side is here too: a request read, and
+# a response made and signed, or an error answered.
+#
+# **What is answered has been checked.** `status_of` answers a status only
+# for a certificate the issuer signed, and only from a response whose
+# signature holds for the issuer's key, or for a certificate the response
+# carries that the issuer signed for `x509.OCSP_SIGNING`, whose key usage,
+# where written, allows a signature, and that is valid at the moment asked;
+# whose responder ID names that signer; whose nonce is the one sent, where
+# it writes one; whose `producedAt` and `thisUpdate` are not after the
+# moment and whose `nextUpdate` is neither before it nor before
+# `thisUpdate`, a skew allowed either way, or with no `nextUpdate` whose
+# `thisUpdate` is younger than the age allowed; and that says something of
+# that very certificate, its CertID computed again from the issuer by the
+# hash the response chose. A critical extension not understood is refused,
+# and so is a nonce outside RFC 8954's 1 to 32 bytes.
+#
+# It does not check a delegated responder's own revocation (RFC 6960
+# § 4.2.2.2.1 leaves it to the client's policy, and most responders mark
+# theirs `id-pkix-ocsp-nocheck`), sign or check a request's signature, or
+# read a revocation list (`x509.decode_crl`); the stapled response of a
+# connection is `tls`'s to hand over. It fails with `invalid`, `not_found`,
+# `failed` (a responder's error status, or an HTTP status other than 200),
+# `unsupported`, and as `http` fails for `check`.
+
+use big
+use bytes
+use crypto
+use crypto/keypairs
+use http
+use os
+use strings
+use time
+use x509
+use x509/ocsp/internal/ids
+use x509/ocsp/internal/reading
+use x509/ocsp/internal/samples
+use x509/ocsp/internal/writing
+
+## Codes
+
+# A request or a response that is not what RFC 6960 says, or a signature, a
+# signer, a nonce or a moment that does not hold, the message saying which.
+constant INVALID: str
+    "invalid"
+
+# A response that says nothing of the certificate asked about; a
+# certificate that names no responder: `status_of`, `check`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A responder's error status, or an HTTP status other than 200: the message
+# carries it. `status_of`, `check`.
+constant FAILED: str
+    "failed"
+
+# A CertID's hash, a response's type or a signature's algorithm not read
+# here.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Identifying a certificate
+
+# How a request and a response name one certificate (RFC 6960 § 4.1.1).
+record CertId
+    # The hash of the two below: SHA-1 or SHA-2.
+    hash: crypto.Algorithm
+    # The hash of the issuer's name, as DER.
+    issuer_name_hash: [u8]
+    # The hash of the issuer's public key, its BIT STRING's bytes.
+    issuer_key_hash: [u8]
+    # The certificate's serial.
+    serial: big.Integer
+
+# The CertID of `certificate`, issued by `issuer`, by `hash`.
+#
+# - `certificate`: the certificate asked about.
+# - `issuer`: the certificate that issued it.
+# - `hash`: SHA-1, which RFC 5019 asks and every responder reads, or SHA-256,
+#   SHA-384 or SHA-512.
+#
+# Fails `invalid` where `certificate`'s issuer is not `issuer`'s subject;
+# `unsupported` for another hash. See also `create_request`.
+function id_of(certificate: x509.Certificate, issuer: x509.Certificate, hash: crypto.Algorithm) -> CertId?
+    if ids.hash_oid(hash) == ""
+        return fail(code: UNSUPPORTED, msg: "a CertID by a hash other than SHA-1 and SHA-2")
+
+    if certificate.issuer.der != issuer.subject.der
+        return fail(code: INVALID, msg: "the certificate's issuer is not the issuer's subject")
+    id = ids.id_of(
+        hash: hash,
+        issuer_name: issuer.subject.der,
+        issuer_key: issuer.public_key.key,
+        serial: certificate.serial
+    )
+    return ok(
+        CertId(hash: id.hash, issuer_name_hash: id.issuer_name_hash, issuer_key_hash: id.issuer_key_hash, serial: id.serial)
+    )
+
+# Whether `id` names a certificate `issuer` issued: its hashes are of the
+# issuer's name and key, by the hash it names.
+#
+# - `id`: a CertID, a request's or a response's.
+# - `issuer`: the issuer.
+#
+# See also `id_of`.
+function is_issued_by(id: CertId, issuer: x509.Certificate) -> bool
+    plain = ids.Id(
+        hash: id.hash,
+        issuer_name_hash: id.issuer_name_hash,
+        issuer_key_hash: id.issuer_key_hash,
+        serial: id.serial
+    )
+    return ids.is_issued_by(id: plain, issuer_name: issuer.subject.der, issuer_key: issuer.public_key.key)
+
+## Requests
+
+# A request read.
+record Request
+    # The certificates asked about, one or more.
+    ids: [CertId]
+    # The nonce; [] where none is written.
+    nonce: [u8]
+    # Whether it is signed; the signature is not checked here.
+    signed: bool
+    # Its own DER.
+    der: [u8]
+
+# A nonce of 32 bytes, the most RFC 8954 § 2.1 allows, drawn from the
+# system's source.
+#
+# Fails as `os.random_bytes` fails. See also `create_request`.
+function new_nonce() -> [u8]?
+    return os.random_bytes(ids.MAX_NONCE)
+
+# The DER of a request for `asked`, with `nonce` where it is not [].
+#
+# - `asked`: the certificates asked about, one or more, `id_of`'s.
+# - `nonce`: 1 to 32 bytes, `new_nonce`'s; [] for none.
+#
+# Fails `invalid` where `asked` is empty or `nonce` is longer than 32 bytes;
+# `unsupported` for a CertID's hash other than SHA-1 and SHA-2. See also
+# `decode_request`, `get_url`.
+function create_request(asked: [CertId], nonce: [u8]) -> [u8]?
+    if asked.len() == 0
+        return fail(code: INVALID, msg: "a request for no certificate")
+
+    if nonce.len() > ids.MAX_NONCE
+        return fail(
+            code: INVALID,
+            msg: f"a nonce of {nonce.len()} bytes, where RFC 8954 § 2.1 writes 1 to {ids.MAX_NONCE}"
+        )
+    plain: [ids.Id] @= []
+
+    for id in asked
+        if ids.hash_oid(id.hash) == ""
+            return fail(code: UNSUPPORTED, msg: "a CertID by a hash other than SHA-1 and SHA-2")
+        plain @ plain.push(
+            ids.Id(hash: id.hash, issuer_name_hash: id.issuer_name_hash, issuer_key_hash: id.issuer_key_hash, serial: id.serial)
+        )
+
+    return writing.request(asked: plain, nonce: nonce)
+
+# The request `der` holds.
+#
+# - `der`: the request's bytes, as a responder receives them.
+#
+# Fails `invalid` where `der` is no OCSPRequest of RFC 6960 § 4.1.1, a
+# critical extension is not understood or the nonce is outside 1 to 32
+# bytes; `unsupported` for a CertID's hash not read here. See also
+# `create_response`.
+function decode_request(der: [u8]) -> Request?
+    asked = reading.request_of(der)?
+    out: [CertId] @= []
+
+    for id in asked.ids
+        out @ out.push(
+            CertId(hash: id.hash, issuer_name_hash: id.issuer_name_hash, issuer_key_hash: id.issuer_key_hash, serial: id.serial)
+        )
+
+    return ok(Request(ids: out, nonce: asked.nonce, signed: asked.signed, der: der))
+
+# The URL of a GET of `request` from the responder at `base` (RFC 6960
+# appendix A.1): `base`, a `/` where it ends in none, and the request in
+# base 64 with `+`, `/` and `=` escaped.
+#
+# - `base`: the responder's URL, as `authorityInfoAccess` writes it.
+# - `request`: the request's DER, `create_request`'s.
+#
+# A request whose URL passes 255 bytes goes by POST, as RFC 5019 § 5 says.
+# See also `create_request`.
+function get_url(base: str, request: [u8]) -> str
+    encoded = strings.replace_pairs(bytes.format_base64(request), pairs: {"+": "%2B", "/": "%2F", "=": "%3D"})
+
+    if strings.has_suffix(s: base, suffix: "/")
+        return base + encoded
+    return base + "/" + encoded
+
+## Responses
+
+# How a responder answered (RFC 6960 § 4.2.1).
+variant ResponseStatus
+    # A response follows.
+    successful
+    # The request was not understood.
+    malformed_request
+    # The responder failed.
+    internal_error
+    # Ask again later.
+    try_later
+    # The responder asks for a signed request.
+    sig_required
+    # The responder may not answer this client or this certificate.
+    unauthorized
+
+# What a response says of a certificate.
+variant Status
+    # Not revoked: the responder knows it and it is not revoked.
+    good
+    # Revoked.
+    revoked
+        # When.
+        at: time.DateTime
+        # Why; it fails `not_found` where the response says nothing.
+        reason: x509.Reason?
+    # The responder does not know the certificate.
+    unknown
+
+# What a response says of one certificate.
+record Single
+    # The certificate it is about.
+    id: CertId
+    # Its status.
+    status: Status
+    # When the status was known to be right.
+    this_update: time.DateTime
+    # When newer word will be had; it fails `not_found` where the responder
+    # writes none, its word being new at every request.
+    next_update: time.DateTime?
+    # Its extensions, every one as written.
+    extensions: [x509.Extension]
+
+# How a response names its signer.
+variant ResponderId
+    # By the signer's subject.
+    by_name
+        # The subject.
+        name: x509.Name
+    # By the SHA-1 hash of the signer's public key, its BIT STRING's bytes.
+    by_key
+        # The hash, 20 bytes.
+        hash: [u8]
+
+# A basic response (RFC 6960 § 4.2.1), what a `successful` one holds.
+record Basic
+    # The DER of its ResponseData as received: the bytes its signer signed.
+    tbs: [u8]
+    # Its signer.
+    responder: ResponderId
+    # When it was signed.
+    produced_at: time.DateTime
+    # What it says of each certificate.
+    responses: [Single]
+    # The nonce it echoes; [] where it writes none.
+    nonce: [u8]
+    # Its extensions, the nonce's among them.
+    extensions: [x509.Extension]
+    # The signature's algorithm.
+    signature_algorithm: x509.Algorithm
+    # The signature's bytes.
+    signature: [u8]
+    # The certificates it carries: a delegated responder's, and the
+    # certificates that issued it.
+    certificates: [x509.Certificate]
+
+# A response read.
+record Response
+    # How the responder answered.
+    status: ResponseStatus
+    # What it holds; it fails `not_found` unless `status` is `successful`.
+    basic: Basic?
+    # Its own DER.
+    der: [u8]
+
+# The name RFC 6960 gives `status`.
+#
+# - `status`: how a responder answered.
+#
+# See also `status_of`.
+function format_response_status(status: ResponseStatus) -> str
+    return match status
+        .successful        => "successful"
+        .malformed_request => "malformedRequest"
+        .internal_error    => "internalError"
+        .try_later         => "tryLater"
+        .sig_required      => "sigRequired"
+        .unauthorized      => "unauthorized"
+
+# The response `der` holds, as a responder sends it or a TLS server staples
+# it.
+#
+# - `der`: the response's bytes, DER as RFC 6960 asks.
+#
+# Fails `invalid` where `der` is no OCSPResponse of RFC 6960 § 4.2.1, a
+# critical extension is not understood or the nonce is outside 1 to 32
+# bytes; `unsupported` for a response type other than the basic one or a
+# CertID's hash not read here. A response whose status is an error is
+# answered, its `basic` failing `not_found`. Nothing is checked against a
+# certificate here: `status_of` does it.
+function decode_response(der: [u8]) -> Response?
+    answered = reading.response_of(der)?
+
+    # Indexed by RFC 6960 § 4.2.1's codes; 4 is unused there and refused by
+    # `reading.response_of`, so its place is never read.
+    statuses: [ResponseStatus] = [
+        .successful
+        .malformed_request
+        .internal_error
+        .try_later
+        .try_later
+        .sig_required
+        .unauthorized
+    ]
+    status = statuses[answered.code]
+
+    match answered.data
+        .ok data =>
+            responder: ResponderId = match data.responder_name
+                .ok name => .by_name(name: name)
+                .err _   => .by_key(hash: data.responder_key)
+
+            singles: [Single] @= []
+
+            for entry in data.entries
+                said: Status @= .unknown
+
+                match entry.revoked_at
+                    .ok at => said @ .revoked(at: at, reason: entry.reason)
+                    .err _ =>
+                        if entry.state == 0
+                            said @ .good
+
+                id = CertId(
+                    hash: entry.id.hash,
+                    issuer_name_hash: entry.id.issuer_name_hash,
+                    issuer_key_hash: entry.id.issuer_key_hash,
+                    serial: entry.id.serial
+                )
+                singles @ singles.push(
+                    Single(id: id, status: said, this_update: entry.this_update, next_update: entry.next_update, extensions: entry.extensions)
+                )
+
+            basic = Basic(
+                tbs: data.tbs,
+                responder: responder,
+                produced_at: data.produced_at,
+                responses: singles,
+                nonce: data.nonce,
+                extensions: data.extensions,
+                signature_algorithm: data.signature_algorithm,
+                signature: data.signature,
+                certificates: data.certificates
+            )
+            return ok(Response(status: status, basic: ok(basic), der: der))
+        .err _ =>
+            return ok(
+                Response(status: status, basic: fail(code: NOT_FOUND, msg: f"the responder answered {format_response_status(status)}"), der: der)
+            )
+
+## Checking
+
+# What a response is checked against.
+record Options
+    # The moment it is checked at: the moment it is read, `time.now()`.
+    at: time.Instant
+    # The nonce the request sent; [] for none, as for a stapled response.
+    nonce: [u8]
+    # Whether a response that writes no nonce is refused where `nonce` is
+    # not []: a responder that answers with responses signed beforehand,
+    # as RFC 5019 lets it, writes none, and their freshness is checked
+    # instead.
+    nonce_required: bool
+    # How far the responder's clock may stand from the program's, 0 or
+    # more.
+    skew: time.Duration
+    # How old a response with no `nextUpdate` may be, its `thisUpdate`
+    # counted from, 0 or more: a responder that writes none answers afresh
+    # each time.
+    max_age: time.Duration
+
+# The options of the moment `at` and the nonce `nonce`: five minutes of skew
+# and an hour of age, a response without a nonce taken on its freshness.
+#
+# - `at`: the moment the response is checked at.
+# - `nonce`: the nonce sent; [] for none, as for a stapled response.
+#
+# See also `status_of`.
+function default_options(at: time.Instant, nonce: [u8]) -> Options
+    return Options(
+        at: at,
+        nonce: nonce,
+        nonce_required: false,
+        skew: time.minutes(5).must(),
+        max_age: time.hours(1).must()
+    )
+
+# The certificate that signed `basic`, for the certificates `issuer` issued:
+# the issuer itself, or a responder it delegated to, which `basic` carries,
+# which `issuer` signed for `x509.OCSP_SIGNING`, whose key usage, where it
+# is written, allows a signature, and which is valid at `at` (RFC 6960
+# § 4.2.2.2).
+#
+# - `basic`: the basic response.
+# - `issuer`: the issuer of the certificates asked about.
+# - `at`: the moment the delegation is checked at.
+#
+# Fails `invalid` where the responder ID names neither, or the signer named
+# is not delegated or its signature does not hold, saying which;
+# `unsupported` for a signature's algorithm `x509` does not check. See also
+# `status_of`.
+function signer_of(basic: Basic, issuer: x509.Certificate, at: time.Instant) -> x509.Certificate?
+    name: [u8] @= []
+    key_hash: [u8] @= []
+
+    match basic.responder
+        .by_name n => name @ n.name.der
+        .by_key k  => key_hash @ k.hash
+
+    if ids.names(name: name, key_hash: key_hash, subject: issuer.subject.der, key: issuer.public_key.key)
+        if !x509.verify_signature(key: issuer.public_key, algorithm: basic.signature_algorithm, message: basic.tbs, signature: basic.signature)?
+            return fail(
+                code: INVALID,
+                msg: "the response names the issuer as its signer, and its signature does not hold for the issuer's key"
+            )
+        return ok(issuer)
+
+    for certificate in basic.certificates
+        if ids.names(name: name, key_hash: key_hash, subject: certificate.subject.der, key: certificate.public_key.key)
+            if certificate.issuer.der != issuer.subject.der || !x509.is_signed_by(certificate: certificate, issuer: issuer)?
+                return fail(
+                    code: INVALID,
+                    msg: "the response's signer was not issued by the issuer, so it may not answer for it"
+                )
+            delegated: bool @= false
+
+            match certificate.extensions.extended_key_usage
+                .ok purposes =>
+                    for purpose in purposes
+                        if purpose.dotted == x509.OCSP_SIGNING
+                            delegated @ true
+                .err _ => delegated @ false
+
+            if !delegated
+                return fail(
+                    code: INVALID,
+                    msg: "the response's signer is not delegated: its extended key usage lacks OCSPSigning, which RFC 6960 § 4.2.2.2 asks"
+                )
+
+            # A key usage not written allows every use (RFC 5280 § 4.2.1.3).
+            match certificate.extensions.key_usage
+                .ok usage =>
+                    if !usage.digital_signature
+                        return fail(
+                            code: INVALID,
+                            msg: "the response's signer has a key usage without digitalSignature"
+                        )
+                .err _ => delegated @ true
+
+            if !x509.is_valid_at(certificate: certificate, at: at)
+                return fail(code: INVALID, msg: "the response's signer is not valid at the moment asked")
+
+            if !x509.verify_signature(key: certificate.public_key, algorithm: basic.signature_algorithm, message: basic.tbs, signature: basic.signature)?
+                return fail(code: INVALID, msg: "the response's signature does not hold for its signer's key")
+            return ok(certificate)
+
+    return fail(code: INVALID, msg: "the response's signer is neither the issuer nor a certificate it carries")
+
+# What `response` says of `certificate`, issued by `issuer`, once every
+# check of this module's comment holds. A response a TLS server stapled is
+# checked here with `options.nonce` [], its freshness standing for the nonce
+# no client could send.
+#
+# - `response`: the response read.
+# - `certificate`: the certificate asked about.
+# - `issuer`: the certificate that issued it.
+# - `options`: the moment, the nonce sent, the skew and the age allowed.
+#
+# Fails `failed` where the responder answered an error status; `invalid`
+# where `issuer` did not sign `certificate`, or the signature, the signer,
+# the nonce, a moment or the options do not hold, saying which; `not_found`
+# where the response says nothing of `certificate`; `unsupported` for a
+# signature's algorithm `x509` does not check. See also `check`,
+# `default_options`, `signer_of`.
+function status_of(response: Response, certificate: x509.Certificate, issuer: x509.Certificate, options: Options) -> Single?
+    if response.status != .successful
+        return fail(code: FAILED, msg: f"the responder answered {format_response_status(response.status)}")
+    basic = response.basic?
+
+    if certificate.issuer.der != issuer.subject.der || !x509.is_signed_by(certificate: certificate, issuer: issuer)?
+        return fail(code: INVALID, msg: "the certificate was not signed by the issuer")
+    _ = signer_of(basic: basic, issuer: issuer, at: options.at)?
+
+    if options.nonce.len() > 0
+        if basic.nonce.len() > 0 && basic.nonce != options.nonce
+            return fail(code: INVALID, msg: "the response's nonce is not the one sent")
+
+        if basic.nonce.len() == 0 && options.nonce_required
+            return fail(code: INVALID, msg: "the response writes no nonce, and one was required")
+    latest = ids.within(r: time.add(t: options.at, d: options.skew), what: "the moment with its skew")?
+    earliest = ids.within(r: time.add(t: options.at, d: ids.within(r: time.negate(options.skew), what: "the skew")?), what: "the moment with its skew")?
+
+    if time.is_before(a: latest, b: options.at)
+        return fail(code: INVALID, msg: "a negative skew")
+
+    if time.is_after(a: ids.instant(at: basic.produced_at, what: "producedAt")?, b: latest)
+        return fail(code: INVALID, msg: "the response was produced after the moment asked, past the skew")
+
+    for single in basic.responses
+        if big.compare(a: single.id.serial, b: certificate.serial) == 0 && is_issued_by(id: single.id, issuer: issuer)
+            this_update = ids.instant(at: single.this_update, what: "thisUpdate")?
+
+            if time.is_after(a: this_update, b: latest)
+                return fail(code: INVALID, msg: "the response's thisUpdate is after the moment asked, past the skew")
+
+            match single.next_update
+                .ok next =>
+                    next_instant = ids.instant(at: next, what: "nextUpdate")?
+
+                    if time.is_before(a: next_instant, b: this_update)
+                        return fail(code: INVALID, msg: "the response's nextUpdate is before its thisUpdate")
+
+                    if time.is_before(a: next_instant, b: earliest)
+                        return fail(
+                            code: INVALID,
+                            msg: "the response is stale: its nextUpdate is before the moment asked, past the skew"
+                        )
+                .err _ =>
+                    oldest = ids.within(r: time.add(t: this_update, d: options.max_age), what: "thisUpdate with the age allowed")?
+
+                    if time.is_before(a: oldest, b: this_update)
+                        return fail(code: INVALID, msg: "a negative age allowed")
+
+                    if time.is_before(a: oldest, b: earliest)
+                        return fail(
+                            code: INVALID,
+                            msg: "the response writes no nextUpdate and is older than the age allowed"
+                        )
+
+            return ok(single)
+
+    return fail(code: NOT_FOUND, msg: "the response says nothing of the certificate")
+
+# The status of `certificate`, issued by `issuer`, asked of the responders
+# its `authorityInfoAccess` names, in their order until one answers: a
+# request by SHA-1 with a fresh nonce sent by POST, the response checked at
+# the moment it is read by `status_of` with `default_options`.
+#
+# - `certificate`: the certificate asked about.
+# - `issuer`: the certificate that issued it.
+# - `client`: how the request is sent: its deadline, its proxy, its roots.
+#
+# Fails `not_found` where `certificate` names no responder; else as the
+# last responder asked failed: `failed` for an HTTP status other than 200
+# or a responder's error status, and as `status_of` and `http.post` fail.
+# See also `status_of`.
+function check(certificate: x509.Certificate, issuer: x509.Certificate, client: http.Client) -> Single?
+    targets: [str] @= []
+
+    match certificate.extensions.authority_info_access
+        .ok access =>
+            for one in access
+                if one.method.dotted == x509.OCSP
+                    match one.location
+                        .uri u => targets @ targets.push(u.uri)
+                        .other_name _ | .email _ | .dns _ | .x400_address _ | .directory _ | .edi_party _ | .ip _ | .ip_network _ | .registered_id _ => targets @ targets
+        .err _ => targets @ targets
+
+    answer: Single? @= fail(code: NOT_FOUND, msg: "the certificate names no OCSP responder")
+    nonce = new_nonce()?
+    request = create_request(asked: [id_of(certificate: certificate, issuer: issuer, hash: .sha1)?], nonce: nonce)?
+
+    for target in targets
+        match http.post(client, target: target, content_type: "application/ocsp-request", body: request)
+            .ok reply =>
+                if reply.status != 200
+                    answer @ fail(code: FAILED, msg: f"{target} answered HTTP {reply.status} {reply.reason}")
+                else
+                    match decode_response(reply.body)
+                        .ok response =>
+                            answer @ status_of(
+                                response: response,
+                                certificate: certificate,
+                                issuer: issuer,
+                                options: default_options(at: time.now()?, nonce: nonce)
+                            )
+
+                            if !answer.is_err()
+                                return answer
+                        .err e => answer @ fail(code: e.code, msg: f"{target}: {e.msg}")
+            .err e => answer @ fail(code: e.code, msg: f"{target}: {e.msg}")
+
+    return answer
+
+## Answering
+
+# What a responder says of one certificate.
+record Answer
+    # The certificate.
+    id: CertId
+    # Its status.
+    status: Status
+    # When the status was known to be right.
+    this_update: time.DateTime
+    # When newer word will be had; `fail` for none, the responder answering
+    # afresh each time.
+    next_update: time.DateTime?
+
+# What a response says, and how it names its signer.
+record ResponseTemplate
+    # What it says of each certificate, one or more.
+    answers: [Answer]
+    # When it is signed.
+    produced_at: time.DateTime
+    # The request's nonce, echoed; [] for none.
+    nonce: [u8]
+    # Whether the signer is named by its key's hash, as RFC 5019 asks,
+    # rather than by its subject.
+    by_key: bool
+    # The certificates it carries: a delegated signer's own, and the ones
+    # that issued it; [] where the issuer signs.
+    certificates: [x509.Certificate]
+
+# The DER of a successful response of `template`, signed by `signer`'s
+# `key` by `scheme`: the issuer's own key, or a delegated responder's. It is
+# read back and its signature checked before it is answered.
+#
+# - `template`: what it says.
+# - `signer`: the certificate of the key that signs.
+# - `key`: that certificate's private key, which stays open.
+# - `scheme`: how it signs.
+#
+# Fails `invalid` where `template` answers nothing, its nonce is longer than
+# 32 bytes or `key` is not `signer`'s; `unsupported` for a CertID's hash
+# other than SHA-1 and SHA-2; as `keypairs.sign` fails. See also
+# `create_error_response`, `decode_request`.
+function create_response(template: ResponseTemplate, signer: x509.Certificate, key: keypairs.PrivateKey, scheme: keypairs.Scheme) -> [u8]?
+    if template.answers.len() == 0
+        return fail(code: INVALID, msg: "a response that answers nothing")
+
+    if template.nonce.len() > ids.MAX_NONCE
+        return fail(
+            code: INVALID,
+            msg: f"a nonce of {template.nonce.len()} bytes, where RFC 8954 § 2.1 writes 1 to {ids.MAX_NONCE}"
+        )
+    entries: [reading.Entry] @= []
+
+    for answer in template.answers
+        if ids.hash_oid(answer.id.hash) == ""
+            return fail(code: UNSUPPORTED, msg: "a CertID by a hash other than SHA-1 and SHA-2")
+        id = ids.Id(
+            hash: answer.id.hash,
+            issuer_name_hash: answer.id.issuer_name_hash,
+            issuer_key_hash: answer.id.issuer_key_hash,
+            serial: answer.id.serial
+        )
+        state: i64 @= 2
+        revoked_at: time.DateTime? @= fail(code: NOT_FOUND, msg: "the certificate is not revoked")
+        reason: x509.Reason? @= fail(code: NOT_FOUND, msg: "no reason")
+
+        match answer.status
+            .good => state @ 0
+            .revoked r =>
+                state @ 1
+                revoked_at @ ok(r.at)
+                reason @ r.reason
+            .unknown => state @ 2
+
+        entries @ entries.push(
+            reading.Entry(id: id, state: state, revoked_at: revoked_at, reason: reason, this_update: answer.this_update, next_update: answer.next_update, extensions: [])
+        )
+
+    der = writing.response(entries: entries, produced_at: template.produced_at, nonce: template.nonce, by_key: template.by_key, signer: signer, key: key, scheme: scheme, certificates: template.certificates)?
+    back = decode_response(der)?.basic?
+
+    if !x509.verify_signature(key: signer.public_key, algorithm: back.signature_algorithm, message: back.tbs, signature: back.signature)?
+        return fail(
+            code: INVALID,
+            msg: "the key is not the signer's: the response written does not hold for its certificate"
+        )
+    return ok(der)
+
+# The DER of a response answering the error `status`, with no responseBytes.
+#
+# - `status`: any status but `successful`.
+#
+# Fails `invalid` for `successful`, which `create_response` answers. See
+# also `create_response`.
+function create_error_response(status: ResponseStatus) -> [u8]?
+    code = match status
+        .successful        => 0
+        .malformed_request => 1
+        .internal_error    => 2
+        .try_later         => 3
+        .sig_required      => 5
+        .unauthorized      => 6
+
+    if code == 0
+        return fail(code: INVALID, msg: "a successful response is made by `create_response`")
+    return writing.error_response(code)
+
+test "id_of: the CertID OpenSSL and Python's cryptography 50.0.2 compute, by SHA-1; another issuer and MD5 refused"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    id = id_of(certificate: leaf, issuer: ca, hash: .sha1).must()
+    assert bytes.format_hex(id.issuer_name_hash) == "26b86c15bbf940d249f64746c3b9857b78031dac"
+    assert bytes.format_hex(id.issuer_key_hash) == "1094c244bd309a2d2b3c00dab41bbd3634eff817"
+    assert big.compare(a: id.serial, b: big.from_int(2)) == 0
+    assert ids.code_of(id_of(certificate: leaf, issuer: leaf, hash: .sha1)) == INVALID
+    assert ids.code_of(id_of(certificate: leaf, issuer: ca, hash: .md5)) == UNSUPPORTED
+    assert is_issued_by(id: id, issuer: ca)
+    assert !is_issued_by(id: id, issuer: leaf)
+
+test "create_request: OpenSSL 4.1.0's requests byte for byte, by SHA-1 and SHA-256, one certificate and two, with the nonce and without"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must()
+    revoked = id_of(certificate: x509.decode_certificate(samples.revoked()).must(), issuer: ca, hash: .sha1).must()
+    by_sha256 = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha256).must()
+    assert create_request(asked: [leaf], nonce: []).must() == samples.request_plain()
+    assert create_request(asked: [by_sha256], nonce: []).must() == samples.request_sha256()
+    assert create_request(asked: [leaf, revoked], nonce: []).must() == samples.request_two()
+    assert create_request(asked: [leaf], nonce: bytes.parse_hex("e4bd17a208f0118ab3cfc5177e7f8551").must()).must() == samples.request_nonce()
+
+test "create_request: no certificate, a nonce of 33 bytes and a CertID by MD5 refused; 32 bytes written"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must()
+    long: [u8] @= []
+
+    while long.len() < 33
+        long @ long.push(0x5a)
+
+    assert ids.code_of(create_request(asked: [], nonce: [])) == INVALID
+    assert ids.code_of(create_request(asked: [leaf], nonce: long)) == INVALID
+    assert decode_request(create_request(asked: [leaf], nonce: long.slice(from: 0, to: 32)).must()).must().nonce.len() == 32
+    by_md5 = CertId(
+        hash: .md5,
+        issuer_name_hash: leaf.issuer_name_hash,
+        issuer_key_hash: leaf.issuer_key_hash,
+        serial: leaf.serial
+    )
+    assert ids.code_of(create_request(asked: [by_md5], nonce: [])) == UNSUPPORTED
+
+test "decode_request: OpenSSL's requests, their CertIDs, hashes and nonce; a truncated one and an empty list refused"
+    ca = x509.decode_certificate(samples.ca()).must()
+    one = decode_request(samples.request_nonce()).must()
+    assert one.ids.len() == 1 && !one.signed
+    assert bytes.format_hex(one.nonce) == "e4bd17a208f0118ab3cfc5177e7f8551"
+    assert is_issued_by(id: one.ids[0], issuer: ca) && big.compare(a: one.ids[0].serial, b: big.from_int(2)) == 0
+    two = decode_request(samples.request_two()).must()
+    assert two.ids.len() == 2 && big.compare(a: two.ids[1].serial, b: big.from_int(3)) == 0 && two.nonce == []
+    assert decode_request(samples.request_sha256()).must().ids[0].hash == .sha256
+    whole = samples.request_plain()
+    assert ids.code_of(decode_request(whole.slice(from: 0, to: whole.len() - 1))) == INVALID
+    assert ids.code_of(decode_request([0x30, 0x04, 0x30, 0x02, 0x30, 0x00])) == INVALID
+
+test "decode_response: an error status read with no basic response, status 4 and a successful one without its bytes refused"
+    errors: [ResponseStatus] = [.malformed_request, .internal_error, .try_later, .sig_required, .unauthorized]
+
+    for status in errors
+        response = decode_response(create_error_response(status).must()).must()
+        assert response.status == status && ids.code_of(response.basic) == NOT_FOUND
+
+    assert create_error_response(.try_later).must() == [0x30, 0x03, 0x0a, 0x01, 0x03]
+    assert ids.code_of(create_error_response(.successful)) == INVALID
+    assert ids.code_of(decode_response([0x30, 0x03, 0x0a, 0x01, 0x04])) == INVALID
+    assert ids.code_of(decode_response([0x30, 0x03, 0x0a, 0x01, 0x00])) == INVALID
+    whole = samples.response_two()
+    assert ids.code_of(decode_response(whole.slice(from: 0, to: whole.len() - 1))) == INVALID
+
+test "decode_response: OpenSSL's answers as Python's cryptography 50.0.2 reads them: responder, moments, statuses, reason, carried certificates"
+    two = decode_response(samples.response_two()).must().basic.must()
+    assert format_response_status(decode_response(samples.response_two()).must().status) == "successful"
+    assert two.responses.len() == 2 && two.certificates.len() == 1 && two.nonce == []
+    assert two.produced_at == samples.date(month: 11, day: 24, hour: 1, minute: 21, second: 45)
+    assert two.responses[0].status == .good
+    assert two.responses[0].next_update.must() == samples.date(month: 12, day: 1, hour: 1, minute: 21, second: 45)
+    assert two.responses[1].status == .revoked(at: samples.date(month: 11, day: 1, hour: 12, minute: 0, second: 0), reason: ok(.key_compromise))
+    by_key = decode_response(samples.response_delegated_key()).must().basic.must()
+    assert by_key.responder == .by_key(hash: bytes.parse_hex("fc121c462ef4cfe92133cffabfe516a2537cfa3f").must())
+    assert ids.code_of(decode_response(samples.response_no_next()).must().basic.must().responses[0].next_update) == NOT_FOUND
+    assert decode_response(samples.response_sha256()).must().basic.must().responses[0].id.hash == .sha256
+
+test "status_of: the CA's own answer, its delegated responder's by name and by key, SHA-256's, revoked with its reason"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    revoked = x509.decode_certificate(samples.revoked()).must()
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: [])
+
+    for der in [samples.response_two(), samples.response_delegated(), samples.response_delegated_key(), samples.response_sha256(), samples.response_no_next()]
+        assert status_of(response: decode_response(der).must(), certificate: leaf, issuer: ca, options: options).must().status == .good
+
+    said = status_of(
+        response: decode_response(samples.response_two()).must(),
+        certificate: revoked,
+        issuer: ca,
+        options: options
+    ).must()
+    assert said.status == .revoked(at: samples.date(month: 11, day: 1, hour: 12, minute: 0, second: 0), reason: ok(.key_compromise))
+    delegated = decode_response(samples.response_delegated()).must().basic.must()
+    assert signer_of(basic: delegated, issuer: ca, at: options.at).must().der == samples.responder()
+    assert signer_of(basic: decode_response(samples.response_two()).must().basic.must(), issuer: ca, at: options.at).must().der == samples.ca()
+
+test "status_of: a signer without OCSPSigning, another issuer, a certificate not asked about, a changed signature and an error status refused"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    revoked = x509.decode_certificate(samples.revoked()).must()
+    responder = x509.decode_certificate(samples.responder()).must()
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: [])
+    not_delegated = status_of(
+        response: decode_response(samples.response_not_responder()).must(),
+        certificate: leaf,
+        issuer: ca,
+        options: options
+    )
+    assert ids.code_of(not_delegated) == INVALID && strings.contains(s: ids.message_of(not_delegated), substr: "OCSPSigning")
+    assert ids.code_of(status_of(response: decode_response(samples.response_two()).must(), certificate: leaf, issuer: responder, options: options)) == INVALID
+    assert ids.code_of(status_of(response: decode_response(samples.response_nonce()).must(), certificate: revoked, issuer: ca, options: options)) == NOT_FOUND
+    response = decode_response(samples.response_two()).must()
+    basic = response.basic.must()
+    last = basic.signature.len() - 1
+    altered: [u8] @= basic.signature.slice(from: 0, to: last)
+    flipped: u8 @= 0x00
+
+    if basic.signature[last] == 0x00
+        flipped @ 0x01
+    altered @ altered.push(flipped)
+    changed = Basic(
+        tbs: basic.tbs,
+        responder: basic.responder,
+        produced_at: basic.produced_at,
+        responses: basic.responses,
+        nonce: basic.nonce,
+        extensions: basic.extensions,
+        signature_algorithm: basic.signature_algorithm,
+        signature: altered,
+        certificates: basic.certificates
+    )
+    assert ids.code_of(status_of(response: Response(status: .successful, basic: ok(changed), der: response.der), certificate: leaf, issuer: ca, options: options)) == INVALID
+    error = decode_response(create_error_response(.unauthorized).must()).must()
+    assert ids.code_of(status_of(response: error, certificate: leaf, issuer: ca, options: options)) == FAILED
+
+test "status_of: a delegated responder whose key usage lacks digitalSignature refused, which OpenSSL 4.1.0 verifies"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 3, minute: 0, second: 0), nonce: [])
+    refused = status_of(
+        response: decode_response(samples.response_bad_usage()).must(),
+        certificate: leaf,
+        issuer: ca,
+        options: options
+    )
+    assert ids.code_of(refused) == INVALID && strings.contains(s: ids.message_of(refused), substr: "digitalSignature")
+
+test "status_of: the nonce sent, another one refused, none taken on freshness unless required"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    at = samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0)
+    sent = bytes.parse_hex("e4bd17a208f0118ab3cfc5177e7f8551").must()
+    echoed = decode_response(samples.response_nonce()).must()
+    assert status_of(response: echoed, certificate: leaf, issuer: ca, options: default_options(at: at, nonce: sent)).must().status == .good
+    assert ids.code_of(status_of(response: echoed, certificate: leaf, issuer: ca, options: default_options(at: at, nonce: [0x01, 0x02]))) == INVALID
+    none = decode_response(samples.response_two()).must()
+    assert status_of(response: none, certificate: leaf, issuer: ca, options: default_options(at: at, nonce: sent)).must().status == .good
+    required = Options(
+        at: at,
+        nonce: sent,
+        nonce_required: true,
+        skew: time.minutes(5).must(),
+        max_age: time.hours(1).must()
+    )
+    assert ids.code_of(status_of(response: none, certificate: leaf, issuer: ca, options: required)) == INVALID
+
+test "status_of: freshness at its edges, the skew of five minutes either way, an hour's age without nextUpdate, a responder not yet valid"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    two = decode_response(samples.response_two()).must()
+    no_next = decode_response(samples.response_no_next()).must()
+    delegated = decode_response(samples.response_delegated()).must()
+
+    # thisUpdate and producedAt are 11-24 01:21:45, nextUpdate 12-01 01:21:45.
+    assert status_of(response: two, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 11, day: 24, hour: 1, minute: 16, second: 45), nonce: [])).is_err() == false
+    assert ids.code_of(status_of(response: two, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 11, day: 24, hour: 1, minute: 16, second: 44), nonce: []))) == INVALID
+    assert status_of(response: two, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 12, day: 1, hour: 1, minute: 26, second: 45), nonce: [])).is_err() == false
+    assert ids.code_of(status_of(response: two, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 12, day: 1, hour: 1, minute: 26, second: 46), nonce: []))) == INVALID
+    assert status_of(response: no_next, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 26, second: 45), nonce: [])).is_err() == false
+    assert ids.code_of(status_of(response: no_next, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 26, second: 46), nonce: []))) == INVALID
+
+    # The delegated responder's certificate begins at 01:21:45 itself.
+    assert ids.code_of(status_of(response: delegated, certificate: leaf, issuer: ca, options: default_options(at: samples.at(month: 11, day: 24, hour: 1, minute: 20, second: 0), nonce: []))) == INVALID
+    negative = Options(
+        at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0),
+        nonce: [],
+        nonce_required: false,
+        skew: time.negate(time.minutes(5).must()).must(),
+        max_age: time.hours(1).must()
+    )
+    assert ids.code_of(status_of(response: two, certificate: leaf, issuer: ca, options: negative)) == INVALID
+
+test "create_response: the ResponseData OpenSSL 4.1.0 signed for the same answers, byte for byte, by name and by key, with the nonce; read back and checked"
+    ca = x509.decode_certificate(samples.ca()).must()
+    leaf = x509.decode_certificate(samples.leaf()).must()
+    revoked = x509.decode_certificate(samples.revoked()).must()
+    responder = x509.decode_certificate(samples.responder()).must()
+    this_update = samples.date(month: 11, day: 24, hour: 1, minute: 21, second: 45)
+    next_update = samples.date(month: 12, day: 1, hour: 1, minute: 21, second: 45)
+    good = Answer(
+        id: id_of(certificate: leaf, issuer: ca, hash: .sha1).must(),
+        status: .good,
+        this_update: this_update,
+        next_update: ok(next_update)
+    )
+    gone = Answer(
+        id: id_of(certificate: revoked, issuer: ca, hash: .sha1).must(),
+        status: .revoked(at: samples.date(month: 11, day: 1, hour: 12, minute: 0, second: 0), reason: ok(.key_compromise)),
+        this_update: this_update,
+        next_update: ok(next_update)
+    )
+    ca_key @= keypairs.decode_private_der(samples.ca_key()).must()
+    responder_key @= keypairs.decode_private_der(samples.responder_key()).must()
+    by_ca = create_response(
+        ResponseTemplate(answers: [good, gone], produced_at: this_update, nonce: [], by_key: false, certificates: [ca]),
+        signer: ca,
+        key: ca_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    nonce = bytes.parse_hex("e4bd17a208f0118ab3cfc5177e7f8551").must()
+    echoing = create_response(
+        ResponseTemplate(answers: [good], produced_at: this_update, nonce: nonce, by_key: false, certificates: [ca]),
+        signer: ca,
+        key: ca_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    by_key = create_response(
+        ResponseTemplate(answers: [good], produced_at: this_update, nonce: [], by_key: true, certificates: [responder]),
+        signer: responder,
+        key: responder_key,
+        scheme: .ecdsa_sha256
+    ).must()
+    wrong_key = create_response(
+        ResponseTemplate(answers: [good], produced_at: this_update, nonce: [], by_key: false, certificates: []),
+        signer: ca,
+        key: responder_key,
+        scheme: .ecdsa_sha256
+    )
+    keypairs.close_private(@ca_key).must()
+    keypairs.close_private(@responder_key).must()
+    assert decode_response(by_ca).must().basic.must().tbs == decode_response(samples.response_two()).must().basic.must().tbs
+    assert decode_response(echoing).must().basic.must().tbs == decode_response(samples.response_nonce()).must().basic.must().tbs
+    assert decode_response(by_key).must().basic.must().tbs == decode_response(samples.response_delegated_key()).must().basic.must().tbs
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: nonce)
+    assert status_of(response: decode_response(by_ca).must(), certificate: revoked, issuer: ca, options: options).must().status == gone.status
+    assert status_of(response: decode_response(echoing).must(), certificate: leaf, issuer: ca, options: options).must().status == .good
+    assert status_of(response: decode_response(by_key).must(), certificate: leaf, issuer: ca, options: options).must().status == .good
+    assert ids.code_of(wrong_key) == INVALID
+
+test "create_response: no answer, a nonce of 33 bytes and a CertID by MD5 refused before anything is signed"
+    ca = x509.decode_certificate(samples.ca()).must()
+    id = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must()
+    moment = samples.date(month: 11, day: 24, hour: 1, minute: 21, second: 45)
+    long: [u8] @= []
+
+    while long.len() < 33
+        long @ long.push(0x5a)
+
+    key @= keypairs.decode_private_der(samples.ca_key()).must()
+    good = Answer(id: id, status: .good, this_update: moment, next_update: fail(code: NOT_FOUND, msg: "none"))
+    by_md5 = Answer(
+        id: CertId(hash: .md5, issuer_name_hash: id.issuer_name_hash, issuer_key_hash: id.issuer_key_hash, serial: id.serial),
+        status: .good,
+        this_update: moment,
+        next_update: fail(code: NOT_FOUND, msg: "none")
+    )
+    nothing = create_response(
+        ResponseTemplate(answers: [], produced_at: moment, nonce: [], by_key: false, certificates: []),
+        signer: ca,
+        key: key,
+        scheme: .ecdsa_sha256
+    )
+    too_long = create_response(
+        ResponseTemplate(answers: [good], produced_at: moment, nonce: long, by_key: false, certificates: []),
+        signer: ca,
+        key: key,
+        scheme: .ecdsa_sha256
+    )
+    md5 = create_response(
+        ResponseTemplate(answers: [by_md5], produced_at: moment, nonce: [], by_key: false, certificates: []),
+        signer: ca,
+        key: key,
+        scheme: .ecdsa_sha256
+    )
+    unknown = create_response(
+        ResponseTemplate(answers: [Answer(id: id, status: .unknown, this_update: moment, next_update: fail(code: NOT_FOUND, msg: "none"))], produced_at: moment, nonce: [], by_key: false, certificates: []),
+        signer: ca,
+        key: key,
+        scheme: .ecdsa_sha256
+    )
+    keypairs.close_private(@key).must()
+    assert ids.code_of(nothing) == INVALID && ids.code_of(too_long) == INVALID && ids.code_of(md5) == UNSUPPORTED
+    assert decode_response(unknown.must()).must().basic.must().responses[0].status == .unknown
+
+test "check: a certificate that names no OCSP responder answers not_found without asking"
+    ca = x509.decode_certificate(samples.ca()).must()
+    assert ids.code_of(check(certificate: ca, issuer: ca, client: http.default_client())) == NOT_FOUND
+
+## Examples
+
+# The CertID of a certificate, by the hash every responder reads.
+test "id_of: a leaf's CertID by SHA-1"
+    ca = x509.decode_certificate(samples.ca()).must()
+    id = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must()
+    assert id.issuer_key_hash.len() == 20
+
+# Whether a CertID names a certificate of an issuer.
+test "is_issued_by: a request's CertID and its issuer"
+    ca = x509.decode_certificate(samples.ca()).must()
+    assert is_issued_by(id: decode_request(samples.request_plain()).must().ids[0], issuer: ca)
+
+# A fresh nonce for a request.
+test "new_nonce: 32 bytes"
+    assert new_nonce().must().len() == 32
+
+# A request for one certificate, with a nonce.
+test "create_request: a leaf, with a fresh nonce"
+    ca = x509.decode_certificate(samples.ca()).must()
+    id = id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must()
+    nonce = new_nonce().must()
+    assert decode_request(create_request(asked: [id], nonce: nonce).must()).must().nonce == nonce
+
+# A request read, as a responder reads it.
+test "decode_request: OpenSSL's request with a nonce"
+    assert decode_request(samples.request_nonce()).must().ids.len() == 1
+
+# The URL a request is sent to by GET, as Python's `urllib.parse.quote`
+# escapes the base 64.
+test "get_url: OpenSSL's request without a nonce"
+    expected = "http://127.0.0.1:18888/MEIwQDA%2BMDwwOjAJBgUrDgMCGgUABBQmuGwVu%2FlA0kn2R0bDuYV7eAMdrAQUEJTCRL0wmi0rPADatBu9NjTv%2BBcCAQI%3D"
+    assert get_url(base: "http://127.0.0.1:18888/", request: samples.request_plain()) == expected
+    assert get_url(base: "http://127.0.0.1:18888", request: samples.request_plain()) == expected
+
+# The name RFC 6960 gives a status.
+test "format_response_status: tryLater"
+    assert format_response_status(.try_later) == "tryLater"
+
+# A response read: how the responder answered, and what it says.
+test "decode_response: the CA's answer"
+    response = decode_response(samples.response_two()).must()
+    assert response.status == .successful && response.basic.must().responses.len() == 2
+
+# The options of a check at a moment, for the nonce sent.
+test "default_options: five minutes of skew"
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: [])
+    assert options.skew == time.minutes(5).must() && !options.nonce_required
+
+# The certificate that signed a response: here a delegated responder.
+test "signer_of: the delegated responder"
+    ca = x509.decode_certificate(samples.ca()).must()
+    basic = decode_response(samples.response_delegated()).must().basic.must()
+    assert signer_of(basic: basic, issuer: ca, at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0)).must().der == samples.responder()
+
+# What a response says of a certificate, every check made, as for a stapled
+# response, which carries no nonce.
+test "status_of: a revoked certificate"
+    ca = x509.decode_certificate(samples.ca()).must()
+    revoked = x509.decode_certificate(samples.revoked()).must()
+    options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: [])
+    single = status_of(
+        response: decode_response(samples.response_two()).must(),
+        certificate: revoked,
+        issuer: ca,
+        options: options
+    ).must()
+    assert single.status != .good
+
+# A certificate's status asked of the responder it names; a certificate that
+# names none answers `not_found`.
+test "check: a certificate that names no responder"
+    ca = x509.decode_certificate(samples.ca()).must()
+    assert check(certificate: ca, issuer: ca, client: http.default_client()).is_err()
+
+# A response made and signed by the issuer.
+test "create_response: the CA answers good"
+    ca = x509.decode_certificate(samples.ca()).must()
+    moment = samples.date(month: 11, day: 24, hour: 1, minute: 21, second: 45)
+    answer = Answer(
+        id: id_of(certificate: x509.decode_certificate(samples.leaf()).must(), issuer: ca, hash: .sha1).must(),
+        status: .good,
+        this_update: moment,
+        next_update: fail(code: NOT_FOUND, msg: "none")
+    )
+    key @= keypairs.decode_private_der(samples.ca_key()).must()
+    der = create_response(
+        ResponseTemplate(answers: [answer], produced_at: moment, nonce: [], by_key: false, certificates: []),
+        signer: ca,
+        key: key,
+        scheme: .ecdsa_sha256
+    )
+    keypairs.close_private(@key).must()
+    assert decode_response(der.must()).must().status == .successful
+
+# A response answering an error.
+test "create_error_response: tryLater"
+    assert decode_response(create_error_response(.try_later).must()).must().status == .try_later

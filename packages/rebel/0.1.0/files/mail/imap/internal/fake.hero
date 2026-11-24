@@ -41,6 +41,42 @@ function play(script: str, capabilities: [str], rev2: bool) -> Played
     )
     return Played(conn: c, server: server)
 
+# A server on the loopback address for one session, played on a thread of
+# its own, for the examples of `connect`: the port it listens on, and the
+# thread, which answers what the client wrote.
+record Started
+    # The port.
+    port: i64
+    # The thread, which answers what the client wrote once it closed.
+    thread: (thread str)
+
+# What the thread of `start` is handed.
+record Serving
+    # Where it tells its port.
+    ports: (mailbox i64)
+    # The server's whole answer, the greeting first.
+    script: str
+
+# Starts a server that accepts one connection on the loopback address and
+# writes `script` into it at once, the greeting first.
+function start(script: str) -> Started
+    ports: (mailbox i64) = mailbox()
+    t = spawn(serve_once, Serving(ports: ports, script: script)).must()
+    return Started(port: ports.receive(within_ms: 5_000).must(), thread: t)
+
+# The thread of `start`: one connection accepted, `s.script` written, and
+# what the client wrote read until it closes.
+function serve_once(s: Serving) -> str
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = s.ports.send(l.address.port).is_err()
+    conn = net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    io.write_text(conn.stream, text: s.script).must()
+    r @= io.reader(conn.stream)
+    written = io.read_rest_text(@r).must()
+    io.close(@r.stream).must()
+    return written
+
 # What the client wrote, read once its session `conn` is closed, and the
 # server's end `server` closed.
 function heard(@conn: flow.Conn, @server: io.Stream) -> str

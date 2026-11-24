@@ -1106,6 +1106,23 @@ test "zipf: the rank of a word"
     rank = draw_discrete(@g, zipf(exponent: 1.0, offset: 1.0, largest: 49999).must()) + 1
     assert rank >= 1 && rank <= 50000
 
+# A thousand numbers drawn from one law, their mean near the law's.
+test "draw: a thousand times from a normal law"
+    g @= Generator(high: 1, low: 2)
+    law = normal(mean: 10.0, deviation: 2.0).must()
+    total @= 0.0
+
+    for _ in range(from: 0, to: 1000)
+        total @ total + draw(@g, law).must()
+
+    assert total / 1000.0 > 9.5 && total / 1000.0 < 10.5
+
+# The faults found in a batch of 20 parts, each faulty one time in ten.
+test "draw_discrete: faults in a batch"
+    g @= Generator(high: 1, low: 2)
+    faults = draw_discrete(@g, binomial(trials: 20, probability: 0.1).must())
+    assert faults >= 0 && faults <= 20
+
 # A delay spread by chance, from a generator nobody can foresee.
 test "draw_chacha8: a jitter"
     g @= from_system_chacha8().must()

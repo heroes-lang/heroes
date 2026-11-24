@@ -1,0 +1,287 @@
+# The ledger of `chart`: plots and charts made as SVG text and as images,
+# one block per capability, and what Heroes answers to each.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no chart in their standard
+# libraries. Their charting libraries are not on this Mac (no gonum/plot in
+# the Go module cache, no plotters in Cargo's registry), and fetching one is a
+# download this round has no leave for, so the `go` and `rust` columns are
+# `-` and say nothing of those libraries. The yardstick is Python's
+# matplotlib 3.10.9, installed on this Mac outside the tree and read there on
+# 2026-11-24: the 164 functions `matplotlib.pyplot` defines itself, listed
+# by `dir()` and `inspect`, each in a block or in the dropped section; its
+# classes and the modules it re-exports are its object layer, dropped below.
+#
+# The oracles the tests were held to, run the same day: d3-array 3.2.4,
+# d3-scale 4.0.2 and d3-time 3.1.0 under Node 26 (their `ticks`, linear
+# `nice` and `tickFormat`, `log.ticks` and `log.tickFormat`, `scaleUtc`'s
+# ticks, format and `nice`, and `bin`) over 71 cases, every value, label and
+# range equal but the one widening `bin` names; NumPy 2.5.4's `histogram`
+# over 154 bins, all equal; and each chart's SVG rendered by CairoSVG 2.9.1
+# and resvg 0.5.0 against the image the package drew of the same layout,
+# with text as outlines within a mean of 0.3 levels and no pixel off by more
+# than a quarter.
+#
+# The test font, `chart/internal/samples.hero`, is Noto Sans Regular 2.015,
+# Copyright 2022 The Noto Project Authors, under the SIL Open Font License
+# 1.1, whose text the font's own `name` table holds.
+
+## Series over two axes
+
+capability chart/line  a line through a series' points in their order, broken where a value is not a number
+  heroes  chart.Mark.line, chart.lay_out
+  go      -
+  rust    -
+  python  plot
+  note    a value that is not a number breaks the line, as matplotlib masks it; an infinite one is `invalid`
+
+capability chart/scatter  a disc at each point of a series
+  heroes  chart.Mark.points
+  go      -
+  rust    -
+  python  scatter
+  note    one size and one colour a series; a disc whose centre falls outside the plot is not drawn, one inside is drawn whole
+
+capability chart/line-and-points  a line through a series' points with a disc at each
+  heroes  chart.Mark.line_and_points
+  go      -
+  rust    -
+  python  plot
+  note    matplotlib's marker styles beyond the disc are left out
+
+capability chart/area  the room between a series' line and zero filled, see-through where areas overlap
+  heroes  chart.Mark.area
+  go      -
+  rust    -
+  python  fill_between, fill
+  note    filled at two fifths of the series' colour, a gap parting the area
+
+capability chart/stacked-area  areas stacked, each on the ones before it
+  heroes  chart.Plot.stacked
+  go      -
+  rust    -
+  python  stackplot
+  note    stacked areas share their columns and hold numbers, or `invalid`; stacked as matplotlib's and d3's default stacks them, values added in order
+
+## Bars and histograms
+
+capability chart/bars  bars of categories side by side, a series each
+  heroes  chart.Bars, chart.Grouping.grouped
+  go      -
+  rust    -
+  python  bar
+  note    a value that is not a number makes no bar; the value axis spans zero unless its range is fixed
+
+capability chart/stacked-bars  bars of several series stacked in each category
+  heroes  chart.Grouping.stacked
+  go      -
+  rust    -
+  python  bar, barh
+  note    the positive values stack up from zero and the negative down, as d3's diverging offset stacks them, so no two bars overlap; matplotlib stacks what its `bottom` says
+
+capability chart/horizontal-bars  bars lying along the value axis, the categories down the left side
+  heroes  chart.Direction.horizontal
+  go      -
+  rust    -
+  python  barh
+  note    the first category at the top, as a list reads; matplotlib puts it at the bottom
+
+capability chart/bins  values counted into a histogram's bins
+  heroes  chart.bin
+  go      -
+  rust    -
+  python  hist
+  note    `auto` is d3's default (Sturges' count at nice edges), `count` NumPy's equal widths and `edges` NumPy's own edges; values all one widen to one bin from half below to half above, as NumPy widens them, where d3 makes a bin of no width
+
+capability chart/histogram  a histogram drawn: its bins as bars on a value axis
+  heroes  chart.Histogram
+  go      -
+  rust    -
+  python  hist
+  note    the bars touch, a pixel's gap between them; one colour
+
+## Pies
+
+capability chart/pie  a pie: slices clockwise from twelve o'clock, each its value's share
+  heroes  chart.Pie
+  go      -
+  rust    -
+  python  pie
+  note    clockwise from twelve as d3-shape's pie turns, where matplotlib starts at three and turns the other way; a slice's share is written on it where the text fits inside the slice
+
+capability chart/donut  a donut: a pie with a hole a share of its radius
+  heroes  chart.Pie.hole
+  go      -
+  rust    -
+  python  pie
+
+## Axes and ticks
+
+capability chart/linear-ticks  a linear axis's ticks at steps of 1, 2 or 5 times a power of ten, labelled
+  heroes  chart.ticks
+  go      -
+  rust    -
+  python  xticks, yticks, locator_params, tick_params, ticklabel_format
+  note    d3's ticks and `,f` labels, equal over the oracle's cases; the minus sign is the ASCII hyphen where d3 writes U+2212
+
+capability chart/nice-range  an axis's range moved out to its ticks
+  heroes  chart.nice
+  go      -
+  rust    -
+  python  autoscale, margins, axis
+  note    d3's `nice`, where matplotlib pads the data by a margin instead
+
+capability chart/log-scale  a logarithmic axis in any base above 1, its powers and their multiples ticked
+  heroes  chart.Scale.log
+  go      -
+  rust    -
+  python  xscale, yscale, loglog, semilogx, semilogy, minorticks_on, minorticks_off
+  note    d3's `log.ticks` and its choice of labelled ticks; a base whose multiples would pass ten times the count asked takes linear ticks; a value at or below zero is `invalid`, where matplotlib masks it
+
+capability chart/time-scale  a time axis in UTC ticked at the calendar's steps and labelled by them
+  heroes  chart.Scale.time
+  go      -
+  rust    -
+  python  plot_date
+  note    d3's `scaleUtc` ticks and multi-scale labels in English, years 1 to 9999; a time zone's local calendar is left out
+
+capability chart/fixed-range  an axis's range given, what falls outside cut away
+  heroes  chart.Extent.fixed
+  go      -
+  rust    -
+  python  xlim, ylim
+
+capability chart/grid  lines of a grid at an axis's labelled ticks
+  heroes  chart.Axis.grid
+  go      -
+  rust    -
+  python  grid
+
+capability chart/legend  the named series listed beside the plot, each with its mark
+  heroes  chart.Look.legend
+  go      -
+  rust    -
+  python  legend, figlegend
+  note    beside the plot, in as many columns as its height needs, never over the data
+
+capability chart/title-and-labels  a title over the plot and a label on each axis
+  heroes  chart.Look.title, chart.Axis.label
+  go      -
+  rust    -
+  python  title, suptitle, xlabel, ylabel
+
+capability chart/layout  margins measured from the text in the font, crowded tick labels thinned
+  heroes  chart.lay_out
+  go      -
+  rust    -
+  python  tight_layout, subplots_adjust
+
+capability chart/palette  colours for the series, of hues evenly spaced and each far from the one before
+  heroes  chart.palette
+  go      -
+  rust    -
+  python  -
+  note    made in `image/colorspace`'s HLS; matplotlib's colour cycle is a fixed list in its settings
+
+## Written out
+
+capability chart/svg  a chart written as an SVG document, its text as text or as outlines
+  heroes  chart.to_svg
+  go      -
+  rust    -
+  python  savefig
+  note    one line, no XML declaration; text elements name the font's family, outlines draw alike in every reader
+
+capability chart/image  a chart drawn into an RGBA image, anti-aliased, its text in the font
+  heroes  chart.to_image
+  go      -
+  rust    -
+  python  savefig
+  note    the same drawing as the SVG; writing it as PNG is `image/png`'s
+
+## Not made here
+
+capability chart/lying-area  an area filled from a series' line to the left axis
+  heroes  pending
+  go      -
+  rust    -
+  python  fill_betweenx
+
+capability chart/reference-lines  lines and bands across a plot at a value
+  heroes  pending
+  go      -
+  rust    -
+  python  axhline, axvline, axline, hlines, vlines, axhspan, axvspan
+
+capability chart/annotations  text and arrows placed on a plot, and a bar's value written on it
+  heroes  pending
+  go      -
+  rust    -
+  python  text, annotate, arrow, figtext, table, bar_label
+
+capability chart/error-bars  error bars about a series' points
+  heroes  pending
+  go      -
+  rust    -
+  python  errorbar
+
+capability chart/box-plots  box plots and violin plots of distributions
+  heroes  pending
+  go      -
+  rust    -
+  python  boxplot, violinplot
+
+capability chart/step-plots  step, stair and stem plots, and the empirical distribution as steps
+  heroes  pending
+  go      -
+  rust    -
+  python  step, stairs, stem, ecdf
+
+capability chart/heat-maps  heat maps of a grid of values with a colour bar and colour maps
+  heroes  pending
+  go      -
+  rust    -
+  python  imshow, matshow, pcolor, pcolormesh, hist2d, hexbin, spy, colorbar, clim, figimage, get_cmap, set_cmap, autumn, bone, cool, copper, flag, gray, hot, hsv, inferno, jet, magma, nipy_spectral, pink, plasma, prism, spring, summer, viridis, winter
+
+capability chart/contours  contour plots, of a grid and of a triangulation
+  heroes  pending
+  go      -
+  rust    -
+  python  contour, contourf, clabel, tricontour, tricontourf, tripcolor, triplot
+
+capability chart/polar  polar plots
+  heroes  pending
+  go      -
+  rust    -
+  python  polar, rgrids, thetagrids
+
+capability chart/figures  several plots in one figure, and a second axis on the right or the top
+  heroes  pending
+  go      -
+  rust    -
+  python  subplot, subplots, subplot2grid, subplot_mosaic, axes, twinx, twiny
+
+capability chart/events  event plots and broken bars
+  heroes  pending
+  go      -
+  rust    -
+  python  eventplot, broken_barh
+
+capability chart/vector-fields  arrows and streamlines of a vector field
+  heroes  pending
+  go      -
+  rust    -
+  python  quiver, quiverkey, barbs, streamplot
+
+capability chart/signal-plots  a signal's spectrum or correlation computed and plotted in one call
+  heroes  refused: computing a spectrum or a correlation is signal processing's, and its result is a line this package draws
+  go      -
+  rust    -
+  python  acorr, xcorr, psd, csd, cohere, specgram, magnitude_spectrum, angle_spectrum, phase_spectrum
+
+## dropped
+
+dropped  figure, gcf, gca, gci, sca, sci, cla, clf, close, delaxes, fignum_exists, get_figlabels, get_fignums, get_current_fig_manager, new_figure_manager, findobj, get, getp, setp, get_plot_commands  matplotlib's state of current figures and axes, found and changed by name: a chart here is a value, laid out by `chart.lay_out`
+dropped  show, draw, draw_if_interactive, ion, ioff, isinteractive, pause, ginput, waitforbuttonpress, connect, disconnect, subplot_tool, install_repl_displayhook, uninstall_repl_displayhook, switch_backend  a window and its events: a chart here is drawn once, as a picture
+dropped  rc, rc_context, rcdefaults, set_loglevel, xkcd, box  global settings and styles: a chart's look is `chart.Look`, given with each chart
+dropped  imread, imsave  image files: `image/png` and its neighbours read and write them
+dropped  matplotlib.pyplot's classes and re-exported modules (Figure, Axes, Line2D, Text, cm, mlab, ...)  its object layer, which a program here does not reach: the records of the face hold a chart

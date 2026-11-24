@@ -1923,7 +1923,12 @@ function framing_of(body: BodyReader) -> Framing
 # request's cannot; and as `io.write` fails. See also `write_request`, which
 # writes a body held whole.
 function write_request_head(s: io.Stream, r: Request, framing: Framing) -> BodyWriter?
-    inner = inner_framing(framing)?
+    inner: framings.Framing = match framing
+        .none     => .none
+        .length l => .length(n: l.bytes)
+        .chunked  => .chunked
+        .to_end   => .to_end
+
     fields: [wire.Field] @= []
 
     for h in r.headers
@@ -1956,7 +1961,12 @@ function write_request_head(s: io.Stream, r: Request, framing: Framing) -> BodyW
 # and as `io.write` fails. See also `write_response_head`, whose body always
 # runs to the connection's end.
 function write_response_head_framed(s: io.Stream, response: Response, framing: Framing) -> BodyWriter?
-    inner = inner_framing(framing)?
+    inner: framings.Framing = match framing
+        .none     => .none
+        .length l => .length(n: l.bytes)
+        .chunked  => .chunked
+        .to_end   => .to_end
+
     fields: [wire.Field] @= []
 
     for h in response.headers
@@ -1965,21 +1975,6 @@ function write_response_head_framed(s: io.Stream, response: Response, framing: F
     data = relaying.response_head(status_code: response.status, reason: response.reason, fields: fields, framing: inner, closing: response.closing, date: policy.date_now().default(""))?
     io.write(s, data: data)?
     return ok(BodyWriter(state: relaying.owed_of(inner)))
-
-# The framing `framing` says, as the internal writers read it.
-#
-# - `framing`: the framing asked for.
-#
-# Fails `invalid` for a length below zero.
-function inner_framing(framing: Framing) -> framings.Framing?
-    match framing
-        .none    => return ok(.none)
-        .chunked => return ok(.chunked)
-        .to_end  => return ok(.to_end)
-        .length l =>
-            if l.bytes < 0
-                return fail(code: INVALID, msg: f"writing a head: a body of {l.bytes} bytes, below zero")
-            return ok(.length(n: l.bytes))
 
 # Writes `data` to `s` as the next piece of the body `body` frames: the bytes
 # themselves, or one chunk holding them; nothing for no bytes.
@@ -6010,3 +6005,110 @@ test "tunnel: a connection through an HTTP proxy"
     ).must()
     io.close(@s).must()
     assert strings.has_prefix(s: threads.wait_text(@t.thread), prefix: "CONNECT example.test:443\n")
+
+# A request's body read as it comes after its head, framed by its
+# `Content-Length`: a gateway's way to pass it on without holding it whole.
+test "request_body_reader: a POST's body in pieces"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "POST /up HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\n\r\nhello").must()
+    reader @= io.reader(two.second.stream)
+    h = read_request_head(@reader, limits: default_limits()).must()
+    body @= request_body_reader(h, limits: default_limits()).must()
+    assert read_piece(@reader, @body, most: 3).must() == bytes.from_text("hel")
+    assert read_piece(@reader, @body, most: 3).must() == bytes.from_text("lo")
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# The framing a relay writes a chunked body on in, read before a byte of it.
+test "framing_of: a chunked request's body"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "POST /up HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    h = read_request_head(@reader, limits: default_limits()).must()
+    assert framing_of(request_body_reader(h, limits: default_limits()).must()) == .chunked
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# A request's head written for a body of 5 bytes, the body then written as
+# it comes.
+test "write_request_head: a PUT whose body follows"
+    p = io.pipe().must()
+    writer @= p.writer
+    r = request(method: METHOD_PUT, target: "http://example.com/f").must()
+    body @= write_request_head(writer, r: r, framing: .length(bytes: 5)).must()
+    write_piece(writer, @body, data: bytes.from_text("hello")).must()
+    end_pieces(writer, @body).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert io.read_rest_text(@reader).must() == "PUT /f HTTP/1.1\r\nHost: example.com\r\nContent-Length: 5\r\n\r\nhello"
+    io.close(@reader.stream).must()
+
+# An answer's head written for a body sent as chunks, then the body piece by
+# piece, which the client reads whole.
+test "write_response_head_framed: a chunked answer as it comes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    answer = respond(STATUS_OK, content_type: "text/plain", body: [])
+    body @= write_response_head_framed(two.second.stream, response: answer, framing: .chunked).must()
+    write_piece(two.second.stream, @body, data: bytes.from_text("one ")).must()
+    write_piece(two.second.stream, @body, data: bytes.from_text("two")).must()
+    end_pieces(two.second.stream, @body).must()
+    client @= io.reader(two.first.stream)
+    assert text_of(read_response(@client, method: METHOD_GET, limits: default_limits()).must()).must() == "one two"
+    io.close(@client.stream).must()
+    io.close(@two.second.stream).must()
+
+# A body of a known length written in two pieces.
+test "write_piece: a body of 7 bytes in two pieces"
+    p = io.pipe().must()
+    writer @= p.writer
+    answer = respond(STATUS_OK, content_type: "text/plain", body: [])
+    body @= write_response_head_framed(writer, response: answer, framing: .length(bytes: 7)).must()
+    write_piece(writer, @body, data: bytes.from_text("abcd")).must()
+    write_piece(writer, @body, data: bytes.from_text("efg")).must()
+    end_pieces(writer, @body).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert text_of(read_response(@reader, method: METHOD_GET, limits: default_limits()).must()).must() == "abcdefg"
+    io.close(@reader.stream).must()
+
+# A chunked body ended by its last chunk and an empty trailer.
+test "end_pieces: the last chunk of a chunked body"
+    p = io.pipe().must()
+    writer @= p.writer
+    answer = respond(STATUS_OK, content_type: "text/plain", body: [])
+    body @= write_response_head_framed(writer, response: answer, framing: .chunked).must()
+    write_piece(writer, @body, data: bytes.from_text("hi")).must()
+    end_pieces(writer, @body).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert strings.has_suffix(s: io.read_rest_text(@reader).must(), suffix: "\r\n\r\n2\r\nhi\r\n0\r\n\r\n")
+    io.close(@reader.stream).must()
+
+# A WebSocket's upgrade answered 101, the reader then standing at the first
+# bytes of the new protocol.
+test "read_switch_head: a 101 and the bytes after it"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\nxyz"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    switched = read_switch_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert switched.status == 101 && !switched.closing
+    assert io.read_n(@reader, n: 3).must() == bytes.from_text("xyz")
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# `100 Continue`, written before reading a body the client holds back until
+# it is asked.
+test "write_continue: the client told to send its body"
+    p = io.pipe().must()
+    writer @= p.writer
+    write_continue(writer).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert io.read_rest_text(@reader).must() == "HTTP/1.1 100 Continue\r\n\r\n"
+    io.close(@reader.stream).must()

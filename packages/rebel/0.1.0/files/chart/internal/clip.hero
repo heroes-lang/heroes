@@ -1,0 +1,182 @@
+# Shapes cut to the plot's rectangle: a polyline by Liang and Barsky's
+# clipping of each segment, its visible pieces joined where they touch, and
+# a polygon by Sutherland and Hodgman's clipping against each edge in turn.
+# A coordinate that is not a number breaks a polyline there.
+
+use image/vector
+
+# A rectangle in pixels, `left` below `right` and `top` below `bottom`.
+record Rect
+    left: f64
+    top: f64
+    right: f64
+    bottom: f64
+
+# The part of a segment inside a rectangle, as the fractions of the segment
+# where it enters and leaves.
+record Cut
+    inside: bool
+    enter: f64
+    leave: f64
+
+# Where the segment from (`x0`, `y0`) to (`x1`, `y1`) is inside `r`.
+function cut(x0: f64, y0: f64, x1: f64, y1: f64, r: Rect) -> Cut
+    dx = x1 - x0
+    dy = y1 - y0
+    ps = [-dx, dx, -dy, dy]
+    qs = [x0 - r.left, r.right - x0, y0 - r.top, r.bottom - y0]
+    enter @= 0.0
+    leave @= 1.0
+
+    for i in range(from: 0, to: 4)
+        p = ps[i]
+        q = qs[i]
+
+        if p == 0.0
+            if q < 0.0
+                return Cut(inside: false, enter: 0.0, leave: 0.0)
+        else
+            t = q / p
+
+            if p < 0.0
+                if t > enter
+                    enter @ t
+            else if t < leave
+                leave @ t
+
+        if enter > leave
+            return Cut(inside: false, enter: 0.0, leave: 0.0)
+
+    return Cut(inside: true, enter: enter, leave: leave)
+
+# The polyline through the points (`xs[i]`, `ys[i]`) cut to `r`: the runs of
+# points inside it, a point that is not a number ending a run.
+function polyline(xs: [f64] lent, ys: [f64] lent, r: Rect) -> [[vector.Point]]
+    runs: [[vector.Point]] @= []
+    run: [vector.Point] @= []
+    whole_end @= false
+
+    if xs.len() < 2
+        return runs
+
+    for i in range(from: 0, to: xs.len() - 1)
+        x0 = xs[i]
+        y0 = ys[i]
+        x1 = xs[i + 1]
+        y1 = ys[i + 1]
+
+        if x0 != x0 || y0 != y0 || x1 != x1 || y1 != y1
+            if run.len() > 1
+                runs @ runs.push(run)
+            run @ []
+            whole_end @ false
+            continue
+        c = cut(x0: x0, y0: y0, x1: x1, y1: y1, r: r)
+
+        if !c.inside
+            if run.len() > 1
+                runs @ runs.push(run)
+            run @ []
+            whole_end @ false
+            continue
+        a = vector.Point(x: x0 + c.enter * (x1 - x0), y: y0 + c.enter * (y1 - y0))
+        b = vector.Point(x: x0 + c.leave * (x1 - x0), y: y0 + c.leave * (y1 - y0))
+
+        if !(whole_end && c.enter == 0.0 && run.len() > 0)
+            if run.len() > 1
+                runs @ runs.push(run)
+            run @ [a]
+        run @ run.push(b)
+        whole_end @ c.leave == 1.0
+
+    if run.len() > 1
+        runs @ runs.push(run)
+    return runs
+
+# Which side of an edge of the rectangle a clipping pass keeps.
+variant Edge
+    # Columns from `left` on.
+    left
+    # Columns up to `right`.
+    right
+    # Rows from `top` on.
+    top
+    # Rows up to `bottom`.
+    bottom
+
+# Whether `p` is on the kept side of `edge`.
+function keeps(p: vector.Point, edge: Edge, r: Rect) -> bool
+    return match edge
+        .left   => p.x >= r.left
+        .right  => p.x <= r.right
+        .top    => p.y >= r.top
+        .bottom => p.y <= r.bottom
+
+# Where the segment from `a` to `b` crosses `edge`'s line.
+function crossing(a: vector.Point, b: vector.Point, edge: Edge, r: Rect) -> vector.Point
+    return match edge
+        .left   => vector.Point(x: r.left, y: a.y + (b.y - a.y) * (r.left - a.x) / (b.x - a.x))
+        .right  => vector.Point(x: r.right, y: a.y + (b.y - a.y) * (r.right - a.x) / (b.x - a.x))
+        .top    => vector.Point(x: a.x + (b.x - a.x) * (r.top - a.y) / (b.y - a.y), y: r.top)
+        .bottom => vector.Point(x: a.x + (b.x - a.x) * (r.bottom - a.y) / (b.y - a.y), y: r.bottom)
+
+# The polygon `points` cut to `r`, as Sutherland and Hodgman cut it: empty
+# where nothing of it is inside.
+function polygon(points: [vector.Point], r: Rect) -> [vector.Point]
+    out @= points
+    edges: [Edge] = [.left, .right, .top, .bottom]
+
+    for edge in edges
+        if out.len() == 0
+            return out
+        input = out
+        out @ []
+        previous @= input[input.len() - 1]
+
+        for p in input
+            if keeps(p: p, edge: edge, r: r)
+                if !keeps(p: previous, edge: edge, r: r)
+                    out @ out.push(crossing(a: previous, b: p, edge: edge, r: r))
+                out @ out.push(p)
+            else if keeps(p: previous, edge: edge, r: r)
+                out @ out.push(crossing(a: previous, b: p, edge: edge, r: r))
+            previous @ p
+
+    return out
+
+## Tests
+
+test "polyline: fewer than two points draw nothing"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    assert polyline(xs: [], ys: [], r: r).len() == 0
+    assert polyline(xs: [1.0], ys: [1.0], r: r).len() == 0
+
+test "polyline: a line through the rectangle is cut at its edges"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    runs = polyline(xs: [-5.0, 5.0, 15.0], ys: [5.0, 5.0, 5.0], r: r)
+    assert runs == [[vector.Point(x: 0.0, y: 5.0), vector.Point(x: 5.0, y: 5.0), vector.Point(x: 10.0, y: 5.0)]]
+
+test "polyline: a gap and a stretch outside part the runs"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    gap = polyline(xs: [1.0, 2.0, 0.0 / 0.0, 3.0, 4.0], ys: [1.0, 1.0, 1.0, 1.0, 1.0], r: r)
+    assert gap.len() == 2
+    out = polyline(xs: [1.0, 2.0, 20.0, 3.0], ys: [1.0, 1.0, 1.0, 1.0], r: r)
+    assert out == [[vector.Point(x: 1.0, y: 1.0), vector.Point(x: 2.0, y: 1.0), vector.Point(x: 10.0, y: 1.0)], [vector.Point(x: 10.0, y: 1.0), vector.Point(x: 3.0, y: 1.0)]]
+
+test "polyline: a line wholly outside draws nothing"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    assert polyline(xs: [11.0, 20.0], ys: [-1.0, -5.0], r: r).len() == 0
+
+test "polygon: a square cut to the rectangle's corner, as Sutherland and Hodgman cut it"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    square = [
+        vector.Point(x: 5.0, y: 5.0)
+        vector.Point(x: 15.0, y: 5.0)
+        vector.Point(x: 15.0, y: 15.0)
+        vector.Point(x: 5.0, y: 15.0)
+    ]
+    assert polygon(points: square, r: r) == [vector.Point(x: 5.0, y: 10.0), vector.Point(x: 5.0, y: 5.0), vector.Point(x: 10.0, y: 5.0), vector.Point(x: 10.0, y: 10.0)]
+
+test "polygon: wholly outside, nothing"
+    r = Rect(left: 0.0, top: 0.0, right: 10.0, bottom: 10.0)
+    assert polygon(points: [vector.Point(x: 20.0, y: 20.0), vector.Point(x: 30.0, y: 20.0), vector.Point(x: 25.0, y: 30.0)], r: r).len() == 0

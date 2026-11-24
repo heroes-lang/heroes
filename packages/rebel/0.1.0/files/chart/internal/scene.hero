@@ -1,0 +1,352 @@
+# A chart laid out: shapes filled and stroked and lines of text, in pixels,
+# and the two ways it is written, an SVG document and an RGBA image drawn
+# through `image/vector`. Both read the same items in the same order, so the
+# image is the SVG drawn.
+#
+# A text is placed by its anchor and measured in the font before it is
+# placed; the SVG either names the font's family and lets its reader set the
+# text, anchored where the measure put it, or writes the glyphs' outlines,
+# which every reader draws alike.
+
+use chart/internal/codes
+use chart/internal/samples
+use font
+use image
+use image/text as typeset
+use image/vector
+use numbers
+use xml
+
+# The most pixels a side of an image.
+constant MOST_PIXELS: i64
+    16384
+
+# Which point of a line of text its `x` names.
+variant Anchor
+    # Its start, the left end.
+    start
+    # Its middle.
+    middle
+    # Its end, the right end.
+    end
+
+# A line of text.
+record Text
+    text: str
+    # The column of the anchor.
+    x: f64
+    # The row of the baseline.
+    y: f64
+    # The size of the em in pixels.
+    size: f64
+    anchor: Anchor
+    # Whether the line is turned a quarter counterclockwise about (`x`, `y`),
+    # to read upward.
+    turned: bool
+    color: image.Color
+
+# One thing drawn.
+variant Item
+    # A path filled under the non-zero rule.
+    fill
+        path: [vector.Segment]
+        color: image.Color
+    # A path stroked with round joins and flat ends.
+    stroke
+        path: [vector.Segment]
+        color: image.Color
+        width: f64
+    # A line of text.
+    text
+        line: Text
+
+# Everything drawn, in the order drawn, over a ground of one colour.
+record Scene
+    width: i64
+    height: i64
+    background: image.Color
+    items: [Item]
+
+# A colour's style for measuring: the measure reads no colour.
+function measuring(size: f64) -> typeset.Style
+    return typeset.style(size: size, color: image.Color(r: 0, g: 0, b: 0, a: 255))
+
+# How wide `text` is set in `f` at `size` pixels to the em.
+function width_of(f: font.Font lent, text: str, size: f64) -> f64?
+    m = typeset.measure(f, text, measuring(size))?
+    return ok(m.width)
+
+# How far `f`'s letters reach above the baseline at `size`.
+function ascent_of(f: font.Font lent, size: f64) -> f64?
+    m = typeset.measure(f, "0", measuring(size))?
+    return ok(m.ascent)
+
+# How far below the baseline.
+function descent_of(f: font.Font lent, size: f64) -> f64?
+    m = typeset.measure(f, "0", measuring(size))?
+    return ok(m.descent)
+
+# The height of a capital at `size`: the font's own figure, else seven tenths
+# of its ascent.
+function cap_of(f: font.Font lent, size: f64) -> f64?
+    metrics = font.metrics_of(f)
+
+    match metrics.cap_height
+        .ok cap =>
+            if cap > 0 && metrics.units_per_em > 0
+                return ok(to_f64(cap) * size / to_f64(metrics.units_per_em))
+        .err _ => _ = 0
+
+    return ok(ascent_of(f: f, size: size)? * 0.7)
+
+# The column where a line of `width` anchored at `x` starts.
+function start_of(x: f64, width: f64, anchor: Anchor) -> f64
+    return match anchor
+        .start  => x
+        .middle => x - width / 2.0
+        .end    => x - width
+
+# The outline of a line of text where it is drawn, turned if it is.
+function outline_of(f: font.Font lent, t: Text) -> [vector.Segment]?
+    width = width_of(f: f, text: t.text, size: t.size)?
+    path = typeset.outline(f: f, text: t.text, how: measuring(t.size), x: start_of(x: t.x, width: width, anchor: t.anchor), y: t.y)?
+
+    if t.turned
+        return ok(vector.transform(path, vector.rotation(degrees: -90.0, about_x: t.x, about_y: t.y)))
+    return ok(path)
+
+## SVG
+
+# `x` in at most two digits after the point, no trailing zero, no point for
+# a whole number and no sign on zero.
+function num(x: f64) -> str
+    text @= numbers.trim_negative_zero(numbers.format_float(x: x, precision: 2))
+
+    while text.len() > 0 && text.slice(from: text.len() - 1, to: text.len()) == "0"
+        text @ text.slice(from: 0, to: text.len() - 1)
+
+    if text.len() > 0 && text.slice(from: text.len() - 1, to: text.len()) == "."
+        text @ text.slice(from: 0, to: text.len() - 1)
+
+    if text == "-0" || text == ""
+        return "0"
+    return text
+
+# Two hexadecimal digits of a byte.
+function hex(b: u8) -> str
+    digits = "0123456789abcdef"
+    v = to_i64(b).must()
+    return digits.slice(from: v / 16, to: v / 16 + 1) + digits.slice(from: v % 16, to: v % 16 + 1)
+
+# A colour as SVG writes its paint, `#rrggbb`.
+function paint(c: image.Color) -> str
+    return "#" + hex(c.r) + hex(c.g) + hex(c.b)
+
+# The opacity attribute `name` of a colour that is not opaque, with a space
+# before it, or nothing for an opaque one.
+function opacity(c: image.Color, name: str) -> str
+    if c.a == 255
+        return ""
+    return f" {name}=\"{numbers.format_float(x: to_f64(c.a) / 255.0, precision: 3)}\""
+
+# `path` as SVG path data.
+function path_data(path: [vector.Segment] lent) -> str
+    out: [str] @= []
+
+    for s in path
+        match s
+            .move m => out @ out.push(f"M{num(m.x)} {num(m.y)}")
+            .line l => out @ out.push(f"L{num(l.x)} {num(l.y)}")
+            .quad q => out @ out.push(f"Q{num(q.control_x)} {num(q.control_y)} {num(q.x)} {num(q.y)}")
+            .cubic c =>
+                out @ out.push(
+                    f"C{num(c.control1_x)} {num(c.control1_y)} {num(c.control2_x)} {num(c.control2_y)} {num(c.x)} {num(c.y)}"
+                )
+            .close => out @ out.push("Z")
+
+    return out.join("")
+
+# The CSS list of `family` and then `sans-serif`, the family quoted, a
+# backslash or a quote in it escaped as CSS escapes them.
+function family_list(family: str) -> str
+    out: [str] @= ["'"]
+
+    for c in family.chars()
+        if c == "\\" || c == "'"
+            out @ out.push("\\")
+        out @ out.push(c)
+
+    out @ out.push("', sans-serif")
+    return out.join("")
+
+# The SVG document of `s`: one line ending with a line feed, no XML
+# declaration. With `outlines` the text is the glyphs' outlines in `f`;
+# without, text elements naming `f`'s family and then `sans-serif`.
+function svg(s: Scene lent, f: font.Font lent, outlines: bool) -> str?
+    family = xml.quote_attribute(family_list(font.name_of(f, .family).default("sans-serif")))?
+    out: [str] @= [
+        f"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{s.width}\" height=\"{s.height}\" viewBox=\"0 0 {s.width} {s.height}\">"
+        f"<rect width=\"{s.width}\" height=\"{s.height}\" fill=\"{paint(s.background)}\"{opacity(c: s.background, name: "fill-opacity")}/>"
+    ]
+
+    for item in s.items
+        match item
+            .fill p =>
+                if p.path.len() > 0
+                    out @ out.push(
+                        f"<path d=\"{path_data(p.path)}\" fill=\"{paint(p.color)}\"{opacity(c: p.color, name: "fill-opacity")}/>"
+                    )
+            .stroke p =>
+                if p.path.len() > 0
+                    out @ out.push(
+                        f"<path d=\"{path_data(p.path)}\" fill=\"none\" stroke=\"{paint(p.color)}\"{opacity(c: p.color, name: "stroke-opacity")} stroke-width=\"{num(p.width)}\" stroke-linejoin=\"round\"/>"
+                    )
+            .text t =>
+                if outlines
+                    path = outline_of(f: f, t: t.line)?
+
+                    if path.len() > 0
+                        out @ out.push(
+                            f"<path d=\"{path_data(path)}\" fill=\"{paint(t.line.color)}\"{opacity(c: t.line.color, name: "fill-opacity")}/>"
+                        )
+                else
+                    out @ out.push(text_element(line: t.line, family: family)?)
+
+    out @ out.push("</svg>\n")
+    return ok(out.join(""))
+
+# A text element of `line` naming `family`, an attribute's quoted value.
+#
+# Fails `invalid` where the text holds a character XML cannot hold.
+function text_element(line: Text, family: str) -> str?
+    anchor = match line.anchor
+        .start  => "start"
+        .middle => "middle"
+        .end    => "end"
+
+    turn @= ""
+
+    if line.turned
+        turn @ f" transform=\"rotate(-90 {num(line.x)} {num(line.y)})\""
+    color = f"fill=\"{paint(line.color)}\"{opacity(c: line.color, name: "fill-opacity")}"
+    body = xml.escape_text(line.text)?
+    return ok(
+        f"<text x=\"{num(line.x)}\" y=\"{num(line.y)}\" font-family={family} font-size=\"{num(line.size)}\" text-anchor=\"{anchor}\" {color}{turn}>{body}</text>"
+    )
+
+## Images
+
+# `s` drawn into an RGBA image of its size: the ground, then every item in
+# order, anti-aliased, the text in `f`.
+#
+# Fails `limit` where a side passes 16,384 pixels, and as `image/vector` and
+# `image/text` fail.
+function draw(s: Scene lent, f: font.Font lent) -> image.Image?
+    if s.width > MOST_PIXELS || s.height > MOST_PIXELS
+        return fail(
+            code: codes.LIMIT,
+            msg: f"the image would be {s.width} by {s.height} pixels, past {MOST_PIXELS} a side"
+        )
+    img: image.Image @= image.blank(width: s.width, height: s.height, format: .rgba)?
+    image.fill_rect(@img, x: 0, y: 0, width: s.width, height: s.height, color: s.background)
+
+    for item in s.items
+        match item
+            .fill p =>
+                if p.path.len() > 0
+                    vector.fill_path(@img, p.path, p.color, .non_zero)?
+            .stroke p =>
+                if p.path.len() > 0
+                    style @= vector.stroke(p.width)
+                    style.join @ .round
+                    vector.stroke_path(@img, p.path, p.color, style)?
+            .text t =>
+                path = outline_of(f: f, t: t.line)?
+
+                if path.len() > 0
+                    vector.fill_path(@img, path, t.line.color, .non_zero)?
+
+    return ok(img)
+
+## Tests
+
+test "num: two digits at most, no trailing zero, no signed zero"
+    assert num(12.0) == "12"
+    assert num(3.14159) == "3.14"
+    assert num(-0.001) == "0"
+    assert num(-2.5) == "-2.5"
+
+test "paint and opacity: a colour as SVG writes it"
+    assert paint(image.Color(r: 255, g: 128, b: 0, a: 255)) == "#ff8000"
+    assert opacity(c: image.Color(r: 0, g: 0, b: 0, a: 255), name: "fill-opacity") == ""
+    assert opacity(c: image.Color(r: 0, g: 0, b: 0, a: 102), name: "fill-opacity") == " fill-opacity=\"0.400\""
+
+test "family_list: the family quoted for CSS, then sans-serif"
+    assert family_list("Noto Sans") == "'Noto Sans', sans-serif"
+    assert family_list("O'Hara") == "'O\\'Hara', sans-serif"
+
+test "svg: a scene of one square past the left edge, every attribute"
+    f = font.parse(samples.truetype(), 0).must()
+    path: [vector.Segment] @= []
+    vector.add_rect(@path, x: -1.0, y: 2.0, width: 3.0, height: 4.0)
+    s = Scene(
+        width: 8,
+        height: 9,
+        background: image.Color(r: 255, g: 255, b: 255, a: 255),
+        items: [.fill(path: path, color: image.Color(r: 255, g: 0, b: 0, a: 255))]
+    )
+    assert svg(s: s, f: f, outlines: false).must() == "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"9\" viewBox=\"0 0 8 9\"><rect width=\"8\" height=\"9\" fill=\"#ffffff\"/><path d=\"M-1 2L2 2L2 6L-1 6Z\" fill=\"#ff0000\"/></svg>\n"
+
+test "svg: a line of text as an element and as outlines"
+    f = font.parse(samples.truetype(), 0).must()
+    line = Text(
+        text: "A&B",
+        x: 10.0,
+        y: 20.0,
+        size: 12.0,
+        anchor: .middle,
+        turned: true,
+        color: image.Color(r: 0, g: 0, b: 0, a: 255)
+    )
+    s = Scene(
+        width: 40,
+        height: 40,
+        background: image.Color(r: 255, g: 255, b: 255, a: 255),
+        items: [.text(line: line)]
+    )
+    elements = svg(s: s, f: f, outlines: false).must()
+    assert strings_hold(
+        text: elements,
+        part: "<text x=\"10\" y=\"20\" font-family=\"'Noto Sans', sans-serif\" font-size=\"12\" text-anchor=\"middle\" fill=\"#000000\" transform=\"rotate(-90 10 20)\">A&amp;B</text>"
+    )
+    assert !strings_hold(text: svg(s: s, f: f, outlines: true).must(), part: "<text")
+
+test "draw: a square filled over the ground"
+    f = font.parse(samples.truetype(), 0).must()
+    path: [vector.Segment] @= []
+    vector.add_rect(@path, x: 2.0, y: 2.0, width: 4.0, height: 4.0)
+    s = Scene(
+        width: 8,
+        height: 8,
+        background: image.Color(r: 255, g: 255, b: 255, a: 255),
+        items: [.fill(path: path, color: image.Color(r: 0, g: 0, b: 255, a: 255))]
+    )
+    img = draw(s: s, f: f).must()
+    assert image.color_at(img: img, x: 3, y: 3) == image.Color(r: 0, g: 0, b: 255, a: 255)
+    assert image.color_at(img: img, x: 0, y: 0) == image.Color(r: 255, g: 255, b: 255, a: 255)
+
+test "draw: an image past 16,384 pixels a side is refused"
+    f = font.parse(samples.truetype(), 0).must()
+    s = Scene(width: 16385, height: 1, background: image.Color(r: 255, g: 255, b: 255, a: 255), items: [])
+    assert draw(s: s, f: f).is_err()
+
+# Whether `part` stands in `text`.
+function strings_hold(text: str, part: str) -> bool
+    if part.len() > text.len()
+        return false
+
+    for i in range(from: 0, to: text.len() - part.len() + 1)
+        if text[i] == part[0] && text.slice(from: i, to: i + part.len()) == part
+            return true
+
+    return false

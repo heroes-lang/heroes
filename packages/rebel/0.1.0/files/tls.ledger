@@ -182,7 +182,7 @@ capability tls/revocation  a certificate's revocation asked (OCSP, CRL, stapling
   go      tls.Conn.OCSPResponse, tls.ConnectionState.OCSPResponse, tls.ConnectionState.SignedCertificateTimestamps, tls.Certificate.OCSPStaple, tls.Certificate.SignedCertificateTimestamps
   rust    -
   python  ssl.VERIFY_CRL_CHECK_LEAF, ssl.VERIFY_CRL_CHECK_CHAIN, ssl.VerifyFlags, ssl.SSLContext.verify_flags
-  note    It is the platform's own: macOS asks, Windows and Linux do not as this layer calls them. A check of its own is not written
+  note    It is the platform's own: macOS asks, Windows and Linux do not as this layer calls them. A check of its own is not written here: `x509/ocsp` asks a responder and checks a response (`ocsp.check`, `ocsp.status_of`), a stapled one too once its bytes are had, and a connection does not hand a stapled response over yet
 
 capability tls/encrypted-hello  the client's hello encrypted (ECH)
   heroes  pending
