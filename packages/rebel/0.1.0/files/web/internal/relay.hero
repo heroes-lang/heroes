@@ -415,13 +415,13 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
                 continue
 
         match sent(upstream: conn.stream, plan: plan, up: up, reader: @reader, body: @body, trip: trip, client: stream)
-            .ok _ => _ = 0
-            .err e =>
-                shut(@conn)
-
-                if e.code == "client"
+            .ok whole =>
+                if !whole
+                    shut(@conn)
                     told(@c, upstream: i, outcome: .neither)
                     return false
+            .err e =>
+                shut(@conn)
                 told(@c, upstream: i, outcome: .failed)
                 last @ e.code
 
@@ -515,10 +515,12 @@ function connect(up: Upstream, plan: Plan) -> net.Conn?
     return net.connect(host: up.base.host, port: up.port, deadline_ms: plan.connect_ms)
 
 # Sends the head of `trip` on `upstream` and its body as it comes from the
-# client, `100 Continue` told the client first where it asked. Fails with
-# the code of the upstream's failure, or `client` where the client failed,
-# its answer then written where one is owed.
-function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> ()?
+# client, `100 Continue` told the client first where it asked. Answers
+# whether the client held up its side: false where it went away, failed or
+# passed its bound, its answer then written where one is owed, so the
+# upstream is not blamed for it. Fails with the code of the upstream's
+# failure.
+function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> bool?
     host = if plan.keep_host && trip.asked_host != ""
         trip.asked_host
     else
@@ -537,13 +539,13 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
     writer @= http.write_request_head(upstream, r: out, framing: trip.framing)?
 
     if !has_body(trip.framing)
-        return ok()
+        return ok(true)
 
     if trip.continuing
         within(client, secure: false, ms: plan.client_ms)
 
         if http.write_continue(client).is_err()
-            return fail(code: "client", msg: "the client went away before its body")
+            return ok(false)
     total: i64 @= 0
 
     while true
@@ -558,7 +560,7 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
                     else
                         http.failure_status(code: e.code, in_head: false).default(400)
                     refuse(client, r: trip.r, status: status, why: e.msg, retry_s: 0)
-                return fail(code: "client", msg: f"reading the client's body: {e.msg}")
+                return ok(false)
 
         if piece.len() == 0
             break
@@ -566,11 +568,12 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
 
         if total > plan.limits.body_bytes
             refuse(client, r: trip.r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
-            return fail(code: "client", msg: "the client's body passed its bound")
+            return ok(false)
         within(upstream, secure: up.secure, ms: plan.send_ms)
         http.write_piece(upstream, @writer, data: piece)?
 
-    return http.end_pieces(upstream, @writer)
+    http.end_pieces(upstream, @writer)?
+    return ok(true)
 
 # The `Host` an upstream is asked by its own name: its host, and its port
 # where the scheme's own is not it.
