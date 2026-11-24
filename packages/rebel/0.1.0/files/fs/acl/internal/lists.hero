@@ -1,0 +1,429 @@
+# The calls `fs/acl` makes on its floor, `fs/acl/hero_acl`: a list read back
+# from the layer's form and written into it, an id found by name, and the one
+# place a kind of the floor becomes a code of README § A4 with a message
+# saying what was asked and what the system answered. A list is read into
+# `Row`s, as the layer writes it, and then into the face's `Entry`s.
+
+use bytes as octets
+use fs/acl
+use fs/acl/hero_acl
+
+constant INVALID: str
+    "invalid"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# The room the first reading of a list is given: some forty entries.
+constant FIRST_ROOM: i64
+    4096
+
+# The largest list read, past which the call fails `limit`: a Windows list
+# holds at most 64 KiB of entries, each named at most a few hundred bytes.
+constant MOST: i64
+    16777216
+
+# How many readings are made before a list that grows on every one is a
+# failure.
+constant TRIES: i64
+    8
+
+# One entry as the layer writes it, its fields read: `who` one of the
+# layer's `HERO_ACL_USER` to `HERO_ACL_MASK`.
+record Row
+    who: i64
+    deny: bool
+    rights: i64
+    flags: i64
+    id: str
+    name: str
+
+# A list as the layer writes it.
+record Rows
+    protected: bool
+    rows: [Row]
+
+# What the layer's reason for an entry it cannot hold means, in words.
+function reason_words(reason: i64) -> str
+    if reason == hero_acl.HERO_ACL_CANNOT_WHO
+        return "this system's lists name a user or a group alone, no owner, owning group, mask or everyone else"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_DENY
+        return "Linux's lists only allow"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_RIGHT
+        return "it grants a right this system's lists have no place for: Linux's grant read (`READ_DATA`), write (`WRITE_DATA`) and execute (`EXECUTE`) alone, Darwin's no generic right"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_FLAG
+        return "it carries a flag this system's lists have no place for: on Linux an entry carries none, or a folder's default entries' whole set, `LINUX_DEFAULT`"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_PROTECT
+        return "Linux's lists cannot be protected from a parent's: they inherit only when a file is made"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_DEFAULT
+        return "a folder's default entries stand on what is not a folder"
+
+    if reason == hero_acl.HERO_ACL_CANNOT_READ
+        return "the list holds an entry of a kind not read here (an object, callback or audit entry), or is a null list, which grants everyone everything"
+    return f"the layer gave the reason {reason}"
+
+# The failure of `asked` where a call of the floor answered -1: its kind as a
+# code, and what the system found in words.
+function failed<T>(asked: str) -> T?
+    kind = hero_acl.last_error()
+    number = hero_acl.last_os_error()
+
+    if kind == hero_acl.HERO_ACL_CANNOT
+        place = if_entry(number)
+        return fail(code: UNSUPPORTED, msg: f"{asked}: {place}{reason_words(hero_acl.last_reason())}")
+
+    if kind == hero_acl.HERO_ACL_INVALID
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: the system takes no such list: an id it cannot read as one, or a Linux list missing its owner, owning group or everyone-else entry, or naming one twice"
+        )
+
+    if kind == hero_acl.HERO_ACL_NOT_FOUND
+        return fail(code: FILE_NOT_FOUND, msg: f"{asked}: nothing is there")
+
+    if kind == hero_acl.HERO_ACL_UNKNOWN
+        return fail(code: NOT_FOUND, msg: f"{asked}: the system knows no such name")
+
+    if kind == hero_acl.HERO_ACL_DENIED
+        return fail(
+            code: PERMISSION,
+            msg: f"{asked}: the system refuses it to this program: only the owner, or a user the list lets, changes a list (its number {number})"
+        )
+
+    if kind == hero_acl.HERO_ACL_NOT_A_DIRECTORY
+        return fail(code: NOT_A_DIRECTORY, msg: f"{asked}: a part of the path is not a folder")
+
+    if kind == hero_acl.HERO_ACL_LIMIT
+        return fail(code: LIMIT, msg: f"{asked}: the system has no room for it (its number {number})")
+
+    if kind == hero_acl.HERO_ACL_UNSUPPORTED
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"{asked}: this volume keeps no access list (a FAT drive, a Linux file system mounted without them), or this system keeps none that is read here: Darwin, Linux and Windows are"
+        )
+
+    if kind == hero_acl.HERO_ACL_NOT_TEXT
+        return fail(code: NOT_TEXT, msg: f"{asked}: the path or the name is not UTF-8")
+    return fail(code: FAILED, msg: f"{asked}: the system refused it, its number {number}")
+
+# Which entry the layer named, in words: `the entry at 2: `, or nothing for
+# the list's own protection, place 0.
+function if_entry(place: i64) -> str
+    if place > 0
+        return f"the entry at {place}: "
+    return ""
+
+# Nothing where `text` can be handed to C, or `invalid` where it holds a zero
+# byte, which C reads as its end.
+#
+# - `text`: a path, a name or an id.
+# - `what`: what `text` is, for the message.
+# - `asked`: what was asked, for the message.
+function checked(text: str, what: str, asked: str) -> ()?
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == 0
+            return fail(code: INVALID, msg: f"{asked}: the {what} holds a zero byte at {at}, which no system reads")
+        at @ at + 1
+
+    return ok()
+
+# The bytes the layer answered, read once and asked again with more room
+# where they did not fit: a list (`name` empty) or an id.
+function filled(path: str, name: str, follow: i64, group: i64, asked: str) -> [u8]?
+    room: i64 @= FIRST_ROOM
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got: i64 @= 0
+
+        if name.len() == 0
+            got @ hero_acl.read(path, follow: follow, @buffer, n: room.to_u64().must())
+        else
+            got @ hero_acl.id_of(name, group: group, @buffer, n: room.to_u64().must())
+
+        if got < 0
+            return failed(asked)
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+
+        if got > MOST
+            return fail(code: LIMIT, msg: f"{asked}: it has {got} bytes, past the {MOST} read")
+
+        # Room for a list that grew between its measure and its reading.
+        room @ got
+        tries @ tries + 1
+
+    return fail(code: FAILED, msg: f"{asked}: it grew on each of {TRIES} readings")
+
+# The fields `bytes` holds, each ended by a zero byte; the bytes of each, as
+# they stand. Fails `failed` where the last has no zero byte after it.
+function fields_of(bytes: [u8] lent, asked: str) -> [[u8]]?
+    found: [[u8]] @= []
+    start: i64 @= 0
+
+    for index in range(from: 0, to: bytes.len())
+        if bytes[index] == 0
+            found @ found.push(bytes.slice(from: start, to: index))
+            start @ index + 1
+
+    if start != bytes.len()
+        return fail(code: FAILED, msg: f"{asked}: the layer's list does not end in a zero byte")
+    return ok(found)
+
+# The number a field of decimal digits holds. Fails `failed` where it is
+# empty, holds another byte, or passes the largest `i64`.
+function number_of(field: [u8], asked: str) -> i64?
+    if field.len() == 0 || field.len() > 18
+        return fail(code: FAILED, msg: f"{asked}: the layer wrote a number of {field.len()} digits")
+    value: i64 @= 0
+
+    for b in field
+        if b < '0' || b > '9'
+            return fail(code: FAILED, msg: f"{asked}: the layer wrote a number holding the byte {b}")
+        value @ value * 10 + (b - '0').to_i64().must()
+
+    return ok(value)
+
+# The list `bytes` holds, in the layer's form. Fails `failed` where it is not
+# that form, and `not_text` where an id is not UTF-8; a name that is not is
+# read with U+FFFD in its place, since a write never reads it.
+function rows_of(bytes: [u8] lent, asked: str) -> Rows?
+    fields = fields_of(bytes, asked: asked)?
+    count = hero_acl.fields()
+
+    if fields.len() == 0 || (fields.len() - 1) % count != 0
+        return fail(code: FAILED, msg: f"{asked}: the layer wrote {fields.len()} fields, no whole number of entries")
+    rows: [Row] @= []
+    at: i64 @= 1
+
+    while at < fields.len()
+        id: str @= ""
+
+        match octets.to_text(fields[at + 4])
+            .ok text => id @ text
+            .err _ => return fail(code: NOT_TEXT, msg: f"{asked}: the id of the entry at {at / count + 1} is not UTF-8")
+
+        rows @ rows.push(
+            Row(who: number_of(fields[at], asked: asked)?, deny: number_of(fields[at + 1], asked: asked)? == 1, rights: number_of(fields[at + 2], asked: asked)?, flags: number_of(fields[at + 3], asked: asked)?, id: id, name: octets.to_text_lossy(fields[at + 5]))
+        )
+        at @ at + count
+
+    return ok(Rows(protected: number_of(fields[0], asked: asked)? == 1, rows: rows))
+
+# One field of the layer's form, its text and the zero byte after it.
+function put_field(@bytes: [u8], text: str)
+    for b in octets.from_text(text)
+        bytes @ bytes.push(b)
+
+    bytes @ bytes.push(0)
+
+# The layer's form of `list`. The name is written empty: the layer never reads
+# it, and a name holding a zero byte would split its field.
+function bytes_of(list: Rows, asked: str) -> [u8]?
+    bytes: [u8] @= []
+
+    if list.protected
+        put_field(@bytes, text: "1")
+    else
+        put_field(@bytes, text: "0")
+
+    for row in list.rows
+        checked(text: row.id, what: "id of an entry", asked: asked)?
+
+        if row.rights < 0 || row.flags < 0
+            return fail(code: INVALID, msg: f"{asked}: an entry's rights and flags are never below 0")
+        put_field(@bytes, text: f"{row.who}")
+
+        if row.deny
+            put_field(@bytes, text: "1")
+        else
+            put_field(@bytes, text: "0")
+
+        put_field(@bytes, text: f"{row.rights}")
+        put_field(@bytes, text: f"{row.flags}")
+        put_field(@bytes, text: row.id)
+        put_field(@bytes, text: "")
+
+    return ok(bytes)
+
+# `path`'s list, the link's own where `follow` is 0.
+function read_rows(path: str, follow: i64) -> Rows?
+    asked = f"reading the access list of \"{path}\""
+    checked(text: path, what: "path", asked: asked)?
+    return rows_of(filled(path: path, name: "", follow: follow, group: 0, asked: asked)?, asked: asked)
+
+# `path`'s list replaced by `list`, the link's own where `follow` is 0.
+function write_rows(path: str, follow: i64, list: Rows) -> ()?
+    asked = f"writing the access list of \"{path}\""
+    checked(text: path, what: "path", asked: asked)?
+    bytes @= bytes_of(list, asked: asked)?
+
+    if hero_acl.write(path, follow: follow, @bytes, size: bytes.len().to_u64().must()) < 0
+        return failed(asked)
+    return ok()
+
+# The id of the user, or the group where `group` is 1, the system knows by
+# `name`.
+function id_named(name: str, group: i64) -> str?
+    asked = if_group(group) + f" \"{name}\""
+    checked(text: name, what: "name", asked: asked)?
+
+    if name.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: a name is never empty")
+    bytes = filled(path: "", name: name, follow: 0, group: group, asked: asked)?
+
+    match octets.to_text(bytes)
+        .ok text => return ok(text)
+        .err _   => return fail(code: FAILED, msg: f"{asked}: the system's id is not UTF-8")
+
+# What an id search asks, in words.
+function if_group(group: i64) -> str
+    if group == 1
+        return "finding the id of the group"
+    return "finding the id of the user"
+
+# The face's list of the layer's rows.
+function acl_of(found: Rows) -> acl.Acl
+    entries: [acl.Entry] @= []
+
+    for row in found.rows
+        entries @ entries.push(
+            acl.Entry(who: who_of(row.who), deny: row.deny, rights: row.rights, flags: row.flags, id: row.id, name: row.name)
+        )
+
+    return acl.Acl(protected: found.protected, entries: entries)
+
+# The layer's rows of the face's list.
+function rows_of_acl(list: acl.Acl) -> Rows
+    rows: [Row] @= []
+
+    for e in list.entries
+        rows @ rows.push(
+            Row(who: number_of_who(e.who), deny: e.deny, rights: e.rights, flags: e.flags, id: e.id, name: e.name)
+        )
+
+    return Rows(protected: list.protected, rows: rows)
+
+# Whom the layer's number names. The layer writes no other number: an entry
+# it read names one of these six.
+function who_of(number: i64) -> acl.Who
+    if number == hero_acl.HERO_ACL_USER
+        return .user
+
+    if number == hero_acl.HERO_ACL_GROUP
+        return .group
+
+    if number == hero_acl.HERO_ACL_OWNER
+        return .owner
+
+    if number == hero_acl.HERO_ACL_OWNING_GROUP
+        return .owning_group
+
+    if number == hero_acl.HERO_ACL_OTHERS
+        return .others
+    assert number == hero_acl.HERO_ACL_MASK
+    return .mask
+
+# The layer's number for whom an entry names.
+function number_of_who(who: acl.Who) -> i64
+    return match who
+        .user         => hero_acl.HERO_ACL_USER
+        .group        => hero_acl.HERO_ACL_GROUP
+        .owner        => hero_acl.HERO_ACL_OWNER
+        .owning_group => hero_acl.HERO_ACL_OWNING_GROUP
+        .others       => hero_acl.HERO_ACL_OTHERS
+        .mask         => hero_acl.HERO_ACL_MASK
+
+# `path`'s list, the link's own where `follow` is 0, as the face gives it.
+function read_acl(path: str, follow: i64) -> acl.Acl?
+    found = read_rows(path: path, follow: follow)?
+
+    for row in found.rows
+        if row.who < hero_acl.HERO_ACL_USER || row.who > hero_acl.HERO_ACL_MASK
+            return fail(
+                code: FAILED,
+                msg: f"reading the access list of \"{path}\": the layer named whom an entry names {row.who}"
+            )
+
+    return ok(acl_of(found))
+
+# `path`'s list replaced by the face's `list`, the link's own where `follow`
+# is 0.
+function write_acl(path: str, follow: i64, list: acl.Acl) -> ()?
+    return write_rows(path: path, follow: follow, list: rows_of_acl(list))
+
+## Tests
+
+test "rows_of: a list with no entry, one of two entries, and lists not of the layer's form"
+    empty = rows_of(['0', 0], asked: "x").must()
+    assert !empty.protected && empty.rows.len() == 0
+    two: [u8] = ['1', 0, '1', 0, '0', 0, '3', 0, '0', 0, '5', 0, 'a', 0, '2', 0, '1', 0, '1', 0, '2', 0, '9', 0, 'b', 0]
+    list = rows_of(two, asked: "x").must()
+    assert list.protected && list.rows.len() == 2
+    assert list.rows[0] == Row(who: 1, deny: false, rights: 3, flags: 0, id: "5", name: "a")
+    assert list.rows[1] == Row(who: 2, deny: true, rights: 1, flags: 2, id: "9", name: "b")
+
+    short: [u8] = ['0']
+    whole_less: [u8] = ['0', 0, '1', 0]
+    letter: [u8] = ['0', 0, 'x', 0, '0', 0, '1', 0, '0', 0, 0, 0]
+
+    for bad in [short, whole_less, letter]
+        match rows_of(bad, asked: "x")
+            .ok _  => assert false
+            .err e => assert e.code == FAILED
+
+test "bytes_of and rows_of: a list written and read back is the same list, its names left out"
+    list = Rows(
+        protected: true,
+        rows: [Row(who: 2, deny: true, rights: 1179817, flags: 3, id: "S-1-5-32-545", name: "BUILTIN\\Users")]
+    )
+    back = rows_of(bytes_of(list, asked: "x").must(), asked: "x").must()
+    assert back.protected
+    assert back.rows[0] == Row(who: 2, deny: true, rights: 1179817, flags: 3, id: "S-1-5-32-545", name: "")
+
+test "bytes_of: an id holding a zero byte, and rights below zero, are invalid"
+    zero: [u8] = ['1', 0, '2']
+    bad_id = Rows(
+        protected: false,
+        rows: [Row(who: 1, deny: false, rights: 1, flags: 0, id: zero.validated_bytes().must(), name: "")]
+    )
+
+    match bytes_of(bad_id, asked: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    below = Rows(protected: false, rows: [Row(who: 1, deny: false, rights: -1, flags: 0, id: "1", name: "")])
+
+    match bytes_of(below, asked: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

@@ -1,0 +1,51 @@
+# What the tests of `fs/acl` stand on, and nothing else calls: a folder each
+# test makes under `build/` and removes, the entry that grants this user one
+# right in the system's own form, and the entries of a list that name one id.
+
+use fs
+use fs/acl
+use os
+
+# A folder of its own for one test, under `build/` of the folder the tests run
+# from, so nothing is written outside it.
+#
+# - `name`: the test's own word, in the folder's name.
+function folder(name: str) -> str
+    fs.make_dir_all("build").must()
+    return fs.make_temp_dir(dir: "build", pattern: f"rebel-acl-{name}-*").must()
+
+# The entry that allows the user this test runs as `rights`, with `flags`.
+#
+# - `rights`: the rights allowed.
+# - `flags`: how it is handed down.
+function mine(rights: i64, flags: i64) -> acl.Entry
+    me = os.user_name().must()
+    return acl.Entry(who: .user, deny: false, rights: rights, flags: flags, id: acl.user_id_of(me).must(), name: "")
+
+# The entries of `list` that name `id` and did not come down from a parent,
+# by whom they name and what they allow or deny, their names left out: on
+# Windows a parent's entries may name the same user.
+#
+# - `list`: a list read.
+# - `id`: the id looked for.
+function naming(list: acl.Acl, id: str) -> [acl.Entry]
+    found: [acl.Entry] @= []
+
+    for e in list.entries
+        if e.id == id && e.flags & acl.INHERITED == 0
+            found @ found.push(
+                acl.Entry(who: e.who, deny: e.deny, rights: e.rights, flags: e.flags, id: e.id, name: "")
+            )
+
+    return found
+
+# Whether the volume under `path` keeps a list: false where reading it answers
+# `unsupported`; any other failure fails the test.
+#
+# - `path`: a file or a folder the test made.
+function kept(path: str) -> bool
+    match acl.read(path)
+        .ok _ => return true
+        .err e =>
+            assert e.code == acl.UNSUPPORTED
+            return false

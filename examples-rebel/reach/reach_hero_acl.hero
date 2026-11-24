@@ -1,0 +1,8 @@
+# Reaches Rebel's floor over the platform layer's access control lists,
+# `hero_acl.h`, so that `heroes test` on this file runs the floor's own tests
+# (spec § 12, § 13). It prints how many fields one entry of a list holds.
+
+use <rebel>/fs/acl/hero_acl
+
+function main()
+    print(hero_acl.fields())

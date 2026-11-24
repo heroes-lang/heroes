@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eighty-two packages, in layers. **A package may use any package of a layer below
+A hundred and eighty-three packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -162,6 +162,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `mail/imap` | mail read from a server: IMAP4rev2 and IMAP4rev1 with STARTTLS or TLS, LOGIN and SASL (PLAIN, XOAUTH2, OAUTHBEARER), mailboxes listed, made and selected, messages fetched whole or in parts with their envelopes and structures, searched, flagged, copied, moved, appended and expunged by number or UID, news waited for with IDLE; every answer read against the grammar and bounded in bytes | `bytes`, `io`, `mail`, `net`, `numbers`, `strings`, `time`, `tls`, `unicode` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read and made and signed, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `net`, `os`, `pem`, `strings`, `time` |  |
+| 5 | `fs/acl` | a file's or a folder's access control list read and written whole, a link's own too, copied to another path, and the id of a user or a group found by name: entries that allow or deny rights with their inheritance and a list protected from its parent's on Windows and Darwin, POSIX's owner, user, group, mask and default entries on Linux read and written as the kernel keeps them; an entry a system cannot hold, and other systems, answer `unsupported` | `bytes`, `fs`, `os` | `hero_acl.h` |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
 | 5 | `fs/xattr` | the extended attributes of a file or a folder, a link's own too, listed, read, written only where new or only where there, removed and copied to another path: Darwin's and Linux's own, the named data streams of NTFS on Windows; other systems answer `unsupported` | `bytes`, `fs` | `hero_xattr.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |

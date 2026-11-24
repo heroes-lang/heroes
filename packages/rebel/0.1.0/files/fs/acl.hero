@@ -1,0 +1,550 @@
+# Who may do what to a file or a folder beyond its permission bits: its access
+# control list read, written whole, copied to another path, and the id of a
+# user or a group found by name, so a backup restores a folder with who may
+# read it and a program grants one user or group a right. What .NET's
+# `FileSystemSecurity` and Java's `AclFileAttributeView` give a program.
+#
+# **One form for three systems** (`hero_acl.h`). Windows' and Darwin's lists
+# are entries that allow or deny rights to a user or a group, carried down a
+# tree by inheritance flags; Darwin's rights and flags are Windows' one to
+# one, so an entry's `rights` and `flags` here are Windows' own numbers, the
+# constants below. Linux's are POSIX's draft lists as the kernel keeps them:
+# entries that only allow read (`READ_DATA`), write (`WRITE_DATA`) and execute
+# (`EXECUTE`), to the owner, a user, the owning group, a group, the mask and
+# everyone else, and a folder's default entries, which the files and folders
+# made in it take, carry `LINUX_DEFAULT`. No library is linked: on Linux the
+# kernel's own form is read and written, so a program needs no libacl.
+#
+# **A list read on one system writes back on that system as it was**: a
+# backup reads it with `read` and restores it with `write`. An id is the
+# system's own (a SID on Windows, a UUID on Darwin, a number on Linux), so a
+# list does not cross systems, nor machines that know other users; `user_id_of`
+# and `group_id_of` find the id of a name on the machine that runs.
+#
+# What it does NOT do: a file's permission bits and owner (`fs.permission_of`,
+# `fs.set_permission`, `fs.owner`, `fs.set_owner`); its extended attributes
+# (`fs/xattr`); a Windows list's audit entries (its SACL), which need a
+# privilege a program rarely holds.
+#
+# It fails with `invalid`, `file_not_found`, `not_found`, `permission`,
+# `not_a_directory`, `not_text`, `limit`, `unsupported` and `failed` (README
+# § A4): `unsupported` where the volume keeps no list (a FAT drive, a Linux
+# file system mounted without them), where an entry is one this system's
+# lists cannot hold, the message naming which and why, and on a POSIX system
+# neither Darwin nor Linux.
+
+use fs
+use fs/acl/internal/fixture
+use fs/acl/internal/lists
+use os
+
+## Codes
+
+# An id holding a zero byte, a path holding one, an entry's rights or flags
+# below 0, an id the system cannot read as one, a Linux list missing its
+# owner, owning group or everyone-else entry or naming one twice.
+constant INVALID: str
+    lists.INVALID
+
+# The path names nothing.
+constant FILE_NOT_FOUND: str
+    lists.FILE_NOT_FOUND
+
+# The system knows no user or group of that name.
+constant NOT_FOUND: str
+    lists.NOT_FOUND
+
+# The system refuses the call to this program: only a file's owner, or a user
+# its list lets, changes a list.
+constant PERMISSION: str
+    lists.PERMISSION
+
+# A part of the path on its way is not a folder.
+constant NOT_A_DIRECTORY: str
+    lists.NOT_A_DIRECTORY
+
+# On Windows, a path or a name that is not UTF-8.
+constant NOT_TEXT: str
+    lists.NOT_TEXT
+
+# The system has no room for the list, or one read is past 16 MiB.
+constant LIMIT: str
+    lists.LIMIT
+
+# The volume keeps no list, an entry is one this system's lists cannot hold,
+# or the system keeps none that is read here.
+constant UNSUPPORTED: str
+    lists.UNSUPPORTED
+
+# The system refused for a reason none of the codes above names; the message
+# carries its number.
+constant FAILED: str
+    lists.FAILED
+
+## Rights and flags
+
+# To read a file's bytes, or list a folder.
+constant READ_DATA: i64
+    0x1
+
+# To write a file's bytes, or make a file in a folder.
+constant WRITE_DATA: i64
+    0x2
+
+# To write at a file's end, or make a folder in a folder.
+constant APPEND_DATA: i64
+    0x4
+
+# To read the extended attributes.
+constant READ_EXTENDED: i64
+    0x8
+
+# To write the extended attributes.
+constant WRITE_EXTENDED: i64
+    0x10
+
+# To run a file, or pass through a folder.
+constant EXECUTE: i64
+    0x20
+
+# To remove what a folder holds, whatever the list of what it holds says.
+constant DELETE_CHILD: i64
+    0x40
+
+# To read the attributes: times, size, kind.
+constant READ_ATTRIBUTES: i64
+    0x80
+
+# To write the attributes.
+constant WRITE_ATTRIBUTES: i64
+    0x100
+
+# To remove it.
+constant DELETE: i64
+    0x10000
+
+# To read its list.
+constant READ_SECURITY: i64
+    0x20000
+
+# To write its list.
+constant WRITE_SECURITY: i64
+    0x40000
+
+# To make oneself its owner.
+constant CHANGE_OWNER: i64
+    0x80000
+
+# To wait on it, which Windows asks of every reading and writing.
+constant SYNCHRONIZE: i64
+    0x100000
+
+# Windows' generic rights, which an entry a folder hands down may carry and
+# Darwin has no place for.
+constant GENERIC_ALL: i64
+    0x10000000
+
+constant GENERIC_EXECUTE: i64
+    0x20000000
+
+constant GENERIC_WRITE: i64
+    0x40000000
+
+constant GENERIC_READ: i64
+    0x80000000
+
+# What Windows' Explorer calls Read: the data, the attributes, the extended
+# attributes and the list read, and the wait (`FILE_GENERIC_READ`).
+constant READ: i64
+    0x120089
+
+# What Explorer calls Write (`FILE_GENERIC_WRITE`).
+constant WRITE: i64
+    0x120116
+
+# What Explorer calls Read and execute.
+constant READ_AND_EXECUTE: i64
+    0x1200a9
+
+# What Explorer calls Modify: read, execute, write and remove.
+constant MODIFY: i64
+    0x1301bf
+
+# What Explorer calls Full control (`FILE_ALL_ACCESS`).
+constant FULL_CONTROL: i64
+    0x1f01ff
+
+# The entry is handed down to the files made in a folder.
+constant FILE_INHERIT: i64
+    0x1
+
+# The entry is handed down to the folders made in a folder.
+constant FOLDER_INHERIT: i64
+    0x2
+
+# The entry handed down goes one level only, and no further.
+constant LIMIT_INHERIT: i64
+    0x4
+
+# The entry is only handed down, and does not govern the folder itself.
+constant ONLY_INHERIT: i64
+    0x8
+
+# The entry came down from a parent; on Windows a list not protected takes its
+# parent's again when written, so such an entry is left to the system.
+constant INHERITED: i64
+    0x10
+
+# A Linux folder's default entries: handed down to the files and folders made
+# in it, and not governing the folder itself.
+constant LINUX_DEFAULT: i64
+    0xb
+
+## Lists
+
+# Whom an entry names.
+variant Who
+    # A user, by its id.
+    user
+    # A group, by its id.
+    group
+    # Linux alone: the file's owner.
+    owner
+    # Linux alone: the file's owning group.
+    owning_group
+    # Linux alone: everyone the entries before it do not name.
+    others
+    # Linux alone: the most a user, group or owning group entry grants.
+    mask
+
+# One entry of a list.
+record Entry
+    # Whom it names.
+    who: Who
+    # True where it denies its rights, false where it allows them; Linux's
+    # only allow.
+    deny: bool
+    # The rights it allows or denies, the constants above or'ed.
+    rights: i64
+    # How it is handed down a tree, the constants above or'ed.
+    flags: i64
+    # The user's or group's id, the system's own: empty for the owner, the
+    # owning group, everyone else and the mask.
+    id: str
+    # The user's or group's name as the system gives it, empty where it knows
+    # none (an account since removed); never read by `write`.
+    name: str
+
+# A file's or a folder's list.
+record Acl
+    # True where it takes nothing its parent hands down (Windows' protected
+    # DACL, Darwin's `ACL_FLAG_NO_INHERIT`); Linux's are never.
+    protected: bool
+    # Its entries in the system's order: on Windows the order they are judged
+    # in, so a deny meant to win stands before the allow it overrides; on
+    # Linux the kernel's (owner, users by id, owning group, groups by id, mask,
+    # everyone else, then a folder's default entries).
+    entries: [Entry]
+
+# `path`'s access list.
+#
+# - `path`: the file or folder asked.
+#
+# Where a file has no list, Darwin's answer has no entry and Linux's has the
+# three its permission bits are. Fails `file_not_found` where nothing is at
+# `path`, `unsupported` where a Windows list holds an entry of a kind not read
+# here (an object, callback or audit entry) or is null, never a list with an
+# entry left out, and as the module's comment says.
+function read(path: str) -> Acl?
+    return lists.read_acl(path: path, follow: 1)
+
+# The access list of the link at `path` itself, not of what it names.
+#
+# - `path`: the link asked.
+#
+# Linux keeps no list on a link, and answers the three entries its permission
+# bits are. Fails as `read` does.
+function link_read(path: str) -> Acl?
+    return lists.read_acl(path: path, follow: 0)
+
+# Replaces `path`'s access list with `acl`.
+#
+# - `path`: the file or folder written.
+# - `acl`: the list; a list `read` gave writes back as it was.
+#
+# On Windows a list not protected takes its parent's entries again, so an
+# entry of `acl` marked `INHERITED` is left to the system; a protected one is
+# written whole, as given. On Linux the access entries replace the access
+# list, a folder's default entries its default list, removed where `acl` holds
+# none; where `acl` names a user or a group and holds no mask, a mask is made
+# of every right a user, group or owning-group entry grants, as `setfacl`
+# makes one; a volume without lists takes the three entries of the permission
+# bits as those bits. Fails `unsupported` for an entry this system's lists
+# cannot hold (on Darwin and Windows an owner, owning group, mask or
+# everyone-else entry; on Linux a deny, a right other than read, write and
+# execute, a flag other than `LINUX_DEFAULT`, a protected list), the message
+# naming which; `permission` where this user may not change it; `invalid` for
+# an id the system cannot read; and as `read` does.
+function write(path: str, acl: Acl) -> ()?
+    return lists.write_acl(path: path, follow: 1, list: acl)
+
+# Replaces the access list of the link at `path` itself with `acl`.
+#
+# - `path`: the link written.
+# - `acl`: the list.
+#
+# Linux keeps no list on a link, nor Darwin's APFS (`acl_set_link_np`
+# answers `ENOTSUP`), and both answer `unsupported`; Windows writes the
+# link's own. Fails as `write` does.
+function link_write(path: str, acl: Acl) -> ()?
+    return lists.write_acl(path: path, follow: 0, list: acl)
+
+# Writes `from`'s access list on `to`.
+#
+# - `from`: the file or folder whose list is read.
+# - `to`: the file or folder written.
+#
+# On Windows `to` keeps what its own parent hands down unless `from`'s list is
+# protected; on Linux a folder's default entries are copied to a folder alone,
+# and `unsupported` where `to` is a file. Fails as `read` and `write` do.
+function copy(from: str, to: str) -> ()?
+    return write(path: to, acl: read(from)?)
+
+# The id of the user the system knows by `name`, as an entry's `id` holds it.
+#
+# - `name`: the user's name; on Windows `DOMAIN\name` or `name`.
+#
+# Fails `not_found` where the system knows no user of that name, or it names
+# a group, and `invalid` where it is empty or holds a zero byte.
+function user_id_of(name: str) -> str?
+    return lists.id_named(name, group: 0)
+
+# The id of the group the system knows by `name`, as an entry's `id` holds it.
+#
+# - `name`: the group's name; on Windows `BUILTIN\Users` or `Users`.
+#
+# Fails as `user_id_of` does, `not_found` where the name is a user's.
+function group_id_of(name: str) -> str?
+    return lists.id_named(name, group: 1)
+
+## Tests
+
+test "read and write: a path that is not there is file_not_found, and a zero byte in a path is invalid"
+    dir = fixture.folder("absent")
+    gone = dir + "/nothing"
+
+    match read(gone)
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match write(path: gone, acl: Acl(protected: false, entries: []))
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    zero: [u8] = ['b', 0, 'x']
+
+    match read(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    fs.remove_all(dir).must()
+
+test "a file's list written back as it was read reads the same"
+    dir = fixture.folder("same")
+    file = dir + "/f"
+    fs.write_bytes(file, data: [1]).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no access list: read answers unsupported")
+    before = read(file).must()
+
+    if os.system() == .linux
+        # No list: the three entries its permission bits are.
+        assert before.entries.len() == 3
+        assert before.entries[0].who == .owner && before.entries[1].who == .owning_group && before.entries[2].who == .others
+
+    if os.system() == .darwin
+        assert before.entries.len() == 0 && !before.protected
+    write(path: file, acl: before).must()
+    assert read(file).must() == before
+    fs.remove_all(dir).must()
+
+test "write: this user allowed to read a file's data is read back, the rest of the list kept"
+    dir = fixture.folder("grant")
+    file = dir + "/f"
+    fs.write_bytes(file, data: [1]).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no access list: read answers unsupported")
+    before = read(file).must()
+    entry = fixture.mine(rights: READ_DATA, flags: 0)
+    write(path: file, acl: Acl(protected: false, entries: before.entries.push(entry))).must()
+    after = read(file).must()
+    assert fixture.naming(after, id: entry.id) == [entry]
+    masks: i64 @= 0
+
+    for e in after.entries
+        if e.who == .mask
+            masks @ masks + 1
+
+    if os.system() == .linux
+        # A list naming a user takes a mask of what its user and group
+        # entries grant, as `setfacl` makes one.
+        assert masks == 1
+    else
+        assert masks == 0
+
+    # Copied whole to another file.
+    other = dir + "/g"
+    fs.write_bytes(other, data: [2]).must()
+    copy(from: file, to: other).must()
+    assert fixture.naming(read(other).must(), id: entry.id) == [entry]
+    fs.remove_all(dir).must()
+
+test "write: a deny entry and a protected list, which Linux's lists cannot hold"
+    dir = fixture.folder("deny")
+    file = dir + "/f"
+    fs.write_bytes(file, data: [1]).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no access list: read answers unsupported")
+    before = read(file).must()
+    denied = Entry(
+        who: .user,
+        deny: true,
+        rights: WRITE_DATA,
+        flags: 0,
+        id: fixture.mine(rights: 0, flags: 0).id,
+        name: ""
+    )
+    first: [Entry] @= [denied]
+
+    for e in before.entries
+        first @ first.push(e)
+
+    with_deny = Acl(protected: false, entries: first)
+    protected = Acl(protected: true, entries: before.entries)
+
+    if os.system() == .linux
+        match write(path: file, acl: with_deny)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+        match write(path: file, acl: protected)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+        assert read(file).must() == before
+    else
+        write(path: file, acl: with_deny).must()
+        assert fixture.naming(read(file).must(), id: denied.id) == [denied]
+        write(path: file, acl: Acl(protected: true, entries: [denied])).must()
+        back = read(file).must()
+        assert back.protected
+        assert fixture.naming(back, id: denied.id) == [denied]
+
+    fs.remove_all(dir).must()
+
+test "write: an owner entry on Darwin and Windows, and a default entry on a Linux file, cannot be held"
+    dir = fixture.folder("cannot")
+    file = dir + "/f"
+    fs.write_bytes(file, data: [1]).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no access list: read answers unsupported")
+    before = read(file).must()
+    owner = Entry(who: .owner, deny: false, rights: READ_DATA, flags: 0, id: "", name: "")
+    inherited = fixture.mine(rights: READ_DATA, flags: LINUX_DEFAULT)
+
+    if os.system() == .linux
+        match write(path: file, acl: Acl(protected: false, entries: before.entries.push(inherited)))
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED && e.msg == f"writing the access list of \"{file}\": the entry at 4: a folder's default entries stand on what is not a folder"
+    else
+        match write(path: file, acl: Acl(protected: false, entries: [owner]))
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED && e.msg == f"writing the access list of \"{file}\": the entry at 1: this system's lists name a user or a group alone, no owner, owning group, mask or everyone else"
+
+    assert read(file).must() == before
+    fs.remove_all(dir).must()
+
+test "write: a folder's entries handed down to what is made in it"
+    dir = fixture.folder("inherit")
+    inner = dir + "/inner"
+    fs.make_dir(inner).must()
+
+    if !fixture.kept(inner)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no access list: read answers unsupported")
+    before = read(inner).must()
+    flags: i64 @= FILE_INHERIT | FOLDER_INHERIT
+
+    if os.system() == .linux
+        flags @ LINUX_DEFAULT
+
+    # On Linux a folder's default list holds the owner, owning group and
+    # everyone else too, as its access list does.
+    handed: [Entry] @= []
+
+    if os.system() == .linux
+        for e in before.entries
+            handed @ handed.push(
+                Entry(who: e.who, deny: false, rights: e.rights, flags: LINUX_DEFAULT, id: e.id, name: "")
+            )
+
+    entry = fixture.mine(rights: READ_DATA | EXECUTE, flags: flags)
+    given: [Entry] @= before.entries
+
+    for e in handed
+        given @ given.push(e)
+
+    write(path: inner, acl: Acl(protected: false, entries: given.push(entry))).must()
+    assert fixture.naming(read(inner).must(), id: entry.id) == [entry]
+
+    # A file made in the folder takes the entry, its flags those of an entry
+    # handed down.
+    fs.write_bytes(inner + "/made", data: []).must()
+    took: i64 @= 0
+
+    for e in read(inner + "/made").must().entries
+        if e.id == entry.id && e.rights & READ_DATA != 0
+            took @ took + 1
+
+    assert took >= 1
+    fs.remove_all(dir).must()
+
+test "user_id_of and group_id_of: this user's id, a group's, and names the system knows none of"
+    me = os.user_name().must()
+    id = user_id_of(me).must()
+    assert id.len() > 0
+
+    group = match os.system()
+        .darwin  => "staff"
+        .linux   => "root"
+        .windows => "Users"
+        .other   => "wheel"
+
+    if os.system() == .other
+        skip_test(reason: "this system keeps no access list that is read here: user_id_of answers unsupported")
+    assert group_id_of(group).must().len() > 0
+
+    # Linux's `root` is user 0 and group 0 both; elsewhere a user's id and a
+    # group's are never the same.
+    if os.system() != .linux
+        assert group_id_of(group).must() != id
+
+    match user_id_of("rebel-no-such-user-9431")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match group_id_of("rebel-no-such-group-9431")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match user_id_of("")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

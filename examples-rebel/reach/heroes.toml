@@ -41,6 +41,8 @@ packages = [
     "flags",
     "font",
     "fs",
+    "fs/acl",
+    "fs/acl/hero_acl",
     "fs/hero_volumes",
     "fs/watch",
     "fs/watch/hero_watch",
