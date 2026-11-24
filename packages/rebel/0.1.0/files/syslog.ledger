@@ -33,7 +33,7 @@ capability syslog/write  a line written at a level
   note    never waits: a log whose queue is full answers `limit`, where Go's and Python's block. A line holding a zero byte is `invalid` everywhere, since no C string carries it; a newline stays in the line, in the journal's binary form. The unified log and the Event Log take at most 31,839 bytes (`ReportEventW`'s string), the journal any length, an entry past a datagram's size sent as the protocol asks, an empty datagram carrying a sealed memory file
 
 capability syslog/journal  the journal's native protocol
-  heroes  syslog.write, syslog.format_journal, syslog.open_socket
+  heroes  syslog.write, syslog.encode_journal, syslog.open_socket
   go      -
   rust    -
   python  -

@@ -212,7 +212,7 @@ function open_socket(name: str, destination: Destination, socket: str) -> Log?
 # - `line`: the message; any text but a zero byte.
 #
 # Fails `invalid` for a name that is none and a line holding a zero byte.
-function format_journal(name: str, level: Level, line: str) -> [u8]?
+function encode_journal(name: str, level: Level, line: str) -> [u8]?
     _ = checks.checked(name: name, asked: "writing a journal entry")?
     _ = checks.without_zero(line: line, asked: "writing a journal entry")?
     return ok(forms.journal(identifier: name, level: level_number(level), line: line))
@@ -227,7 +227,7 @@ function format_journal(name: str, level: Level, line: str) -> [u8]?
 # - `at`: the local time it is stamped with.
 #
 # Fails `invalid` for a name that is none and a line holding a zero byte. See
-# also `format_journal`.
+# also `encode_journal`.
 function format_syslog(name: str, level: Level, line: str, pid: i64, at: time.DateTime) -> str?
     _ = checks.checked(name: name, asked: "writing a syslog line")?
     _ = checks.without_zero(line: line, asked: "writing a syslog line")?
@@ -398,11 +398,11 @@ test "install_source and remove_source: invalid names before the system, unsuppo
         assert errors.has_code(install_source("demo"), code: UNSUPPORTED)
         assert errors.has_code(remove_source("demo"), code: UNSUPPORTED)
 
-test "format_journal and format_syslog: the protocol's entry and RFC 3164's line, a wrong name or a zero byte invalid"
-    assert format_journal(name: "demo", level: .warning, line: "hi").must() == forms.journal(identifier: "demo", level: 4, line: "hi")
+test "encode_journal and format_syslog: the protocol's entry and RFC 3164's line, a wrong name or a zero byte invalid"
+    assert encode_journal(name: "demo", level: .warning, line: "hi").must() == forms.journal(identifier: "demo", level: 4, line: "hi")
     at = time.DateTime(year: 2026, month: 1, day: 15, hour: 12, minute: 0, second: 0, nanosecond: 0)
     assert format_syslog(name: "demo", level: .notice, line: "up", pid: 7, at: at).must() == "<29>Jan 15 12:00:00 demo[7]: up"
-    assert errors.has_code(format_journal(name: "", level: .info, line: "x"), code: INVALID)
+    assert errors.has_code(encode_journal(name: "", level: .info, line: "x"), code: INVALID)
     raw: [u8] = [97, 0]
     zeroed = raw.validated_bytes().must()
     assert errors.has_code(format_syslog(name: "demo", level: .info, line: zeroed, pid: 1, at: at), code: INVALID)
@@ -433,8 +433,8 @@ test "open_socket: the journal at the socket a container mounts"
         .err e  => assert e.code == UNSUPPORTED
 
 # The datagram the journal is sent for one line, told without a socket.
-test "format_journal: the fields of one warning"
-    entry = format_journal(name: "backup", level: .warning, line: "disk almost full").must()
+test "encode_journal: the fields of one warning"
+    entry = encode_journal(name: "backup", level: .warning, line: "disk almost full").must()
     assert bytes.to_text(entry).must() == "MESSAGE=disk almost full\nPRIORITY=4\nSYSLOG_FACILITY=3\nSYSLOG_IDENTIFIER=backup\n"
 
 # The line `/dev/log` is sent for one notice, stamped with the time given.

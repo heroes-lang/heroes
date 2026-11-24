@@ -1,7 +1,7 @@
 # The two texts a line becomes on Linux: the journal's native protocol and the
 # classic syslog line. Pure: each writes bytes and sends nothing, so what a
 # datagram holds is told without a socket. Private to the package (README §
-# A2); the face's `format_journal` and `format_syslog` are these.
+# A2); the face's `encode_journal` and `format_syslog` are these.
 #
 # The journal's, read on 2026-11-24 from systemd's `JOURNAL_NATIVE_PROTOCOL`
 # page: an entry is fields, each `NAME=value` and a newline, or, where the
