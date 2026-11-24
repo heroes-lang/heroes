@@ -1,12 +1,14 @@
 # Reaches Rebel's `jobs/redis_store`, so that `heroes test` on this file
 # runs the package's own tests (spec § 12). Where the variable
 # `REBEL_REDIS_URL` names a server, it enqueues a job there, claims it and
-# completes it; elsewhere it says why not.
+# completes it, and takes a token of a limit every worker shares; elsewhere
+# it says why not.
 
 use <rebel>/jobs
 use <rebel>/jobs/redis_store
 use <rebel>/os
 use <rebel>/redis
+use <rebel>/time
 
 function main()
     match os.env("REBEL_REDIS_URL")
@@ -20,4 +22,7 @@ function main()
                     claimed = redis_store.claim(@c, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
                     redis_store.complete(@c, claimed, .null_value).must()
                     print("job ", id, " ", jobs.state_name(redis_store.get(@c, id).must().state))
+                    _ = redis_store.set_limit(@c, name: "hello", every: time.seconds(1).must(), burst: 1).must()
+                    print("limit granted ", redis_store.allow(@c, name: "hello", n: 1).must().granted)
+                    redis_store.remove_limit(@c, name: "hello").must()
                     redis.close(@c).must()
