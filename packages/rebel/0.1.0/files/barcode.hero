@@ -1,7 +1,8 @@
 # Barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their two- and
 # five-digit add-ons (ISO/IEC 15420 and the GS1 General Specifications),
-# Code 128 and GS1-128 (ISO/IEC 15417), and Data Matrix ECC 200 and GS1
-# Data Matrix (ISO/IEC 16022), each with its check characters or error
+# Code 128 and GS1-128 (ISO/IEC 15417), Data Matrix ECC 200 and GS1 Data
+# Matrix (ISO/IEC 16022), and PDF417 and compact PDF417 (ISO/IEC 15438),
+# each with its check characters or error
 # correction and its quiet zones, and written as SVG text or drawn into an
 # `image`, the digits a person reads set under a linear symbol's bars.
 #
@@ -27,6 +28,8 @@ use barcode/internal/code128 as c128
 use barcode/internal/codes
 use barcode/internal/dm_symbol
 use barcode/internal/gs1
+use barcode/internal/pdf_encode
+use barcode/internal/pdf_symbol
 use barcode/internal/render
 use barcode/internal/samples
 use barcode/internal/upc
@@ -42,8 +45,10 @@ use image
 constant INVALID: str
     codes.INVALID
 
-# The code of data longer than the symbology holds, which `gs1_128`
-# answers past 48 characters.
+# The code of data longer than the symbology holds: `gs1_128` past 48
+# characters; `data_matrix`, `data_matrix_bytes` and `gs1_data_matrix`
+# past the size asked or the largest; `pdf417` and `pdf417_bytes` past 928
+# codewords or 90 rows.
 constant UNSUPPORTED: str
     codes.UNSUPPORTED
 
@@ -74,6 +79,9 @@ variant Symbology
     data_matrix
     # GS1 Data Matrix, Data Matrix holding GS1 element strings, FNC1 first.
     gs1_data_matrix
+    # PDF417, any bytes, a text of more than ASCII marked as UTF-8; compact
+    # where its rows end in one bar.
+    pdf417
 
 # Text written with a symbol: the digits a person reads.
 record Caption
@@ -271,7 +279,7 @@ function upce(digits: str) -> Symbol?
 function with_add_on(symbol: Symbol, digits: str) -> Symbol?
     match symbol.symbology
         .ean13 | .upca | .upce => _ = 0
-        .ean8 | .code128 | .gs1_128 | .data_matrix | .gs1_data_matrix => return fail(
+        .ean8 | .code128 | .gs1_128 | .data_matrix | .gs1_data_matrix | .pdf417 => return fail(
             code: codes.INVALID,
             msg: "an add-on follows an EAN-13, a UPC-A or a UPC-E alone"
         )
@@ -544,6 +552,137 @@ function gs1_data_matrix(elements: [Element], size: Size) -> Symbol?
         Symbol(symbology: .gs1_data_matrix, rows: dm_symbol.make(pieces: gs1.pieces(ais: ais, values: values), prefix: [], order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: gs1.caption(ais: ais, values: values))
     )
 
+## PDF417
+
+# A count the program gives, or one the package chooses.
+variant Count
+    # Chosen: PDF417's columns for a symbol about three times as wide as it
+    # is tall, its level of error correction the one the standard
+    # recommends for the data.
+    automatic
+    # Given.
+    exactly
+        # The count.
+        value: i64
+
+# How `pdf417` makes a symbol. Built directly, or by
+# `default_pdf417_options`.
+record Pdf417Options
+    # The data columns, 1 to 30.
+    columns: Count
+    # The level of error correction, 0 to 8: 2 to the level plus one
+    # codewords of it, a symbol at level 8 restoring 255 lost.
+    level: Count
+    # How many modules tall a row is drawn, 1 or more; the standard
+    # recommends 3 at least.
+    row_height: i64
+    # Whether each row ends with one bar instead of its right row indicator
+    # and stop pattern: compact PDF417, narrower, for a clean print.
+    compact: bool
+
+# The options of an ordinary PDF417: the columns and the level chosen, rows
+# three modules tall, not compact. See also `pdf417`.
+function default_pdf417_options() -> Pdf417Options
+    return Pdf417Options(columns: .automatic, level: .automatic, row_height: 3, compact: false)
+
+# The PDF417 of `text`: runs of thirteen digits or more in numeric
+# compaction, runs of text in text compaction, and the rest in byte.
+#
+# - `text`: the text; one holding only ASCII is written as it is, any other
+#   behind the ECI that marks it UTF-8 (ECI 000026), so a reader gives it
+#   back as written; one byte at least.
+# - `options`: the columns, the level, the rows' height, compact or not.
+#
+# The quiet zone is two modules on each side, the least the standard asks.
+# Fails `invalid` where `text` is empty or a count or the rows' height is
+# out of its range;
+# `unsupported` where the data and its error correction pass 928
+# codewords or need more than 90 rows. See also `pdf417_bytes`.
+function pdf417(text: str, options: Pdf417Options) -> Symbol?
+    if text.len() == 0
+        return fail(code: codes.INVALID, msg: "a PDF417 holds one byte or more, and the data is empty")
+    data: [i64] @= []
+    eci: bool @= false
+
+    for i in range(from: 0, to: text.len())
+        data @ data.push(to_i64(text[i]).must())
+
+        if text[i] >= 128
+            eci @ true
+
+    words: [i64] @= []
+
+    if eci
+        words @ [pdf_encode.ECI, 26]
+
+    for w in pdf_encode.words_of(data)
+        words @ words.push(w)
+
+    if options.row_height < 1
+        return fail(code: codes.INVALID, msg: f"a PDF417's rows are 1 module tall or more, not {options.row_height}")
+
+    level = match options.level
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_level = match options.level
+        .automatic => true
+        .exactly _ => false
+
+    columns = match options.columns
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_columns = match options.columns
+        .automatic => true
+        .exactly _ => false
+
+    rows = pdf_symbol.rows_of(words: words, level: level, choose_level: choose_level, columns: columns, choose_columns: choose_columns, row_height: options.row_height, compact: options.compact)?
+    return ok(
+        Symbol(symbology: .pdf417, rows: rows, row_height: options.row_height, guards: [], add_on: [], quiet: Quiet(left: 2, right: 2, top: 2, bottom: 2), captions: [], text: text)
+    )
+
+# The PDF417 of `data`, read back as its bytes.
+#
+# - `data`: any bytes, which a reader takes as ISO/IEC 8859-1 unless the
+#   program that reads them knows better; runs of digits and of text are
+#   compacted as `pdf417` compacts them; one byte at least.
+# - `options`: the columns, the level, the rows' height, compact or not.
+#
+# `text` is the bytes read as ISO/IEC 8859-1. Fails as `pdf417` fails. See
+# also `pdf417`.
+function pdf417_bytes(data: [u8], options: Pdf417Options) -> Symbol?
+    if data.len() == 0
+        return fail(code: codes.INVALID, msg: "a PDF417 holds one byte or more, and the data is empty")
+    pieces: [i64] @= []
+
+    for b in data
+        pieces @ pieces.push(to_i64(b).must())
+
+    if options.row_height < 1
+        return fail(code: codes.INVALID, msg: f"a PDF417's rows are 1 module tall or more, not {options.row_height}")
+
+    level = match options.level
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_level = match options.level
+        .automatic => true
+        .exactly _ => false
+
+    columns = match options.columns
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_columns = match options.columns
+        .automatic => true
+        .exactly _ => false
+
+    rows = pdf_symbol.rows_of(words: pdf_encode.words_of(pieces), level: level, choose_level: choose_level, columns: columns, choose_columns: choose_columns, row_height: options.row_height, compact: options.compact)?
+    return ok(
+        Symbol(symbology: .pdf417, rows: rows, row_height: options.row_height, guards: [], add_on: [], quiet: Quiet(left: 2, right: 2, top: 2, bottom: 2), captions: [], text: c128.latin1_text(data))
+    )
+
 ## Written out
 
 # How `to_svg` writes a symbol. Built directly, or by `default_svg_options`.
@@ -759,3 +898,18 @@ test "gs1_data_matrix: a GTIN and an expiry date"
         size: .smallest(shape: .square)
     ).must()
     assert s.text == "(01)09501101530003(17)250630"
+
+# The default PDF417 options.
+test "default_pdf417_options: chosen columns and level, rows of three"
+    assert default_pdf417_options().row_height == 3
+
+# A PDF417 of a shipping label's text.
+test "pdf417: a shipping label"
+    s = pdf417(text: "SHIP TO: ACME, 1 MAIN ST, 12345", options: default_pdf417_options()).must()
+    assert s.rows.len() >= 3
+
+# A PDF417 of bytes, compact.
+test "pdf417_bytes: bytes in a compact symbol"
+    options = Pdf417Options(columns: .exactly(value: 4), level: .exactly(value: 2), row_height: 3, compact: true)
+    s = pdf417_bytes(data: [0, 1, 2, 250], options: options).must()
+    assert s.rows[0].len() == 17 * 4 + 35
