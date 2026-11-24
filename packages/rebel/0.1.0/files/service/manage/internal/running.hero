@@ -1,0 +1,151 @@
+# The managers' own programs run, `systemctl` and `launchctl`: each run with
+# no input, its output and its error read whole, bounded in time, and what it
+# answered handed back as a value; and the waits a call makes while a service
+# moves from one state to the next, each bounded by the caller's span.
+
+use lists
+use os
+use process
+use service/manage/internal/failure
+use strings
+use time
+
+# How long a question to a manager's program may take, in seconds: a reload,
+# a query or a load, none of which waits on a service.
+constant ASK_SECONDS: i64
+    60
+
+# How long a wait sleeps between two looks at a service, in milliseconds.
+constant LOOK_MS: i64
+    50
+
+# What a manager's program answered.
+record Ran
+    # Its exit code.
+    code: i64
+    # What it wrote to its output.
+    output: str
+    # What it wrote to its error, its blanks at either end cut.
+    error: str
+
+# The bound of a question that waits on no service.
+function ask_limit() -> time.Duration
+    return time.seconds(ASK_SECONDS).must()
+
+# `program` and `arguments` as a line a reader can run again.
+function line_of(program: str, arguments: [str]) -> str
+    return process.quote_all(lists.concat(xs: [program], then: arguments))
+
+# Runs `program` with `arguments` for at most `limit`, above zero. Fails
+# `unsupported` where the program is not there, `timeout` where it runs past
+# `limit`, and `failed` where a signal ended it or it wrote what is no text.
+function ran(program: str, arguments: [str], limit: time.Duration) -> Ran?
+    c = process.with_time_limit(
+        process.with_error(process.with_output(process.with_input(process.command(program, arguments: arguments), from: .nothing), to: .pipe), to: .pipe),
+        limit: limit
+    )
+    said = line_of(program, arguments: arguments)
+
+    match process.run(c)
+        .err e =>
+            if e.code == "not_found"
+                return fail(
+                    code: failure.UNSUPPORTED,
+                    msg: f"running `{said}`: this system has no `{program}` ({e.msg})"
+                )
+            return fail(code: failure.FAILED, msg: f"running `{said}`: {e.msg}")
+        .ok done =>
+            output = done.output.validated_bytes()
+            error = done.error.validated_bytes()
+
+            if output.is_err() || error.is_err()
+                return fail(code: failure.FAILED, msg: f"running `{said}`: it wrote bytes that are not UTF-8")
+
+            match done.status
+                .exited x => return ok(Ran(code: x.code, output: output.must(), error: strings.trim(error.must())))
+                .signaled s => return fail(
+                    code: failure.FAILED,
+                    msg: f"running `{said}`: the signal {s.signal} ended it"
+                )
+                .timed_out =>
+                    return fail(
+                        code: failure.TIMEOUT,
+                        msg: f"running `{said}`: it did not answer in {limit.nanoseconds / 1000000} ms"
+                    )
+
+# How much of `limit` is left since `started`: none below zero.
+function left(started: time.Mark, limit: time.Duration) -> time.Duration
+    match time.elapsed(started)
+        .err _ => return time.nanoseconds(0)
+        .ok spent =>
+            if spent.nanoseconds >= limit.nanoseconds
+                return time.nanoseconds(0)
+            return time.nanoseconds(limit.nanoseconds - spent.nanoseconds)
+
+# Sleeps one look's length, or what is left of `limit` where that is shorter;
+# false where nothing was left.
+function looked(started: time.Mark, limit: time.Duration) -> bool
+    rest = left(started, limit: limit)
+
+    if rest.nanoseconds == 0
+        return false
+
+    step = time.milliseconds(LOOK_MS).must()
+
+    if rest.nanoseconds < step.nanoseconds
+        time.sleep(rest)
+    else
+        time.sleep(step)
+    return true
+
+# Whether the process `pid` has ended: the system names no process of that id.
+# Fails where the system refuses to say, with its code.
+function has_ended(pid: i64) -> bool?
+    match os.process_usage(pid)
+        .ok _ => return ok(false)
+        .err e =>
+            if e.code == "not_found"
+                return ok(true)
+            return fail(code: e.code, msg: f"asking whether the process {pid} still runs: {e.msg}")
+
+# Waits until the process `pid` has ended, at most `limit` since `started`.
+# Fails `timeout` where it still runs then, `what` naming it.
+function ended(pid: i64, started: time.Mark, limit: time.Duration, what: str) -> ()?
+    while true
+        if has_ended(pid)?
+            return ok()
+
+        if !looked(started, limit: limit)
+            return fail(
+                code: failure.TIMEOUT,
+                msg: f"{what}: its process {pid} still ran after {limit.nanoseconds / 1000000} ms; the system goes on ending it"
+            )
+
+test "line_of: a word with a space quoted, the others as they stand"
+    assert line_of("/bin/launchctl", arguments: ["print", "gui/501/a b"]) == "/bin/launchctl print 'gui/501/a b'"
+
+test "ran: an exit code and both streams read, a program not there, a time limit passed"
+    if os.system() == .windows
+        skip_test(reason: "the managers' programs this runs are POSIX ones")
+    said = ran("/bin/sh", arguments: ["-c", "echo out; echo ' err ' >&2; exit 3"], limit: ask_limit()).must()
+    assert said.code == 3
+    assert said.output == "out\n"
+    assert said.error == "err"
+    missing = ran("/nowhere/at/all", arguments: [], limit: ask_limit())
+
+    match missing
+        .ok _  => assert false
+        .err e => assert e.code == failure.UNSUPPORTED
+
+    slow = ran("/bin/sleep", arguments: ["5"], limit: time.milliseconds(200).must())
+
+    match slow
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+test "ended: this process runs, so the wait of no time is a timeout"
+    started = time.mark().must()
+
+    match ended(os.pid(), started: started, limit: time.nanoseconds(0), what: "this test")
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT

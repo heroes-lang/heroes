@@ -467,6 +467,8 @@
 #include "platform/hero_volumes.c"
 #include "hero_xattr.h"
 #include "platform/hero_xattr.c"
+#include "hero_acl.h"
+#include "platform/hero_acl.c"
 #include "hero_stream.h"
 #include "platform/hero_stream.c"
 #include "hero_stream_net.h"
@@ -516,4 +518,6 @@
 #include "platform/hero_activation.c"
 #include "hero_syslog.h"
 #include "platform/hero_syslog.c"
+#include "hero_scm.h"
+#include "platform/hero_scm.c"
 #endif

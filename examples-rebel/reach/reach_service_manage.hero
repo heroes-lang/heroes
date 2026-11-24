@@ -1,0 +1,124 @@
+# Reaches Rebel's `service/manage`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). With no argument it prints the manager this
+# system has. With `<verb> <name> <scope>` it acts on the service `name`,
+# `scope` being `user` or `system`: `unit` and `job` print the systemd unit
+# file and the launchd property list of a definition, `install` installs it,
+# `start`, `stop`, `restart` and `remove` wait ten seconds at most, or the
+# milliseconds a fourth word `--span=<ms>` gives, `status`
+# prints where it stands. The definition's program and arguments follow the
+# scope; a word `--boot` among them starts it at boot, `--restart` restarts it
+# on failure, `--dir=<folder>` and `--env=<NAME>=<value>` set its folder and a
+# variable, and `--description=<text>` describes it.
+
+use <rebel>/numbers
+use <rebel>/service/manage
+use <rebel>/strings
+use <rebel>/time
+
+function main()
+    given = args()
+
+    if given.len() < 3
+        match manage.manager()
+            .ok m =>
+                match m
+                    .systemd => print("systemd")
+                    .launchd => print("launchd")
+                    .windows => print("windows")
+            .err e => print(e.code, ": ", e.msg)
+
+        return
+
+    verb = given[0]
+    name = given[1]
+
+    scope: manage.Scope = if given[2] == "system"
+        .system
+    else
+        .user
+    limit @= time.seconds(10).must()
+
+    if given.len() >= 4 && strings.has_prefix(s: given[3], prefix: "--span=")
+        match numbers.parse_int(given[3].slice(from: 7, to: given[3].len()))
+            .ok ms => limit @ time.nanoseconds(ms * 1000000)
+            .err e =>
+                print(verb, ": ", e.code, ": ", e.msg)
+                exit(code: 1)
+
+    told: ()? = if verb == "unit" || verb == "job" || verb == "install"
+        defined(verb: verb, name: name, scope: scope, words: given.slice(from: 3, to: given.len()))
+    else if verb == "start"
+        manage.start(name, scope: scope, limit: limit)
+    else if verb == "stop"
+        manage.stop(name, scope: scope, limit: limit)
+    else if verb == "restart"
+        manage.restart(name, scope: scope, limit: limit)
+    else if verb == "remove"
+        manage.remove(name, scope: scope, limit: limit)
+    else if verb == "status"
+        status(name, scope: scope)
+    else
+        fail(code: "invalid", msg: f"no verb \"{verb}\"")
+
+    match told
+        .ok _ => print(verb, ": done")
+        .err e =>
+            print(verb, ": ", e.code, ": ", e.msg)
+            exit(code: 1)
+
+# The definition the words after the scope give, written or installed.
+function defined(verb: str, name: str, scope: manage.Scope, words: [str]) -> ()?
+    program: str @= ""
+    arguments: [str] @= []
+    d @= manage.definition(name: name, program: "", arguments: [], scope: scope)
+
+    for w in words
+        if w == "--boot"
+            d.at_boot @ true
+        else if w == "--restart"
+            d.restart @ .on_failure
+        else if strings.has_prefix(s: w, prefix: "--dir=")
+            d.dir @ w.slice(from: 6, to: w.len())
+        else if strings.has_prefix(s: w, prefix: "--description=")
+            d.description @ w.slice(from: 14, to: w.len())
+        else if strings.has_prefix(s: w, prefix: "--env=")
+            pair = w.slice(from: 6, to: w.len())
+            at = strings.index_of(s: pair, substr: "=")?
+            d.env[pair.slice(from: 0, to: at)] @ pair.slice(from: at + 1, to: pair.len())
+        else if program == ""
+            program @ w
+        else
+            arguments @ arguments.push(w)
+
+    d.program @ program
+    d.arguments @ arguments
+
+    if verb == "unit"
+        print(manage.format_unit(d)?)
+        return ok()
+
+    if verb == "job"
+        print(manage.format_job(d)?)
+        return ok()
+    return manage.install(d)
+
+# Prints where the service `name` stands.
+function status(name: str, scope: manage.Scope) -> ()?
+    s = manage.status_of(name, scope: scope)?
+
+    state = match s.state
+        .stopped  => "stopped"
+        .starting => "starting"
+        .running  => "running"
+        .stopping => "stopping"
+        .pausing  => "pausing"
+        .paused   => "paused"
+        .resuming => "resuming"
+        .failed f => f"failed {f.code}"
+
+    pid = match s.pid
+        .ok p  => to_str(p)
+        .err _ => "-"
+
+    print(f"state {state} pid {pid} at_boot {s.at_boot}")
+    return ok()

@@ -1,0 +1,22 @@
+# Reaches Rebel's `fs/acl`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads the access list of a file of its
+# own making under `build/` and prints how many entries it holds and whether
+# it is protected, then removes the folder.
+
+use <rebel>/fs
+use <rebel>/fs/acl
+
+function main()
+    _ = fs.make_dir_all("build").is_err()
+
+    match fs.make_temp_dir(dir: "build", pattern: "reach-acl-*")
+        .err e => print(e.code, ": ", e.msg)
+        .ok root =>
+            file = root + "/report.txt"
+            _ = fs.write_bytes(file, data: [1]).is_err()
+
+            match acl.read(file)
+                .err e   => print(e.code, ": ", e.msg)
+                .ok list => print(list.entries.len(), " entries, protected ", list.protected)
+
+            _ = fs.remove_all(root).is_err()

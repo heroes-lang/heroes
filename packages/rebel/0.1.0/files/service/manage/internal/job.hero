@@ -1,0 +1,118 @@
+# The property list launchd reads for a definition, as `launchd.plist(5)` on
+# this Mac (macOS 27.2) names its keys: `Label`, `ProgramArguments` (the
+# program an absolute path, so no `Program` key is needed), `WorkingDirectory`,
+# `EnvironmentVariables`, `RunAtLoad`, `KeepAlive` and `ThrottleInterval`. The
+# texts go through `plist`, whose writer escapes what XML needs and refuses
+# what it cannot hold, so no text of a program's reaches the file unescaped.
+#
+# A restart on failure is `KeepAlive` as a dictionary, `SuccessfulExit` false
+# (an exit whose status is not 0) or `Crashed` true (a signal of a crash),
+# with `AfterInitialDemand` where the job waits to be started: the page says
+# the key otherwise implies `RunAtLoad`, and a job loaded with it and
+# `RunAtLoad` false stood until `launchctl kickstart`, then came back after it
+# exited with 3 (measured on this Mac on 2026-11-24). A restart at every exit
+# is `KeepAlive` true, which starts the job at every load, so it is written
+# only with `at_boot`. The page has no key for a description, so none is
+# written.
+
+use bytes
+use plist
+use service/manage
+
+# The dictionary entry `key` holding `value`.
+function entry(key: str, value: plist.Value) -> plist.Entry
+    return plist.Entry(key: key, value: value)
+
+# `ThrottleInterval` for a delay of `delay_ms` milliseconds: whole seconds,
+# a part of one rounded up, at least 1.
+function throttle_seconds(delay_ms: i64) -> i64
+    seconds = (delay_ms + 999) / 1000
+
+    if seconds < 1
+        return 1
+    return seconds
+
+# The job's property list for `d`, which `checks.definition_checked` has
+# passed. Fails `unsupported` where `d` restarts at every exit and is not
+# started at boot, which launchd cannot hold.
+function property_list(d: manage.Definition, delay_ms: i64) -> plist.Value?
+    words: [plist.Value] @= [.text(v: d.program)]
+
+    for a in d.arguments
+        words @ words.push(.text(v: a))
+
+    entries: [plist.Entry] @= [
+        entry("Label", value: .text(v: d.name))
+        entry("ProgramArguments", value: .list(items: words))
+    ]
+
+    if d.dir != ""
+        entries @ entries.push(entry("WorkingDirectory", value: .text(v: d.dir)))
+
+    if d.env.len() > 0
+        variables: [plist.Entry] @= []
+
+        for name in sort(keys(d.env))
+            variables @ variables.push(entry(name, value: .text(v: d.env[name].must())))
+
+        entries @ entries.push(entry("EnvironmentVariables", value: .dictionary(entries: variables)))
+    entries @ entries.push(entry("RunAtLoad", value: .boolean(v: d.at_boot)))
+
+    match d.restart
+        .never => _ = 0
+        .on_failure =>
+            kept: [plist.Entry] = [
+                entry("SuccessfulExit", value: .boolean(v: false))
+                entry("Crashed", value: .boolean(v: true))
+                entry("AfterInitialDemand", value: .boolean(v: !d.at_boot))
+            ]
+            entries @ entries.push(entry("KeepAlive", value: .dictionary(entries: kept)))
+        .always =>
+            if !d.at_boot
+                return fail(
+                    code: "unsupported",
+                    msg: f"the service \"{d.name}\" restarts at every exit and waits to be started, which launchd cannot hold: `KeepAlive` true starts a job at every load (`launchd.plist(5)`); restart it on failure, or start it at boot"
+                )
+            entries @ entries.push(entry("KeepAlive", value: .boolean(v: true)))
+
+    match d.restart
+        .never => _ = 0
+        .on_failure | .always =>
+            seconds = throttle_seconds(delay_ms)
+            entries @ entries.push(entry("ThrottleInterval", value: .unsigned(v: to_u64(seconds).must())))
+
+    return ok(.dictionary(entries: entries))
+
+# Whether the job's property list `data` says launchd starts it when it is
+# loaded: `RunAtLoad` true, or `KeepAlive` true, which implies it.
+function starts_at_load(data: [u8]) -> bool
+    match plist.decode(data)
+        .err _ => return false
+        .ok root =>
+            for key in ["RunAtLoad", "KeepAlive"]
+                match plist.member(root, key: key)
+                    .ok v =>
+                        match v
+                            .boolean b =>
+                                if b.v
+                                    return true
+                            .nil_value | .unsigned | .negative | .real | .text | .date | .data | .uid | .list | .dictionary => _ = 0
+                    .err _ => _ = 0
+
+            return false
+
+test "throttle_seconds: none, a part of a second, whole seconds"
+    assert throttle_seconds(0) == 1
+    assert throttle_seconds(1) == 1
+    assert throttle_seconds(1000) == 1
+    assert throttle_seconds(1001) == 2
+    assert throttle_seconds(60000) == 60
+
+test "starts_at_load: RunAtLoad, KeepAlive true, neither, a document that is no property list"
+    on_load = "<plist version=\"1.0\"><dict><key>RunAtLoad</key><true/></dict></plist>"
+    kept = "<plist version=\"1.0\"><dict><key>RunAtLoad</key><false/><key>KeepAlive</key><true/></dict></plist>"
+    waiting = "<plist version=\"1.0\"><dict><key>RunAtLoad</key><false/><key>KeepAlive</key><dict><key>Crashed</key><true/></dict></dict></plist>"
+    assert starts_at_load(bytes.from_text(on_load))
+    assert starts_at_load(bytes.from_text(kept))
+    assert !starts_at_load(bytes.from_text(waiting))
+    assert !starts_at_load(bytes.from_text("not a plist"))

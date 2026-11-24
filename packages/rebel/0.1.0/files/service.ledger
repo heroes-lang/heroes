@@ -133,11 +133,11 @@ capability service/start-reason  why the system started the service
   note    pending: asked of the system with `QueryServiceDynamicInformation`, not written in this step
 
 capability service/manage  services installed, started, stopped, queried and removed
-  heroes  pending
+  heroes  service/manage.install, service/manage.start, service/manage.stop, service/manage.restart, service/manage.status_of, service/manage.remove
   go      svc.ActivityStatus, svc.Active, svc.Inactive, svc.AnyActivity
   rust    Service, ServiceAccess, ServiceAction, ServiceConfig, ServiceFailureActions, ServiceInfo, ServiceType, ServiceStartType, ServiceErrorControl
   python  -
-  note    pending: the catalogue's row H15, a service installed (the system's own `sc create` does it by hand today); this package is the program's side of the protocol, a service's running and being controlled
+  note    in the subpackage `service/manage` (its own ledger, `service/manage.ledger`, the catalogue's row H15), since a program that is a service never installs itself, and so that only the programs that install services carry `process` and `plist`: a systemd unit, system or user, through `systemctl`; a launchd daemon or agent through `launchctl`; a service of the Service Control Manager through the platform layer's `hero_scm.h`. Go's `svc.ActivityStatus` and its three values choose the services `mgr.Service.ListDependentServices` lists, which `service/manage.ledger` keeps `pending`. Run on 2026-11-24 through launchd on this Mac and systemd 257 in a Linux arm64 container; the Service Control Manager's arm is unrun, compiled by zig alone
 
 capability service/notify  a datagram of assignments sent to the manager's notice socket
   heroes  service.notify
