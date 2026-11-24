@@ -18,6 +18,10 @@
 
 #include <stdint.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 #define DOOR_PATIENCE_NS INT64_C(5000000000)
 #define DOOR_EVENTS (4 * HERO_POLL_EVENT_NUMBERS)
 
@@ -67,23 +71,37 @@ static inline int64_t door_set(void) {
 /* A wait for a child that runs on: it looks once and answers the limit
  * passed, ends when the interrupt comes, answers at once while it is
  * untaken, waits out a limit once it is taken, and answers the end once the
- * child is ended. The child stands in a group of its own, which a console's
- * Ctrl-C does not reach on Windows. */
+ * child is ended. The interrupt must not end the child: on POSIX the child
+ * stands in a group of its own, which the SIGINT sent to this process's
+ * group does not reach. A console program on Windows has no such group
+ * (`hero_proc_start` answers every kind but the parent's
+ * `HERO_PROC_UNSUPPORTED`), so the child shares this console and would end
+ * at its Ctrl-C; it is started with Ctrl-C ignored, a state a child takes
+ * from its parent when it is made (`SetConsoleCtrlHandler`), and this
+ * process heeds Ctrl-C again as soon as the start returns. */
 static inline int64_t door_child(void) {
     int32_t interrupt = hero_signal_number(HERO_SIGNAL_INTERRUPT);
 #if defined(_WIN32)
     static const char program[] = "ping";
     static const char words[] = "-n\0" "31\0" "127.0.0.1";
+    const int64_t group = HERO_PROC_GROUP_PARENT;
 #else
     static const char program[] = "sleep";
     static const char words[] = "30";
+    const int64_t group = HERO_PROC_GROUP_NEW;
 #endif
     int64_t stop = -1;
     int64_t code = 0;
     int64_t by_signal = 0;
+#if defined(_WIN32)
+    if (!SetConsoleCtrlHandler(NULL, TRUE)) return 14;
+#endif
     hero_proc *child = hero_proc_start(program, words, sizeof words, HERO_PROC_ENV_PARENT, NULL, 0, "",
                                        HERO_PROC_STDIO_NOTHING, NULL, HERO_PROC_STDIO_NOTHING, NULL,
-                                       HERO_PROC_STDIO_NOTHING, NULL, HERO_PROC_GROUP_NEW, NULL);
+                                       HERO_PROC_STDIO_NOTHING, NULL, group, NULL);
+#if defined(_WIN32)
+    if (!SetConsoleCtrlHandler(NULL, FALSE)) return 15;
+#endif
 
     if (child == NULL) return 2;
     if (hero_proc_heed(child, 0, &stop) != 0 || stop != 0) return 3;

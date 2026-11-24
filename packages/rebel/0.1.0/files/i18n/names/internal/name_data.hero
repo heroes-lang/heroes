@@ -4,34 +4,9 @@
 
 use i18n
 use i18n/internal/locale_syntax
+use i18n/internal/table_codes
 use i18n/names/internal/name_tables
 use strings
-
-# The value of one character of `ALPHABET`.
-function digit_of(b: u8) -> i64
-    if b >= '0' && b <= '9'
-        return to_i64(b - '0').must()
-
-    if b >= 'A' && b <= 'Z'
-        return to_i64(b - 'A').must() + 10
-
-    if b >= 'a' && b <= 'z'
-        return to_i64(b - 'a').must() + 36
-
-    if b == '+'
-        return 62
-    return 63
-
-# The number `width` characters of `ALPHABET` from `at` of `codes` write.
-function number_at(codes: str, at: i64, width: i64) -> i64
-    value @= 0
-    i @= at
-
-    while i < at + width
-        value @ value * 64 + digit_of(codes[i])
-        i @ i + 1
-
-    return value
 
 # Text `id` of `STRINGS`.
 function text_of(id: i64) -> str
@@ -47,10 +22,10 @@ function entry_of(row: str, key: i64) -> i64
 
     while low < high
         middle = (low + high) / 2
-        found = number_at(row, at: middle * 5, width: 2)
+        found = table_codes.number_at(row, at: middle * 5, width: 2)
 
         if found == key
-            return number_at(row, at: middle * 5 + 2, width: 3)
+            return table_codes.number_at(row, at: middle * 5 + 2, width: 3)
 
         if found < key
             low @ middle + 1
@@ -83,11 +58,6 @@ function name_of(key: str, locale: i18n.Locale) -> str?
     return fail(code: i18n.NOT_FOUND, msg: f"CLDR has no name `{key}` in `{i18n.format_locale(locale)}`")
 
 ## Tests
-
-test "number_at: one, two and three characters"
-    assert number_at("0", at: 0, width: 1) == 0
-    assert number_at("x//", at: 1, width: 2) == 4095
-    assert number_at("111", at: 0, width: 3) == 64 * 64 + 65
 
 test "entry_of: an empty row, the first, the last and a key between two"
     assert entry_of("", key: 0) == -1

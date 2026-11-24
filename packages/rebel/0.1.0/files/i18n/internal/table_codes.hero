@@ -1,0 +1,45 @@
+# The numbers the generated tables of `i18n`'s subpackages write in base 64,
+# one character of `0-9A-Za-z+/` a digit, the most significant first: an
+# entry of `collate`'s root, a text's number in `dates`' and `names`' tables.
+# One reading for all three, so a table's generator and its reader agree on
+# one alphabet.
+
+# The value of one character of the alphabet: `0` to `9` are 0 to 9, `A` to
+# `Z` 10 to 35, `a` to `z` 36 to 61, `+` 62 and any other byte 63, `/`'s.
+function digit_of(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'A' && b <= 'Z'
+        return to_i64(b - 'A').must() + 10
+
+    if b >= 'a' && b <= 'z'
+        return to_i64(b - 'a').must() + 36
+
+    if b == '+'
+        return 62
+    return 63
+
+# The number `width` characters of `text` from byte `at` write.
+function number_at(text: str, at: i64, width: i64) -> i64
+    value @= 0
+    i @= at
+
+    while i < at + width
+        value @ value * 64 + digit_of(text[i])
+        i @ i + 1
+
+    return value
+
+## Tests
+
+test "digit_of: each range's ends, `+` and `/`"
+    assert digit_of('0') == 0 && digit_of('9') == 9
+    assert digit_of('A') == 10 && digit_of('Z') == 35
+    assert digit_of('a') == 36 && digit_of('z') == 61
+    assert digit_of('+') == 62 && digit_of('/') == 63
+
+test "number_at: one, two and three characters, from inside a text"
+    assert number_at("0", at: 0, width: 1) == 0
+    assert number_at("x//", at: 1, width: 2) == 4095
+    assert number_at("111", at: 0, width: 3) == 64 * 64 + 65
