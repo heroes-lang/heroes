@@ -1,0 +1,20 @@
+extern "lendok.h"
+    function lj_try(cb: (function(i64) -> i64)) -> i64
+    function lj_fill(@md: [u8] counted_by 4096 lent) -> i32
+
+function body(n: i64) -> i64
+    md: [u8] @= []
+    print_nothing(n: lj_fill(@md))
+    return md.len() + n
+
+function print_nothing(n: i32)
+    if n == 99
+        print("never")
+
+function main()
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 20000)
+        total @ total + lj_try(cb: body)
+
+    print("jumped, sum ", total)
