@@ -1,0 +1,53 @@
+# The small conversions the modules of `x509/pkcs12` share: bytes held as
+# `i64` turned into bytes, two lists of words joined, and, for the tests,
+# hexadecimal read and a failure's code and words.
+
+use bytes
+
+# `words`, bytes held as `i64` from 0 to 255, as bytes.
+function bytes_of(words: [i64]) -> [u8]
+    out: [u8] @= []
+
+    for w in words
+        out @ out.push(to_u8(w).must())
+
+    return out
+
+# `a` then `b`.
+function joined(a: [i64], b: [i64]) -> [i64]
+    out: [i64] @= a
+
+    for w in b
+        out @ out.push(w)
+
+    return out
+
+# The bytes `hex` writes, two digits each: for the tests, whose text is
+# known good.
+function unhex(hex: str) -> [u8]
+    return bytes.parse_hex(hex).must()
+
+# The code `r` failed with, or "" where it holds a value.
+function code_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code
+
+# The words `r` failed with, or "" where it holds a value.
+function message_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "bytes_of and joined: nothing, and one of each"
+    assert bytes_of([]) == []
+    assert bytes_of([0, 255]) == [0, 255]
+    assert joined(a: [], b: []) == []
+    assert joined(a: [1], b: [2, 3]) == [1, 2, 3]
+
+test "code_of and message_of: a value, and a failure"
+    good: i64? = ok(1)
+    bad: i64? = fail(code: "invalid", msg: "no")
+    assert code_of(good) == ""
+    assert code_of(bad) == "invalid"
+    assert message_of(bad) == "no"

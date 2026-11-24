@@ -1,0 +1,325 @@
+# The arguments of a command as RFC 9051 writes them: a text as an atom, a
+# quoted string or a literal, whichever keeps it one argument; a mailbox's
+# name in modified UTF-7 until UTF-8 is in force; a set of numbers, a flag,
+# a day, a moment and a body section each checked against its grammar
+# before a byte is written, so nothing a program passes can end a command
+# early or add one.
+
+use bytes
+use mail
+use mail/imap/internal/lex
+use mail/imap/internal/utf7
+use numbers
+use strings
+use time
+
+# The code of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The longest text sent quoted; a longer one goes as a literal.
+constant MAX_QUOTED: i64
+    1024
+
+# One piece of a command: text written as it is, or a literal announced
+# with its length and sent as bytes.
+variant Piece
+    # Text, already in IMAP's syntax.
+    text
+        # The text.
+        s: str
+    # A literal: `{n}` then its bytes, `~{n}` where `binary`.
+    literal
+        # The bytes.
+        data: [u8]
+        # Whether it is a literal8, which may hold any byte.
+        binary: bool
+
+# `data` as one string argument: quoted where it is short and holds no
+# line end, no NUL and, unless `utf8`, no byte above ASCII; a literal
+# otherwise. Fails `invalid` where it holds NUL, which only a literal8 may.
+function string_piece(data: [u8], utf8: bool) -> Piece?
+    quotable @= data.len() <= MAX_QUOTED
+
+    for b in data
+        if b == 0
+            return fail(code: INVALID, msg: "a text holds a NUL byte, which no IMAP string carries")
+
+        if b == '\r' || b == '\n' || b >= 0x80 && !utf8
+            quotable @ false
+
+    if !quotable
+        return ok(.literal(data: data, binary: false))
+    out: [u8] @= ['"']
+
+    for b in data
+        if b == '"' || b == '\\'
+            out @ out.push('\\')
+        out @ out.push(b)
+
+    out @ out.push('"')
+    return ok(.text(s: bytes.to_text_lossy(out)))
+
+# `t` as an astring: as itself where every byte may stand in an atom (or is
+# `]`) and it is not empty or NIL, as `string_piece` writes it otherwise.
+function astring_piece(t: str, utf8: bool) -> Piece?
+    plain @= t.len() > 0 && lex.upper(t) != "NIL"
+
+    for b in bytes.from_text(t)
+        if !lex.is_atom_char(b) && b != ']'
+            plain @ false
+
+    if plain
+        return ok(.text(s: t))
+    return string_piece(bytes.from_text(t), utf8: utf8)
+
+# The mailbox `name` as an argument: `INBOX` in any case written `INBOX`,
+# any other name in modified UTF-7 unless `utf8`. Fails `invalid` where it
+# is empty.
+function mailbox_piece(name: str, utf8: bool) -> Piece?
+    if name == ""
+        return fail(code: INVALID, msg: "a mailbox's name is empty")
+
+    if lex.upper(name) == "INBOX"
+        return ok(.text(s: "INBOX"))
+
+    if utf8
+        return astring_piece(name, utf8: true)
+    return astring_piece(utf7.encoded(name), utf8: false)
+
+# `name` in modified UTF-7.
+function utf7_name(name: str) -> str
+    return utf7.encoded(name)
+
+# The name the server wrote, `wire`, as text: modified UTF-7 read unless
+# `utf8`.
+function mailbox_name(wire: str, utf8: bool) -> str?
+    if utf8
+        return ok(wire)
+    return utf7.decoded(wire)
+
+# Whether `t` is a set of message numbers or UIDs as IMAP writes one:
+# numbers from 1 to 2^32 - 1 or `*`, alone or as `a:b`, joined by `,`.
+function is_set(t: str) -> bool
+    if t == ""
+        return false
+
+    for part in strings.split(s: t, sep: ",")
+        ends = strings.split(s: part, sep: ":")
+
+        if ends.len() > 2
+            return false
+
+        for one in ends
+            if one != "*" && !is_nz(one)
+                return false
+
+    return true
+
+# Whether `t` writes a number from 1 to 2^32 - 1 with no leading zero.
+function is_nz(t: str) -> bool
+    if t.len() == 0 || t.len() > 10 || t[0] == '0'
+        return false
+
+    for b in bytes.from_text(t)
+        if b < '0' || b > '9'
+            return false
+
+    return t.len() < 10 || numbers.parse_int(t).default(0) <= lex.MAX_NZ
+
+# `t` checked as a set. Fails `invalid` where it is none.
+function set_text(t: str) -> str?
+    if !is_set(t)
+        return fail(
+            code: INVALID,
+            msg: f"\"{strings.replace_all(s: t, old: "\r", new: "\\r")}\" is no set of message numbers: numbers from 1 to 4294967295 or `*`, alone or as `a:b`, joined by `,`"
+        )
+    return ok(t)
+
+# The system flags a program may set.
+constant SYSTEM_FLAGS: [str]
+    ["\\ANSWERED", "\\FLAGGED", "\\DELETED", "\\SEEN", "\\DRAFT"]
+
+# `flags` as a parenthesized list. Fails `invalid` where one is neither a
+# system flag a program may set nor a keyword of atom characters.
+function flags_text(flags: [str]) -> str?
+    for f in flags
+        if strings.has_prefix(s: f, prefix: "\\")
+            known @= false
+
+            for name in SYSTEM_FLAGS
+                if name == lex.upper(f)
+                    known @ true
+
+            if !known
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{f}\" is no system flag a client sets: \\Answered, \\Flagged, \\Deleted, \\Seen or \\Draft"
+                )
+        else if f == "" || !bytes.from_text(f).all(lex.is_atom_char)
+            return fail(code: INVALID, msg: f"the keyword \"{f}\" is empty or holds a byte no atom holds")
+
+    return ok("(" + join(flags, " ") + ")")
+
+# The months as IMAP writes them.
+constant MONTHS: [str]
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+# The day `t` falls on in UTC, as SEARCH writes it: `1-Feb-1994`.
+function day_text(t: time.Instant) -> str
+    d = time.to_date_time(t)
+    return f"{d.day}-{MONTHS[d.month - 1]}-{d.year}"
+
+# `d` as APPEND writes it, quoted: `"17-Jul-1996 02:44:25 -0700"`, in the
+# offset it names (UTC where it names none). Fails `invalid` outside the
+# years 1 to 9999.
+function date_time_text(d: mail.Date) -> str?
+    offset = if d.offset_known
+        d.offset_minutes
+    else
+        0
+    local = time.to_date_time(time.Instant(unix_nanoseconds: d.instant.unix_nanoseconds + offset * 60_000_000_000))
+
+    if local.year < 1 || local.year > 9999
+        return fail(code: INVALID, msg: f"the year {local.year} is outside the 1 to 9999 an IMAP date writes")
+
+    sign = if offset < 0
+        "-"
+    else
+        "+"
+
+    a = if offset < 0
+        -offset
+    else
+        offset
+    return ok(
+        f"\"{two(local.day)}-{MONTHS[local.month - 1]}-{pad(n: local.year, width: 4)} {two(local.hour)}:{two(local.minute)}:{two(local.second)} {sign}{two(a / 60)}{two(a % 60)}\""
+    )
+
+# `n` in two digits.
+function two(n: i64) -> str
+    return pad(n: n, width: 2)
+
+# `n` with zeros before it up to `width` digits.
+function pad(n: i64, width: i64) -> str
+    t = to_str(n)
+
+    if t.len() >= width
+        return t
+    return repeat("0", to_u64(width - t.len()).must()) + t
+
+# The section `spec` checked and written upper case: "", `HEADER`, `TEXT`,
+# `HEADER.FIELDS (A B)`, `HEADER.FIELDS.NOT (A B)`, or a part's numbers
+# (`1.2`) alone or followed by `.HEADER`, `.TEXT`, `.MIME` or a field list.
+# Fails `invalid` where it is none of these, or a field's name holds a byte
+# other than a printable one without `:`, `(`, `)`.
+function section_text(spec: str) -> str?
+    bad: str? = fail(
+        code: INVALID,
+        msg: f"\"{strings.replace_all(s: spec, old: "\r", new: "\\r")}\" is no body section: \"\", HEADER, TEXT, HEADER.FIELDS (...), HEADER.FIELDS.NOT (...), or a part's numbers followed by nothing, .HEADER, .TEXT, .MIME or a field list"
+    )
+    space = strings.index_of(s: spec, substr: " ").default(spec.len())
+    head = lex.upper(spec.slice(from: 0, to: space))
+    tail = spec.slice(from: space, to: spec.len())
+    words = strings.split(s: head, sep: ".")
+    k @= 0
+
+    while k < words.len() && is_nz(words[k])
+        k @ k + 1
+
+    rest = join(words.slice(from: k, to: words.len()), ".")
+
+    if head == ""
+        if tail != ""
+            return bad
+        return ok("")
+
+    if rest == "HEADER.FIELDS" || rest == "HEADER.FIELDS.NOT"
+        return ok(head + " " + field_list(tail)?)
+
+    if tail != ""
+        return bad
+
+    if rest == "" && k > 0
+        return ok(head)
+
+    if rest == "HEADER" || rest == "TEXT" || rest == "MIME" && k > 0
+        return ok(head)
+    return bad
+
+# The list ` (A B)` of field names, checked and written `(A B)` upper case.
+function field_list(tail: str) -> str?
+    if !strings.has_prefix(s: tail, prefix: " (") || !strings.has_suffix(s: tail, suffix: ")") || tail.len() < 4
+        return fail(code: INVALID, msg: f"\"{tail}\" is no list of header fields: ` (Subject From)`")
+    names = strings.split(s: tail.slice(from: 2, to: tail.len() - 1), sep: " ")
+
+    for n in names
+        if n == "" || !bytes.from_text(n).all(is_field_char)
+            return fail(code: INVALID, msg: f"\"{n}\" is no header field's name")
+
+    return ok("(" + lex.upper(join(names, " ")) + ")")
+
+# Whether `b` may stand in a header field's name sent as an atom.
+function is_field_char(b: u8) -> bool
+    return lex.is_atom_char(b) && b != ':'
+
+## Tests
+
+test "string_piece: quoted with escapes, a literal for a line end, 8-bit bytes and length, NUL refused"
+    assert string_piece(bytes.from_text("a \"b\" \\c"), utf8: false).must() == .text(s: "\"a \\\"b\\\" \\\\c\"")
+    assert string_piece([], utf8: false).must() == .text(s: "\"\"")
+    assert string_piece(bytes.from_text("a\r\nb"), utf8: true).must() == .literal(data: bytes.from_text("a\r\nb"), binary: false)
+    assert string_piece(bytes.from_text("é"), utf8: false).must() == .literal(data: bytes.from_text("é"), binary: false)
+    assert string_piece(bytes.from_text("é"), utf8: true).must() == .text(s: "\"é\"")
+    assert string_piece(bytes.from_text(repeat("x", 1025)), utf8: true).must() == .literal(data: bytes.from_text(repeat("x", 1025)), binary: false)
+    assert string_piece([97, 0], utf8: true).is_err()
+
+test "astring_piece and mailbox_piece: an atom, NIL and the empty text quoted, INBOX in any case, modified UTF-7, UTF-8"
+    assert astring_piece("ana", utf8: false).must() == .text(s: "ana")
+    assert astring_piece("a]b", utf8: false).must() == .text(s: "a]b")
+    assert astring_piece("nil", utf8: false).must() == .text(s: "\"nil\"")
+    assert astring_piece("a b", utf8: false).must() == .text(s: "\"a b\"")
+    assert astring_piece("", utf8: false).must() == .text(s: "\"\"")
+    assert mailbox_piece("inbox", utf8: false).must() == .text(s: "INBOX")
+    assert mailbox_piece("Entwürfe", utf8: false).must() == .text(s: "Entw&APw-rfe")
+    assert mailbox_piece("Entwürfe", utf8: true).must() == .text(s: "\"Entwürfe\"")
+    assert mailbox_piece("a&b c", utf8: false).must() == .text(s: "\"a&-b c\"")
+    assert mailbox_piece("", utf8: false).is_err()
+    assert mailbox_name("Entw&APw-rfe", utf8: false).must() == "Entwürfe" && mailbox_name("Entw&APw-rfe", utf8: true).must() == "Entw&APw-rfe"
+
+test "set_text: RFC 9051's sets, and every shape refused"
+    for good in ["1", "2:4", "2,4:7,9,12:*", "*", "*:4", "4294967295", "1:4294967295"]
+        assert set_text(good).must() == good
+
+    for bad in ["", "0", "1:", ":1", "1::2", "1,", "a", "4294967296", "01", "1 2", "1\r\nA2 LOGOUT", "1:2:3"]
+        match set_text(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "flags_text: system flags in any case, keywords, the empty list, \\Recent and \\* refused, a keyword with a space refused"
+    assert flags_text(["\\seen", "\\Deleted", "$Junk"]).must() == "(\\seen \\Deleted $Junk)"
+    assert flags_text([]).must() == "()"
+
+    for bad in [["\\Recent"], ["\\*"], ["a b"], [""], ["a)"], ["\\Seen\r\n"]]
+        assert flags_text(bad).is_err()
+
+test "day_text and date_time_text: Python's Time2Internaldate's shape, a zone behind and ahead, UTC where none is known"
+    assert day_text(time.date(year: 1994, month: 2, day: 1).must()) == "1-Feb-1994"
+    t = time.from_unix(whole_seconds: 837596665, extra_nanoseconds: 0).must()
+    assert date_time_text(mail.Date(instant: t, offset_minutes: -420, offset_known: true)).must() == "\"17-Jul-1996 02:44:25 -0700\""
+    assert date_time_text(mail.Date(instant: t, offset_minutes: 330, offset_known: true)).must() == "\"17-Jul-1996 15:14:25 +0530\""
+    assert date_time_text(mail.Date(instant: t, offset_minutes: 330, offset_known: false)).must() == "\"17-Jul-1996 09:44:25 +0000\""
+
+test "section_text: every shape of RFC 9051's section, upper case, and refusals"
+    assert section_text("").must() == ""
+    assert section_text("header").must() == "HEADER"
+    assert section_text("1.2.text").must() == "1.2.TEXT"
+    assert section_text("1.2").must() == "1.2"
+    assert section_text("2.mime").must() == "2.MIME"
+    assert section_text("HEADER.FIELDS (Subject From)").must() == "HEADER.FIELDS (SUBJECT FROM)"
+    assert section_text("1.header.fields.not (x-y)").must() == "1.HEADER.FIELDS.NOT (X-Y)"
+
+    for bad in ["MIME", "0", "1.0", "HEADER.FIELDS", "HEADER.FIELDS ()", "HEADER.FIELDS (a:b)", "TEXT x", "1.2.BODY", "HEADER\r\nA1 LOGOUT", "HEADER.FIELDS (a)]", " "]
+        match section_text(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

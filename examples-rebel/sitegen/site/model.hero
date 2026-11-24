@@ -74,8 +74,9 @@ record ImageSettings
     thumb_height: i64
     # The quality a JPEG is written at, 1 to 100.
     jpeg_quality: i64
-    # For each kind of file a browser does not show, the kind it is written
-    # as: `bmp` and `netpbm` to `png`, `jpeg` or `gif`.
+    # For each kind of file not shown as it is, the kind it is written as:
+    # `bmp`, `netpbm` and `tiff`, which a browser does not show, and `ico`,
+    # which the generator does not write, to `png`, `jpeg`, `gif` or `webp`.
     convert: {str: str}
 
 # Which outputs get a Brotli copy beside them, so a server sends it to a

@@ -1,0 +1,125 @@
+# Logging in: LOGIN and AUTHENTICATE with a mechanism's first answer, a
+# password never sent in plain text but to the loopback host, a server's
+# challenge in place of a status shown in the failure, and, once logged in,
+# the capabilities learnt anew and IMAP4rev2 enabled where offered.
+
+use bytes
+use mail/imap/internal/command
+use mail/imap/internal/flow
+use mail/imap/internal/response
+use mail/imap/internal/status
+use mail/imap/internal/wire
+use net
+use strings
+
+# Whether a password may be sent: over TLS, or to this machine.
+function may_send_secret(c: flow.Conn lent) -> ()?
+    if c.is_tls || is_loopback(c.host)
+        return ok()
+    return fail(
+        code: flow.INVALID,
+        msg: f"a password is never sent in plain text to {c.host}, which is not this machine: connect with STARTTLS or TLS"
+    )
+
+# Whether `host` names this machine.
+function is_loopback(host: str) -> bool
+    lowered = strings.to_lower_ascii(host)
+
+    if lowered == "localhost" || strings.has_suffix(s: lowered, suffix: ".localhost")
+        return true
+
+    return match net.parse_host(strings.trim_suffix(s: strings.trim_prefix(s: host, prefix: "["), suffix: "]"))
+        .ok a  => net.is_loopback(a)
+        .err _ => false
+
+# Logs in with LOGIN.
+function login(@c: flow.Conn, user: str, password: str) -> ()?
+    may_send_secret(c)?
+
+    if flow.has(c, name: "LOGINDISABLED")
+        return fail(code: flow.UNSUPPORTED, msg: "the server names LOGINDISABLED: it takes no LOGIN on this connection")
+    pieces = [
+        .text(s: "LOGIN ")
+        command.astring_piece(user, utf8: true)?
+        .text(s: " ")
+        command.astring_piece(password, utf8: true)?
+    ]
+
+    match flow.run(@c, pieces: pieces, takes: [], asked: "LOGIN")
+        .ok _ => return logged(@c)
+        .err e =>
+            if c.last.condition == "NO"
+                return flow.refusal(c.last, asked: "LOGIN", signing_in: true)
+            return fail(code: e.code, msg: e.msg)
+
+# Logs in by AUTHENTICATE with the mechanism `mech` and its first answer
+# `first`; where the server sends a challenge instead of a status, as
+# XOAUTH2 and OAUTHBEARER do to say why they refuse, it is shown in the
+# failure and answered by `abort`, after which the server says NO.
+function authenticate(@c: flow.Conn, mech: str, first: [u8], abort: str) -> ()?
+    may_send_secret(c)?
+
+    if !flow.has(c, name: "AUTH=" + mech)
+        return fail(code: flow.UNSUPPORTED, msg: f"the server does not offer AUTH={mech}")
+
+    if c.idling != ""
+        return fail(code: flow.INVALID, msg: "the client is idling: `idle_done` ends the IDLE before another command")
+    wire.begin(@c.wire)?
+    tag = wire.next_tag(@c.wire)
+    data: [response.Data] @= []
+
+    encoded = if first.len() == 0
+        "="
+    else
+        bytes.format_base64(first)
+
+    if flow.has(c, name: "SASL-IR")
+        wire.write(c.wire, data: bytes.from_text(f"{tag} AUTHENTICATE {mech} {encoded}\r\n"))?
+    else
+        wire.write(c.wire, data: bytes.from_text(f"{tag} AUTHENTICATE {mech}\r\n"))?
+        turn = flow.wait(@c, tag: tag, @data, continuation: true)?
+
+        if !turn.continued
+            return flow.refusal(turn.status, asked: "AUTHENTICATE " + mech, signing_in: true)
+        wire.write(c.wire, data: bytes.from_text(encoded + "\r\n"))?
+    said @= ""
+    turn = flow.wait(@c, tag: tag, @data, continuation: true)?
+
+    end = if turn.continued
+        said @ match bytes.parse_base64(turn.text)
+            .ok raw => flow.visible(raw)
+            .err _  => flow.visible(bytes.from_text(turn.text))
+
+        wire.write(c.wire, data: bytes.from_text(abort + "\r\n"))?
+        flow.wait(@c, tag: tag, @data, continuation: false)?.status
+    else
+        turn.status
+
+    for d in data
+        flow.keep(@c, d: d)
+
+    if end.condition != "OK"
+        st = if said == ""
+            end
+        else
+            status.Status(
+                condition: end.condition,
+                code: end.code,
+                args: end.args,
+                capabilities: end.capabilities,
+                flags: end.flags,
+                value: end.value,
+                sets: end.sets,
+                text: end.text + " (the server's challenge: " + said + ")"
+            )
+        return flow.refusal(st, asked: "AUTHENTICATE " + mech, signing_in: true)
+    return logged(@c)
+
+# After a login: the capabilities learnt anew where the status did not name
+# them, and IMAP4rev2 enabled where offered.
+function logged(@c: flow.Conn) -> ()?
+    c.logged_in @ true
+
+    if c.last.code != "CAPABILITY"
+        _ = flow.capability(@c)?
+    return flow.enable_rev2(@c)

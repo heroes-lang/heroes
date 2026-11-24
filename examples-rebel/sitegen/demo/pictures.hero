@@ -2,16 +2,21 @@
 # reads, so the demo carries no binary file and every byte of its output can
 # be made again: a harbour photograph as a JPEG whose EXIF says it was taken
 # with the camera turned (orientation 6), a chart with transparency as a
-# PNG, waves as an animated GIF, a lighthouse as a Windows bitmap, and a
-# scanned page as a raw PGM.
+# PNG, waves as an animated GIF, a lighthouse as a Windows bitmap, a
+# scanned page as a raw PGM, a survey sheet as an LZW-compressed TIFF whose
+# page says it was scanned turned (orientation 8), a signal flag as an icon
+# of two sizes, and a buoy with transparency as a lossless WebP.
 
 use <rebel>/bytes
 use <rebel>/image
 use <rebel>/image/bmp
 use <rebel>/image/gif
+use <rebel>/image/ico
 use <rebel>/image/jpeg
 use <rebel>/image/netpbm
 use <rebel>/image/png
+use <rebel>/image/tiff
+use <rebel>/image/webp
 
 ## The files
 
@@ -35,6 +40,9 @@ function files() -> [File]
         File(name: "content/images/waves.gif", data: gif.encode(waves()).must())
         File(name: "content/images/lighthouse.bmp", data: bmp.encode(lighthouse(night: false)).must())
         File(name: "content/images/scan.pgm", data: netpbm.encode(scan(), plain: false).must())
+        File(name: "content/images/survey.tiff", data: survey_file())
+        File(name: "content/images/flag.ico", data: flag_file())
+        File(name: "content/images/buoy.webp", data: webp.encode_image(buoy()).must())
     ]
 
 # The lighthouse at night, taller and darker, which the demo writes over the
@@ -173,6 +181,97 @@ function scan() -> image.Image
 
     return img
 
+# A survey sheet, 40 by 56 as scanned: a pale sea, three depth contours
+# and a sounding line, the sheet lying on its side, so the page's
+# Orientation tag (8) says to turn it a quarter counter-clockwise.
+function survey() -> image.Image
+    img @= image.blank(width: 40, height: 56, format: .rgb).must()
+    image.fill_rect(@img, x: 0, y: 0, width: 40, height: 56, color: color(r: 222, g: 236, b: 244, a: 255))
+
+    for band in range(from: 0, to: 3)
+        image.fill_rect(
+            @img,
+            x: 4 + band * 10,
+            y: 0,
+            width: 2,
+            height: 56,
+            color: color(r: 70, g: 110 + band * 30, b: 170, a: 255)
+        )
+
+    image.fill_rect(@img, x: 0, y: 30, width: 40, height: 1, color: color(r: 30, g: 30, b: 30, a: 255))
+    return img
+
+# The survey sheet as a TIFF file: one page, LZW-compressed, its
+# Orientation tag 8.
+function survey_file() -> [u8]
+    no_resolution: tiff.Resolution? = fail(code: "not_found", msg: "none")
+    no_text: str? = fail(code: "not_found", msg: "none")
+    page = tiff.Page(
+        image: survey(),
+        orientation: 8,
+        compression: .lzw,
+        reduced: false,
+        resolution: no_resolution,
+        description: no_text,
+        software: no_text,
+        date_time: no_text,
+        icc: []
+    )
+    options = tiff.EncodeOptions(
+        compression: .lzw,
+        predictor: false,
+        rows_per_strip: 0,
+        tile_width: 0,
+        tile_height: 0,
+        big_endian: false,
+        big: false,
+        depth: .natural,
+        two_dimensional: false,
+        byte_aligned_eol: false
+    )
+    return tiff.encode([page], options: options).must()
+
+# A signal flag of `side` pixels a side on a clear ground: a blue field
+# with a white square at its middle, its pole on the left.
+function flag(side: i64) -> image.Image
+    img @= image.blank(width: side, height: side, format: .rgba).must()
+    unit = side / 8
+    image.fill_rect(@img, x: 0, y: 0, width: unit, height: side, color: color(r: 90, g: 70, b: 50, a: 255))
+    image.fill_rect(
+        @img,
+        x: unit,
+        y: unit,
+        width: side - unit,
+        height: side / 2,
+        color: color(r: 20, g: 60, b: 160, a: 255)
+    )
+    image.fill_rect(
+        @img,
+        x: unit * 4,
+        y: unit * 2,
+        width: unit * 2,
+        height: unit * 2,
+        color: color(r: 255, g: 255, b: 255, a: 255)
+    )
+    return img
+
+# The signal flag as an icon: a 16-pixel image stored as a bitmap and a
+# 32-pixel one stored as PNG, the larger read.
+function flag_file() -> [u8]
+    no_spot: ico.Hotspot? = fail(code: "not_found", msg: "none")
+    small = ico.Entry(image: flag(16), storage: .bmp, bits: 32, hotspot: no_spot)
+    large = ico.Entry(image: flag(32), storage: .png, bits: 32, hotspot: no_spot)
+    return ico.encode(ico.Ico(kind: .icon, entries: [small, large])).must()
+
+# A buoy, 24 by 40, on a clear ground: a red body, a white band and a
+# dark top mark.
+function buoy() -> image.Image
+    img @= image.blank(width: 24, height: 40, format: .rgba).must()
+    image.fill_rect(@img, x: 6, y: 12, width: 12, height: 26, color: color(r: 200, g: 30, b: 30, a: 255))
+    image.fill_rect(@img, x: 6, y: 22, width: 12, height: 4, color: color(r: 250, g: 250, b: 250, a: 255))
+    image.fill_rect(@img, x: 10, y: 2, width: 4, height: 10, color: color(r: 40, g: 40, b: 40, a: 255))
+    return img
+
 ## EXIF
 
 # `photo`, a JPEG file, with an EXIF segment naming `orientation` put after
@@ -237,4 +336,4 @@ test "files: every kind the generator reads, each recognised by its signature"
     for f in files()
         kinds @ kinds.push(image.kind_of(f.data).must())
 
-    assert kinds == [.jpeg, .png, .gif, .bmp, .netpbm]
+    assert kinds == [.jpeg, .png, .gif, .bmp, .netpbm, .tiff, .ico, .webp]

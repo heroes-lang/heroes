@@ -35,7 +35,9 @@
 #   URL's host and every link to an internationalized domain in ASCII.
 # - `image` scales and converts pictures, read and written by `image/png`,
 #   `image/jpeg` (its EXIF orientation applied), `image/gif` (an animated
-#   thumbnail), `image/bmp` and `image/netpbm`.
+#   thumbnail), `image/webp` (lossless), `image/bmp`, `image/netpbm`,
+#   `image/tiff` (its page's orientation applied) and `image/ico` (an
+#   icon's largest image).
 # - `xml` writes the sitemap and the feeds; `compress/brotli` the
 #   precompressed copies; `crypto` fingerprints sources and outputs so only
 #   changed files are rebuilt and written.

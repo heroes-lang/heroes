@@ -1,0 +1,18 @@
+# The codes `barcode` fails with, kept in one place so that every module of
+# the package fails alike.
+
+# The code of an input the function does not read, which the face names as
+# `barcode.INVALID`.
+constant INVALID: str
+    "invalid"
+
+# The code of data no symbol of the symbology holds, which the face names as
+# `barcode.UNSUPPORTED`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Tests
+
+test "codes: the two codes are the library's words"
+    assert INVALID == "invalid"
+    assert UNSUPPORTED == "unsupported"

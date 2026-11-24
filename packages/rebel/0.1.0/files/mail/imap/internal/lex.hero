@@ -1,0 +1,327 @@
+# The pieces of RFC 9051's response grammar, read where the parser stands
+# in the session's current line: atoms, numbers, quoted strings, literals
+# and NIL. A literal is read only where the grammar expects a string, so a
+# `{5}` at the end of a line of free text is never taken for one; its length
+# is checked against the budget before a byte of it is read (`wire.literal`).
+# Anything the grammar does not allow is refused with `invalid` and the
+# line's first bytes, never guessed at.
+
+use bytes
+use io
+use mail/imap/internal/wire
+use net
+use time
+
+# The code of an answer that is not IMAP.
+constant INVALID: str
+    "invalid"
+
+# The largest number an answer may write: 2^63 - 1, a mod-sequence's bound.
+constant MAX_NUMBER: i64
+    9_223_372_036_854_775_807
+
+# The largest message number or UID, 2^32 - 1.
+constant MAX_NZ: i64
+    4_294_967_295
+
+# The byte at the parser's place, or -1 at the end of the line.
+function peek(s: wire.Session lent) -> i64
+    if s.at >= s.line.len()
+        return -1
+    return to_i64(s.line[s.at]).must()
+
+# Whether the parser stands at the end of the line.
+function at_end(s: wire.Session lent) -> bool
+    return s.at >= s.line.len()
+
+# A failure naming `what` was expected where the parser stands.
+function refused<T>(s: wire.Session lent, what: str) -> T?
+    return fail(code: INVALID, msg: f"the server's answer holds no {what} at byte {s.at} of {wire.excerpt(s.line)}")
+
+# Moves past the byte `b`. Fails `invalid` where another stands there.
+function expect(@s: wire.Session, b: u8, what: str) -> ()?
+    if peek(s) != to_i64(b).must()
+        return refused(s, what: what)
+    s.at @ s.at + 1
+    return ok()
+
+# Moves past one space.
+function space(@s: wire.Session) -> ()?
+    return expect(@s, b: ' ', what: "space")
+
+# Moves past `b` where it stands there, and says whether it did.
+function take(@s: wire.Session, b: u8) -> bool
+    if peek(s) == to_i64(b).must()
+        s.at @ s.at + 1
+        return true
+    return false
+
+# Whether `b` may stand in an atom: any byte from `!` to `~` but the
+# specials `(` `)` `{` `%` `*` `"` `\` `]`.
+function is_atom_char(b: u8) -> bool
+    if b <= ' ' || b > '~'
+        return false
+    return b != '(' && b != ')' && b != '{' && b != '%' && b != '*' && b != '"' && b != '\\' && b != ']'
+
+# The atom where the parser stands, upper case where `upper`. With `bracket`
+# a `]` is part of it, as an astring's atom allows. Fails `invalid` where no
+# atom stands there.
+function atom_of(@s: wire.Session, bracket: bool) -> str?
+    start = s.at
+
+    while s.at < s.line.len() && (is_atom_char(s.line[s.at]) || bracket && s.line[s.at] == ']')
+        s.at @ s.at + 1
+
+    if s.at == start
+        return refused(s, what: "atom")
+    return ok(bytes.to_text(s.line.slice(from: start, to: s.at)).must())
+
+# The atom where the parser stands, upper case: a keyword compared as such.
+function keyword(@s: wire.Session) -> str?
+    return ok(upper(atom_of(@s, bracket: false)?))
+
+# `t` upper case, ASCII letters alone.
+function upper(t: str) -> str
+    return bytes.to_text(bytes.to_upper_ascii(bytes.from_text(t))).must()
+
+# The number where the parser stands: digits, at most `MAX_NUMBER`. Fails
+# `invalid` where no digit stands there or the number is larger.
+function number(@s: wire.Session) -> i64?
+    start = s.at
+    n @= 0
+
+    while s.at < s.line.len() && s.line[s.at] >= '0' && s.line[s.at] <= '9'
+        d = to_i64(s.line[s.at] - '0').must()
+
+        if n > (MAX_NUMBER - d) / 10
+            return fail(
+                code: INVALID,
+                msg: f"the server's answer holds a number past 2^63 - 1 at byte {start} of {wire.excerpt(s.line)}"
+            )
+        n @ n * 10 + d
+        s.at @ s.at + 1
+
+    if s.at == start
+        return refused(s, what: "number")
+    return ok(n)
+
+# A message number or a UID where the parser stands: 1 to 2^32 - 1.
+function nz_number(@s: wire.Session) -> i64?
+    start = s.at
+    n = number(@s)?
+
+    if n < 1 || n > MAX_NZ
+        return fail(
+            code: INVALID,
+            msg: f"the server's answer holds {n}, outside 1 to 2^32 - 1, at byte {start} of {wire.excerpt(s.line)}"
+        )
+    return ok(n)
+
+# Whether the parser stands on NIL, as a word of its own; it moves past it
+# where it does.
+function take_nil(@s: wire.Session) -> bool
+    if s.at + 3 > s.line.len()
+        return false
+    word = upper(bytes.to_text_lossy(s.line.slice(from: s.at, to: s.at + 3)))
+
+    if word != "NIL"
+        return false
+
+    if s.at + 3 < s.line.len() && is_atom_char(s.line[s.at + 3])
+        return false
+    s.at @ s.at + 3
+    return true
+
+# The quoted string where the parser stands, without its quotes and
+# escapes. Fails `invalid` where it does not end on the line, or a `\`
+# escapes another byte than `"` or `\`.
+function quoted(@s: wire.Session) -> [u8]?
+    expect(@s, b: '"', what: "quoted string")?
+    out: [u8] @= []
+
+    while true
+        if s.at >= s.line.len()
+            return fail(
+                code: INVALID,
+                msg: f"the server's answer holds a quoted string that never ends: {wire.excerpt(s.line)}"
+            )
+        b = s.line[s.at]
+        s.at @ s.at + 1
+
+        if b == '"'
+            break
+
+        if b == '\\'
+            if s.at >= s.line.len() || s.line[s.at] != '"' && s.line[s.at] != '\\'
+                return fail(
+                    code: INVALID,
+                    msg: f"the server's answer escapes a byte a quoted string never escapes: {wire.excerpt(s.line)}"
+                )
+            out @ out.push(s.line[s.at])
+            s.at @ s.at + 1
+        else
+            out @ out.push(b)
+
+    return ok(out)
+
+# Whether a literal's announcement stands where the parser is: `{n}`, or
+# `~{n}` where `binary`, digits alone between the braces and nothing after
+# them on the line.
+function at_literal(s: wire.Session lent, binary: bool) -> bool
+    k @= s.at
+
+    if binary && k < s.line.len() && s.line[k] == '~'
+        k @ k + 1
+
+    if k >= s.line.len() || s.line[k] != '{' || s.line[s.line.len() - 1] != '}' || k + 2 >= s.line.len()
+        return false
+
+    for b in s.line.slice(from: k + 1, to: s.line.len() - 1)
+        if b < '0' || b > '9'
+            return false
+
+    return true
+
+# The literal where the parser stands, its bytes read from the stream, and
+# the parser at the start of the line after it. `~{n}`, a literal of any
+# bytes, is taken where `binary`. Fails `invalid` where `{n}` is not the end
+# of the line, `limit` where `n` passes the budget.
+function literal(@s: wire.Session, binary: bool) -> [u8]?
+    if binary
+        _ = take(@s, b: '~')
+    expect(@s, b: '{', what: "literal")?
+    n = number(@s)?
+    expect(@s, b: '}', what: "literal's closing brace")?
+
+    if !at_end(s)
+        return fail(
+            code: INVALID,
+            msg: f"the server's answer goes on after a literal's length on its line: {wire.excerpt(s.line)}"
+        )
+    return wire.literal(@s, n: n)
+
+# A string where the parser stands: quoted, or a literal (`~{n}` too where
+# `binary`).
+function string(@s: wire.Session, binary: bool) -> [u8]?
+    if peek(s) == '"'
+        return quoted(@s)
+
+    if at_literal(s, binary: binary)
+        return literal(@s, binary: binary)
+    return refused(s, what: "string")
+
+# A string or NIL where the parser stands, NIL read as the empty list.
+function nstring(@s: wire.Session, binary: bool) -> [u8]?
+    if take_nil(@s)
+        return ok([])
+    return string(@s, binary: binary)
+
+# An astring where the parser stands: an atom with `]` allowed, or a string.
+function astring(@s: wire.Session) -> [u8]?
+    if peek(s) == '"' || at_literal(s, binary: false)
+        return string(@s, binary: false)
+    return ok(bytes.from_text(atom_of(@s, bracket: true)?))
+
+# The bytes from the parser's place to the end of the line, the parser at
+# its end: the free text of a status.
+function rest(@s: wire.Session) -> [u8]
+    out = s.line.slice(from: s.at, to: s.line.len())
+    s.at @ s.line.len()
+    return out
+
+# `raw` as text, each byte that is not UTF-8 replaced: a server's free text,
+# shown and never trusted.
+function text_of(raw: [u8]) -> str
+    return bytes.to_text_lossy(raw)
+
+# A flag where the parser stands: `\Seen` and the other system flags, `\*`,
+# or a keyword; as the server wrote it.
+function flag(@s: wire.Session) -> str?
+    if take(@s, b: '\\')
+        if take(@s, b: '*')
+            return ok("\\*")
+        return ok("\\" + atom_of(@s, bracket: false)?)
+    return atom_of(@s, bracket: false)
+
+# The flags of a parenthesized list where the parser stands: `(\Seen $Junk)`.
+function flag_list(@s: wire.Session) -> [str]?
+    expect(@s, b: '(', what: "flag list")?
+    out: [str] @= []
+
+    if take(@s, b: ')')
+        return ok(out)
+
+    while true
+        out @ out.push(flag(@s)?)
+
+        if take(@s, b: ')')
+            return ok(out)
+        space(@s)?
+
+## Tests
+
+test "atom_of, keyword, number, nz_number: the edges"
+    two = net_pair()
+    s @= two
+    s.line @ bytes.from_text("ok] 0 4294967295 4294967296 9223372036854775807 9223372036854775808 x]")
+    assert keyword(@s).must() == "OK" && peek(s) == ']'
+    assert take(@s, b: ']') && take(@s, b: ' ')
+    assert number(@s).must() == 0 && take(@s, b: ' ')
+    assert nz_number(@s).must() == 4294967295 && take(@s, b: ' ')
+    assert nz_number(@s).is_err() && take(@s, b: ' ')
+    assert number(@s).must() == 9223372036854775807 && take(@s, b: ' ')
+
+    match number(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    s.at @ s.line.len() - 2
+    assert atom_of(@s, bracket: true).must() == "x]" && at_end(s)
+    assert atom_of(@s, bracket: false).is_err() && number(@s).is_err()
+    wire.close(@s).must()
+
+test "quoted: escapes, an empty string, UTF-8, an escape of another byte, no end"
+    s @= net_pair()
+    s.line @ bytes.from_text("\"a\\\"b\\\\c\" \"\" \"été\" \"a\\nb\" \"open")
+    assert quoted(@s).must() == bytes.from_text("a\"b\\c") && take(@s, b: ' ')
+    assert quoted(@s).must().len() == 0 && take(@s, b: ' ')
+    assert quoted(@s).must() == bytes.from_text("été") && take(@s, b: ' ')
+    assert quoted(@s).is_err()
+    s.at @ s.line.len() - 5
+    assert quoted(@s).is_err()
+    wire.close(@s).must()
+
+test "nil, nstring, flag_list: NIL as a word and not as a prefix, flags of every shape, an empty list"
+    s @= net_pair()
+    s.line @ bytes.from_text("NIL nil NILS (\\Seen \\* $Junk) () (\\Seen")
+    assert nstring(@s, binary: false).must().len() == 0 && take(@s, b: ' ')
+    assert take_nil(@s) && take(@s, b: ' ')
+    assert !take_nil(@s) && atom_of(@s, bracket: false).must() == "NILS" && take(@s, b: ' ')
+    assert flag_list(@s).must() == ["\\Seen", "\\*", "$Junk"] && take(@s, b: ' ')
+    assert flag_list(@s).must().len() == 0 && take(@s, b: ' ')
+    assert flag_list(@s).is_err()
+    wire.close(@s).must()
+
+test "string: a literal at the end of its line read from the stream, a literal8, a brace inside a line refused"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1000)
+    server @= two.second.stream
+    io.write_text(server, text: "{3}\r\na\r\n NIL ~{2}\r\n\u{1}x x {1} y\r\n").must()
+    wire.begin(@s).must()
+    wire.next_line(@s).must()
+    assert string(@s, binary: false).must() == bytes.from_text("a\r\n") && take(@s, b: ' ')
+    assert nstring(@s, binary: false).must().len() == 0 && take(@s, b: ' ')
+    assert !at_literal(s, binary: false) && at_literal(s, binary: true)
+    assert string(@s, binary: true).must() == [1, 'x'] && s.line == bytes.from_text(" x {1} y")
+    assert take(@s, b: ' ') && atom_of(@s, bracket: false).must() == "x" && take(@s, b: ' ')
+    assert string(@s, binary: false).is_err()
+    io.close(@server).must()
+    wire.close(@s).must()
+
+# A session over one end of a pair whose other end is closed, for tests that
+# set its line by hand.
+function net_pair() -> wire.Session
+    two = net.pair(deadline_ms: 5000).must()
+    other @= two.second.stream
+    io.close(@other).must()
+    return wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1000)

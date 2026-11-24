@@ -1,0 +1,95 @@
+# Reaches Rebel's `x509/pkcs12`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). `read <file> <password>`
+# prints what a PKCS #12 file holds and its identities; `write <key> <chain>
+# <file> <password> <aes256|triple_des>` writes the file of a PEM key and
+# the PEM chain that goes with it; `trust <chain> <file> <password>` writes
+# a trust store of the PEM certificates.
+
+use <rebel>/crypto/keypairs
+use <rebel>/fs
+use <rebel>/x509
+use <rebel>/x509/pkcs12
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"reach_x509_pkcs12: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+# The lines that tell what the file at `path` holds under `password`.
+function report(path: str, password: str) -> [str]?
+    contents = pkcs12.decode(der: fs.read_bytes(path)?, password: password)?
+    lines: [str] @= []
+
+    for key in contents.keys
+        lines @ lines.push(f"key {key.der.len()} bytes, name \"{key.name}\", id of {key.id.len()} bytes")
+
+    for entry in contents.certificates
+        lines @ lines.push(
+            f"certificate {x509.format_name(entry.certificate.subject)}, name \"{entry.name}\", trusted for {entry.trusted_for.len()}"
+        )
+
+    match pkcs12.identities_of(contents)
+        .ok identities =>
+            for identity in identities
+                lines @ lines.push(f"identity of a chain of {identity.chain.len()}")
+        .err e => lines @ lines.push(f"no identity: {e.msg}")
+
+    return ok(lines)
+
+# The file of the PEM key at `key_path` and the PEM chain at `chain_path`.
+function made(key_path: str, chain_path: str, password: str, protection: str) -> [u8]?
+    options: pkcs12.Options @= pkcs12.default_options()
+
+    if protection == "triple_des"
+        options @ pkcs12.Options(protection: .triple_des, iterations: 2048)
+    key @= keypairs.parse_private_pem(read_file(key_path)?)?
+    chain = x509.parse_certificates(read_file(chain_path)?)?
+    file = pkcs12.encode(key: key, chain: chain, name: "Hero", password: password, options: options)
+    keypairs.close_private(@key)?
+    return file
+
+# Writes at `path` the trust store of the PEM certificates at `chain_path`.
+function trust_store(chain_path: str, path: str, password: str) -> ()?
+    chain = x509.parse_certificates(read_file(chain_path)?)?
+    store = pkcs12.encode_trust_store(certificates: chain, names: [], password: password, options: pkcs12.default_options())?
+    return fs.write_bytes(path: path, data: store)
+
+# The usage, the code a command line not understood fails with.
+constant USAGE: str
+    "usage: reach_x509_pkcs12 read <file> <password> | write <key.pem> <chain.pem> <file> <password> <aes256|triple_des> | trust <chain.pem> <file> <password>"
+
+# The lines the command `given` prints, once it has run.
+function run(given: [str]) -> [str]?
+    if given.len() == 3 && given[0] == "read"
+        return report(path: given[1], password: given[2])
+
+    if given.len() == 6 && given[0] == "write"
+        fs.write_bytes(path: given[3], data: made(key_path: given[1], chain_path: given[2], password: given[4], protection: given[5])?)?
+        return ok([])
+
+    if given.len() == 4 && given[0] == "trust"
+        trust_store(chain_path: given[1], path: given[2], password: given[3])?
+        return ok([])
+    return fail(code: "usage", msg: USAGE)
+
+function main()
+    match run(text_arguments())
+        .ok lines =>
+            for line in lines
+                print(line)
+        .err e =>
+            if e.code == "usage"
+                print(e.msg)
+                exit(code: 2)
+            print(f"reach_x509_pkcs12: {e.code}: {e.msg}")
+            exit(code: 1)

@@ -235,6 +235,12 @@ constant FOREIGN_DATA: [str]
         # reported it; it is read apart as `samples.hero` beside it is, by its
         # exact path, and `records/numbered` reported this file at that gate (`M1uT`).
         "packages/rebel/0.1.0/files/x509/internal/openssl.hero numbered"
+        # PKCS #12 files OpenSSL, Python and Java wrote, in base64, `M6tF...`
+        # and `M3yf...`. **Rows added after the list's day, 2026-11-24**: the
+        # files were born at M-rebel-library's step 133d, and
+        # `records/numbered` reported them at that step (`M6tF`, `M3yf`).
+        "packages/rebel/0.1.0/files/x509/pkcs12/internal/samples.hero numbered"
+        "packages/rebel/0.1.0/files/x509/pkcs12/internal/written.hero numbered"
         # tiktoken's `o200k_base` ranks, their tokens in base64.
         "packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero numbered"
         # Unicode 17.0.0's names, `MENDE KIKAKUI SYLLABLE M172 MBO` among them.

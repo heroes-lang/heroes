@@ -1,0 +1,92 @@
+# A file written below `x509/pkcs12`'s records: the iterations checked and
+# the password's forms made; a content enciphered and the PFX finished with
+# its MAC, by AES-256 under PBES2 and HMAC-SHA-256, or by PKCS #12's triple
+# DES and HMAC-SHA-1 where `legacy` is true; and the bags' attributes, a
+# certificate bag, a localKeyId and Java's mark of trust.
+
+use asn1
+use bytes
+use crypto
+use x509
+use x509/pkcs12/internal/bags
+use x509/pkcs12/internal/derive
+use x509/pkcs12/internal/reading
+use x509/pkcs12/internal/schemes
+
+# The fewest iterations a file is written with, RFC 8018 § 4.2's 1000.
+constant MIN_ITERATIONS: i64
+    1000
+
+# The purpose Java trusts a certificate of a trust store for,
+# `anyExtendedKeyUsage`.
+constant ANY_EXTENDED_KEY_USAGE: str
+    "2.5.29.37.0"
+
+# `iterations` checked, and `password`'s forms.
+function prepared(iterations: i64, password: str) -> schemes.Password?
+    if iterations < MIN_ITERATIONS || iterations > derive.MAX_ITERATIONS
+        return fail(
+            code: "invalid",
+            msg: f"{iterations} iterations, where a file is written with {MIN_ITERATIONS} to {derive.MAX_ITERATIONS}"
+        )
+    return ok(schemes.Password(bmp: derive.bmp(password), utf8: bytes.from_text(password)))
+
+# `text` enciphered under `password` with `iterations`: triple DES where
+# `legacy` is true, else AES-256.
+function sealed(legacy: bool, iterations: i64, password: schemes.Password, text: [u8]) -> schemes.Sealed?
+    if legacy
+        return schemes.encrypt_triple_des(password: password, iterations: iterations, text: text)
+    return schemes.encrypt_aes256(password: password, iterations: iterations, text: text)
+
+# The PFX of `safes`, its MAC by HMAC-SHA-1 and a salt of 8 bytes where
+# `legacy` is true, else by HMAC-SHA-256 and a salt of 16.
+function finished(safes: [asn1.Value], password: schemes.Password, legacy: bool, iterations: i64) -> [u8]?
+    if legacy
+        return bags.pfx_der(safes: safes, password: password, digest: .sha1, iterations: iterations, salt_length: 8)
+    return bags.pfx_der(safes: safes, password: password, digest: .sha256, iterations: iterations, salt_length: 16)
+
+# The attributes of a bag: its friendlyName `name` where it is not "", then
+# `rest`.
+function attributes_of(name: str, rest: [asn1.Value]) -> [asn1.Value]
+    out: [asn1.Value] @= []
+
+    if name != ""
+        out @ out.push(
+            .sequence(items: [.oid(v: asn1.Oid(dotted: reading.FRIENDLY_NAME)), .set(items: [.text(kind: .bmp, v: name)])])
+        )
+
+    for one in rest
+        out @ out.push(one)
+
+    return out
+
+# The localKeyId of `certificate`'s key, the certificate's SHA-1, as
+# OpenSSL, Python and Windows write it.
+function local_key_id(certificate: x509.Certificate) -> asn1.Value
+    return .sequence(
+        items: [.oid(v: asn1.Oid(dotted: reading.LOCAL_KEY_ID)), .set(items: [.octet_string(v: crypto.sha1(certificate.der))])]
+    )
+
+# Oracle's trustedKeyUsage for `ANY_EXTENDED_KEY_USAGE`, as `keytool
+# -importcert` writes it.
+function trusted() -> asn1.Value
+    return .sequence(
+        items: [.oid(v: asn1.Oid(dotted: reading.TRUSTED_KEY_USAGE)), .set(items: [.oid(v: asn1.Oid(dotted: ANY_EXTENDED_KEY_USAGE))])]
+    )
+
+# The certificate bag of `certificate`, with `attributes`.
+function certificate_bag(certificate: x509.Certificate, attributes: [asn1.Value]) -> asn1.Value
+    value: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: reading.X509_CERTIFICATE)), asn1.tagged(v: .octet_string(v: certificate.der), number: 0)]
+    )
+    return bags.bag(kind: bags.CERT_BAG, value: value, attributes: attributes)
+
+test "prepared: the least and the most iterations taken, one below and one above refused"
+    assert prepared(iterations: MIN_ITERATIONS, password: "").must().bmp == [0, 0]
+    assert !prepared(iterations: derive.MAX_ITERATIONS, password: "a").is_err()
+    assert prepared(iterations: MIN_ITERATIONS - 1, password: "a").is_err()
+    assert prepared(iterations: derive.MAX_ITERATIONS + 1, password: "a").is_err()
+
+test "attributes_of: no name, and a name before the rest"
+    assert attributes_of(name: "", rest: []) == []
+    assert attributes_of(name: "n", rest: [trusted()]).len() == 2
