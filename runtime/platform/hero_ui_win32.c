@@ -1660,6 +1660,17 @@ static LRESULT hero_ui_win_notified(NMHDR *head) {
             hero_ui_win_stamp_changed(widget);
         }
         return 0;
+    case HERO_UI_CALENDAR:
+        /* Every change of the day shown chosen is read back and told where
+         * it changed the value: a click's `MCN_SELECT` and an arrow key's
+         * `MCN_SELCHANGE` alike, so a pick by the keyboard is told whether or
+         * not Windows sends the first for it; a notice that leaves the day
+         * as it was (the program's own `MCM_SETCURSEL`, muted, a month turned
+         * with the day kept) tells nothing. */
+        if (head->code == MCN_SELECT || head->code == MCN_SELCHANGE) {
+            hero_ui_win_stamp_changed(widget);
+        }
+        return 0;
     default:
         return 0;
     }
@@ -2498,6 +2509,13 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             hero_ui_win_stamp_setup(made);
         }
         break;
+    case HERO_UI_CALENDAR:
+        /* One day at a time: never `MCS_MULTISELECT`. */
+        made->hwnd = hero_ui_win_control(window, inside, MONTHCAL_CLASSW, WS_TABSTOP, 0, id);
+        if (made->hwnd != NULL) {
+            hero_ui_win_stamp_setup(made);
+        }
+        break;
     case HERO_UI_COLOR_WELL:
         made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_OWNERDRAW | WS_TABSTOP, 0, id);
         break;
@@ -2964,6 +2982,7 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
         return hero_ui_win_stamp_set(widget, value, false);
     case HERO_UI_COLOR_WELL:
         return hero_ui_win_well_set(widget, value, false);
@@ -3559,6 +3578,18 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         size.cx += hero_ui_win_metric(SM_CXVSCROLL, dpi) + 2 * hero_ui_win_metric(SM_CXEDGE, dpi) + MulDiv(12, (int)dpi, 96);
         size.cy = hero_ui_win_line(widget->hwnd) + 2 * hero_ui_win_metric(SM_CYEDGE, dpi) + MulDiv(3, (int)dpi, 96);
         break;
+    case HERO_UI_CALENDAR: {
+        /* A month's grid, its title and its today line, as the control
+         * measures them in its font. */
+        RECT least;
+
+        memset(&least, 0, sizeof least);
+        if (SendMessageW(widget->hwnd, MCM_GETMINREQRECT, 0, (LPARAM)&least)) {
+            size.cx = least.right - least.left;
+            size.cy = least.bottom - least.top;
+        }
+        break;
+    }
     case HERO_UI_COLOR_WELL:
         *width = 44;
         *height = 23;
@@ -3666,6 +3697,7 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
     case HERO_UI_COLOR_WELL:
         *value = widget->value;
         return HERO_UI_OK;
@@ -5019,6 +5051,7 @@ static bool hero_ui_win_takes_keys(int64_t kind) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
     case HERO_UI_COLOR_WELL:
     case HERO_UI_FONT_BUTTON:
     case HERO_UI_EDITABLE_COMBO:
@@ -8265,6 +8298,11 @@ static LRESULT hero_ui_win_spin_stepped(hero_ui_native *spin, const NMUPDOWN *st
  * year before 1601, so a value before it is `invalid` and the ends of a new
  * picker start there.
  *
+ * A MONTH'S CALENDAR is the system's month calendar (`MONTHCAL_CLASS`), one
+ * day chosen, held and bounded as the date picker's value is
+ * (`MCM_SETCURSEL`, `MCM_GETCURSEL`, `MCM_SETRANGE`), its size the control's
+ * own least (`MCM_GETMINREQRECT`).
+ *
  * A COLOUR WELL is a button the arm draws (`BS_OWNERDRAW`): a swatch of the
  * colour over a push button's frame, the colour shown over a checkerboard
  * where it is not opaque. Its click opens `ChooseColorW` over its window, which
@@ -8323,7 +8361,14 @@ static int64_t hero_ui_win_bar_height(const hero_ui_native *bar) {
 }
 
 static bool hero_ui_win_stamp_kind(int64_t kind) {
-    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER;
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER || kind == HERO_UI_CALENDAR;
+}
+
+/* The kind the pure half reads `kind` as: a month's calendar is a date
+ * picker shown open (`hero_ui.h`'s A MONTH'S CALENDAR), every rule of its
+ * value and its ends the date picker's. */
+static int64_t hero_ui_win_stamp_as(int64_t kind) {
+    return kind == HERO_UI_CALENDAR ? HERO_UI_DATE_PICKER : kind;
 }
 
 /* `fields` as the `SYSTEMTIME` a picker takes. */
@@ -8347,7 +8392,7 @@ static bool hero_ui_win_stamp_read(const hero_ui_native *picker, int64_t *second
     hero_ui_win_fields fields;
 
     memset(&shown, 0, sizeof shown);
-    if (SendMessageW(picker->hwnd, DTM_GETSYSTEMTIME, 0, (LPARAM)&shown) != GDT_VALID) {
+    if (picker->kind == HERO_UI_CALENDAR ? !SendMessageW(picker->hwnd, MCM_GETCURSEL, 0, (LPARAM)&shown) : SendMessageW(picker->hwnd, DTM_GETSYSTEMTIME, 0, (LPARAM)&shown) != GDT_VALID) {
         return false;
     }
     fields.year = shown.wYear;
@@ -8361,7 +8406,7 @@ static bool hero_ui_win_stamp_read(const hero_ui_native *picker, int64_t *second
         fields.year = 1970;
         fields.month = 1;
         fields.day = 1;
-    } else if (picker->kind == HERO_UI_DATE_PICKER) {
+    } else if (hero_ui_win_stamp_as(picker->kind) == HERO_UI_DATE_PICKER) {
         fields.hour = 0;
         fields.minute = 0;
         fields.second = 0;
@@ -8382,11 +8427,16 @@ static void hero_ui_win_stamp_show(const hero_ui_native *picker) {
         hero_ui_win_stamp_system(&fields, &ends[0]);
         hero_ui_win_stamp_fields(picker->most, &fields);
         hero_ui_win_stamp_system(&fields, &ends[1]);
-        (void)SendMessageW(picker->hwnd, DTM_SETRANGE, GDTR_MIN | GDTR_MAX, (LPARAM)ends);
+        (void)SendMessageW(picker->hwnd, picker->kind == HERO_UI_CALENDAR ? MCM_SETRANGE : DTM_SETRANGE, GDTR_MIN | GDTR_MAX, (LPARAM)ends);
     }
     hero_ui_win_stamp_fields(picker->value, &fields);
     hero_ui_win_stamp_system(&fields, &shown);
-    (void)SendMessageW(picker->hwnd, DTM_SETSYSTEMTIME, GDT_VALID, (LPARAM)&shown);
+    if (picker->kind == HERO_UI_CALENDAR) {
+        /* The month shown follows the day chosen. */
+        (void)SendMessageW(picker->hwnd, MCM_SETCURSEL, 0, (LPARAM)&shown);
+    } else {
+        (void)SendMessageW(picker->hwnd, DTM_SETSYSTEMTIME, GDT_VALID, (LPARAM)&shown);
+    }
     hero_ui_mute(-1);
 }
 
@@ -8399,9 +8449,13 @@ static void hero_ui_win_stamp_setup(hero_ui_native *picker) {
     const wchar_t clock[] = L"HH':'mm':'ss";
     const wchar_t standard[] = L"yyyy-MM-dd";
 
-    hero_ui_win_stamp_span(picker->kind, &picker->least, &picker->most);
+    hero_ui_win_stamp_span(hero_ui_win_stamp_as(picker->kind), &picker->least, &picker->most);
     picker->value = 0;
     format[0] = 0;
+    if (picker->kind == HERO_UI_CALENDAR) {
+        hero_ui_win_stamp_show(picker);
+        return;
+    }
     if (picker->kind != HERO_UI_TIME_PICKER) {
         if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, locale, (int)(sizeof locale / sizeof locale[0])) <= 0 || !hero_ui_win_pattern_date(locale, date, (int)(sizeof date / sizeof date[0]))) {
             memcpy(date, standard, sizeof standard);
@@ -8448,7 +8502,7 @@ static void hero_ui_win_stamp_changed(hero_ui_native *picker) {
  * where the picker is greyed out); `invalid` for a moment its kind does not
  * hold and for one outside its ends. */
 static int64_t hero_ui_win_stamp_set(hero_ui_native *picker, int64_t value, bool person) {
-    const char *refusal = hero_ui_win_stamp_refusal(picker->kind, value);
+    const char *refusal = hero_ui_win_stamp_refusal(hero_ui_win_stamp_as(picker->kind), value);
 
     if (refusal != NULL) {
         return hero_ui_refused(HERO_UI_INVALID, refusal);
@@ -8476,10 +8530,10 @@ static int64_t hero_ui_win_stamp_set(hero_ui_native *picker, int64_t value, bool
 static int64_t hero_ui_win_stamp_range(hero_ui_native *picker, int64_t least, int64_t most) {
     const char *refusal;
 
-    least = hero_ui_win_stamp_least(picker->kind, least);
-    refusal = hero_ui_win_stamp_refusal(picker->kind, least);
+    least = hero_ui_win_stamp_least(hero_ui_win_stamp_as(picker->kind), least);
+    refusal = hero_ui_win_stamp_refusal(hero_ui_win_stamp_as(picker->kind), least);
     if (refusal == NULL) {
-        refusal = hero_ui_win_stamp_refusal(picker->kind, most);
+        refusal = hero_ui_win_stamp_refusal(hero_ui_win_stamp_as(picker->kind), most);
     }
     if (refusal != NULL) {
         return hero_ui_refused(HERO_UI_INVALID, refusal);
