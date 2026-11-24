@@ -1,0 +1,315 @@
+# The requests of an SFTP session that answer more than a status, and the
+# attributes requests carry: a handle read from its answer, attributes read
+# or set by path, handle or link, an extension's request built once the
+# server announced it with its version (OpenSSH's `PROTOCOL` § 4.2), the one
+# name a `NAME` answer holds, a folder's entries, a volume's facts and the
+# names of user and group numbers.
+
+use bytes
+use sftp/internal/attrs
+use sftp/internal/conn
+use sftp/internal/wire
+use ssh
+use time
+
+# One entry of a folder as the server listed it.
+record Entry
+    # Its name within the folder.
+    name: str
+    # The line `ls -l` prints for it, a byte that is not UTF-8 replaced.
+    long_name: str
+    # Its attributes.
+    raw: attrs.Raw
+
+# A volume's facts (`statvfs@openssh.com`, OpenSSH's `PROTOCOL` § 4.4), its
+# block counts turned into bytes.
+record Space
+    # The volume's size in bytes.
+    total: i64
+    # The bytes free.
+    free: i64
+    # The bytes free to this user.
+    available: i64
+    # The size of a block it prefers to be written by.
+    block_size: i64
+    # How many files it can hold.
+    files: i64
+    # How many more files it can hold.
+    files_free: i64
+    # How many more this user may make.
+    files_available: i64
+    # Its number.
+    id: i64
+    # Whether it is read only, `ST_RDONLY`.
+    read_only: bool
+    # Whether it ignores the set-user and set-group bits, `ST_NOSUID`.
+    no_setuid: bool
+    # The longest name it holds.
+    name_max: i64
+
+## Handles
+
+# The handle at `r`, a `HANDLE` answer's: 1 to 256 bytes (§ 3).
+function handle_of(@r: wire.Reader, asked: str) -> [u8]?
+    handle = wire.read_string(@r, what: asked + ": the handle")?
+
+    if handle.len() == 0 || handle.len() > conn.HANDLE_BOUND
+        return fail(code: conn.INVALID, msg: f"{asked}: the server gave a handle of {handle.len()} bytes")
+    return ok(handle)
+
+## Attributes
+
+# Sends `packet`, a request answered by attributes, and reads them.
+function attributes(@c: ssh.Client, @st: conn.State, packet: [u8], asked: str) -> attrs.Raw?
+    sent @= packet
+    r @= conn.call(@c, @st, @sent, kind: conn.ATTRS, asked: asked)?
+    return attrs.read(@r, what: asked)
+
+# The attributes of `path`, links followed where `follow`.
+function stat(@c: ssh.Client, @st: conn.State, path: str, follow: bool) -> attrs.Raw?
+    kind @= conn.LSTAT
+
+    if follow
+        kind @ conn.STAT
+    packet @= conn.packet_of(kind)
+    wire.put_text(@packet, text: path)
+    return attributes(@c, @st, packet: packet, asked: f"reading the attributes of \"{path}\"")
+
+# The attributes of the open `handle`.
+function fstat(@c: ssh.Client, @st: conn.State, handle: [u8], asked: str) -> attrs.Raw?
+    packet @= conn.packet_of(conn.FSTAT)
+    wire.put_string(out: @packet, data: handle)
+    return attributes(@c, @st, packet: packet, asked: asked)
+
+# Attributes that set the permission bits alone.
+function permission_change(permission: i64, path: str) -> attrs.Raw?
+    if permission < 0 || permission > 0o7777
+        return fail(code: conn.INVALID, msg: f"\"{path}\": the permission {permission}, outside 0 to 0o7777")
+    raw @= attrs.none()
+    raw.flags @ attrs.PERMISSIONS
+    raw.permissions @ permission
+    return ok(raw)
+
+# Attributes that set the owner and the group alone, -1 written as 2^32 - 1,
+# the number a POSIX system reads as unchanged.
+function owner_change(user: i64, group: i64, path: str) -> attrs.Raw?
+    if user < -1 || user > 4294967294 || group < -1 || group > 4294967294
+        return fail(
+            code: conn.INVALID,
+            msg: f"\"{path}\": the owner {user} and the group {group}, outside -1 to 2^32 - 2"
+        )
+    raw @= attrs.none()
+    raw.flags @ attrs.UIDGID
+    raw.uid @ unsigned(user)
+    raw.gid @ unsigned(group)
+    return ok(raw)
+
+# `n` as a `uint32`, -1 as 2^32 - 1.
+function unsigned(n: i64) -> i64
+    if n == -1
+        return 4294967295
+    return n
+
+# Attributes that set both times alone, in whole seconds, the fraction
+# dropped.
+function times_change(written: time.Instant, accessed: time.Instant, path: str) -> attrs.Raw?
+    w = time.unix_seconds(written)
+    a = time.unix_seconds(accessed)
+
+    if w < 0 || w > 4294967295 || a < 0 || a > 4294967295
+        return fail(code: conn.INVALID, msg: f"\"{path}\": a time outside 1970 to 2106, which SFTP 3 cannot carry")
+    raw @= attrs.none()
+    raw.flags @ attrs.ACMODTIME
+    raw.atime @ a
+    raw.mtime @ w
+    return ok(raw)
+
+# Sends `raw` as the new attributes of the open `handle`.
+function set_handle(@c: ssh.Client, @st: conn.State, handle: [u8], raw: attrs.Raw, asked: str) -> ()?
+    packet @= conn.packet_of(conn.FSETSTAT)
+    wire.put_string(out: @packet, data: handle)
+    attrs.write(@packet, raw: raw)
+    return conn.call_ok(@c, @st, @packet, asked: asked)
+
+# Sends `raw` as the new attributes of `path`, links followed.
+function set_path(@c: ssh.Client, @st: conn.State, path: str, raw: attrs.Raw, asked: str) -> ()?
+    packet @= conn.packet_of(conn.SETSTAT)
+    wire.put_text(@packet, text: path)
+    attrs.write(@packet, raw: raw)
+    return conn.call_ok(@c, @st, @packet, asked: asked)
+
+# Sends `raw` as the new attributes of the link `path` itself
+# (`lsetstat@openssh.com`, `PROTOCOL` § 4.7).
+function set_link(@c: ssh.Client, @st: conn.State, path: str, raw: attrs.Raw, asked: str) -> ()?
+    packet @= extension(st, name: "lsetstat@openssh.com", version: "1", asked: asked)?
+    wire.put_text(@packet, text: path)
+    attrs.write(@packet, raw: raw)
+    return conn.call_ok(@c, @st, @packet, asked: asked)
+
+## Extensions and names
+
+# An `EXTENDED` request of the extension `name`, which the server must have
+# announced with `version`; `unsupported` where it did not.
+function extension(st: conn.State lent, name: str, version: str, asked: str) -> [u8]?
+    if !conn.offers(st, name: name, data: version)
+        return fail(code: conn.UNSUPPORTED, msg: f"{asked}: the server does not offer {name} version {version}")
+    return ok(conn.extended(name))
+
+# The one name a `NAME` answer to `packet` holds.
+function one_name(@c: ssh.Client, @st: conn.State, packet: [u8], asked: str) -> str?
+    sent @= packet
+    r @= conn.call(@c, @st, @sent, kind: conn.NAME, asked: asked)?
+    count = wire.read_u32(@r, what: asked)?
+
+    if count != 1
+        return fail(code: conn.INVALID, msg: f"{asked}: the server answered {count} names where one was owed")
+    return wire.read_text(@r, what: asked)
+
+# The entries the open folder `handle` holds, read to its end, `.` and `..`
+# left out, sorted by their names' bytes.
+function listing(@c: ssh.Client, @st: conn.State, handle: [u8], asked: str) -> [Entry]?
+    found: {str: Entry} @= {}
+
+    while true
+        packet @= conn.packet_of(conn.READDIR)
+        wire.put_string(out: @packet, data: handle)
+        id = conn.send(@c, @st, @packet)?
+        reply = conn.await(@c, @st, id: id)?
+        r @= wire.reader(reply.body)
+
+        if reply.kind == conn.STATUS
+            code = wire.read_u32(@r, what: asked)?
+
+            if code == conn.FX_EOF
+                break
+            return conn.failure(@r, code: code, asked: asked)
+
+        if reply.kind != conn.NAME
+            return fail(code: conn.INVALID, msg: f"{asked}: the server answered a packet of type {reply.kind}")
+        count = wire.read_u32(@r, what: asked)?
+
+        # Each name takes at least its two lengths and its flags, so a count
+        # past what the bytes can hold is refused before anything is built.
+        if count > wire.left(r) / 12
+            return fail(code: conn.INVALID, msg: f"{asked}: {count} names announced in {wire.left(r)} bytes")
+        n @= 0
+
+        while n < count
+            n @ n + 1
+            name = wire.read_text(@r, what: asked)?
+            long = wire.read_string(@r, what: asked)?
+            raw = attrs.read(@r, what: asked)?
+
+            if name != "." && name != ".."
+                found[name] @ Entry(name: name, long_name: bytes.to_text_lossy(long), raw: raw)
+
+    out: [Entry] @= []
+
+    for name in sort(keys(found))
+        out @ out.push(found[name].must())
+
+    return ok(out)
+
+# The names the server gives the numbers `ids`, of users where `of_users`
+# and of groups where not (`users-groups-by-id@openssh.com`, `PROTOCOL` §
+# 4.12): a number with no name, answered empty, left out.
+function names_by_id(@c: ssh.Client, @st: conn.State, ids: [i64], of_users: bool) -> {i64: str}?
+    asked = "asking the names of users and groups by their numbers"
+    found: {i64: str} @= {}
+
+    if ids.len() == 0
+        return ok(found)
+    packet @= extension(st, name: "users-groups-by-id@openssh.com", version: "1", asked: asked)?
+    listed: [u8] @= []
+
+    for id in ids
+        if id < 0 || id > 4294967295
+            return fail(code: conn.INVALID, msg: f"{asked}: the number {id}, outside 0 to 2^32 - 1")
+        wire.put_u32(@listed, n: id)
+
+    none: [u8] = []
+
+    if of_users
+        wire.put_string(out: @packet, data: listed)
+        wire.put_string(out: @packet, data: none)
+    else
+        wire.put_string(out: @packet, data: none)
+        wire.put_string(out: @packet, data: listed)
+    r @= conn.call(@c, @st, @packet, kind: conn.EXTENDED_REPLY, asked: asked)?
+    users = wire.read_string(@r, what: asked)?
+    groups = wire.read_string(@r, what: asked)?
+    names @= wire.reader(groups)
+
+    if of_users
+        names @ wire.reader(users)
+
+    for id in ids
+        name = wire.read_text(@names, what: asked)?
+
+        if name != ""
+            found[id] @ name
+
+    wire.expect_end(names, what: asked)?
+    return ok(found)
+
+## Volumes
+
+# The volume's facts an answer of `statvfs@openssh.com` or
+# `fstatvfs@openssh.com` holds at `r`: eleven `uint64`, the block counts in
+# units of the second.
+function space_of(@r: wire.Reader, asked: str) -> Space?
+    numbers: [i64] @= []
+
+    for _ in range(from: 0, to: 11)
+        numbers @ numbers.push(wire.read_u64(@r, what: asked)?)
+
+    unit = numbers[1]
+    return ok(
+        Space(total: bytes_of(count: numbers[2], unit: unit, asked: asked)?, free: bytes_of(count: numbers[3], unit: unit, asked: asked)?, available: bytes_of(count: numbers[4], unit: unit, asked: asked)?, block_size: numbers[0], files: numbers[5], files_free: numbers[6], files_available: numbers[7], id: numbers[8], read_only: numbers[9] & 1 != 0, no_setuid: numbers[9] & 2 != 0, name_max: numbers[10])
+    )
+
+# `count` units of `unit` bytes, `invalid` past 2^63 - 1.
+function bytes_of(count: i64, unit: i64, asked: str) -> i64?
+    if unit > 0 && count > 9223372036854775807 / unit
+        return fail(code: conn.INVALID, msg: f"{asked}: {count} blocks of {unit} bytes, past 2^63 - 1")
+    return ok(count * unit)
+
+test "owner_change, permission_change and times_change: -1 kept, the ranges' edges, and times version 3 cannot carry"
+    assert owner_change(user: -1, group: 0, path: "p").must().uid == 4294967295
+    assert owner_change(user: 4294967294, group: -1, path: "p").must().gid == 4294967295
+    assert owner_change(user: -2, group: 0, path: "p").is_err()
+    assert owner_change(user: 0, group: 4294967295, path: "p").is_err()
+    assert permission_change(0o7777, path: "p").must().permissions == 0o7777
+    assert permission_change(0, path: "p").must().flags == attrs.PERMISSIONS
+    assert permission_change(-1, path: "p").is_err()
+    assert permission_change(0o10000, path: "p").is_err()
+    epoch = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    last = time.from_unix(whole_seconds: 4294967295, extra_nanoseconds: 999999999).must()
+    raw = times_change(written: last, accessed: epoch, path: "p").must()
+    assert raw.mtime == 4294967295
+    assert raw.atime == 0
+    past = time.from_unix(whole_seconds: 4294967296, extra_nanoseconds: 0).must()
+    before = time.from_unix(whole_seconds: -1, extra_nanoseconds: 0).must()
+    assert times_change(written: past, accessed: epoch, path: "p").is_err()
+    assert times_change(written: epoch, accessed: before, path: "p").is_err()
+
+test "bytes_of and space_of: a volume's counts, the largest size, one past it, and an answer cut short"
+    assert bytes_of(count: 9223372036854775807, unit: 1, asked: "a").must() == 9223372036854775807
+    assert bytes_of(count: 4611686018427387904, unit: 2, asked: "a").is_err()
+    assert bytes_of(count: 0, unit: 0, asked: "a").must() == 0
+    out: [u8] @= []
+
+    for n in [4096, 512, 100, 50, 40, 1000, 900, 800, 7, 3, 255]
+        wire.put_u64(@out, n: n)
+
+    r @= wire.reader(out)
+    v = space_of(@r, asked: "a").must()
+    assert v.total == 51200
+    assert v.free == 25600
+    assert v.available == 20480
+    assert v.block_size == 4096
+    assert v.files == 1000 && v.files_free == 900 && v.files_available == 800
+    assert v.id == 7 && v.read_only && v.no_setuid && v.name_max == 255
+    cut = out.slice(from: 0, to: 80)
+    r2 @= wire.reader(cut)
+    assert space_of(@r2, asked: "a").is_err()

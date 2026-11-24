@@ -1,0 +1,288 @@
+# SFTP's file attributes, the `ATTRS` of draft-ietf-secsh-filexfer-02 § 5:
+# a `uint32` of flags saying which fields follow, then the size, the owner's
+# and the group's numbers, the permission bits, the times of the last read
+# and the last write in whole seconds, and pairs of named extensions. A
+# field the flags leave out is absent, never zero.
+
+use fs
+use sftp/internal/wire
+use time
+
+## Flags
+
+# The size follows, a `uint64`.
+constant SIZE: i64
+    1
+
+# The owner's and the group's numbers follow, two `uint32`.
+constant UIDGID: i64
+    2
+
+# The permission bits follow, a `uint32`, the file's type among them.
+constant PERMISSIONS: i64
+    4
+
+# The times of the last read and the last write follow, two `uint32` of
+# seconds since 1970.
+constant ACMODTIME: i64
+    8
+
+# Named extensions follow: a `uint32` count, then a name and its data each.
+constant EXTENDED: i64
+    0x80000000
+
+## The fields
+
+# One named extension of a file's attributes.
+record Pair
+    # The extension's name, `name@domain`.
+    name: str
+    # Its data, as the server sent it.
+    data: [u8]
+
+# A file's attributes as the wire holds them: `flags` says which of the
+# other fields hold a value; the others are 0, or empty.
+record Raw
+    # Which fields follow: `SIZE`, `UIDGID`, `PERMISSIONS`, `ACMODTIME`,
+    # `EXTENDED`, or'd.
+    flags: i64
+    # The size in bytes.
+    size: i64
+    # The owner's number.
+    uid: i64
+    # The group's number.
+    gid: i64
+    # The permission bits, the type's among them.
+    permissions: i64
+    # The last read, in seconds since 1970.
+    atime: i64
+    # The last write, in seconds since 1970.
+    mtime: i64
+    # The named extensions.
+    extended: [Pair]
+
+# Attributes holding nothing: what a request sends to change nothing, or to
+# let the server choose.
+function none() -> Raw
+    pairs: [Pair] = []
+    return Raw(flags: 0, size: 0, uid: 0, gid: 0, permissions: 0, atime: 0, mtime: 0, extended: pairs)
+
+# Whether `raw` holds the field `flag` names.
+function has(raw: Raw lent, flag: i64) -> bool
+    return raw.flags & flag != 0
+
+## The fields a program reads
+
+# What the type bits of `raw`'s permissions name; `not_found` where the
+# server sent no permissions or no type in them.
+function kind(raw: Raw lent) -> fs.Kind?
+    if !has(raw, flag: PERMISSIONS)
+        return fail(code: "not_found", msg: "the server sent no permissions, and so no type")
+    return kind_of(raw.permissions)
+
+# What the type bits of `permissions` name: S_IFREG, S_IFDIR and S_IFLNK
+# as POSIX numbers them, which SFTP 3 carries as they are.
+function kind_of(permissions: i64) -> fs.Kind?
+    bits = permissions & 0o170000
+
+    if bits == 0o100000
+        return ok(.file)
+
+    if bits == 0o040000
+        return ok(.directory)
+
+    if bits == 0o120000
+        return ok(.link)
+
+    if bits == 0
+        return fail(code: "not_found", msg: "the server sent no type in the permissions")
+    return ok(.other)
+
+# `raw`'s size, `not_found` where the server sent none.
+function size(raw: Raw lent) -> i64?
+    return field(has(raw, flag: SIZE), value: raw.size, what: "size")
+
+# `raw`'s permission bits without the type's, `not_found` where none came.
+function permission(raw: Raw lent) -> i64?
+    return field(has(raw, flag: PERMISSIONS), value: raw.permissions & 0o7777, what: "permission")
+
+# `raw`'s owner's number, `not_found` where none came.
+function user(raw: Raw lent) -> i64?
+    return field(has(raw, flag: UIDGID), value: raw.uid, what: "owner")
+
+# `raw`'s group's number, `not_found` where none came.
+function group(raw: Raw lent) -> i64?
+    return field(has(raw, flag: UIDGID), value: raw.gid, what: "group")
+
+# `raw`'s last write, `not_found` where none came.
+function written(raw: Raw lent) -> time.Instant?
+    if has(raw, flag: ACMODTIME)
+        return time.from_unix(whole_seconds: raw.mtime, extra_nanoseconds: 0)
+    return fail(code: "not_found", msg: "the server sent no time of the last write")
+
+# `raw`'s last read, `not_found` where none came.
+function accessed(raw: Raw lent) -> time.Instant?
+    if has(raw, flag: ACMODTIME)
+        return time.from_unix(whole_seconds: raw.atime, extra_nanoseconds: 0)
+    return fail(code: "not_found", msg: "the server sent no time of the last read")
+
+# `raw`'s named extensions by name; a name the server sent twice keeps its
+# last data.
+function extended(raw: Raw lent) -> {str: [u8]}
+    out: {str: [u8]} @= {}
+
+    for p in raw.extended
+        out[p.name] @ p.data
+
+    return out
+
+# `value` where `present`, else `not_found` naming `what`.
+function field(present: bool, value: i64, what: str) -> i64?
+    if present
+        return ok(value)
+    return fail(code: "not_found", msg: f"the server sent no {what}")
+
+## Reading and writing
+
+# The attributes at `r`'s place. A flag the draft does not define fails
+# `invalid`, since the fields it would announce cannot be read past.
+function read(@r: wire.Reader, what: str) -> Raw?
+    flags = wire.read_u32(@r, what: what)?
+    known = SIZE | UIDGID | PERMISSIONS | ACMODTIME | EXTENDED
+
+    if flags & ~known != 0
+        return fail(
+            code: wire.INVALID,
+            msg: f"{what}: the attribute flags {flags} hold bits the protocol does not define"
+        )
+    out @= none()
+    out.flags @ flags
+
+    if flags & SIZE != 0
+        out.size @ wire.read_u64(@r, what: what + "'s size")?
+
+    if flags & UIDGID != 0
+        out.uid @ wire.read_u32(@r, what: what + "'s owner")?
+        out.gid @ wire.read_u32(@r, what: what + "'s group")?
+
+    if flags & PERMISSIONS != 0
+        out.permissions @ wire.read_u32(@r, what: what + "'s permissions")?
+
+    if flags & ACMODTIME != 0
+        out.atime @ wire.read_u32(@r, what: what + "'s last read")?
+        out.mtime @ wire.read_u32(@r, what: what + "'s last write")?
+
+    if flags & EXTENDED != 0
+        count = wire.read_u32(@r, what: what + "'s extensions")?
+
+        # Each pair takes at least its two lengths, so a count past what the
+        # bytes can hold is refused before anything is built for it.
+        if count > wire.left(r) / 8
+            return fail(
+                code: wire.INVALID,
+                msg: f"{what}: {count} extensions announced in {wire.left(r)} bytes"
+            )
+        pairs: [Pair] @= []
+        n: i64 @= 0
+
+        while n < count
+            n @ n + 1
+            name = wire.read_text(@r, what: what + "'s extension name")?
+            data = wire.read_string(@r, what: what + "'s extension data")?
+            pairs @ pairs.push(Pair(name: name, data: data))
+
+        out.extended @ pairs
+
+    return ok(out)
+
+# `raw` added to `out`, the fields its flags name and no other. Aborts on a
+# number past its field's width, which the package checked first.
+function write(@out: [u8], raw: Raw lent)
+    wire.put_u32(@out, n: raw.flags)
+
+    if raw.flags & SIZE != 0
+        wire.put_u64(@out, n: raw.size)
+
+    if raw.flags & UIDGID != 0
+        wire.put_u32(@out, n: raw.uid)
+        wire.put_u32(@out, n: raw.gid)
+
+    if raw.flags & PERMISSIONS != 0
+        wire.put_u32(@out, n: raw.permissions)
+
+    if raw.flags & ACMODTIME != 0
+        wire.put_u32(@out, n: raw.atime)
+        wire.put_u32(@out, n: raw.mtime)
+
+    if raw.flags & EXTENDED != 0
+        wire.put_u32(@out, n: raw.extended.len())
+
+        for p in raw.extended
+            wire.put_text(@out, text: p.name)
+            wire.put_string(out: @out, data: p.data)
+
+test "read and write: no field, every field, an extension, and a flag the draft does not define"
+    out: [u8] @= []
+    write(@out, raw: none())
+    assert out == [0, 0, 0, 0]
+    pairs = [Pair(name: "a@b", data: [1, 2])]
+    full = Raw(
+        flags: SIZE | UIDGID | PERMISSIONS | ACMODTIME | EXTENDED,
+        size: 4294967296,
+        uid: 501,
+        gid: 20,
+        permissions: 0o100644,
+        atime: 4294967295,
+        mtime: 0,
+        extended: pairs
+    )
+    back: [u8] @= []
+    write(@back, raw: full)
+    assert back.len() == 4 + 8 + 8 + 4 + 8 + 4 + 7 + 6
+    r @= wire.reader(back)
+    assert read(@r, what: "a file").must() == full
+    assert wire.left(r) == 0
+    odd: [u8] = [0, 0, 0, 16]
+    r2 @= wire.reader(odd)
+
+    match read(@r2, what: "a file")
+        .ok _  => assert false
+        .err e => assert e.code == wire.INVALID
+
+    cut: [u8] = [0, 0, 0, 1, 0, 0]
+    r3 @= wire.reader(cut)
+    assert read(@r3, what: "a file").is_err()
+
+test "kind, size, permission, user, group, written, accessed and extended: every field, none, and the kind of each type"
+    pairs = [Pair(name: "a@b", data: [1])]
+    raw = Raw(
+        flags: SIZE | UIDGID | PERMISSIONS | ACMODTIME | EXTENDED,
+        size: 7,
+        uid: 501,
+        gid: 20,
+        permissions: 0o120755,
+        atime: 0,
+        mtime: 4294967295,
+        extended: pairs
+    )
+    assert kind(raw).must() == .link
+    assert size(raw).must() == 7
+    assert permission(raw).must() == 0o755
+    assert user(raw).must() == 501
+    assert group(raw).must() == 20
+    assert time.unix_seconds(accessed(raw).must()) == 0
+    assert time.unix_seconds(written(raw).must()) == 4294967295
+    assert extended(raw)["a@b"].must() == [1]
+    empty = none()
+    assert kind(empty).is_err()
+    assert size(empty).is_err()
+    assert permission(empty).is_err()
+    assert user(empty).is_err()
+    assert group(empty).is_err()
+    assert written(empty).is_err()
+    assert accessed(empty).is_err()
+    assert extended(empty).len() == 0
+    assert kind_of(0o100644).must() == .file
+    assert kind_of(0o040755).must() == .directory
+    assert kind_of(0o010644).must() == .other
+    assert kind_of(0o644).is_err()

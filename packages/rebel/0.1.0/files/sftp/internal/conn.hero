@@ -1,0 +1,714 @@
+# An SFTP session's conversation with its server over one SSH channel
+# (draft-ietf-secsh-filexfer-02 §§ 3, 4, 7): requests framed and numbered,
+# answers read back in whatever order the server sends them and kept for
+# the request that waits on their number, an answer to a request nobody
+# asked refused. A frame that cannot be read leaves the stream with no
+# place to resume, so it ends the session: every later call fails `closed`
+# with the reason.
+
+use bytes
+use sftp/internal/wire
+use ssh
+
+## Codes
+
+# A packet that is not what the protocol says, a status `BAD_MESSAGE`.
+constant INVALID: str
+    "invalid"
+
+# A path that names nothing: the status `NO_SUCH_FILE`.
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+# The server refused: the status `PERMISSION_DENIED`.
+constant PERMISSION: str
+    "permission"
+
+# The session or its connection ended.
+constant CLOSED: str
+    "closed"
+
+# The server does not offer what was asked: `OP_UNSUPPORTED`, an extension
+# it did not announce, a version older than 3.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The server failed for a reason its status does not name: `FAILURE`.
+constant FAILED: str
+    "failed"
+
+# The wait ran out, as `ssh` answers it.
+constant TIMEOUT: str
+    "timeout"
+
+## Packet types (§ 3)
+
+# The client's first packet, its version.
+constant INIT: u8
+    1
+
+# The server's answer to `INIT`.
+constant VERSION: u8
+    2
+
+# Opens a file.
+constant OPEN: u8
+    3
+
+# Closes a handle.
+constant CLOSE: u8
+    4
+
+# Reads bytes of a file.
+constant READ: u8
+    5
+
+# Writes bytes of a file.
+constant WRITE: u8
+    6
+
+# A path's attributes, a link not followed.
+constant LSTAT: u8
+    7
+
+# An open file's attributes.
+constant FSTAT: u8
+    8
+
+# Changes a path's attributes.
+constant SETSTAT: u8
+    9
+
+# Changes an open file's attributes.
+constant FSETSTAT: u8
+    10
+
+# Opens a folder to list.
+constant OPENDIR: u8
+    11
+
+# The next names of an open folder.
+constant READDIR: u8
+    12
+
+# Removes a file.
+constant REMOVE: u8
+    13
+
+# Makes a folder.
+constant MKDIR: u8
+    14
+
+# Removes a folder.
+constant RMDIR: u8
+    15
+
+# A path made absolute and canonical.
+constant REALPATH: u8
+    16
+
+# A path's attributes, links followed.
+constant STAT: u8
+    17
+
+# Gives a path another name.
+constant RENAME: u8
+    18
+
+# The target of a link.
+constant READLINK: u8
+    19
+
+# Makes a link.
+constant SYMLINK: u8
+    20
+
+# A status: a request's success, or why it failed.
+constant STATUS: u8
+    101
+
+# A handle of a file or a folder opened.
+constant HANDLE: u8
+    102
+
+# Bytes read.
+constant DATA: u8
+    103
+
+# Names and their attributes.
+constant NAME: u8
+    104
+
+# A file's attributes.
+constant ATTRS: u8
+    105
+
+# A request an extension defines.
+constant EXTENDED: u8
+    200
+
+# The answer to an `EXTENDED` request.
+constant EXTENDED_REPLY: u8
+    201
+
+## Status codes (§ 7)
+
+# Success.
+constant FX_OK: i64
+    0
+
+# The end of a file or of a folder's names.
+constant FX_EOF: i64
+    1
+
+## Bounds
+
+# The version this client speaks.
+constant VERSION_SPOKEN: i64
+    3
+
+# The largest reply taken where the server announced no larger: 256 KiB,
+# room for the largest read this client asks and for a folder's names.
+constant REPLY_BOUND: i64
+    262144
+
+# The largest reply taken whatever the server announced: the `ssh`
+# package's window of a channel, 2 MiB.
+constant REPLY_CEILING: i64
+    2097152
+
+# The bytes of one read or write request: `sftp`'s own default buffer
+# (sftp(1), `-B`).
+constant CHUNK: i64
+    32768
+
+# The requests kept in flight by a transfer: `sftp`'s own default (sftp(1),
+# `-R`), so a transfer's answers fill the channel's 2 MiB window at most.
+constant DEPTH: i64
+    64
+
+# The bytes asked of the channel at once.
+constant READ_SIZE: i64
+    65536
+
+# The largest handle a server may give (§ 3: 256 bytes).
+constant HANDLE_BOUND: i64
+    256
+
+## The state
+
+# An extension the server announced in its version: its name and its
+# data, the extension's own version for OpenSSH's.
+record Extension
+    # Its name, `name@domain` for a vendor's.
+    name: str
+    # Its data.
+    data: [u8]
+
+# A request sent whose answer has not come: its number, and whether
+# anybody still waits for it.
+record Asked
+    # The request's number.
+    id: i64
+    # False once its caller has stopped waiting: its answer is dropped.
+    wanted: bool
+
+# An answer that came before its request was waited on.
+record Parked
+    # The request's number.
+    id: i64
+    # The answer's type.
+    kind: u8
+    # What follows the number.
+    body: [u8]
+
+# An answer: its type and what follows its request's number.
+record Reply
+    # The answer's type: `STATUS`, `HANDLE`, `DATA`, `NAME`, `ATTRS`,
+    # `EXTENDED_REPLY`.
+    kind: u8
+    # What follows the number.
+    body: [u8]
+
+# A session's conversation.
+record State
+    # The SSH channel the subsystem runs on.
+    channel: ssh.Channel
+    # The version agreed, 3.
+    version: i64
+    # The extensions the server announced, in its order.
+    extensions: [Extension]
+    # The number the next request takes, from 0 to 2^32 - 1.
+    next_id: i64
+    # Bytes the channel gave that no packet has taken yet, from `at`.
+    inbox: [u8]
+    # The first byte of `inbox` not yet taken.
+    at: i64
+    # The requests sent whose answers have not come, oldest first.
+    asked: [Asked]
+    # The answers that came before they were waited on.
+    parked: [Parked]
+    # The largest packet taken from the server.
+    bound: i64
+    # The bytes of one read request.
+    read_chunk: i64
+    # The bytes of one write request.
+    write_chunk: i64
+    # Whether the session has ended, by `close` or by a stream it could not
+    # read.
+    ended: bool
+    # Why it ended.
+    why: str
+
+## Starting
+
+# The conversation on `channel`, where the subsystem `sftp` runs: the
+# client's version sent and the server's read, with its extensions; where
+# the server offers `limits@openssh.com`, its bounds asked and kept.
+function begin(@c: ssh.Client, channel: ssh.Channel) -> State?
+    none: [u8] = []
+    no_extensions: [Extension] = []
+    no_asked: [Asked] = []
+    no_parked: [Parked] = []
+    st @= State(
+        channel: channel,
+        version: 0,
+        extensions: no_extensions,
+        next_id: 0,
+        inbox: none,
+        at: 0,
+        asked: no_asked,
+        parked: no_parked,
+        bound: REPLY_BOUND,
+        read_chunk: CHUNK,
+        write_chunk: CHUNK,
+        ended: false,
+        why: ""
+    )
+    hello: [u8] @= []
+    wire.put_u32(@hello, n: 5)
+    wire.put_byte(@hello, b: INIT)
+    wire.put_u32(@hello, n: VERSION_SPOKEN)
+    written(@st, sent: ssh.write(@c, channel: channel, data: hello))?
+    packet = next_packet(@c, @st)?
+    r @= wire.reader(packet)
+    kind = wire.read_byte(@r, what: "the server's version")?
+
+    if kind != VERSION
+        return ended(
+            @st,
+            code: INVALID,
+            msg: f"the server answered the client's version with a packet of type {kind}, not VERSION"
+        )
+    version = wire.read_u32(@r, what: "the server's version")?
+
+    if version < VERSION_SPOKEN
+        return ended(
+            @st,
+            code: UNSUPPORTED,
+            msg: f"the server speaks SFTP version {version}, and this client version 3 alone"
+        )
+
+    if version > VERSION_SPOKEN
+        return ended(
+            @st,
+            code: INVALID,
+            msg: f"the server answered version {version} to a client that asked 3"
+        )
+    st.version @ version
+    found: [Extension] @= []
+
+    while wire.left(r) > 0
+        raw = wire.read_string(@r, what: "the name of an extension of the server's version")?
+        data = wire.read_string(@r, what: "the data of an extension of the server's version")?
+
+        match bytes.to_text(raw)
+            .ok name =>
+                found @ found.push(Extension(name: name, data: data))
+            .err _ =>
+                return ended(
+                    @st,
+                    code: INVALID,
+                    msg: f"the server's version names an extension {bytes.format_escaped(raw)} that is not UTF-8"
+                )
+
+    st.extensions @ found
+
+    if offers(st, name: "limits@openssh.com", data: "1")
+        take_limits(@c, @st)?
+    return ok(st)
+
+# Asks the server's bounds (`limits@openssh.com`, OpenSSH's `PROTOCOL` §
+# 4.8): the largest packet, read and write it serves. Each lowers this
+# client's own where it is lower, since a server may end the connection
+# past them, and the largest packet raises the bound of what is taken up
+# to the channel's window; a bound of 0 says none.
+function take_limits(@c: ssh.Client, @st: State) -> ()?
+    packet @= extended("limits@openssh.com")
+    id = send(@c, @st, @packet)?
+    r @= expect(@c, @st, id: id, kind: EXTENDED_REPLY, asked: "asking the server's limits")?
+    largest_packet = wire.read_u64(@r, what: "the server's largest packet")?
+    largest_read = wire.read_u64(@r, what: "the server's largest read")?
+    largest_write = wire.read_u64(@r, what: "the server's largest write")?
+    _ = wire.read_u64(@r, what: "the server's most open handles")?
+
+    if largest_packet > st.bound
+        st.bound @ smaller(a: largest_packet, b: REPLY_CEILING)
+
+    if largest_read > 0
+        st.read_chunk @ smaller(a: largest_read, b: CHUNK)
+
+    if largest_write > 0
+        st.write_chunk @ smaller(a: largest_write, b: CHUNK)
+
+    # A write's packet carries its data, the handle and 25 bytes more.
+    if largest_packet > 0 && st.write_chunk > largest_packet - 512
+        st.write_chunk @ largest_packet - 512
+
+    if st.write_chunk < 1 || st.read_chunk < 1
+        return ended(
+            @st,
+            code: INVALID,
+            msg: f"the server's limits leave no room for a read or a write: packets of {largest_packet} bytes"
+        )
+
+    return ok()
+
+# Whether the server announced the extension `name` with `data` for its
+# version.
+function offers(st: State lent, name: str, data: str) -> bool
+    for e in st.extensions
+        if e.name == name && e.data == bytes.from_text(data)
+            return true
+
+    return false
+
+## Requests
+
+# A request of type `kind` with its length and its number left for `send`
+# to write: the bytes its fields are added to.
+function packet_of(kind: u8) -> [u8]
+    return [0, 0, 0, 0, kind, 0, 0, 0, 0]
+
+# An `EXTENDED` request named `name`, its fields to add.
+function extended(name: str) -> [u8]
+    packet @= packet_of(EXTENDED)
+    wire.put_text(@packet, text: name)
+    return packet
+
+# Sends `packet`, built from `packet_of`, under a new number, which it
+# answers: the length and the number written into its place first.
+function send(@c: ssh.Client, @st: State, @packet: [u8]) -> i64?
+    usable(st)?
+    length = packet.len() - 4
+
+    if length > st.bound
+        return fail(
+            code: INVALID,
+            msg: f"a request of {length} bytes, past the {st.bound} this session sends"
+        )
+    id @= st.next_id
+
+    while is_asked(st, id: id)
+        id @ next_of(id)
+
+    put_at(@packet, at: 0, n: length)
+    put_at(@packet, at: 5, n: id)
+    written(@st, sent: ssh.write(@c, channel: st.channel, data: packet))?
+    st.asked @ with_asked(st.asked, id: id)
+    st.next_id @ next_of(id)
+    return ok(id)
+
+# The answer to request `id`, read from the channel until it has come;
+# the answers to other requests that come first are kept for them. Where
+# the wait fails, a timeout among others, nobody waits on `id` any more, so
+# its answer is dropped when it comes rather than kept for ever.
+function await(@c: ssh.Client, @st: State, id: i64) -> Reply?
+    while true
+        match parked_at(st, id: id)
+            .ok i =>
+                reply = Reply(kind: st.parked[i].kind, body: st.parked[i].body)
+                st.parked @ without_parked(st.parked, at: i)
+                return ok(reply)
+            .err _ =>
+                match next_answer(@c, @st)
+                    .ok _ => _ = 0
+                    .err e =>
+                        forget(@st, ids: [id])
+                        return fail(code: e.code, msg: e.msg)
+
+# Reads the next answer from the channel and keeps it for its request.
+function next_answer(@c: ssh.Client, @st: State) -> ()?
+    usable(st)?
+    packet = next_packet(@c, @st)?
+    return file(@st, packet: packet)
+
+# The answer to request `id`, which must be `kind`: a reader at what follows
+# its number. A status answers its failure, a status of success included,
+# since a value was owed; another type fails `invalid`.
+function expect(@c: ssh.Client, @st: State, id: i64, kind: u8, asked: str) -> wire.Reader?
+    reply = await(@c, @st, id: id)?
+    r @= wire.reader(reply.body)
+
+    if reply.kind == STATUS
+        code = wire.read_u32(@r, what: asked + ": the status")?
+
+        if code == FX_OK
+            return fail(code: INVALID, msg: f"{asked}: the server answered success where a value was owed")
+        return failure(@r, code: code, asked: asked)
+
+    if reply.kind != kind
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: the server answered with a packet of type {reply.kind} where {kind} was owed"
+        )
+    return ok(r)
+
+# The answer to request `id`, which must be a status of success.
+function expect_ok(@c: ssh.Client, @st: State, id: i64, asked: str) -> ()?
+    reply = await(@c, @st, id: id)?
+    r @= wire.reader(reply.body)
+
+    if reply.kind != STATUS
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: the server answered with a packet of type {reply.kind} where a status was owed"
+        )
+    code = wire.read_u32(@r, what: asked + ": the status")?
+
+    if code == FX_OK
+        return ok()
+    return failure(@r, code: code, asked: asked)
+
+# Sends `packet` and reads its answer, a status of success.
+function call_ok(@c: ssh.Client, @st: State, @packet: [u8], asked: str) -> ()?
+    id = send(@c, @st, @packet)?
+    return expect_ok(@c, @st, id: id, asked: asked)
+
+# Sends `packet` and reads its answer, of type `kind`.
+function call(@c: ssh.Client, @st: State, @packet: [u8], kind: u8, asked: str) -> wire.Reader?
+    id = send(@c, @st, @packet)?
+    return expect(@c, @st, id: id, kind: kind, asked: asked)
+
+# Stops waiting on the requests `ids`: an answer already come is dropped,
+# and one still to come is dropped when it does.
+function forget(@st: State, ids: [i64] lent)
+    for id in ids
+        match parked_at(st, id: id)
+            .ok i => st.parked @ without_parked(st.parked, at: i)
+            .err _ =>
+                for i in range(from: 0, to: st.asked.len())
+                    if st.asked[i].id == id
+                        st.asked[i].wanted @ false
+
+## Failure
+
+# The failure of a status whose code is `code`, other than success, `r` at
+# its message: the server's words in the message beside what was asked.
+function failure<T>(@r: wire.Reader, code: i64, asked: str) -> T?
+    said = words_of(@r)
+    table = [
+        "success"
+        "the end of the file"
+        "no such file"
+        "permission denied"
+        "a failure"
+        "a bad message"
+        "no connection"
+        "the connection lost"
+        "an operation it does not support"
+    ]
+    codes = [INVALID, INVALID, FILE_NOT_FOUND, PERMISSION, FAILED, INVALID, CLOSED, CLOSED, UNSUPPORTED]
+
+    if code >= 0 && code < table.len()
+        return fail(
+            code: codes[code],
+            msg: f"{asked}: the server answered {table[code]}{said}"
+        )
+    return fail(code: FAILED, msg: f"{asked}: the server answered the status {code}{said}")
+
+# The message a status carries, as ` ("...")`, or nothing where it carries
+# none; bytes that are not UTF-8 are written escaped.
+function words_of(@r: wire.Reader) -> str
+    match wire.read_string(@r, what: "a status's message")
+        .ok raw =>
+            if raw.len() == 0
+                return ""
+
+            match bytes.to_text(raw)
+                .ok t  => return f" (\"{t}\")"
+                .err _ => return f" ({bytes.format_escaped(raw)})"
+        .err _ => return ""
+
+## Packets
+
+# The next whole packet the server sent, its length taken off: its type
+# and what follows. A length past the session's bound, or of no byte,
+# ends the session.
+function next_packet(@c: ssh.Client, @st: State) -> [u8]?
+    while true
+        have = st.inbox.len() - st.at
+
+        if have >= 4
+            n = wire.u32_of(st.inbox, at: st.at)
+
+            if n < 1 || n > st.bound
+                return ended(
+                    @st,
+                    code: INVALID,
+                    msg: f"the server sent a packet of {n} bytes, outside 1 to the {st.bound} this session takes"
+                )
+
+            if have >= 4 + n
+                packet = st.inbox.slice(from: st.at + 4, to: st.at + 4 + n)
+                st.at @ st.at + 4 + n
+
+                if st.at == st.inbox.len()
+                    st.inbox @ []
+                    st.at @ 0
+                return ok(packet)
+
+        match ssh.read(@c, channel: st.channel, n: READ_SIZE)
+            .ok more =>
+                if more.len() == 0
+                    return ended(@st, code: CLOSED, msg: "the server ended the SFTP subsystem")
+
+                if st.at > 0
+                    st.inbox @ st.inbox.slice(from: st.at, to: st.inbox.len())
+                    st.at @ 0
+                append(into: @st.inbox, data: more)
+            .err e =>
+                if e.code == TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+                return ended(@st, code: e.code, msg: e.msg)
+
+# Takes `packet`, an answer: kept for its request where anybody waits on
+# it, dropped where nobody does; one of another type, too short for its
+# number, or to a request never asked ends the session.
+function file(@st: State, packet: [u8]) -> ()?
+    kind = packet[0]
+
+    if kind != STATUS && kind != HANDLE && kind != DATA && kind != NAME && kind != ATTRS && kind != EXTENDED_REPLY
+        return ended(
+            @st,
+            code: INVALID,
+            msg: f"the server sent a packet of type {kind}, which no client request is answered by"
+        )
+
+    if packet.len() < 5
+        return ended(
+            @st,
+            code: INVALID,
+            msg: f"the server sent an answer of {packet.len()} bytes, too short for its number"
+        )
+    id = wire.u32_of(packet, at: 1)
+
+    for i in range(from: 0, to: st.asked.len())
+        if st.asked[i].id == id
+            wanted = st.asked[i].wanted
+            st.asked @ without_asked(st.asked, at: i)
+
+            if wanted
+                body = packet.slice(from: 5, to: packet.len())
+                st.parked @ st.parked.push(Parked(id: id, kind: kind, body: body))
+            return ok()
+
+    return ended(
+        @st,
+        code: INVALID,
+        msg: f"the server answered request {id}, which this session never sent or had its answer to"
+    )
+
+## The session's end
+
+# Fails `closed` with the reason once the session has ended.
+function usable(st: State lent) -> ()?
+    if st.ended
+        return fail(code: CLOSED, msg: f"the SFTP session has ended: {st.why}")
+    return ok()
+
+# Ends the session for the reason `msg`, and fails with `code` and it.
+function ended<T>(@st: State, code: str, msg: str) -> T?
+    if !st.ended
+        st.ended @ true
+        st.why @ msg
+    return fail(code: code, msg: msg)
+
+# Answers `sent`, a write to the channel; one that failed ends the session,
+# since part of a packet may have gone.
+function written(@st: State, sent: ()?) -> ()?
+    match sent
+        .ok _  => return ok()
+        .err e => return ended(@st, code: e.code, msg: e.msg)
+
+## Lists
+
+# Whether request `id` waits on its answer.
+function is_asked(st: State lent, id: i64) -> bool
+    for a in st.asked
+        if a.id == id
+            return true
+
+    return false
+
+# Where the answer to `id` is kept, `not_found` where it is not.
+function parked_at(st: State lent, id: i64) -> i64?
+    for i in range(from: 0, to: st.parked.len())
+        if st.parked[i].id == id
+            return ok(i)
+
+    return fail(code: "not_found", msg: f"no answer kept for request {id}")
+
+# `asked` with request `id` after the others.
+function with_asked(asked: [Asked], id: i64) -> [Asked]
+    out @= asked
+    out @ out.push(Asked(id: id, wanted: true))
+    return out
+
+# `asked` without its element at `at`.
+function without_asked(asked: [Asked] lent, at: i64) -> [Asked]
+    out: [Asked] @= []
+
+    for i in range(from: 0, to: asked.len())
+        if i != at
+            out @ out.push(asked[i])
+
+    return out
+
+# `parked` without its element at `at`.
+function without_parked(parked: [Parked] lent, at: i64) -> [Parked]
+    out: [Parked] @= []
+
+    for i in range(from: 0, to: parked.len())
+        if i != at
+            out @ out.push(parked[i])
+
+    return out
+
+# `data` added to the end of `into`.
+function append(@into: [u8], data: [u8] lent)
+    for b in data
+        into @ into.push(b)
+
+## Numbers
+
+# The number after `id`, 0 after 2^32 - 1.
+function next_of(id: i64) -> i64
+    if id == 4294967295
+        return 0
+    return id + 1
+
+# The smaller of `a` and `b`.
+function smaller(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# `n` written as a `uint32` over the four bytes of `packet` at `at`.
+function put_at(@packet: [u8], at: i64, n: i64)
+    four: [u8] @= []
+    wire.put_u32(@four, n: n)
+    packet[at] @ four[0]
+    packet[at + 1] @ four[1]
+    packet[at + 2] @ four[2]
+    packet[at + 3] @ four[3]

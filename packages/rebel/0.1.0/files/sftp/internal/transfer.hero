@@ -1,0 +1,189 @@
+# Reads and writes of a file's bytes as a pipeline: requests of the
+# session's chunk kept in flight, up to `conn.DEPTH`, so a transfer waits
+# on the network once per window rather than once per chunk. A read the
+# server answers short is asked again from where it stopped, so a read
+# ends short only at the end of the file; a failure stops the requests, and
+# the answers still to come are dropped as they arrive.
+
+use sftp/internal/conn
+use sftp/internal/wire
+use ssh
+
+# A read in flight: its request's number and the bytes it asked.
+record Pending
+    # The request's number.
+    id: i64
+    # Where its bytes begin in the file.
+    offset: i64
+    # How many it asked.
+    length: i64
+
+# Bytes an answer gave, and where they begin in the file.
+record Piece
+    # Where they begin.
+    offset: i64
+    # The bytes.
+    data: [u8]
+
+# The bytes of the open file `handle`, `name` in a failure, from `offset`, `length` of them or to
+# the file's end where `to_end`; fewer only where the file ends first.
+# Where the end is not known the window opens at one request and doubles
+# with each full answer, so a small file costs one request.
+function read(@c: ssh.Client, @st: conn.State, handle: [u8], name: str, offset: i64, length: i64, to_end: bool) -> [u8]?
+    limit @= offset + length
+
+    if to_end
+        limit @ 9223372036854775807
+    depth @= conn.DEPTH
+
+    if to_end
+        depth @ 1
+    next @= offset
+    again: [Pending] @= []
+    flight: [Pending] @= []
+    pieces: [Piece] @= []
+
+    while true
+        while flight.len() < depth && (again.len() > 0 || next < limit)
+            if again.len() > 0
+                p = again[0]
+                again @ again.slice(from: 1, to: again.len())
+
+                if p.offset < limit
+                    id = ask_read(@c, @st, handle: handle, offset: p.offset, length: p.length)?
+                    flight @ flight.push(Pending(id: id, offset: p.offset, length: p.length))
+            else
+                n = conn.smaller(a: st.read_chunk, b: limit - next)
+                id = ask_read(@c, @st, handle: handle, offset: next, length: n)?
+                flight @ flight.push(Pending(id: id, offset: next, length: n))
+                next @ next + n
+
+        if flight.len() == 0
+            break
+        p = flight[0]
+        flight @ flight.slice(from: 1, to: flight.len())
+
+        match answer(@c, @st, p: p, name: name)
+            .err e =>
+                conn.forget(@st, ids: ids_of(flight))
+                return fail(code: e.code, msg: e.msg)
+            .ok got =>
+                if got.len() == 0
+                    limit @ conn.smaller(a: limit, b: p.offset)
+                else
+                    pieces @ pieces.push(Piece(offset: p.offset, data: got))
+
+                    if got.len() < p.length
+                        again @ again.push(
+                            Pending(id: 0, offset: p.offset + got.len(), length: p.length - got.len())
+                        )
+                    else if depth < conn.DEPTH
+                        depth @ depth * 2
+
+    return joined(pieces, offset: offset, end: limit)
+
+# Sends a read of `length` bytes at `offset`; its number.
+function ask_read(@c: ssh.Client, @st: conn.State, handle: [u8], offset: i64, length: i64) -> i64?
+    packet @= conn.packet_of(conn.READ)
+    wire.put_string(out: @packet, data: handle)
+    wire.put_u64(@packet, n: offset)
+    wire.put_u32(@packet, n: length)
+    return conn.send(@c, @st, @packet)
+
+# The bytes the answer to `p` gave: empty at the end of the file. More than
+# asked fails `invalid`.
+function answer(@c: ssh.Client, @st: conn.State, p: Pending, name: str) -> [u8]?
+    reply = conn.await(@c, @st, id: p.id)?
+    r @= wire.reader(reply.body)
+    asked = f"reading \"{name}\": {p.length} bytes at {p.offset}"
+
+    if reply.kind == conn.STATUS
+        code = wire.read_u32(@r, what: asked + ": the status")?
+
+        if code == conn.FX_EOF
+            none: [u8] = []
+            return ok(none)
+
+        if code == conn.FX_OK
+            return fail(code: conn.INVALID, msg: f"{asked}: the server answered success where bytes were owed")
+        return conn.failure(@r, code: code, asked: asked)
+
+    if reply.kind != conn.DATA
+        return fail(
+            code: conn.INVALID,
+            msg: f"{asked}: the server answered with a packet of type {reply.kind} where bytes were owed"
+        )
+    data = wire.read_string(@r, what: asked)?
+
+    if data.len() > p.length
+        return fail(code: conn.INVALID, msg: f"{asked}: the server answered {data.len()} bytes")
+    return ok(data)
+
+# The bytes of `pieces` from `offset` to `end`, which must cover them with
+# no gap: every answer either gave bytes, had the rest asked again, or moved
+# `end` down to the file's end, so a gap is a server's fault. Pieces past
+# `end`, read before the file was found to end there, are dropped.
+function joined(pieces: [Piece] lent, offset: i64, end: i64) -> [u8]?
+    starts: {i64: i64} @= {}
+
+    for i in range(from: 0, to: pieces.len())
+        starts[pieces[i].offset] @ i
+
+    out: [u8] @= []
+    at @= offset
+
+    while at < end
+        match starts[at]
+            .ok i =>
+                piece = pieces[i]
+                stop = conn.smaller(a: piece.data.len(), b: end - at)
+
+                for k in range(from: 0, to: stop)
+                    out @ out.push(piece.data[k])
+
+                at @ at + stop
+            .err _ =>
+                return fail(
+                    code: conn.INVALID,
+                    msg: f"the server's answers left the bytes at {at} unread before the end at {end}"
+                )
+
+    return ok(out)
+
+# Writes `data` to the open file `handle`, `name` in a failure, at `offset`, in chunks kept in
+# flight; every chunk's status must be success. The first failure is
+# answered, the chunks sent after it left to the server.
+function write(@c: ssh.Client, @st: conn.State, handle: [u8], name: str, offset: i64, data: [u8] lent) -> ()?
+    flight: [Pending] @= []
+    at @= 0
+
+    while true
+        while flight.len() < conn.DEPTH && at < data.len()
+            n = conn.smaller(a: st.write_chunk, b: data.len() - at)
+            packet @= conn.packet_of(conn.WRITE)
+            wire.put_string(out: @packet, data: handle)
+            wire.put_u64(@packet, n: offset + at)
+            wire.put_string(out: @packet, data: data.slice(from: at, to: at + n))
+            id = conn.send(@c, @st, @packet)?
+            flight @ flight.push(Pending(id: id, offset: offset + at, length: n))
+            at @ at + n
+
+        if flight.len() == 0
+            return ok()
+        p = flight[0]
+        flight @ flight.slice(from: 1, to: flight.len())
+
+        match conn.expect_ok(@c, @st, id: p.id, asked: f"writing \"{name}\": {p.length} bytes at {p.offset}")
+            .ok _ => _ = 0
+            .err e =>
+                conn.forget(@st, ids: ids_of(flight))
+                return fail(code: e.code, msg: e.msg)
+
+# The numbers of `flight`'s requests.
+function ids_of(flight: [Pending] lent) -> [i64]
+    out: [i64] @= []
+
+    for p in flight
+        out @ out.push(p.id)
+
+    return out
