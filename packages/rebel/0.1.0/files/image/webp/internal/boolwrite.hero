@@ -1,0 +1,153 @@
+# The boolean encoder of VP8 (RFC 6386, section 7): bits written at the
+# probability the caller names, the inverse of `boolread`. The bottom of the
+# interval is kept in 32 bits whose top byte goes out once eight more bits
+# are settled; a carry out of the 32 bits is added to the bytes already
+# written. `finished` writes 32 more bits at even odds, so every bit the
+# decoder reads lies inside the partition.
+
+use image/webp/internal/boolread
+
+# A partition being written.
+record Writer
+    # The bytes settled, then room for more.
+    out: [u8]
+    # How many bytes of `out` are settled.
+    size: i64
+    # The width of the interval, 128 to 255 between writes.
+    range: i64
+    # The bottom of the interval, below 2 ** 32.
+    bottom: i64
+    # The shifts before the next byte is settled.
+    count: i64
+
+# A writer with nothing written.
+function start() -> Writer
+    return Writer(out: [], size: 0, range: 255, bottom: 0, count: 24)
+
+# Appends the byte `b` to the bytes settled, the room doubled when it runs
+# out, so a byte costs the same however many came before.
+function emit(@w: Writer, b: i64)
+    if w.size == w.out.len()
+        grown @= w.out
+        target = 2 * grown.len() + 64
+
+        while grown.len() < target
+            grown @ grown.push(0)
+
+        w.out @ grown
+    w.out[w.size] @ to_u8(b).must()
+    w.size @ w.size + 1
+
+# Adds one to the bytes written, carrying through those at 255.
+function carry(@w: Writer)
+    k @= w.size - 1
+
+    while k >= 0 && w.out[k] == 255
+        w.out[k] @ 0
+        k @ k - 1
+
+    if k >= 0
+        w.out[k] @ w.out[k] + 1
+
+# Writes `bit`, 0 or 1, at the probability `prob` out of 256 that it is 0.
+function put(@w: Writer, prob: i64, bit: i64)
+    split = 1 + ((w.range - 1) * prob >> 8)
+
+    if bit == 1
+        w.bottom @ w.bottom + split
+        w.range @ w.range - split
+
+        if w.bottom >= 0x100000000
+            carry(w: @w)
+            w.bottom @ w.bottom - 0x100000000
+    else
+        w.range @ split
+
+    while w.range < 128
+        w.range @ w.range << 1
+
+        if w.bottom & 0x80000000 != 0
+            carry(w: @w)
+        w.bottom @ w.bottom << 1 & 0xffffffff
+        w.count @ w.count - 1
+
+        if w.count == 0
+            emit(w: @w, b: w.bottom >> 24)
+            w.bottom @ w.bottom & 0xffffff
+            w.count @ 8
+
+# Writes the `n` low bits of `v`, the most significant first, at even odds.
+function literal(@w: Writer, v: i64, n: i64)
+    k @= n - 1
+
+    while k >= 0
+        put(w: @w, prob: 128, bit: v >> k & 1)
+        k @ k - 1
+
+# Writes the magnitude of `v` in `n` bits, then its sign.
+function signed(@w: Writer, v: i64, n: i64)
+    if v < 0
+        literal(w: @w, v: -v, n: n)
+        put(w: @w, prob: 128, bit: 1)
+    else
+        literal(w: @w, v: v, n: n)
+        put(w: @w, prob: 128, bit: 0)
+
+# Writes a flag, set, and `v` as `signed` writes it; or the flag clear where
+# `v` is 0.
+function optional_signed(@w: Writer, v: i64, n: i64)
+    if v == 0
+        put(w: @w, prob: 128, bit: 0)
+    else
+        put(w: @w, prob: 128, bit: 1)
+        signed(w: @w, v: v, n: n)
+
+# The partition's bytes, every bit written settled.
+function finished(@w: Writer) -> [u8]
+    for _ in range(from: 0, to: 32)
+        put(w: @w, prob: 128, bit: 0)
+
+    return w.out.slice(from: 0, to: w.size)
+
+## Tests
+
+test "put: every bit read back by boolread at every probability, none read past the end"
+    w @= start()
+    bits: [i64] @= []
+    odds: [i64] @= []
+    v @= 12345
+
+    for _ in range(from: 0, to: 3000)
+        v @ (v * 1103515245 + 12345) % 2147483648
+        prob = 1 + v / 65536 % 255
+
+        bit = if v / 8 % 7 == 0
+            1 - v / 16 % 2
+        else if prob > 128
+            0
+        else
+            1
+        put(w: @w, prob: prob, bit: bit)
+        bits @ bits.push(bit)
+        odds @ odds.push(prob)
+
+    data = finished(w: @w)
+    r @= boolread.open(data, from: 0, to: data.len())
+
+    for i in range(from: 0, to: bits.len())
+        assert boolread.bit(r: @r, prob: odds[i]) == bits[i]
+
+    assert !r.over
+
+test "literal and signed: numbers read back, the sign after the magnitude"
+    w @= start()
+    literal(w: @w, v: 0x5a, n: 8)
+    signed(w: @w, v: -37, n: 7)
+    optional_signed(w: @w, v: 0, n: 4)
+    optional_signed(w: @w, v: 9, n: 4)
+    data = finished(w: @w)
+    r @= boolread.open(data, from: 0, to: data.len())
+    assert boolread.literal(r: @r, n: 8) == 0x5a
+    assert boolread.signed(r: @r, n: 7) == -37
+    assert boolread.optional_signed(r: @r, n: 4) == 0
+    assert boolread.optional_signed(r: @r, n: 4) == 9
