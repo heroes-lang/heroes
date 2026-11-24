@@ -47,10 +47,11 @@
 # and `allow`, `reserve` and `cancel` take the tokens of an attempt at the
 # time the caller names, so a worker holds one for each kind of job it
 # limits and asks it before it runs one. A limit every worker shares is
-# kept in the store: `jobs/postgres_store` keeps such a bucket under a name,
-# takes its tokens in one statement that locks it, on the server's clock,
-# and answers these same values (`postgres_store.allow`); a worker refused
-# `snooze`s the job for the wait. `jobs/redis_store` keeps none yet.
+# kept in the store, such a bucket under a name, on the server's clock, and
+# answers these same values: `jobs/postgres_store` takes its tokens in one
+# statement that locks its row (`postgres_store.allow`), `jobs/redis_store`
+# in one script the server runs whole (`redis_store.allow`); a worker
+# refused `snooze`s the job for the wait.
 #
 # Not written yet, each a `pending` block of its ledger: a worker woken at once
 # when a job comes, rather than at its next poll; jobs that wait for others: chains,

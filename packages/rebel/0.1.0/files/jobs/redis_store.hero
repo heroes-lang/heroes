@@ -19,20 +19,34 @@
 # Redis 5 or later, whose scripts may read the clock, and refuses a
 # cluster's redirections as `redis` does.
 #
+# It keeps the limits every worker shares, each a `jobs.Bucket` under a
+# name: `set_limit` makes one, and `allow`, `reserve`, `reserve_within` and
+# `cancel_reservation` take and give back its tokens in one script the
+# server runs whole, so workers on any number of connections and processes
+# take them one after another and never more than it holds. A limit reads
+# the server's `TIME` as the script runs, never earlier than the latest time
+# it read, in nanoseconds whose steps are microseconds, the arithmetic exact
+# past what Lua's numbers hold. It lives as long as the server keeps its
+# keys: a server restarted with nothing saved forgets it, and a worker that
+# asks it then fails `not_found` until `set_limit` makes it again, full.
+#
 # It fails with `jobs`'s codes, and with `redis`'s, handed on from the
 # client, where the server refuses or the connection is lost: `closed`,
 # `timeout`, `permission` where the server asks for a password.
 #
 # Not written yet, each a `pending` block of its ledger: a worker woken by a
-# blocking pop or a message when a job comes; a limit workers share kept in
-# Redis, its tokens taken by a script the server runs whole.
+# blocking pop or a message when a job comes.
 
 use jobs
 use jobs/internal/limits
+use jobs/internal/taking
+use jobs/redis_store/internal/buckets
 use jobs/redis_store/internal/live
 use jobs/redis_store/internal/replies
 use jobs/redis_store/internal/scripts
+use jobs/redis_store/internal/takers
 use json
+use numbers
 use redis
 use strings
 use time
@@ -41,7 +55,8 @@ use time
 
 # The prefix of every key the store writes: `rebel_jobs:job:<id>` for a
 # job's fields, `rebel_jobs:ready:<queue>` and the other sets of a queue,
-# `rebel_jobs:unique:<key>`, `rebel_jobs:periodic:<name>`.
+# `rebel_jobs:unique:<key>`, `rebel_jobs:periodic:<name>`,
+# `rebel_jobs:limit:<name>` for a limit workers share.
 constant PREFIX: str
     "rebel_jobs:"
 
@@ -519,6 +534,124 @@ function enqueue_due(@c: redis.Client, schedules: [jobs.Periodic]) -> [i64]?
 
     return ok(ids)
 
+## Limits workers share
+
+# Makes the limit `name` full, a token every `every` and a burst of `burst`,
+# or gives the limit of that name this rate and burst, holding the tokens it
+# held, as many as the new burst allows, a debt kept: `jobs.bucket` and
+# `jobs.with_rate` kept in the store, where every worker of the server takes
+# from the one limit. Answers the limit after, its `seen` the server's time
+# of the change.
+#
+# - `c`: the client.
+# - `name`: the limit's name, a job's kind or a host or any key, checked as a
+#   kind is; it is kept under its own key, `PREFIX`, `limit:` and the name,
+#   so two names never share one.
+# - `every`: the time to earn one token.
+# - `burst`: the most tokens it holds, so the most attempts that go at once.
+#
+# The change is a script the server runs whole: no other client's command
+# falls between its reading of the limit and its writing. The tokens held
+# are rounded to the nanosecond at the new rate. Fails `invalid` as
+# `jobs.bucket` does, where `name` is empty, too long or holds a zero byte,
+# and where its key holds something the store did not write as a limit;
+# `does_not_fit` where the debt kept at the new rate reaches past what an
+# `Instant` holds, the limit unchanged; and as `redis.call` fails. See also
+# `allow`, `remove_limit`.
+function set_limit(@c: redis.Client, name: str, every: time.Duration, burst: i64) -> jobs.Bucket?
+    return buckets.set(@c, name: name, every: every, burst: burst, clock: .server)
+
+# Removes the limit `name`; a worker that asks it next fails `not_found`.
+#
+# - `c`: the client.
+# - `name`: the limit's name.
+#
+# Fails `not_found` where no limit has that name, `invalid` where `name` is
+# not one a store keeps, and as `redis.call` fails. See also `set_limit`.
+function remove_limit(@c: redis.Client, name: str) -> ()?
+    return buckets.remove(@c, name: name)
+
+# The limit `name` as it stands now, its `seen` the server's time of the
+# reading: `jobs.tokens(limit, at: limit.seen)` is what it holds then.
+#
+# - `c`: the client.
+# - `name`: the limit's name.
+#
+# Fails `not_found` where no limit has that name, `invalid` where `name` is
+# not one a store keeps or its key holds something the store did not write
+# as a limit, and as `redis.call` fails. See also `set_limit`.
+function limit_named(@c: redis.Client, name: str) -> jobs.Bucket?
+    return buckets.read(@c, name: name, clock: .server)
+
+# Whether `n` tokens of the limit `name` are there now, taking them where
+# they are, as `jobs.allow` does of a bucket the program holds; any number of
+# workers on any number of connections take from it, and none more than it
+# holds.
+#
+# - `c`: the client.
+# - `name`: the limit's name.
+# - `n`: how many tokens the attempt costs, 1 or more.
+#
+# Where they are not all there nothing is taken and `granted` is false, the
+# attempt asking for more than the burst included; the limit answered is the
+# one read, its `seen` the server's time, so `jobs.reserve(found.bucket, at:
+# found.bucket.seen, n)` tells the wait, which a worker gives `snooze`, whose
+# clock is the same server's. The time is the server's `TIME` as the script
+# runs, never earlier than the latest time the limit read. Fails `invalid`
+# where `n` is below 1 or `name` is not one a store keeps, `not_found` where
+# no limit has that name, `does_not_fit` where the tokens are earned past
+# what an `Instant` holds, and as `redis.call` fails. See also `reserve`,
+# `set_limit`.
+function allow(@c: redis.Client, name: str, n: i64) -> jobs.Allowed?
+    taken = buckets.take(@c, name: name, n: n, longest: time.Duration(nanoseconds: 0), clock: .server)?
+    return taking.allowed(taken)
+
+# Takes `n` tokens of the limit `name` now even if they are not there, and
+# tells how long to wait for them: reservations of every worker queue, each
+# behind the ones before, as `jobs.reserve` does.
+#
+# - `c`: the client.
+# - `name`: the limit's name.
+# - `n`: how many tokens, from 1 to the burst.
+#
+# Fails `invalid` where `n` is below 1 or past the burst or `name` is not one
+# a store keeps, `not_found` where no limit has that name, `does_not_fit`
+# where the tokens are earned past what an `Instant` holds, and as
+# `redis.call` fails. See also `reserve_within`, `cancel_reservation`.
+function reserve(@c: redis.Client, name: str, n: i64) -> jobs.Reservation?
+    return reserve_within(@c, name: name, n: n, within: time.max_duration())
+
+# `reserve`, the tokens taken only where the wait for them is no longer than
+# `within`, as `jobs.reserve_within` does.
+#
+# - `c`: the client.
+# - `name`: the limit's name.
+# - `n`: how many tokens.
+# - `within`: the longest wait the caller will accept; nothing means the
+#   tokens must be there.
+#
+# Fails `timeout` where the wait is longer, nothing taken, and as `reserve`
+# does. See also `allow`.
+function reserve_within(@c: redis.Client, name: str, n: i64, within: time.Duration) -> jobs.Reservation?
+    taken = buckets.take(@c, name: name, n: n, longest: within, clock: .server)?
+    return taking.reserved(taken, within: within)
+
+# Gives the reservation `taken` of the limit `name` back, as far as no later
+# taking of any worker has used what it took, as `jobs.cancel` does, and
+# answers the limit after.
+#
+# - `c`: the client.
+# - `name`: the limit the reservation was taken of.
+# - `taken`: the reservation, as `reserve` answered it; once its time to act
+#   has passed it gives back nothing.
+#
+# Fails `invalid` where the reservation holds no token or `name` is not one
+# a store keeps, `not_found` where no limit has that name, `does_not_fit`
+# where what it gives back leaves the limit empty past what an `Instant`
+# holds, and as `redis.call` fails. See also `reserve`.
+function cancel_reservation(@c: redis.Client, name: str, taken: jobs.Reservation) -> jobs.Bucket?
+    return buckets.give_back(@c, name: name, taken: taken, clock: .server)
+
 ## Tests
 
 test "PREFIX: every key of the store begins with rebel_jobs:"
@@ -911,6 +1044,147 @@ test "enqueue_due live: first seen nothing, due once enqueued once, called again
             assert enqueue_due(@c, [jobs.new_periodic(name: "bad", cron: "* * * * *", job: bad).must()]).is_err()
             redis.close(@c).must()
 
+test "allow live: forty tokens shared by takers on eight threads here and on four threads in each of three child processes, two hundred asked, forty granted in all"
+    if takers.is_child()
+        exit(code: takers.child())
+
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "crawl", every: time.hours(1).must(), burst: 40).must()
+            answers = takers.run(limit: "crawl", mode: "allow", times: 10, here: 8, children: 3, each: 4).must()
+            granted: i64 @= 0
+
+            for one in answers
+                match numbers.parse_int(one)
+                    .ok n => granted @ granted + n
+                    .err _ =>
+                        print("a taker answered: ", one)
+                        assert false
+
+            print("allow live: ", answers.len(), " takers granted ", granted, " tokens of a burst of 40")
+            assert answers.len() == 20 && granted == 40
+            assert !allow(@c, name: "crawl", n: 1).must().granted
+            redis.close(@c).must()
+
+test "reserve live: twenty-four reservations of a token every ten seconds by takers here and in two child processes, each ready at a time of its own, ten seconds after the one before"
+    if takers.is_child()
+        exit(code: takers.child())
+
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "feed", every: time.seconds(10).must(), burst: 1).must()
+            answers = takers.run(limit: "feed", mode: "reserve", times: 2, here: 4, children: 2, each: 4).must()
+            ready: [i64] @= []
+
+            for one in answers
+                for part in strings.split(s: one, sep: ",")
+                    match numbers.parse_int(part)
+                        .ok n => ready @ ready.push(n)
+                        .err _ =>
+                            print("a taker answered: ", one)
+                            assert false
+
+            assert answers.len() == 12 && ready.len() == 24
+            ordered = sort(ready)
+
+            for i in range(from: 1, to: ordered.len())
+                assert ordered[i] - ordered[i - 1] == 10_000_000_000
+
+            redis.close(@c).must()
+
+test "set_limit live: limits whose names differ by a byte, a colon, a case or a character of more than one byte keep a key each, and a taking of one leaves the others full"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            names = ["host", "host:", "Host", "hóst", "hos", "job:000000000000001"]
+
+            for name in names
+                _ = set_limit(@c, name: name, every: time.hours(1).must(), burst: 2).must()
+
+            stored = sort(redis.texts_of(redis.call(@c, ["KEYS", PREFIX + "*"]).must()).must())
+            wanted: [str] @= []
+
+            for name in names
+                wanted @ wanted.push(PREFIX + "limit:" + name)
+
+            assert stored == sort(wanted)
+            assert allow(@c, name: "host", n: 2).must().granted
+
+            for name in names
+                now = limit_named(@c, name: name).must()
+                held = jobs.available(limit: now, at: now.seen)
+
+                if name == "host"
+                    assert held == 0
+                else
+                    assert held == 2
+
+            enqueued = enqueue(@c, jobs.new_job("host", .null_value)).must()
+            assert enqueued == 1 && get(@c, 1).must().kind == "host"
+            remove_limit(@c, name: "host").must()
+            assert !limit_named(@c, name: "host:").is_err() && !get(@c, 1).is_err()
+            redis.close(@c).must()
+
+test "allow live: a connection the server ended fails closed on every limit call and is closed, a new one finds the limit as it stood, and a server nobody answers at fails closed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3).must()
+            assert allow(@c, name: "api", n: 1).must().granted
+            id = redis.int_of(redis.call(@c, ["CLIENT", "ID"]).must()).must()
+            other @= live.connect_kept().must()
+            assert redis.int_of(redis.call(@other, ["CLIENT", "KILL", "ID", to_str(id)]).must()).must() == 1
+
+            match allow(@c, name: "api", n: 1)
+                .ok _  => assert false
+                .err e => assert e.code == redis.CLOSED
+
+            assert redis.is_closed(c)
+
+            match set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3)
+                .ok _  => assert false
+                .err e => assert e.code == redis.CLOSED
+
+            assert limit_named(@c, name: "api").is_err() && reserve(@c, name: "api", n: 1).is_err()
+            redis.close(@c).must()
+            again @= live.connect_kept().must()
+            now = limit_named(@again, name: "api").must()
+            assert jobs.available(limit: now, at: now.seen) == 2
+            assert allow(@again, name: "api", n: 2).must().granted && !allow(@again, name: "api", n: 1).must().granted
+            redis.close(@again).must()
+            redis.close(@other).must()
+            nobody @= redis.options("127.0.0.1")
+            nobody.port @ 1
+            nobody.security @ .plain
+
+            match redis.connect(nobody)
+                .ok lost =>
+                    l @= lost
+                    redis.close(@l).must()
+                    assert false
+                .err e => assert e.code == redis.CLOSED
+
+test "allow live: a limit refused now is granted once the wait it told has passed on the server's clock"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "tick", every: time.milliseconds(50).must(), burst: 1).must()
+            assert allow(@c, name: "tick", n: 1).must().granted
+            refused = allow(@c, name: "tick", n: 1).must()
+            assert !refused.granted
+            wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.milliseconds(50).must())
+            time.sleep(time.sum(a: wait, b: time.milliseconds(5).must()).must())
+            assert allow(@c, name: "tick", n: 1).must().granted
+            redis.close(@c).must()
+
 ## Examples
 
 # A job enqueued, to run as soon as a worker claims it.
@@ -1158,4 +1432,91 @@ test "enqueue_due: a schedule first seen enqueues nothing yet"
                 job: jobs.new_job("report", .null_value)
             ).must()
             assert enqueue_due(@c, [nightly]).must() == []
+            redis.close(@c).must()
+
+# A limit of two tokens a second with a burst of five, made full.
+test "set_limit: two a second, five at once"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            made = set_limit(@c, name: "mail", every: time.milliseconds(500).must(), burst: 5).must()
+            assert jobs.available(limit: made, at: made.seen) == 5
+            redis.close(@c).must()
+
+# A limit no longer needed.
+test "remove_limit: a limit removed, then not found"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "import", every: time.seconds(1).must(), burst: 1).must()
+            remove_limit(@c, name: "import").must()
+            assert limit_named(@c, name: "import").is_err()
+            redis.close(@c).must()
+
+# The tokens a limit holds now.
+test "limit_named: one of three tokens taken"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3).must()
+            assert allow(@c, name: "api", n: 1).must().granted
+            now = limit_named(@c, name: "api").must()
+            assert jobs.available(limit: now, at: now.seen) == 2
+            redis.close(@c).must()
+
+# A crawler's politeness toward one host: one request a second.
+test "allow: a second request to a host refused, and its wait"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "example.org", every: time.seconds(1).must(), burst: 1).must()
+            assert allow(@c, name: "example.org", n: 1).must().granted
+            refused = allow(@c, name: "example.org", n: 1).must()
+            assert !refused.granted
+            wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1).must())
+            redis.close(@c).must()
+
+# Reservations of every worker queue behind one another.
+test "reserve: a third token waits its turn"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "report", every: time.hours(1).must(), burst: 2).must()
+            _ = reserve(@c, name: "report", n: 2).must()
+            third = reserve(@c, name: "report", n: 1).must()
+            assert time.is_longer(a: third.delay, b: time.minutes(59).must()) && !time.is_longer(a: third.delay, b: time.hours(1).must())
+            redis.close(@c).must()
+
+# A wait longer than the caller accepts takes nothing.
+test "reserve_within: a wait of an hour where a minute is allowed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "sync", every: time.hours(1).must(), burst: 1).must()
+            assert allow(@c, name: "sync", n: 1).must().granted
+
+            match reserve_within(@c, name: "sync", n: 1, within: time.minutes(1).must())
+                .ok _  => assert false
+                .err e => assert e.code == jobs.TIMEOUT
+
+            redis.close(@c).must()
+
+# A reservation a worker no longer needs, given back.
+test "cancel_reservation: the token comes back"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            _ = set_limit(@c, name: "upload", every: time.hours(1).must(), burst: 1).must()
+            assert allow(@c, name: "upload", n: 1).must().granted
+            waiting = reserve(@c, name: "upload", n: 1).must()
+            back = cancel_reservation(@c, name: "upload", taken: waiting).must()
+            assert jobs.tokens(limit: back, at: back.seen) > -0.5
             redis.close(@c).must()

@@ -11,11 +11,7 @@ use redis
 # removed. Fails `not_found` where the variable is not set, and as
 # `redis.parse_url`, `redis.connect` and the commands fail.
 function connect() -> redis.Client?
-    url = match os.env("REBEL_REDIS_URL")
-        .ok u  => u
-        .err _ => return fail(code: redis.NOT_FOUND, msg: "REBEL_REDIS_URL names no server")
-
-    c @= redis.connect(redis.parse_url(url)?)?
+    c @= connect_kept()?
 
     match redis.call(@c, ["EVAL", "for _, k in ipairs(redis.call('KEYS', ARGV[1] .. '*')) do redis.call('DEL', k) end return 0", "0", redis_store.PREFIX])
         .ok _ => return ok(c)
@@ -24,3 +20,14 @@ function connect() -> redis.Client?
             # end its run in a panic at the return of `main`.
             _ = redis.close(@c).is_err()
             return fail(code: e.code, msg: e.msg)
+
+# A connection to the server `REBEL_REDIS_URL` names, the store's keys kept:
+# for a second client of a test, and for the takers a test starts, which
+# share the keys their test made. Fails `not_found` where the variable is
+# not set, and as `redis.parse_url` and `redis.connect` fail.
+function connect_kept() -> redis.Client?
+    url = match os.env("REBEL_REDIS_URL")
+        .ok u  => u
+        .err _ => return fail(code: redis.NOT_FOUND, msg: "REBEL_REDIS_URL names no server")
+
+    return redis.connect(redis.parse_url(url)?)

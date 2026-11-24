@@ -1,0 +1,109 @@
+# What a store found when it took tokens of a limit every worker shares, and
+# what `jobs.allow` and `jobs.reserve_within` would answer of it: each store
+# keeps a limit its own way, a row of PostgreSQL or a hash of Redis, and both
+# answer a taking with these same values and these same codes.
+
+use jobs
+use jobs/internal/gcra
+use time
+
+# What a taking of tokens found.
+record Taken
+    # Whether the tokens were taken.
+    granted: bool
+    # The limit after the tokens were taken, or as read where they were not,
+    # its `seen` the time it was read at.
+    bucket: jobs.Bucket
+    # How many tokens were asked.
+    tokens: i64
+    # Whether the instant the tokens are earned is one an `Instant` holds.
+    fits: bool
+    # The instant the tokens are earned, taken or not, where it `fits`.
+    finish: time.Instant
+    # How long from the reading until `finish`, nothing where it has passed.
+    delay: time.Duration
+
+# What `jobs.allow` would answer of the same limit: more tokens than the
+# burst are not granted, an instant past an `Instant` fails `does_not_fit`.
+#
+# - `taken`: what a store found, asked with no wait.
+function allowed(taken: Taken) -> jobs.Allowed?
+    if taken.tokens > taken.bucket.burst
+        return ok(jobs.Allowed(granted: false, bucket: taken.bucket))
+
+    if !taken.fits
+        return fail(code: jobs.DOES_NOT_FIT, msg: f"{taken.tokens} tokens are earned past what an instant holds")
+    return ok(jobs.Allowed(granted: taken.granted, bucket: taken.bucket))
+
+# What `jobs.reserve_within` would answer of the same limit.
+#
+# - `taken`: what a store found, asked with the wait `within`.
+# - `within`: the longest wait asked.
+#
+# Fails `invalid` where more tokens than the burst were asked,
+# `does_not_fit` where they are earned past what an `Instant` holds, and
+# `timeout` where the wait is longer than `within`, nothing taken in each.
+function reserved(taken: Taken, within: time.Duration) -> jobs.Reservation?
+    if taken.tokens > taken.bucket.burst
+        return fail(
+            code: jobs.INVALID,
+            msg: f"{taken.tokens} tokens asked of a limit whose burst is {taken.bucket.burst}: from 1 to the burst can be"
+        )
+
+    if !taken.fits
+        return fail(code: jobs.DOES_NOT_FIT, msg: f"{taken.tokens} tokens are earned past what an instant holds")
+
+    if !taken.granted
+        return fail(
+            code: jobs.TIMEOUT,
+            msg: f"{taken.tokens} tokens are {time.format_duration(taken.delay)} away, more than the {time.format_duration(within)} allowed"
+        )
+    return ok(
+        jobs.Reservation(bucket: taken.bucket, tokens: taken.tokens, delay: taken.delay, ready: time.add(t: taken.bucket.seen, d: taken.delay)?, finish: taken.finish)
+    )
+
+# The code `r` failed with, or `ok`.
+#
+# - `r`: the answer.
+function allowed_code(r: jobs.Allowed?) -> str
+    match r
+        .ok _  => return "ok"
+        .err e => return e.code
+
+# The code `r` failed with, or `ok`.
+#
+# - `r`: the answer.
+function reserved_code(r: jobs.Reservation?) -> str
+    match r
+        .ok _  => return "ok"
+        .err e => return e.code
+
+test "allowed: more than the burst refused before the instant is asked, one past an instant fails, a grant kept"
+    full = jobs.Bucket(every: time.seconds(1).must(), burst: 2, empty_at: gcra.at_ms(-2000), seen: gcra.at_ms(0))
+    none = time.Duration(nanoseconds: 0)
+    asked = Taken(granted: false, bucket: full, tokens: 3, fits: false, finish: gcra.at_ms(0), delay: none)
+    assert !allowed(asked).must().granted
+    past = Taken(granted: false, bucket: full, tokens: 1, fits: false, finish: gcra.at_ms(0), delay: none)
+    assert allowed_code(allowed(past)) == jobs.DOES_NOT_FIT
+    given = Taken(granted: true, bucket: full, tokens: 1, fits: true, finish: gcra.at_ms(-1000), delay: none)
+    assert allowed(given).must() == jobs.Allowed(granted: true, bucket: full)
+
+test "reserved: more than the burst invalid, past an instant does_not_fit, a wait too long timeout, and the instant it is ready"
+    full = jobs.Bucket(every: time.seconds(1).must(), burst: 2, empty_at: gcra.at_ms(0), seen: gcra.at_ms(0))
+    wait = time.seconds(1).must()
+    asked = Taken(
+        granted: false,
+        bucket: full,
+        tokens: 3,
+        fits: true,
+        finish: gcra.at_ms(3000),
+        delay: time.seconds(3).must()
+    )
+    assert reserved_code(reserved(asked, within: time.max_duration())) == jobs.INVALID
+    past = Taken(granted: false, bucket: full, tokens: 1, fits: false, finish: gcra.at_ms(0), delay: wait)
+    assert reserved_code(reserved(past, within: time.max_duration())) == jobs.DOES_NOT_FIT
+    late = Taken(granted: false, bucket: full, tokens: 1, fits: true, finish: gcra.at_ms(1000), delay: wait)
+    assert reserved_code(reserved(late, within: time.milliseconds(999).must())) == jobs.TIMEOUT
+    given = Taken(granted: true, bucket: full, tokens: 1, fits: true, finish: gcra.at_ms(1000), delay: wait)
+    r = reserved(given, within: wait).must()
+    assert r.ready == gcra.at_ms(1000) && r.finish == gcra.at_ms(1000) && r.delay == wait && r.tokens == 1

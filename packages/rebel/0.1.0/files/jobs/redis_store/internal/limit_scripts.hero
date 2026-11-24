@@ -1,0 +1,252 @@
+# The Lua scripts that keep the limits every worker shares, each run whole by
+# the server with `EVAL`, so no other client's command falls between a
+# limit's reading and its writing. A limit is a hash under one key,
+# `KEYS[1]`: `every_ns`, the time to earn a token, `burst`, `empty_at_ns`,
+# the instant it is or was empty, and `seen_ns`, the latest time a call read,
+# each a whole number written in decimal, the times in nanoseconds since 1970.
+#
+# Lua's numbers are doubles, whole only up to 2^53, and an instant in
+# nanoseconds is past 2^60, so the prelude does every sum, difference,
+# product and quotient on whole numbers kept as limbs of seven decimal
+# digits, exactly, and says which answers an `i64` holds: the arithmetic of
+# `jobs`'s own bucket, done on the server. Each script reads the clock its
+# last argument names, `server` for the server's `TIME` or an instant in
+# nanoseconds, never earlier than the limit's `seen_ns`.
+#
+# Each answers `missing` where no limit is under the key, `bad` where the key
+# holds a hash the store did not write as a limit, `nofit` where the instant
+# it would write is past what an `i64` holds, writing nothing; else `ok`, the
+# limit's `every_ns`, `burst` and `empty_at_ns`, and the time read. An
+# argument that is no whole number is an error reply, `ERR`.
+
+use strings
+
+# The steps every script shares: whole numbers of any length, signed, made
+# from decimal text (`int`) and written back (`text`), compared, added,
+# subtracted, multiplied and divided; the clock; and the limit under a key,
+# read and checked.
+function prelude() -> str
+    lines = [
+        "local B = 10000000"
+        "local function trim(a)"
+        "  local i = #a"
+        "  while i > 1 and a[i] == 0 do a[i] = nil i = i - 1 end"
+        "  if i == 1 and a[1] == 0 then a.s = 1 end"
+        "  return a"
+        "end"
+        "local function int(t)"
+        "  if type(t) ~= 'string' then return nil end"
+        "  local s, d = 1, t"
+        "  if string.sub(t, 1, 1) == '-' then s, d = -1, string.sub(t, 2) end"
+        "  if not string.find(d, '^%d+$') or #d > 40 then return nil end"
+        "  local a, i = {s = s}, #d"
+        "  while i >= 1 do"
+        "    local j = math.max(1, i - 6)"
+        "    a[#a + 1] = tonumber(string.sub(d, j, i))"
+        "    i = j - 1"
+        "  end"
+        "  return trim(a)"
+        "end"
+        "local function text(a)"
+        "  local out = {string.format('%d', a[#a])}"
+        "  for i = #a - 1, 1, -1 do out[#out + 1] = string.format('%07d', a[i]) end"
+        "  if a.s < 0 then return '-' .. table.concat(out) end"
+        "  return table.concat(out)"
+        "end"
+        "local function cmp_abs(a, b)"
+        "  if #a ~= #b then if #a < #b then return -1 end return 1 end"
+        "  for i = #a, 1, -1 do"
+        "    if a[i] ~= b[i] then if a[i] < b[i] then return -1 end return 1 end"
+        "  end"
+        "  return 0"
+        "end"
+        "local function cmp(a, b)"
+        "  if a.s ~= b.s then if a.s < b.s then return -1 end return 1 end"
+        "  if a.s < 0 then return cmp_abs(b, a) end"
+        "  return cmp_abs(a, b)"
+        "end"
+        "local function signed(r, s) r.s = s return trim(r) end"
+        "local function plus(a, b)"
+        "  local big, small, s = a, b, a.s"
+        "  if a.s ~= b.s and cmp_abs(a, b) < 0 then big, small, s = b, a, b.s end"
+        "  local r, c = {}, 0"
+        "  local step = 1"
+        "  if a.s ~= b.s then step = -1 end"
+        "  for i = 1, math.max(#big, #small) do"
+        "    local x = (big[i] or 0) + step * (small[i] or 0) + c"
+        "    c = 0"
+        "    if x >= B then x, c = x - B, 1 elseif x < 0 then x, c = x + B, -1 end"
+        "    r[i] = x"
+        "  end"
+        "  if c > 0 then r[#r + 1] = c end"
+        "  return signed(r, s)"
+        "end"
+        "local function negate(a)"
+        "  local r = {}"
+        "  for i = 1, #a do r[i] = a[i] end"
+        "  return signed(r, -a.s)"
+        "end"
+        "local function minus(a, b) return plus(a, negate(b)) end"
+        "local function times(a, b)"
+        "  local r = {}"
+        "  for i = 1, #a + #b do r[i] = 0 end"
+        "  for i = 1, #a do"
+        "    local c = 0"
+        "    for j = 1, #b do"
+        "      local x = r[i + j - 1] + a[i] * b[j] + c"
+        "      c = math.floor(x / B)"
+        "      r[i + j - 1] = x - c * B"
+        "    end"
+        "    local k = i + #b"
+        "    while c > 0 do"
+        "      local x = r[k] + c"
+        "      c = math.floor(x / B)"
+        "      r[k] = x - c * B"
+        "      k = k + 1"
+        "    end"
+        "  end"
+        "  return signed(r, a.s * b.s)"
+        "end"
+        "local ZERO, ONE = int('0'), int('1')"
+        "local MOST, LEAST = int('9223372036854775807'), int('-9223372036854775808')"
+        "local SPAN = int('2305843009213693952')"
+        "local function later(a, b) if cmp(a, b) >= 0 then return a end return b end"
+        "local function fits(a) return cmp(a, MOST) <= 0 and cmp(a, LEAST) >= 0 end"
+        "local function quotient(p, d)"
+        "  local steps, units = {[0] = d}, {[0] = ONE}"
+        "  for k = 1, 66 do steps[k] = plus(steps[k - 1], steps[k - 1]) units[k] = plus(units[k - 1], units[k - 1]) end"
+        "  if cmp(p, steps[66]) >= 0 then return nil end"
+        "  local q, r = ZERO, p"
+        "  for k = 65, 0, -1 do"
+        "    if cmp(steps[k], r) <= 0 then r = minus(r, steps[k]) q = plus(q, units[k]) end"
+        "  end"
+        "  return q, r"
+        "end"
+        "local function clock(arg)"
+        "  if arg ~= 'server' then return int(arg) end"
+        "  local t = redis.call('TIME')"
+        "  return int(t[1] .. string.format('%06d', tonumber(t[2])) .. '000')"
+        "end"
+        "local function stored(key)"
+        "  local h = redis.call('HMGET', key, 'every_ns', 'burst', 'empty_at_ns', 'seen_ns')"
+        "  if not (h[1] or h[2] or h[3] or h[4]) then return nil, 'missing' end"
+        "  local l = {every = int(h[1]), burst = int(h[2]), empty = int(h[3]), seen = int(h[4])}"
+        "  if not (l.every and l.burst and l.empty and l.seen) then return nil, 'bad' end"
+        "  if cmp(l.every, ONE) < 0 or cmp(l.burst, ONE) < 0 or cmp(times(l.every, l.burst), SPAN) > 0 then return nil, 'bad' end"
+        "  if not (fits(l.empty) and fits(l.seen)) then return nil, 'bad' end"
+        "  return l, 'ok'"
+        "end"
+        "local function answer(l, empty, t) return {'ok', text(l.every), text(l.burst), text(empty), text(t)} end"
+    ]
+    return lines.join("\n") + "\n"
+
+# Takes `ARGV[1]` tokens of the limit where they are all earned within
+# `ARGV[2]` nanoseconds and they are no more than its burst: its
+# `empty_at_ns` moves that many tokens' time past the later of itself and
+# the moment a full limit would have emptied. Answers, taken or not, the
+# limit as read, the time read, the instant the tokens are earned (an `i64`'s
+# largest where it is past one), and `1` or `0` for whether that instant
+# fits and whether the tokens were taken.
+function take() -> str
+    body = [
+        "local n, longest, now = int(ARGV[1]), int(ARGV[2]), clock(ARGV[3])"
+        "if not (n and longest and now) then return redis.error_reply('ERR the limit script was given an argument that is no whole number') end"
+        "local l, found = stored(KEYS[1])"
+        "if not l then return {found} end"
+        "local t = later(l.seen, now)"
+        "local finish = plus(later(l.empty, minus(t, times(l.every, l.burst))), times(l.every, n))"
+        "local fit = fits(finish)"
+        "local granted = cmp(n, l.burst) <= 0 and fit and cmp(minus(finish, t), longest) <= 0"
+        "if granted then redis.call('HSET', KEYS[1], 'empty_at_ns', text(finish), 'seen_ns', text(t)) end"
+        "if not fit then finish = MOST end"
+        "local out = answer(l, l.empty, t)"
+        "out[6] = text(finish)"
+        "out[7] = fit and '1' or '0'"
+        "out[8] = granted and '1' or '0'"
+        "return out"
+    ]
+    return prelude() + body.join("\n")
+
+# Gives back a reservation of `ARGV[1]` tokens, ready at `ARGV[2]` and
+# leaving the limit empty until `ARGV[3]`, as far as no later taking used it
+# and not once it is ready, never past the moment a full limit would have
+# emptied; answers the limit after.
+function give_back() -> str
+    body = [
+        "local n, ready, finish, now = int(ARGV[1]), int(ARGV[2]), int(ARGV[3]), clock(ARGV[4])"
+        "if not (n and ready and finish and now) then return redis.error_reply('ERR the limit script was given an argument that is no whole number') end"
+        "local l, found = stored(KEYS[1])"
+        "if not l then return {found} end"
+        "local t = later(l.seen, now)"
+        "local empty = l.empty"
+        "if cmp(ready, t) >= 0 then"
+        "  local back = minus(times(l.every, n), later(minus(l.empty, finish), ZERO))"
+        "  if cmp(back, ZERO) > 0 then empty = later(minus(l.empty, back), minus(t, times(l.every, l.burst))) end"
+        "end"
+        "if not fits(empty) then return {'nofit'} end"
+        "redis.call('HSET', KEYS[1], 'empty_at_ns', text(empty), 'seen_ns', text(t))"
+        "return answer(l, empty, t)"
+    ]
+    return prelude() + body.join("\n")
+
+# Makes the limit full at the time read, a token every `ARGV[1]` nanoseconds
+# and a burst of `ARGV[2]`; or, where it is there, gives it that rate and
+# burst holding the tokens it held, as many as the smaller burst allows, a
+# debt kept, each at the new rate, rounded to the nanosecond, half away from
+# nothing. Answers the limit after, or `nofit` with the limit unchanged.
+function set() -> str
+    body = [
+        "local every, burst, now = int(ARGV[1]), int(ARGV[2]), clock(ARGV[3])"
+        "if not (every and burst and now) then return redis.error_reply('ERR the limit script was given an argument that is no whole number') end"
+        "local l, found = stored(KEYS[1])"
+        "if found == 'bad' then return {found} end"
+        "local t, empty = now, nil"
+        "if not l then"
+        "  empty = minus(now, times(every, burst))"
+        "else"
+        "  t = later(l.seen, now)"
+        "  local least = burst"
+        "  if cmp(l.burst, burst) < 0 then least = l.burst end"
+        "  local behind = minus(t, l.empty)"
+        "  local kept = times(least, every)"
+        "  if cmp(behind, times(least, l.every)) < 0 then"
+        "    local owed = behind.s < 0"
+        "    if owed then behind = negate(behind) end"
+        "    local q, r = quotient(times(behind, every), l.every)"
+        "    if not q then return {'nofit'} end"
+        "    if cmp(plus(r, r), l.every) >= 0 then q = plus(q, ONE) end"
+        "    if owed then q = negate(q) end"
+        "    kept = q"
+        "  end"
+        "  empty = minus(t, kept)"
+        "end"
+        "if not fits(empty) then return {'nofit'} end"
+        "redis.call('HSET', KEYS[1], 'every_ns', text(every), 'burst', text(burst), 'empty_at_ns', text(empty), 'seen_ns', text(t))"
+        "return {'ok', text(every), text(burst), text(empty), text(t)}"
+    ]
+    return prelude() + body.join("\n")
+
+# Reads the limit at the time read, writing nothing.
+function read() -> str
+    body = [
+        "local now = clock(ARGV[1])"
+        "if not now then return redis.error_reply('ERR the limit script was given an argument that is no whole number') end"
+        "local l, found = stored(KEYS[1])"
+        "if not l then return {found} end"
+        "return answer(l, l.empty, later(l.seen, now))"
+    ]
+    return prelude() + body.join("\n")
+
+test "every limit script: the prelude first, the limit read from its one key, the clock its last argument, and only the scripts that change a limit writing it"
+    head = prelude()
+    clocks = ["clock(ARGV[3])", "clock(ARGV[4])", "clock(ARGV[3])", "clock(ARGV[1])"]
+    texts = [take(), give_back(), set(), read()]
+
+    for i in range(from: 0, to: texts.len())
+        t = texts[i]
+        assert t.len() > head.len() && t.slice(from: 0, to: head.len()) == head
+        body = t.slice(from: head.len(), to: t.len())
+        assert strings.contains(s: body, substr: clocks[i]) && strings.contains(s: body, substr: "stored(KEYS[1])")
+        assert strings.contains(s: body, substr: "HSET") == (i < 3)
+
+    assert head.slice(from: 0, to: 19) == "local B = 10000000\n" && !strings.contains(s: head, substr: "HSET")
