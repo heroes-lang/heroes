@@ -29,6 +29,12 @@
 # systemd and launchd themselves are unrun here: this Mac has neither a
 # systemd host nor a Linux; the protocols run against sockets a program of the
 # test makes, and launchd's against a user agent `launchctl` bootstraps.
+# On 2026-11-24 the local sockets, FIFOs and special files handed over, the
+# pidfd check and the notices of bus services and tuning were run against a
+# systemd host: systemd 257 as PID 1 in a Debian 13 container of this Mac's
+# Linux arm64 image (kernel 7.0), its socket units handing the descriptors
+# and `systemctl show` reading the notices back; and a launchd user agent
+# whose socket is a local one, on this Mac.
 
 capability service/start-as-service  the program is the service the Service Control Manager called
   heroes  service.start
@@ -194,7 +200,7 @@ capability service/inherit-kinds  each descriptor as the value it is
   go      activation.Listeners, activation.PacketConns
   rust    ListenFd
   python  daemon.is_socket, daemon.is_socket_inet, daemon.is_fifo
-  note    the descriptor is asked what it is, never assumed: a listening TCP socket is a `net.Listener`, a connected one (`Accept=yes`) a `net.Conn`, a UDP socket a `net.UdpSocket`, IPv4 or IPv6, and anything else is `other`, left open, with words for what it is. Go fills a gap with nil and Python asks before it takes; a value here is never wrong for the descriptor it came from
+  note    the descriptor is asked what it is, never assumed: a listening TCP socket is a `net.Listener`, a connected one (`Accept=yes`) a `net.Conn`, a UDP socket a `net.UdpSocket`, IPv4 or IPv6, a local socket, a FIFO or a special file the value `service/inherit-local-sockets` names, and anything else is `other`, left open, with words for what it is. Go fills a gap with nil and Python asks before it takes; a value here is never wrong for the descriptor it came from
 
 capability service/inherit-tls  listeners that speak TLS
   heroes  refused: a listener's TLS is the program's own choice at accept, and `tls` wraps the connection it accepts, so a handed socket needs nothing of its own
@@ -211,18 +217,18 @@ capability service/inherit-launchd  the sockets launchd hands a job
   note    `launch_activate_socket(name, &fds, &cnt)` of `launch.h`: the sockets the job's plist names under `Sockets`, handed over once (a second call is `exists`, EALREADY), a program no launchd job runs is `not_found` (ESRCH); each is adopted as systemd's are; more than 64 under one name is `limit`. None of the three libraries binds it
 
 capability service/inherit-local-sockets  Unix-domain sockets, FIFOs and special files handed over
-  heroes  pending
+  heroes  service.inherit, service.inherit_launchd, service.Handed
   go      activation.Listeners, activation.PacketConns
   rust    ListenFd
-  python  daemon.is_socket_unix, daemon.is_mq, daemon.is_fifo
-  note    pending: a descriptor that is a local socket, a FIFO or a file is `other` today, left open and told in words; adopting a local stream listener belongs to `ipc`'s table, a change to that package
+  python  daemon.is_socket_unix, daemon.is_fifo, daemon.is_mq
+  note    a local stream socket that listens is `local_listener`, an `ipc.Listener` named by the path or, on Linux, the abstract name it is bound to (launchd binds a local socket in a folder of its own and moves the file to the plist's `SockPathName`, so the name is the path it was bound at), whose close leaves the socket file to the manager that listens on it; one connected (`Accept=yes`) is `local_connection`, an `io.Stream` of `ipc`'s; a FIFO (`ListenFIFO=`) is `fifo` and a character device or a file (`ListenSpecial=`) `special`, each an `io.Stream` read and written as the manager opened it, made blocking as every stream of `io` is. Each descriptor is asked what it is, never assumed, and adopted inside the one call, so a failure closes every value already made. Left `other` with words: a local datagram or sequenced-packet socket (`ipc` has no value for one, its block `ipc/datagrams`), a netlink socket, a POSIX message queue (Linux's file system of them shows one as a regular file, told by its magic), a folder. Run on 2026-11-24 against systemd 257 (`ListenStream=` at a path and at `@` an abstract name, `Accept=yes`, `ListenFIFO=`, `ListenSpecial=/dev/random`, `ListenDatagram=` told `other`) and a launchd user agent's `SockPathName`
 
 capability service/inherit-pidfd  the pidfd check of `$LISTEN_PIDFDID`
-  heroes  pending
+  heroes  service.inherit
   go      -
   rust    -
   python  -
-  note    pending: from systemd 259 the manager also sets `$LISTEN_PIDFDID` and the page says the reader checks it against the process's pidfd inode; this package checks the pid alone, which the page's earlier protocol asks, and Linux alone has the pidfd
+  note    `sd_listen_fds(3)` since systemd 259: where `$LISTEN_PIDFDID` is set it must be this process's pidfd inode number, else nothing was handed to this process; a value that is no number of 1 to 20 digits within 64 bits is `invalid`. The number is read as systemd's `pidfd_get_inode_id` reads it: `pidfd_open` on the process, the pidfd file system's magic `PID_FS_MAGIC` checked by `fstatfs`, the inode number by `fstat` on 64 bits (`sd_pidfd_get_inode_id(3)`); where there is none (off Linux, before Linux 6.9, an inode number of 32 bits) the check is passed over, as systemd's `sd_listen_fds` passes it over when its own lookup fails (its `sd-daemon.c`, read on 2026-11-24). None of the three libraries checks it. Run on 2026-11-24 in the systemd container (Linux 7.0) by a launcher that sets `$LISTEN_PIDFDID` and becomes the program by `exec`: its own number handed the listener over, the number plus one handed nothing
 
 capability service/notify-descriptors  descriptors stored with the manager and a barrier
   heroes  refused: a program holds no raw descriptor, and passing one over a local socket (`SCM_RIGHTS`) is a descriptor a Heroes program cannot be trusted to hand over
@@ -232,11 +238,11 @@ capability service/notify-descriptors  descriptors stored with the manager and a
   note    `FDSTORE=1`, `FDSTOREREMOVE=1`, `FDNAME=`, `FDPOLL=0`, `BARRIER=1` and `MAINPIDFD=1` need descriptors sent beside the datagram; Python's `notify(fds=)` does it. `parse_notices` passes these variables over
 
 capability service/notify-other-variables  the notice variables of bus services and tuning
-  heroes  pending
+  heroes  service.Notice.bus_error, service.Notice.varlink_error, service.Notice.exit_status, service.Notice.notify_access, service.Notice.restart_reset, service.NotifyAccess
   go      -
   rust    NotifyState
   python  daemon.notify
-  note    pending: `BUSERROR=`, `VARLINKERROR=`, `EXIT_STATUS=` (the page says the manager does not consume it), `NOTIFYACCESS=` and `RESTART_RESET=1`, which the row did not ask for
+  note    `BUSERROR=` (systemd 233) and `VARLINKERROR=` (257) checked against the D-Bus specification's error names and Varlink's interface definition, an empty name taking the error back as the manager does (`empty_to_null` in its `service.c`, read on 2026-11-24); `EXIT_STATUS=` (254) 0 to 255, which the page says the manager keeps as information; `NOTIFYACCESS=` (254) one of `none`, `main`, `exec`, `all` (`systemd.service(5)`); `RESTART_RESET=1` (258). Run on 2026-11-24 against systemd 257, `systemctl show` reading back `StatusBusError`, `StatusVarlinkError` and `NotifyAccess=all`; `RESTART_RESET=1` is newer than it and passed over there, unrun against 258
 
 dropped
   go      svc.Handler (an interface of a callback, which the language has none of: the program's own loop calls `wait`), svc.ChangeRequest.CurrentStatus and .Context (the status and a raw handle of the system), svc.StatusHandle (a raw handle of the system, which the layer keeps)

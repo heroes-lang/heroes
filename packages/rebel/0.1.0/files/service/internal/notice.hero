@@ -7,13 +7,16 @@
 # The variables are the ones systemd's `sd_notify(3)` documents, read on
 # 2026-11-23: `READY=1`, `RELOADING=1` with `MONOTONIC_USEC=`, `STOPPING=1`,
 # `STATUS=`, `ERRNO=`, `MAINPID=`, `WATCHDOG=1`, `WATCHDOG=trigger`,
-# `WATCHDOG_USEC=` and `EXTEND_TIMEOUT_USEC=`. A line is one assignment, so a
-# value holding a newline would start another: a text is refused where it
-# holds a control character, never written.
+# `WATCHDOG_USEC=` and `EXTEND_TIMEOUT_USEC=`; and, read on 2026-11-24,
+# `BUSERROR=`, `VARLINKERROR=`, `EXIT_STATUS=`, `NOTIFYACCESS=` and
+# `RESTART_RESET=1`. A line is one assignment, so a value holding a newline
+# would start another: a text is refused where it holds a control character,
+# never written.
 
 use numbers
 use service
 use service/internal/failure
+use service/internal/names
 use strings
 use time
 
@@ -25,6 +28,10 @@ constant DIGITS_MOST: i64
 # The most an errno number is: Linux's, the system a manager runs on.
 constant ERRNO_MOST: i64
     4095
+
+# The most an exit status is: a process's status is its low eight bits.
+constant EXIT_STATUS_MOST: i64
+    255
 
 # `text` where it is one line of printable characters, else a failure naming
 # `what` and the byte.
@@ -78,6 +85,14 @@ function assignment(n: service.Notice, monotonic: time.Duration) -> str?
         .extend_timeout x =>
             usec = microseconds_of(x.span, what: "a timeout extension")?
             return ok(f"EXTEND_TIMEOUT_USEC={usec}")
+        .bus_error b     => return ok("BUSERROR=" + names.bus_error(b.name)?)
+        .varlink_error v => return ok("VARLINKERROR=" + names.varlink_error(v.name)?)
+        .exit_status x =>
+            if x.code < 0 || x.code > EXIT_STATUS_MOST
+                return fail(code: failure.INVALID, msg: f"an exit status is 0 to {EXIT_STATUS_MOST}, not {x.code}")
+            return ok(f"EXIT_STATUS={x.code}")
+        .notify_access a => return ok("NOTIFYACCESS=" + names.access_word(a.who))
+        .restart_reset   => return ok("RESTART_RESET=1")
 
 # The datagram the notices make: their assignments, one to a line, and the
 # clock reading `RELOADING=1` goes with.
@@ -150,6 +165,27 @@ function notice_of(name: str, value: str) -> [service.Notice]?
     if name == "EXTEND_TIMEOUT_USEC"
         return ok([.extend_timeout(span: time.microseconds(number_of(text: value, name: name)?)?)])
 
+    if name == "BUSERROR"
+        return ok([.bus_error(name: names.bus_error(value)?)])
+
+    if name == "VARLINKERROR"
+        return ok([.varlink_error(name: names.varlink_error(value)?)])
+
+    if name == "EXIT_STATUS"
+        code = number_of(text: value, name: name)?
+
+        if code > EXIT_STATUS_MOST
+            return fail(code: failure.INVALID, msg: f"EXIT_STATUS is {code}: an exit status is 0 to {EXIT_STATUS_MOST}")
+        return ok([.exit_status(code: code)])
+
+    if name == "NOTIFYACCESS"
+        return ok([.notify_access(who: names.access_of(value)?)])
+
+    if name == "RESTART_RESET"
+        if value != "1"
+            return fail(code: failure.INVALID, msg: f"RESTART_RESET is \"{value}\": the only value it takes is 1")
+        return ok([.restart_reset])
+
     if name == "MONOTONIC_USEC"
         _ = number_of(text: value, name: name)?
     return ok([])
@@ -208,6 +244,43 @@ test "format: one notice is one line, and reloading goes with the clock reading"
     assert format(reload, monotonic: span(2000)).must() == "RELOADING=1\nMONOTONIC_USEC=2000000\nSTATUS=Reloading"
     reading = time.nanoseconds(1500)
     assert format(reload, monotonic: reading).must() == "RELOADING=1\nMONOTONIC_USEC=2\nSTATUS=Reloading"
+
+test "format: the notices of bus services and tuning are the assignments sd_notify(3) names, its own examples among them"
+    more: [service.Notice] = [
+        .bus_error(name: "org.freedesktop.DBus.Error.TimedOut")
+        .varlink_error(name: "org.varlink.service.InvalidParameter")
+        .exit_status(code: 0)
+        .exit_status(code: 255)
+        .notify_access(who: .none)
+        .notify_access(who: .main)
+        .notify_access(who: .exec)
+        .notify_access(who: .all)
+        .restart_reset
+        .bus_error(name: "")
+        .varlink_error(name: "")
+    ]
+    want = "BUSERROR=org.freedesktop.DBus.Error.TimedOut\nVARLINKERROR=org.varlink.service.InvalidParameter\nEXIT_STATUS=0\nEXIT_STATUS=255\nNOTIFYACCESS=none\nNOTIFYACCESS=main\nNOTIFYACCESS=exec\nNOTIFYACCESS=all\nRESTART_RESET=1\nBUSERROR=\nVARLINKERROR="
+    assert format(more, monotonic: span(0)).must() == want
+    assert parse(want).must() == more
+
+test "format and parse: an exit status out of range, an error name of the wrong grammar and a value a variable does not take are invalid"
+    low: [service.Notice] = [.exit_status(code: -1)]
+    assert reading_code(format(low, monotonic: span(0))) == failure.INVALID
+    high: [service.Notice] = [.exit_status(code: 256)]
+    assert reading_code(format(high, monotonic: span(0))) == failure.INVALID
+    bus: [service.Notice] = [.bus_error(name: "TimedOut")]
+    assert reading_code(format(bus, monotonic: span(0))) == failure.INVALID
+    varlink: [service.Notice] = [.varlink_error(name: "org.varlink.service")]
+    assert reading_code(format(varlink, monotonic: span(0))) == failure.INVALID
+    line: [service.Notice] = [.bus_error(name: "a.b\nREADY=1")]
+    assert reading_code(format(line, monotonic: span(0))) == failure.INVALID
+    assert reading_code(parse("EXIT_STATUS=256")) == failure.INVALID
+    assert reading_code(parse("EXIT_STATUS=-1")) == failure.INVALID
+    assert reading_code(parse("EXIT_STATUS=")) == failure.INVALID
+    assert reading_code(parse("NOTIFYACCESS=some")) == failure.INVALID
+    assert reading_code(parse("RESTART_RESET=0")) == failure.INVALID
+    assert reading_code(parse("BUSERROR=a")) == failure.INVALID
+    assert reading_code(parse("VARLINKERROR=a.b.c")) == failure.INVALID
 
 test "format: no notice, a status with a control character, an errno and a pid out of range, and a span below zero are invalid"
     nothing: [service.Notice] = []

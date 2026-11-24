@@ -11,10 +11,15 @@
 # bind it on every platform. Systemd's notice and descriptors exist on POSIX
 # and launchd's sockets on Darwin; every other call answers
 # `HERO_ACTIVATION_UNSUPPORTED`. The sockets a manager hands over come as the
-# numbers of `net/hero_net`'s table, taken back through `hero_net.hero_net_of`.
+# numbers of `net/hero_net`'s table, taken back through `hero_net.hero_net_of`;
+# a local listener, a local connection, a FIFO and a special file come as the
+# numbers this layer keeps them under, taken back once through
+# `take_listener` and `take_stream`.
 
 use bytes
 use fs
+use io/hero_stream
+use ipc/hero_ipc
 use os
 use time
 
@@ -39,6 +44,10 @@ extern "hero_activation.h"
     constant HERO_ACTIVATION_ENTRY_CONNECTION: i64
     constant HERO_ACTIVATION_ENTRY_DATAGRAM: i64
     constant HERO_ACTIVATION_ENTRY_OTHER: i64
+    constant HERO_ACTIVATION_ENTRY_LOCAL_LISTENER: i64
+    constant HERO_ACTIVATION_ENTRY_LOCAL_CONNECTION: i64
+    constant HERO_ACTIVATION_ENTRY_FIFO: i64
+    constant HERO_ACTIVATION_ENTRY_SPECIAL: i64
     # The most descriptors `$LISTEN_FDS` may say, the most sockets one name of
     # launchd's may hold, and the most bytes of one notice.
     constant HERO_ACTIVATION_MOST: i64
@@ -55,6 +64,17 @@ extern "hero_activation.h"
     function hero_activation_count() -> i64
     function hero_activation_monotonic_usec() -> i64
     function hero_activation_count_for(pid_text: cstr lent, count_text: cstr lent, pid: i64) -> i64
+    function hero_activation_pidfd_check(listed_text: cstr lent, own_known: i64, own: u64) -> i64
+    function hero_activation_own_pidfd_id(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    # The calls the marks below name, which the header declares through
+    # `hero_ipc.h` and `hero_stream.h`: a listener's end and a stream's.
+    #
+    # - `l`: the listener ended and given back.
+    function hero_ipc_listener_close(l: hero_ipc.Listener consumes) -> i64
+    # - `s`: the stream ended and given back.
+    function hero_stream_close(s: hero_stream.Stream consumes) -> i64
+    function hero_activation_take_listener(number: i64) -> hero_ipc.Listener acquires hero_ipc_listener_close
+    function hero_activation_take_stream(number: i64) -> hero_stream.Stream acquires hero_stream_close
     function hero_activation_inherit(@entries: [Entry] counted_by n lent, n: u64) -> i64
     function hero_activation_launchd(name: cstr lent, @entries: [Entry] counted_by n lent, n: u64) -> i64
     function hero_activation_describe(descriptor: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
@@ -101,6 +121,35 @@ function monotonic_usec() -> i64
 # - `pid`: the process the descriptors would be for.
 function count_for(pid_text: str, count_text: str, pid: i64) -> i64
     return hero_activation_count_for(pid_text: pid_text.cstr(), count_text: count_text.cstr(), pid: pid)
+
+# What the pidfd check answers for the text `$LISTEN_PIDFDID` holds and this
+# process's own number: 1 where the descriptors are this process's, 0 where
+# they are another's, -1 for a text that is no number.
+#
+# - `listed_text`: what `$LISTEN_PIDFDID` holds.
+# - `own_known`: 1 where `own` is this process's number, 0 where it has none.
+# - `own`: this process's pidfd inode number.
+function pidfd_check(listed_text: str, own_known: i64, own: u64) -> i64
+    return hero_activation_pidfd_check(listed_text: listed_text.cstr(), own_known: own_known, own: own)
+
+# This process's pidfd inode number as digits written into `buffer`; their
+# length, 0 where the system has no stable one.
+#
+# - `buffer`: room for the digits, 24 bytes holding any.
+function own_pidfd_id(@buffer: [u8]) -> i64
+    return hero_activation_own_pidfd_id(@buffer, n: buffer.len().to_u64().must())
+
+# The local listener kept under `number`, handed over once; or `nullptr`.
+#
+# - `number`: an entry's `number`, of the kind `HERO_ACTIVATION_ENTRY_LOCAL_LISTENER`.
+function take_listener(number: i64) -> hero_ipc.Listener
+    return hero_activation_take_listener(number)
+
+# The stream kept under `number`, handed over once; or `nullptr`.
+#
+# - `number`: an entry's `number`, of a local connection, a FIFO or a special file.
+function take_stream(number: i64) -> hero_stream.Stream
+    return hero_activation_take_stream(number)
 
 # Takes every descriptor handed over, once, into `entries`; their count, or -1.
 #
@@ -361,6 +410,40 @@ test "hero_activation count_for: the pid must be this process's, both texts digi
     assert last_error() == HERO_ACTIVATION_INVALID
     assert count_for(pid_text: "42", count_text: "99999999999999999999", pid: 42) == -1
     assert last_error() == HERO_ACTIVATION_INVALID
+
+test "hero_activation pidfd_check: the listed number must be this process's where it has one, digits alone within 64 bits"
+    own: u64 = 4711
+    largest: u64 = 18446744073709551615
+    assert pidfd_check(listed_text: "4711", own_known: 1, own: own) == 1
+    assert pidfd_check(listed_text: "4712", own_known: 1, own: own) == 0
+    assert pidfd_check(listed_text: "04711", own_known: 1, own: own) == 1
+    assert pidfd_check(listed_text: "4712", own_known: 0, own: own) == 1
+    assert pidfd_check(listed_text: "18446744073709551615", own_known: 1, own: largest) == 1
+    assert pidfd_check(listed_text: "18446744073709551616", own_known: 1, own: largest) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert pidfd_check(listed_text: "", own_known: 1, own: own) == -1
+    assert last_error() == HERO_ACTIVATION_INVALID
+    assert pidfd_check(listed_text: "-1", own_known: 1, own: own) == -1
+    assert pidfd_check(listed_text: "+4711", own_known: 1, own: own) == -1
+    assert pidfd_check(listed_text: " 4711", own_known: 1, own: own) == -1
+    assert pidfd_check(listed_text: "4711x", own_known: 0, own: own) == -1
+    assert pidfd_check(listed_text: "123456789012345678901", own_known: 1, own: own) == -1
+
+test "hero_activation own_pidfd_id: Linux with the pidfd file system has a number, every other system none"
+    room_for_digits: [u8] @= room(24)
+    n = own_pidfd_id(@room_for_digits)
+
+    match os.system()
+        .linux =>
+            if n == 0
+                skip_test(reason: "this Linux has no pidfd file system (Linux 6.9 on) or an inode number of 32 bits")
+            assert n > 0 && n <= 20
+
+            for i in range(from: 0, to: n)
+                assert room_for_digits[i] >= '0' && room_for_digits[i] <= '9'
+        .darwin  => assert n == 0
+        .windows => assert n == 0
+        .other   => assert n == 0
 
 test "hero_activation count, inherit: a test run is handed no descriptor, and room for none is room enough"
     if !on_posix()
