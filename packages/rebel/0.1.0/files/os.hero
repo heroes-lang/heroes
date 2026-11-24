@@ -1,8 +1,9 @@
 # The process's world: its environment, its working folder, the folders the
 # system keeps for a program's data, state, cache, settings and sockets, who it
 # runs as and on what machine, the machine's processes listed, users and groups
-# found and the user changed, the signals it counts, and a URL or a file handed
-# to the application the user's system keeps for it. Files and folders by path
+# found and the user changed, the signals it counts, a URL or a file handed
+# to the application the user's system keeps for it, and a file shown
+# selected in the system's file manager. Files and folders by path
 # are the package `fs`'s, and other programs the package `process`'s. The
 # program's arguments and its exit are the language's own, the built-ins
 # `args()` and `exit`, and its arguments read as flags and options are
@@ -108,7 +109,11 @@ function env_bytes(name: str) -> [u8]?
 # (`env_all_bytes` reads them), and with the system's code where it cannot be
 # read. An entry with no `=`, or one whose name is empty, as Windows' own
 # `=C:` are, is left out, so every name here is one `env` reads; where a name
-# stands twice its first value is kept, the one `env` answers.
+# stands twice its first value is kept, the one `env` answers. A key is the
+# name as the system keeps it, and the map's keys are matched byte for byte:
+# Windows keeps a name in the spelling it was set with, `Path` in a process
+# Explorer starts, and `env` finds it without case where `every["PATH"]`
+# does not.
 function env_all() -> {str: str}?
     return variables.as_map()
 
@@ -333,6 +338,40 @@ function open_path(path: str) -> ()?
 
     if hero_sys.open(opening.launch_target(path)) != 0
         return codes.sys_failed(asked: f"opening \"{path}\"")
+    return ok()
+
+# Shows the file or the folder `path` names selected in the system's file
+# manager, Finder, Explorer or the desktop's own, as a program's "Show in
+# Finder" after a download, and returns once the system has taken it.
+#
+# - `path`: absolute, or relative to the working folder; one that begins with
+#   `-` is handed as `./` and the path, so no launcher reads it as an option.
+#
+# On Darwin `open -R` is run with `path`, Finder selecting the item in a
+# window of its folder. On Linux and every other POSIX the desktop's file
+# manager is asked over the session's D-Bus (`org.freedesktop.FileManager1`,
+# `ShowItems`), and where none answers (no session, no `dbus-send`, a desktop
+# whose file manager does not take the call) the folder holding the item is
+# opened by `xdg-open` with nothing selected, as Chromium's "Show in folder"
+# falls back. On Windows `SHOpenFolderAndSelectItems` asks Explorer.
+#
+# Fails `file_not_found` where `path` names nothing, asked before the system
+# is, `invalid` where it is empty or holds a zero byte, `not_found` where
+# neither `dbus-send` nor `xdg-open` is on the machine, `unsupported` where
+# the system has no tool to show it with, and `failed` where the launcher or
+# the shell ended otherwise.
+#
+# See also `open_path`.
+function reveal_path(path: str) -> ()?
+    if path.len() == 0 || codes.has_zero(path)
+        return fail(code: codes.INVALID, msg: "an empty path, or one holding a zero byte, names nothing to show")
+    none: [i64] @= []
+
+    if hero_disk.facts_through(path, @none, n: 0) < 0
+        return codes.disk_failed(asked: f"showing \"{path}\" in the file manager")
+
+    if hero_sys.reveal(opening.launch_target(path)) != 0
+        return codes.sys_failed(asked: f"showing \"{path}\" in the file manager")
     return ok()
 
 ## Who runs the process, and where
@@ -1328,7 +1367,14 @@ test "env_all and env_all_bytes: PATH among them, every name read back by env, o
     raw = env_all_bytes().must()
     names = keys(every)
     assert names.len() == raw.len() && names.len() > 0
-    assert every["PATH"].must() == env("PATH").must()
+    told: [str] @= []
+
+    for name in names
+        if variables.reads_as(name: name, wanted: "PATH")
+            told @ told.push(name)
+
+    assert told.len() == 1
+    assert every[told[0]].must() == env("PATH").must()
     at: i64 @= 0
 
     while at < raw.len()
@@ -1808,6 +1854,19 @@ test "open_path: empty and a zero byte invalid, a missing file file_not_found, n
         .ok _  => assert false
         .err e => assert e.code == FILE_NOT_FOUND
 
+test "reveal_path: empty and a zero byte invalid, a missing file and a file in a missing folder file_not_found, nothing started"
+    zeroed: [u8] = [97, 0, 98]
+
+    for path in ["", zeroed.validated_bytes().must()]
+        match reveal_path(path)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    for path in ["-rebel-no-such-file", "/rebel-no-such-folder/report.pdf", "rebel-no-such-folder/a/b"]
+        match reveal_path(path)
+            .ok _  => assert false
+            .err e => assert e.code == FILE_NOT_FOUND
+
 test "count_signal: the end at once and the stop refused, Ctrl-C counted with none come, a second call, then the stop refused"
     refused: [Signal] = [.kill, .stop]
 
@@ -2184,6 +2243,12 @@ test "open_path: a file that is not there"
 
 # A server that ends its loops on Ctrl-C instead of dying in the middle of a
 # write.
+# "Show in Finder" after a download, here asked of a file that is not there.
+test "reveal_path: a file that is not there"
+    match reveal_path("/rebel-no-such-folder/report.pdf")
+        .ok _  => print("shown")
+        .err e => print(e.code)
+
 test "catch_stop: Ctrl-C asks the stop from now on"
     catch_stop().must()
     assert !is_stop_asked()

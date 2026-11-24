@@ -343,6 +343,7 @@ constant SHARED_BY_DECISION: [str]
         "runtime/platform/hero_printing.c hero_printing_functions | CUPS's functions on macOS and Linux, found by `dlsym` ONCE inside `pthread_once` (`hero_printing_once`) and only read after it, `hero_keyring_functions`' shape: a once-guard is the one shape where shared and safe are the same word, and the functions are the process's, the same on every thread; libcups keeps its connection and its last error per thread"
         "runtime/platform/hero_printing.c hero_printing_found | whether every one of those functions was found, written once inside the same `pthread_once` and only read after it, on the entry above's reason"
         "runtime/platform/hero_printing.c hero_printing_once | the once-guard over finding CUPS's functions, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_printing.c side_words | the words of IPP's `sides` a job is submitted with, by the layer's number: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe. This sweep reads a `T *const` as mutable on purpose, the loud direction, so it is named here rather than passed in silence"
         "runtime/platform/hero_printing.c hero_printing_render | on Windows the PDF renderer's, Direct2D's, Direct3D's, WinRT's and the print ticket's functions, found by `GetProcAddress` ONCE inside `InitOnceExecuteOnce` (`hero_printing_render_once`) and only read after it, `hero_printing_functions`' shape on the other arm"
         "runtime/platform/hero_printing.c hero_printing_render_found | whether every one of those functions was found, written once inside the same `InitOnceExecuteOnce` and only read after it"
         "runtime/platform/hero_printing.c hero_printing_render_once | the once-guard over finding them, `INIT_ONCE`: being shared is its entire job and the platform owns its synchronisation"
@@ -358,7 +359,6 @@ constant SHARED_BY_DECISION: [str]
         "runtime/platform/hero_poll.c hero_poll_array | on the systems whose wait takes an array (`HERO_POLL_ARRAY`): what a wait hands the system, each set's part its own range. Filled under `hero_poll_lock`, handed to `poll` or `WSAPoll` by the one wait a set allows, which touches its own range alone, and read back under the lock; one array for the process because a set's range is its own, so a per-thread copy would be a second answer to one question"
         "runtime/platform/hero_poll.c hero_poll_array_entry | the entry each place of that array stands for, beside it and on its reason: written under `hero_poll_lock` as the set's range is filled, read under it after the wait"
         "runtime/platform/hero_poll.c hero_poll_lock | the lock over the set table, its entries and the array, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
-        "runtime/platform/hero_poll.c hero_poll_bell_at | Windows' alone: the address of the stop's bell, written once before the bell's socket is published by an atomic store and only read after a load sees it published, `hero_own_symbols`'s shape; process-wide, since the bell is the process's"
         "runtime/platform/hero_proc.c hero_proc_table | the table of processes the program started, its free list and its count of released processes no thread waits for, one object under `hero_proc_lock`, `hero_net_slots`'s shape: a process started on one thread may be waited for or released on another, and issuing a slot is a read-then-write over the free list, which no atomic makes single"
         "runtime/platform/hero_proc.c hero_proc_lock | the lock over that table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
         "runtime/platform/hero_stream.c hero_stream_slots | the platform layer's table of byte streams the program holds, the process's three standard ones first (M-rebel-library), shared on purpose and guarded by `hero_stream_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a stream opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
@@ -394,9 +394,16 @@ constant SHARED_BY_DECISION: [str]
         "runtime/platform/hero_ui_canvas_gtk.c hero_ui_canvas_gtk_found_functions | cairo's, Pango's and the GTK 4 calls the drawing area makes, found by `dlsym` ONCE inside `pthread_once` (`hero_ui_canvas_gtk_once`) and only read after it, `hero_ui_gtk`'s shape: the functions are the process's, the same on every thread"
         "runtime/platform/hero_ui_canvas_gtk.c hero_ui_canvas_gtk_found | whether every one of those functions was found, written once inside the same `pthread_once` and only read after it"
         "runtime/platform/hero_ui_canvas_gtk.c hero_ui_canvas_gtk_once | the once-guard over finding them, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation"
+        "runtime/platform/hero_ui_parts_gtk.c hero_ui_parts_gtk_found_functions | GObject's, GLib's and the GTK 4 calls a drawing area's parts make, and the three GObject types of the member's with where each type's fields stand, found and registered ONCE inside `pthread_once` (`hero_ui_parts_gtk_once`) and only read after it, `hero_ui_gtk`'s shape: the functions and the types are the process's, the same on every thread"
+        "runtime/platform/hero_ui_parts_gtk.c hero_ui_parts_gtk_found | whether every one of those functions was found and the three types registered, written once inside the same `pthread_once` and only read after it"
+        "runtime/platform/hero_ui_parts_gtk.c hero_ui_parts_gtk_once | the once-guard over finding and registering them, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation"
         "runtime/platform/hero_ui_gtk.c hero_ui_gtk | GTK 4's, GLib's and GIO's functions on every system neither Apple's nor Windows, found by `dlsym` ONCE inside `pthread_once` (`hero_ui_gtk_once`) and only read after it, `hero_keyring_functions`' shape: `hero_ui_native_here` may ask from any thread whether GTK is installed, so the functions are the process's, the same on every thread"
         "runtime/platform/hero_ui_gtk.c hero_ui_gtk_found | whether every one of GTK 4.0's functions the arm calls was found, written once inside the same `pthread_once` and only read after it, on the entry above's reason"
         "runtime/platform/hero_ui_gtk.c hero_ui_gtk_once | the once-guard over finding those functions, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_ui_gtk.c watched | the three signals of GTK's settings the appearance's turns are watched by: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe; named here because this sweep reads a `T *const` as mutable on purpose, `hero_printing.c`'s `side_words`' reason"
+        "runtime/platform/hero_ui_gtk.c xml | the two D-Bus interfaces of a tray, the item's and the menu's, as the text GIO parses: an array of `const` pointers to `const` text, written by its initialiser alone, on `side_words`' reason"
+        "runtime/platform/hero_ui_gtk.c names | the names of those two interfaces, in the same order: an array of `const` pointers to `const` text, written by its initialiser alone, on `side_words`' reason"
+        "runtime/platform/hero_ui_gtk.c changed | the three signals a tray sends when its words, name or image change: an array of `const` pointers to `const` text, written by its initialiser alone, on `side_words`' reason"
         "runtime/platform/hero_watch.c hero_watch_slots | the platform layer's table of folder watches the program holds (M-rebel-library), shared on purpose and guarded by `hero_watch_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a watch opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single. One lock, and no other member called under it (the member's own words)"
         "runtime/platform/hero_watch.c hero_watch_fresh | how many slots have ever held a watch, read and written only under `hero_watch_lock`, the lock's own state, as `hero_net_fresh` is"
         "runtime/platform/hero_watch.c hero_watch_given_back | the head of the slots given back, under `hero_watch_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
@@ -880,10 +887,17 @@ function keep_layer(@r: report.Report, sources: [str])
         members @ members + 1
         stem = name.slice(from: 0, to: name.len() - 2)
         member = read_file(path)
-        header = read_file(RUNTIME + "/" + stem + ".h")
+
+        place = match own_header(stem, beside: shell.exists(LAYER + stem + ".h"), shared: shell.exists(RUNTIME + "/" + stem + ".h"))
+            .ok found => found
+            .err e =>
+                wrong @ wrong.push("    " + path + ": " + e.msg)
+                continue
+
+        header = read_file(place)
 
         if member.is_err() || header.is_err()
-            wrong @ wrong.push("    " + path + ": it or its header, " + RUNTIME + "/" + stem + ".h, cannot be read")
+            wrong @ wrong.push("    " + path + ": it or its header, " + place + ", cannot be read")
             continue
         first = first_code(member.must())
 
@@ -893,7 +907,7 @@ function keep_layer(@r: report.Report, sources: [str])
             )
 
         for breach in unguarded(header.must())
-            wrong @ wrong.push("    " + RUNTIME + "/" + stem + ".h: " + breach)
+            wrong @ wrong.push("    " + place + ": " + breach)
 
     if wrong.len() > 0
         report.keep_failure(
@@ -911,6 +925,34 @@ function keep_layer(@r: report.Report, sources: [str])
         floor: LEAST_LAYER_MEMBERS,
         what: "members of the platform layer"
     )
+
+# The member `stem`'s own header, where clang finds the quoted
+# `#include "<stem>.h"` the member opens with: beside the member first, then
+# on the include path the layer compiles every member with, `-I runtime`
+# (`selfhost/cli/layer.hero`). `beside` and `shared` say whether a file
+# stands in each place. A header of the members alone, which no Heroes group
+# names, stands beside them (`hero_ui_print_win32.h` says so of itself); one
+# a group names stands under `runtime/`, where a program's C reaches it. In
+# both places it is refused: the member would be compiled against the first
+# and every program's C against the second, two prototypes this rule exists
+# to make one.
+function own_header(stem: str, beside: bool, shared: bool) -> str?
+    near = LAYER + stem + ".h"
+    far = RUNTIME + "/" + stem + ".h"
+
+    if beside && shared
+        return fail(
+            code: "twice",
+            msg: "its header stands twice, " + near + " and " + far + ": the member is compiled against the first and a program's C against the second"
+        )
+
+    if beside
+        return ok(near)
+
+    if shared
+        return ok(far)
+
+    return fail(code: "none", msg: "its header stands neither at " + near + " nor at " + far)
 
 function min_len(text: str, at: i64) -> i64
     if at > text.len()
@@ -1273,3 +1315,20 @@ test "the layer's first line of code is read as written, and a header's only con
     assert conditional("ifdef X")
     assert !conditional("include \"x.h\"")
     assert !conditional("define IFX 1")
+
+# Rule 4's header found where clang finds it, in each of the four shapes:
+# beside the member alone, under `runtime/` alone, in neither, in both.
+test "a member's own header is the one beside it, else the one under runtime/, and never one standing in both"
+    assert own_header("hero_x", beside: true, shared: false).must() == "runtime/platform/hero_x.h"
+    assert own_header("hero_x", beside: false, shared: true).must() == "runtime/hero_x.h"
+
+    match own_header("hero_x", beside: false, shared: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "its header stands neither at runtime/platform/hero_x.h nor at runtime/hero_x.h"
+
+    match own_header("hero_x", beside: true, shared: true)
+        .ok _  => assert false
+        .err e => assert strings.has_prefix(
+            s: e.msg,
+            prefix: "its header stands twice, runtime/platform/hero_x.h and runtime/hero_x.h"
+        )

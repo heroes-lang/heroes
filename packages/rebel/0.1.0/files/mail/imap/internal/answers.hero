@@ -1,0 +1,414 @@
+# Each command a program asks, run and its answer read into the records of
+# the face: the mailboxes LIST names, what STATUS and SELECT say, the
+# messages FETCH and STORE answer, the numbers SEARCH and EXPUNGE answer,
+# what COPYUID and APPENDUID say, and the server's news.
+
+use bytes
+use mail/imap
+use mail/imap/internal/command
+use mail/imap/internal/flow
+use mail/imap/internal/lex
+use mail/imap/internal/response
+use mail/imap/internal/status
+use mail/imap/internal/wire
+
+# Closes the connection through its one place.
+function close(@c: flow.Conn) -> ()?
+    return wire.close(@c.wire)
+
+# `st` as the face's record.
+function public_status(st: status.Status) -> imap.Status
+    return imap.Status(condition: st.condition, code: st.code, args: st.args, text: st.text)
+
+# `st` as one line for a person, as `flow.shown` writes a status.
+function shown(st: imap.Status) -> str
+    return flow.shown(
+        status.Status(condition: st.condition, code: st.code, args: st.args, capabilities: [], flags: [], value: 0, sets: [], text: st.text)
+    )
+
+# Enables `names` and answers those the server enabled.
+function enable(@c: flow.Conn, names: [str]) -> [str]?
+    if !c.rev2 && !flow.has(c, name: "ENABLE")
+        return fail(code: flow.UNSUPPORTED, msg: "the server does not offer ENABLE")
+
+    if names.len() == 0
+        return fail(code: flow.INVALID, msg: "ENABLE names no capability")
+
+    for n in names
+        if !bytes.from_text(n).all(lex.is_atom_char)
+            return fail(code: flow.INVALID, msg: f"\"{n}\" is no capability's name")
+
+    done = flow.run(@c, pieces: [.text(s: "ENABLE " + join(names, " "))], takes: ["ENABLED"], asked: "ENABLE")?
+    out: [str] @= []
+
+    for d in done.data
+        match d
+            .enabled k =>
+                for n in k.names
+                    out @ out.push(n)
+
+                    if n == "IMAP4REV2"
+                        c.rev2 @ true
+            .condition _ | .capability _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return ok(out)
+
+# The pattern or reference `t` of a LIST: `*` and `%` kept, the rest of the
+# name in modified UTF-7 unless `utf8`.
+function list_piece(t: str, utf8: bool) -> command.Piece?
+    wire_text = if utf8
+        t
+    else
+        command.utf7_name(t)
+    plain @= wire_text.len() > 0
+
+    for b in bytes.from_text(wire_text)
+        if !lex.is_atom_char(b) && b != '%' && b != '*' && b != ']'
+            plain @ false
+
+    if plain
+        return ok(.text(s: wire_text))
+    return command.string_piece(bytes.from_text(wire_text), utf8: utf8)
+
+# The mailboxes LIST (or the subscribed ones) names.
+function list(@c: flow.Conn, reference: str, pattern: str, subscribed: bool) -> [imap.Mailbox]?
+    word = if !subscribed
+        "LIST "
+    else if c.rev2
+        "LIST (SUBSCRIBED) "
+    else
+        "LSUB "
+
+    kind = if subscribed && !c.rev2
+        "LSUB"
+    else
+        "LIST"
+    pieces = [.text(s: word), list_piece(reference, utf8: c.rev2)?, .text(s: " "), list_piece(pattern, utf8: c.rev2)?]
+    done = flow.run(@c, pieces: pieces, takes: [kind], asked: kind)?
+    out: [imap.Mailbox] @= []
+
+    for d in done.data
+        entry = match d
+            .list l => l.entry
+            .lsub l => l.entry
+            .condition _ | .capability _ | .enabled _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => continue
+
+        name = command.mailbox_name(entry.wire_name, utf8: c.rev2)?
+        out @ out.push(imap.Mailbox(name: name, delimiter: entry.delimiter, attributes: entry.attributes))
+
+    return ok(out)
+
+# Runs `word` on the mailbox `name`: CREATE, DELETE, SUBSCRIBE, UNSUBSCRIBE.
+function on_mailbox(@c: flow.Conn, word: str, name: str) -> ()?
+    _ = flow.run(@c, pieces: [.text(s: word + " "), command.mailbox_piece(name, utf8: c.rev2)?], takes: [], asked: word)?
+    return ok()
+
+# Renames `from` to `to`.
+function rename(@c: flow.Conn, from: str, to: str) -> ()?
+    pieces = [
+        .text(s: "RENAME ")
+        command.mailbox_piece(from, utf8: c.rev2)?
+        .text(s: " ")
+        command.mailbox_piece(to, utf8: c.rev2)?
+    ]
+    _ = flow.run(@c, pieces: pieces, takes: [], asked: "RENAME")?
+    return ok()
+
+# What STATUS says of `name`.
+function mailbox_status(@c: flow.Conn, name: str) -> imap.MailboxStatus?
+    asked = if c.rev2
+        " (MESSAGES UIDNEXT UIDVALIDITY UNSEEN DELETED SIZE)"
+    else
+        " (MESSAGES RECENT UIDNEXT UIDVALIDITY UNSEEN)"
+    done = flow.run(@c, pieces: [.text(s: "STATUS "), command.mailbox_piece(name, utf8: c.rev2)?, .text(s: asked)], takes: ["STATUS"], asked: "STATUS")?
+
+    for d in done.data
+        match d
+            .counts k =>
+                n = k.counts.items
+                return ok(
+                    imap.MailboxStatus(name: name, messages: n["MESSAGES"].default(-1), recent: n["RECENT"].default(-1), uid_next: n["UIDNEXT"].default(-1), uid_validity: n["UIDVALIDITY"].default(-1), unseen: n["UNSEEN"].default(-1), deleted: n["DELETED"].default(-1), size: n["SIZE"].default(-1))
+                )
+            .condition _ | .capability _ | .enabled _ | .list _ | .lsub _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return fail(code: flow.INVALID, msg: "the server answered STATUS with no STATUS response")
+
+# Selects or examines `name`.
+function select(@c: flow.Conn, name: str, read_only: bool) -> imap.Selected?
+    word = if read_only
+        "EXAMINE"
+    else
+        "SELECT"
+    done = flow.run(@c, pieces: [.text(s: word + " "), command.mailbox_piece(name, utf8: c.rev2)?], takes: ["EXISTS", "RECENT", "FLAGS", "OK", "LIST"], asked: word)?
+    out @= imap.Selected(
+        name: name,
+        read_only: read_only || done.status.code == "READ-ONLY",
+        exists: 0,
+        recent: 0,
+        flags: [],
+        permanent_flags: [],
+        uid_validity: 0,
+        uid_next: 0,
+        unseen: 0,
+        highest_modseq: 0
+    )
+
+    for d in done.data
+        match d
+            .exists n => out.exists @ n.n
+            .recent n => out.recent @ n.n
+            .flags f  => out.flags @ f.flags
+            .condition k =>
+                st = k.status
+
+                if st.code == "PERMANENTFLAGS"
+                    out.permanent_flags @ st.flags
+                else if st.code == "UIDVALIDITY"
+                    out.uid_validity @ st.value
+                else if st.code == "UIDNEXT"
+                    out.uid_next @ st.value
+                else if st.code == "UNSEEN"
+                    out.unseen @ st.value
+                else if st.code == "HIGHESTMODSEQ"
+                    out.highest_modseq @ st.value
+                else if st.code != "NOMODSEQ" && st.code != "CLOSED"
+                    flow.keep(@c, d: d)
+            .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return ok(out)
+
+# The words of a command on a set, `UID ` first where `uid`.
+function on_set(word: str, set: str, uid: bool) -> str?
+    prefix = if uid
+        "UID "
+    else
+        ""
+    return ok(prefix + word + " " + command.set_text(set)?)
+
+# The messages FETCH answers.
+function fetch(@c: flow.Conn, set: str, uid: bool, asked: str) -> [imap.Message]?
+    done = flow.run(@c, pieces: [.text(s: on_set(word: "FETCH", set: set, uid: uid)? + " " + asked)], takes: ["FETCH"], asked: "FETCH")?
+    return ok(messages(done.data))
+
+# The messages of FETCH responses among `data`.
+function messages(data: [response.Data]) -> [imap.Message]
+    out: [imap.Message] @= []
+
+    for d in data
+        match d
+            .fetch f => out @ out.push(f.message)
+            .condition _ | .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .other _ => _ = 0
+
+    return out
+
+# The flags changed and each message's flags after.
+function store(@c: flow.Conn, set: str, uid: bool, word: str, flags: [str]) -> [imap.Message]?
+    text = on_set(word: "STORE", set: set, uid: uid)? + " " + word + " " + command.flags_text(flags)?
+    done = flow.run(@c, pieces: [.text(s: text)], takes: ["FETCH"], asked: "STORE")?
+    return ok(messages(done.data))
+
+# The numbers SEARCH or ESEARCH answer, in increasing order; ESEARCH's ALL
+# written out, eight bytes of the budget a number.
+function search(@c: flow.Conn, criteria: [command.Piece], uid: bool) -> [i64]?
+    head = if uid
+        "UID SEARCH "
+    else
+        "SEARCH "
+    pieces: [command.Piece] @= [.text(s: head)]
+
+    for p in criteria
+        pieces @ pieces.push(p)
+
+    done = flow.run(@c, pieces: pieces, takes: ["SEARCH", "ESEARCH"], asked: "SEARCH")?
+    out: [i64] @= []
+
+    for d in done.data
+        match d
+            .search s =>
+                for n in s.numbers
+                    out @ out.push(n)
+            .esearch e =>
+                if e.result.all != ""
+                    for n in query_numbers(@c, set: e.result.all)?
+                        out @ out.push(n)
+            .condition _ | .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return ok(sort(out))
+
+# Each number of the set `set` an ESEARCH named, within what is left of the
+# budget at eight bytes a number.
+function query_numbers(@c: flow.Conn, set: str) -> [i64]?
+    most = c.wire.left / 8
+    out: [i64] @= []
+
+    for part in strings_split(set)
+        ends = part_ends(part)?
+
+        if ends[1] - ends[0] + 1 > most - out.len()
+            return fail(
+                code: flow.LIMIT,
+                msg: f"the server's ESEARCH names more numbers than the {c.wire.max_bytes} bytes `Options.max_bytes` allows, at eight a number"
+            )
+        n @= ends[0]
+
+        while n <= ends[1]
+            out @ out.push(n)
+            n @ n + 1
+
+    wire.spend(@c.wire, n: out.len() * 8)?
+    return ok(out)
+
+# The parts of a set between its commas.
+function strings_split(set: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for k in range(from: 0, to: set.len())
+        if set[k] == ','
+            out @ out.push(set.slice(from: start, to: k))
+            start @ k + 1
+
+    out @ out.push(set.slice(from: start, to: set.len()))
+    return out
+
+# The low and the high end of one part of a set the server wrote, `a` or
+# `a:b`.
+function part_ends(part: str) -> [i64]?
+    if !command.is_set(part)
+        return fail(code: flow.INVALID, msg: f"the server's ESEARCH names \"{part}\", which is no set of numbers")
+    colon = bytes.index_of(s: bytes.from_text(part), substr: [':']).default(part.len())
+    a = whole(part.slice(from: 0, to: colon))?
+
+    b = if colon < part.len()
+        whole(part.slice(from: colon + 1, to: part.len()))?
+    else
+        a
+
+    if a <= b
+        return ok([a, b])
+    return ok([b, a])
+
+# The number `t` writes, `*` refused.
+function whole(t: str) -> i64?
+    if t == "*"
+        return fail(code: flow.INVALID, msg: "the server's ESEARCH names `*`, which is no number")
+    n @= 0
+
+    for b in bytes.from_text(t)
+        n @ n * 10 + to_i64(b - '0').must()
+
+    return ok(n)
+
+# Copies or moves the set to `to`, and what COPYUID says.
+function copy(@c: flow.Conn, set: str, uid: bool, to: str, word: str) -> imap.Copied?
+    pieces = [.text(s: on_set(word: word, set: set, uid: uid)? + " "), command.mailbox_piece(to, utf8: c.rev2)?]
+    done = flow.run(@c, pieces: pieces, takes: ["OK"], asked: word)?
+    out @= imap.Copied(uid_validity: 0, from: imap.Set(uid: true, text: ""), to: imap.Set(uid: true, text: ""))
+    found @= copied(st: done.status, @out)
+
+    for d in done.data
+        match d
+            .condition k =>
+                if !found && copied(st: k.status, @out)
+                    found @ true
+                else
+                    flow.keep(@c, d: d)
+            .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return ok(out)
+
+# Whether `st` holds COPYUID, read into `out` where it does.
+function copied(st: status.Status, @out: imap.Copied) -> bool
+    if st.code != "COPYUID" || st.sets.len() != 2
+        return false
+    out.uid_validity @ st.value
+    out.from @ imap.Set(uid: true, text: st.sets[0])
+    out.to @ imap.Set(uid: true, text: st.sets[1])
+    return true
+
+# The message numbers EXPUNGE or UID EXPUNGE of `set` answer.
+function expunge(@c: flow.Conn, set: str) -> [i64]?
+    text = if set == ""
+        "EXPUNGE"
+    else
+        "UID EXPUNGE " + command.set_text(set)?
+    done = flow.run(@c, pieces: [.text(s: text)], takes: ["EXPUNGE"], asked: "EXPUNGE")?
+    out: [i64] @= []
+
+    for d in done.data
+        match d
+            .expunge e => out @ out.push(e.n)
+            .condition _ | .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .fetch _ | .other _ => _ = 0
+
+    return ok(out)
+
+# Appends `message` to `to`, with `flags` and the quoted `date` where it is
+# not "", and what APPENDUID says.
+function append(@c: flow.Conn, to: str, message: [u8], flags: [str], date: str) -> imap.Appended?
+    binary = message.any(is_zero)
+
+    if binary && !c.rev2 && !flow.has(c, name: "BINARY")
+        return fail(
+            code: flow.INVALID,
+            msg: "the message holds a NUL byte, which only BINARY or IMAP4rev2 lets APPEND carry"
+        )
+
+    for cap in c.capabilities
+        if bytes.index_of(s: bytes.from_text(cap), substr: bytes.from_text("APPENDLIMIT=")).default(-1) == 0
+            limit = whole(cap.slice(from: 12, to: cap.len())).default(-1)
+
+            if limit >= 0 && message.len() > limit
+                return fail(
+                    code: flow.LIMIT,
+                    msg: f"the message of {message.len()} bytes passes the server's APPENDLIMIT of {limit}"
+                )
+
+    pieces: [command.Piece] @= [.text(s: "APPEND "), command.mailbox_piece(to, utf8: c.rev2)?]
+
+    if flags.len() > 0
+        pieces @ pieces.push(.text(s: " " + command.flags_text(flags)?))
+
+    if date != ""
+        pieces @ pieces.push(.text(s: " " + date))
+    pieces @ pieces.push(.text(s: " "))
+    pieces @ pieces.push(.literal(data: message, binary: binary))
+    done = flow.run(@c, pieces: pieces, takes: [], asked: "APPEND")?
+
+    if done.status.code == "APPENDUID" && done.status.sets.len() == 1
+        return ok(imap.Appended(uid_validity: done.status.value, uid: whole(done.status.sets[0]).default(0)))
+    return ok(imap.Appended(uid_validity: 0, uid: 0))
+
+# Whether `b` is the zero byte.
+function is_zero(b: u8) -> bool
+    return b == 0
+
+# The news kept for the program, emptied.
+function take_updates(@c: flow.Conn) -> [imap.Update]
+    out = updates(c.pending)
+    c.pending @ []
+    return out
+
+# `data` as the face's news.
+function updates(data: [response.Data]) -> [imap.Update]
+    out: [imap.Update] @= []
+
+    for d in data
+        one: imap.Update = match d
+            .exists n     => .exists(count: n.n)
+            .recent n     => .recent(count: n.n)
+            .expunge n    => .expunge(seq: n.n)
+            .fetch f      => .fetch(message: f.message)
+            .flags f      => .flags(flags: f.flags)
+            .condition k  => .said(status: public_status(k.status))
+            .capability _ => .other(name: "CAPABILITY")
+            .enabled _    => .other(name: "ENABLED")
+            .list _       => .other(name: "LIST")
+            .lsub _       => .other(name: "LSUB")
+            .counts _     => .other(name: "STATUS")
+            .search _     => .other(name: "SEARCH")
+            .esearch _    => .other(name: "ESEARCH")
+            .other o      => .other(name: o.name)
+
+        out @ out.push(one)
+
+    return out

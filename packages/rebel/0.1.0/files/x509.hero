@@ -36,8 +36,8 @@
 # It does not process certificate policies in `verify_chain`, write the
 # extensions of other documents (name constraints, policies and the rest go
 # through `Profile`'s `extra`, written as given), write delta lists or
-# indirect ones, fetch a list or ask OCSP (`http`), read the system's store of
-# roots (`tls` checks a connection by it), or read a private key
+# indirect ones, fetch a list (`http`), ask OCSP (`x509/ocsp`), read the
+# system's store of roots (`tls` checks a connection by it), or read a private key
 # (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
 # `does_not_fit` and `unsupported`.
 #
@@ -63,6 +63,7 @@ use x509/internal/known
 use x509/internal/openssl
 use x509/internal/places
 use x509/internal/samples
+use x509/internal/schemes
 use x509/internal/shapes
 use x509/internal/writing
 
@@ -350,6 +351,19 @@ function to_algorithm(v: asn1.Value) -> Algorithm?
 function scheme_of(algorithm: Algorithm) -> keypairs.Scheme?
     name = known.scheme_name(dotted: algorithm.oid.dotted, has_parameters: !algorithm.parameters.is_err(), parameters: algorithm.parameters.default(.null_value))?
     return keypairs.parse_scheme(name)
+
+# The algorithm `scheme`'s signatures are named by, as this package writes
+# it into a certificate, a request and a list: the inverse of `scheme_of`,
+# for a document of another standard signed by the same schemes (an OCSP
+# response, a timestamp).
+#
+# - `scheme`: how the signature is made.
+#
+# See also `scheme_of`.
+function algorithm_of(scheme: keypairs.Scheme) -> Algorithm
+    # `schemes.identifier` writes a SEQUENCE of an identifier and at most its
+    # parameters for each of the nine schemes, which `to_algorithm` reads.
+    return to_algorithm(schemes.identifier(scheme)).must()
 
 # The public key DER `der` holds, a SubjectPublicKeyInfo.
 #
@@ -3027,6 +3041,27 @@ test "verify_signature: a byte of the message changed is false, never a failure"
     changed[100] @ 0x00
     assert !verify_signature(key: inter.public_key, algorithm: leaf.signature_algorithm, message: changed, signature: leaf.signature).must()
 
+test "algorithm_of: each of the nine schemes read back by scheme_of, parameters NULL for RSA PKCS #1 and none for ECDSA and Ed25519"
+    schemes_all: [keypairs.Scheme] = [
+        .ed25519
+        .ecdsa_sha256
+        .ecdsa_sha384
+        .rsa_pss_sha256
+        .rsa_pss_sha384
+        .rsa_pss_sha512
+        .rsa_pkcs1_sha256
+        .rsa_pkcs1_sha384
+        .rsa_pkcs1_sha512
+    ]
+
+    for scheme in schemes_all
+        assert scheme_of(algorithm_of(scheme)).must() == scheme
+
+    assert algorithm_of(.rsa_pkcs1_sha256).parameters.must() == .null_value
+    assert algorithm_of(.ecdsa_sha384).parameters.is_err()
+    assert algorithm_of(.ed25519).parameters.is_err()
+    assert algorithm_of(.ed25519).oid.dotted == "1.3.101.112"
+
 test "scheme_of and kind_of: each certificate's"
     assert scheme_of(parse_certificate(samples.root()).must().signature_algorithm).must() == .ecdsa_sha384
     assert scheme_of(parse_certificate(samples.pss()).must().signature_algorithm).must() == .rsa_pss_sha256
@@ -4171,6 +4206,10 @@ test "to_algorithm: sha256WithRSAEncryption"
 # The scheme `crypto/keypairs` checks a certificate's signature with.
 test "scheme_of: a leaf's RSA signature"
     assert scheme_of(parse_certificate(samples.leaf()).must().signature_algorithm).must() == .rsa_pkcs1_sha256
+
+# The algorithm a signature by a scheme is named by.
+test "algorithm_of: ECDSA with SHA-256"
+    assert algorithm_of(.ecdsa_sha256).oid.dotted == "1.2.840.10045.4.3.2"
 
 # A public key read from the SubjectPublicKeyInfo a certificate holds.
 test "decode_public_key: the leaf's key"

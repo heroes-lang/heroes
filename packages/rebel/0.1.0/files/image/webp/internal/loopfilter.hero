@@ -1,0 +1,194 @@
+# The loop filter of VP8 (RFC 6386, section 15), as libwebp 1.6.0 applies it:
+# over the whole reconstructed picture, macroblock by macroblock in raster
+# order, the left edge, the edges inside, the top edge and the edges inside
+# again, each pixel pair filtered only where the step across the edge is
+# small enough to be the coding's and not the picture's. The simple filter
+# touches luma alone; the normal one luma and chroma.
+
+use image/webp/internal/header
+
+# `v` held to `lo` to `hi`.
+function clamp(v: i64, lo: i64, hi: i64) -> i64
+    if v < lo
+        return lo
+
+    if v > hi
+        return hi
+    return v
+
+# `v` held to 0 to 255.
+function pixel(v: i64) -> i64
+    return clamp(v: v, lo: 0, hi: 255)
+
+# The distance of `v` from 0.
+function abs(v: i64) -> i64
+    if v < 0
+        return -v
+    return v
+
+# Whether the edge at `p` of `px`, `s` across it, is to be filtered at the
+# edge limit `t`: four times the step across it plus the step of the two
+# pixels beyond, within `2 * t + 1`.
+function smooth_across(px: [i64] lent, p: i64, s: i64, t: i64) -> bool
+    return 4 * abs(px[p - s] - px[p]) + abs(px[p - 2 * s] - px[p + s]) <= 2 * t + 1
+
+# Whether the edge passes `smooth_across` and every step among the four
+# pixels on each side is within the interior limit `it`.
+function smooth_inside(px: [i64] lent, p: i64, s: i64, t: i64, it: i64) -> bool
+    if !smooth_across(px, p: p, s: s, t: t)
+        return false
+    return abs(px[p - 4 * s] - px[p - 3 * s]) <= it && abs(px[p - 3 * s] - px[p - 2 * s]) <= it && abs(px[p - 2 * s] - px[p - s]) <= it && abs(px[p + 3 * s] - px[p + 2 * s]) <= it && abs(px[p + 2 * s] - px[p + s]) <= it && abs(px[p + s] - px[p]) <= it
+
+# Whether the step beside the edge on either side passes `hev`, the edge then
+# holding detail the filter keeps.
+function high_variance(px: [i64] lent, p: i64, s: i64, hev: i64) -> bool
+    return abs(px[p - 2 * s] - px[p - s]) > hev || abs(px[p + s] - px[p]) > hev
+
+# The two pixels nearest the edge moved toward each other, the outer two
+# counted (libwebp's `DoFilter2`).
+function filter2(@px: [i64], p: i64, s: i64)
+    p0 = px[p - s]
+    q0 = px[p]
+    a = 3 * (q0 - p0) + clamp(v: px[p - 2 * s] - px[p + s], lo: -128, hi: 127)
+    a1 = clamp(v: a + 4 >> 3, lo: -16, hi: 15)
+    a2 = clamp(v: a + 3 >> 3, lo: -16, hi: 15)
+    px[p - s] @ pixel(p0 + a2)
+    px[p] @ pixel(q0 - a1)
+
+# The four pixels nearest an edge inside a macroblock moved (libwebp's
+# `DoFilter4`).
+function filter4(@px: [i64], p: i64, s: i64)
+    p1 = px[p - 2 * s]
+    p0 = px[p - s]
+    q0 = px[p]
+    q1 = px[p + s]
+    a = 3 * (q0 - p0)
+    a1 = clamp(v: a + 4 >> 3, lo: -16, hi: 15)
+    a2 = clamp(v: a + 3 >> 3, lo: -16, hi: 15)
+    a3 = a1 + 1 >> 1
+    px[p - 2 * s] @ pixel(p1 + a3)
+    px[p - s] @ pixel(p0 + a2)
+    px[p] @ pixel(q0 - a1)
+    px[p + s] @ pixel(q1 - a3)
+
+# The six pixels nearest a macroblock's edge moved (libwebp's `DoFilter6`).
+function filter6(@px: [i64], p: i64, s: i64)
+    p2 = px[p - 3 * s]
+    p1 = px[p - 2 * s]
+    p0 = px[p - s]
+    q0 = px[p]
+    q1 = px[p + s]
+    q2 = px[p + 2 * s]
+    a = clamp(v: 3 * (q0 - p0) + clamp(v: p1 - q1, lo: -128, hi: 127), lo: -128, hi: 127)
+    a1 = 27 * a + 63 >> 7
+    a2 = 18 * a + 63 >> 7
+    a3 = 9 * a + 63 >> 7
+    px[p - 3 * s] @ pixel(p2 + a3)
+    px[p - 2 * s] @ pixel(p1 + a2)
+    px[p - s] @ pixel(p0 + a1)
+    px[p] @ pixel(q0 - a1)
+    px[p + s] @ pixel(q1 - a2)
+    px[p + 2 * s] @ pixel(q2 - a3)
+
+# An edge of `count` pixels from `p`, `along` apart, `s` across, filtered
+# by the normal filter: `outer` for a macroblock's edge, else one inside.
+function normal(@px: [i64], p: i64, s: i64, along: i64, count: i64, f: header.Strength, outer: bool)
+    t = if outer
+        f.limit + 4
+    else
+        f.limit
+
+    for k in range(from: 0, to: count)
+        q = p + k * along
+
+        if smooth_inside(px, p: q, s: s, t: t, it: f.interior)
+            if high_variance(px, p: q, s: s, hev: f.hev)
+                filter2(px: @px, p: q, s: s)
+            else if outer
+                filter6(px: @px, p: q, s: s)
+            else
+                filter4(px: @px, p: q, s: s)
+
+# An edge of `count` pixels filtered by the simple filter at limit `t`.
+function simple(@px: [i64], p: i64, s: i64, along: i64, count: i64, t: i64)
+    for k in range(from: 0, to: count)
+        q = p + k * along
+
+        if smooth_across(px, p: q, s: s, t: t)
+            filter2(px: @px, p: q, s: s)
+
+# The planes `y`, `u` and `v`, `across` by `down` macroblocks, filtered by
+# `kind` (1 simple, 2 normal), macroblock `i` at the strength `strengths[i]`
+# with its inner edges where `inner[i]`.
+function frame(@y: [i64], @u: [i64], @v: [i64], across: i64, down: i64, kind: i64, strengths: [header.Strength] lent, inner: [bool] lent)
+    ys = across * 16
+    cs = across * 8
+
+    for my in range(from: 0, to: down)
+        for mx in range(from: 0, to: across)
+            i = my * across + mx
+            f = strengths[i]
+
+            if f.limit > 0
+                yp = my * 16 * ys + mx * 16
+                cp = my * 8 * cs + mx * 8
+
+                if kind == 1
+                    simple_block(y: @y, p: yp, stride: ys, f: f, left: mx > 0, top: my > 0, inner: inner[i])
+                else
+                    normal_block(
+                        y: @y,
+                        u: @u,
+                        v: @v,
+                        yp: yp,
+                        cp: cp,
+                        ys: ys,
+                        cs: cs,
+                        f: f,
+                        left: mx > 0,
+                        top: my > 0,
+                        inner: inner[i]
+                    )
+
+# One macroblock's luma at `p` filtered by the simple filter.
+function simple_block(@y: [i64], p: i64, stride: i64, f: header.Strength, left: bool, top: bool, inner: bool)
+    if left
+        simple(px: @y, p: p, s: 1, along: stride, count: 16, t: f.limit + 4)
+
+    if inner
+        for k in range(from: 1, to: 4)
+            simple(px: @y, p: p + 4 * k, s: 1, along: stride, count: 16, t: f.limit)
+
+    if top
+        simple(px: @y, p: p, s: stride, along: 1, count: 16, t: f.limit + 4)
+
+    if inner
+        for k in range(from: 1, to: 4)
+            simple(px: @y, p: p + 4 * k * stride, s: stride, along: 1, count: 16, t: f.limit)
+
+# One macroblock's luma at `yp` and chroma at `cp` filtered by the normal
+# filter.
+function normal_block(@y: [i64], @u: [i64], @v: [i64], yp: i64, cp: i64, ys: i64, cs: i64, f: header.Strength, left: bool, top: bool, inner: bool)
+    if left
+        normal(px: @y, p: yp, s: 1, along: ys, count: 16, f: f, outer: true)
+        normal(px: @u, p: cp, s: 1, along: cs, count: 8, f: f, outer: true)
+        normal(px: @v, p: cp, s: 1, along: cs, count: 8, f: f, outer: true)
+
+    if inner
+        for k in range(from: 1, to: 4)
+            normal(px: @y, p: yp + 4 * k, s: 1, along: ys, count: 16, f: f, outer: false)
+
+        normal(px: @u, p: cp + 4, s: 1, along: cs, count: 8, f: f, outer: false)
+        normal(px: @v, p: cp + 4, s: 1, along: cs, count: 8, f: f, outer: false)
+
+    if top
+        normal(px: @y, p: yp, s: ys, along: 1, count: 16, f: f, outer: true)
+        normal(px: @u, p: cp, s: cs, along: 1, count: 8, f: f, outer: true)
+        normal(px: @v, p: cp, s: cs, along: 1, count: 8, f: f, outer: true)
+
+    if inner
+        for k in range(from: 1, to: 4)
+            normal(px: @y, p: yp + 4 * k * ys, s: ys, along: 1, count: 16, f: f, outer: false)
+
+        normal(px: @u, p: cp + 4 * cs, s: cs, along: 1, count: 8, f: f, outer: false)
+        normal(px: @v, p: cp + 4 * cs, s: cs, along: 1, count: 8, f: f, outer: false)

@@ -1,10 +1,13 @@
-# A WebP file read: its chunks followed, each lossless frame decoded, and what
-# the extended format says about the canvas, the loop and the metadata kept
-# beside the frames.
+# A WebP file read: its chunks followed, each frame decoded, lossless or
+# lossy with its alpha, and what the extended format says about the canvas,
+# the loop and the metadata kept beside the frames.
 
 use image
+use image/webp/internal/alpha
 use image/webp/internal/riff
 use image/webp/internal/stream
+use image/webp/internal/vp8
+use image/webp/internal/yuv
 
 # One frame decoded, as the file lays it out.
 record Raw
@@ -65,10 +68,30 @@ function frame_of(data: [u8] lent, limits: image.Limits) -> Raw?
         Raw(image: image.from_pixels(width: d.width, height: d.height, format: .rgba, pixels: d.pixels)?, x: 0, y: 0, duration: 0, replaces: true, clears: false)
     )
 
+# The frame of the VP8 chunk payload `data`, with the alpha of the ALPH
+# chunk payload `alph` where `with_alpha`: RGB without alpha, RGBA with it.
+# Fails as `vp8.decode` and `alpha.decode` fail.
+function lossy_frame(data: [u8] lent, alph: [u8] lent, with_alpha: bool, limits: image.Limits) -> Raw?
+    planes = vp8.decode(data, limits: limits)?
+    a: [u8] @= []
+
+    if with_alpha
+        a @ alpha.decode(alph, width: planes.width, height: planes.height)?
+    px = yuv.to_rgb(y: planes.y, u: planes.u, v: planes.v, alpha: a, width: planes.width, height: planes.height)
+
+    format: image.Format = if with_alpha
+        .rgba
+    else
+        .rgb
+    return ok(
+        Raw(image: image.from_pixels(width: planes.width, height: planes.height, format: format, pixels: px)?, x: 0, y: 0, duration: 0, replaces: true, clears: false)
+    )
+
 # The frame of the ANMF chunk payload `d` on a canvas of `canvas_width` by
-# `canvas_height`. Fails `invalid` where the payload is short, its picture is
-# not the size it says or lies outside the canvas, and `unsupported` for a
-# lossy picture.
+# `canvas_height`: a lossless picture, or a lossy one with the frame's first
+# ALPH chunk, as libwebp's demuxer takes it. Fails `invalid` where the
+# payload is short, its picture is not the size it says or lies outside the
+# canvas, or an ALPH chunk stands before a lossless picture.
 function animated_frame(d: [u8] lent, canvas_width: i64, canvas_height: i64, limits: image.Limits) -> Raw?
     if d.len() < 16
         return fail(code: image.INVALID, msg: f"an animation frame of {d.len()} bytes, where its header takes 16")
@@ -85,16 +108,22 @@ function animated_frame(d: [u8] lent, canvas_width: i64, canvas_height: i64, lim
             msg: f"a frame of {width} by {height} at {x}, {y} outside a canvas of {canvas_width} by {canvas_height}"
         )
     parts = riff.chunks_in(d, from: 16, end: d.len())?
+    alph: [u8] @= []
+    with_alpha @= false
 
     for p in parts
-        if p.tag == "VP8 " || p.tag == "ALPH"
-            return fail(
-                code: image.UNSUPPORTED,
-                msg: "a lossy WebP frame (VP8, with or without ALPH): this reads the lossless coding"
-            )
+        if p.tag == "ALPH" && !with_alpha
+            alph @ p.data
+            with_alpha @ true
 
-        if p.tag == "VP8L"
-            f = frame_of(p.data, limits: limits)?
+        if p.tag == "VP8L" && with_alpha
+            return fail(code: image.INVALID, msg: "an animation frame with an ALPH chunk before a lossless picture")
+
+        if p.tag == "VP8L" || p.tag == "VP8 "
+            f = if p.tag == "VP8L"
+                frame_of(p.data, limits: limits)?
+            else
+                lossy_frame(data: p.data, alph: alph, with_alpha: with_alpha, limits: limits)?
 
             if f.image.width != width || f.image.height != height
                 return fail(
@@ -130,7 +159,10 @@ function parse(data: [u8] lent, limits: image.Limits) -> Parsed?
         )
 
     if first.tag == "VP8 "
-        return fail(code: image.UNSUPPORTED, msg: "a lossy WebP (VP8): this reads the lossless coding")
+        f = lossy_frame(data: first.data, alph: [], with_alpha: false, limits: limits)?
+        return ok(
+            Parsed(width: f.image.width, height: f.image.height, frames: [f], animated: false, loops: 0, background: [0, 0, 0, 0], icc: [], exif: [], xmp: [])
+        )
 
     if first.tag != "VP8X" || first.data.len() < 10
         return fail(
@@ -146,6 +178,8 @@ function parse(data: [u8] lent, limits: image.Limits) -> Parsed?
     out.height @ height
     out.animated @ flags & 2 != 0
     budget @= limits.max_pixels - width * height
+    alph: [u8] @= []
+    with_alpha @= false
 
     for c in chunks.slice(from: 1, to: chunks.len())
         if c.tag == "ICCP"
@@ -167,8 +201,14 @@ function parse(data: [u8] lent, limits: image.Limits) -> Parsed?
             placed = animated_frame(c.data, canvas_width: width, canvas_height: height, limits: own)?
             budget @ budget - placed.image.width * placed.image.height
             out.frames @ out.frames.push(placed)
-        else if c.tag == "VP8L" && !out.animated && out.frames.len() == 0
-            f = frame_of(c.data, limits: limits)?
+        else if c.tag == "ALPH" && !out.animated && out.frames.len() == 0
+            alph @ c.data
+            with_alpha @ true
+        else if (c.tag == "VP8L" || c.tag == "VP8 ") && !out.animated && out.frames.len() == 0
+            f = if c.tag == "VP8L"
+                frame_of(c.data, limits: limits)?
+            else
+                lossy_frame(data: c.data, alph: alph, with_alpha: with_alpha, limits: limits)?
 
             if f.image.width != width || f.image.height != height
                 return fail(
@@ -176,11 +216,6 @@ function parse(data: [u8] lent, limits: image.Limits) -> Parsed?
                     msg: f"a canvas of {width} by {height} holding a picture of {f.image.width} by {f.image.height}"
                 )
             out.frames @ out.frames.push(f)
-        else if c.tag == "VP8 " || c.tag == "ALPH"
-            return fail(
-                code: image.UNSUPPORTED,
-                msg: "a lossy WebP frame (VP8, with or without ALPH): this reads the lossless coding"
-            )
 
     if out.frames.len() == 0
         return fail(code: image.INVALID, msg: "an extended WebP file with no frame")

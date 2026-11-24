@@ -16,9 +16,15 @@ constant PERIODIC_TABLE: str
 constant QUEUES_TABLE: str
     "rebel_jobs_queues"
 
+# The table of the limits workers share, one row a bucket of `jobs.Bucket`:
+# its time to earn a token and its burst, the instant it is or was empty and
+# the latest time a call read, in nanoseconds since 1970.
+constant LIMITS_TABLE: str
+    "rebel_jobs_limits"
+
 # The script that makes the tables and their indexes where they are not.
 constant SCHEMA: str
-    "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));\nCREATE TABLE IF NOT EXISTS rebel_jobs (id bigserial PRIMARY KEY, kind text NOT NULL CHECK (kind <> ''), queue text NOT NULL CHECK (queue <> ''), payload jsonb NOT NULL, priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 9), state text NOT NULL DEFAULT 'available' CHECK (state IN ('available', 'running', 'completed', 'failed', 'cancelled')), attempt integer NOT NULL DEFAULT 0, max_attempts integer NOT NULL CHECK (max_attempts >= 1), unique_key text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), run_at timestamptz NOT NULL, attempted_at timestamptz, finished_at timestamptz, lease_until timestamptz, worker text NOT NULL DEFAULT '', cancel_requested boolean NOT NULL DEFAULT false, errors jsonb NOT NULL DEFAULT '[]', output jsonb NOT NULL DEFAULT 'null');\nCREATE INDEX IF NOT EXISTS rebel_jobs_ready ON rebel_jobs (queue, priority, run_at, id) WHERE state = 'available';\nCREATE INDEX IF NOT EXISTS rebel_jobs_leases ON rebel_jobs (lease_until) WHERE state = 'running';\nCREATE INDEX IF NOT EXISTS rebel_jobs_finished ON rebel_jobs (queue, state, finished_at) WHERE state IN ('completed', 'failed', 'cancelled');\nCREATE UNIQUE INDEX IF NOT EXISTS rebel_jobs_unique ON rebel_jobs (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running');\nCREATE TABLE IF NOT EXISTS rebel_jobs_periodic (name text PRIMARY KEY, schedule text NOT NULL, next_at timestamptz NOT NULL);\nCREATE TABLE IF NOT EXISTS rebel_jobs_queues (name text PRIMARY KEY, paused boolean NOT NULL DEFAULT false);\n"
+    "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));\nCREATE TABLE IF NOT EXISTS rebel_jobs (id bigserial PRIMARY KEY, kind text NOT NULL CHECK (kind <> ''), queue text NOT NULL CHECK (queue <> ''), payload jsonb NOT NULL, priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 9), state text NOT NULL DEFAULT 'available' CHECK (state IN ('available', 'running', 'completed', 'failed', 'cancelled')), attempt integer NOT NULL DEFAULT 0, max_attempts integer NOT NULL CHECK (max_attempts >= 1), unique_key text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), run_at timestamptz NOT NULL, attempted_at timestamptz, finished_at timestamptz, lease_until timestamptz, worker text NOT NULL DEFAULT '', cancel_requested boolean NOT NULL DEFAULT false, errors jsonb NOT NULL DEFAULT '[]', output jsonb NOT NULL DEFAULT 'null');\nCREATE INDEX IF NOT EXISTS rebel_jobs_ready ON rebel_jobs (queue, priority, run_at, id) WHERE state = 'available';\nCREATE INDEX IF NOT EXISTS rebel_jobs_leases ON rebel_jobs (lease_until) WHERE state = 'running';\nCREATE INDEX IF NOT EXISTS rebel_jobs_finished ON rebel_jobs (queue, state, finished_at) WHERE state IN ('completed', 'failed', 'cancelled');\nCREATE UNIQUE INDEX IF NOT EXISTS rebel_jobs_unique ON rebel_jobs (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running');\nCREATE TABLE IF NOT EXISTS rebel_jobs_periodic (name text PRIMARY KEY, schedule text NOT NULL, next_at timestamptz NOT NULL);\nCREATE TABLE IF NOT EXISTS rebel_jobs_queues (name text PRIMARY KEY, paused boolean NOT NULL DEFAULT false);\nCREATE TABLE IF NOT EXISTS rebel_jobs_limits (name text PRIMARY KEY CHECK (name <> ''), every_ns bigint NOT NULL CHECK (every_ns >= 1), burst bigint NOT NULL CHECK (burst >= 1), empty_at_ns bigint NOT NULL, seen_ns bigint NOT NULL);\n"
 
 # A job's fields, each as the text `jobs.info_of` reads.
 constant COLUMNS: str
@@ -164,6 +170,62 @@ constant NEXT_RUN: str
 # payload, `$7` priority, `$8` attempts, `$9` unique key.
 constant ADVANCE: str
     "WITH advanced AS (UPDATE rebel_jobs_periodic SET next_at = $2 WHERE name = $1 AND next_at = $3 RETURNING name) INSERT INTO rebel_jobs (kind, queue, payload, priority, max_attempts, unique_key, run_at) SELECT $4, $5, $6::jsonb, $7, $8, $9, now() FROM advanced ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"
+
+# The server's clock in nanoseconds since 1970, read each time a statement
+# evaluates it, so a statement that waits for a limit's lock reads a time no
+# earlier than the wait; its steps are microseconds.
+constant LIMIT_CLOCK: str
+    "(extract(epoch FROM clock_timestamp()) * 1000000000)::bigint"
+
+# Limit `$1` read and locked, with `t`, the later of the time `clock` and the
+# latest time a call read: time never runs backwards for a limit.
+function limit_row(clock: str) -> str
+    return f"SELECT name, every_ns, burst, empty_at_ns, seen_ns, greatest(seen_ns, {clock}) AS t FROM rebel_jobs_limits WHERE name = $1 FOR UPDATE"
+
+# `$2` tokens taken from limit `$1` at the time `clock` where they are all
+# earned within `$3` nanoseconds and `$2` is no more than the burst: the
+# instant the limit is empty moves `$2` tokens' time past the later of
+# itself and the moment a full limit would have emptied. Answers the limit
+# as read, the time `t` it was read at, the instant `finish` the tokens are
+# earned (`fits` false where it is past a `bigint`, nothing taken), and
+# whether they were taken, in either case; no row where there is no limit.
+function take(clock: str) -> str
+    return f"WITH cur AS MATERIALIZED ({limit_row(clock)}), calc AS MATERIALIZED (SELECT cur.*, greatest(empty_at_ns::numeric, t::numeric - every_ns::numeric * burst) + every_ns::numeric * $2::bigint AS finish FROM cur), decided AS MATERIALIZED (SELECT calc.*, ($2::bigint <= burst AND finish <= 9223372036854775807 AND greatest(finish - t, 0) <= $3::bigint) AS granted FROM calc), moved AS (UPDATE rebel_jobs_limits SET empty_at_ns = decided.finish::bigint, seen_ns = decided.t FROM decided WHERE rebel_jobs_limits.name = decided.name AND decided.granted RETURNING rebel_jobs_limits.name) SELECT every_ns, burst, empty_at_ns, t, least(finish, 9223372036854775807)::bigint AS finish, finish <= 9223372036854775807 AS fits, granted, (SELECT count(*) FROM moved) AS moved FROM decided"
+
+# A reservation of `$2` tokens of limit `$1`, ready at `$3` and leaving the
+# limit empty until `$4`, given back at the time `clock`, as far as no later
+# taking used it and not once it is ready: the limit after answered, no row
+# where there is no limit.
+function give_back(clock: str) -> str
+    return f"WITH cur AS MATERIALIZED ({limit_row(clock)}), calc AS MATERIALIZED (SELECT cur.*, CASE WHEN $3::bigint < t THEN 0 ELSE every_ns::numeric * $2::bigint - greatest(empty_at_ns::numeric - $4::bigint, 0) END AS back FROM cur) UPDATE rebel_jobs_limits SET empty_at_ns = CASE WHEN calc.back > 0 THEN greatest(calc.empty_at_ns::numeric - calc.back, calc.t::numeric - calc.every_ns::numeric * calc.burst)::bigint ELSE calc.empty_at_ns END, seen_ns = calc.t FROM calc WHERE rebel_jobs_limits.name = calc.name RETURNING rebel_jobs_limits.every_ns, rebel_jobs_limits.burst, rebel_jobs_limits.empty_at_ns, rebel_jobs_limits.seen_ns AS t"
+
+# The instant a limit changed at the time `at` to a token every
+# `excluded.every_ns` and a burst of `excluded.burst` is empty: as many of
+# the tokens it held as the new burst allows, a debt kept whole, each at the
+# new rate, rounded to the nanosecond.
+function reshaped(at: str) -> str
+    return f"{at}::numeric - round(least(({at}::numeric - l.empty_at_ns) * excluded.every_ns / l.every_ns, least(l.burst, excluded.burst)::numeric * excluded.every_ns))"
+
+# The later of a limit's latest time read and the time a change names.
+constant CHANGED_AT: str
+    "greatest(l.seen_ns, excluded.seen_ns)"
+
+# Limit `$1` made full at the time `clock` with a token every `$2`
+# nanoseconds and a burst of `$3`, or, where it is there, given that rate and
+# burst holding the tokens it held, as `reshaped` says, unless the instant
+# that leaves is past a `bigint`; the limit after answered, no row where it
+# is past.
+function set_limit(clock: str) -> str
+    after = reshaped(CHANGED_AT)
+    return f"INSERT INTO rebel_jobs_limits AS l (name, every_ns, burst, empty_at_ns, seen_ns) SELECT $1, $2::bigint, $3::bigint, c.t - $2::bigint * $3::bigint, c.t FROM (SELECT {clock} AS t) c ON CONFLICT (name) DO UPDATE SET every_ns = excluded.every_ns, burst = excluded.burst, empty_at_ns = ({after})::bigint, seen_ns = {CHANGED_AT} WHERE ({after}) BETWEEN -9223372036854775808 AND 9223372036854775807 RETURNING every_ns, burst, empty_at_ns, seen_ns AS t"
+
+# Limit `$1` read at the time `clock`, unlocked; no row where there is none.
+function limit_named(clock: str) -> str
+    return f"SELECT every_ns, burst, empty_at_ns, greatest(seen_ns, {clock}) AS t FROM rebel_jobs_limits WHERE name = $1"
+
+# Limit `$1` removed.
+constant REMOVE_LIMIT: str
+    "DELETE FROM rebel_jobs_limits WHERE name = $1"
 
 test "insert: the three starts"
     assert insert(START_NOW) == "INSERT INTO rebel_jobs (kind, queue, payload, priority, max_attempts, unique_key, run_at) VALUES ($1, $2, $3::jsonb, $4, $5, $6, now()) ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"

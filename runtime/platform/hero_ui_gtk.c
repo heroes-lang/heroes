@@ -14,11 +14,9 @@
  *
  * ITS OWN HEADER FIRST (held by the net's `runtime` suite), so a definition
  * with another signature than the header's is `conflicting types` where it
- * is compiled. */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+ * is compiled. So it defines no `_GNU_SOURCE`, which glibc reads at the first
+ * header and would come too late after it: the two names this arm takes from
+ * glibc's GNU half are declared below, as `hero_ipc.c` declares them. */
 
 #include "hero_ui_gtk.h"
 
@@ -46,11 +44,27 @@
 #include <time.h>
 #include <unistd.h>
 #include "hero_ui_canvas_gtk.h"
+#include "hero_ui_parts_gtk.h"
 #include "hero_ui_print_gtk.h"
 #include "hero_ui_web_gtk.h"
 
+#if defined(__linux__)
+/* Linux makes a socket close-on-exec in the call that takes it; glibc
+ * declares `accept4` only under `_GNU_SOURCE`, which this member cannot
+ * define before its own header. */
+int accept4(int fd, struct sockaddr *address, socklen_t *length, int flags);
+#endif
+
+/* `SO_PEERCRED`'s answer, `struct ucred` in glibc under `_GNU_SOURCE` alone:
+ * three numbers in this order (socket(7)). */
+typedef struct {
+    pid_t pid;
+    uid_t uid;
+    gid_t gid;
+} hero_ui_gtk_ucred;
+
 /* ==========================================================================
- * THE GTK ARM: GTK 4's own widgets, `GtkButton`, `GtkEntry`, `GtkTextView`,
+ * THE GTK ARM:GTK 4's own widgets, `GtkButton`, `GtkEntry`, `GtkTextView`,
  * `GtkCheckButton`, `GtkListBox`, `GtkDropDown`, `GtkProgressBar`,
  * `GtkScale`, `GtkPicture`, `GtkLabel`, and GMenu's models in a
  * `GtkPopoverMenuBar`, on every system that is neither Apple's nor Windows;
@@ -2381,7 +2395,11 @@ static void hero_ui_gtk_spun(void *spin, void *data) {
  * made in UTC only to give the calendar a day to show. `least` and `most`
  * are the bounds, which the arm enforces for the person, since neither the
  * calendar nor a spin takes bounds across a whole moment: a pick outside
- * them is put back, muted, the value held and shown again. */
+ * them is put back, muted, the value held and shown again.
+ *
+ * A MONTH'S CALENDAR (`HERO_UI_CALENDAR`) is a date picker shown open: the
+ * `GtkCalendar` itself is the widget, in place of the button and its
+ * popover, and every rule above holds for it as for the date picker. */
 
 #define HERO_UI_GTK_DAY 86400
 #define HERO_UI_GTK_PICKER_DATE_LEAST (-62135596800LL)
@@ -2389,7 +2407,13 @@ static void hero_ui_gtk_spun(void *spin, void *data) {
 #define HERO_UI_GTK_PICKER_MOMENT_MOST 253402300799LL
 
 static bool hero_ui_gtk_is_picker(int64_t kind) {
-    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER;
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_TIME_PICKER || kind == HERO_UI_DATE_TIME_PICKER || kind == HERO_UI_CALENDAR;
+}
+
+/* Whether a picker of `kind` holds a whole day alone: a date picker's and a
+ * month calendar's value. */
+static bool hero_ui_gtk_picker_days(int64_t kind) {
+    return kind == HERO_UI_DATE_PICKER || kind == HERO_UI_CALENDAR;
 }
 
 /* The whole days from `seconds`' day back to 1970-01-01, rounded down: the
@@ -2448,7 +2472,7 @@ static bool hero_ui_gtk_picker_read(const hero_ui_native *widget, int64_t *momen
         }
         days = hero_ui_gtk_days_from(year, month + 1, day < 1 ? 1 : day);
     }
-    if (widget->kind != HERO_UI_DATE_PICKER) {
+    if (!hero_ui_gtk_picker_days(widget->kind)) {
         seconds = hero_ui_gtk_clock_part(widget, 1) * 3600 + hero_ui_gtk_clock_part(widget, 2) * 60 + hero_ui_gtk_clock_part(widget, 3);
     }
     *moment = days * HERO_UI_GTK_DAY + seconds;
@@ -2462,7 +2486,7 @@ static void hero_ui_gtk_picker_label(const hero_ui_native *widget) {
     int64_t day;
     char label[32];
 
-    if (widget->kind == HERO_UI_TIME_PICKER) {
+    if (widget->kind == HERO_UI_TIME_PICKER || widget->kind == HERO_UI_CALENDAR) {
         return;
     }
     hero_ui_gtk_civil_of(hero_ui_gtk_days_of(widget->value), &year, &month, &day);
@@ -2492,7 +2516,7 @@ static void hero_ui_gtk_picker_show(hero_ui_native *widget) {
         }
         hero_ui_gtk_picker_label(widget);
     }
-    if (widget->kind != HERO_UI_DATE_PICKER) {
+    if (!hero_ui_gtk_picker_days(widget->kind)) {
         hero_ui_gtk.spin_button_set_value(widget->parts[1], (double)(seconds / 3600));
         hero_ui_gtk.spin_button_set_value(widget->parts[2], (double)(seconds / 60 % 60));
         hero_ui_gtk.spin_button_set_value(widget->parts[3], (double)(seconds % 60));
@@ -2532,14 +2556,37 @@ static int hero_ui_gtk_clock_output(void *spin, void *data) {
     return 1;
 }
 
+/* Connects the person's pick in calendar `calendar` of picker `made`: a day
+ * chosen, and a month or a year turned, which moves GTK 4's chosen day with
+ * it (gtkcalendar.c's `calendar_set_month_next` and the rest select the day
+ * of the month turned to), so each is read and told only where the day held
+ * changes. */
+static void hero_ui_gtk_picker_watch(hero_ui_native *made, void *calendar) {
+    for (const char *signal = "day-selected"; signal != NULL;) {
+        hero_ui_gtk_connect(calendar, signal, (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
+        signal = strcmp(signal, "day-selected") == 0 ? "next-month" : strcmp(signal, "next-month") == 0 ? "prev-month" : strcmp(signal, "prev-month") == 0 ? "next-year" : strcmp(signal, "next-year") == 0 ? "prev-year" : NULL;
+    }
+}
+
 static bool hero_ui_gtk_make_picker(hero_ui_native *made) {
+    made->least = made->kind == HERO_UI_TIME_PICKER ? 0 : HERO_UI_GTK_PICKER_DATE_LEAST;
+    made->most = hero_ui_gtk_picker_days(made->kind) ? HERO_UI_GTK_PICKER_DATE_MOST : made->kind == HERO_UI_TIME_PICKER ? HERO_UI_GTK_DAY - 1 : HERO_UI_GTK_PICKER_MOMENT_MOST;
+    made->value = 0;
+    if (made->kind == HERO_UI_CALENDAR) {
+        /* Shown open: the calendar is the widget, its month always seen. */
+        made->widget = hero_ui_gtk.calendar_new();
+        if (made->widget == NULL) {
+            return false;
+        }
+        made->parts[0] = made->widget;
+        hero_ui_gtk_picker_watch(made, made->parts[0]);
+        hero_ui_gtk_picker_show(made);
+        return true;
+    }
     made->widget = hero_ui_gtk.box_new(HERO_GTK_ORIENTATION_HORIZONTAL, 6);
     if (made->widget == NULL) {
         return false;
     }
-    made->least = made->kind == HERO_UI_TIME_PICKER ? 0 : HERO_UI_GTK_PICKER_DATE_LEAST;
-    made->most = made->kind == HERO_UI_DATE_PICKER ? HERO_UI_GTK_PICKER_DATE_MOST : made->kind == HERO_UI_TIME_PICKER ? HERO_UI_GTK_DAY - 1 : HERO_UI_GTK_PICKER_MOMENT_MOST;
-    made->value = 0;
     if (made->kind != HERO_UI_TIME_PICKER) {
         void *popover = hero_ui_gtk.popover_new();
 
@@ -2551,10 +2598,7 @@ static bool hero_ui_gtk_make_picker(hero_ui_native *made) {
         hero_ui_gtk.popover_set_child(popover, made->parts[0]);
         hero_ui_gtk.menu_button_set_popover(made->drop, popover);
         hero_ui_gtk.box_append(made->widget, made->drop);
-        for (const char *signal = "day-selected"; signal != NULL;) {
-            hero_ui_gtk_connect(made->parts[0], signal, (hero_ui_gtk_callback)hero_ui_gtk_picked, made->id);
-            signal = strcmp(signal, "day-selected") == 0 ? "next-month" : strcmp(signal, "next-month") == 0 ? "prev-month" : strcmp(signal, "prev-month") == 0 ? "next-year" : strcmp(signal, "next-year") == 0 ? "prev-year" : NULL;
-        }
+        hero_ui_gtk_picker_watch(made, made->parts[0]);
     }
     if (made->kind != HERO_UI_DATE_PICKER) {
         for (int which = 1; which <= 3; which += 1) {
@@ -2580,6 +2624,7 @@ static bool hero_ui_gtk_make_picker(hero_ui_native *made) {
 static bool hero_ui_gtk_picker_holds(int64_t kind, int64_t value) {
     switch (kind) {
     case HERO_UI_DATE_PICKER:
+    case HERO_UI_CALENDAR:
         return value % HERO_UI_GTK_DAY == 0 && value >= HERO_UI_GTK_PICKER_DATE_LEAST && value <= HERO_UI_GTK_PICKER_DATE_MOST;
     case HERO_UI_TIME_PICKER:
         return value >= 0 && value < HERO_UI_GTK_DAY;
@@ -2592,7 +2637,7 @@ static bool hero_ui_gtk_picker_holds(int64_t kind, int64_t value) {
  * does not, or its bounds do not. */
 static int64_t hero_ui_gtk_picker_check(const hero_ui_native *widget, int64_t value) {
     if (!hero_ui_gtk_picker_holds(widget->kind, value)) {
-        return hero_ui_refused(HERO_UI_INVALID, widget->kind == HERO_UI_DATE_PICKER ? "a date picker holds a whole day: a multiple of 86400 seconds, from year 1 to year 9999" : widget->kind == HERO_UI_TIME_PICKER ? "a time picker holds the seconds since midnight: 0 to 86399" : "a date and time picker holds a moment from year 1 to year 9999");
+        return hero_ui_refused(HERO_UI_INVALID, widget->kind == HERO_UI_DATE_PICKER ? "a date picker holds a whole day: a multiple of 86400 seconds, from year 1 to year 9999" : widget->kind == HERO_UI_CALENDAR ? "a month calendar holds a whole day: a multiple of 86400 seconds, from year 1 to year 9999" : widget->kind == HERO_UI_TIME_PICKER ? "a time picker holds the seconds since midnight: 0 to 86399" : "a date and time picker holds a moment from year 1 to year 9999");
     }
     if (value < widget->least || value > widget->most) {
         return hero_ui_refused(HERO_UI_INVALID, "the value is outside the bounds the picker was given");
@@ -3492,6 +3537,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
         ok = hero_ui_gtk_make_picker(made);
         break;
     case HERO_UI_COLOR_WELL:
@@ -3926,6 +3972,7 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
         answer = hero_ui_gtk_picker_set(widget, value, false);
         break;
     case HERO_UI_COLOR_WELL:
@@ -4447,6 +4494,7 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
     case HERO_UI_COLOR_WELL:
     case HERO_UI_FONT_BUTTON:
         size = hero_ui_gtk_natural(widget->widget);
@@ -4608,6 +4656,7 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_DATE_PICKER:
     case HERO_UI_TIME_PICKER:
     case HERO_UI_DATE_TIME_PICKER:
+    case HERO_UI_CALENDAR:
     case HERO_UI_COLOR_WELL:
         *value = widget->value;
         return HERO_UI_OK;
@@ -4709,8 +4758,11 @@ static int64_t hero_ui_gtk_now(void) {
 
 /* The set's or the mailbox's events the watched descriptors queued
  * (A SET AND A MAILBOX IN THE APP'S WAIT), which the common part queues
- * without counting them among the arm's own. */
-static uint64_t hero_ui_gtk_readied;
+ * without counting them among the arm's own. The UI thread's, as
+ * `hero_ui.c`'s `hero_ui_pushed` it is added to: the watches' sources stand
+ * on the default main context, which only the arm's own functions iterate,
+ * and `hero_ui.c` calls those on the UI thread alone. */
+static _Thread_local uint64_t hero_ui_gtk_readied;
 
 /* What `pump` compares to know that something was queued. */
 static uint64_t hero_ui_gtk_queued(void) {
@@ -9613,6 +9665,9 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
         hero_ui_gtk.accessible_reset_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL);
         hero_layer_free(widget->accessible);
         widget->accessible = NULL;
+        if (widget->kind == HERO_UI_CANVAS) {
+            hero_ui_parts_gtk_named(widget->widget, NULL);
+        }
         return HERO_UI_OK;
     }
     made = hero_ui_gtk_text(name, count, false);
@@ -9622,6 +9677,10 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
     hero_ui_gtk.accessible_update_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL, made, -1);
     hero_layer_free(widget->accessible);
     widget->accessible = made;
+    if (widget->kind == HERO_UI_CANVAS) {
+        /* The image standing for an area with no parts carries its name. */
+        hero_ui_parts_gtk_named(widget->widget, made);
+    }
     return HERO_UI_OK;
 }
 
@@ -9926,9 +9985,10 @@ static const char hero_ui_gtk_tray_menu_xml[] =
     "</interface></node>";
 
 /* The two interfaces as GIO reads them, the item's and the menu's, parsed
- * once and kept for the process, as the library is. */
-static void *hero_ui_gtk_tray_nodes[2];
-static void *hero_ui_gtk_tray_interfaces[2];
+ * once by the UI thread, the one thread that makes a tray, and kept for its
+ * life, as the library is. */
+static _Thread_local void *hero_ui_gtk_tray_nodes[2];
+static _Thread_local void *hero_ui_gtk_tray_interfaces[2];
 
 static bool hero_ui_gtk_tray_described(void) {
     static const char *const xml[2] = {hero_ui_gtk_tray_item_xml, hero_ui_gtk_tray_menu_xml};
@@ -11083,8 +11143,8 @@ static int hero_ui_gtk_hand_told(void *data) {
         }
         hero_ui_tell_text(HERO_UI_EVENT_OPEN, 0, items, HERO_UI_OPEN_ARGUMENTS, hand->arguments, (int64_t)hand->count);
     }
-    free(hand->arguments);
-    free(hand);
+    hero_layer_free(hand->arguments);
+    hero_layer_free(hand);
     return 0;
 }
 
@@ -11112,7 +11172,7 @@ static void *hero_ui_gtk_hand_read(void *data) {
         good = hand->count <= HERO_UI_TEXT_MOST;
     }
     if (good && hand->count > 0) {
-        hand->arguments = malloc(hand->count);
+        hand->arguments = hero_layer_alloc(hand->count);
         good = hand->arguments != NULL && hero_ui_gtk_whole(hand->socket, hand->arguments, hand->count, false);
         if (good) {
             uint32_t start = 0;
@@ -11133,8 +11193,8 @@ static void *hero_ui_gtk_hand_read(void *data) {
     }
     (void)close(hand->socket);
     if (!good) {
-        free(hand->arguments);
-        free(hand);
+        hero_layer_free(hand->arguments);
+        hero_layer_free(hand);
         return NULL;
     }
     (void)hero_ui_gtk.idle_add(hero_ui_gtk_hand_told, hand);
@@ -11159,7 +11219,7 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
     (void)data;
     for (;;) {
         int socket_id = accept4(fd, NULL, NULL, SOCK_CLOEXEC);
-        struct ucred peer;
+        hero_ui_gtk_ucred peer;
         socklen_t size = sizeof peer;
         hero_ui_gtk_hand *hand;
 
@@ -11168,9 +11228,9 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
         }
         hero_ui_gtk_hand_socket(socket_id);
         (void)fcntl(socket_id, F_SETFL, fcntl(socket_id, F_GETFL) & ~O_NONBLOCK);
-        hand = calloc(1, sizeof *hand);
+        hand = hero_layer_alloc_zero(1, sizeof *hand);
         if (hand == NULL || getsockopt(socket_id, SOL_SOCKET, SO_PEERCRED, &peer, &size) != 0 || peer.uid != geteuid()) {
-            free(hand);
+            hero_layer_free(hand);
             (void)close(socket_id);
             continue;
         }
@@ -11179,7 +11239,7 @@ static int hero_ui_gtk_instance_accept(int fd, unsigned condition, void *data) {
         (void)snprintf(hand->identity, sizeof hand->identity, "%s", hero_ui_gtk_instance_identity);
         if (!hero_ui_gtk_thread(hero_ui_gtk_hand_read, hand)) {
             (void)close(socket_id);
-            free(hand);
+            hero_layer_free(hand);
         }
     }
 }
@@ -11273,8 +11333,8 @@ static void *hero_ui_gtk_hand_own(void *data) {
     hero_ui_gtk_own_hand *own = data;
 
     (void)hero_ui_gtk_hand_to(own->path, own->identity, own->arguments, own->count);
-    free(own->arguments);
-    free(own);
+    hero_layer_free(own->arguments);
+    hero_layer_free(own);
     return NULL;
 }
 
@@ -11284,14 +11344,14 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
     if (hero_ui_gtk_instance_listener < 0) {
         return HERO_UI_INVALID;
     }
-    own = calloc(1, sizeof *own);
-    if (own == NULL || (count > 0 && (own->arguments = malloc((size_t)count)) == NULL)) {
-        free(own);
+    own = hero_layer_alloc_zero(1, sizeof *own);
+    if (own == NULL || (count > 0 && (own->arguments = hero_layer_alloc((size_t)count)) == NULL)) {
+        hero_layer_free(own);
         return HERO_UI_LIMIT;
     }
     if (!hero_ui_gtk_instance_path(hero_ui_gtk_instance_identity, ".sock", own->path, sizeof own->path)) {
-        free(own->arguments);
-        free(own);
+        hero_layer_free(own->arguments);
+        hero_layer_free(own);
         return hero_ui_refused(HERO_UI_OTHER, "the claim's local socket has no path");
     }
     (void)snprintf(own->identity, sizeof own->identity, "%s", hero_ui_gtk_instance_identity);
@@ -11300,8 +11360,8 @@ int64_t hero_ui_arm_hand_over(const uint8_t *arguments, int64_t count) {
     }
     own->count = (uint32_t)count;
     if (!hero_ui_gtk_thread(hero_ui_gtk_hand_own, own)) {
-        free(own->arguments);
-        free(own);
+        hero_layer_free(own->arguments);
+        hero_layer_free(own);
         return hero_ui_refused(HERO_UI_OTHER, "no thread could be made to hand the arguments over");
     }
     return HERO_UI_OK;
@@ -11338,7 +11398,7 @@ static bool hero_ui_gtk_items_add(uint8_t **items, size_t *length, size_t *room,
 
     if (*length + more > *room) {
         size_t wanted = (*length + more) * 2;
-        uint8_t *grown = realloc(*items, wanted);
+        uint8_t *grown = hero_layer_grow(*items, wanted);
 
         if (grown == NULL) {
             return false;
@@ -11398,8 +11458,8 @@ static void hero_ui_gtk_app_open(void *uris) {
     for (size_t from = 0; from < urls_length; from += strlen((const char *)urls + from) + 1) {
         hero_ui_gtk_opened(HERO_UI_OPEN_URLS, urls + from, strlen((const char *)urls + from) + 1, 1);
     }
-    free(files);
-    free(urls);
+    hero_layer_free(files);
+    hero_layer_free(urls);
 }
 
 /* The interface's methods, on the UI thread. */
@@ -11984,6 +12044,48 @@ int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int
     return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
 }
 
+/* -- A DRAWING AREA'S PARTS ------------------------------------------------
+ *
+ * The parts and what GTK offers a screen reader of them are
+ * `hero_ui_parts_gtk.c`'s: these calls find the area and keep the words of
+ * a refusal for `hero_ui.c`. */
+
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_set(widget->widget, list, count, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_read(widget->widget, buffer, count, length, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
+    char words[HERO_UI_WORDS_MOST] = "";
+    int64_t answer = HERO_UI_OK;
+    hero_ui_native *widget = hero_ui_gtk_canvas(id, &answer);
+
+    if (widget == NULL) {
+        return answer;
+    }
+    answer = hero_ui_parts_gtk_act(widget->widget, part, act, words, sizeof words);
+    return answer == HERO_UI_OK ? HERO_UI_OK : hero_ui_refused(answer, words);
+}
+
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
 /* Every kind of `hero_ui.h` and every act of it is
@@ -11991,9 +12093,9 @@ int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int
  * which check each. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)parent;
-    /* No kind past the drawing area is drawn here: one the contract gains is
-     * refused by name until this arm makes it. */
-    return kind <= HERO_UI_CANVAS;
+    /* No kind past the month calendar is drawn here: one the contract gains
+     * is refused by name until this arm makes it. */
+    return kind <= HERO_UI_CALENDAR;
 }
 
 bool hero_ui_arm_acts(int64_t act) {

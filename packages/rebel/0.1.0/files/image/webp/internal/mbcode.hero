@@ -1,0 +1,270 @@
+# One macroblock of the lossy encoder: its modes chosen, its residue
+# transformed and quantized, and its pixels rebuilt exactly as the decoder
+# will rebuild them, from the decoder's own predictions and inverse
+# transforms, so the next macroblock predicts from what a reader sees. The
+# luma is coded both ways, one 16x16 prediction (the mode with the least
+# prediction error) and sixteen 4x4 ones (each block's mode chosen the same
+# way on the pixels already rebuilt), and the way whose squared error plus
+# `lambda` times its estimated bits is smaller is kept.
+
+use image/webp/internal/forward
+use image/webp/internal/idct
+use image/webp/internal/loopfilter
+use image/webp/internal/modes
+use image/webp/internal/predict
+use image/webp/internal/quant
+use image/webp/internal/vp8
+
+# One macroblock coded.
+record Coded
+    # Its modes, its segment and whether it holds no level.
+    modes: modes.Modes
+    # Its levels, 400: sixteen luma blocks, four of U, four of V, then the
+    # DC block, sixteen each in natural order.
+    levels: [i64]
+
+# The source planes and the planes rebuilt so far, luma `stride` wide and
+# chroma half that.
+record Planes
+    # The source luma, padded to whole macroblocks.
+    y: [i64]
+    # The source U.
+    u: [i64]
+    # The source V.
+    v: [i64]
+    # The luma's row width.
+    stride: i64
+
+# The sum of absolute differences of the `size` square of `src` at `s` and
+# the work area `w` at `p`.
+function sad(src: [i64] lent, s: i64, stride: i64, w: [i64] lent, p: i64, size: i64) -> i64
+    total @= 0
+    j @= 0
+
+    while j < size
+        i @= 0
+
+        while i < size
+            d = src[s + j * stride + i] - w[p + j * predict.BPS + i]
+            total @ total + loopfilter.abs(d)
+            i @ i + 1
+
+        j @ j + 1
+
+    return total
+
+# The sum of squared differences, as `sad` reads them.
+function sse(src: [i64] lent, s: i64, stride: i64, w: [i64] lent, p: i64, size: i64) -> i64
+    total @= 0
+    j @= 0
+
+    while j < size
+        i @= 0
+
+        while i < size
+            d = src[s + j * stride + i] - w[p + j * predict.BPS + i]
+            total @ total + d * d
+            i @ i + 1
+
+        j @ j + 1
+
+    return total
+
+# The bits the levels from `at` to `end` take, estimated: three a level not
+# zero and two more for each bit of its size, two a block for its end.
+function rate(levels: [i64] lent, at: i64, end: i64) -> i64
+    total @= 2 * ((end - at) / 16)
+    i @= at
+
+    while i < end
+        v @= levels[i]
+
+        if v != 0
+            total @ total + 3
+
+            if v < 0
+                v @ -v
+
+            while v > 0
+                total @ total + 2
+                v @ v >> 1
+        i @ i + 1
+
+    return total
+
+# Where luma block `n` of the work area begins.
+function block_at(n: i64) -> i64
+    return vp8.Y0 + n / 4 * 4 * predict.BPS + n % 4 * 4
+
+# The levels of the coefficients `c` written into `levels` at `at`, and
+# their dequantized values into `deq` at `at`, from position `first`.
+function keep(c: [i64] lent, first: i64, dc: i64, ac: i64, @levels: [i64], @deq: [i64], at: i64)
+    l = forward.quantize(c, first: first, dc: dc, ac: ac)
+    i @= first
+
+    while i < 16
+        levels[at + i] @ l[i]
+
+        step = if i == 0
+            dc
+        else
+            ac
+        deq[at + i] @ idct.wrap16(l[i] * step)
+        i @ i + 1
+
+# Macroblock `mx`, `my` of `src` coded at the steps `m` and rebuilt into
+# `y`, `u` and `v`, the work areas `wy`, `wu` and `wv` lent for it.
+function code(src: Planes lent, @y: [i64], @u: [i64], @v: [i64], @wy: [i64], @wu: [i64], @wv: [i64], mx: i64, my: i64, across: i64, m: quant.Matrix, segment: i64, lambda: i64) -> Coded
+    ys = src.stride
+    cs = ys / 2
+    vp8.edges(wy: @wy, wu: @wu, wv: @wv, y: y, u: u, v: v, mx: mx, my: my, across: across)
+    sy = my * 16 * ys + mx * 16
+    levels @= vp8.zeros(400)
+    deq @= vp8.zeros(384)
+    best @= 0
+    best_sad @= -1
+    mode @= 0
+
+    while mode < 4
+        t @= wy
+        predict.luma(px: @t, pos: vp8.Y0, mode: mode, x: mx, y: my)
+        e = sad(src: src.y, s: sy, stride: ys, w: t, p: vp8.Y0, size: 16)
+
+        if best_sad < 0 || e < best_sad
+            best @ mode
+            best_sad @ e
+        mode @ mode + 1
+
+    w16 @= wy
+    predict.luma(px: @w16, pos: vp8.Y0, mode: best, x: mx, y: my)
+    dcs @= vp8.zeros(16)
+    n @= 0
+
+    while n < 16
+        c = forward.dct(src: src.y, s: sy + n / 4 * 4 * ys + n % 4 * 4, stride: ys, pred: w16, p: block_at(n))
+        dcs[n] @ c[0]
+        keep(c: c, first: 1, dc: m.y1_dc, ac: m.y1_ac, levels: @levels, deq: @deq, at: n * 16)
+        n @ n + 1
+
+    y2 = forward.quantize(forward.wht(dcs), first: 0, dc: m.y2_dc, ac: m.y2_ac)
+    y2_deq @= vp8.zeros(16)
+    i @= 0
+
+    while i < 16
+        levels[384 + i] @ y2[i]
+
+        step = if i == 0
+            m.y2_dc
+        else
+            m.y2_ac
+        y2_deq[i] @ idct.wrap16(y2[i] * step)
+        i @ i + 1
+
+    idct.wht(dc: y2_deq, out: @deq, at: 0)
+    n @ 0
+
+    while n < 16
+        vp8.add(coeffs: deq, at: n * 16, px: @w16, pos: block_at(n))
+        n @ n + 1
+
+    score16 = sse(src: src.y, s: sy, stride: ys, w: w16, p: vp8.Y0, size: 16) + lambda * (rate(levels: levels, at: 0, end: 256) + rate(levels: levels, at: 384, end: 400) + 4)
+    split @= vp8.zeros(400)
+    sdeq @= vp8.zeros(384)
+    w4 @= wy
+    subs: [i64] @= []
+    n @ 0
+
+    while n < 16
+        pos = block_at(n)
+        s = sy + n / 4 * 4 * ys + n % 4 * 4
+        pick @= 0
+        pick_sad @= -1
+        mode @ 0
+
+        while mode < 10
+            predict.sub(px: @w4, pos: pos, mode: mode)
+            e = sad(src: src.y, s: s, stride: ys, w: w4, p: pos, size: 4)
+
+            if pick_sad < 0 || e < pick_sad
+                pick @ mode
+                pick_sad @ e
+            mode @ mode + 1
+
+        predict.sub(px: @w4, pos: pos, mode: pick)
+        c = forward.dct(src: src.y, s: s, stride: ys, pred: w4, p: pos)
+        keep(c: c, first: 0, dc: m.y1_dc, ac: m.y1_ac, levels: @split, deq: @sdeq, at: n * 16)
+        vp8.add(coeffs: sdeq, at: n * 16, px: @w4, pos: pos)
+        subs @ subs.push(pick)
+        n @ n + 1
+
+    score4 = sse(src: src.y, s: sy, stride: ys, w: w4, p: vp8.Y0, size: 16) + lambda * (rate(levels: split, at: 0, end: 256) + 48)
+    luma @= best
+    blocks: [i64] @= []
+
+    if score4 < score16
+        luma @ modes.B_PRED
+        blocks @ subs
+        wy @ w4
+        k @= 0
+
+        while k < 400
+            levels[k] @ split[k]
+            k @ k + 1
+    else
+        wy @ w16
+
+        for _ in range(from: 0, to: 16)
+            blocks @ blocks.push(modes.implied(best))
+
+    chroma = chroma_mode(src, wu: wu, wv: wv, mx: mx, my: my)
+    predict.chroma(px: @wu, pos: vp8.C0, mode: chroma, x: mx, y: my)
+    predict.chroma(px: @wv, pos: vp8.C0, mode: chroma, x: mx, y: my)
+    sc = my * 8 * cs + mx * 8
+    k @= 0
+
+    while k < 4
+        pos = vp8.C0 + k / 2 * 4 * predict.BPS + k % 2 * 4
+        s = sc + k / 2 * 4 * cs + k % 2 * 4
+        cu = forward.dct(src: src.u, s: s, stride: cs, pred: wu, p: pos)
+        keep(c: cu, first: 0, dc: m.uv_dc, ac: m.uv_ac, levels: @levels, deq: @deq, at: 256 + k * 16)
+        vp8.add(coeffs: deq, at: 256 + k * 16, px: @wu, pos: pos)
+        cv = forward.dct(src: src.v, s: s, stride: cs, pred: wv, p: pos)
+        keep(c: cv, first: 0, dc: m.uv_dc, ac: m.uv_ac, levels: @levels, deq: @deq, at: 320 + k * 16)
+        vp8.add(coeffs: deq, at: 320 + k * 16, px: @wv, pos: pos)
+        k @ k + 1
+
+    vp8.store(work: wy, plane: @y, stride: ys, at: sy, size: 16)
+    vp8.store(work: wu, plane: @u, stride: cs, at: sc, size: 8)
+    vp8.store(work: wv, plane: @v, stride: cs, at: sc, size: 8)
+    empty @= true
+
+    for l in levels
+        if l != 0
+            empty @ false
+
+    return Coded(
+        modes: modes.Modes(segment: segment, skip: empty, luma: luma, blocks: blocks, chroma: chroma),
+        levels: levels
+    )
+
+# The chroma mode whose prediction of U and V together errs the least.
+function chroma_mode(src: Planes lent, wu: [i64] lent, wv: [i64] lent, mx: i64, my: i64) -> i64
+    cs = src.stride / 2
+    sc = my * 8 * cs + mx * 8
+    best @= 0
+    best_sad @= -1
+    mode @= 0
+
+    while mode < 4
+        tu @= wu
+        tv @= wv
+        predict.chroma(px: @tu, pos: vp8.C0, mode: mode, x: mx, y: my)
+        predict.chroma(px: @tv, pos: vp8.C0, mode: mode, x: mx, y: my)
+        e = sad(src: src.u, s: sc, stride: cs, w: tu, p: vp8.C0, size: 8) + sad(src: src.v, s: sc, stride: cs, w: tv, p: vp8.C0, size: 8)
+
+        if best_sad < 0 || e < best_sad
+            best @ mode
+            best_sad @ e
+        mode @ mode + 1
+
+    return best

@@ -1,0 +1,90 @@
+# The inverse transforms of VP8 (RFC 6386, section 14): the Walsh-Hadamard
+# transform that spreads a macroblock's DC block over its sixteen luma blocks,
+# and the integer DCT that turns a block's coefficients into the residue added
+# to its prediction. Both compute as libwebp 1.6.0's do, and keep a value
+# stored between steps in 16 bits, as libwebp's coefficient arrays do, so a
+# stream whose coefficients overflow them decodes as it does there.
+
+# `v` as a 16-bit cell holds it: its low 16 bits read as signed.
+function wrap16(v: i64) -> i64
+    return (v + 32768 & 65535) - 32768
+
+# The DCT's first constant: `a * 20091 >> 16` plus `a`, about `a * sqrt(2) *
+# cos(pi / 8)`.
+function mul1(a: i64) -> i64
+    return (a * 20091 >> 16) + a
+
+# The DCT's second: about `a * sqrt(2) * sin(pi / 8)`.
+function mul2(a: i64) -> i64
+    return a * 35468 >> 16
+
+# The sixteen DCs of a macroblock's luma blocks from its DC block `dc`, each
+# written at `out[at + 16 * i]`, the first coefficient of block `i`.
+function wht(dc: [i64] lent, @out: [i64], at: i64)
+    tmp @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    for i in range(from: 0, to: 4)
+        a0 = dc[i] + dc[12 + i]
+        a1 = dc[4 + i] + dc[8 + i]
+        a2 = dc[4 + i] - dc[8 + i]
+        a3 = dc[i] - dc[12 + i]
+        tmp[i] @ a0 + a1
+        tmp[8 + i] @ a0 - a1
+        tmp[4 + i] @ a3 + a2
+        tmp[12 + i] @ a3 - a2
+
+    for i in range(from: 0, to: 4)
+        d = tmp[i * 4] + 3
+        a0 = d + tmp[3 + i * 4]
+        a1 = tmp[1 + i * 4] + tmp[2 + i * 4]
+        a2 = tmp[1 + i * 4] - tmp[2 + i * 4]
+        a3 = d - tmp[3 + i * 4]
+        out[at + 64 * i] @ wrap16(a0 + a1 >> 3)
+        out[at + 64 * i + 16] @ wrap16(a3 + a2 >> 3)
+        out[at + 64 * i + 32] @ wrap16(a0 - a1 >> 3)
+        out[at + 64 * i + 48] @ wrap16(a3 - a2 >> 3)
+
+# The residue of the block whose sixteen coefficients start at `c[at]`, added
+# to the 4x4 pixels of `px` from `pos`, `stride` apart a row, each held to 0
+# to 255.
+function add_inverse(c: [i64] lent, at: i64, @px: [i64], pos: i64, stride: i64)
+    tmp @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    for i in range(from: 0, to: 4)
+        a = c[at + i] + c[at + 8 + i]
+        b = c[at + i] - c[at + 8 + i]
+        x = mul2(c[at + 4 + i]) - mul1(c[at + 12 + i])
+        y = mul1(c[at + 4 + i]) + mul2(c[at + 12 + i])
+        tmp[4 * i] @ a + y
+        tmp[4 * i + 1] @ b + x
+        tmp[4 * i + 2] @ b - x
+        tmp[4 * i + 3] @ a - y
+
+    for i in range(from: 0, to: 4)
+        d = tmp[i] + 4
+        a = d + tmp[8 + i]
+        b = d - tmp[8 + i]
+        x = mul2(tmp[4 + i]) - mul1(tmp[12 + i])
+        y = mul1(tmp[4 + i]) + mul2(tmp[12 + i])
+        row = pos + i * stride
+        px[row] @ clip(px[row] + (a + y >> 3))
+        px[row + 1] @ clip(px[row + 1] + (b + x >> 3))
+        px[row + 2] @ clip(px[row + 2] + (b - x >> 3))
+        px[row + 3] @ clip(px[row + 3] + (a - y >> 3))
+
+# `v` held to 0 to 255.
+function clip(v: i64) -> i64
+    if v < 0
+        return 0
+
+    if v > 255
+        return 255
+    return v
+
+# Whether the sixteen coefficients from `c[at]` are all zero.
+function all_zero(c: [i64] lent, at: i64) -> bool
+    for i in range(from: at, to: at + 16)
+        if c[i] != 0
+            return false
+
+    return true

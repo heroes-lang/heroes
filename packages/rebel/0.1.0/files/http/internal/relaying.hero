@@ -1,0 +1,253 @@
+# A message relayed as it comes, RFC 9112: its head written with the framing
+# its body will have, and the body written piece by piece in that framing, so
+# a gateway carries a body it never holds whole. Every part of a head is
+# checked before a byte is made, as `write` checks a message held whole.
+
+use bytes
+use http/internal/body
+use http/internal/status
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+
+# How much of a body relayed as it comes is still owed, so a piece past a
+# length and an end before it are refused rather than written.
+record Owed
+    # How the body ends.
+    framing: body.Framing
+    # The bytes still owed by a body of a length; 0 for every other framing.
+    left: i64
+    # Whether the end was written.
+    ended: bool
+
+# What a body of `framing` owes before a byte of it.
+function owed_of(framing: body.Framing) -> Owed
+    left = match framing
+        .length l                  => l.n
+        .none | .chunked | .to_end => 0
+
+    return Owed(framing: framing, left: left, ended: false)
+
+# The bytes of the head of a request whose body follows in `framing`:
+# `method` `target` HTTP/1.1, `Host: host`, the fields but the framing's and
+# the host's, `Connection: close` where `closing` and no field says it, then
+# `Content-Length` for a length and `Transfer-Encoding: chunked` for chunks.
+# Fails `invalid` where the method or a name is no token, the target is empty
+# or holds a space, a control byte or a byte above ASCII, the host is empty
+# or a value holds a line end, and for a body to the connection's end, which
+# a request cannot have (RFC 9112 § 6.3).
+function request_head(method: str, target: str, host: str, fields: [wire.Field], framing: body.Framing, closing: bool) -> [u8]?
+    if !syntax.is_token(method)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing a request's head: the method {syntax.shown(method)} is no token"
+        )
+
+    if target.len() == 0
+        return fail(code: syntax.INVALID, msg: "writing a request's head: its target is empty")
+    at: i64 @= 0
+
+    while at < target.len()
+        if target[at] < 33 || target[at] > 126
+            return fail(
+                code: syntax.INVALID,
+                msg: f"writing a request's head: the target {syntax.shown(target)} holds a space, a control byte or a byte above ASCII"
+            )
+        at @ at + 1
+
+    if host == "" || !syntax.is_value(host)
+        return fail(code: syntax.INVALID, msg: f"writing a request's head for {syntax.shown(target)}: it names no host")
+    lines: [str] @= [f"{method} {target} HTTP/1.1", "Host: " + host]
+    write.others(@lines, fields: fields, skip_host: true)?
+    closes(@lines, fields: fields, closing: closing)
+
+    match framing
+        .none     => _ = 0
+        .length l => lines @ lines.push(f"Content-Length: {l.n}")
+        .chunked  => lines @ lines.push("Transfer-Encoding: chunked")
+        .to_end =>
+            return fail(
+                code: syntax.INVALID,
+                msg: f"writing a request's head for {syntax.shown(target)}: a request's body cannot run to the connection's end"
+            )
+
+    return ok(bytes.from_text(lines.join("\r\n") + "\r\n\r\n"))
+
+# The bytes of the head of a response whose body follows in `framing`:
+# HTTP/1.1 `status_code` `reason`, the fields but the framing's, a `Date`
+# where `date` is not "" and no field holds one, `Connection: close` where
+# `closing` or the body runs to the connection's end and no field says it,
+# then `Content-Length` for a length and `Transfer-Encoding: chunked` for
+# chunks. `reason` "" is the status's text. Fails `invalid` where the status
+# is neither 101 nor 200 to 999, where 101 is framed with a body, or where the
+# reason or a field is not one, as `write.others` says.
+function response_head(status_code: i64, reason: str, fields: [wire.Field], framing: body.Framing, closing: bool, date: str) -> [u8]?
+    if status_code != 101 && (status_code < 200 || status_code > 999)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing the head of a relayed response: the status {status_code} is neither 101 nor a final one, 200 to 999"
+        )
+
+    framed = match framing
+        .none                          => false
+        .length _ | .chunked | .to_end => true
+
+    if status_code == 101 && framed
+        return fail(code: syntax.INVALID, msg: "writing the head of a relayed response: 101 has no body")
+    said: str @= reason
+
+    if said == ""
+        said @ status.text_of(status_code).default("")
+
+    if !syntax.is_value(said)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing the head of a relayed response: the reason {syntax.shown(said)} holds a line end or a control byte"
+        )
+    lines: [str] @= [f"HTTP/1.1 {status_code} {said}"]
+    write.others(@lines, fields: fields, skip_host: false)?
+
+    if date != "" && wire.values_of(fields, name: "Date").len() == 0
+        lines @ lines.push("Date: " + date)
+
+    to_end = match framing
+        .to_end                      => true
+        .none | .length _ | .chunked => false
+
+    closes(@lines, fields: fields, closing: closing || to_end)
+
+    match framing
+        .none | .to_end => _ = 0
+        .length l       => lines @ lines.push(f"Content-Length: {l.n}")
+        .chunked        => lines @ lines.push("Transfer-Encoding: chunked")
+
+    return ok(bytes.from_text(lines.join("\r\n") + "\r\n\r\n"))
+
+# Adds `Connection: close` to `lines` where `closing` and no `Connection`
+# field of `fields` holds `close` already.
+function closes(@lines: [str], fields: [wire.Field], closing: bool)
+    if closing && !syntax.has_member(wire.values_of(fields, name: "Connection"), token: "close")
+        lines @ lines.push("Connection: close")
+
+# The bytes `data` is written as in the body `owed` frames, `owed` lessened
+# by them: the bytes themselves, or one chunk holding them; nothing for no
+# bytes. Fails `invalid` where the body has ended, has no body, or is owed
+# fewer bytes than `data` holds.
+function piece(@owed: Owed, data: [u8]) -> [u8]?
+    if data.len() == 0
+        return ok([])
+
+    if owed.ended
+        return fail(code: syntax.INVALID, msg: "writing a body: its end was written already")
+
+    match owed.framing
+        .none   => return fail(code: syntax.INVALID, msg: "writing a body: the head said there is none")
+        .to_end => return ok(data)
+        .length _ =>
+            if data.len() > owed.left
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"writing a body: {data.len()} bytes, where its length leaves {owed.left}"
+                )
+            owed.left @ owed.left - data.len()
+            return ok(data)
+        .chunked =>
+            out: [u8] @= body.hex(data.len())
+            out @ out.push('\r')
+            out @ out.push('\n')
+
+            for b in data
+                out @ out.push(b)
+
+            out @ out.push('\r')
+            out @ out.push('\n')
+            return ok(out)
+
+# The bytes that end the body `owed` frames: the last chunk with an empty
+# trailer for chunks, nothing else. Fails `invalid` where a body of a length
+# is still owed bytes, which only the connection's end can then tell the
+# reader, and where its end was written already.
+function end(@owed: Owed) -> [u8]?
+    if owed.ended
+        return fail(code: syntax.INVALID, msg: "ending a body: its end was written already")
+
+    match owed.framing
+        .none | .to_end => _ = 0
+        .length _ =>
+            if owed.left > 0
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"ending a body: its length is still owed {owed.left} bytes"
+                )
+        .chunked =>
+            owed.ended @ true
+            return ok(['0', '\r', '\n', '\r', '\n'])
+
+    owed.ended @ true
+    return ok([])
+
+## Tests
+
+test "request_head: a length, a chunked body and none are framed as said"
+    fields = [wire.Field(name: "Accept", value: "*/*"), wire.Field(name: "Content-Length", value: "99")]
+    got = bytes.to_text(
+        request_head(method: "PUT", target: "/a?b=1", host: "up:8080", fields: fields, framing: .length(n: 3), closing: true).must()
+    ).must()
+    assert got == "PUT /a?b=1 HTTP/1.1\r\nHost: up:8080\r\nAccept: */*\r\nConnection: close\r\nContent-Length: 3\r\n\r\n"
+    chunks = bytes.to_text(
+        request_head(method: "POST", target: "/", host: "up", fields: [], framing: .chunked, closing: false).must()
+    ).must()
+    assert chunks == "POST / HTTP/1.1\r\nHost: up\r\nTransfer-Encoding: chunked\r\n\r\n"
+    none = bytes.to_text(
+        request_head(method: "GET", target: "/", host: "up", fields: [wire.Field(name: "Connection", value: "close")], framing: .none, closing: true).must()
+    ).must()
+    assert none == "GET / HTTP/1.1\r\nHost: up\r\nConnection: close\r\n\r\n"
+
+test "request_head: a body to the end, a bad target and a line end in a value are refused"
+    assert request_head(method: "POST", target: "/", host: "up", fields: [], framing: .to_end, closing: false).is_err()
+    assert request_head(method: "GET", target: "/a b", host: "up", fields: [], framing: .none, closing: false).is_err()
+    assert request_head(method: "GET", target: "/", host: "", fields: [], framing: .none, closing: false).is_err()
+    assert request_head(
+        method: "GET",
+        target: "/",
+        host: "up",
+        fields: [wire.Field(name: "X", value: "a\r\nInjected: 1")],
+        framing: .none,
+        closing: false
+    ).is_err()
+    assert request_head(method: "G T", target: "/", host: "up", fields: [], framing: .none, closing: false).is_err()
+
+test "response_head: 101 has no body, a body to the end closes, the date is added once"
+    up = [wire.Field(name: "Upgrade", value: "websocket"), wire.Field(name: "Connection", value: "Upgrade")]
+    switched = bytes.to_text(
+        response_head(status_code: 101, reason: "", fields: up, framing: .none, closing: false, date: "").must()
+    ).must()
+    assert switched == "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
+    assert response_head(status_code: 101, reason: "", fields: up, framing: .chunked, closing: false, date: "").is_err()
+    assert response_head(status_code: 100, reason: "", fields: [], framing: .none, closing: false, date: "").is_err()
+    to_end = bytes.to_text(
+        response_head(status_code: 200, reason: "", fields: [], framing: .to_end, closing: false, date: "D").must()
+    ).must()
+    assert to_end == "HTTP/1.1 200 OK\r\nDate: D\r\nConnection: close\r\n\r\n"
+    dated = [wire.Field(name: "Date", value: "E"), wire.Field(name: "Transfer-Encoding", value: "gzip")]
+    kept = bytes.to_text(
+        response_head(status_code: 404, reason: "Gone Away", fields: dated, framing: .chunked, closing: false, date: "D").must()
+    ).must()
+    assert kept == "HTTP/1.1 404 Gone Away\r\nDate: E\r\nTransfer-Encoding: chunked\r\n\r\n"
+
+test "piece: a length is never passed, chunks are framed, the end is owed once"
+    owed @= owed_of(.length(n: 5))
+    assert piece(@owed, data: [1, 2, 3]).must() == [1, 2, 3]
+    assert piece(@owed, data: [4, 5, 6]).is_err()
+    assert end(@owed).is_err()
+    assert piece(@owed, data: [4, 5]).must() == [4, 5]
+    assert end(@owed).must() == []
+    assert end(@owed).is_err()
+    chunks @= owed_of(.chunked)
+    assert bytes.to_text(piece(@chunks, data: bytes.from_text("hello, world!")).must()).must() == "d\r\nhello, world!\r\n"
+    assert piece(@chunks, data: []).must() == []
+    assert bytes.to_text(end(@chunks).must()).must() == "0\r\n\r\n"
+    assert piece(@chunks, data: [1]).is_err()
+    nothing @= owed_of(.none)
+    assert piece(@nothing, data: [1]).is_err()
+    assert end(@nothing).must() == []

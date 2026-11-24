@@ -1,0 +1,71 @@
+# The ledger of `fs/xattr`: what a program can do with the extended
+# attributes of a file or a folder, one block per capability, and what Rebel
+# answers (gap G07, 2026-11-24). The yardsticks, each read on this machine
+# that day: Go 1.27.4's `syscall` (`go doc syscall` with `GOOS=linux`, which
+# lists `Getxattr`, `Listxattr`, `Setxattr` and `Removexattr`, and with this
+# Mac's own `GOOS`, which lists none); Rust 1.100.0's standard library, whose
+# installed documentation names no extended attribute; Python 3.15.2's `os`
+# (`Doc/library/os.rst`, § Linux extended attributes: `getxattr`,
+# `listxattr`, `setxattr`, `removexattr`, `XATTR_CREATE`, `XATTR_REPLACE`,
+# `XATTR_SIZE_MAX` and `follow_symlinks`, *available on Linux only*, and
+# `hasattr(os, "getxattr")` false on this Mac). None of the three reads them
+# on Darwin or Windows, so the answers were held to each system's own tools
+# instead: this Mac's `xattr`, the Linux arm64 image's Python 3 `os`
+# functions, and the Windows box's PowerShell `Get-Item -Stream` and
+# `Get-Content -Stream`.
+
+capability xattr/names  the names of a file's or a folder's extended attributes listed
+  heroes  fs/xattr.names
+  go      syscall.Listxattr
+  rust    -
+  python  os.listxattr
+  note    Go's and Python's are Linux's alone. Darwin `listxattr`, Linux `listxattr`, Windows the named data streams `GetFileInformationByHandleEx` with `FileStreamInfo` lists, the unnamed one (the file's bytes) left out. A name that is not UTF-8 fails `not_text`, as a folder's entry does
+
+capability xattr/read  one extended attribute's value read
+  heroes  fs/xattr.read
+  go      syscall.Getxattr
+  rust    -
+  python  os.getxattr
+  note    read whole, at most a GiB; an attribute that is not there is `not_found`, a path that is not there `file_not_found`
+
+capability xattr/write  one extended attribute written, made or replaced
+  heroes  fs/xattr.write
+  go      syscall.Setxattr
+  rust    -
+  python  os.setxattr
+  note    at once or not at all on Darwin and Linux; on Windows the stream is written and then cut to its length, so a failure part way may leave it short, and the file is held open without `FILE_SHARE_DELETE` while its stream is written, so a stream is never written on a file made in its place
+
+capability xattr/write-only-new-or-existing  a write that makes only, or replaces only
+  heroes  fs/xattr.write_with, fs/xattr.When
+  go      syscall.Setxattr
+  rust    -
+  python  os.setxattr, os.XATTR_CREATE, os.XATTR_REPLACE
+  note    `.only_new` fails `exists` where it is there, `.only_existing` fails `not_found` where it is not: `XATTR_CREATE` and `XATTR_REPLACE` on Darwin and Linux, `CREATE_NEW` and `OPEN_EXISTING` of the stream on Windows
+
+capability xattr/remove  one extended attribute removed
+  heroes  fs/xattr.remove
+  go      syscall.Removexattr
+  rust    -
+  python  os.removexattr
+  note    -
+
+capability xattr/link  the attributes of a link itself, not of what it names
+  heroes  fs/xattr.link_names, fs/xattr.link_read, fs/xattr.write_with, fs/xattr.link_remove
+  go      -
+  rust    -
+  python  os.listxattr, os.getxattr, os.setxattr, os.removexattr
+  note    Python's `follow_symlinks=False`. Darwin `XATTR_NOFOLLOW`, Linux the `l` calls, Windows `FILE_FLAG_OPEN_REPARSE_POINT`; Linux keeps no `user.` attribute on a link and answers `permission`
+
+capability xattr/copy  every extended attribute of one path written on another
+  heroes  fs/xattr.copy
+  go      -
+  rust    -
+  python  shutil.copystat
+  note    Python's copies them on Linux alone and passes over a name the target refuses; here the first refusal fails the call, naming the attribute, so a backup never restores less than it says
+
+capability xattr/unsupported  a volume or a system that keeps none told so
+  heroes  fs/xattr.UNSUPPORTED
+  go      -
+  rust    -
+  python  -
+  note    `unsupported` where the volume keeps no attribute of that kind (Darwin and Linux `ENOTSUP`, a Windows volume whose `GetVolumeInformationByHandleW` lacks `FILE_NAMED_STREAMS`), and on a POSIX system neither Darwin nor Linux, whose `extattr_*` calls are not read; every test that writes one skips by those words. Unrun: a volume that keeps none, on any of the three

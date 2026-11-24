@@ -1,0 +1,335 @@
+# The volumes mounted on the machine, read back from the bytes
+# `hero_volumes_list` writes: for each volume `hero_volumes.fields()` fields,
+# each text and a zero byte, in the order `hero_volumes.h` gives. The face
+# turns each `Entry` here into its own `Volume`; this module holds no type of
+# the face, which a private module cannot reach.
+
+use bytes as octets
+use fs/hero_volumes
+use fs/internal/codes
+use os
+
+# How many bytes the first reading of the list is given room for: some two
+# hundred mounts at the three hundred bytes an entry takes, so one call is
+# the whole list on a machine that is not a container host.
+constant FIRST_ROOM: i64
+    65536
+
+# How many readings are made before a list that grows on every one is a
+# failure: volumes are mounted between two calls.
+constant TRIES: i64
+    16
+
+# One volume as the layer wrote it, its texts already read.
+record Entry
+    # The folder it is mounted on.
+    mount: str
+    # What is mounted there.
+    device: str
+    # The file system's name.
+    kind: str
+    # The name a person gave it, or "".
+    label: str
+    # Its size, in bytes.
+    total: i64
+    # The bytes free to any user.
+    free: i64
+    # The bytes this user may still write.
+    available: i64
+    # Whether it is read only.
+    read_only: bool
+    # Whether it is stored on another machine.
+    network: bool
+    # Whether its medium can be taken out.
+    removable: bool
+    # Whether the system keeps it out of its file manager.
+    hidden: bool
+
+# The words a refused list is told in, by the kind the layer gave.
+function failed<T>() -> T?
+    kind = hero_volumes.last_error()
+    number = hero_volumes.last_os_error()
+
+    if kind == hero_volumes.HERO_VOLUMES_UNSUPPORTED
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: "the mounted volumes are not listed on this system: Darwin, Linux with /proc mounted, and Windows are"
+        )
+
+    if kind == hero_volumes.HERO_VOLUMES_DENIED
+        return fail(
+            code: codes.PERMISSION,
+            msg: f"the system does not let this program read its table of mounts (its number {number})"
+        )
+
+    if kind == hero_volumes.HERO_VOLUMES_LIMIT
+        return fail(
+            code: codes.LIMIT,
+            msg: f"the system had no room to list the volumes, or a figure passed the largest i64 (its number {number})"
+        )
+
+    if kind == hero_volumes.HERO_VOLUMES_INVALID
+        return fail(code: codes.INVALID, msg: "the list of volumes was asked with a count and no room")
+    return fail(code: codes.FAILED, msg: f"the system refused the list of volumes (its number {number})")
+
+# The whole list of volumes, read once and asked again with more room where
+# it did not fit. Fails with the layer's kind as a code, `failed` where the
+# list grew on every one of `TRIES` readings, and as `entries_of` does.
+function read() -> [Entry]?
+    room: i64 @= FIRST_ROOM
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got = hero_volumes.list(@buffer, n: room.to_u64().must())
+
+        if got < 0
+            return failed()
+
+        if got <= room
+            return entries_of(buffer.slice(from: 0, to: got))
+
+        if got > 1073741824
+            return fail(code: codes.LIMIT, msg: f"the list of volumes has {got} bytes")
+
+        # Room for the volumes mounted before it is read again.
+        room @ got + got / 8 + 4096
+        tries @ tries + 1
+
+    return fail(code: codes.FAILED, msg: f"the list of volumes grew on each of {TRIES} readings")
+
+# Where the next zero byte stands in `bytes`, from `from` on. Fails `failed`
+# where none does, so the bytes are not the layer's form.
+function zero_after(bytes: [u8] lent, from: i64) -> i64?
+    at: i64 @= from
+
+    while at < bytes.len()
+        if bytes[at] == 0
+            return ok(at)
+        at @ at + 1
+
+    return fail(
+        code: codes.FAILED,
+        msg: f"the list of volumes ends at byte {bytes.len()} inside a field that opened at byte {from}"
+    )
+
+# The number written in `bytes` from `from` to `to`, decimal digits alone.
+# Fails `failed` where it is empty, holds another byte, or passes the largest
+# `i64`.
+function number_of(bytes: [u8] lent, from: i64, to: i64) -> i64?
+    if to == from
+        return fail(code: codes.FAILED, msg: f"the list of volumes holds an empty number at byte {from}")
+    value: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        b = bytes[at]
+
+        if b < '0' || b > '9'
+            return fail(code: codes.FAILED, msg: f"the list of volumes holds byte {b} inside a number at byte {at}")
+
+        # A byte always fits an `i64`.
+        digit = (b - '0').to_i64().must()
+
+        if value > (9223372036854775807 - digit) / 10
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of volumes holds a number at byte {from} past the largest i64"
+            )
+        value @ value * 10 + digit
+        at @ at + 1
+
+    return ok(value)
+
+# The mark written in `bytes` from `from` to `to`: `1` is true and `0` false.
+# Fails `failed` for anything else.
+function mark_of(bytes: [u8] lent, from: i64, to: i64) -> bool?
+    if to == from + 1 && bytes[from] == '1'
+        return ok(true)
+
+    if to == from + 1 && bytes[from] == '0'
+        return ok(false)
+    return fail(code: codes.FAILED, msg: f"the list of volumes holds a mark that is neither 0 nor 1 at byte {from}")
+
+# The folder a volume is mounted on, from `from` to `to`. Fails `not_text`
+# where it is not UTF-8, as `fs` fails a folder's entry that is not: a path
+# with U+FFFD in it would name nothing.
+function mount_of(bytes: [u8] lent, from: i64, to: i64) -> str?
+    match octets.to_text(bytes.slice(from: from, to: to))
+        .ok text => return ok(text)
+        .err _ => return fail(
+            code: codes.NOT_TEXT,
+            msg: f"the list of volumes holds a mount folder that is not UTF-8 at byte {from}"
+        )
+
+# The volumes `bytes` holds, in the layer's order. Fails `failed` where the
+# bytes are not the layer's form: a field with no end, a number empty, of
+# another byte or past the largest `i64`, a mark neither 0 nor 1, a volume
+# with no mount folder, or bytes free past its size; and `not_text` where a
+# mount folder is not UTF-8. A device, a file system's name and a label are
+# for a person to read, so a byte of them that is not UTF-8 is shown as
+# U+FFFD rather than hide every other volume.
+function entries_of(bytes: [u8] lent) -> [Entry]?
+    found: [Entry] @= []
+    at: i64 @= 0
+    wanted = hero_volumes.fields()
+
+    while at < bytes.len()
+        starts: [i64] @= []
+        ends: [i64] @= []
+
+        while ends.len() < wanted
+            end = zero_after(bytes, from: at)?
+            starts @ starts.push(at)
+            ends @ ends.push(end)
+            at @ end + 1
+
+        if ends[0] == starts[0]
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of volumes holds a volume with no mount folder at byte {starts[0]}"
+            )
+        total = number_of(bytes, from: starts[4], to: ends[4])?
+        free = number_of(bytes, from: starts[5], to: ends[5])?
+        available = number_of(bytes, from: starts[6], to: ends[6])?
+
+        if free > total || available > total
+            return fail(
+                code: codes.FAILED,
+                msg: f"the list of volumes holds a volume with more bytes free than its size at byte {starts[4]}"
+            )
+        found @ found.push(
+            Entry(mount: mount_of(bytes, from: starts[0], to: ends[0])?, device: octets.to_text_lossy(bytes.slice(from: starts[1], to: ends[1])), kind: octets.to_text_lossy(bytes.slice(from: starts[2], to: ends[2])), label: octets.to_text_lossy(bytes.slice(from: starts[3], to: ends[3])), total: total, free: free, available: available, read_only: mark_of(bytes, from: starts[7], to: ends[7])?, network: mark_of(bytes, from: starts[8], to: ends[8])?, removable: mark_of(bytes, from: starts[9], to: ends[9])?, hidden: mark_of(bytes, from: starts[10], to: ends[10])?)
+        )
+
+    return ok(found)
+
+## Tests
+
+# Adds the bytes of `text` and a zero byte to `out`.
+function add_text(@out: [u8], text: str)
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    out @ out.push(0)
+
+# The bytes the layer writes for one volume whose fields are `fields`.
+function written(fields: [str]) -> [u8]
+    out: [u8] @= []
+
+    for field in fields
+        add_text(@out, text: field)
+
+    return out
+
+# The fields of a local volume with a label.
+function local_fields(mount: str, label: str) -> [str]
+    return [mount, "/dev/disk3s1s1", "apfs", label, "994662584320", "460000000000", "450000000000", "1", "0", "0", "0"]
+
+test "entries_of: none, one with every field, one with no label, and two in order"
+    assert entries_of([]).must() == []
+    one = entries_of(written(local_fields(mount: "/", label: "Macintosh HD"))).must()
+    assert one.len() == 1
+    assert one[0].mount == "/" && one[0].device == "/dev/disk3s1s1" && one[0].kind == "apfs"
+    assert one[0].label == "Macintosh HD" && one[0].total == 994662584320
+    assert one[0].free == 460000000000 && one[0].available == 450000000000
+    assert one[0].read_only && !one[0].network && !one[0].removable && !one[0].hidden
+    share = entries_of(written(["Z:\\", "\\\\server\\share", "NTFS", "", "0", "0", "0", "0", "1", "0", "0"])).must()
+    assert share[0].mount == "Z:\\" && share[0].device == "\\\\server\\share" && share[0].label == ""
+    assert share[0].total == 0 && share[0].network && !share[0].read_only
+    both: [u8] @= written(local_fields(mount: "/", label: "a"))
+
+    for b in written(["/Volumes/Stick", "/dev/disk5s1", "msdos", "STICK", "100", "50", "40", "0", "0", "1", "0"])
+        both @ both.push(b)
+
+    two = entries_of(both).must()
+    assert two.len() == 2 && two[0].mount == "/" && two[1].mount == "/Volumes/Stick" && two[1].removable
+
+test "entries_of: a label of more than one byte, a hidden volume, and the largest figures"
+    named = entries_of(written(local_fields(mount: "/Volumes/Café ☕", label: "Café ☕"))).must()
+    assert named[0].mount == "/Volumes/Café ☕" && named[0].label == "Café ☕"
+    vm = entries_of(
+        written(["/System/Volumes/VM", "/dev/disk3s6", "apfs", "VM", "9223372036854775807", "9223372036854775807", "9223372036854775807", "0", "0", "0", "1"])
+    ).must()
+    assert vm[0].hidden && vm[0].total == 9223372036854775807 && vm[0].available == 9223372036854775807
+
+test "entries_of: a device and a label that are not UTF-8 are shown with U+FFFD, the rest kept"
+    raw: [u8] @= []
+    add_text(@raw, text: "/mnt/x")
+
+    for b in [47, 100, 101, 118, 255, 0]
+        raw @ raw.push(to_u8(b).must())
+
+    add_text(@raw, text: "ext4")
+
+    for b in [76, 254, 0]
+        raw @ raw.push(to_u8(b).must())
+
+    for field in ["10", "5", "5", "0", "0", "0", "0"]
+        add_text(@raw, text: field)
+
+    shown = entries_of(raw).must()
+    assert shown[0].device == "/dev�" && shown[0].label == "L�" && shown[0].kind == "ext4"
+
+test "entries_of fails: a field with no end, a volume with a field missing, an empty number, a sign, a number past the largest i64, a mark of 2, no mount, more free than its size, and a mount that is not UTF-8"
+    whole = written(local_fields(mount: "/", label: "a"))
+    cut = whole.slice(from: 0, to: whole.len() - 1)
+    missing = written(["/", "/dev/disk3s1s1", "apfs", "a", "10", "5", "5", "1", "0", "0"])
+    wrong = [
+        cut
+        missing
+        written(["/", "d", "apfs", "", "", "5", "5", "0", "0", "0", "0"])
+        written(["/", "d", "apfs", "", "-10", "5", "5", "0", "0", "0", "0"])
+        written(["/", "d", "apfs", "", "9223372036854775808", "5", "5", "0", "0", "0", "0"])
+        written(["/", "d", "apfs", "", "10", "5", "5", "2", "0", "0", "0"])
+        written(["", "d", "apfs", "", "10", "5", "5", "0", "0", "0", "0"])
+        written(["/", "d", "apfs", "", "10", "11", "5", "0", "0", "0", "0"])
+        written(["/", "d", "apfs", "", "10", "5", "11", "0", "0", "0", "0"])
+    ]
+
+    for one in wrong
+        match entries_of(one)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FAILED
+
+    bad_mount: [u8] @= []
+
+    for b in [47, 255, 0]
+        bad_mount @ bad_mount.push(to_u8(b).must())
+
+    for field in ["d", "apfs", "", "10", "5", "5", "0", "0", "0", "0"]
+        add_text(@bad_mount, text: field)
+
+    match entries_of(bad_mount)
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_TEXT
+
+test "read: the volume this program's folder stands on is listed, with figures in order"
+    listed = read().must()
+    assert listed.len() >= 1
+    roots: i64 @= 0
+
+    for v in listed
+        assert v.mount.len() > 0
+        assert v.free <= v.total && v.available <= v.total && v.available >= 0
+
+        if v.mount == "/" || v.mount == "C:\\"
+            roots @ roots + 1
+
+    assert roots >= 1
+
+test "read: on Darwin `/` is local and shown and the system's own volumes hidden; on Linux and Windows none is hidden"
+    listed = read().must()
+    hidden: i64 @= 0
+
+    for v in listed
+        if v.hidden
+            hidden @ hidden + 1
+
+        if os.system() == .darwin && v.mount == "/"
+            assert !v.network && !v.hidden && !v.removable && v.label.len() > 0
+
+    if os.system() == .darwin
+        assert hidden >= 1
+    else
+        assert hidden == 0

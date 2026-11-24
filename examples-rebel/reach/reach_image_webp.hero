@@ -1,17 +1,26 @@
 # Reaches Rebel's `image/webp`, so that `heroes test` on this file runs the
 # package's own tests (spec § 12). It writes a small image as a lossless WebP
-# file, reads it back, and prints its size and the colour of its first pixel.
+# file and as a lossy one, reads each back, and prints its size and the
+# colour of its first pixel.
 
 use <rebel>/image
 use <rebel>/image/webp
+
+# Prints the size and first red of the WebP file `file` read back, or why it
+# could not be.
+function show(file: [u8])
+    match webp.decode_image(file, image.default_limits())
+        .err e   => print(e.code, ": ", e.msg)
+        .ok back => print(back.width, " by ", back.height, ", red ", image.color_at(back, x: 0, y: 0).r)
 
 function main()
     match image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [200, 100, 50, 0, 0, 0])
         .err e => print(e.code, ": ", e.msg)
         .ok img =>
             match webp.encode_image(img)
-                .err e => print(e.code, ": ", e.msg)
-                .ok file =>
-                    match webp.decode_image(file, image.default_limits())
-                        .err e   => print(e.code, ": ", e.msg)
-                        .ok back => print(back.width, " by ", back.height, ", red ", image.color_at(back, x: 0, y: 0).r)
+                .err e   => print(e.code, ": ", e.msg)
+                .ok file => show(file)
+
+            match webp.encode_lossy(img, how: webp.lossy(quality: 90))
+                .err e   => print(e.code, ": ", e.msg)
+                .ok file => show(file)

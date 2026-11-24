@@ -1,0 +1,162 @@
+# Reaches Rebel's `x509/ocsp`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). `request <cert> <issuer>
+# <file> <sha1|sha256>` writes a request with a fresh nonce and prints the
+# nonce; `status <response> <cert> <issuer> <nonce|->` checks a response at
+# this moment and prints what it says; `respond <request> <signer> <key>
+# <file> <name|key> <certificates>` answers a request as a responder signing
+# by the PEM key, every certificate good, carrying the PEM certificates
+# named; `check <cert> <issuer>` asks the responder the certificate names.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/crypto/keypairs
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/time
+use <rebel>/x509
+use <rebel>/x509/ocsp
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"reach_x509_ocsp: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+# The PEM certificate at `path`.
+function certificate_at(path: str) -> x509.Certificate?
+    return x509.parse_certificate(read_file(path)?)
+
+# `at` as RFC 3339 to the second, or as its fields where it is no moment.
+function revoked_at(at: time.DateTime) -> str
+    return match time.from_date_time(at)
+        .ok t  => time.format(t, layout: .rfc3339_seconds)
+        .err _ => f"{at.year}-{at.month}-{at.day} {at.hour}:{at.minute}:{at.second}"
+
+# The name RFC 5280 § 5.3.1 gives `reason`, as OpenSSL prints it.
+function reason_name(reason: x509.Reason) -> str
+    return match reason
+        .unspecified            => "unspecified"
+        .key_compromise         => "keyCompromise"
+        .ca_compromise          => "cACompromise"
+        .affiliation_changed    => "affiliationChanged"
+        .superseded             => "superseded"
+        .cessation_of_operation => "cessationOfOperation"
+        .certificate_hold       => "certificateHold"
+        .remove_from_crl        => "removeFromCRL"
+        .privilege_withdrawn    => "privilegeWithdrawn"
+        .aa_compromise          => "aACompromise"
+
+# The line that tells `single`'s status.
+function told(single: ocsp.Single) -> str
+    return match single.status
+        .good => "good"
+        .revoked r =>
+            match r.reason
+                .ok reason => f"revoked at {revoked_at(r.at)}, reason {reason_name(reason)}"
+                .err _     => f"revoked at {revoked_at(r.at)}"
+        .unknown => "unknown"
+
+# Writes at `path` a request for the certificate at `cert_path` by `hash`
+# and answers the nonce sent, in hexadecimal.
+function request(cert_path: str, issuer_path: str, path: str, hash: str) -> str?
+    algorithm: crypto.Algorithm @= .sha1
+
+    if hash == "sha256"
+        algorithm @ .sha256
+    id = ocsp.id_of(certificate: certificate_at(cert_path)?, issuer: certificate_at(issuer_path)?, hash: algorithm)?
+    nonce = ocsp.new_nonce()?
+    fs.write_bytes(path: path, data: ocsp.create_request(asked: [id], nonce: nonce)?)?
+    return ok(f"nonce {bytes.format_hex(nonce)}")
+
+# What the response at `path` says of the certificate at `cert_path`, checked
+# at this moment against the nonce `nonce`, hexadecimal or `-` for none.
+function status(path: str, cert_path: str, issuer_path: str, nonce: str) -> str?
+    sent: [u8] @= []
+
+    if nonce != "-"
+        sent @ bytes.parse_hex(nonce)?
+    response = ocsp.decode_response(fs.read_bytes(path)?)?
+    options = ocsp.default_options(at: time.now()?, nonce: sent)
+    return ok(
+        told(ocsp.status_of(response: response, certificate: certificate_at(cert_path)?, issuer: certificate_at(issuer_path)?, options: options)?)
+    )
+
+# Writes at `path` the answer to the request at `request_path`, every
+# certificate good for a day, signed by the PEM key at `key_path` of the
+# certificate at `signer_path`, named by `naming` and carrying the PEM
+# certificates at `chain_path`.
+function respond(request_path: str, signer_path: str, key_path: str, path: str, naming: str, chain_path: str) -> ()?
+    asked = ocsp.decode_request(fs.read_bytes(request_path)?)?
+    now = time.to_date_time(time.now()?)
+    next = time.to_date_time(time.add(t: time.now()?, d: time.days(1)?)?)
+    answers: [ocsp.Answer] @= []
+
+    for id in asked.ids
+        answers @ answers.push(ocsp.Answer(id: id, status: .good, this_update: now, next_update: ok(next)))
+
+    template = ocsp.ResponseTemplate(
+        answers: answers,
+        produced_at: now,
+        nonce: asked.nonce,
+        by_key: naming == "key",
+        certificates: x509.parse_certificates(read_file(chain_path)?)?
+    )
+    key @= keypairs.parse_private_pem(read_file(key_path)?)?
+    signer = certificate_at(signer_path)?
+
+    scheme: keypairs.Scheme = match x509.kind_of(signer.public_key)?
+        .p256    => .ecdsa_sha256
+        .p384    => .ecdsa_sha384
+        .ed25519 => .ed25519
+        .x25519  => .ed25519
+        .rsa _   => .rsa_pkcs1_sha256
+
+    written = ocsp.create_response(template, signer: signer, key: key, scheme: scheme)
+    keypairs.close_private(@key)?
+    return fs.write_bytes(path: path, data: written?)
+
+# What the responder the certificate at `cert_path` names says of it.
+function asked_live(cert_path: str, issuer_path: str) -> str?
+    single = ocsp.check(certificate: certificate_at(cert_path)?, issuer: certificate_at(issuer_path)?, client: http.default_client())?
+    return ok(told(single))
+
+# The usage, the code a command line not understood fails with.
+constant USAGE: str
+    "usage: reach_x509_ocsp request <cert.pem> <issuer.pem> <file> <sha1|sha256> | status <response> <cert.pem> <issuer.pem> <nonce|-> | respond <request> <signer.pem> <key.pem> <file> <name|key> <chain.pem> | check <cert.pem> <issuer.pem>"
+
+# The lines the command `given` prints, once it has run.
+function run(given: [str]) -> [str]?
+    if given.len() == 5 && given[0] == "request"
+        return ok([request(cert_path: given[1], issuer_path: given[2], path: given[3], hash: given[4])?])
+
+    if given.len() == 5 && given[0] == "status"
+        return ok([status(path: given[1], cert_path: given[2], issuer_path: given[3], nonce: given[4])?])
+
+    if given.len() == 7 && given[0] == "respond"
+        respond(request_path: given[1], signer_path: given[2], key_path: given[3], path: given[4], naming: given[5], chain_path: given[6])?
+        return ok([])
+
+    if given.len() == 3 && given[0] == "check"
+        return ok([asked_live(cert_path: given[1], issuer_path: given[2])?])
+    return fail(code: "usage", msg: USAGE)
+
+function main()
+    match run(text_arguments())
+        .ok lines =>
+            for line in lines
+                print(line)
+        .err e =>
+            if e.code == "usage"
+                print(e.msg)
+                exit(code: 2)
+            print(f"reach_x509_ocsp: {e.code}: {e.msg}")
+            exit(code: 1)

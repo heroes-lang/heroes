@@ -1,0 +1,229 @@
+# The items of a FETCH response (RFC 9051 § 7.5.2, RFC 3516's BINARY, RFC
+# 7162's MODSEQ): each item read by its own grammar into a message, its
+# name kept so a program can tell an item not answered from one answered
+# empty. An item no grammar here names is passed over as one value of any
+# shape and its name kept; one whose value is no value is refused.
+
+use bytes
+use mail
+use mail/imap
+use mail/imap/internal/lex
+use mail/imap/internal/shape
+use mail/imap/internal/wire
+use strings
+use time
+
+# A message numbered `seq` with nothing answered yet.
+function empty(seq: i64) -> imap.Message
+    return imap.Message(
+        seq: seq,
+        items: [],
+        uid: 0,
+        flags: [],
+        envelope: shape.no_envelope(),
+        structure: shape.no_part(),
+        internal_date: mail.Date(instant: time.Instant(unix_nanoseconds: 0), offset_minutes: 0, offset_known: false),
+        size: 0,
+        modseq: 0,
+        bodies: [],
+        binary_sizes: {}
+    )
+
+# The items of the message `seq` where the parser stands, on their `(`.
+function message(@s: wire.Session, seq: i64) -> imap.Message?
+    out @= empty(seq)
+    lex.expect(@s, b: '(', what: "FETCH items")?
+
+    if lex.take(@s, b: ')')
+        return ok(out)
+
+    while true
+        item(@s, @out)?
+
+        if lex.take(@s, b: ')')
+            return ok(out)
+        lex.space(@s)?
+
+# An item's name where the parser stands: letters, digits, `.` and `-`, upper
+# case.
+function name_of(@s: wire.Session) -> str?
+    start = s.at
+
+    while !lex.at_end(s) && is_name_char(s.line[s.at])
+        s.at @ s.at + 1
+
+    if s.at == start
+        return lex.refused(s, what: "FETCH item")
+    return ok(lex.upper(lex.text_of(s.line.slice(from: start, to: s.at))))
+
+# Whether `b` may stand in an item's name.
+function is_name_char(b: u8) -> bool
+    return b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '.' || b == '-' || b == '_'
+
+# One item where the parser stands, read into `out`.
+function item(@s: wire.Session, @out: imap.Message) -> ()?
+    name = name_of(@s)?
+
+    if (name == "BODY" || name == "BINARY" || name == "BINARY.SIZE") && lex.peek(s) == '['
+        return section(@s, @out, name: name)
+    out.items @ out.items.push(name)
+    lex.space(@s)?
+
+    if name == "FLAGS"
+        out.flags @ lex.flag_list(@s)?
+    else if name == "UID"
+        out.uid @ lex.nz_number(@s)?
+    else if name == "ENVELOPE"
+        out.envelope @ shape.envelope(@s)?
+    else if name == "BODYSTRUCTURE" || name == "BODY"
+        out.structure @ shape.part(@s, depth: 0)?
+    else if name == "INTERNALDATE"
+        out.internal_date @ internal_date(lex.text_of(lex.quoted(@s)?))?
+    else if name == "RFC822.SIZE"
+        out.size @ lex.number(@s)?
+    else if name == "MODSEQ"
+        lex.expect(@s, b: '(', what: "MODSEQ's value")?
+        out.modseq @ lex.number(@s)?
+        lex.expect(@s, b: ')', what: "MODSEQ's end")?
+    else if name == "RFC822" || name == "RFC822.HEADER" || name == "RFC822.TEXT"
+        out.bodies @ out.bodies.push(
+            imap.Body(section: name, origin: -1, data: lex.nstring(@s, binary: false)?, binary: false)
+        )
+    else
+        shape.skip(@s, depth: 0)?
+    return ok()
+
+# A `BODY[...]`, `BINARY[...]` or `BINARY.SIZE[...]` item whose `name` was
+# read, the parser on its `[`.
+function section(@s: wire.Session, @out: imap.Message, name: str) -> ()?
+    lex.expect(@s, b: '[', what: "section")?
+    start = s.at
+
+    while !lex.at_end(s) && lex.peek(s) != ']'
+        s.at @ s.at + 1
+
+    spec = lex.upper(lex.text_of(s.line.slice(from: start, to: s.at)))
+    lex.expect(@s, b: ']', what: "section's end")?
+    origin @= -1
+
+    if lex.take(@s, b: '<')
+        origin @ lex.number(@s)?
+        lex.expect(@s, b: '>', what: "origin's end")?
+    out.items @ out.items.push(name + "[" + spec + "]")
+    lex.space(@s)?
+
+    if name == "BINARY.SIZE"
+        out.binary_sizes[spec] @ lex.number(@s)?
+        return ok()
+    data = lex.nstring(@s, binary: name == "BINARY")?
+    out.bodies @ out.bodies.push(imap.Body(section: spec, origin: origin, data: data, binary: name == "BINARY"))
+    return ok()
+
+# The months as INTERNALDATE writes them.
+constant MONTHS: [str]
+    ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+
+# The moment `t` writes, `17-Jul-1996 02:44:25 -0700`, a one-digit day
+# written after a space as RFC 9051's `date-day-fixed` asks. Fails `invalid`
+# where it is not such a date or names a day, a time or a zone outside its
+# range.
+function internal_date(t: str) -> mail.Date?
+    bad: mail.Date? = fail(
+        code: lex.INVALID,
+        msg: f"the server's INTERNALDATE \"{t}\" is not `dd-Mon-yyyy hh:mm:ss +zzzz`"
+    )
+
+    if t.len() != 26 || !strings.is_ascii(t)
+        return bad
+
+    day = if t[0] == ' '
+        digits(t.slice(from: 1, to: 2))
+    else
+        digits(t.slice(from: 0, to: 2))
+    month_name = lex.upper(t.slice(from: 3, to: 6))
+    rest = t.slice(from: 2, to: t.len())
+
+    if rest[0] != '-' || rest[4] != '-' || rest[9] != ' ' || rest[12] != ':' || rest[15] != ':' || rest[18] != ' '
+        return bad
+
+    if rest[19] != '+' && rest[19] != '-'
+        return bad
+    month @= 0
+
+    for k in range(from: 0, to: 12)
+        if MONTHS[k] == month_name
+            month @ k + 1
+
+    year = digits(rest.slice(from: 5, to: 9))
+    hour = digits(rest.slice(from: 10, to: 12))
+    minute = digits(rest.slice(from: 13, to: 15))
+    second = digits(rest.slice(from: 16, to: 18))
+    zone_h = digits(rest.slice(from: 20, to: 22))
+    zone_m = digits(rest.slice(from: 22, to: 24))
+
+    if month == 0 || day < 0 || year < 0 || hour < 0 || minute < 0 || second < 0 || zone_h < 0 || zone_m < 0 || zone_m > 59 || zone_h > 23
+        return bad
+
+    local = match time.from_date_time(time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: 0))
+        .ok made => made
+        .err _   => return bad
+
+    offset = if rest[19] == '-'
+        -(zone_h * 60 + zone_m)
+    else
+        zone_h * 60 + zone_m
+    return ok(
+        mail.Date(instant: time.Instant(unix_nanoseconds: local.unix_nanoseconds - offset * 60_000_000_000), offset_minutes: offset, offset_known: true)
+    )
+
+# The number the ASCII digits of `t` write, -1 where it is empty or holds
+# another byte.
+function digits(t: str) -> i64
+    if t.len() == 0
+        return -1
+    n @= 0
+
+    for b in bytes.from_text(t)
+        if b < '0' || b > '9'
+            return -1
+        n @ n * 10 + to_i64(b - '0').must()
+
+    return n
+
+## Tests
+
+test "internal_date: RFC 3501's example, a one-digit day after a space, a zone ahead, a one-digit day with no space refused as Python refuses it"
+    a = internal_date("17-Jul-1996 02:44:25 -0700").must()
+    assert a.offset_minutes == -420 && a.offset_known && time.unix_seconds(a.instant) == 837596665
+    assert time.unix_seconds(internal_date(" 1-Jan-2026 00:00:00 +0100").must().instant) == 1767222000
+    assert time.unix_seconds(internal_date("01-Jan-2026 00:00:00 +0000").must().instant) == 1767225600
+
+    for bad in ["", "1-Jan-2026 00:00:00 +0000", "17-Jul-1996 02:44:25", "32-Jul-1996 02:44:25 -0700", "17-Jux-1996 02:44:25 -0700", "17-Jul-1996 24:00:00 -0700", "17-Jul-1996 02:44:25 -0760", "17/Jul/1996 02:44:25 -0700", "x7-Jul-1996 02:44:25 -0700"]
+        match internal_date(bad)
+            .ok _  => assert false
+            .err e => assert e.code == lex.INVALID
+
+test "message: RFC 3501's FETCH examples, a section with an origin, BINARY.SIZE, an unknown item passed over"
+    s @= lex.net_pair()
+    s.line @ bytes.from_text(
+        "(FLAGS (\\Seen) INTERNALDATE \"17-Jul-1996 02:44:25 -0700\" RFC822.SIZE 4286 UID 4827313 MODSEQ (12) BODY[HEADER.FIELDS (SUBJECT)]<0> \"Subject: x\" BINARY.SIZE[1] 30 X-GM-LABELS (\"\\\\Inbox\" foo) BODY[] NIL)"
+    )
+    m = message(@s, seq: 12).must()
+    assert m.seq == 12 && m.flags == ["\\Seen"] && m.size == 4286 && m.uid == 4827313 && m.modseq == 12
+    assert m.items == ["FLAGS", "INTERNALDATE", "RFC822.SIZE", "UID", "MODSEQ", "BODY[HEADER.FIELDS (SUBJECT)]", "BINARY.SIZE[1]", "X-GM-LABELS", "BODY[]"]
+    assert m.bodies == [imap.Body(section: "HEADER.FIELDS (SUBJECT)", origin: 0, data: bytes.from_text("Subject: x"), binary: false), imap.Body(section: "", origin: -1, data: [], binary: false)]
+    assert m.binary_sizes == {"1": 30} && lex.at_end(s)
+    s.line @ bytes.from_text("()")
+    s.at @ 0
+    assert message(@s, seq: 1).must() == empty(1)
+    wire.close(@s).must()
+
+test "message: an item with no value, a list never closed, a UID of 0"
+    s @= lex.net_pair()
+
+    for bad in ["(FLAGS)", "(UID 1", "(UID 0)", "(BODY[1 \"x\")", "(FLAGS (\\Seen) UID)"]
+        s.line @ bytes.from_text(bad)
+        s.at @ 0
+        assert message(@s, seq: 1).is_err()
+
+    wire.close(@s).must()

@@ -5514,33 +5514,8 @@ int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
     return hero_ui_appkit_part_act(id, part, act);
 }
 
-#else
-
-/* THE PARTS' CALLS, which neither C arm offers yet: each refuses in words of
- * its own (`hero_ui_refused`). An arm that offers them defines them in its
- * own member (UI Automation's fragments on Win32, a `GtkAccessible` of the
- * arm's on GTK 4), and its system leaves this block's condition. */
-
-int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count) {
-    (void)id;
-    (void)list;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer offers a drawing area's parts to a screen reader on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
-    (void)id;
-    (void)buffer;
-    (void)count;
-    (void)length;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a drawing area's parts on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act) {
-    (void)id;
-    (void)part;
-    (void)act;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer acts on a drawing area's part as a screen reader on macOS alone, and this system's arm has no such call");
-}
-
 #endif
+
+/* THE PARTS' CALLS of the two C arms are their own members': GTK 4's in
+ * `hero_ui_gtk.c`, over `hero_ui_parts_gtk.c`, and Win32's in
+ * `hero_ui_win32.c`, over `hero_ui_parts_win32.c`. */

@@ -45,6 +45,9 @@
 
 #include <stdint.h>
 
+#include "hero_ipc.h"
+#include "hero_stream.h"
+
 /* The kinds of failure, the same numbers on every platform. */
 #define HERO_ACTIVATION_OK 0
 /* An argument the layer refuses, or an environment it cannot read: a
@@ -77,10 +80,23 @@
 #define HERO_ACTIVATION_ENTRY_LISTENER 1
 #define HERO_ACTIVATION_ENTRY_CONNECTION 2
 #define HERO_ACTIVATION_ENTRY_DATAGRAM 3
-/* A descriptor that is no socket this layer holds: a FIFO, a file, a local
- * socket, a netlink one. It is left open and untouched, apart from being
- * marked close-on-exec, and `hero_activation_describe` says what it is. */
+/* A descriptor no member of the layer has a value for: a local datagram or
+ * sequenced-packet socket, a netlink one, a POSIX message queue, a folder.
+ * It is left open and untouched, apart from being marked close-on-exec, and
+ * `hero_activation_describe` says what it is. */
 #define HERO_ACTIVATION_ENTRY_OTHER 4
+/* A local stream socket that listens, a path's or an abstract name's, held
+ * by `hero_ipc.h`'s table: `hero_activation_take_listener` hands it over. */
+#define HERO_ACTIVATION_ENTRY_LOCAL_LISTENER 5
+/* A local stream socket connected, which systemd hands per connection where
+ * the unit says `Accept=yes`: `hero_activation_take_stream` hands over the
+ * channel's stream. */
+#define HERO_ACTIVATION_ENTRY_LOCAL_CONNECTION 6
+/* A FIFO (`ListenFIFO=`), as a stream of `hero_stream.h`'s table:
+ * `hero_activation_take_stream` hands it over. */
+#define HERO_ACTIVATION_ENTRY_FIFO 7
+/* A character device or a file (`ListenSpecial=`), as a stream the same way. */
+#define HERO_ACTIVATION_ENTRY_SPECIAL 8
 
 /* The most descriptors `$LISTEN_FDS` may say, and the most sockets one name
  * of launchd's may hold. */
@@ -91,8 +107,11 @@
 #define HERO_ACTIVATION_NOTICE_MOST 4096
 
 /* One descriptor a manager handed over. `number` is a socket's number of
- * `hero_net.h` for a kind that is one, taken back once with `hero_net_of`
- * (or `hero_net_close` through it), and -1 for `HERO_ACTIVATION_ENTRY_OTHER`;
+ * `hero_net.h` for the three kinds of `hero_net.h`'s sockets, taken back once
+ * with `hero_net_of` (or `hero_net_close` through it); for a local listener,
+ * a local connection, a FIFO and a special file, the number this layer kept
+ * the value under, taken back once with `hero_activation_take_listener` or
+ * `hero_activation_take_stream`; and -1 for `HERO_ACTIVATION_ENTRY_OTHER`.
  * `descriptor` is the descriptor's own number, which only
  * `hero_activation_describe` reads. */
 typedef struct hero_activation_entry {
@@ -141,6 +160,25 @@ int64_t hero_activation_count(void);
  * an absent variable. */
 int64_t hero_activation_count_for(const char *pid_text, const char *count_text, int64_t pid);
 
+/* THE PIDFD CHECK (`sd_listen_fds(3)`, since systemd 259): where the
+ * manager also set `$LISTEN_PIDFDID`, the descriptors are this process's only
+ * where it is the inode number of this process's pidfd, which tells a
+ * process from a later one that reuses its pid. What the check answers for
+ * the text the manager wrote and this process's own number: 1 where the
+ * descriptors are this process's (no text, or the process has no stable
+ * pidfd number to compare, as systemd's own reader passes over then), 0
+ * where the numbers differ, -1 with `HERO_ACTIVATION_INVALID` for a text
+ * that is no decimal number of 1 to 20 digits within 64 bits. `own_known`
+ * is 1 where `own` is the process's number, 0 where it has none. */
+int64_t hero_activation_pidfd_check(const char *listed_text, int64_t own_known, uint64_t own);
+
+/* This process's pidfd inode number as decimal digits, written into
+ * `buffer`, `n` long, where they fit, and their length; 0 where the system
+ * has no stable number: off Linux, on a kernel without the pidfd file system
+ * (`PID_FS_MAGIC`, Linux 6.9), or with an inode number of 32 bits, which
+ * `sd_pidfd_get_inode_id(3)` says is reused as pids are. */
+int64_t hero_activation_own_pidfd_id(void *buffer, uint64_t n);
+
 /* The machine's `CLOCK_MONOTONIC` in whole microseconds, which a notice of
  * `RELOADING=1` is sent with; -1 where this system has none. */
 int64_t hero_activation_monotonic_usec(void);
@@ -165,6 +203,18 @@ int64_t hero_activation_inherit(hero_activation_entry *entries, uint64_t n);
  * (launchd hands them over once), `HERO_ACTIVATION_LIMIT` for more sockets
  * than that, which are closed, `HERO_ACTIVATION_UNSUPPORTED` off Darwin. */
 int64_t hero_activation_launchd(const char *name, hero_activation_entry *entries, uint64_t n);
+
+/* The local listener kept under `number` by the call that wrote the entry,
+ * handed over once, which `hero_ipc_listener_close` gives back; NULL with
+ * `HERO_ACTIVATION_NOT_FOUND` where the number names none, or none any more,
+ * and `HERO_ACTIVATION_INVALID` where it names a stream. */
+hero_ipc_listener *hero_activation_take_listener(int64_t number);
+
+/* The stream (a local connection's, a FIFO's, a special file's) kept under
+ * `number`, handed over once, which `hero_stream_close` gives back; NULL as
+ * `hero_activation_take_listener` answers, `HERO_ACTIVATION_INVALID` where
+ * the number names a listener. */
+hero_stream *hero_activation_take_stream(int64_t number);
 
 /* What the descriptor `descriptor` is, in words: written into `buffer`, `n`
  * long, where they fit, and their length; 0 where the descriptor is not open

@@ -86,15 +86,18 @@ use time
 use tls
 use url
 use uuid
+use web/internal/balance
 use web/internal/csrf
 use web/internal/event_stream
 use web/internal/fixture
 use web/internal/folders
+use web/internal/gateway
 use web/internal/health
 use web/internal/limiting
 use web/internal/patterns
 use web/internal/proxies
 use web/internal/reading
+use web/internal/relay
 use web/internal/routing
 use web/internal/signing
 use web/internal/sniffing
@@ -2024,6 +2027,332 @@ function forwarded_of(r: http.Request, trusted: [net.Network]) -> Forwarded
     else
         host
     return Forwarded(address: hops[w.at].address, scheme: scheme, host: told_host, proxies: w.passed)
+
+## A reverse proxy
+
+# An upstream a reverse proxy passes requests to: made by `upstream_of`.
+record Upstream
+    # Its URL, `http://` or `https://` with a host, whose path and query
+    # every target asked is joined to.
+    url: url.Url
+    # Its share of the turns, 1 or more.
+    weight: i64
+
+# How a reverse proxy chooses the upstream of each request, as nginx's
+# upstream module documents its methods.
+variant Choosing
+    # Each in turn, as often as its weight says: nginx's smooth weighted
+    # round-robin, its default.
+    round_robin
+    # The fewest requests in flight for its weight, ties taken in turn:
+    # nginx's `least_conn`.
+    least_connections
+
+# A reverse proxy: made by `reverse_proxy`, its fields changed by the
+# program, served by `serve_proxy` or `serve_proxy_stream`.
+record ReverseProxy
+    # The upstreams, 1 or more.
+    upstreams: [Upstream]
+    # How each request's upstream is chosen.
+    choosing: Choosing
+    # What a request's head may hold (431 past it), its body past
+    # `body_bytes` refused 413, and what an upstream's head may hold (502).
+    limits: http.Limits
+    # How long the making of an upstream's connection may take, its TLS
+    # handshake included; past it the next upstream is tried, or 504.
+    connect_timeout: time.Duration
+    # How long an upstream may stay silent: before its answer's head (504
+    # past it), between two pieces of its body, and in a switched connection
+    # where the client is silent too.
+    read_timeout: time.Duration
+    # How long one write to an upstream may wait.
+    send_timeout: time.Duration
+    # How long a client may stay silent inside its request's body (408 past
+    # it), or take one write of the answer.
+    client_timeout: time.Duration
+    # How long a client's connection may wait for its next request, the
+    # whole of its head included; the connection is then closed.
+    idle_timeout: time.Duration
+    # The most upstreams one request is tried on, 1 or more.
+    tries: i64
+    # The failures within `fail_timeout` that keep an upstream out for
+    # `fail_timeout`, as nginx's `max_fails`; 0 counts none.
+    max_fails: i64
+    # The span failures are counted in, and how long an upstream is kept out.
+    fail_timeout: time.Duration
+    # Whether the client's `Host` is sent on, as Go's
+    # `NewSingleHostReverseProxy` sends it; else the upstream's own, as
+    # nginx's `$proxy_host` and Go's `SetURL` send it.
+    keep_host: bool
+    # The proxies in front of this one, as `trusted_networks` makes them:
+    # where the client's connection comes from one, its `Forwarded` and
+    # `X-Forwarded-*` are added to; from any other they are replaced.
+    trusted: [net.Network]
+    # The pseudonym this proxy writes in `Via`, a token, the listener's port
+    # after it; "" writes none and detects no loop.
+    via: str
+    # The PEM of the only authorities an `https://` upstream's certificate
+    # may be signed by; "" trusts the system's store.
+    roots: str
+    # The client connections served at once by `serve_proxy`, each on a
+    # worker thread of its own, 1 or more; the next waits in the listener's
+    # queue until one ends.
+    workers: i64
+
+# What serving a reverse proxy came to.
+record ProxyServed
+    # The client connections served.
+    connections: i64
+    # The requests read.
+    requests: i64
+    # The answers an upstream gave, passed back whole.
+    relayed: i64
+    # The requests the proxy answered itself: refused (400, 408, 413, 431,
+    # 501, 505, 508) or answered for an upstream (502, 503, 504).
+    refused: i64
+    # The connections switched to another protocol (a WebSocket) and
+    # relayed both ways.
+    switched: i64
+
+# A reverse proxy served on the calling thread, its balancer's counts kept
+# from one connection to the next: made by `proxy_state`, used by
+# `serve_proxy_stream`.
+record ProxyState
+    # What the relay does. Only this package reads it.
+    plan: relay.Plan
+    # The balancer's counts. Only this package reads it.
+    chooser: relay.Chooser
+
+# The upstream at `target`, given `weight` of the turns.
+#
+# - `target`: an `http://` or `https://` URL with a host; its path and query
+#   are joined to every target asked.
+# - `weight`: its share of the turns, 1 or more.
+#
+# Fails `invalid` where `target` is no such URL, holds a user or a
+# fragment, or `weight` is below 1. See also `reverse_proxy`.
+function upstream_of(target: str, weight: i64) -> Upstream?
+    u = url.parse(target)?
+
+    if u.scheme != "http" && u.scheme != "https"
+        return fail(code: INVALID, msg: f"an upstream {target}: its scheme is neither http nor https")
+
+    if u.host == "" || u.user != "" || u.fragment != ""
+        return fail(code: INVALID, msg: f"an upstream {target}: it names no host, or names a user or a fragment")
+
+    if weight < 1
+        return fail(code: INVALID, msg: f"an upstream {target}: a weight of {weight}, below 1")
+    return ok(Upstream(url: u, weight: weight))
+
+# A reverse proxy over `upstreams` with the usual settings: the round-robin,
+# `http.default_limits()`, 60 seconds to connect, to wait for an upstream and
+# to write to one (nginx's `proxy_connect_timeout`, `proxy_read_timeout` and
+# `proxy_send_timeout`), 60 seconds for a client's silences and its idle
+# connection, 3 tries, an upstream kept out for 10 seconds after 1 failure
+# (nginx's `max_fails` and `fail_timeout`), the upstream's own `Host`, no
+# proxy trusted, the machine's name in `Via`, the system's authorities, and
+# 32 workers.
+#
+# - `upstreams`: the upstreams, as `upstream_of` makes them.
+#
+# See also `serve_proxy`, `upstream_of`.
+function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy
+    minute = time.seconds(60).must()
+    named = os.host_name().default("proxy")
+
+    name = if gateway.is_token(named)
+        named
+    else
+        "proxy"
+
+    return ReverseProxy(
+        upstreams: upstreams,
+        choosing: .round_robin,
+        limits: http.default_limits(),
+        connect_timeout: minute,
+        read_timeout: minute,
+        send_timeout: minute,
+        client_timeout: minute,
+        idle_timeout: minute,
+        tries: 3,
+        max_fails: 1,
+        fail_timeout: time.seconds(10).must(),
+        keep_host: false,
+        trusted: [],
+        via: name,
+        roots: "",
+        workers: 32
+    )
+
+# The state `serve_proxy_stream` serves `proxy` with, nothing counted yet.
+#
+# - `proxy`: the reverse proxy; `workers` is not read.
+#
+# Fails `invalid` where it has no upstream, `tries` is below 1, `max_fails`
+# below 0, a span below 0, or `via` is neither "" nor a token. See also
+# `serve_proxy_stream`.
+function proxy_state(proxy: ReverseProxy) -> ProxyState?
+    plan = plan_of(proxy, received_by: proxy.via)?
+    start = time.mark()?
+    return ok(ProxyState(plan: plan, chooser: .here(state: balance_of(proxy), start: start)))
+
+# The relay's plan for `proxy`.
+#
+# - `proxy`: the reverse proxy.
+# - `received_by`: what `Via` names this proxy by; "" writes none.
+#
+# Fails as `proxy_state` says.
+function plan_of(proxy: ReverseProxy, received_by: str) -> relay.Plan?
+    if proxy.upstreams.len() == 0
+        return fail(code: INVALID, msg: "a reverse proxy with no upstream")
+
+    if proxy.tries < 1 || proxy.max_fails < 0
+        return fail(
+            code: INVALID,
+            msg: f"a reverse proxy of {proxy.tries} tries and {proxy.max_fails} failures, where tries are 1 or more and failures 0 or more"
+        )
+
+    if proxy.via != "" && !gateway.is_token(proxy.via)
+        return fail(code: INVALID, msg: f"a reverse proxy's `Via` pseudonym {proxy.via} is no token")
+    spans = [
+        proxy.connect_timeout
+        proxy.read_timeout
+        proxy.send_timeout
+        proxy.client_timeout
+        proxy.idle_timeout
+        proxy.fail_timeout
+    ]
+
+    for d in spans
+        if d.nanoseconds < 0
+            return fail(code: INVALID, msg: f"a reverse proxy's span of {time.format_duration(d)}, below zero")
+
+    ups: [relay.Upstream] @= []
+
+    for u in proxy.upstreams
+        if u.weight < 1
+            return fail(code: INVALID, msg: f"an upstream of weight {u.weight}, below 1")
+        secure = u.url.scheme == "https"
+
+        port = if u.url.port == ""
+            if secure
+                443
+            else
+                80
+        else
+            url.port_of(u.url)?
+        ups @ ups.push(relay.Upstream(base: u.url, port: port, secure: secure))
+
+    return ok(
+        relay.Plan(upstreams: ups, limits: proxy.limits, connect_ms: ms_of(proxy.connect_timeout), read_ms: ms_of(proxy.read_timeout), send_ms: ms_of(proxy.send_timeout), client_ms: ms_of(proxy.client_timeout), idle_ms: ms_of(proxy.idle_timeout), tries: proxy.tries, keep_host: proxy.keep_host, trusted: proxy.trusted, scheme: "http", received_by: received_by, roots: proxy.roots)
+    )
+
+# The balancer `proxy` asks for, nothing counted.
+#
+# - `proxy`: the reverse proxy.
+function balance_of(proxy: ReverseProxy) -> balance.State
+    weights: [i64] @= []
+
+    for u in proxy.upstreams
+        weights @ weights.push(u.weight)
+
+    least = match proxy.choosing
+        .round_robin       => false
+        .least_connections => true
+
+    return balance.state_of(weights, least: least, max_fails: proxy.max_fails, fail_ms: ms_of(proxy.fail_timeout))
+
+# `d` in whole milliseconds, a part of one counting as a whole one, and
+# `net.FOREVER` for `time.max_duration()`.
+#
+# - `d`: the span, 0 or more.
+function ms_of(d: time.Duration) -> i64
+    if d == time.max_duration()
+        return net.FOREVER
+    return (d.nanoseconds + 999_999) / 1_000_000
+
+# Serves every connection `l` accepts as a reverse proxy over
+# `proxy.upstreams` until the program asks to stop: each request passed to
+# an upstream the balancer chooses, and its answer passed back, the bodies
+# both ways as they come and never held whole.
+#
+# - `l`: the listener; its owner closes it.
+# - `proxy`: what the proxy does.
+#
+# Each request goes out with the hop-by-hop fields of RFC 9110 § 7.6.1
+# removed, those its `Connection` lists among them, so a client can never
+# make a field the proxy adds vanish; `Forwarded`, `X-Forwarded-For`,
+# `-Host` and `-Proto` telling the client, those the client wrote kept only
+# from a proxy `proxy.trusted` holds; `Via` naming this proxy, a request that
+# names it already refused 508; `Max-Forwards` counted down, a `TRACE` or
+# `OPTIONS` at 0 answered here, and `OPTIONS *` too; `Host` as
+# `proxy.keep_host` says; and `Connection: close`, one upstream connection a
+# request. A request that asks
+# to switch protocols (`Connection: upgrade` and `Upgrade`, a WebSocket) is
+# passed with its `Upgrade`, and a 101 answering it is relayed byte for byte
+# both ways until either end closes or both are silent past
+# `proxy.read_timeout`; a 101 switching to another protocol is answered 502.
+# The answer comes back with the hop-by-hop fields removed, its body with
+# its length, as chunks to an HTTP/1.1 client or to the connection's end to
+# an HTTP/1.0 one.
+#
+# Where an upstream cannot be reached, the next is tried, up to
+# `proxy.tries`; where it was reached and its answer's head did not come,
+# the next is tried only for an idempotent request with no body (RFC 9110 §
+# 9.2.2), nothing having been passed back yet. An upstream's failure is
+# answered 504 where the time ran out (`timeout`) and 502 for every other
+# code; 503, with `Retry-After`, where every upstream is kept out by its
+# failures. A failure once the answer's head is passed back closes the
+# client's connection, its body cut short. What it refuses, and why:
+# `CONNECT` (501, a reverse proxy opens no tunnel); an `Expect` other than
+# `100-continue` (417), which is written by the proxy itself before the body;
+# a request with both `Content-Length` and `Transfer-Encoding`, or a coding
+# other than chunked (400, 501), which RFC 9112 § 6.3 names as smuggling; a
+# head past `proxy.limits` (431) and a body past it (413); a trailer, read and
+# checked and not passed on.
+#
+# Connections are served by `proxy.workers` threads at once; the next waits
+# in the listener's queue. At the stop (`os.catch_stop`, `os.ask_stop`) no
+# connection is accepted, and every wait of the workers answers `stopped`,
+# so requests in flight are cut. Fails `invalid` as `proxy_state` does or
+# where `proxy.workers` is below 1, `limit` where a worker could not be
+# started, and as `poll` fails. See also `serve_proxy_stream`,
+# `reverse_proxy`.
+function serve_proxy(l: net.Listener, proxy: ReverseProxy) -> ProxyServed?
+    if proxy.workers < 1
+        return fail(code: INVALID, msg: f"a reverse proxy of {proxy.workers} workers, below 1")
+
+    by = if proxy.via == ""
+        ""
+    else
+        f"{proxy.via}:{l.address.port}"
+    plan = plan_of(proxy, received_by: by)?
+    got = relay.serve(l, plan: plan, state: balance_of(proxy), workers: proxy.workers)?
+    t = got.tally
+    return ok(
+        ProxyServed(connections: got.connections, requests: t.requests, relayed: t.relayed, refused: t.refused, switched: t.switched)
+    )
+
+# Serves the client on `stream` as `serve_proxy` serves each connection, on
+# the calling thread, until its connection ends: for a program's own loop,
+# or a connection it accepted itself.
+#
+# - `state`: the proxy and its balancer's counts, as `proxy_state` made
+#   them; the counts move.
+# - `stream`: the client's connection; its owner closes it.
+# - `remote`: the client's address and port, as `net.format_address` writes
+#   them.
+#
+# What it served. See also `serve_proxy`.
+function serve_proxy_stream(@state: ProxyState, stream: io.Stream, remote: str) -> ProxyServed
+    t = relay.serve_client(@state.chooser, plan: state.plan, stream: stream, remote: remote)
+    return ProxyServed(
+        connections: 1,
+        requests: t.requests,
+        relayed: t.relayed,
+        refused: t.refused,
+        switched: t.switched
+    )
 
 ## Caching dynamic responses
 

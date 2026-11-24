@@ -1,0 +1,192 @@
+# The keys a password gives: RFC 7292 appendix B's derivation, which the MAC
+# and the PKCS #12 ciphers take, over the password as a BMPString of UTF-16
+# with two zero bytes after it; PKCS #5's PBKDF1 (RFC 8018 § 5.1), which its
+# oldest ciphers take; and a digest by name, the ones a file may ask for.
+
+use bytes
+use crypto
+use unicode
+use x509/pkcs12/internal/octets
+
+# The most iterations a file is read with, or written with: ten million.
+# A file asking more is refused before any work, since its count is the
+# writer's and the time is the reader's.
+constant MAX_ITERATIONS: i64
+    10000000
+
+# The digest whose identifier is `dotted`: MD5, SHA-1 and the SHA-2 family,
+# the digests RFC 7292 and RFC 8018 name.
+function digest_of(dotted: str) -> crypto.Algorithm?
+    if dotted == "1.2.840.113549.2.5"
+        return ok(.md5)
+
+    if dotted == "1.3.14.3.2.26"
+        return ok(.sha1)
+
+    if dotted == "2.16.840.1.101.3.4.2.4"
+        return ok(.sha224)
+
+    if dotted == "2.16.840.1.101.3.4.2.1"
+        return ok(.sha256)
+
+    if dotted == "2.16.840.1.101.3.4.2.2"
+        return ok(.sha384)
+
+    if dotted == "2.16.840.1.101.3.4.2.3"
+        return ok(.sha512)
+
+    if dotted == "2.16.840.1.101.3.4.2.5"
+        return ok(.sha512_224)
+
+    if dotted == "2.16.840.1.101.3.4.2.6"
+        return ok(.sha512_256)
+    return fail(code: "unsupported", msg: f"the digest {dotted}, which no PKCS #12 file of RFC 7292 names")
+
+# The identifier of `digest`, one `digest_of` reads.
+function digest_oid(digest: crypto.Algorithm) -> str
+    match digest
+        .md5                                          => return "1.2.840.113549.2.5"
+        .sha1                                         => return "1.3.14.3.2.26"
+        .sha224                                       => return "2.16.840.1.101.3.4.2.4"
+        .sha256                                       => return "2.16.840.1.101.3.4.2.1"
+        .sha384                                       => return "2.16.840.1.101.3.4.2.2"
+        .sha512                                       => return "2.16.840.1.101.3.4.2.3"
+        .sha512_224                                   => return "2.16.840.1.101.3.4.2.5"
+        .sha512_256                                   => return "2.16.840.1.101.3.4.2.6"
+        .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 => return ""
+
+# The HMAC of PBKDF2 whose identifier is `dotted` (RFC 8018 appendix B.1),
+# by its digest.
+function prf_of(dotted: str) -> crypto.Algorithm?
+    if dotted == "1.2.840.113549.2.7"
+        return ok(.sha1)
+
+    if dotted == "1.2.840.113549.2.8"
+        return ok(.sha224)
+
+    if dotted == "1.2.840.113549.2.9"
+        return ok(.sha256)
+
+    if dotted == "1.2.840.113549.2.10"
+        return ok(.sha384)
+
+    if dotted == "1.2.840.113549.2.11"
+        return ok(.sha512)
+
+    if dotted == "1.2.840.113549.2.12"
+        return ok(.sha512_224)
+
+    if dotted == "1.2.840.113549.2.13"
+        return ok(.sha512_256)
+    return fail(code: "unsupported", msg: f"the pseudorandom function {dotted}, which RFC 8018 does not name")
+
+# The digest of `data` by `digest`.
+function hash(digest: crypto.Algorithm, data: [u8]) -> [u8]
+    state @= crypto.start(digest)
+    crypto.update(@state, data)
+    return crypto.digest(state)
+
+# `password` as RFC 7292 appendix B.1 gives it to the derivation: its UTF-16
+# big-endian units, a character above U+FFFF as its two surrogates, then two
+# zero bytes.
+function bmp(password: str) -> [u8]
+    out: [u8] @= []
+
+    for point in unicode.code_points(password)
+        for unit in unicode.to_utf16(point).must()
+            n = to_i64(unit).must()
+            out @ out.push(to_u8(n >> 8).must())
+            out @ out.push(to_u8(n & 0xff).must())
+
+    out @ out.push(0)
+    return out.push(0)
+
+# `data` repeated to fill whole blocks of `v` bytes, as many as its length
+# asks; nothing for nothing.
+function stretch(data: [u8], v: i64) -> [u8]
+    out: [u8] @= []
+
+    if data.len() == 0
+        return out
+    count = (data.len() + v - 1) / v * v
+
+    while out.len() < count
+        out @ out.push(data[out.len() % data.len()])
+
+    return out
+
+# RFC 7292 appendix B.2's `length` bytes from `password` (as `bmp` gives it,
+# or empty), `salt`, the purpose `id` (1 a key, 2 an IV, 3 a MAC's key) and
+# `iterations`, 1 or more, which the caller checks, by `digest`.
+function pkcs12_key(digest: crypto.Algorithm, password: [u8], salt: [u8], id: i64, iterations: i64, length: i64) -> [u8]
+    v = crypto.block_size(digest)
+    d: [u8] @= []
+
+    while d.len() < v
+        d @ d.push(to_u8(id).must())
+
+    i: [u8] @= bytes.concat([stretch(data: salt, v: v), stretch(data: password, v: v)])
+    out: [u8] @= []
+
+    while out.len() < length
+        a: [u8] @= hash(digest: digest, data: bytes.concat([d, i]))
+        round: i64 @= 1
+
+        while round < iterations
+            a @ hash(digest: digest, data: a)
+            round @ round + 1
+
+        out @ bytes.concat([out, a])
+        b = stretch(data: a, v: v)
+        next: [u8] @= []
+        at: i64 @= 0
+
+        while at < i.len()
+            carry: i64 @= 1
+            k: i64 @= v - 1
+            block: [u8] @= i.slice(from: at, to: at + v)
+
+            while k >= 0
+                sum = to_i64(block[k]).must() + to_i64(b[k]).must() + carry
+                block[k] @ to_u8(sum & 0xff).must()
+                carry @ sum >> 8
+                k @ k - 1
+
+            next @ bytes.concat([next, block])
+            at @ at + v
+
+        i @ next
+
+    return out.slice(from: 0, to: length)
+
+# PBKDF1's 16 bytes from `password` and `salt` by `digest`, MD5 or SHA-1,
+# over `iterations`, 1 or more: the key the first 8 and the IV the last 8.
+function pbkdf1(digest: crypto.Algorithm, password: [u8], salt: [u8], iterations: i64) -> [u8]
+    t: [u8] @= hash(digest: digest, data: bytes.concat([password, salt]))
+    round: i64 @= 1
+
+    while round < iterations
+        t @ hash(digest: digest, data: t)
+        round @ round + 1
+
+    return t.slice(from: 0, to: 16)
+
+test "bmp: nothing, ASCII, a character of two bytes, and one above U+FFFF as two surrogates"
+    assert bmp("") == [0, 0]
+    assert bmp("ab") == [0, 0x61, 0, 0x62, 0, 0]
+    assert bmp("ä") == [0, 0xe4, 0, 0]
+    assert bmp("😀") == [0xd8, 0x3d, 0xde, 0x00, 0, 0]
+
+test "stretch: nothing, a part of a block, and a whole one"
+    assert stretch(data: [], v: 4) == []
+    assert stretch(data: [1, 2, 3], v: 4) == [1, 2, 3, 1]
+    assert stretch(data: [1, 2, 3, 4], v: 4) == [1, 2, 3, 4]
+
+test "digest_of, prf_of and digest_oid: every name read and written back, an unknown one refused"
+    assert digest_of(digest_oid(.sha256)).must() == .sha256
+    assert digest_of(digest_oid(.sha1)).must() == .sha1
+    assert digest_of(digest_oid(.sha512_256)).must() == .sha512_256
+    assert octets.code_of(digest_of("1.2.3")) == "unsupported"
+    assert prf_of("1.2.840.113549.2.9").must() == .sha256
+    assert octets.code_of(prf_of("1.2.840.113549.2.6")) == "unsupported"
+    assert digest_oid(.sha3_256) == ""

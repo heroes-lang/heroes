@@ -184,6 +184,13 @@ hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms
  * about 50 ms, failing `HERO_IPC_NOT_OPEN`. */
 int64_t hero_ipc_listener_close(hero_ipc_listener *l);
 
+/* The name the listener `l` listens on, a path, an abstract name or a pipe's
+ * name, as the listen was given it or as the socket a manager handed over is
+ * bound: written into `buffer`, `n` long, where it fits, its length answered
+ * and its `HERO_IPC_SPACE_*` in `*space`; -1 with `HERO_IPC_NOT_OPEN` where
+ * `l` names no open listener. */
+int64_t hero_ipc_listener_name(hero_ipc_listener *l, void *buffer, uint64_t n, int64_t *space);
+
 /* Makes every later and waiting read and write of the channel `s` end by
  * `ms` milliseconds from now, failing the stream's `HERO_STREAM_TIMED_OUT`;
  * `HERO_IPC_FOREVER` takes the deadline away, and 0 is a deadline already
@@ -205,6 +212,35 @@ int64_t hero_ipc_shutdown_write(hero_stream *s);
  * at the connection: its id into `*pid` and its user's id into `*uid`
  * (-1 on Windows, which has none of that number). 0, or -1. */
 int64_t hero_ipc_peer(hero_stream *s, int64_t *pid, int64_t *uid);
+
+/* ADOPTING A DESCRIPTOR A MANAGER HANDED THE PROGRAM (M-rebel-library, for
+ * `hero_activation.h`): called from C of the layer alone, as `hero_net.h`'s
+ * `hero_net_adopt` is. A descriptor is no number a Heroes program can be
+ * trusted to hand over, so no group binds these two. The descriptor is ASKED
+ * what it is, never assumed; on success the table owns it, set close-on-exec
+ * and non-blocking as every socket the table holds is. On failure NULL, the
+ * descriptor untouched and still the caller's: `HERO_IPC_INVALID` for a
+ * number no descriptor can be, one that names no socket, or a local stream
+ * socket of the other shape (listening for the stream, connected for the
+ * listener), `HERO_IPC_NOT_OPEN` for a number that names nothing,
+ * `HERO_IPC_UNSUPPORTED` for a socket of another family or type, and on
+ * Windows, where no manager hands a descriptor over; `HERO_IPC_EXISTS` for a
+ * listener the table holds already, and `HERO_IPC_LIMIT` where the table has
+ * no room, which closes the descriptor.
+ *
+ * The listening local stream socket `descriptor` is, as a listener
+ * `hero_ipc_accept` takes connections from: its space and name read from the
+ * socket, a path or, on Linux, an abstract name (`HERO_IPC_UNSUPPORTED` for
+ * one longer than the table keeps, or unnamed). `hero_ipc_listener_close`
+ * closes the descriptor and NEVER removes the socket file, which is the
+ * manager's: it keeps its own descriptor and listens on after the program's
+ * copy is gone. */
+hero_ipc_listener *hero_ipc_adopt_listener(int64_t descriptor);
+
+/* The connected local stream socket `descriptor` is, as a channel's stream
+ * of kind `HERO_STREAM_KIND_SOCKET`, which `hero_stream_close` gives back:
+ * what systemd hands per connection where its unit says `Accept=yes`. */
+hero_stream *hero_ipc_adopt_stream(int64_t descriptor);
 
 /* -- shared memory ----------------------------------------------------------- */
 

@@ -1,0 +1,321 @@
+# The header of a VP8 key frame (RFC 6386, sections 9 and 19), read as
+# libwebp 1.6.0 reads it: the frame tag and the picture's size, then, from the
+# first partition, the segments, the loop filter, the token partitions, the
+# quantizers and the coefficient probabilities. What it answers is all the
+# macroblock loop needs, the first partition left at its first macroblock.
+
+use bytes
+use image
+use image/webp/internal/boolread
+use image/webp/internal/probs
+use image/webp/internal/quant
+use image/webp/internal/samples
+
+# How the macroblocks of one segment and one kind are filtered.
+record Strength
+    # The limit of an edge inside the macroblock, 0 where nothing is filtered.
+    limit: i64
+    # The interior limit.
+    interior: i64
+    # The threshold of high edge variance.
+    hev: i64
+    # Whether the edges inside the macroblock are filtered whatever its
+    # coefficients.
+    inner: bool
+
+# A key frame's header.
+record Header
+    # The picture's columns.
+    width: i64
+    # Its rows.
+    height: i64
+    # The macroblocks of a row.
+    across: i64
+    # The rows of macroblocks.
+    down: i64
+    # Whether each macroblock says its segment.
+    segment_map: bool
+    # The three probabilities of the segment tree.
+    segment_probs: [i64]
+    # The loop filter: 0 none, 1 simple, 2 normal.
+    filter: i64
+    # Segment `s`'s strength at `2 * s` for a 16x16 macroblock, `2 * s + 1`
+    # for one predicted by 4x4 blocks.
+    strengths: [Strength]
+    # Each segment's steps.
+    matrices: [quant.Matrix]
+    # The coefficient probabilities, `probs.DEFAULTS` flattened and updated:
+    # the probability `i` of type `t`, band `b`, context `c` at
+    # `((t * 8 + b) * 3 + c) * 11 + i`.
+    coeff: [i64]
+    # The probability that a macroblock has coefficients, -1 where every
+    # macroblock codes them.
+    skip_prob: i64
+    # The first partition, at its first macroblock.
+    modes: boolread.Reader
+    # The token partitions; row `y` reads partition `y % parts.len()`.
+    parts: [boolread.Reader]
+
+# The width and height a key frame's first ten bytes give. Fails `invalid`
+# where `data` is short, is not a key frame to show, or names a size of 0.
+function size_of(data: [u8] lent) -> [i64]?
+    if data.len() < 10
+        return fail(code: image.INVALID, msg: f"a VP8 frame of {data.len()} bytes, where its header takes 10")
+    tag = byte(data, at: 0) | byte(data, at: 1) << 8 | byte(data, at: 2) << 16
+
+    if tag & 1 != 0
+        return fail(code: image.INVALID, msg: "a VP8 frame that is not a key frame")
+
+    if tag >> 1 & 7 > 3
+        return fail(code: image.INVALID, msg: f"a VP8 frame of version {tag >> 1 & 7}, where 0 to 3 are defined")
+
+    if tag >> 4 & 1 == 0
+        return fail(code: image.INVALID, msg: "a VP8 frame marked not to be shown")
+
+    if byte(data, at: 3) != 0x9d || byte(data, at: 4) != 0x01 || byte(data, at: 5) != 0x2a
+        return fail(code: image.INVALID, msg: "a VP8 key frame without its start code 9d 01 2a")
+
+    if tag >> 5 >= data.len()
+        return fail(
+            code: image.INVALID,
+            msg: f"a first partition of {tag >> 5} bytes in a frame of {data.len()}"
+        )
+    width = (byte(data, at: 6) | byte(data, at: 7) << 8) & 0x3fff
+    height = (byte(data, at: 8) | byte(data, at: 9) << 8) & 0x3fff
+
+    if width == 0 || height == 0
+        return fail(code: image.INVALID, msg: f"a VP8 frame of {width} by {height}")
+    return ok([width, height, tag >> 5])
+
+# The byte of `data` at `at`, as a number.
+function byte(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must()
+
+# The header of the key frame `data`, a VP8 chunk's payload, within `limits`.
+# Fails `invalid` where the frame is damaged or ends inside its header,
+# `limit` where its size passes `limits`.
+function parse(data: [u8] lent, limits: image.Limits) -> Header?
+    size = size_of(data)?
+    image.check_limits(limits, width: size[0], height: size[1])?
+    first_end = 10 + size[2]
+    r @= boolread.open(data, from: 10, to: first_end)
+    _ = boolread.bit(r: @r, prob: 128)
+    _ = boolread.bit(r: @r, prob: 128)
+    segment_on = boolread.bit(r: @r, prob: 128) == 1
+    segment_map @= false
+    absolute @= true
+    seg_q @= [0, 0, 0, 0]
+    seg_f @= [0, 0, 0, 0]
+    segment_probs @= [255, 255, 255]
+
+    if segment_on
+        segment_map @ boolread.bit(r: @r, prob: 128) == 1
+
+        if boolread.bit(r: @r, prob: 128) == 1
+            absolute @ boolread.bit(r: @r, prob: 128) == 1
+
+            for s in range(from: 0, to: 4)
+                seg_q[s] @ boolread.optional_signed(r: @r, n: 7)
+
+            for s in range(from: 0, to: 4)
+                seg_f[s] @ boolread.optional_signed(r: @r, n: 6)
+
+        if segment_map
+            for s in range(from: 0, to: 3)
+                if boolread.bit(r: @r, prob: 128) == 1
+                    segment_probs[s] @ boolread.literal(r: @r, n: 8)
+
+    if r.over
+        return fail(code: image.INVALID, msg: "a VP8 frame whose segment header runs past its first partition")
+    simple = boolread.bit(r: @r, prob: 128) == 1
+    level = boolread.literal(r: @r, n: 6)
+    sharpness = boolread.literal(r: @r, n: 3)
+    ref_delta @= 0
+    mode_delta @= 0
+
+    if boolread.bit(r: @r, prob: 128) == 1 && boolread.bit(r: @r, prob: 128) == 1
+        for i in range(from: 0, to: 4)
+            if boolread.bit(r: @r, prob: 128) == 1
+                v = boolread.signed(r: @r, n: 6)
+
+                if i == 0
+                    ref_delta @ v
+
+        for i in range(from: 0, to: 4)
+            if boolread.bit(r: @r, prob: 128) == 1
+                v = boolread.signed(r: @r, n: 6)
+
+                if i == 0
+                    mode_delta @ v
+
+    if r.over
+        return fail(code: image.INVALID, msg: "a VP8 frame whose filter header runs past its first partition")
+    count = 1 << boolread.literal(r: @r, n: 2)
+    parts = partitions(data, from: first_end, count: count)?
+    base = boolread.literal(r: @r, n: 7)
+    d = quant.Indices(
+        base: base,
+        y1_dc: boolread.optional_signed(r: @r, n: 4),
+        y2_dc: boolread.optional_signed(r: @r, n: 4),
+        y2_ac: boolread.optional_signed(r: @r, n: 4),
+        uv_dc: boolread.optional_signed(r: @r, n: 4),
+        uv_ac: boolread.optional_signed(r: @r, n: 4)
+    )
+    matrices: [quant.Matrix] @= []
+    strengths: [Strength] @= []
+
+    for s in range(from: 0, to: 4)
+        q = if !segment_on
+            base
+        else if absolute
+            seg_q[s]
+        else
+            seg_q[s] + base
+        matrices @ matrices.push(quant.matrix(q, d: d))
+
+        f = if !segment_on
+            level
+        else if absolute
+            seg_f[s]
+        else
+            seg_f[s] + level
+        strengths @ strengths.push(strength(level: f + ref_delta, sharpness: sharpness, inner: false))
+        strengths @ strengths.push(strength(level: f + ref_delta + mode_delta, sharpness: sharpness, inner: true))
+
+    _ = boolread.bit(r: @r, prob: 128)
+    coeff @= flat(probs.DEFAULTS)
+    updates = flat(probs.UPDATES)
+
+    for i in range(from: 0, to: coeff.len())
+        if boolread.bit(r: @r, prob: updates[i]) == 1
+            coeff[i] @ boolread.literal(r: @r, n: 8)
+
+    skip_prob @= -1
+
+    if boolread.bit(r: @r, prob: 128) == 1
+        skip_prob @ boolread.literal(r: @r, n: 8)
+
+    kind = if level == 0
+        0
+    else if simple
+        1
+    else
+        2
+    return ok(
+        Header(width: size[0], height: size[1], across: (size[0] + 15) / 16, down: (size[1] + 15) / 16, segment_map: segment_map, segment_probs: segment_probs, filter: kind, strengths: strengths, matrices: matrices, coeff: coeff, skip_prob: skip_prob, modes: r, parts: parts)
+    )
+
+# The strength of a filter `level` (before it is held to 0 to 63) at
+# `sharpness`, as libwebp computes it.
+function strength(level: i64, sharpness: i64, inner: bool) -> Strength
+    held = if level < 0
+        0
+    else if level > 63
+        63
+    else
+        level
+
+    if held == 0
+        return Strength(limit: 0, interior: 0, hev: 0, inner: inner)
+    interior @= held
+
+    if sharpness > 0
+        if sharpness > 4
+            interior @ interior >> 2
+        else
+            interior @ interior >> 1
+
+        if interior > 9 - sharpness
+            interior @ 9 - sharpness
+
+    if interior < 1
+        interior @ 1
+
+    hev = if held >= 40
+        2
+    else if held >= 15
+        1
+    else
+        0
+    return Strength(limit: 2 * held + interior, interior: interior, hev: hev, inner: inner)
+
+# The `count` token partitions after the first, from `from`: their sizes in 3
+# bytes each but the last's, which takes what is left. A size past the end is
+# cut to it, as libwebp does. Fails `invalid` where the sizes do not fit or
+# the last partition is empty.
+function partitions(data: [u8] lent, from: i64, count: i64) -> [boolread.Reader]?
+    sizes = from + 3 * (count - 1)
+
+    if sizes > data.len()
+        return fail(code: image.INVALID, msg: f"a VP8 frame that ends inside its {count} partition sizes")
+    out: [boolread.Reader] @= []
+    at @= sizes
+
+    for p in range(from: 0, to: count - 1)
+        k = from + 3 * p
+        size = byte(data, at: k) | byte(data, at: k + 1) << 8 | byte(data, at: k + 2) << 16
+        end = boolread.min(a: at + size, b: data.len())
+        out @ out.push(boolread.open(data, from: at, to: end))
+        at @ end
+
+    if at >= data.len()
+        return fail(code: image.INVALID, msg: "a VP8 frame whose last token partition is empty")
+    out @ out.push(boolread.open(data, from: at, to: data.len()))
+    return ok(out)
+
+# The rows of `table` laid end to end.
+function flat(table: [[i64]] lent) -> [i64]
+    out: [i64] @= []
+
+    for row in table
+        for v in row
+            out @ out.push(v)
+
+    return out
+
+## Tests
+
+# The VP8 payload of the sample `name`, its 20 bytes of RIFF and chunk
+# header taken off.
+function sample_frame(name: str) -> [u8]
+    for s in samples.lossy()
+        if s.name == name
+            file = bytes.parse_hex(s.file).must()
+            return file.slice(from: 20, to: file.len())
+
+    return []
+
+test "size_of: short, not a key frame, an unknown version, hidden, no start code, a partition too long, no size"
+    good = sample_frame("cwebp-40x34")
+    first = to_i64(good[0]).must() >> 5 | to_i64(good[1]).must() << 3 | to_i64(good[2]).must() << 11
+    assert size_of(good).must() == [40, 34, first]
+    assert size_of(good.slice(from: 0, to: 9)).is_err()
+    changes = [[0, 1], [0, 8], [0, 0], [3, 0], [5, 0], [2, 255], [6, 0]]
+
+    for c in changes
+        bad @= good
+        at = c[0]
+
+        if at == 0 && c[1] == 0
+            bad[0] @ to_u8(to_i64(good[0]).must() & 0xef).must()
+        else if at == 0
+            bad[0] @ to_u8(to_i64(good[0]).must() | c[1]).must()
+        else if at == 6
+            bad[6] @ 0
+            bad[7] @ to_u8(to_i64(good[7]).must() & 0xc0).must()
+        else
+            bad[at] @ to_u8(c[1]).must()
+
+        match size_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == image.INVALID
+
+test "parse: one partition read, and an empty last partition refused"
+    good = sample_frame("cwebp-40x34")
+    first_end = 10 + size_of(good).must()[2]
+    h = parse(good, limits: image.default_limits()).must()
+    assert h.parts.len() == 1 && h.across == 3 && h.down == 3
+
+    match parse(good.slice(from: 0, to: first_end), limits: image.default_limits())
+        .ok _  => assert false
+        .err e => assert e.code == image.INVALID

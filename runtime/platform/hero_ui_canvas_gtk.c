@@ -99,6 +99,7 @@
 #include "hero_layer_alloc.h"
 #include "hero_ui.h"
 #include "hero_ui_arm.h"
+#include "hero_ui_parts_gtk.h"
 
 /* The numbers of GTK's, cairo's and Pango's headers this member passes. */
 #define HERO_GTK_ACCESSIBLE_ROLE_IMG 20
@@ -1251,6 +1252,8 @@ int64_t hero_ui_canvas_gtk_make(int64_t id, hero_ui_canvas_gtk_namer namer, void
     void *drag;
     void *motion;
     void *keys;
+    size_t parts_type = hero_ui_parts_gtk_area_type();
+    int64_t attached;
 
     *area = NULL;
     *canvas = NULL;
@@ -1261,9 +1264,15 @@ int64_t hero_ui_canvas_gtk_make(int64_t id, hero_ui_canvas_gtk_namer namer, void
     if (made == NULL) {
         return hero_ui_canvas_gtk_said(HERO_UI_LIMIT, words, room, "the memory for a drawing area could not be had");
     }
-    /* Its role is the image's, fixed as it is made, as GTK fixes a role:
-     * one element a screen reader names by its accessible name. */
-    widget = f->object_new(f->drawing_area_get_type(), "accessible-role", HERO_GTK_ACCESSIBLE_ROLE_IMG, (const char *)NULL);
+    /* GTK fixes a role as a widget is made. Where GTK offers a drawing
+     * area's parts (`hero_ui_parts_gtk.h`), the area is of that member's
+     * type, a group holding its parts or one image standing for it; else
+     * GTK's own, one image a screen reader names by its accessible name. */
+    if (parts_type != 0) {
+        widget = f->object_new((unsigned long)parts_type, "accessible-role", hero_ui_parts_gtk_area_role(), (const char *)NULL);
+    } else {
+        widget = f->object_new(f->drawing_area_get_type(), "accessible-role", HERO_GTK_ACCESSIBLE_ROLE_IMG, (const char *)NULL);
+    }
     if (widget == NULL) {
         hero_layer_free(made);
         return hero_ui_canvas_gtk_said(HERO_UI_OTHER, words, room, "GTK made no drawing area");
@@ -1294,6 +1303,12 @@ int64_t hero_ui_canvas_gtk_make(int64_t id, hero_ui_canvas_gtk_namer namer, void
     hero_ui_canvas_gtk_on(f, keys, "key-pressed", (hero_ui_canvas_gtk_callback)hero_ui_canvas_gtk_key_pressed, made);
     hero_ui_canvas_gtk_on(f, keys, "key-released", (hero_ui_canvas_gtk_callback)hero_ui_canvas_gtk_key_released, made);
     f->widget_add_controller(widget, keys);
+    attached = hero_ui_parts_gtk_attach(widget, id, words, room);
+    if (attached != HERO_UI_OK) {
+        /* Finalised here, the record with it, as GTK frees both. */
+        f->object_unref(widget);
+        return attached;
+    }
     *area = widget;
     *canvas = made;
     return HERO_UI_OK;
@@ -1308,6 +1323,7 @@ void hero_ui_canvas_gtk_forget(hero_ui_canvas_gtk *canvas) {
     }
     area = canvas->area;
     canvas->id = 0;
+    hero_ui_parts_gtk_forget(area);
     /* The record may be freed by this very call, the area finalised. */
     f->object_unref(area);
 }

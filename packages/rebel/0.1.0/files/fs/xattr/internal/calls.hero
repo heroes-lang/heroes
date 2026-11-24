@@ -1,0 +1,274 @@
+# The calls `fs/xattr` makes on its floor, `fs/xattr/hero_xattr`, and the one
+# place a kind of the floor becomes a code of README § A4 with a message
+# saying what was asked and what the system answered. A path and a name are
+# checked here for a zero byte before C is handed them, since C reads one as
+# their end and `cstr` aborts on it.
+
+use bytes as octets
+use fs/xattr/hero_xattr
+
+constant INVALID: str
+    "invalid"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant EXISTS: str
+    "exists"
+
+constant PERMISSION: str
+    "permission"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# The room the first reading of a list or a value is given: a Linux
+# attribute is at most 64 KiB, and most are a few dozen bytes.
+constant FIRST_ROOM: i64
+    4096
+
+# The largest list or value read whole, past which the call fails `limit`:
+# Darwin's resource fork and a Windows stream may be as large as a file.
+constant MOST: i64
+    1073741824
+
+# How many readings are made before an answer that grows on every one is a
+# failure.
+constant TRIES: i64
+    8
+
+# The code of `kind`, one of the kinds `hero_xattr.last_error` answers.
+function code_of(kind: i64) -> str
+    if kind == hero_xattr.HERO_XATTR_INVALID
+        return INVALID
+
+    if kind == hero_xattr.HERO_XATTR_NOT_FOUND
+        return FILE_NOT_FOUND
+
+    if kind == hero_xattr.HERO_XATTR_ABSENT
+        return NOT_FOUND
+
+    if kind == hero_xattr.HERO_XATTR_EXISTS
+        return EXISTS
+
+    if kind == hero_xattr.HERO_XATTR_DENIED
+        return PERMISSION
+
+    if kind == hero_xattr.HERO_XATTR_NOT_A_DIRECTORY
+        return NOT_A_DIRECTORY
+
+    if kind == hero_xattr.HERO_XATTR_LIMIT || kind == hero_xattr.HERO_XATTR_TOO_LARGE
+        return LIMIT
+
+    if kind == hero_xattr.HERO_XATTR_UNSUPPORTED
+        return UNSUPPORTED
+
+    if kind == hero_xattr.HERO_XATTR_NOT_TEXT
+        return NOT_TEXT
+    return FAILED
+
+# What the system found, in words, for `kind`, with its own number where no
+# code names the reason.
+function words_of(kind: i64, number: i64) -> str
+    if kind == hero_xattr.HERO_XATTR_INVALID
+        return "the system takes no such name or value: empty, too long, of a form the name keeps for itself, or on Windows holding `:`, `\\` or `/`"
+
+    if kind == hero_xattr.HERO_XATTR_NOT_FOUND
+        return "nothing is there"
+
+    if kind == hero_xattr.HERO_XATTR_ABSENT
+        return "it has no attribute of that name"
+
+    if kind == hero_xattr.HERO_XATTR_EXISTS
+        return "it has an attribute of that name already"
+
+    if kind == hero_xattr.HERO_XATTR_DENIED
+        return "the system refuses it to this program: the file's permission, a namespace this user may not write, a name the system keeps for itself, or a link, on which Linux keeps no `user.` attribute"
+
+    if kind == hero_xattr.HERO_XATTR_NOT_A_DIRECTORY
+        return "a part of the path is not a folder"
+
+    if kind == hero_xattr.HERO_XATTR_LIMIT
+        return f"the system has no room for it (its number {number})"
+
+    if kind == hero_xattr.HERO_XATTR_TOO_LARGE
+        return "the value is larger than this volume keeps for one attribute"
+
+    if kind == hero_xattr.HERO_XATTR_UNSUPPORTED
+        return "this volume keeps no extended attribute of that kind (on Windows, no named streams), or this system keeps none that is read here: Darwin, Linux and Windows are"
+
+    if kind == hero_xattr.HERO_XATTR_NOT_TEXT
+        return "the path or the name is not UTF-8"
+    return f"the system refused it, its number {number}"
+
+# The failure of `asked` where a call of the floor answered -1: its kind as a
+# code, and what the system found in words.
+function failed<T>(asked: str) -> T?
+    kind = hero_xattr.last_error()
+    return fail(code: code_of(kind), msg: f"{asked}: {words_of(kind: kind, number: hero_xattr.last_os_error())}")
+
+# Nothing where `text` can be handed to C, or `invalid` where it holds a zero
+# byte, which C reads as its end.
+#
+# - `text`: a path or a name.
+# - `what`: what `text` is, for the message.
+# - `asked`: what was asked, for the message.
+function checked(text: str, what: str, asked: str) -> ()?
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == 0
+            return fail(code: INVALID, msg: f"{asked}: the {what} holds a zero byte at {at}, which no system reads")
+        at @ at + 1
+
+    return ok()
+
+# The bytes of a list of names (`name` empty) or of one value, read once and
+# asked again with more room where they did not fit.
+function filled(path: str, name: str, follow: i64, asked: str) -> [u8]?
+    checked(text: path, what: "path", asked: asked)?
+    checked(text: name, what: "name", asked: asked)?
+    room: i64 @= FIRST_ROOM
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got: i64 @= 0
+
+        if name.len() == 0
+            got @ hero_xattr.names(path, follow: follow, @buffer, n: room.to_u64().must())
+        else
+            got @ hero_xattr.read(path: path, name: name, follow: follow, @buffer, n: room.to_u64().must())
+
+        if got < 0
+            return failed(asked)
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+
+        if got > MOST
+            return fail(code: LIMIT, msg: f"{asked}: it has {got} bytes, past the {MOST} read whole")
+
+        # Room for an answer that grew between its measure and its reading.
+        room @ got
+        tries @ tries + 1
+
+    return fail(code: FAILED, msg: f"{asked}: it grew on each of {TRIES} readings")
+
+# The names a list of the floor holds, each ended by a zero byte. Fails
+# `not_text` where a name is not UTF-8, and `failed` where the bytes do not
+# end in a zero byte, so they are not the floor's form.
+function names_of(bytes: [u8] lent, asked: str) -> [str]?
+    found: [str] @= []
+    start: i64 @= 0
+
+    for index in range(from: 0, to: bytes.len())
+        if bytes[index] == 0
+            match octets.to_text(bytes.slice(from: start, to: index))
+                .ok text => found @ found.push(text)
+                .err _   => return fail(code: NOT_TEXT, msg: f"{asked}: the name at byte {start} is not UTF-8")
+
+            start @ index + 1
+
+    if start != bytes.len()
+        return fail(code: FAILED, msg: f"{asked}: the list does not end in a zero byte")
+    return ok(found)
+
+# The names of `path`'s attributes, the link's own where `follow` is 0.
+function listed(path: str, follow: i64) -> [str]?
+    asked = f"listing the extended attributes of \"{path}\""
+    return names_of(filled(path: path, name: "", follow: follow, asked: asked)?, asked: asked)
+
+# The value of `path`'s attribute `name`, the link's own where `follow` is 0.
+function value_of(path: str, name: str, follow: i64) -> [u8]?
+    asked = f"reading the extended attribute \"{name}\" of \"{path}\""
+
+    if name.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: an attribute's name is never empty")
+    return filled(path: path, name: name, follow: follow, asked: asked)
+
+# `value` written as `path`'s attribute `name`, as `mode` says, on the link
+# itself where `follow` is 0.
+function written(path: str, name: str, value: [u8], mode: i64, follow: i64) -> ()?
+    asked = f"writing the extended attribute \"{name}\" of \"{path}\""
+    checked(text: path, what: "path", asked: asked)?
+    checked(text: name, what: "name", asked: asked)?
+
+    if name.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: an attribute's name is never empty")
+    bytes @= value
+
+    if hero_xattr.write(path: path, name: name, @bytes, size: value.len().to_u64().must(), follow: follow, mode: mode) < 0
+        return failed(asked)
+    return ok()
+
+# `path`'s attribute `name` removed, the link's own where `follow` is 0.
+function removed(path: str, name: str, follow: i64) -> ()?
+    asked = f"removing the extended attribute \"{name}\" of \"{path}\""
+    checked(text: path, what: "path", asked: asked)?
+    checked(text: name, what: "name", asked: asked)?
+
+    if name.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: an attribute's name is never empty")
+
+    if hero_xattr.remove(path: path, name: name, follow: follow) < 0
+        return failed(asked)
+    return ok()
+
+## Tests
+
+test "code_of: each kind of the floor its code, both kinds of room limit, and a kind no code names failed"
+    assert code_of(hero_xattr.HERO_XATTR_NOT_FOUND) == FILE_NOT_FOUND
+    assert code_of(hero_xattr.HERO_XATTR_ABSENT) == NOT_FOUND
+    assert code_of(hero_xattr.HERO_XATTR_EXISTS) == EXISTS
+    assert code_of(hero_xattr.HERO_XATTR_DENIED) == PERMISSION
+    assert code_of(hero_xattr.HERO_XATTR_NOT_A_DIRECTORY) == NOT_A_DIRECTORY
+    assert code_of(hero_xattr.HERO_XATTR_LIMIT) == LIMIT
+    assert code_of(hero_xattr.HERO_XATTR_TOO_LARGE) == LIMIT
+    assert code_of(hero_xattr.HERO_XATTR_UNSUPPORTED) == UNSUPPORTED
+    assert code_of(hero_xattr.HERO_XATTR_NOT_TEXT) == NOT_TEXT
+    assert code_of(hero_xattr.HERO_XATTR_INVALID) == INVALID
+    assert code_of(hero_xattr.HERO_XATTR_OTHER) == FAILED
+    assert code_of(99) == FAILED
+
+test "names_of: none, one, several, an empty list, a name that is not UTF-8, and bytes with no last zero"
+    assert names_of([], asked: "x").must().len() == 0
+    one = names_of([97, 0], asked: "x").must()
+    assert one.len() == 1 && one[0] == "a"
+    two = names_of([97, 46, 98, 0, 0xc3, 0xa9, 0], asked: "x").must()
+    assert two.len() == 2 && two[0] == "a.b" && two[1] == "é"
+
+    match names_of([0xff, 0], asked: "x")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    match names_of([97, 0, 98], asked: "x")
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+test "checked: a zero byte at the start, the middle and the end is invalid, and none passes"
+    assert !checked(text: "abc", what: "path", asked: "x").is_err()
+
+    zero_first: [u8] = [0, 'a', 'b']
+    zero_middle: [u8] = ['a', 0, 'c']
+    zero_last: [u8] = ['a', 'b', 0]
+
+    for bytes in [zero_first, zero_middle, zero_last]
+        match checked(text: bytes.validated_bytes().must(), what: "path", asked: "x")
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
