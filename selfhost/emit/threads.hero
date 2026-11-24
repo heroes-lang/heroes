@@ -87,21 +87,28 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
             statements @ statements.push(target.must() + " = " + numbered + ";")
     else if name == "receive"
         # Into the answer's own storage, so a value of any size is rebuilt once
-        # and never stands on the frame.
+        # and never stands on the frame, written whole first (`zeroed_whole`).
         into = target.must()
+        option_c = ctype.option_of(names, ty: result)
+        statements @ statements.push(zeroed_whole(into: into, c_type: option_c))
+        statements @ statements.push(into + ".tag = INT64_C(0);")
         statements @ statements.push(
             nodebug.MARK + "int64_t hero_answer = hero_mail_receive(" + arguments[0] + ", &" + into + ".as.ok, " + arguments[1] + ", &" + stop_place.HERE + ");"
         )
-        statements @ statements.push("if (hero_answer == 0) " + into + ".tag = INT64_C(0);")
         statements @ statements.push(
-            "else { " + into + ".tag = INT64_C(1); " + into + ".as.err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped(); }"
+            "if (hero_answer != 0) " + into + " = (" + option_c + "){.tag = INT64_C(1), .as.err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()};"
         )
     else if name == "wait"
         statements @ statements.push(
             nodebug.MARK + "HeroThreadBox *hero_box = hero_thread_end(" + arguments[0] + ", &" + stop_place.HERE + ");"
         )
 
+        # The answer's take writes it by its parts, a variant's tag and its
+        # case's fields alone, so it is written whole first (`zeroed_whole`).
         if crossing.answers(c, names, ty: result) && !target.is_err()
+            statements @ statements.push(
+                zeroed_whole(into: target.must(), c_type: ctype.c_type(names, c: c, ty: result).must())
+            )
             statements @ statements.push(
                 crossing.take_of(c, s, decls, ty: result) + "(&hero_box->answer, &" + target.must() + ");"
             )
@@ -182,3 +189,24 @@ function assigned(target: str?, made: str) -> str
     if target.is_err()
         return made + ";"
     return target.must() + " = " + made + ";"
+
+# **An answer the runtime or a take writes by its parts is written WHOLE
+# first** (panel 182's item 3). Since panel 182 the prologue gives a
+# temporary no initialiser (`emit/body.hero`): the receive wrote the option's
+# tag and handed `&into.as.ok` to the runtime's take, and the wait handed the
+# answer to its take, which writes a variant's tag and its case's fields
+# alone, so the rest of the union and the padding kept the stack's leftovers
+# inside a value the IR calls defined (`tests/harness/suite_wholes.hero`
+# found the receive's in the emissions of defect 2692's two cases, the early
+# gate of 2026-11-24). The write is `emit/zeroed.hero`'s deep form, every
+# byte zero by the emitted C's own `memset`, read back as one assignment of
+# the whole type (an exact overlap, C11 6.5.16.1p3): no initialiser for clang
+# to recurse into however deep the answer's records nest (defects 549 and
+# 2058), and the whole write `wholes` asks before a part's.
+function zeroed_whole(into: str, c_type: str) -> str
+    return into + " = *(" + c_type + " *)__builtin_memset(&" + into + ", 0, sizeof " + into + ");"
+
+## Tests
+
+test "an answer is written whole, every byte zero, before any part of it"
+    assert zeroed_whole(into: "t5", c_type: "h_0opt_19de49") == "t5 = *(h_0opt_19de49 *)__builtin_memset(&t5, 0, sizeof t5);"

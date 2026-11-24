@@ -28,10 +28,25 @@
 # sibling branch does not count, and that is the shape the lookup had:
 # `if (found == NULL) { t3 = …; } else { t3.tag = …; }`.
 #
-# WHAT IT DOES NOT SEE, said rather than implied. A callee handed `&t<N>`
-# whole that writes only part of it (every such call in the seed today is
-# a retain, a release, an `eq` or an overflow builtin, grepped
-# 2026-09-28); and a slot's partial write, which is a place store into a
+# AND A TAKE HANDED `&t<N>` WHOLE writes it by its parts, so it counts as a
+# part write too: a take, the runtime's `hero_cross_take_*` or a unit's own
+# `h_0take_<hash>` (`emit/crossing.hero`), rebuilds a value crossing between
+# threads a field at a time, a variant's tag and its case's fields alone.
+# The thread's `wait` handed its answer to one with nothing written whole
+# before it from step 104b to the early gate of 2026-11-24, unseen here
+# while the receive beside it, `&t<N>.as.ok`, was found.
+#
+# WHAT IT DOES NOT SEE, said rather than implied. Any other callee handed
+# `&t<N>` whole that writes only part of it. Every such call in the seed
+# was a retain, a release, an `eq` or an overflow builtin, grepped
+# 2026-09-28; counted again 2026-11-24 over the seed and the blessed
+# emissions, the callees also name the runtime's array and map entries,
+# `memset`, `hero_panic_assert_shown_at`, the puts and the takes, and a
+# program's own functions through an `@` parameter. The takes write a value
+# by its parts and are asked above; that the others read their value, or
+# write through `@` a value its caller already wrote whole (spec § 5), is
+# a reading of their declarations, not a run. And a slot's partial write,
+# which is a place store into a
 # value the author already initialised whole (spec § 5) rather than a
 # definition. A part READ through an address after a whole write in an
 # earlier block would be reported, which is the loud direction: none exists
@@ -245,6 +260,10 @@ function partial_writes(c: str) -> [Finding]
             if end > name_at && end < n && (c[end] == '.' || c[end] == '[')
                 if !written_whole(scopes: scopes, value: number_of(c: c, from: name_at + 1, to: end))
                     found @ found.push(Finding(line: line, text: line_text(c: c, start: line_start)))
+            else if end > name_at && name_at == at + 1 && end < n && (c[end] == ',' || c[end] == ')') && handed_to_take(c: c, at: at, start: line_start)
+                # `&t<N>` whole, handed to a take, which writes it by parts.
+                if !written_whole(scopes: scopes, value: number_of(c: c, from: name_at + 1, to: end))
+                    found @ found.push(Finding(line: line, text: line_text(c: c, start: line_start)))
             fresh @ false
             at @ at + 1
             continue
@@ -318,6 +337,39 @@ function assigns_before_end(c: str, at: i64) -> bool
         k @ k + 1
 
     return false
+
+# Whether the argument at `at` is one of a take's, the runtime's
+# `hero_cross_take_*` or a unit's own `h_0take_<hash>`: the name before the
+# innermost call open at `at`, walking back no further than the statement,
+# `;`, `{`, `}` or the line's start.
+function handed_to_take(c: str, at: i64, start: i64) -> bool
+    k: i64 @= at - 1
+    depth: i64 @= 0
+
+    while k >= start
+        b = c[k]
+
+        if b == ';' || b == '{' || b == '}'
+            return false
+
+        if b == ')'
+            depth @ depth + 1
+        else if b == '('
+            if depth == 0
+                break
+            depth @ depth - 1
+        k @ k - 1
+
+    if k < start
+        return false
+    name_end = k
+    name_start: i64 @= k
+
+    while name_start > start && is_name_byte(c[name_start - 1])
+        name_start @ name_start - 1
+
+    name = c.slice(from: name_start, to: name_end)
+    return strings.has_prefix(s: name, prefix: "h_0take_") || strings.has_prefix(s: name, prefix: "hero_cross_take_")
 
 function written_whole(scopes: [{i64: bool}], value: i64) -> bool
     for scope in scopes
@@ -397,6 +449,30 @@ test "reads, pointers, slots, literals and comments are not partial writes"
     # `t12x` is not a temporary; `&(t3.f)` is the address of a part.
     assert partial_writes("int f(void) {\nbb0:\n    t12x.f = 1;\n}\n").len() == 0
     assert partial_writes("int f(void) {\nbb0:\n    g(&(t3.f_x));\n}\n").len() == 1
+
+# The receive and the wait as `emit/threads.hero` wrote them from step 104b
+# to the early gate of 2026-11-24, which found the receive in the emissions
+# of defect 2692's two cases; and as it writes them since, every answer
+# written whole, every byte zero, before a part of it is.
+test "a mailbox's receive and a thread's wait are findings until their answer is written whole first"
+    receive = "int f(void) {\nbb0:\n    { int64_t hero_answer = hero_mail_receive(t1, &t5.as.ok, t4, &hero_here); if (hero_answer == 0) t5.tag = INT64_C(0); else { t5.tag = INT64_C(1); t5.as.err = hero_failure_closed(); } }\n}\n"
+    assert partial_writes(receive).len() == 3
+    received = "int f(void) {\nbb0:\n    { t5 = *(h_0opt_19de49 *)__builtin_memset(&t5, 0, sizeof t5); t5.tag = INT64_C(0); int64_t hero_answer = hero_mail_receive(t1, &t5.as.ok, t4, &hero_here); if (hero_answer != 0) t5 = (h_0opt_19de49){.tag = INT64_C(1), .as.err = hero_failure_closed()}; }\n}\n"
+    assert partial_writes(received).len() == 0
+
+    # The wait hands its answer whole to the answer's take, a unit's own or
+    # the runtime's; a put only reads what it is handed.
+    wait = "int f(void) {\nbb0:\n    { HeroThreadBox *hero_box = hero_thread_end(t12, &hero_here); h_0take_6ac631dc(&hero_box->answer, &t13); hero_thread_box_free(hero_box); }\n    { hero_cross_take_str(&hero_box->answer, &t14); }\n    { h_0put_6ac631dc(&hero_box->head.arg, &t15); }\n}\n"
+    found = partial_writes(wait)
+    assert found.len() == 2
+    assert found[0].line == 3 && found[1].line == 4
+    waited = "int f(void) {\nbb0:\n    { HeroThreadBox *hero_box = hero_thread_end(t12, &hero_here); t13 = *(h_main_Shape *)__builtin_memset(&t13, 0, sizeof t13); h_0take_6ac631dc(&hero_box->answer, &t13); hero_thread_box_free(hero_box); }\n}\n"
+    assert partial_writes(waited).len() == 0
+
+    # Another callee handed a temporary whole is not asked: it reads it.
+    assert partial_writes("int f(void) {\nbb0:\n    hero_array_push(&t2, &t3);\n}\n").len() == 0
+    assert handed_to_take(c: "x; h_0take_1(b, &t2", at: 16, start: 0)
+    assert !handed_to_take(c: "x; h_0take_1(b); g(&t2", at: 19, start: 0)
 
 test "a failure names the count and the sites, and a clean text passes"
     clean: report.Report @= report.empty()
