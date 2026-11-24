@@ -194,6 +194,24 @@ int64_t hero_sys_runtime_folder(void *buffer, uint64_t count);
  * application for its kind `HERO_SYS_UNSUPPORTED`. */
 int64_t hero_sys_open(const char *target);
 
+/* Shows the file or folder `path` names selected in the system's file
+ * manager, and answers 0 once the system has taken it. On Darwin
+ * `/usr/bin/open -R`, started and waited for as `hero_sys_open` starts its
+ * launcher, Finder selecting the item in a window of its folder. On Linux and
+ * every other POSIX the freedesktop.org file manager interface,
+ * `org.freedesktop.FileManager1.ShowItems` on the session's D-Bus by
+ * `dbus-send` found by `PATH`, the item named by a `file:` URI of its folder's
+ * real path and its own name; where no file manager answers it, the folder
+ * holding the item is opened by `xdg-open`, shown with nothing selected. On
+ * Windows `SHOpenFolderAndSelectItems` on the item's full path. THE CALLER
+ * CHECKS WHAT IT HANDS, as for `hero_sys_open`: Darwin's `open` reads a path
+ * that begins with `-` as an option. A NULL or empty path is
+ * `HERO_SYS_INVALID`; a folder that is not there `HERO_SYS_NOT_FOUND` on
+ * Linux, and a path the shell finds no item for on Windows; the rest as
+ * `hero_sys_open` answers them, and on Windows the shell's `HRESULT` in
+ * `hero_sys_last_os_error()`. */
+int64_t hero_sys_reveal(const char *path);
+
 /* Every variable of the environment, by the fill form: each as its name, `=`
  * and its value, as the system holds it, followed by one zero byte, in the
  * system's order. An entry the system holds with no `=` is handed as it
