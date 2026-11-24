@@ -29,14 +29,17 @@ constant INVALID: str
 
 ## Defaults
 
-# The image kinds a browser shows, which a conversion may write.
+# The image kinds a browser shows, which a conversion may write. An icon,
+# which a browser shows too, is not among them: an icon's images are 256
+# pixels a side at most, and a thumbnail of the site's bound may not fit
+# one.
 constant SHOWN_KINDS: [str]
-    ["png", "jpeg", "gif"]
+    ["png", "jpeg", "gif", "webp"]
 
 # Every image kind the generator reads, by the names `image.Kind`'s cases
 # have.
 constant READ_KINDS: [str]
-    ["png", "jpeg", "gif", "bmp", "netpbm"]
+    ["png", "jpeg", "gif", "bmp", "netpbm", "tiff", "ico", "webp"]
 
 # The extensions a Brotli copy is made for where `site.toml` names none:
 # the text a site serves.
@@ -198,7 +201,7 @@ function images_of(doc: json.Value) -> model.ImageSettings?
     if quality < 1 || quality > 100
         return fail(code: INVALID, msg: f"site.toml: images.jpeg_quality {quality} is not 1 to 100")
 
-    convert: {str: str} @= {"bmp": "png", "netpbm": "png"}
+    convert: {str: str} @= {"bmp": "png", "netpbm": "png", "tiff": "png", "ico": "png"}
     table = json.value_at(doc, "/images/convert").default(.null_value)
 
     if !json.is_null(table)
@@ -212,7 +215,7 @@ function images_of(doc: json.Value) -> model.ImageSettings?
             if !is_among(kind, READ_KINDS) || !is_among(target, SHOWN_KINDS)
                 return fail(
                     code: INVALID,
-                    msg: f"site.toml: images.convert writes \"{kind}\" as \"{target}\"; it reads png, jpeg, gif, bmp and netpbm, and writes png, jpeg and gif"
+                    msg: f"site.toml: images.convert writes \"{kind}\" as \"{target}\"; it reads png, jpeg, gif, bmp, netpbm, tiff, ico and webp, and writes png, jpeg, gif and webp"
                 )
             convert[kind] @ target
 
@@ -299,6 +302,8 @@ test "read: the least a site says, one language and every default"
     assert site.base_path == "/"
     assert site.languages.len() == 1 && site.languages[0].code == "en" && site.languages[0].prefix == ""
     assert site.images.thumb_width == 320 && site.images.convert["bmp"].must() == "png"
+    assert site.images.convert["tiff"].must() == "png" && site.images.convert["ico"].must() == "png"
+    assert site.images.convert["webp"].is_err()
     assert site.output == "public" && site.feed_size == 20
 
 test "read: a Unicode host in ASCII, a path kept with its slash, languages by weight"
@@ -320,6 +325,12 @@ test "read: no title, a base URL that is a path, a quality out of range and a co
         root: "s",
         text: "title = \"T\"\nbase_url = \"https://e.org\"\ntheme = \"p\"\n[images.convert]\npng = \"bmp\"\n"
     ).is_err()
+
+test "read: a TIFF written as WebP taken, an icon written as an icon refused"
+    head = "title = \"T\"\nbase_url = \"https://e.org\"\ntheme = \"p\"\n[images.convert]\n"
+    site = read(root: "s", text: head + "tiff = \"webp\"\n").must()
+    assert site.images.convert["tiff"].must() == "webp" && site.images.convert["ico"].must() == "png"
+    assert read(root: "s", text: head + "ico = \"ico\"\n").is_err()
 
 test "key_name: a pointer written as a TOML key"
     assert key_name("/images/convert") == "images.convert"
