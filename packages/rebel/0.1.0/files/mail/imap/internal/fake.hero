@@ -1,0 +1,54 @@
+# The server of `mail/imap`'s tests, played without a thread: a session over
+# one end of a connected pair of sockets, the server's whole answer written
+# into the other end before the client speaks, and what the client wrote
+# read back once it is done. The client's tags are numbered from A0001, so
+# a script names them before they are sent.
+
+use io
+use mail/imap/internal/flow
+use mail/imap/internal/status
+use mail/imap/internal/wire
+use net
+use time
+
+# A session and the server's end of its connection.
+record Played
+    # The session, logged in, its capabilities those the test named.
+    conn: flow.Conn
+    # The server's end, holding the client's words once the session ends.
+    server: io.Stream
+
+# A session over a pair whose server end holds `script` already, the
+# capabilities `capabilities` known, IMAP4rev2 in force where `rev2`.
+function play(script: str, capabilities: [str], rev2: bool) -> Played
+    two = net.pair(deadline_ms: 5000).must()
+    server = two.second.stream
+    io.write_text(server, text: script).must()
+    w = wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1_000_000)
+    c = flow.Conn(
+        wire: w,
+        host: "127.0.0.1",
+        is_tls: false,
+        capabilities: capabilities,
+        rev2: rev2,
+        logged_in: true,
+        greeting: status.plain(condition: "OK", text: ""),
+        last: status.plain(condition: "", text: ""),
+        pending: [],
+        lost: 0,
+        idling: "",
+        bye: status.plain(condition: "", text: "")
+    )
+    return Played(conn: c, server: server)
+
+# What the client wrote, read once its session `conn` is closed, and the
+# server's end `server` closed.
+function heard(@conn: flow.Conn, @server: io.Stream) -> str
+    match wire.close(@conn.wire)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    r @= io.reader(server)
+    out = io.read_rest_text(@r).must()
+    io.close(@server).must()
+    return out

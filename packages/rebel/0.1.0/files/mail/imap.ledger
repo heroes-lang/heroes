@@ -1,0 +1,266 @@
+# The ledger of `mail/imap`: what Python's `imaplib` (3.15) lets a program do,
+# one block per capability, and what Rebel answers. Neither Go's standard
+# library nor Rust's has an IMAP client, so their lines are `-`. The lists are
+# this machine's, 2026-11-24: `dir(imaplib)` and `dir(imaplib.IMAP4)`. The
+# answers of the tests are RFC 3501's and RFC 9051's own examples, Python's
+# `base64` for the SASL answers and modified UTF-7, Python's
+# `imaplib.Internaldate2tuple` for INTERNALDATE, and Dovecot 2.4.2 (the image
+# `dovecot/dovecot:2.4.2`, run in a container this day) answering the same
+# steps to `imaplib` and to this package.
+
+capability connect/plain  a session over plain TCP, its greeting read and its capabilities known
+  heroes  imap.connect, imap.Security.plain, imap.PORT_IMAP
+  go      -
+  rust    -
+  python  imaplib.IMAP4, imaplib.IMAP4.open, imaplib.IMAP4_PORT, imaplib.IMAP4.welcome
+  note    a greeting of BYE fails `closed`, of PREAUTH logs the client in; the capabilities are those the greeting names or CAPABILITY answers
+
+capability connect/starttls  a plain connection made secure by STARTTLS, the capabilities learnt anew after it
+  heroes  imap.connect, imap.Security.starttls
+  go      -
+  rust    -
+  python  imaplib.IMAP4.starttls
+  note    through `tls.connect_after`, the greeting and STARTTLS `tls`'s plain steps: a greeting that is not OK (PREAUTH among them) or a refusal of STARTTLS fails, never going on in plain text, where Python's `starttls` raises only once asked and a program may skip it
+
+capability connect/implicit-tls  a session over TLS from the first byte (RFC 8314, port 993)
+  heroes  imap.connect, imap.Security.implicit, imap.PORT_IMAPS
+  go      -
+  rust    -
+  python  imaplib.IMAP4_SSL, imaplib.IMAP4_SSL_PORT, imaplib.HAVE_SSL
+  note    the certificate is checked by `tls` against the system's store or `Options.roots`, never turned off
+
+capability connect/process  a session with a program's standard streams, as `imaplib.IMAP4_stream` runs a command
+  heroes  refused: a program that speaks IMAP on its standard streams is started by `process` and its streams are not a TLS connection; this client speaks to a server over the network alone, so its every promise on TLS and passwords holds
+  go      -
+  rust    -
+  python  imaplib.IMAP4_stream
+
+capability connect/deadline  each step bounded by a deadline
+  heroes  imap.Options.deadline
+  go      -
+  rust    -
+  python  imaplib.IMAP4.open, imaplib.IMAP4.socket
+  note    Python takes a timeout for the socket; here every step, the connection, the handshake and each command with its answer, has its own deadline
+
+capability answer/bound  the answer to one command bounded in bytes, a literal's length checked before it is read
+  heroes  imap.Options.max_bytes, imap.LIMIT
+  go      -
+  rust    -
+  python  imaplib.IMAP4.readline, imaplib.IMAP4.read, imaplib.Literal, imaplib.DEFAULT_BUFFER_SIZE
+  note    Python bounds a line to 1,000,000 bytes (`_MAXLINE`) and reads a literal of any length it is told; here a literal announced past `max_bytes` fails `limit` before a byte of it is read, and the lines and literals of one answer count together
+
+capability answer/grammar  each response read against RFC 9051's grammar, what breaks it refused
+  heroes  imap.INVALID
+  go      -
+  rust    -
+  python  imaplib.IMAP4.response, imaplib.Untagged_response, imaplib.Untagged_status, imaplib.Response_code, imaplib.Continuation, imaplib.IMAP4.abort, imaplib.IMAP4.error, imaplib.IMAP4.readonly
+  note    Python matches lines with regular expressions and hands the program the raw data of each response; here every kind of data a command takes is read by its own grammar into records, a `{n}` read as a literal only where a string is expected, a list or a body structure nested past 64 refused, and a response of a kind no grammar names passed over with its literals counted
+
+capability session/logout  the session ended with LOGOUT, or closed
+  heroes  imap.logout, imap.close
+  go      -
+  rust    -
+  python  imaplib.IMAP4.logout, imaplib.IMAP4.shutdown
+
+capability session/noop  NOOP and CHECK
+  heroes  imap.noop, imap.check
+  go      -
+  rust    -
+  python  imaplib.IMAP4.noop, imaplib.IMAP4.check
+  note    CHECK is NOOP on IMAP4rev2, which removed it
+
+capability session/capability  the capabilities asked and read
+  heroes  imap.capability, imap.capabilities_of, imap.has_capability
+  go      -
+  rust    -
+  python  imaplib.IMAP4.capability, imaplib.IMAP4.capabilities, imaplib.AllowedVersions
+  note    upper case, as Python keeps them; learnt anew after STARTTLS and after a login
+
+capability session/status  the server's statuses: the greeting, the last tagged one, a status shown
+  heroes  imap.Status, imap.greeting_of, imap.last_status_of, imap.format_status
+  go      -
+  rust    -
+  python  imaplib.IMAP4.welcome, imaplib.IMAP4.response
+  note    a status keeps its response code apart; the failure of a NO is coded by it (RFC 5530)
+
+capability session/rev2  IMAP4rev2 enabled where offered, and other extensions by ENABLE
+  heroes  imap.enable, imap.is_rev2
+  go      -
+  rust    -
+  python  imaplib.IMAP4.enable, imaplib.IMAP4.utf8_enabled
+  note    the login enables IMAP4rev2 where the server offers it, as RFC 9051's appendix asks of a client that speaks both; UTF8=ACCEPT alone (RFC 6855) is not enabled, so on IMAP4rev1 names are modified UTF-7 and a message is appended as it is
+
+capability login/login  LOGIN
+  heroes  imap.login
+  go      -
+  rust    -
+  python  imaplib.IMAP4.login
+  note    refused in plain text but to the loopback host, and where the server names LOGINDISABLED
+
+capability login/plain  AUTHENTICATE PLAIN, with SASL-IR where offered
+  heroes  imap.auth_plain
+  go      -
+  rust    -
+  python  imaplib.IMAP4.authenticate
+  note    Python takes any mechanism through a function a program writes; here each mechanism is a function, its answer built and checked
+
+capability login/oauth  AUTHENTICATE XOAUTH2 and OAUTHBEARER (RFC 7628), the server's reason for a refusal shown
+  heroes  imap.auth_xoauth2, imap.auth_oauthbearer
+  go      -
+  rust    -
+  python  imaplib.IMAP4.authenticate
+
+capability login/cram-md5  AUTHENTICATE CRAM-MD5
+  heroes  refused: RFC 8314 and the IETF's move of CRAM-MD5 to historic (draft-ietf-sasl-crammd5-to-historic) leave it no use over TLS, and in plain text it exposes the password to an offline guess; PLAIN over TLS is the one way
+  go      -
+  rust    -
+  python  imaplib.IMAP4.login_cram_md5
+
+capability login/proxy  PROXYAUTH, a Sun server's extension
+  heroes  refused: no RFC names it; an administrator acting as a user logs in as that user by AUTHENTICATE PLAIN's identity, which `auth_plain` takes
+  go      -
+  rust    -
+  python  imaplib.IMAP4.proxyauth
+
+capability mailbox/list  LIST and LSUB, names decoded
+  heroes  imap.list, imap.list_subscribed, imap.Mailbox
+  go      -
+  rust    -
+  python  imaplib.IMAP4.list, imaplib.IMAP4.lsub
+  note    LSUB on IMAP4rev1, LIST (SUBSCRIBED) on IMAP4rev2, which has no LSUB; a name that is not modified UTF-7 written as `format_utf7` writes it fails, where Python hands the bytes over
+
+capability mailbox/change  CREATE, DELETE, RENAME, SUBSCRIBE, UNSUBSCRIBE
+  heroes  imap.create, imap.delete, imap.rename, imap.subscribe, imap.unsubscribe
+  go      -
+  rust    -
+  python  imaplib.IMAP4.create, imaplib.IMAP4.delete, imaplib.IMAP4.rename, imaplib.IMAP4.subscribe, imaplib.IMAP4.unsubscribe
+
+capability mailbox/status  STATUS
+  heroes  imap.status, imap.MailboxStatus
+  go      -
+  rust    -
+  python  imaplib.IMAP4.status
+  note    the items asked are those of the protocol in force; Python asks what the program writes
+
+capability mailbox/select  SELECT and EXAMINE, CLOSE and UNSELECT
+  heroes  imap.select, imap.examine, imap.Selected, imap.close_mailbox, imap.unselect
+  go      -
+  rust    -
+  python  imaplib.IMAP4.select, imaplib.IMAP4.close, imaplib.IMAP4.unselect, imaplib.IMAP4.recent
+  note    Python's `select` takes `readonly` and sends EXAMINE; RECENT is `Selected.recent`, read from the answer rather than asked again
+
+capability mailbox/names  modified UTF-7 written and read
+  heroes  imap.format_utf7, imap.parse_utf7
+  go      -
+  rust    -
+  python  -
+  note    Python leaves the encoding to the program; this client writes and reads it itself where UTF-8 is not in force
+
+capability message/sets  sets of message numbers and UIDs, built, checked and written out
+  heroes  imap.Set, imap.seqs, imap.uids, imap.seq_range, imap.uid_range, imap.LAST, imap.numbers_of
+  go      -
+  rust    -
+  python  imaplib.IMAP4.uid
+  note    a UID command is a set with `uid`, so FETCH, STORE, COPY, MOVE, SEARCH and EXPUNGE have one function each; Python's `uid` takes any command's name as text
+
+capability message/fetch  FETCH: flags, envelope, body structure, internal date, size, UID, mod-sequence, sections whole or in part, BINARY
+  heroes  imap.fetch, imap.Item, imap.Message, imap.Envelope, imap.Part, imap.Body, imap.body_of
+  go      -
+  rust    -
+  python  imaplib.IMAP4.fetch, imaplib.IMAP4.partial, imaplib.Internaldate2tuple, imaplib.InternalDate, imaplib.Mon2num, imaplib.Months, imaplib.ParseFlags, imaplib.Flags
+  note    sections are fetched with `.PEEK`, so fetching never sets `\Seen`, which `store` sets; PARTIAL, gone since RFC 3501, is a partial `Item.body`
+
+capability message/search  SEARCH and UID SEARCH with keys as data, UTF-8 texts
+  heroes  imap.search, imap.Key
+  go      -
+  rust    -
+  python  imaplib.IMAP4.search
+  note    Python sends criteria a program writes as text; here keys are a variant, NOT and OR of groups among them, each string quoted or a literal so no key ends the command; ESEARCH's ALL on IMAP4rev2 is written out within the budget at eight bytes a number
+
+capability message/store  STORE of flags, added, removed or replaced
+  heroes  imap.store, imap.Change
+  go      -
+  rust    -
+  python  imaplib.IMAP4.store
+  note    `\Recent` and `\*` refused, which no client sets
+
+capability message/copy  COPY and MOVE, COPYUID read
+  heroes  imap.copy, imap.move, imap.Copied
+  go      -
+  rust    -
+  python  imaplib.IMAP4.copy
+  note    MOVE where the server offers it or IMAP4rev2; elsewhere `unsupported`, saying the copy, store and expunge that a program may run, never done in its place since a plain EXPUNGE removes every message marked `\Deleted`
+
+capability message/expunge  EXPUNGE and UID EXPUNGE
+  heroes  imap.expunge, imap.expunge_uids
+  go      -
+  rust    -
+  python  imaplib.IMAP4.expunge
+
+capability message/append  APPEND with flags and a date, APPENDUID read, a literal8 for NUL
+  heroes  imap.append, imap.append_dated, imap.Appended
+  go      -
+  rust    -
+  python  imaplib.IMAP4.append, imaplib.Time2Internaldate, imaplib.MapCRLF
+  note    the message is sent as given, its line ends the caller's (`mail` writes CRLF), where Python rewrites bare line feeds; APPENDLIMIT checked before sending
+
+capability news/updates  the server's news kept and taken: EXISTS, EXPUNGE, FETCH, FLAGS, alerts
+  heroes  imap.Update, imap.take_updates, imap.lost_updates_of
+  go      -
+  rust    -
+  python  imaplib.IMAP4.response, imaplib.IMAP4.recent
+  note    at most 10,000 kept, the oldest going past them and counted
+
+capability news/idle  IDLE: begun, waited on, ended
+  heroes  imap.idle, imap.idle_wait, imap.idle_done
+  go      -
+  rust    -
+  python  imaplib.IMAP4.idle, imaplib.Idler
+
+capability extension/sort-thread  SORT and THREAD (RFC 5256)
+  heroes  pending: the server's orders and threads; a program sorts what FETCH answers meanwhile
+  go      -
+  rust    -
+  python  imaplib.IMAP4.sort, imaplib.IMAP4.thread
+
+capability extension/quota  QUOTA (RFC 9208)
+  heroes  pending: GETQUOTA, GETQUOTAROOT and SETQUOTA, their responses' grammar
+  go      -
+  rust    -
+  python  imaplib.IMAP4.getquota, imaplib.IMAP4.getquotaroot, imaplib.IMAP4.setquota
+
+capability extension/acl  ACL (RFC 4314)
+  heroes  pending: GETACL, SETACL, DELETEACL, MYRIGHTS and LISTRIGHTS
+  go      -
+  rust    -
+  python  imaplib.IMAP4.getacl, imaplib.IMAP4.setacl, imaplib.IMAP4.deleteacl, imaplib.IMAP4.myrights
+
+capability extension/metadata  METADATA and ANNOTATEMORE (RFC 5464)
+  heroes  pending: GETMETADATA and SETMETADATA
+  go      -
+  rust    -
+  python  imaplib.IMAP4.getannotation, imaplib.IMAP4.setannotation
+
+capability extension/namespace  NAMESPACE (RFC 2342, part of IMAP4rev2)
+  heroes  pending: its response's grammar, three lists of prefixes and delimiters
+  go      -
+  rust    -
+  python  imaplib.IMAP4.namespace
+
+capability extension/condstore  CONDSTORE's and QRESYNC's resynchronisation (RFC 7162)
+  heroes  pending: CHANGEDSINCE, UNCHANGEDSINCE and VANISHED; the MODSEQ a fetch asks and HIGHESTMODSEQ a select reads are delivered
+  go      -
+  rust    -
+  python  -
+
+capability command/raw  a command written by hand as text
+  heroes  refused: a command a program writes as text escapes every check of its arguments, so a name or a key could end it and add another; each command is a function here
+  go      -
+  rust    -
+  python  imaplib.IMAP4.xatom, imaplib.IMAP4.send, imaplib.IMAP4.read, imaplib.IMAP4.file, imaplib.Commands
+
+dropped
+  python  imaplib.CRLF: a constant of the protocol, written by this package
+  python  imaplib.Debug, imaplib.IMAP4.print_log: Python's debugging output; a program logs what the functions answer
+  python  imaplib.Int2AP: the tag's spelling, the package's own
+  python  imaplib.binascii, imaplib.calendar, imaplib.datetime, imaplib.errno, imaplib.random, imaplib.re, imaplib.socket, imaplib.ssl, imaplib.subprocess, imaplib.sys, imaplib.time, imaplib.timedelta, imaplib.timezone: modules `imaplib` imports, not its own

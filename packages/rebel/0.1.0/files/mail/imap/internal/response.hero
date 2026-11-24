@@ -1,0 +1,407 @@
+# One response of the server read whole (RFC 9051 § 7, its syntax § 9): a
+# continuation request, a tagged status, or untagged data, each kind of data
+# read by its own grammar, the line ending where the grammar ends. A
+# response whose kind no grammar here names is passed over by its name, its
+# literals read and counted; one that names a known kind and breaks its
+# grammar is refused.
+
+use bytes
+use io
+use mail/imap
+use mail/imap/internal/fetch
+use mail/imap/internal/lex
+use mail/imap/internal/shape
+use mail/imap/internal/status
+use mail/imap/internal/wire
+use net
+use time
+
+# A mailbox a LIST or LSUB names.
+record Listed
+    # Its attributes as the server wrote them: `\HasNoChildren`, `\Sent`.
+    attributes: [str]
+    # The hierarchy delimiter, "" where the server has none.
+    delimiter: str
+    # The name as the server wrote it: modified UTF-7, or UTF-8 once UTF-8
+    # is in force.
+    wire_name: str
+
+# What a STATUS names: each item asked, -1 for one not answered.
+record Counts
+    # The mailbox's name as the server wrote it.
+    wire_name: str
+    # Each item answered, upper case, with its number.
+    items: {str: i64}
+
+# What an ESEARCH answers (RFC 4731, RFC 9051).
+record Searched
+    # The tag of the command it answers, "" for none.
+    tag: str
+    # Whether its numbers are UIDs.
+    uid: bool
+    # `MIN`, `MAX` and `COUNT` where answered.
+    numbers: {str: i64}
+    # `ALL` as a set written as the server wrote it, "" for none.
+    all: str
+
+# One untagged response's data.
+variant Data
+    # A status: OK, NO, BAD, BYE or PREAUTH.
+    condition
+        # The status.
+        status: status.Status
+    # CAPABILITY.
+    capability
+        # The names, upper case.
+        names: [str]
+    # ENABLED.
+    enabled
+        # The names, upper case.
+        names: [str]
+    # LIST.
+    list
+        # The mailbox.
+        entry: Listed
+    # LSUB.
+    lsub
+        # The mailbox.
+        entry: Listed
+    # STATUS.
+    counts
+        # The numbers.
+        counts: Counts
+    # SEARCH.
+    search
+        # The numbers.
+        numbers: [i64]
+    # ESEARCH.
+    esearch
+        # The answer.
+        result: Searched
+    # FLAGS.
+    flags
+        # The flags.
+        flags: [str]
+    # n EXISTS.
+    exists
+        # The number of messages.
+        n: i64
+    # n RECENT.
+    recent
+        # The number of recent messages.
+        n: i64
+    # n EXPUNGE.
+    expunge
+        # The message sequence number removed.
+        n: i64
+    # n FETCH.
+    fetch
+        # The message.
+        message: imap.Message
+    # A kind no grammar here names.
+    other
+        # Its name, upper case.
+        name: str
+
+# One response.
+variant Response
+    # `+`: the server waits for the rest of a command.
+    continuation
+        # The text after `+ `, as written; base 64 during AUTHENTICATE.
+        text: str
+    # A tagged status, ending a command.
+    tagged
+        # The tag.
+        tag: str
+        # The status.
+        status: status.Status
+    # Untagged data.
+    untagged
+        # The data.
+        data: Data
+
+# The next response, read from the stream from its first line.
+function read(@s: wire.Session) -> Response?
+    wire.next_line(@s)?
+
+    if lex.take(@s, b: '+')
+        if lex.take(@s, b: ' ')
+            return ok(.continuation(text: lex.text_of(lex.rest(@s))))
+
+        if !lex.at_end(s)
+            return lex.refused(s, what: "continuation")
+        return ok(.continuation(text: ""))
+
+    if lex.take(@s, b: '*')
+        lex.space(@s)?
+        data = untagged(@s)?
+
+        if !lex.at_end(s)
+            return fail(code: lex.INVALID, msg: f"the server's answer goes on past its end: {wire.excerpt(s.line)}")
+        return ok(.untagged(data: data))
+    tag = lex.atom_of(@s, bracket: false)?
+    lex.space(@s)?
+    word = lex.keyword(@s)?
+
+    if word != "OK" && word != "NO" && word != "BAD"
+        return fail(code: lex.INVALID, msg: f"the server's tagged answer is no OK, NO or BAD: {wire.excerpt(s.line)}")
+    return ok(.tagged(tag: tag, status: status.read(@s, condition: word)?))
+
+# The untagged data where the parser stands, after `* `.
+function untagged(@s: wire.Session) -> Data?
+    if lex.peek(s) >= '0' && lex.peek(s) <= '9'
+        n = lex.number(@s)?
+        lex.space(@s)?
+        word = lex.keyword(@s)?
+
+        if word == "EXISTS"
+            return ok(.exists(n: n))
+
+        if word == "RECENT"
+            return ok(.recent(n: n))
+
+        if n < 1 || n > lex.MAX_NZ
+            return fail(
+                code: lex.INVALID,
+                msg: f"the server's answer names the message {n}, outside 1 to 2^32 - 1: {wire.excerpt(s.line)}"
+            )
+
+        if word == "EXPUNGE"
+            return ok(.expunge(n: n))
+
+        if word == "FETCH"
+            lex.space(@s)?
+            return ok(.fetch(message: fetch.message(@s, seq: n)?))
+        return other(@s, name: word)
+    word = lex.keyword(@s)?
+
+    if status.is_condition(word)
+        return ok(.condition(status: status.read(@s, condition: word)?))
+
+    if word == "CAPABILITY" || word == "ENABLED"
+        names: [str] @= []
+
+        while lex.take(@s, b: ' ')
+            names @ names.push(lex.keyword(@s)?)
+
+        if word == "CAPABILITY"
+            return ok(.capability(names: names))
+        return ok(.enabled(names: names))
+
+    if word == "LIST" || word == "LSUB"
+        lex.space(@s)?
+        entry = listed(@s)?
+
+        if word == "LIST"
+            return ok(.list(entry: entry))
+        return ok(.lsub(entry: entry))
+
+    if word == "FLAGS"
+        lex.space(@s)?
+        return ok(.flags(flags: lex.flag_list(@s)?))
+
+    if word == "SEARCH"
+        numbers: [i64] @= []
+
+        while lex.take(@s, b: ' ')
+            if lex.peek(s) == '('
+                shape.skip(@s, depth: 0)?
+            else
+                numbers @ numbers.push(lex.nz_number(@s)?)
+
+        return ok(.search(numbers: numbers))
+
+    if word == "ESEARCH"
+        return ok(.esearch(result: esearch(@s)?))
+
+    if word == "STATUS"
+        lex.space(@s)?
+        return ok(.counts(counts: counts(@s)?))
+    return other(@s, name: word)
+
+# Data of a kind no grammar here names: the rest of its line passed over,
+# and every literal it announces read and counted.
+function other(@s: wire.Session, name: str) -> Data?
+    while true
+        open = bytes.index_of_last(s: s.line.slice(from: s.at, to: s.line.len()), substr: ['{'])
+
+        match open
+            .err _ =>
+                s.at @ s.line.len()
+                break
+            .ok k =>
+                s.at @ s.at + k
+
+                if !lex.at_literal(s, binary: false)
+                    s.at @ s.line.len()
+                    break
+                _ = lex.literal(@s, binary: false)?
+
+    return ok(.other(name: name))
+
+# A LIST or LSUB's mailbox where the parser stands: its attributes, its
+# delimiter and its name, and any extended data passed over.
+function listed(@s: wire.Session) -> Listed?
+    attributes = lex.flag_list(@s)?
+    lex.space(@s)?
+
+    delimiter = if lex.take_nil(@s)
+        ""
+    else
+        one = lex.quoted(@s)?
+
+        if one.len() != 1
+            return fail(
+                code: lex.INVALID,
+                msg: f"the server's LIST names a delimiter that is not one character: {wire.excerpt(s.line)}"
+            )
+        lex.text_of(one)
+    lex.space(@s)?
+    raw = lex.astring(@s)?
+
+    if lex.take(@s, b: ' ')
+        shape.skip(@s, depth: 0)?
+
+    return match bytes.to_text(raw)
+        .ok name => ok(Listed(attributes: attributes, delimiter: delimiter, wire_name: name))
+        .err _ => fail(
+            code: lex.INVALID,
+            msg: f"the server's LIST names a mailbox that is not UTF-8: {wire.excerpt(raw)}"
+        )
+
+# A STATUS's mailbox and numbers where the parser stands.
+function counts(@s: wire.Session) -> Counts?
+    raw = lex.astring(@s)?
+    lex.space(@s)?
+    lex.expect(@s, b: '(', what: "STATUS items")?
+    items: {str: i64} @= {}
+
+    while !lex.take(@s, b: ')')
+        _ = lex.take(@s, b: ' ')
+        name = lex.keyword(@s)?
+        lex.space(@s)?
+        items[name] @ lex.number(@s)?
+
+    return match bytes.to_text(raw)
+        .ok name => ok(Counts(wire_name: name, items: items))
+        .err _ => fail(
+            code: lex.INVALID,
+            msg: f"the server's STATUS names a mailbox that is not UTF-8: {wire.excerpt(raw)}"
+        )
+
+# An ESEARCH's answer where the parser stands, after its name.
+function esearch(@s: wire.Session) -> Searched?
+    out @= Searched(tag: "", uid: false, numbers: {}, all: "")
+
+    if lex.take(@s, b: ' ')
+        if lex.take(@s, b: '(')
+            if lex.keyword(@s)? != "TAG"
+                return lex.refused(s, what: "ESEARCH's TAG")
+            lex.space(@s)?
+            out.tag @ lex.text_of(lex.string(@s, binary: false)?)
+            lex.expect(@s, b: ')', what: "ESEARCH's correlator end")?
+
+            if !lex.take(@s, b: ' ')
+                return ok(out)
+        last @= true
+
+        while last
+            word = lex.keyword(@s)?
+
+            if word == "UID"
+                out.uid @ true
+            else if word == "ALL"
+                lex.space(@s)?
+                out.all @ status.uid_set(@s)?
+            else if word == "MIN" || word == "MAX" || word == "COUNT"
+                lex.space(@s)?
+                out.numbers[word] @ lex.number(@s)?
+            else
+                lex.space(@s)?
+                shape.skip(@s, depth: 0)?
+            last @ lex.take(@s, b: ' ')
+
+    return ok(out)
+
+## Tests
+
+test "read: RFC 3501's SELECT answer, a tagged status, a continuation, CAPABILITY, LIST with a NIL delimiter"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    server @= two.second.stream
+    io.write_text(
+        server,
+        text: "* 172 EXISTS\r\n* 1 RECENT\r\n* OK [UNSEEN 12] Message 12 is first unseen\r\n* FLAGS (\\Answered \\Flagged \\Deleted \\Seen \\Draft)\r\nA142 OK [READ-WRITE] SELECT completed\r\n+ Ready for additional command text\r\n+\r\n* CAPABILITY IMAP4rev1 STARTTLS AUTH=GSSAPI LOGINDISABLED\r\n* LIST (\\Noselect) \"/\" ~/Mail/foo\r\n* LIST () NIL INBOX\r\n* 12 FETCH (FLAGS (\\Seen) UID 4827313)\r\n* 22 EXPUNGE\r\n* LSUB () \".\" #news.comp.mail.misc\r\n"
+    ).must()
+    wire.begin(@s).must()
+    assert read(@s).must() == .untagged(data: .exists(n: 172))
+    assert read(@s).must() == .untagged(data: .recent(n: 1))
+
+    match read(@s).must()
+        .untagged u =>
+            match u.data
+                .condition c => assert c.status.code == "UNSEEN" && c.status.value == 12 && c.status.text == "Message 12 is first unseen"
+                .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => assert false
+        .tagged _ | .continuation _ => assert false
+
+    assert read(@s).must() == .untagged(data: .flags(flags: ["\\Answered", "\\Flagged", "\\Deleted", "\\Seen", "\\Draft"]))
+
+    match read(@s).must()
+        .tagged t                     => assert t.tag == "A142" && t.status.condition == "OK" && t.status.code == "READ-WRITE"
+        .untagged _ | .continuation _ => assert false
+
+    assert read(@s).must() == .continuation(text: "Ready for additional command text")
+    assert read(@s).must() == .continuation(text: "")
+    assert read(@s).must() == .untagged(data: .capability(names: ["IMAP4REV1", "STARTTLS", "AUTH=GSSAPI", "LOGINDISABLED"]))
+    assert read(@s).must() == .untagged(data: .list(entry: Listed(attributes: ["\\Noselect"], delimiter: "/", wire_name: "~/Mail/foo")))
+    assert read(@s).must() == .untagged(data: .list(entry: Listed(attributes: [], delimiter: "", wire_name: "INBOX")))
+
+    match read(@s).must()
+        .untagged u =>
+            match u.data
+                .fetch f => assert f.message.seq == 12 && f.message.uid == 4827313
+                .condition _ | .capability _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .other _ => assert false
+        .tagged _ | .continuation _ => assert false
+
+    assert read(@s).must() == .untagged(data: .expunge(n: 22))
+    assert read(@s).must() == .untagged(data: .lsub(entry: Listed(attributes: [], delimiter: ".", wire_name: "#news.comp.mail.misc")))
+    io.close(@server).must()
+    wire.close(@s).must()
+
+test "read: STATUS, SEARCH, ESEARCH from RFC 9051's examples, an unknown kind with a literal passed over"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    server @= two.second.stream
+    io.write_text(
+        server,
+        text: "* STATUS blurdybloop (MESSAGES 231 UIDNEXT 44292)\r\n* SEARCH 2 84 882\r\n* SEARCH\r\n* ESEARCH (TAG \"A282\") MIN 2 COUNT 3\r\n* ESEARCH (TAG \"A283\") UID ALL 1:3,5\r\n* ESEARCH (TAG \"A284\")\r\n* XFOO a {3}\r\nb}c y\r\n* 3 EXISTS\r\n"
+    ).must()
+    wire.begin(@s).must()
+    assert read(@s).must() == .untagged(data: .counts(counts: Counts(wire_name: "blurdybloop", items: {"MESSAGES": 231, "UIDNEXT": 44292})))
+    assert read(@s).must() == .untagged(data: .search(numbers: [2, 84, 882]))
+    assert read(@s).must() == .untagged(data: .search(numbers: []))
+    assert read(@s).must() == .untagged(data: .esearch(result: Searched(tag: "A282", uid: false, numbers: {"MIN": 2, "COUNT": 3}, all: "")))
+    assert read(@s).must() == .untagged(data: .esearch(result: Searched(tag: "A283", uid: true, numbers: {}, all: "1:3,5")))
+    assert read(@s).must() == .untagged(data: .esearch(result: Searched(tag: "A284", uid: false, numbers: {}, all: "")))
+    assert read(@s).must() == .untagged(data: .other(name: "XFOO"))
+    assert read(@s).must() == .untagged(data: .exists(n: 3))
+    io.close(@server).must()
+    wire.close(@s).must()
+
+test "read: a tag with no status, an expunge of 0, data past its end, a delimiter of two bytes, a status not OK, NO or BAD"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    server @= two.second.stream
+    io.write_text(
+        server,
+        text: "A1\r\n* 0 EXPUNGE\r\n* 3 EXISTS x\r\n* LIST () \"ab\" x\r\nA1 BYE x\r\n*\r\n+x\r\n"
+    ).must()
+    wire.begin(@s).must()
+
+    for _ in range(from: 0, to: 7)
+        match read(@s)
+            .ok _  => assert false
+            .err e => assert e.code == lex.INVALID
+
+    io.close(@server).must()
+    wire.close(@s).must()

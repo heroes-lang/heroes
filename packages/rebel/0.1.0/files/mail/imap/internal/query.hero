@@ -1,0 +1,319 @@
+# What a program asks, written as IMAP's arguments: sets of numbers built
+# and read back, the items of a fetch, and the keys of a search, each
+# string sent as `command` decides and every number, set, flag and section
+# checked before a byte is sent.
+
+use bytes
+use mail/imap
+use mail/imap/internal/command
+use mail/imap/internal/flow
+use strings
+use time
+
+# The code of an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a set that names more numbers than allowed.
+constant LIMIT: str
+    "limit"
+
+# `n` as a set writes it, 0 as `*`.
+function one(n: i64) -> str
+    if n == 0
+        return "*"
+    return to_str(n)
+
+# The set of `numbers`, joined by `,`.
+function listed(numbers: [i64]) -> str
+    return join(numbers.map(one), ",")
+
+# The set from `first` to `last`.
+function spanned(first: i64, last: i64) -> str
+    return one(first) + ":" + one(last)
+
+# Each number the set `t` names, ranges written out in the order written.
+# Fails `invalid` where it is no set or holds `*`, `limit` past `most`.
+function expanded(t: str, most: i64) -> [i64]?
+    _ = command.set_text(t)?
+
+    if strings.contains_any(s: t, set: "*")
+        return fail(code: INVALID, msg: f"the set \"{t}\" holds `*`, which names no number until a mailbox says which")
+    out: [i64] @= []
+
+    for part in strings.split(s: t, sep: ",")
+        ends = strings.split(s: part, sep: ":")
+        a = numbers_parse(ends[0])
+        b = numbers_parse(ends[ends.len() - 1])
+
+        low = if a <= b
+            a
+        else
+            b
+
+        high = if a <= b
+            b
+        else
+            a
+
+        if high - low + 1 > most - out.len()
+            return fail(code: LIMIT, msg: f"the set \"{t}\" names more than {most} numbers")
+        n @= low
+
+        while n <= high
+            out @ out.push(n)
+            n @ n + 1
+
+    return ok(out)
+
+# The number `t` writes, which `command.is_set` checked.
+function numbers_parse(t: str) -> i64
+    n @= 0
+
+    for b in bytes.from_text(t)
+        n @ n * 10 + to_i64(b - '0').must()
+
+    return n
+
+# The items of a fetch as one parenthesized list. Fails `invalid` where
+# there are none or a section or a range is refused; `unsupported` where
+# BINARY or CONDSTORE is asked of a server that lacks it.
+function fetch_items(c: flow.Conn lent, asked: [imap.Item]) -> str?
+    if asked.len() == 0
+        return fail(code: INVALID, msg: "a fetch asks no item")
+    out: [str] @= []
+
+    for it in asked
+        word = match it
+            .flags         => "FLAGS"
+            .envelope      => "ENVELOPE"
+            .structure     => "BODYSTRUCTURE"
+            .internal_date => "INTERNALDATE"
+            .size          => "RFC822.SIZE"
+            .uid           => "UID"
+            .modseq =>
+                if !flow.has(c, name: "CONDSTORE")
+                    return fail(code: flow.UNSUPPORTED, msg: "the server does not offer CONDSTORE, which MODSEQ needs")
+                "MODSEQ"
+            .body b => "BODY.PEEK[" + command.section_text(b.section)? + "]" + partial(start: b.start, count: b.count)?
+            .binary b =>
+                binary_offered(c)?
+                "BINARY.PEEK[" + part_numbers(b.section)? + "]" + partial(start: b.start, count: b.count)?
+            .binary_size b =>
+                binary_offered(c)?
+                "BINARY.SIZE[" + part_numbers(b.section)? + "]"
+
+        out @ out.push(word)
+
+    return ok("(" + join(out, " ") + ")")
+
+# Fails `unsupported` where the server offers neither BINARY nor IMAP4rev2.
+function binary_offered(c: flow.Conn lent) -> ()?
+    if !c.rev2 && !flow.has(c, name: "BINARY")
+        return fail(code: flow.UNSUPPORTED, msg: "the server offers neither BINARY nor IMAP4rev2")
+    return ok()
+
+# A section of BINARY: a part's numbers, or "" for the whole message.
+function part_numbers(section: str) -> str?
+    if section == ""
+        return ok("")
+
+    for n in strings.split(s: section, sep: ".")
+        if !command.is_nz(n)
+            return fail(code: INVALID, msg: f"\"{section}\" is no part's numbers, which BINARY takes: `1`, `1.2`")
+
+    return ok(section)
+
+# `<start.count>` where `start` is 0 or more, "" where it is -1. Fails
+# `invalid` for another start below 0 or a count below 1.
+function partial(start: i64, count: i64) -> str?
+    if start == -1
+        return ok("")
+
+    if start < 0 || count < 1 || start > 4294967295 || count > 4294967295
+        return fail(
+            code: INVALID,
+            msg: f"a partial fetch from byte {start} of {count} bytes: the start is 0 or more and the count 1 or more, each at most 4294967295"
+        )
+    return ok(f"<{start}.{count}>")
+
+# The keys of a search as pieces, `CHARSET UTF-8` first where a text holds
+# a byte above ASCII and UTF-8 is not in force. Fails `invalid` where there
+# are no keys, a list inside them is empty, or a key is refused.
+function criteria(wanted: [imap.Key], utf8: bool) -> [command.Piece]?
+    if wanted.len() == 0
+        return fail(code: INVALID, msg: "a search names no key: `.all` asks every message")
+    out: [command.Piece] @= []
+    wide @= false
+
+    for k in range(from: 0, to: wanted.len())
+        if k > 0
+            out @ out.push(.text(s: " "))
+        key(@out, wide: @wide, k: wanted[k], utf8: utf8, depth: 0)?
+
+    if wide && !utf8
+        first: [command.Piece] @= [.text(s: "CHARSET UTF-8 ")]
+
+        for p in out
+            first @ first.push(p)
+
+        return ok(first)
+    return ok(out)
+
+# The deepest keys may nest.
+constant MAX_DEPTH: i64
+    64
+
+# Appends the pieces of `k` to `out`, `depth` lists deep, and marks `wide`
+# where a text holds a byte above ASCII.
+function key(@out: [command.Piece], @wide: bool, k: imap.Key, utf8: bool, depth: i64) -> ()?
+    if depth >= MAX_DEPTH
+        return fail(code: INVALID, msg: f"a search's keys nest more than {MAX_DEPTH} deep")
+
+    match k
+        .all         => out @ out.push(.text(s: "ALL"))
+        .answered    => out @ out.push(.text(s: "ANSWERED"))
+        .deleted     => out @ out.push(.text(s: "DELETED"))
+        .draft       => out @ out.push(.text(s: "DRAFT"))
+        .flagged     => out @ out.push(.text(s: "FLAGGED"))
+        .seen        => out @ out.push(.text(s: "SEEN"))
+        .unanswered  => out @ out.push(.text(s: "UNANSWERED"))
+        .undeleted   => out @ out.push(.text(s: "UNDELETED"))
+        .undraft     => out @ out.push(.text(s: "UNDRAFT"))
+        .unflagged   => out @ out.push(.text(s: "UNFLAGGED"))
+        .unseen      => out @ out.push(.text(s: "UNSEEN"))
+        .keyword f   => out @ out.push(.text(s: "KEYWORD " + keyword(f.flag)?))
+        .unkeyword f => out @ out.push(.text(s: "UNKEYWORD " + keyword(f.flag)?))
+        .from t      => text(@out, wide: @wide, word: "FROM", t: t.text, utf8: utf8)?
+        .to t        => text(@out, wide: @wide, word: "TO", t: t.text, utf8: utf8)?
+        .cc t        => text(@out, wide: @wide, word: "CC", t: t.text, utf8: utf8)?
+        .bcc t       => text(@out, wide: @wide, word: "BCC", t: t.text, utf8: utf8)?
+        .subject t   => text(@out, wide: @wide, word: "SUBJECT", t: t.text, utf8: utf8)?
+        .body t      => text(@out, wide: @wide, word: "BODY", t: t.text, utf8: utf8)?
+        .text t      => text(@out, wide: @wide, word: "TEXT", t: t.text, utf8: utf8)?
+        .header h =>
+            text(@out, wide: @wide, word: "HEADER", t: h.name, utf8: utf8)?
+            out @ out.push(.text(s: " "))
+            text(@out, wide: @wide, word: "", t: h.text, utf8: utf8)?
+        .before d      => out @ out.push(.text(s: "BEFORE " + command.day_text(d.day)))
+        .on d          => out @ out.push(.text(s: "ON " + command.day_text(d.day)))
+        .since d       => out @ out.push(.text(s: "SINCE " + command.day_text(d.day)))
+        .sent_before d => out @ out.push(.text(s: "SENTBEFORE " + command.day_text(d.day)))
+        .sent_on d     => out @ out.push(.text(s: "SENTON " + command.day_text(d.day)))
+        .sent_since d  => out @ out.push(.text(s: "SENTSINCE " + command.day_text(d.day)))
+        .larger n      => out @ out.push(.text(s: "LARGER " + size(n.size)?))
+        .smaller n     => out @ out.push(.text(s: "SMALLER " + size(n.size)?))
+        .within w =>
+            word = if w.set.uid
+                "UID "
+            else
+                ""
+            out @ out.push(.text(s: word + command.set_text(w.set.text)?))
+        .not n =>
+            out @ out.push(.text(s: "NOT "))
+            group(@out, wide: @wide, members: n.keys, utf8: utf8, depth: depth)?
+        .either e =>
+            out @ out.push(.text(s: "OR "))
+            group(@out, wide: @wide, members: e.left, utf8: utf8, depth: depth)?
+            out @ out.push(.text(s: " "))
+            group(@out, wide: @wide, members: e.right, utf8: utf8, depth: depth)?
+
+    return ok()
+
+# The keys `members` as one key: alone as itself, several in parentheses.
+function group(@out: [command.Piece], @wide: bool, members: [imap.Key], utf8: bool, depth: i64) -> ()?
+    if members.len() == 0
+        return fail(code: INVALID, msg: "a NOT or an OR of a search holds an empty list of keys")
+
+    if members.len() == 1
+        return key(@out, wide: @wide, k: members[0], utf8: utf8, depth: depth + 1)
+    out @ out.push(.text(s: "("))
+
+    for k in range(from: 0, to: members.len())
+        if k > 0
+            out @ out.push(.text(s: " "))
+        key(@out, wide: @wide, k: members[k], utf8: utf8, depth: depth + 1)?
+
+    out @ out.push(.text(s: ")"))
+    return ok()
+
+# `word`, a space, and `t` as a string; `wide` marked where `t` holds a byte
+# above ASCII.
+function text(@out: [command.Piece], @wide: bool, word: str, t: str, utf8: bool) -> ()?
+    if word != ""
+        out @ out.push(.text(s: word + " "))
+
+    if !strings.is_ascii(t)
+        wide @ true
+    out @ out.push(command.string_piece(bytes.from_text(t), utf8: utf8)?)
+    return ok()
+
+# `flag` checked as a keyword.
+function keyword(flag: str) -> str?
+    _ = command.flags_text([flag])?
+
+    if strings.has_prefix(s: flag, prefix: "\\")
+        return fail(
+            code: INVALID,
+            msg: f"\"{flag}\" is a system flag, which KEYWORD does not name: search with `.seen`, `.flagged` and the others"
+        )
+    return ok(flag)
+
+# `n` checked as a size: 0 or more, as RFC 9051's `number64` lets LARGER
+# and SMALLER name.
+function size(n: i64) -> str?
+    if n < 0
+        return fail(code: INVALID, msg: f"a size of {n} bytes is below zero")
+    return ok(to_str(n))
+
+## Tests
+
+test "listed, spanned and numbers: the last as `*`, ranges written out either way round, `*` and a limit refused"
+    assert listed([1, 3, 0]) == "1,3,*" && spanned(first: 2, last: 0) == "2:*"
+    assert expanded("1:3,9,12:10", most: 100).must() == [1, 2, 3, 9, 10, 11, 12]
+    assert expanded("4294967295", most: 1).must() == [4294967295]
+
+    match expanded("1:*", most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match expanded("1:4294967295", most: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert expanded("0", most: 10).is_err()
+
+test "partial and part_numbers: a whole section, a range, refusals"
+    assert partial(start: -1, count: 0).must() == "" && partial(start: 0, count: 1024).must() == "<0.1024>"
+    assert partial(start: -2, count: 1).is_err() && partial(start: 0, count: 0).is_err() && partial(start: 0, count: 4294967296).is_err()
+    assert part_numbers("").must() == "" && part_numbers("1.2").must() == "1.2" && part_numbers("TEXT").is_err() && part_numbers("1..2").is_err()
+
+test "criteria: RFC 9051's examples, NOT and OR of groups, UTF-8 under CHARSET or as itself, refusals"
+    a = criteria(
+        [.flagged, .since(day: time.date(year: 1994, month: 2, day: 1).must()), .not(keys: [.from(text: "Smith")])],
+        utf8: false
+    ).must()
+    assert a == [.text(s: "FLAGGED"), .text(s: " "), .text(s: "SINCE 1-Feb-1994"), .text(s: " "), .text(s: "NOT "), .text(s: "FROM "), .text(s: "\"Smith\"")]
+    b = criteria(
+        [.either(left: [.seen, .larger(size: 10)], right: [.within(set: imap.Set(uid: true, text: "1:*"))])],
+        utf8: false
+    ).must()
+    assert b == [.text(s: "OR "), .text(s: "("), .text(s: "SEEN"), .text(s: " "), .text(s: "LARGER 10"), .text(s: ")"), .text(s: " "), .text(s: "UID 1:*")]
+    c = criteria([.subject(text: "café")], utf8: false).must()
+    assert c == [.text(s: "CHARSET UTF-8 "), .text(s: "SUBJECT "), .literal(data: bytes.from_text("café"), binary: false)]
+    assert criteria([.subject(text: "café")], utf8: true).must() == [.text(s: "SUBJECT "), .text(s: "\"café\"")]
+    assert criteria([.header(name: "List-Id", text: "")], utf8: true).must() == [.text(s: "HEADER "), .text(s: "\"List-Id\""), .text(s: " "), .text(s: "\"\"")]
+
+    refused: [[imap.Key]] = [
+        []
+        [.not(keys: [])]
+        [.keyword(flag: "\\Seen")]
+        [.keyword(flag: "a b")]
+        [.larger(size: -1)]
+        [.within(set: imap.Set(uid: false, text: "1 2"))]
+    ]
+
+    for bad in refused
+        match criteria(bad, utf8: true)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID

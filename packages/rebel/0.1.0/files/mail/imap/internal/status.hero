@@ -1,0 +1,162 @@
+# A status response, OK, NO, BAD, BYE or PREAUTH, and the response code in
+# brackets that may open its text (RFC 9051 § 7.1, RFC 4315's APPENDUID and
+# COPYUID, RFC 7162's HIGHESTMODSEQ): the codes a client acts on are read
+# into fields, any other kept by name with its arguments as text, and a
+# known code written against its grammar refused.
+
+use bytes
+use mail/imap/internal/lex
+use mail/imap/internal/wire
+
+# A status response.
+record Status
+    # `OK`, `NO`, `BAD`, `BYE` or `PREAUTH`.
+    condition: str
+    # The response code's name, upper case: `TRYCREATE`; "" for none.
+    code: str
+    # The code's arguments as the server wrote them, "" for none.
+    args: str
+    # The capabilities a `CAPABILITY` code names.
+    capabilities: [str]
+    # The flags a `PERMANENTFLAGS` code names.
+    flags: [str]
+    # The number of `UIDNEXT`, `UIDVALIDITY`, `UNSEEN`, `HIGHESTMODSEQ`, and
+    # the UIDVALIDITY of `APPENDUID` and `COPYUID`; 0 for none.
+    value: i64
+    # The UID sets of `APPENDUID` (one) and `COPYUID` (two), as written.
+    sets: [str]
+    # The text after the code, shown and never trusted.
+    text: str
+
+# A status with no code.
+function plain(condition: str, text: str) -> Status
+    return Status(condition: condition, code: "", args: "", capabilities: [], flags: [], value: 0, sets: [], text: text)
+
+# Whether `word` names a status response.
+function is_condition(word: str) -> bool
+    return word == "OK" || word == "NO" || word == "BAD" || word == "BYE" || word == "PREAUTH"
+
+# The text of a status whose `condition` was read, the parser on the space
+# after it or at the end of the line.
+function read(@s: wire.Session, condition: str) -> Status?
+    out @= plain(condition: condition, text: "")
+
+    if lex.at_end(s)
+        return ok(out)
+    lex.space(@s)?
+
+    if lex.take(@s, b: '[')
+        code(@s, @out)?
+        lex.expect(@s, b: ']', what: "response code's closing bracket")?
+
+        if lex.at_end(s)
+            return ok(out)
+        lex.space(@s)?
+
+    out.text @ lex.text_of(lex.rest(@s))
+    return ok(out)
+
+# The response code where the parser stands, after its `[`, read into `out`.
+function code(@s: wire.Session, @out: Status) -> ()?
+    name = lex.keyword(@s)?
+    out.code @ name
+    start = s.at
+
+    if name == "CAPABILITY"
+        out.capabilities @ names(@s)?
+    else if name == "PERMANENTFLAGS"
+        lex.space(@s)?
+        out.flags @ lex.flag_list(@s)?
+    else if name == "UIDNEXT" || name == "UIDVALIDITY" || name == "UNSEEN"
+        lex.space(@s)?
+        out.value @ lex.nz_number(@s)?
+    else if name == "HIGHESTMODSEQ"
+        lex.space(@s)?
+        out.value @ lex.number(@s)?
+    else if name == "APPENDUID"
+        lex.space(@s)?
+        out.value @ lex.nz_number(@s)?
+        lex.space(@s)?
+        out.sets @ [uid_set(@s)?]
+    else if name == "COPYUID"
+        lex.space(@s)?
+        out.value @ lex.nz_number(@s)?
+        lex.space(@s)?
+        first = uid_set(@s)?
+        lex.space(@s)?
+        out.sets @ [first, uid_set(@s)?]
+    else if lex.take(@s, b: ' ')
+        while !lex.at_end(s) && lex.peek(s) != ']'
+            s.at @ s.at + 1
+
+    out.args @ lex.text_of(s.line.slice(from: start, to: s.at))
+    return ok()
+
+# The atoms after a `CAPABILITY`, each after a space, up to a `]` or the end
+# of the line: at least one.
+function names(@s: wire.Session) -> [str]?
+    out: [str] @= []
+
+    while lex.take(@s, b: ' ')
+        out @ out.push(lex.keyword(@s)?)
+
+    if out.len() == 0
+        return lex.refused(s, what: "capability")
+    return ok(out)
+
+# A set of UIDs where the parser stands, as written: digits, `:` and `,`.
+function uid_set(@s: wire.Session) -> str?
+    start = s.at
+
+    while !lex.at_end(s) && (lex.peek(s) >= '0' && lex.peek(s) <= '9' || lex.peek(s) == ':' || lex.peek(s) == ',')
+        s.at @ s.at + 1
+
+    if s.at == start
+        return lex.refused(s, what: "set of UIDs")
+    return ok(lex.text_of(s.line.slice(from: start, to: s.at)))
+
+## Tests
+
+test "read: a code with a number, CAPABILITY, PERMANENTFLAGS, COPYUID, an unknown code, no code, no text"
+    s @= lex.net_pair()
+    s.line @ bytes.from_text(" [UIDVALIDITY 3857529045] UIDs valid")
+    a = read(@s, condition: "OK").must()
+    assert a.code == "UIDVALIDITY" && a.value == 3857529045 && a.text == "UIDs valid" && a.args == " 3857529045"
+    s.line @ bytes.from_text(" [CAPABILITY IMAP4rev2 STARTTLS AUTH=PLAIN] ready")
+    s.at @ 0
+    b = read(@s, condition: "OK").must()
+    assert b.capabilities == ["IMAP4REV2", "STARTTLS", "AUTH=PLAIN"] && b.text == "ready"
+    s.line @ bytes.from_text(" [PERMANENTFLAGS (\\Deleted \\Seen \\*)] Limited")
+    s.at @ 0
+    assert read(@s, condition: "OK").must().flags == ["\\Deleted", "\\Seen", "\\*"]
+    s.line @ bytes.from_text(" [COPYUID 38505 304,319:320 3956:3958] Done")
+    s.at @ 0
+    c = read(@s, condition: "OK").must()
+    assert c.code == "COPYUID" && c.value == 38505 && c.sets == ["304,319:320", "3956:3958"]
+    s.line @ bytes.from_text(" [X-SOMETHING a (b) \"c] text")
+    s.at @ 0
+    d = read(@s, condition: "NO").must()
+    assert d.code == "X-SOMETHING" && d.args == " a (b) \"c" && d.text == "text"
+    s.line @ bytes.from_text(" [ALERT] mind the gap")
+    s.at @ 0
+    assert read(@s, condition: "OK").must() == Status(condition: "OK", code: "ALERT", args: "", capabilities: [], flags: [], value: 0, sets: [], text: "mind the gap")
+    s.line @ bytes.from_text("")
+    s.at @ 0
+    assert read(@s, condition: "OK").must() == plain(condition: "OK", text: "")
+    s.line @ bytes.from_text(" [READ-WRITE]")
+    s.at @ 0
+    assert read(@s, condition: "OK").must().code == "READ-WRITE"
+    wire.close(@s).must()
+
+test "read: a known code against its grammar refused"
+    s @= lex.net_pair()
+
+    for bad in [" [UIDNEXT 0] x", " [UIDNEXT x] x", " [CAPABILITY] x", " [COPYUID 1 2] x", " [UNSEEN 4294967296] x", " [ALERT x", " [PERMANENTFLAGS \\Seen] x"]
+        s.line @ bytes.from_text(bad)
+        s.at @ 0
+
+        match read(@s, condition: "OK")
+            .ok _  => assert false
+            .err e => assert e.code == lex.INVALID
+
+    wire.close(@s).must()

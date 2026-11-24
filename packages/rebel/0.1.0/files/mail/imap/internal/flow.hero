@@ -1,0 +1,353 @@
+# The flow of an IMAP command: what the client knows of the server, a
+# command sent piece by piece with its literals (waiting for the server's
+# `+` unless LITERAL+ or LITERAL- lets the client go on), the responses read
+# up to the tagged one that ends it, a NO or BAD turned into the failure its
+# response code means, and the untagged data a command does not take kept
+# for the program, a bounded number of them.
+
+use bytes
+use mail/imap/internal/command
+use mail/imap/internal/lex
+use mail/imap/internal/response
+use mail/imap/internal/status
+use mail/imap/internal/wire
+
+# The codes.
+constant INVALID: str
+    "invalid"
+
+# The connection closed, or the server said BYE.
+constant CLOSED: str
+    "closed"
+
+# A refusal of the login or of a right.
+constant PERMISSION: str
+    "permission"
+
+# A mailbox that does not exist.
+constant NOT_FOUND: str
+    "not_found"
+
+# A mailbox that exists already.
+constant EXISTS: str
+    "exists"
+
+# A quota, a size or a budget passed.
+constant LIMIT: str
+    "limit"
+
+# A capability the server lacks.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# Any other refusal.
+constant FAILED: str
+    "failed"
+
+# The kinds of connection.
+constant PLAIN: i64
+    0
+
+# STARTTLS.
+constant STARTTLS: i64
+    1
+
+# TLS from the first byte.
+constant IMPLICIT: i64
+    2
+
+# The most untagged responses kept for the program; past it the oldest go.
+constant MAX_PENDING: i64
+    10000
+
+# A session and what the client knows of the server.
+record Conn
+    # The connection.
+    wire: wire.Session
+    # The server's name.
+    host: str
+    # Whether TLS protects the connection.
+    is_tls: bool
+    # The capabilities, upper case.
+    capabilities: [str]
+    # Whether IMAP4rev2 is enabled, UTF-8 then in force.
+    rev2: bool
+    # Whether the client is logged in.
+    logged_in: bool
+    # The greeting, with STARTTLS only its condition.
+    greeting: status.Status
+    # The last tagged status.
+    last: status.Status
+    # The untagged responses no command took, oldest first.
+    pending: [response.Data]
+    # How many were let go past `MAX_PENDING`.
+    lost: i64
+    # The tag of the IDLE in progress, "" for none.
+    idling: str
+    # The BYE the server said, its condition "" for none.
+    bye: status.Status
+
+# What a command answered.
+record Done
+    # The tagged status that ended it.
+    status: status.Status
+    # The untagged data of the kinds it takes, in order.
+    data: [response.Data]
+
+# Asks the server for its capabilities anew.
+function capability(@c: Conn) -> [str]?
+    done = run(@c, pieces: [.text(s: "CAPABILITY")], takes: ["CAPABILITY"], asked: "CAPABILITY")?
+    names: [str] @= []
+
+    for d in done.data
+        match d
+            .capability k =>
+                for n in k.names
+                    names @ names.push(n)
+            .condition _ | .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    if names.len() == 0 && done.status.code == "CAPABILITY"
+        names @ done.status.capabilities
+
+    if names.len() == 0
+        return fail(code: INVALID, msg: "the server answered CAPABILITY with no capability")
+    c.capabilities @ names
+    return ok(names)
+
+# Whether the server names `name` among its capabilities, in any case.
+function has(c: Conn lent, name: str) -> bool
+    want = lex.upper(name)
+
+    for n in c.capabilities
+        if n == want
+            return true
+
+    return false
+
+# Enables IMAP4rev2 where the server offers it, after the login, and learns
+# whether it did.
+function enable_rev2(@c: Conn) -> ()?
+    if !has(c, name: "IMAP4REV2") || c.rev2
+        return ok()
+    done = run(@c, pieces: [.text(s: "ENABLE IMAP4rev2")], takes: ["ENABLED"], asked: "ENABLE")?
+
+    for d in done.data
+        match d
+            .enabled k =>
+                for n in k.names
+                    if n == "IMAP4REV2"
+                        c.rev2 @ true
+            .condition _ | .capability _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+    return ok()
+
+# The kind of `d`, upper case, as a command names what it takes.
+function kind_of(d: response.Data) -> str
+    return match d
+        .condition k  => k.status.condition
+        .capability _ => "CAPABILITY"
+        .enabled _    => "ENABLED"
+        .list _       => "LIST"
+        .lsub _       => "LSUB"
+        .counts _     => "STATUS"
+        .search _     => "SEARCH"
+        .esearch _    => "ESEARCH"
+        .flags _      => "FLAGS"
+        .exists _     => "EXISTS"
+        .recent _     => "RECENT"
+        .expunge _    => "EXPUNGE"
+        .fetch _      => "FETCH"
+        .other o      => o.name
+
+# Keeps `d` for the program, the oldest let go past `MAX_PENDING`.
+function keep(@c: Conn, d: response.Data)
+    if c.pending.len() >= MAX_PENDING
+        c.pending @ c.pending.slice(from: 1, to: c.pending.len())
+        c.lost @ c.lost + 1
+    c.pending @ c.pending.push(d)
+
+# Learns what `d` tells of the session: capabilities, a BYE.
+function note(@c: Conn, d: response.Data)
+    match d
+        .capability k => c.capabilities @ k.names
+        .condition k =>
+            if k.status.condition == "BYE"
+                c.bye @ k.status
+        .enabled _ | .list _ | .lsub _ | .counts _ | .search _ | .esearch _ | .flags _ | .exists _ | .recent _ | .expunge _ | .fetch _ | .other _ => _ = 0
+
+# Whether a literal of `n` bytes may be sent without waiting for `+`.
+function needs_no_wait(c: Conn lent, n: i64) -> bool
+    return has(c, name: "LITERAL+") || (has(c, name: "LITERAL-") || c.rev2) && n <= 4096
+
+# One turn of the server: a continuation, or the tagged status.
+record Turn
+    # Whether the server asked for more.
+    continued: bool
+    # The continuation's text.
+    text: str
+    # The tagged status, where it ended the command.
+    status: status.Status
+
+# Reads responses up to a continuation (where `continuation`) or the tagged
+# one of `tag`, the untagged data put in `data`.
+function wait(@c: Conn, tag: str, @data: [response.Data], continuation: bool) -> Turn?
+    while true
+        r = match response.read(@c.wire)
+            .ok made => made
+            .err e   => return fail(code: e.code, msg: closed_words(c, msg: e.msg, code: e.code))
+
+        match r
+            .continuation k =>
+                if !continuation
+                    return fail(
+                        code: INVALID,
+                        msg: f"the server asked for more of a command that holds no more: + {k.text}"
+                    )
+                return ok(Turn(continued: true, text: k.text, status: status.plain(condition: "", text: "")))
+            .tagged t =>
+                if t.tag != tag
+                    return fail(code: INVALID, msg: f"the server answered the tag {t.tag} where {tag} was awaited")
+                c.last @ t.status
+
+                if t.status.code == "CAPABILITY"
+                    c.capabilities @ t.status.capabilities
+                return ok(Turn(continued: false, text: "", status: t.status))
+            .untagged u =>
+                note(@c, d: u.data)
+                data @ data.push(u.data)
+
+# `msg`, the failure of a read, with the BYE the server said before it.
+function closed_words(c: Conn lent, msg: str, code: str) -> str
+    if code == CLOSED && c.bye.condition == "BYE"
+        return shown(c.bye) + ": the server said BYE and closed the connection"
+    return msg
+
+# Writes `pieces` after `tag`, each literal announced and, unless the server
+# lets it go on, sent once the server says `+`; answers the tagged status
+# where the server ended the command before it was whole.
+function send(@c: Conn, tag: str, pieces: [command.Piece], @data: [response.Data]) -> Turn?
+    head: [str] @= [tag, " "]
+
+    for p in pieces
+        match p
+            .text t => head @ head.push(t.s)
+            .literal l =>
+                quick = needs_no_wait(c, n: l.data.len())
+
+                mark = if l.binary
+                    "~"
+                else
+                    ""
+
+                plus = if quick
+                    "+"
+                else
+                    ""
+                head @ head.push(f"{mark}{{{l.data.len()}{plus}}}\r\n")
+                wire.write(c.wire, data: bytes.from_text(join(head, "")))?
+                head @ []
+
+                if !quick
+                    turn = wait(@c, tag: tag, @data, continuation: true)?
+
+                    if !turn.continued
+                        return ok(turn)
+                wire.write(c.wire, data: l.data)?
+
+    head @ head.push("\r\n")
+    wire.write(c.wire, data: bytes.from_text(join(head, "")))?
+    return ok(Turn(continued: true, text: "", status: status.plain(condition: "", text: "")))
+
+# Runs a command: sends `pieces` under a new tag, reads up to its tagged
+# status, and answers the untagged data of the kinds `takes` names, keeping
+# every other for the program. Fails as `refusal` says where the status is
+# NO or BAD.
+function run(@c: Conn, pieces: [command.Piece], takes: [str], asked: str) -> Done?
+    if c.idling != ""
+        return fail(code: INVALID, msg: "the client is idling: `idle_done` ends the IDLE before another command")
+    wire.begin(@c.wire)?
+    tag = wire.next_tag(@c.wire)
+    data: [response.Data] @= []
+    sent = send(@c, tag: tag, pieces: pieces, @data)?
+
+    if !sent.continued && sent.status.condition == "OK"
+        return fail(
+            code: INVALID,
+            msg: f"the server said OK to {asked} before its literal was sent: " + shown(sent.status)
+        )
+
+    end = if sent.continued
+        wait(@c, tag: tag, @data, continuation: false)?.status
+    else
+        sent.status
+    taken: [response.Data] @= []
+
+    for d in data
+        kind = kind_of(d)
+        wanted @= false
+
+        for k in takes
+            if k == kind
+                wanted @ true
+
+        if wanted && end.condition == "OK"
+            taken @ taken.push(d)
+        else
+            keep(@c, d: d)
+
+    if end.condition != "OK"
+        return refusal(end, asked: asked, signing_in: false)
+    return ok(Done(status: end, data: taken))
+
+# The failure a NO or BAD to `asked` means: BAD `invalid`; NO with a code
+# RFC 5530 names `permission`, `not_found`, `exists`, `limit` or
+# `unsupported` as it means; NO to a login (`signing_in`) with no code `permission`; any
+# other NO `failed`. The message opens with the status.
+function refusal<T>(st: status.Status, asked: str, signing_in: bool) -> T?
+    c = st.code
+
+    code = if st.condition == "BAD"
+        INVALID
+    else if c == "AUTHENTICATIONFAILED" || c == "AUTHORIZATIONFAILED" || c == "EXPIRED" || c == "PRIVACYREQUIRED" || c == "NOPERM"
+        PERMISSION
+    else if c == "NONEXISTENT" || c == "TRYCREATE"
+        NOT_FOUND
+    else if c == "ALREADYEXISTS"
+        EXISTS
+    else if c == "OVERQUOTA" || c == "LIMIT" || c == "TOOBIG"
+        LIMIT
+    else if c == "UNKNOWN-CTE"
+        UNSUPPORTED
+    else if signing_in
+        PERMISSION
+    else
+        FAILED
+    return fail(code: code, msg: shown(st) + ": the server refused " + asked)
+
+# `st` as one line for a person: its condition, its code, its text; any
+# byte outside printable ASCII escaped.
+function shown(st: status.Status) -> str
+    code = if st.code == ""
+        ""
+    else
+        " [" + st.code + st.args + "]"
+
+    text = if st.text == ""
+        ""
+    else
+        " " + st.text
+    return visible(bytes.from_text(st.condition + code + text))
+
+# `raw` as text a person reads: printable ASCII as itself, any other byte
+# as `\x` and two hexadecimal digits, so a server's bytes never reach a
+# terminal raw.
+function visible(raw: [u8]) -> str
+    out: [str] @= []
+
+    for b in raw
+        if b >= 0x20 && b <= 0x7e
+            out @ out.push(bytes.to_text_lossy([b]))
+        else
+            out @ out.push("\\x" + bytes.format_hex([b]))
+
+    return join(out, "")
