@@ -689,8 +689,12 @@ function available(limit: Bucket, at: time.Instant) -> i64
 # - `every`: the new time to earn one token.
 # - `burst`: the new burst.
 #
-# Fails `invalid` as `bucket` does and `does_not_fit` where the sums leave an
-# `Instant`. A change rounds the tokens held to the nanosecond.
+# A change keeps the tokens held, a debt and a fraction of a token included,
+# as exactly that many times the new `every`, rounded to the nearest
+# nanosecond, a tie away from nothing. Fails `invalid` as `bucket` does, and
+# where `limit` earns a token in no time or holds fewer than one, as no bucket
+# `bucket` makes does; `does_not_fit` where the instant it leaves the bucket
+# empty at is not an `Instant`.
 function with_rate(limit: Bucket, at: time.Instant, every: time.Duration, burst: i64) -> Bucket?
     return gcra.reshape(limit: limit, at: at, every: every, burst: burst)
 
@@ -1052,6 +1056,28 @@ test "with_rate: a faster rate with the tokens it had"
     later = time.add(t: now, d: time.seconds(2).must()).must()
     faster = with_rate(limit: emptied, at: later, every: time.milliseconds(500).must(), burst: 4).must()
     assert available(limit: faster, at: later) == 2 && available(limit: faster, at: time.add(t: later, d: time.seconds(1).must()).must()) == 4
+
+test "with_rate: a full bucket of a token every nanosecond changed to one every 2^53 + 1 nanoseconds and a burst of 200 holds 200 of them to the nanosecond, and a debt of 13,916,998,315 ns at 7 s a token moved to 0.7 s rounds its tie away from nothing"
+    made = time.Instant(unix_nanoseconds: 1_795_435_200_000_000_000)
+    full = bucket(every: time.nanoseconds(1), burst: 1_000_000, at: made).must()
+    slow = with_rate(
+        limit: full,
+        at: time.Instant(unix_nanoseconds: 1_795_435_201_000_000_000),
+        every: time.nanoseconds(9_007_199_254_740_993),
+        burst: 200
+    ).must()
+    assert slow.empty_at == time.Instant(unix_nanoseconds: -6_004_649_948_198_600)
+    owed @= bucket(every: time.seconds(7).must(), burst: 2, at: made).must()
+    owed @ reserve(limit: owed, at: made, n: 2).must().bucket
+    owed @ reserve(limit: owed, at: made, n: 2).must().bucket
+    assert owed.empty_at == time.Instant(unix_nanoseconds: 1_795_435_214_000_000_000)
+    moved = with_rate(
+        limit: owed,
+        at: time.Instant(unix_nanoseconds: 1_795_435_200_083_001_685),
+        every: time.milliseconds(700).must(),
+        burst: 5
+    ).must()
+    assert moved.empty_at == time.Instant(unix_nanoseconds: 1_795_435_201_474_701_517)
 
 # Something done on the first call and every third.
 test "sometimes: the first call and every third"

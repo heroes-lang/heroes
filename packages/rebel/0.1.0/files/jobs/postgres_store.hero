@@ -557,7 +557,10 @@ function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?
 # - `burst`: the most tokens it holds, so the most attempts that go at once.
 #
 # The statement locks the limit's row: inside the program's transaction the
-# row stays locked, and every other taker waits, until it ends. Fails
+# row stays locked, and every other taker waits, until it ends. A change
+# keeps the tokens held, a debt and a fraction of a token included, as
+# exactly that many times the new `every`, rounded to the nearest nanosecond,
+# a tie away from nothing, as `jobs.with_rate` does. Fails
 # `invalid` as `jobs.bucket` does and where `name` is empty, too long or holds
 # a zero byte; `does_not_fit` where the debt kept at the new rate reaches past
 # what an `Instant` holds, the limit unchanged; and with the database's
