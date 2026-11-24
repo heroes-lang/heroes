@@ -1,6 +1,6 @@
 # Rebel 0.1.0: every package, for a program that uses it
 
-Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 187 faces in 9 layers, with every one of their 6,115 functions, 1,063 records, 413 variants and 1,603 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
+Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 188 faces in 9 layers, with every one of their 6,109 functions, 1,063 records, 413 variants and 1,604 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
 
 ## How to take Rebel
 
@@ -243,6 +243,7 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`sse`](https://heroes-lang.org/rebel/sse/): Server-sent events, read and served: a reader that connects again as a browser's `EventSource` does (the WHATWG HTML standard, § 9.2), and a hub that keeps the clients of an event stream, tells each of them what happens, remembers what it told so a client that connects again is told what it missed, and keeps a silent connection from being closed by a proxy.
 - [`mcp`](https://heroes-lang.org/rebel/mcp/): The Model Context Protocol, revision 2026-07-28, followed as that revision writes it: a server that offers a model tools (listed with the JSON Schema of their inputs, and called), resources and resource templates, prompts, completions, and change notifications on `subscriptions/listen`; that asks the user for more through elicitation, by multi round-trip requests; that tells progress and hears cancellation; over standard streams one message a line, and over Streamable HTTP.
 - [`openapi`](https://heroes-lang.org/rebel/openapi/): OpenAPI 3.1 documents built as data, written as JSON and YAML, read back, checked, served beside a program's routes, and requests and responses validated against them.
+- [`web/proxy`](https://heroes-lang.org/rebel/web/proxy/): A reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.ReverseProxy`: each request a client sends passed to one of its upstreams, `http://` or `https://`, and the answer passed back, the bodies both ways in pieces as they come and never held whole.
 ## Each face
 
 ### unicode
@@ -7132,10 +7133,10 @@ Who may do what to a file or a folder beyond its permission bits: its access con
 - `constant WRITE_SECURITY: i64`, value `0x40000`: To write its list.
 - `constant CHANGE_OWNER: i64`, value `0x80000`: To make oneself its owner.
 - `constant SYNCHRONIZE: i64`, value `0x100000`: To wait on it, which Windows asks of every reading and writing.
-- `constant GENERIC_ALL: i64`, value `0x10000000`: Windows' generic rights, which an entry a folder hands down may carry and Darwin has no place for.
-- `constant GENERIC_EXECUTE: i64`, value `0x20000000`
-- `constant GENERIC_WRITE: i64`, value `0x40000000`
-- `constant GENERIC_READ: i64`, value `0x80000000`
+- `constant GENERIC_ALL: i64`, value `0x10000000`: Windows' generic right to everything, which an entry a folder hands down may carry and Darwin has no place for.
+- `constant GENERIC_EXECUTE: i64`, value `0x20000000`: Windows' generic right to run a file or pass through a folder, which an entry a folder hands down may carry and Darwin has no place for.
+- `constant GENERIC_WRITE: i64`, value `0x40000000`: Windows' generic right to write, which an entry a folder hands down may carry and Darwin has no place for.
+- `constant GENERIC_READ: i64`, value `0x80000000`: Windows' generic right to read, which an entry a folder hands down may carry and Darwin has no place for.
 - `constant READ: i64`, value `0x120089`: What Windows' Explorer calls Read: the data, the attributes, the extended attributes and the list read, and the wait (`FILE_GENERIC_READ`).
 - `constant WRITE: i64`, value `0x120116`: What Explorer calls Write (`FILE_GENERIC_WRITE`).
 - `constant READ_AND_EXECUTE: i64`, value `0x1200a9`: What Explorer calls Read and execute.
@@ -8526,19 +8527,13 @@ The system's own log: a daemon's lines where the system keeps its log and its to
 - `record Log(name: str, destination: Destination, socket: str)`: A program's log: the name its lines are filed under and where they go.
 - `function level_number(level: Level) -> i64`, called `syslog.level_number(level)`: RFC 5424's number of `level`: 0 for `emergency` to 7 for `debug`.
 - `function is_name(name: str) -> bool`, called `syslog.is_name(name)`: Whether `name` is a name lines can be filed under on every system: 1 to 64 bytes of ASCII letters, digits, `.`, `_` and `-`.
-- `function checked(name: str, asked: str) -> str?`, called `syslog.checked(name: name, asked: asked)`: `name` where it is one, else `invalid`.
-- `function stands(path: str) -> bool`, called `syslog.stands(path)`: Whether a path names something, a socket among them.
 - `function open(name: str) -> Log?`, called `syslog.open(name)`: The system's log, the lines filed under `name`: the journal on a Linux that runs it, else `/dev/log`; the unified log on macOS; the Event Log on Windows. Fails `invalid`, `not_found`, `unsupported`.
 - `function open_socket(name: str, destination: Destination, socket: str) -> Log?`, called `syslog.open_socket(name: name, destination, socket: socket)`: A log whose lines go to the socket at `socket` in the journal's protocol or the syslog line, wherever it stands: a journal in a container, a syslog daemon of the program's own. Fails `invalid`, `unsupported`.
-- `function format_journal(name: str, level: Level, line: str) -> [u8]?`, called `syslog.format_journal(name: name, level, line: line)`: The journal entry one line is: `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3, a daemon's) and `SYSLOG_IDENTIFIER`, a line holding a newline in the protocol's binary form. Fails `invalid`.
+- `function encode_journal(name: str, level: Level, line: str) -> [u8]?`, called `syslog.encode_journal(name: name, level, line: line)`: The bytes of the journal entry one line is, in the journal's native protocol: `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3, a daemon's) and `SYSLOG_IDENTIFIER`, a line holding a newline in the protocol's binary form. Fails `invalid`.
 - `function format_syslog(name: str, level: Level, line: str, pid: i64, at: time.DateTime) -> str?`, called `syslog.format_syslog(name: name, level, line: line, pid, at)`: The classic syslog line one line is, as the C library's `syslog(3)` writes it to `/dev/log`: `<PRI>Mmm dd hh:mm:ss name[pid]: line`. Fails `invalid`.
-- `function without_zero(line: str, asked: str) -> str?`, called `syslog.without_zero(line: line, asked: asked)`: `line` where it holds no zero byte, which no C string carries.
-- `function local_now() -> time.DateTime?`, called `syslog.local_now()`: The machine's local time now, UTC's where the system names no zone.
 - `function write(log: Log, level: Level, line: str) -> ()?`, called `syslog.write(log, level, line)`: Writes `line` to `log` at `level`, never waiting. Fails `invalid`, `not_found`, `permission`, `limit`, `unsupported`, `failed`.
-- `function bytes_of(text: str) -> [u8]`, called `syslog.bytes_of(text)`: The bytes of `text`.
 - `function install_source(name: str) -> ()?`, called `syslog.install_source(name)`: Registers `name` as a source of the Event Log's Application log, with `EventCreate.exe` as its message file, so the Event Viewer shows each line whole. Fails `invalid`, `exists`, `permission`, `unsupported`.
 - `function remove_source(name: str) -> ()?`, called `syslog.remove_source(name)`: Removes what `install_source` registered. Fails `invalid`, `not_found`, `permission`, `unsupported`.
-- `function code_of<T>(r: T?) -> str`, called `syslog.code_of(r)`: The code a failed result carries, "" where it succeeded.
 
 
 ### service/manage
@@ -9421,16 +9416,6 @@ Routes for an HTTP server in the manner of Go's Echo: explicit routes, values, n
 - `record Forwarded(address: str, scheme: str, host: str, proxies: i64)`: What a request says of its client once the proxies the program trusts are read through: made by `forwarded_of`.
 - `function trusted_networks(list: [str]) -> [net.Network]?`, called `web.trusted_networks(list)`: The networks of `list`, each an address, `10.0.0.1` or `::1`, or a network, `10.0.0.0/8` or `fd00::/8`: the proxies a program trusts. Fails `invalid`.
 - `function forwarded_of(r: http.Request, trusted: [net.Network]) -> Forwarded`, called `web.forwarded_of(r, trusted)`: The client of `r`, read through the proxies `trusted` holds: from RFC 7239's `Forwarded` where `r` sends one, else from `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host`.
-- `record Upstream(url: url.Url, weight: i64)`: An upstream a reverse proxy passes requests to: made by `upstream_of`.
-- `variant Choosing = .round_robin | .least_connections`: How a reverse proxy chooses the upstream of each request, as nginx's upstream module documents its methods.
-- `record ReverseProxy(upstreams: [Upstream], choosing: Choosing, limits: http.Limits, connect_timeout: time.Duration, read_timeout: time.Duration, send_timeout: time.Duration, client_timeout: time.Duration, idle_timeout: time.Duration, tries: i64, max_fails: i64, fail_timeout: time.Duration, keep_host: bool, trusted: [net.Network], via: str, roots: str, workers: i64)`: A reverse proxy: made by `reverse_proxy`, its fields changed by the program, served by `serve_proxy` or `serve_proxy_stream`.
-- `record ProxyServed(connections: i64, requests: i64, relayed: i64, refused: i64, switched: i64)`: What serving a reverse proxy came to.
-- `record ProxyState(plan: relay.Plan, chooser: relay.Chooser)`: A reverse proxy served on the calling thread, its balancer's counts kept from one connection to the next: made by `proxy_state`, used by `serve_proxy_stream`.
-- `function upstream_of(target: str, weight: i64) -> Upstream?`, called `web.upstream_of(target, weight)`: The upstream at `target`, given `weight` of the turns. Fails `invalid`.
-- `function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy`, called `web.reverse_proxy(upstreams)`: A reverse proxy over `upstreams` with the usual settings: the round-robin, `http.default_limits()`, 60 seconds to connect, to wait for an upstream and to write to one (nginx's `proxy_connect_timeout`, `proxy_read_timeout` and `proxy_send_timeout`), 60 seconds for a client's silences and its idle connection, 3 tries, an upstream kept out for 10 seconds after 1 failure (nginx's `max_fails` and `fail_timeout`), the upstream's own `Host`, no proxy trusted, the machine's name in `Via`, the system's authorities, and 32 workers.
-- `function proxy_state(proxy: ReverseProxy) -> ProxyState?`, called `web.proxy_state(proxy)`: The state `serve_proxy_stream` serves `proxy` with, nothing counted yet. Fails `invalid`.
-- `function serve_proxy(l: net.Listener, proxy: ReverseProxy) -> ProxyServed?`, called `web.serve_proxy(l, proxy)`: Serves every connection `l` accepts as a reverse proxy over `proxy.upstreams` until the program asks to stop: each request passed to an upstream the balancer chooses, and its answer passed back, the bodies both ways as they come and never held whole. Fails `invalid`, `limit`.
-- `function serve_proxy_stream(@state: ProxyState, stream: io.Stream, remote: str) -> ProxyServed`, called `web.serve_proxy_stream(@state, stream, remote)`: Serves the client on `stream` as `serve_proxy` serves each connection, on the calling thread, until its connection ends: for a program's own loop, or a connection it accepted itself.
 - `function etag_of(body: [u8], weak: bool) -> str`, called `web.etag_of(body, weak)`: A strong entity tag for `body`, or a weak one: the first 16 bytes of its SHA-256 in hexadecimal, quoted, `W/` before it where `weak`.
 - `function with_etag(r: http.Request, response: http.Response) -> http.Response`, called `web.with_etag(r, response)`: A step after the handler: `response` given a strong `ETag` of its body where it is a 200 to `GET` or `HEAD` with none, then answered 304 where `r` holds its copy, by `If-None-Match` or by `If-Modified-Since` against its `Last-Modified`.
 - `function require_acceptable(r: http.Request, offered: [str]) -> Step`, called `web.require_acceptable(r, offered)`: A step that refuses `r` 406 where it accepts none of `offered`, by its `Accept` fields, saying what is offered.
@@ -10933,6 +10918,25 @@ OpenAPI 3.1 documents built as data, written as JSON and YAML, read back, checke
 - `function security_scheme_of(v: json.Value) -> SecurityScheme?`, called `openapi.security_scheme_of(v)`: The security scheme `v` writes. Fails `invalid`.
 - `function security_requirement_json(alternative: SecurityRequirement) -> json.Value`, called `openapi.security_requirement_json(alternative)`: `alternative` as JSON: each scheme's name with the list of its scopes.
 - `function security_requirement_of(v: json.Value) -> SecurityRequirement?`, called `openapi.security_requirement_of(v)`: The security requirement `v` writes. Fails `invalid`.
+
+
+### web/proxy
+
+Layer 8, named `use <rebel>/web/proxy`, [its reference](https://heroes-lang.org/rebel/web/proxy/).
+
+A reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.ReverseProxy`: each request a client sends passed to one of its upstreams, `http://` or `https://`, and the answer passed back, the bodies both ways in pieces as they come and never held whole.
+
+- `constant INVALID: str`, value `"invalid"`: The code of an upstream that is not one, and of a reverse proxy's settings out of their range: `upstream`, `new_state` and `serve` fail with it.
+- `record Upstream(url: url.Url, weight: i64)`: An upstream a reverse proxy passes requests to: made by `upstream`.
+- `variant Choosing = .round_robin | .least_connections`: How a reverse proxy chooses the upstream of each request, as nginx's upstream module documents its methods.
+- `function upstream(target: str, weight: i64) -> Upstream?`, called `proxy.upstream(target, weight)`: The upstream at `target`, given `weight` of the turns. Fails `invalid`.
+- `record ReverseProxy(upstreams: [Upstream], choosing: Choosing, limits: http.Limits, connect_timeout: time.Duration, read_timeout: time.Duration, send_timeout: time.Duration, client_timeout: time.Duration, idle_timeout: time.Duration, tries: i64, max_fails: i64, fail_timeout: time.Duration, keep_host: bool, trusted: [net.Network], via: str, roots: str, workers: i64)`: A reverse proxy: made by `reverse_proxy`, its fields changed by the program, served by `serve` or `serve_stream`.
+- `function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy`, called `proxy.reverse_proxy(upstreams)`: A reverse proxy over `upstreams` with the usual settings: the round-robin, `http.default_limits()`, 60 seconds to connect, to wait for an upstream and to write to one (nginx's `proxy_connect_timeout`, `proxy_read_timeout` and `proxy_send_timeout`), 60 seconds for a client's silences and its idle connection, 3 tries, an upstream kept out for 10 seconds after 1 failure (nginx's `max_fails` and `fail_timeout`), the upstream's own `Host`, no proxy trusted, the machine's name in `Via`, the system's authorities, and 32 workers.
+- `record Served(connections: i64, requests: i64, relayed: i64, refused: i64, switched: i64)`: What serving a reverse proxy came to.
+- `record State(plan: relay.Plan, chooser: relay.Chooser)`: A reverse proxy served on the calling thread, its balancer's counts kept from one connection to the next: made by `new_state`, used by `serve_stream`.
+- `function new_state(proxy: ReverseProxy) -> State?`, called `proxy.new_state(proxy)`: The state `serve_stream` serves `proxy` with, nothing counted yet. Fails `invalid`.
+- `function serve(l: net.Listener, proxy: ReverseProxy) -> Served?`, called `proxy.serve(l, proxy)`: Serves every connection `l` accepts as a reverse proxy over `proxy.upstreams` until the program asks to stop: each request passed to an upstream the balancer chooses, and its answer passed back, the bodies both ways as they come and never held whole. Fails `invalid`, `limit`.
+- `function serve_stream(@state: State, stream: io.Stream, remote: str) -> Served`, called `proxy.serve_stream(@state, stream, remote)`: Serves the client on `stream` as `serve` serves each connection, on the calling thread, until its connection ends: for a program's own loop, or a connection it accepted itself.
 
 ---
 
