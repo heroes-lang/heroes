@@ -3,18 +3,15 @@
 # no C string carries. Private to the package (README § A2); the face's
 # `is_name` is this module's.
 
+use syslog
 use syslog/internal/failure
 
-# The most bytes of a name.
-constant NAME_MOST: i64
-    64
-
-# Whether `name` is 1 to `NAME_MOST` bytes of ASCII letters, digits, `.`,
-# `_` and `-`, a name every system's log files lines under.
+# Whether `name` is 1 to `syslog.NAME_MOST` bytes of ASCII letters, digits,
+# `.`, `_` and `-`, a name every system's log files lines under.
 #
 # - `name`: the name asked about.
 function is_name(name: str) -> bool
-    if name.len() == 0 || name.len() > NAME_MOST
+    if name.len() == 0 || name.len() > syslog.NAME_MOST
         return false
 
     for i in range(from: 0, to: name.len())
@@ -35,7 +32,7 @@ function checked(name: str, asked: str) -> str?
         return failure.of(
             code: failure.INVALID,
             asked: asked,
-            why: f"\"{name}\" is no name: 1 to {NAME_MOST} bytes of ASCII letters, digits, ., _ and -"
+            why: f"\"{name}\" is no name: 1 to {syslog.NAME_MOST} bytes of ASCII letters, digits, ., _ and -"
         )
     return ok(name)
 
