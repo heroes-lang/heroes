@@ -1,6 +1,6 @@
 # Rebel 0.1.0: every package, for a program that uses it
 
-Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 182 faces in 9 layers, with every one of their 6,062 functions, 1,037 records, 394 variants and 1,539 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
+Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 187 faces in 9 layers, with every one of their 6,115 functions, 1,063 records, 413 variants and 1,603 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
 
 ## How to take Rebel
 
@@ -167,6 +167,7 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`template/sanitized`](https://heroes-lang.org/rebel/template/sanitized/): A page of `template`'s HTML mode that places HTML from outside where its template says: each `clean` action writes the text its value names as markup, cleaned by an `html/sanitize` policy inside the element it lands in, so a note written in Markdown and made HTML, or a visitor's comment, stands in its layout as one template, inside a loop as anywhere, and runs nothing.
 - [`ical`](https://heroes-lang.org/rebel/ical/): iCalendar (RFC 5545), the format every calendar program imports and exports, and the content lines it shares with vCard (RFC 6350).
 - [`barcode`](https://heroes-lang.org/rebel/barcode/): Barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their two- and five-digit add-ons (ISO/IEC 15420 and the GS1 General Specifications), Code 128 and GS1-128 (ISO/IEC 15417), Data Matrix ECC 200 and GS1 Data Matrix (ISO/IEC 16022), and PDF417 and compact PDF417 (ISO/IEC 15438), each with its check characters or error correction and its quiet zones, and written as SVG text or drawn into an `image`, the digits a person reads set under a linear symbol's bars.
+- [`chart`](https://heroes-lang.org/rebel/chart/): Plots and charts made: lines, points and areas over two axes, bars side by side or stacked, upright or lying, histograms, pies and donuts, each with its axes' ticks computed (nice numbers, logarithmic scales, the calendar's steps for dates), a grid, a legend, a title and the axes' labels, its text set in a `font.Font` and its colours from a palette made in `image/colorspace`; written as SVG text or drawn into an `image` through `image/vector`, the same drawing either way.
 
 ### Layer 5
 
@@ -182,9 +183,9 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`mail/imap`](https://heroes-lang.org/rebel/mail/imap/): Mail read from a server by IMAP (RFC 9051, IMAP4rev2, and RFC 3501, IMAP4rev1): a client that connects in plain text, by STARTTLS or by TLS from the first byte (RFC 8314, port 993), logs in by LOGIN or by AUTHENTICATE with PLAIN, XOAUTH2 or OAUTHBEARER, enables IMAP4rev2 where the server offers it, lists, makes, renames and selects mailboxes, fetches messages whole or in parts (envelopes, body structures, sections, partial fetches, BINARY), searches, changes flags, copies, moves, appends and expunges, by message number or by UID, and waits for news with IDLE.
 - [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/): Mail sent by SMTP (RFC 5321): a client that connects in plain text, by STARTTLS (RFC 3207) or by TLS from the first byte (RFC 8314, port 465), reads the extensions EHLO names, logs in by AUTH PLAIN, LOGIN, CRAM-MD5 or XOAUTH2, and sends a message to its recipients with SIZE, 8BITMIME, SMTPUTF8 and PIPELINING where the server offers them; each step bounded by a deadline, every reply a value with its code.
 - [`x509`](https://heroes-lang.org/rebel/x509/): Certificates of X.509 read as RFC 5280 writes them: the subject and the issuer with their attributes, the validity, the serial, the public key, the signature's algorithm and bytes, and every common extension decoded, an unknown one kept with its criticality; certificate requests (PKCS #10, RFC 2986) and revocation lists (RFC 5280 § 5) read; a signature checked by the system's own cryptography through `crypto/keypairs`; a chain put in order from a leaf and a pool, and checked; a host name and an address matched against a certificate as RFC 6125 says; and certificates, requests and revocation lists made and signed through `crypto/keypairs`.
+- [`fs/acl`](https://heroes-lang.org/rebel/fs/acl/): Who may do what to a file or a folder beyond its permission bits: its access control list read, written whole, copied to another path, and the id of a user or a group found by name, so a backup restores a folder with who may read it and a program grants one user or group a right.
 - [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/): A folder, a folder's whole tree or one file watched, and every change the system tells of it handed to the program as an `Event`, in order: an entry created, removed, written, its facts changed, or renamed with both its names; events lost told as one `overflow`; the watched folder itself gone.
 - [`fs/xattr`](https://heroes-lang.org/rebel/fs/xattr/): The extended attributes of a file or a folder: named values it carries beside its bytes, listed, read, written, removed and copied to another path, so a backup keeps a macOS file's tags (`com.apple.metadata:_kMDItemUserTags`) and quarantine (`com.apple.quarantine`), a Linux file's SELinux label (`security.selinux`), and what a program stored beside a file of its own.
-- [`service`](https://heroes-lang.org/rebel/service/): The program as a service of the system that starts it.
 - [`sql/odbc`](https://heroes-lang.org/rebel/sql/odbc/): Any database the system's ODBC driver manager reaches, through the API every driver of Rebel keeps over `sql`'s types, name for name, as `sql`'s opening comment writes it: `open`, `close`, `is_closed`, `ping`, `exec`, `query`, `query_one`, `exec_script`, `prepare`, `exec_prepared`, `query_prepared`, `close_statement`, `begin`, `commit`, `rollback` and `in_transaction`.
 - [`ldap`](https://heroes-lang.org/rebel/ldap/): An LDAP client written in Heroes: it speaks LDAPv3 (RFC 4511) to a directory server over a TCP connection of `net` or a TLS connection of `tls`, every message BER of `asn1`, and links no library.
 - [`config`](https://heroes-lang.org/rebel/config/): Settings read in layers: defaults, files in TOML, YAML, JSON, INI or Java's properties, `.env` files, the environment and the command line, each a `Layer` holding an object of `json.Value`, merged by `merge` in the order the program lists them, each over the ones before it, into `Settings` read by dotted path with typed getters.
@@ -201,9 +202,12 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`ui`](https://heroes-lang.org/rebel/ui/): Windows holding the system's own widgets, in the manner of wxWidgets: a button is an `NSButton` on macOS, a Win32 button on Windows, a GTK button on Linux, never one this package draws, so a program looks and behaves as the system's own programs do, its keys, its accessibility and its languages included.
 - [`ical/vcard`](https://heroes-lang.org/rebel/ical/vcard/): vCard (RFC 6350, and RFC 2426's version 3.0): a contact read from and written as the `VCARD` components of a document, over the content lines `ical` reads and writes.
 - [`ssh`](https://heroes-lang.org/rebel/ssh/): A client of SSH 2 (RFC 4250 to 4254): a server reached, its host key checked against a `known_hosts` file the program names, a sign-in by a key or a password, programs run with their output, errors and exit status, a shell or a subsystem in a terminal or without, and connections forwarded both ways; with SSH's key formats, public key lines, OpenSSH's private key files and `known_hosts` lines, read and written.
+- [`syslog`](https://heroes-lang.org/rebel/syslog/): The system's own log: a daemon's lines where the system keeps its log and its tools read it.
+- [`service/manage`](https://heroes-lang.org/rebel/service/manage/): A service of the system installed, started, stopped, asked and removed by another program: a systemd unit, `--user` or the system's, on Linux; a launchd agent of the user's or a daemon of the system's on macOS; a service of the Service Control Manager on Windows.
 
 ### Layer 6
 
+- [`service`](https://heroes-lang.org/rebel/service/): The program as a service of the system that starts it.
 - [`http`](https://heroes-lang.org/rebel/http/): HTTP/1.1, client and server, over `net` and over `tls`: a request and a response as values, read from and written to an `io.Stream` by RFC 9112; a client that sends a request to an `http://` or `https://` URL and follows its redirects; and a server that answers each request of each connection, plain or TLS, with a function of the program.
 - [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/): Numbered migrations of a database's schema: read from the SQL files of a folder or given as values, checked against a table of the versions already applied, and planned as steps, each applying or undoing one migration in its own transaction, that the program runs with its driver.
 - [`grpc`](https://heroes-lang.org/rebel/grpc/): gRPC over HTTP/2: calls of the four kinds (unary, a stream from the server, a stream from the client, and both ways at once), client and server, as the gRPC over HTTP/2 protocol writes them: each message framed by its length, a call's status and its message in the trailers, metadata as header fields (`-bin` keys carried in base 64), a deadline sent as `grpc-timeout`, and messages compressed by gzip where both ends allow it.
@@ -224,6 +228,7 @@ or from a checkout of the repository, Rebel read where it stands:
 - [`s3`](https://heroes-lang.org/rebel/s3/): The S3 API spoken over HTTP and HTTPS with Signature Version 4: objects put, read whole or by a range, asked about, copied, deleted and listed; buckets made, listed and removed; uploads in parts; presigned URLs and browser forms; checksums; and any other request of the API signed and sent.
 - [`jsonrpc`](https://heroes-lang.org/rebel/jsonrpc/): JSON-RPC 2.0, exactly as its specification of 2013-01-04 writes it: requests, notifications, answers and errors with their codes, batches, and ids of every kind the specification allows, read from text and written as text; carried over a stream one message a line (as MCP's standard streams and JSON Lines carry it) or each after a `Content-Length` header (as the Language Server Protocol carries it), and over HTTP through `http`.
 - [`acme`](https://heroes-lang.org/rebel/acme/): A client of ACME, RFC 8555: the directory read, an account made, found, changed or deactivated, an order placed for names, its authorizations answered by HTTP-01 or DNS-01, the order finalized with a certificate request, and the certificate chain downloaded, revoked, or asked when to renew (RFC 9773).
+- [`x509/ocsp`](https://heroes-lang.org/rebel/x509/ocsp/): OCSP (RFC 6960): whether a certificate is revoked, asked of the responder its issuer names and the answer checked.
 - [`llm/anthropic`](https://heroes-lang.org/rebel/llm/anthropic/): Claude's Messages API spoken over `http`, with no SDK: a conversation sent and its answer read whole or as it streams, tools whose calls the program runs itself, tokens counted, batches of requests, the models listed, and every failure the API answers told with its status, its type, its request id and the wait it advises.
 - [`llm/openai`](https://heroes-lang.org/rebel/llm/openai/): OpenAI's Chat Completions and Responses APIs spoken over `http`, with no SDK, and every server that speaks them: Ollama, vLLM, llama.cpp's and LM Studio's servers, reached by their base URL.
 - [`graphql`](https://heroes-lang.org/rebel/graphql/): GraphQL, as its specification of October 2021 writes it and as its working draft has settled since (`@oneOf` input objects, Unicode escapes past U+FFFF, the check that an operation's kind exists): a document's text parsed into operations and fragments, a schema's text parsed into a schema, a document validated against a schema by every rule of the specification's section 5, and an operation executed with the program answering every field, its result and its errors the specification's JSON response.
@@ -6160,6 +6165,47 @@ Barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their two- and five-digit add
 - `function to_image_with_text(symbol: Symbol, options: ImageOptions, f: font.Font) -> image.Image?`, called `barcode.to_image_with_text(symbol, options, f)`: `symbol` drawn into an RGBA image with its captions set in `f`, as a label is printed. Fails `not_found`.
 
 
+### chart
+
+Layer 4, named `use <rebel>/chart`, [its reference](https://heroes-lang.org/rebel/chart/).
+
+Plots and charts made: lines, points and areas over two axes, bars side by side or stacked, upright or lying, histograms, pies and donuts, each with its axes' ticks computed (nice numbers, logarithmic scales, the calendar's steps for dates), a grid, a legend, a title and the axes' labels, its text set in a `font.Font` and its colours from a palette made in `image/colorspace`; written as SVG text or drawn into an `image` through `image/vector`, the same drawing either way.
+
+- `constant INVALID: str`, value `codes.INVALID`: The code of an input the function does not read: a value that is infinite, or not a number where a gap is not taken; a range that does not rise; a count of ticks or bins out of its range; a logarithmic base not above 1 or a value at or below zero on such an axis; a date outside the years 1 to 9999; a size, a text size or a palette out of range; a chart too small for its text.
+- `constant LIMIT: str`, value `codes.LIMIT`: The code of an image past 16,384 pixels a side, which `lay_out` answers.
+- `variant Scale = .linear | .log(base: f64) | .time`: How an axis places its values.
+- `record Range(low: f64, high: f64)`: Two ends of a range of values.
+- `record Tick(value: f64, label: str)`: A tick of an axis.
+- `function ticks(span: Range, scale: Scale, count: i64) -> [Tick]?`, called `chart.ticks(span, scale, count)`: The ticks of an axis over `span`, about `count` of them where the scale can choose. Fails `invalid`.
+- `function nice(span: Range, scale: Scale, count: i64) -> Range?`, called `chart.nice(span, scale, count)`: `span` moved out to the ticks of about `count`, so that the axis begins and ends on a tick. Fails `invalid`.
+- `variant Bins = .auto | .count(count: i64) | .edges(edges: [f64])`: How a histogram's values are cut into bins.
+- `record Bin(low: f64, high: f64, count: i64)`: A bin of a histogram: the values from `low` up to `high`; the last bin also takes a value equal to its `high`.
+- `function bin(values: [f64], bins: Bins) -> [Bin]?`, called `chart.bin(values, bins)`: `values` counted into bins. Fails `invalid`.
+- `function palette(count: i64) -> [image.Color]?`, called `chart.palette(count)`: `count` colours for the series of a chart, of hues evenly spaced around the circle from a blue, as light and as saturated as one another in HLS, taken in an order that sets each far from the one before it. Fails `invalid`.
+- `record Look(width: i64, height: i64, title: str, text_size: f64, background: image.Color, ink: image.Color, grid: image.Color, palette: [image.Color], legend: bool)`: The frame of a chart: its size, its title and how its text and colours look.
+- `function look(title: str, width: i64, height: i64) -> Look`, called `chart.look(title, width: width, height: height)`: The look of an ordinary chart: text 12 pixels to the em in a near black on white, a light gray grid, ten colours of `palette` and a legend.
+- `variant Extent = .data | .fixed(low: f64, high: f64)`: What range an axis spans.
+- `variant TickCount = .auto | .about(count: i64)`: How many ticks an axis takes.
+- `record Axis(label: str, scale: Scale, extent: Extent, ticks: TickCount, grid: bool)`: An axis of a chart.
+- `function axis(label: str) -> Axis`, called `chart.axis(label)`: A linear axis over the data's range, its ticks as many as its length holds and its grid drawn.
+- `variant Mark = .line | .points | .line_and_points | .area`: How a series is drawn.
+- `record Series(name: str, xs: [f64], ys: [f64], mark: Mark)`: A series of points.
+- `record Plot(look: Look, x: Axis, y: Axis, series: [Series], stacked: bool)`: Series over two axes.
+- `variant Grouping = .grouped | .stacked`: How bars of several series share a category.
+- `variant Direction = .vertical | .horizontal`: Which way bars run.
+- `record BarSeries(name: str, values: [f64])`: The values of one series of bars.
+- `record Bars(look: Look, categories: [str], category_label: str, value: Axis, series: [BarSeries], grouping: Grouping, direction: Direction)`: Bars of categories.
+- `record Histogram(look: Look, values: [f64], bins: Bins, x: Axis, y: Axis)`: The counts of values in bins.
+- `record Slice(name: str, value: f64)`: A slice of a pie.
+- `record Pie(look: Look, slices: [Slice], hole: f64, percentages: bool)`: Shares of a whole.
+- `variant Chart = .plot(plot: Plot) | .bars(bars: Bars) | .histogram(histogram: Histogram) | .pie(pie: Pie)`: A chart.
+- `record Layout(scene: scene.Scene, font: font.Font)`: A chart laid out, ready to be written as SVG and drawn as an image, the same drawing either way.
+- `variant SvgText = .elements | .outlines`: How an SVG holds a chart's text.
+- `function lay_out(c: Chart, f: font.Font) -> Layout?`, called `chart.lay_out(c, f)`: `c` laid out in `f`: its ranges and ticks found, its margins measured from its text, its shapes mapped to pixels and cut to the plot. Fails `invalid`, `limit`, `not_found`.
+- `function to_svg(l: Layout, text: SvgText) -> str?`, called `chart.to_svg(l, text)`: The SVG document of a laid out chart: one line ending with a line feed, no XML declaration, as wide and as high as its look in pixels. Fails `not_found`.
+- `function to_image(l: Layout) -> image.Image?`, called `chart.to_image(l)`: A laid out chart drawn into an RGBA image as wide and as high as its look, anti-aliased, the text filled from the font's outlines. Fails `limit`, `not_found`.
+
+
 ### jobs
 
 Layer 5, named `use <rebel>/jobs`, [its reference](https://heroes-lang.org/rebel/jobs/).
@@ -6942,6 +6988,7 @@ Certificates of X.509 read as RFC 5280 writes them: the subject and the issuer w
 - `record PublicKey(algorithm: Algorithm, key: [u8], der: [u8])`: A subject's public key as a certificate holds it: SubjectPublicKeyInfo.
 - `function to_algorithm(v: asn1.Value) -> Algorithm?`, called `x509.to_algorithm(v)`: The algorithm `v` holds, an AlgorithmIdentifier. Fails `invalid`.
 - `function scheme_of(algorithm: Algorithm) -> keypairs.Scheme?`, called `x509.scheme_of(algorithm)`: The scheme of `crypto/keypairs` that checks a signature of `algorithm`. Fails `unsupported`, `invalid`.
+- `function algorithm_of(scheme: keypairs.Scheme) -> Algorithm`, called `x509.algorithm_of(scheme)`: The algorithm `scheme`'s signatures are named by, as this package writes it into a certificate, a request and a list: the inverse of `scheme_of`, for a document of another standard signed by the same schemes (an OCSP response, a timestamp).
 - `function decode_public_key(der: [u8]) -> PublicKey?`, called `x509.decode_public_key(der)`: The public key DER `der` holds, a SubjectPublicKeyInfo. Fails `invalid`.
 - `function kind_of(key: PublicKey) -> keypairs.Kind?`, called `x509.kind_of(key)`: The kind of `key` as `crypto/keypairs` names it, an RSA key's modulus measured. Fails `unsupported`, `invalid`.
 - `function verify_signature(key: PublicKey, algorithm: Algorithm, message: [u8], signature: [u8]) -> bool?`, called `x509.verify_signature(key, algorithm, message: message, signature: signature)`: Whether `signature` is the signature of `message` by `algorithm` of the key `key`. Fails `invalid`, `unsupported`.
@@ -7056,6 +7103,62 @@ Certificates of X.509 read as RFC 5280 writes them: the subject and the issuer w
 - `constant CHALLENGE_PASSWORD: str`, value `"1.2.840.113549.1.9.7"`: A request's attribute `challengePassword` of PKCS #9, `1.2.840.113549.1.9.7`.
 
 
+### fs/acl
+
+Layer 5, named `use <rebel>/fs/acl`, [its reference](https://heroes-lang.org/rebel/fs/acl/).
+
+Who may do what to a file or a folder beyond its permission bits: its access control list read, written whole, copied to another path, and the id of a user or a group found by name, so a backup restores a folder with who may read it and a program grants one user or group a right.
+
+- `constant INVALID: str`, value `lists.INVALID`: An id holding a zero byte, a path holding one, an entry's rights or flags below 0, an id the system cannot read as one, a Linux list missing its owner, owning group or everyone-else entry or naming one twice.
+- `constant FILE_NOT_FOUND: str`, value `lists.FILE_NOT_FOUND`: The path names nothing.
+- `constant NOT_FOUND: str`, value `lists.NOT_FOUND`: The system knows no user or group of that name.
+- `constant PERMISSION: str`, value `lists.PERMISSION`: The system refuses the call to this program: only a file's owner, or a user its list lets, changes a list.
+- `constant NOT_A_DIRECTORY: str`, value `lists.NOT_A_DIRECTORY`: A part of the path on its way is not a folder.
+- `constant NOT_TEXT: str`, value `lists.NOT_TEXT`: On Windows, a path or a name that is not UTF-8.
+- `constant LIMIT: str`, value `lists.LIMIT`: The system has no room for the list, or one read is past 16 MiB.
+- `constant UNSUPPORTED: str`, value `lists.UNSUPPORTED`: The volume keeps no list, an entry is one this system's lists cannot hold, or the system keeps none that is read here.
+- `constant FAILED: str`, value `lists.FAILED`: The system refused for a reason none of the codes above names; the message carries its number.
+- `constant READ_DATA: i64`, value `0x1`: To read a file's bytes, or list a folder.
+- `constant WRITE_DATA: i64`, value `0x2`: To write a file's bytes, or make a file in a folder.
+- `constant APPEND_DATA: i64`, value `0x4`: To write at a file's end, or make a folder in a folder.
+- `constant READ_EXTENDED: i64`, value `0x8`: To read the extended attributes.
+- `constant WRITE_EXTENDED: i64`, value `0x10`: To write the extended attributes.
+- `constant EXECUTE: i64`, value `0x20`: To run a file, or pass through a folder.
+- `constant DELETE_CHILD: i64`, value `0x40`: To remove what a folder holds, whatever the list of what it holds says.
+- `constant READ_ATTRIBUTES: i64`, value `0x80`: To read the attributes: times, size, kind.
+- `constant WRITE_ATTRIBUTES: i64`, value `0x100`: To write the attributes.
+- `constant DELETE: i64`, value `0x10000`: To remove it.
+- `constant READ_SECURITY: i64`, value `0x20000`: To read its list.
+- `constant WRITE_SECURITY: i64`, value `0x40000`: To write its list.
+- `constant CHANGE_OWNER: i64`, value `0x80000`: To make oneself its owner.
+- `constant SYNCHRONIZE: i64`, value `0x100000`: To wait on it, which Windows asks of every reading and writing.
+- `constant GENERIC_ALL: i64`, value `0x10000000`: Windows' generic rights, which an entry a folder hands down may carry and Darwin has no place for.
+- `constant GENERIC_EXECUTE: i64`, value `0x20000000`
+- `constant GENERIC_WRITE: i64`, value `0x40000000`
+- `constant GENERIC_READ: i64`, value `0x80000000`
+- `constant READ: i64`, value `0x120089`: What Windows' Explorer calls Read: the data, the attributes, the extended attributes and the list read, and the wait (`FILE_GENERIC_READ`).
+- `constant WRITE: i64`, value `0x120116`: What Explorer calls Write (`FILE_GENERIC_WRITE`).
+- `constant READ_AND_EXECUTE: i64`, value `0x1200a9`: What Explorer calls Read and execute.
+- `constant MODIFY: i64`, value `0x1301bf`: What Explorer calls Modify: read, execute, write and remove.
+- `constant FULL_CONTROL: i64`, value `0x1f01ff`: What Explorer calls Full control (`FILE_ALL_ACCESS`).
+- `constant FILE_INHERIT: i64`, value `0x1`: The entry is handed down to the files made in a folder.
+- `constant FOLDER_INHERIT: i64`, value `0x2`: The entry is handed down to the folders made in a folder.
+- `constant LIMIT_INHERIT: i64`, value `0x4`: The entry handed down goes one level only, and no further.
+- `constant ONLY_INHERIT: i64`, value `0x8`: The entry is only handed down, and does not govern the folder itself.
+- `constant INHERITED: i64`, value `0x10`: The entry came down from a parent; on Windows a list not protected takes its parent's again when written, so such an entry is left to the system.
+- `constant LINUX_DEFAULT: i64`, value `0xb`: A Linux folder's default entries: handed down to the files and folders made in it, and not governing the folder itself.
+- `variant Who = .user | .group | .owner | .owning_group | .others | .mask`: Whom an entry names.
+- `record Entry(who: Who, deny: bool, rights: i64, flags: i64, id: str, name: str)`: One entry of a list.
+- `record Acl(protected: bool, entries: [Entry])`: A file's or a folder's list.
+- `function read(path: str) -> Acl?`, called `acl.read(path)`: `path`'s access list. Fails `file_not_found`, `unsupported`.
+- `function link_read(path: str) -> Acl?`, called `acl.link_read(path)`: The access list of the link at `path` itself, not of what it names. Fails as `read` does.
+- `function write(path: str, acl: Acl) -> ()?`, called `acl.write(path, acl)`: Replaces `path`'s access list with `acl`. Fails `unsupported`, `permission`, `invalid`.
+- `function link_write(path: str, acl: Acl) -> ()?`, called `acl.link_write(path, acl)`: Replaces the access list of the link at `path` itself with `acl`. Fails as `write` does.
+- `function copy(from: str, to: str) -> ()?`, called `acl.copy(from: from, to: to)`: Writes `from`'s access list on `to`. Fails as `read` and `write` do.
+- `function user_id_of(name: str) -> str?`, called `acl.user_id_of(name)`: The id of the user the system knows by `name`, as an entry's `id` holds it. Fails `not_found`, `invalid`.
+- `function group_id_of(name: str) -> str?`, called `acl.group_id_of(name)`: The id of the group the system knows by `name`, as an entry's `id` holds it. Fails `not_found`.
+
+
 ### fs/watch
 
 Layer 5, named `use <rebel>/fs/watch`, [its reference](https://heroes-lang.org/rebel/fs/watch/).
@@ -7113,58 +7216,6 @@ The extended attributes of a file or a folder: named values it carries beside it
 - `function remove(path: str, name: str) -> ()?`, called `xattr.remove(path: path, name: name)`: Removes `path`'s extended attribute `name`. Fails `not_found`.
 - `function link_remove(path: str, name: str) -> ()?`, called `xattr.link_remove(path: path, name: name)`: Removes the extended attribute `name` of the link at `path` itself. Fails as `remove` does.
 - `function copy(from: str, to: str) -> ()?`, called `xattr.copy(from: from, to: to)`: Writes every extended attribute of `from` on `to`, each made or replaced; an attribute `to` has and `from` has not stays. Fails `permission`.
-
-
-### service
-
-Layer 5, named `use <rebel>/service`, [its reference](https://heroes-lang.org/rebel/service/).
-
-The program as a service of the system that starts it.
-
-- `constant INVALID: str`, value `"invalid"`: An argument out of its range: a name empty, longer than `NAME_MOST` bytes or holding a slash or a backslash; a state a function does not report, or an exit code outside 0 to 4,294,967,295; a wait of less than zero.
-- `constant EXISTS: str`, value `"exists"`: This program started a service already.
-- `constant CLOSED: str`, value `"closed"`: No service stands: none was started, or `end` ran.
-- `constant TIMEOUT: str`, value `"timeout"`: The system did not call the program in the time `start` allowed.
-- `constant NOT_FOUND: str`, value `"not_found"`: Nothing is there: no supervisor's socket answers at the name `$NOTIFY_SOCKET` gives, no launchd socket has the name asked for, no watchdog supervises this program.
-- `constant PERMISSION: str`, value `"permission"`: The system refuses the program what the call does.
-- `constant STOPPED: str`, value `"stopped"`: The program was asked to stop while `wait` waited, after the controls queued before the stop were told.
-- `constant LIMIT: str`, value `"limit"`: The system has no thread, socket or memory left for what the call needs.
-- `constant UNSUPPORTED: str`, value `"unsupported"`: This system has no services: it is not Windows.
-- `constant FAILED: str`, value `"failed"`: The system refused for a reason none of the above names: the program was not started by the Service Control Manager, or the system refused a report; the message carries the system's own words.
-- `constant NAME_MOST: i64`, value `256`: The longest service name `start` takes, in bytes.
-- `record Service(name: str)`: The service of this program.
-- `variant State = .stopped | .start_pending | .stop_pending | .running | .resume_pending | .pause_pending | .paused`: What a service is in: the state it reports to the system.
-- `variant Accept = .stop | .pause_resume | .shutdown | .preshutdown | .param_change | .time_change | .power | .session`: A control the program says it accepts: the system sends no other.
-- `variant Kind = .stop | .pause | .resume | .shutdown | .preshutdown | .param_change | .time_change | .power | .session | .user`: What the system asked of the program.
-- `record Control(kind: Kind, event: i64, session: i64)`: One control, as the system sent it.
-- `function is_supported() -> bool`, called `service.is_supported()`: Whether this system has services: true on Windows alone.
-- `function is_service() -> bool`, called `service.is_service()`: Whether the Service Control Manager started this program, which a program that is a service and a console tool at once asks first: false for a program started from a console, by another program or a scheduled task, and on every system but Windows.
-- `function start(name: str, limit: time.Duration) -> Service?`, called `service.start(name, limit)`: Makes this program the service `name`, once the Service Control Manager has called it, and answers the service, standing in `start_pending`. Fails `invalid`, `limit`, `exists`, `failed`, `unsupported`.
-- `function arguments(s: Service) -> [str]?`, called `service.arguments(s)`: The start parameters the system gave the service, which `sc start <name> <argument>...` writes after the name, in order; none where the program was started with none. Fails `closed`.
-- `function report_running(s: Service, accepts: [Accept]) -> ()?`, called `service.report_running(s, accepts)`: Reports the service running, taking the controls `accepts`. Fails `closed`, `failed`.
-- `function report_paused(s: Service, accepts: [Accept]) -> ()?`, called `service.report_paused(s, accepts)`: Reports the service paused, taking the controls `accepts`. Fails as `report_running` does.
-- `function report_pending(s: Service, state: State, wait_hint: time.Duration) -> ()?`, called `service.report_pending(s, state, wait_hint)`: Reports a pending state: the service is on its way, and the system is told how long to wait for the next report before it takes the service for hung. Fails `invalid`, `closed`, `failed`.
-- `function end(s: Service, exit_code: i64) -> ()?`, called `service.end(s, exit_code)`: Reports the service stopped and ends it: the system is told, the controls not taken are let go, the bell closed, and every call through a copy of the service fails `closed` from then on. Fails `invalid`, `closed`, `failed`.
-- `function wait(s: Service, limit: time.Duration) -> [Control]?`, called `service.wait(s, limit)`: The controls the system sent, in order, waiting until one comes, `limit` passes, or the program is asked to stop. Fails `invalid`, `limit`, `stopped`, `closed`.
-- `function wait_forever(s: Service) -> [Control]?`, called `service.wait_forever(s)`: The controls the system sent, waiting as long as it takes: until one comes or the program is asked to stop. Fails as `wait` does.
-- `function count(s: Service) -> i64?`, called `service.count(s)`: How many controls wait, without waiting. Fails `closed`.
-- `function add_to(set: poll.Set, s: Service) -> i64?`, called `service.add_to(set, s)`: Adds the service to the set `set` and answers the entry's key: a wait on the set tells the key readable while a control waits, and the program then takes the controls with `wait` and a limit of zero. Fails `closed`, `limit`.
-- `function state_name(state: State) -> str`, called `service.state_name(state)`: The state as a word the system's own tools use: `sc query` prints `STOP_PENDING` for `stop_pending`, and this prints `stop_pending`.
-- `function format_control(c: Control) -> str`, called `service.format_control(c)`: The control as one line a person reads: its kind, and the event and session where the kind has them.
-- `variant Notice = .ready | .reloading | .stopping | .status(text: str) | .errno(number: i64) | .main_pid(pid: i64) | .watchdog | .watchdog_trigger | .watchdog_timeout(span: time.Duration) | .extend_timeout(span: time.Duration) | .bus_error(name: str) | .varlink_error(name: str) | .exit_status(code: i64) | .notify_access(who: NotifyAccess) | .restart_reset`: What a program tells the manager that supervises it, one case for each of systemd's assignments (`sd_notify(3)`).
-- `variant NotifyAccess = .none | .main | .exec | .all`: Which processes of a service the manager takes notices from: the values of `NotifyAccess=` in `systemd.service(5)`.
-- `function can_notify() -> bool`, called `service.can_notify()`: Whether this system has systemd's notice socket: POSIX does, and Windows does not.
-- `function format_notices(notices: [Notice], monotonic: time.Duration) -> str?`, called `service.format_notices(notices, monotonic)`: The notices as the datagram one `notify` sends: their assignments, a line for each, with no newline at the end. Fails `invalid`.
-- `function parse_notices(text: str) -> [Notice]?`, called `service.parse_notices(text)`: The notices a datagram holds, in order: what a supervisor reads of `format_notices`. Fails `invalid`.
-- `function notify(notices: [Notice]) -> bool?`, called `service.notify(notices)`: Tells the manager the notices, as one datagram to the socket `$NOTIFY_SOCKET` names: true where it went, false where no manager named a socket, as when the program is started by hand. Fails `invalid`, `unsupported`, `not_found`, `permission`, `limit`.
-- `function watchdog_timeout() -> time.Duration?`, called `service.watchdog_timeout()`: The time the manager's watchdog allows between two `watchdog` notices, from `$WATCHDOG_USEC`: the program sends one about every half of it. Fails `not_found`, `invalid`.
-- `variant Handed = .listener(socket: net.Listener) | .connection(conn: net.Conn) | .datagram(socket: net.UdpSocket) | .local_listener(socket: ipc.Listener) | .local_connection(stream: io.Stream) | .fifo(stream: io.Stream) | .special(stream: io.Stream) | .other(words: str)`: What a manager handed the program: a socket of `net` where it is one, the words for what it is where it is not.
-- `record Inherited(name: str, handed: Handed)`: One descriptor handed over, with the name its unit gave it.
-- `function is_booted_by_systemd() -> bool`, called `service.is_booted_by_systemd()`: Whether the system was booted with systemd as its init, which is what `sd_booted(3)` asks: the directory `/run/systemd/system/` exists.
-- `function can_inherit() -> bool`, called `service.can_inherit()`: Whether this system has systemd's socket activation: POSIX does.
-- `function can_inherit_launchd() -> bool`, called `service.can_inherit_launchd()`: Whether this system has launchd's socket activation: macOS does.
-- `function inherit() -> [Inherited]?`, called `service.inherit()`: The sockets and files systemd handed this program, from descriptor 3 on (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set close-on-exec and made a value of `net`, of `ipc` or of `io`. Fails `exists`, `invalid`, `limit`, `unsupported`.
-- `function inherit_launchd(name: str) -> [Inherited]?`, called `service.inherit_launchd(name)`: The sockets launchd hands the job under `name` (`launch_activate_socket`), as `inherit` makes them, each named `name`. launchd hands a name's sockets over once. Fails `not_found`, `exists`, `limit`, `invalid`, `unsupported`.
 
 
 ### sql/odbc
@@ -8454,6 +8505,129 @@ A client of SSH 2 (RFC 4250 to 4254): a server reached, its host key checked aga
 - `function cancel_remote(@c: Client, host: str, port: i64) -> ()?`, called `ssh.cancel_remote(@c, host, port)`: Asks the server to stop listening on `host` at `port` for this client. Fails `permission`.
 
 
+### syslog
+
+Layer 5, named `use <rebel>/syslog`, [its reference](https://heroes-lang.org/rebel/syslog/).
+
+The system's own log: a daemon's lines where the system keeps its log and its tools read it.
+
+- `constant INVALID: str`, value `"invalid"`: The code of a name, a line or a socket the package refuses.
+- `constant UNSUPPORTED: str`, value `"unsupported"`: The code of a log this system does not have.
+- `constant NOT_FOUND: str`, value `"not_found"`: The code of a socket nothing answers at, or a source nobody registered.
+- `constant PERMISSION: str`, value `"permission"`: The code of a system that refuses the program: a socket's permission, the registry's.
+- `constant LIMIT: str`, value `"limit"`: The code of a log whose queue is full, or a line longer than it takes.
+- `constant EXISTS: str`, value `"exists"`: The code of a source registered already.
+- `constant FAILED: str`, value `"failed"`: The code of any other refusal of the system, its words and number told.
+- `constant JOURNAL_SOCKET: str`, value `"/run/systemd/journal/socket"`: The journal's socket, where systemd's journal listens.
+- `constant SYSLOG_SOCKET: str`, value `"/dev/log"`: The classic syslog socket.
+- `constant NAME_MOST: i64`, value `64`: The most bytes of a name.
+- `variant Level = .emergency | .alert | .critical | .error | .warning | .notice | .info | .debug`: How serious a line is: RFC 5424's severities, from the most.
+- `variant Destination = .journal | .syslog | .unified_log | .event_log`: Where a log's lines go.
+- `record Log(name: str, destination: Destination, socket: str)`: A program's log: the name its lines are filed under and where they go.
+- `function level_number(level: Level) -> i64`, called `syslog.level_number(level)`: RFC 5424's number of `level`: 0 for `emergency` to 7 for `debug`.
+- `function is_name(name: str) -> bool`, called `syslog.is_name(name)`: Whether `name` is a name lines can be filed under on every system: 1 to 64 bytes of ASCII letters, digits, `.`, `_` and `-`.
+- `function checked(name: str, asked: str) -> str?`, called `syslog.checked(name: name, asked: asked)`: `name` where it is one, else `invalid`.
+- `function stands(path: str) -> bool`, called `syslog.stands(path)`: Whether a path names something, a socket among them.
+- `function open(name: str) -> Log?`, called `syslog.open(name)`: The system's log, the lines filed under `name`: the journal on a Linux that runs it, else `/dev/log`; the unified log on macOS; the Event Log on Windows. Fails `invalid`, `not_found`, `unsupported`.
+- `function open_socket(name: str, destination: Destination, socket: str) -> Log?`, called `syslog.open_socket(name: name, destination, socket: socket)`: A log whose lines go to the socket at `socket` in the journal's protocol or the syslog line, wherever it stands: a journal in a container, a syslog daemon of the program's own. Fails `invalid`, `unsupported`.
+- `function format_journal(name: str, level: Level, line: str) -> [u8]?`, called `syslog.format_journal(name: name, level, line: line)`: The journal entry one line is: `MESSAGE`, `PRIORITY`, `SYSLOG_FACILITY` (3, a daemon's) and `SYSLOG_IDENTIFIER`, a line holding a newline in the protocol's binary form. Fails `invalid`.
+- `function format_syslog(name: str, level: Level, line: str, pid: i64, at: time.DateTime) -> str?`, called `syslog.format_syslog(name: name, level, line: line, pid, at)`: The classic syslog line one line is, as the C library's `syslog(3)` writes it to `/dev/log`: `<PRI>Mmm dd hh:mm:ss name[pid]: line`. Fails `invalid`.
+- `function without_zero(line: str, asked: str) -> str?`, called `syslog.without_zero(line: line, asked: asked)`: `line` where it holds no zero byte, which no C string carries.
+- `function local_now() -> time.DateTime?`, called `syslog.local_now()`: The machine's local time now, UTC's where the system names no zone.
+- `function write(log: Log, level: Level, line: str) -> ()?`, called `syslog.write(log, level, line)`: Writes `line` to `log` at `level`, never waiting. Fails `invalid`, `not_found`, `permission`, `limit`, `unsupported`, `failed`.
+- `function bytes_of(text: str) -> [u8]`, called `syslog.bytes_of(text)`: The bytes of `text`.
+- `function install_source(name: str) -> ()?`, called `syslog.install_source(name)`: Registers `name` as a source of the Event Log's Application log, with `EventCreate.exe` as its message file, so the Event Viewer shows each line whole. Fails `invalid`, `exists`, `permission`, `unsupported`.
+- `function remove_source(name: str) -> ()?`, called `syslog.remove_source(name)`: Removes what `install_source` registered. Fails `invalid`, `not_found`, `permission`, `unsupported`.
+- `function code_of<T>(r: T?) -> str`, called `syslog.code_of(r)`: The code a failed result carries, "" where it succeeded.
+
+
+### service/manage
+
+Layer 5, named `use <rebel>/service/manage`, [its reference](https://heroes-lang.org/rebel/service/manage/).
+
+A service of the system installed, started, stopped, asked and removed by another program: a systemd unit, `--user` or the system's, on Linux; a launchd agent of the user's or a daemon of the system's on macOS; a service of the Service Control Manager on Windows.
+
+- `constant INVALID: str`, value `"invalid"`: An argument out of its range: a name that is not 1 to `NAME_MOST` bytes of ASCII letters, digits, `.`, `_` and `-`; a text holding a zero byte, or a description or a setting systemd reads bare that it would change; a program or a folder that is not absolute; a variable's name that is no name; a restart delay out of range.
+- `constant EXISTS: str`, value `"exists"`: A service of that name is installed or known to the manager already.
+- `constant NOT_FOUND: str`, value `"not_found"`: No service of that name is installed: no unit or job the manager knows, no file at `path_of`'s path for `remove`.
+- `constant PERMISSION: str`, value `"permission"`: The system refuses the program what the call does: a system service is installed, started and removed by an administrator (root on Linux and macOS).
+- `constant TIMEOUT: str`, value `"timeout"`: The service did not reach the state asked in the span given, or a manager's program did not answer in a minute.
+- `constant LIMIT: str`, value `"limit"`: The system has no memory left for the call.
+- `constant UNSUPPORTED: str`, value `"unsupported"`: This system has no manager this package reaches, or the manager has no form for what is asked: a Linux not booted with systemd, a user's service or a working folder on Windows, a restart at every exit on Windows.
+- `constant FAILED: str`, value `"failed"`: The system refused for a reason none of the above names; the message carries its own words.
+- `constant NAME_MOST: i64`, value `247`: The longest service name, in bytes: systemd's longest unit name, 255 bytes with `.service` (measured with systemd 257 on 2026-11-24).
+- `constant TEXT_MOST: i64`, value `32768`: The longest description, in bytes.
+- `variant Scope = .system | .user`: Whose a service is.
+- `variant Restart = .never | .on_failure | .always`: When the system starts a service again after it ended by itself.
+- `record Definition(name: str, description: str, program: str, arguments: [str], dir: str, env: {str: str}, scope: Scope, at_boot: bool, restart: Restart, restart_delay: time.Duration)`: A service's definition: what `install` writes.
+- `variant Manager = .systemd | .launchd | .windows`: The manager a system has.
+- `variant State = .stopped | .starting | .running | .stopping | .pausing | .paused | .resuming | .failed(code: i64)`: Where a service stands, as `status_of` reads it.
+- `record Status(state: State, pid: i64?, at_boot: bool)`: What `status_of` answers.
+- `function definition(name: str, program: str, arguments: [str], scope: Scope) -> Definition`, called `manage.definition(name: name, program: program, arguments, scope)`: A definition of the service `name`, of `scope`, running `program` with `arguments`: no description, the manager's own folder, no variables, not started by itself, never restarted, a restart delay of a second.
+- `function manager() -> Manager?`, called `manage.manager()`: The manager of the system this program runs on: systemd where Linux was booted with it (`/run/systemd/system` is a folder, `sd_booted(3)`'s test), launchd on macOS, the Service Control Manager on Windows. Fails `unsupported`.
+- `function format_unit(d: Definition) -> str?`, called `manage.format_unit(d)`: The systemd unit file of `d`: `[Unit]` with its description, `[Service]` with `Type=exec`, the program and its arguments quoted, the folder, the variables in the order of their names, the restart and its delay, and `[Install]` with the target `install` enables it for. Fails `invalid`.
+- `function format_job(d: Definition) -> str?`, called `manage.format_job(d)`: The launchd property list of `d`, in XML as `plutil -convert xml1` writes one: `Label`, `ProgramArguments`, `WorkingDirectory`, `EnvironmentVariables`, `RunAtLoad`, `KeepAlive` and `ThrottleInterval`. Fails `invalid`, `unsupported`.
+- `function path_of(name: str, scope: Scope) -> str?`, called `manage.path_of(name, scope)`: Where `install` writes the definition of the service `name` of `scope` on this system: `/etc/systemd/system/<name>.service` or the user's `systemd/user` folder under `os.config_dir`; `/Library/LaunchDaemons` or the user's `Library/LaunchAgents`, `<name>.plist`. Fails `invalid`, `unsupported`.
+- `function install(d: Definition) -> ()?`, called `manage.install(d)`: Installs `d`, which the system then starts as `d` says, or when asked; the service does not start now. Fails `invalid`, `exists`, `permission`, `unsupported`, `failed`.
+- `function remove(name: str, scope: Scope, limit: time.Duration) -> ()?`, called `manage.remove(name, scope, limit)`: Stops the service `name` of `scope`, waiting at most `limit`, and removes it. Fails `not_found`, `timeout`, `limit`.
+- `function start(name: str, scope: Scope, limit: time.Duration) -> ()?`, called `manage.start(name, scope, limit)`: Starts the service `name` of `scope`, waiting at most `limit` until the system says it started; a service that runs already is left running. Fails `not_found`, `timeout`, `limit`, `failed`, `permission`, `unsupported`.
+- `function stop(name: str, scope: Scope, limit: time.Duration) -> ()?`, called `manage.stop(name, scope, limit)`: Stops the service `name` of `scope`, waiting at most `limit` until its process has ended; a stopped service is left stopped. Fails `not_found`, `timeout`, `limit`, `permission`, `unsupported`.
+- `function restart(name: str, scope: Scope, limit: time.Duration) -> ()?`, called `manage.restart(name, scope, limit)`: Stops the service `name` of `scope` where it runs and starts it, waiting at most `limit` for both; a stopped one is started. Fails as `stop` and `start` do.
+- `function status_of(name: str, scope: Scope) -> Status?`, called `manage.status_of(name, scope)`: Where the service `name` of `scope` stands, its main process and whether the system starts it by itself. Fails `not_found`, `permission`, `unsupported`, `failed`.
+
+
+### service
+
+Layer 6, named `use <rebel>/service`, [its reference](https://heroes-lang.org/rebel/service/).
+
+The program as a service of the system that starts it.
+
+- `constant INVALID: str`, value `"invalid"`: An argument out of its range: a name empty, longer than `NAME_MOST` bytes or holding a slash or a backslash; a state a function does not report, or an exit code outside 0 to 4,294,967,295; a wait of less than zero.
+- `constant EXISTS: str`, value `"exists"`: This program started a service already.
+- `constant CLOSED: str`, value `"closed"`: No service stands: none was started, or `end` ran.
+- `constant TIMEOUT: str`, value `"timeout"`: The system did not call the program in the time `start` allowed.
+- `constant NOT_FOUND: str`, value `"not_found"`: Nothing is there: no supervisor's socket answers at the name `$NOTIFY_SOCKET` gives, no launchd socket has the name asked for, no watchdog supervises this program.
+- `constant PERMISSION: str`, value `"permission"`: The system refuses the program what the call does.
+- `constant STOPPED: str`, value `"stopped"`: The program was asked to stop while `wait` waited, after the controls queued before the stop were told.
+- `constant LIMIT: str`, value `"limit"`: The system has no thread, socket or memory left for what the call needs.
+- `constant UNSUPPORTED: str`, value `"unsupported"`: This system has no services: it is not Windows.
+- `constant FAILED: str`, value `"failed"`: The system refused for a reason none of the above names: the program was not started by the Service Control Manager, or the system refused a report; the message carries the system's own words.
+- `constant NAME_MOST: i64`, value `256`: The longest service name `start` takes, in bytes.
+- `record Service(name: str)`: The service of this program.
+- `variant State = .stopped | .start_pending | .stop_pending | .running | .resume_pending | .pause_pending | .paused`: What a service is in: the state it reports to the system.
+- `variant Accept = .stop | .pause_resume | .shutdown | .preshutdown | .param_change | .time_change | .power | .session`: A control the program says it accepts: the system sends no other.
+- `variant Kind = .stop | .pause | .resume | .shutdown | .preshutdown | .param_change | .time_change | .power | .session | .user`: What the system asked of the program.
+- `record Control(kind: Kind, event: i64, session: i64)`: One control, as the system sent it.
+- `function is_supported() -> bool`, called `service.is_supported()`: Whether this system has services: true on Windows alone.
+- `function is_service() -> bool`, called `service.is_service()`: Whether the Service Control Manager started this program, which a program that is a service and a console tool at once asks first: false for a program started from a console, by another program or a scheduled task, and on every system but Windows.
+- `function start(name: str, limit: time.Duration) -> Service?`, called `service.start(name, limit)`: Makes this program the service `name`, once the Service Control Manager has called it, and answers the service, standing in `start_pending`. Fails `invalid`, `limit`, `exists`, `failed`, `unsupported`.
+- `function arguments(s: Service) -> [str]?`, called `service.arguments(s)`: The start parameters the system gave the service, which `sc start <name> <argument>...` writes after the name, in order; none where the program was started with none. Fails `closed`.
+- `function report_running(s: Service, accepts: [Accept]) -> ()?`, called `service.report_running(s, accepts)`: Reports the service running, taking the controls `accepts`. Fails `closed`, `failed`.
+- `function report_paused(s: Service, accepts: [Accept]) -> ()?`, called `service.report_paused(s, accepts)`: Reports the service paused, taking the controls `accepts`. Fails as `report_running` does.
+- `function report_pending(s: Service, state: State, wait_hint: time.Duration) -> ()?`, called `service.report_pending(s, state, wait_hint)`: Reports a pending state: the service is on its way, and the system is told how long to wait for the next report before it takes the service for hung. Fails `invalid`, `closed`, `failed`.
+- `function end(s: Service, exit_code: i64) -> ()?`, called `service.end(s, exit_code)`: Reports the service stopped and ends it: the system is told, the controls not taken are let go, the bell closed, and every call through a copy of the service fails `closed` from then on. Fails `invalid`, `closed`, `failed`.
+- `function wait(s: Service, limit: time.Duration) -> [Control]?`, called `service.wait(s, limit)`: The controls the system sent, in order, waiting until one comes, `limit` passes, or the program is asked to stop. Fails `invalid`, `limit`, `stopped`, `closed`.
+- `function wait_forever(s: Service) -> [Control]?`, called `service.wait_forever(s)`: The controls the system sent, waiting as long as it takes: until one comes or the program is asked to stop. Fails as `wait` does.
+- `function count(s: Service) -> i64?`, called `service.count(s)`: How many controls wait, without waiting. Fails `closed`.
+- `function add_to(set: poll.Set, s: Service) -> i64?`, called `service.add_to(set, s)`: Adds the service to the set `set` and answers the entry's key: a wait on the set tells the key readable while a control waits, and the program then takes the controls with `wait` and a limit of zero. Fails `closed`, `limit`.
+- `function state_name(state: State) -> str`, called `service.state_name(state)`: The state as a word the system's own tools use: `sc query` prints `STOP_PENDING` for `stop_pending`, and this prints `stop_pending`.
+- `function format_control(c: Control) -> str`, called `service.format_control(c)`: The control as one line a person reads: its kind, and the event and session where the kind has them.
+- `variant Notice = .ready | .reloading | .stopping | .status(text: str) | .errno(number: i64) | .main_pid(pid: i64) | .watchdog | .watchdog_trigger | .watchdog_timeout(span: time.Duration) | .extend_timeout(span: time.Duration) | .bus_error(name: str) | .varlink_error(name: str) | .exit_status(code: i64) | .notify_access(who: NotifyAccess) | .restart_reset`: What a program tells the manager that supervises it, one case for each of systemd's assignments (`sd_notify(3)`).
+- `variant NotifyAccess = .none | .main | .exec | .all`: Which processes of a service the manager takes notices from: the values of `NotifyAccess=` in `systemd.service(5)`.
+- `function can_notify() -> bool`, called `service.can_notify()`: Whether this system has systemd's notice socket: POSIX does, and Windows does not.
+- `function format_notices(notices: [Notice], monotonic: time.Duration) -> str?`, called `service.format_notices(notices, monotonic)`: The notices as the datagram one `notify` sends: their assignments, a line for each, with no newline at the end. Fails `invalid`.
+- `function parse_notices(text: str) -> [Notice]?`, called `service.parse_notices(text)`: The notices a datagram holds, in order: what a supervisor reads of `format_notices`. Fails `invalid`.
+- `function notify(notices: [Notice]) -> bool?`, called `service.notify(notices)`: Tells the manager the notices, as one datagram to the socket `$NOTIFY_SOCKET` names: true where it went, false where no manager named a socket, as when the program is started by hand. Fails `invalid`, `unsupported`, `not_found`, `permission`, `limit`.
+- `function watchdog_timeout() -> time.Duration?`, called `service.watchdog_timeout()`: The time the manager's watchdog allows between two `watchdog` notices, from `$WATCHDOG_USEC`: the program sends one about every half of it. Fails `not_found`, `invalid`.
+- `variant Handed = .listener(socket: net.Listener) | .connection(conn: net.Conn) | .datagram(socket: net.UdpSocket) | .local_listener(socket: ipc.Listener) | .local_connection(stream: io.Stream) | .fifo(stream: io.Stream) | .special(stream: io.Stream) | .other(words: str)`: What a manager handed the program: a socket of `net` where it is one, the words for what it is where it is not.
+- `record Inherited(name: str, handed: Handed)`: One descriptor handed over, with the name its unit gave it.
+- `function is_booted_by_systemd() -> bool`, called `service.is_booted_by_systemd()`: Whether the system was booted with systemd as its init, which is what `sd_booted(3)` asks: the directory `/run/systemd/system/` exists.
+- `function can_inherit() -> bool`, called `service.can_inherit()`: Whether this system has systemd's socket activation: POSIX does.
+- `function can_inherit_launchd() -> bool`, called `service.can_inherit_launchd()`: Whether this system has launchd's socket activation: macOS does.
+- `function inherit() -> [Inherited]?`, called `service.inherit()`: The sockets and files systemd handed this program, from descriptor 3 on (`$LISTEN_PID`, `$LISTEN_FDS`, `$LISTEN_FDNAMES`), in order, each set close-on-exec and made a value of `net`, of `ipc` or of `io`. Fails `exists`, `invalid`, `limit`, `unsupported`.
+- `function inherit_launchd(name: str) -> [Inherited]?`, called `service.inherit_launchd(name)`: The sockets launchd hands the job under `name` (`launch_activate_socket`), as `inherit` makes them, each named `name`. launchd hands a name's sockets over once. Fails `not_found`, `exists`, `limit`, `invalid`, `unsupported`.
+
+
 ### http
 
 Layer 6, named `use <rebel>/http`, [its reference](https://heroes-lang.org/rebel/http/).
@@ -8566,7 +8740,6 @@ HTTP/1.1, client and server, over `net` and over `tls`: a request and a response
 - `function framing_of(body: BodyReader) -> Framing`, called `http.framing_of(body)`: How the body `body` reads ends, as it was framed before a byte of it was read: the framing a relay writes it on in.
 - `function write_request_head(s: io.Stream, r: Request, framing: Framing) -> BodyWriter?`, called `http.write_request_head(s, r, framing)`: Writes the head of `r` to `s` for a body that follows in `framing`, written piece by piece with `write_piece` and ended by `end_pieces`: the request line with `url.request_target(r.url)`, `Host` as `r` names it or else as its URL does, the fields but the framing's, `Connection: close` where `r.closing`, and the framing's own field. Fails `invalid`.
 - `function write_response_head_framed(s: io.Stream, response: Response, framing: Framing) -> BodyWriter?`, called `http.write_response_head_framed(s, response, framing)`: Writes the head of `response` to `s` for a body that follows in `framing`, written piece by piece with `write_piece` and ended by `end_pieces`: the status line, the fields but the framing's, a `Date` where it has none, `Connection: close` where `response.closing` or the body runs to the connection's end, and the framing's own field. Fails `invalid`.
-- `function inner_framing(framing: Framing) -> framings.Framing?`, called `http.inner_framing(framing)`: The framing `framing` says, as the internal writers read it. Fails `invalid`.
 - `function write_piece(s: io.Stream, @body: BodyWriter, data: [u8]) -> ()?`, called `http.write_piece(s, @body, data)`: Writes `data` to `s` as the next piece of the body `body` frames: the bytes themselves, or one chunk holding them; nothing for no bytes. Fails `invalid`.
 - `function end_pieces(s: io.Stream, @body: BodyWriter) -> ()?`, called `http.end_pieces(s, @body)`: Ends the body `body` frames on `s`: the last chunk with an empty trailer for chunks, nothing else. Fails `invalid`.
 - `function read_switch_head(@reader: io.Reader, method: str, limits: Limits) -> Response?`, called `http.read_switch_head(@reader, method, limits)`: The head of the next response `reader` holds that is final or a 101, the other informational ones before it skipped, its body left unread: what a gateway reads after passing on a request that asked to switch protocols (`Upgrade`). Fails as `read_response_head` does, 101 aside.
@@ -9256,9 +9429,6 @@ Routes for an HTTP server in the manner of Go's Echo: explicit routes, values, n
 - `function upstream_of(target: str, weight: i64) -> Upstream?`, called `web.upstream_of(target, weight)`: The upstream at `target`, given `weight` of the turns. Fails `invalid`.
 - `function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy`, called `web.reverse_proxy(upstreams)`: A reverse proxy over `upstreams` with the usual settings: the round-robin, `http.default_limits()`, 60 seconds to connect, to wait for an upstream and to write to one (nginx's `proxy_connect_timeout`, `proxy_read_timeout` and `proxy_send_timeout`), 60 seconds for a client's silences and its idle connection, 3 tries, an upstream kept out for 10 seconds after 1 failure (nginx's `max_fails` and `fail_timeout`), the upstream's own `Host`, no proxy trusted, the machine's name in `Via`, the system's authorities, and 32 workers.
 - `function proxy_state(proxy: ReverseProxy) -> ProxyState?`, called `web.proxy_state(proxy)`: The state `serve_proxy_stream` serves `proxy` with, nothing counted yet. Fails `invalid`.
-- `function plan_of(proxy: ReverseProxy, received_by: str) -> relay.Plan?`, called `web.plan_of(proxy, received_by)`: The relay's plan for `proxy`. Fails as `proxy_state` says.
-- `function balance_of(proxy: ReverseProxy) -> balance.State`, called `web.balance_of(proxy)`: The balancer `proxy` asks for, nothing counted.
-- `function ms_of(d: time.Duration) -> i64`, called `web.ms_of(d)`: `d` in whole milliseconds, a part of one counting as a whole one, and `net.FOREVER` for `time.max_duration()`.
 - `function serve_proxy(l: net.Listener, proxy: ReverseProxy) -> ProxyServed?`, called `web.serve_proxy(l, proxy)`: Serves every connection `l` accepts as a reverse proxy over `proxy.upstreams` until the program asks to stop: each request passed to an upstream the balancer chooses, and its answer passed back, the bodies both ways as they come and never held whole. Fails `invalid`, `limit`.
 - `function serve_proxy_stream(@state: ProxyState, stream: io.Stream, remote: str) -> ProxyServed`, called `web.serve_proxy_stream(@state, stream, remote)`: Serves the client on `stream` as `serve_proxy` serves each connection, on the calling thread, until its connection ends: for a program's own loop, or a connection it accepted itself.
 - `function etag_of(body: [u8], weak: bool) -> str`, called `web.etag_of(body, weak)`: A strong entity tag for `body`, or a weak one: the first 16 bytes of its SHA-256 in hexadecimal, quoted, `W/` before it where `weak`.
@@ -9717,6 +9887,43 @@ A client of ACME, RFC 8555: the directory read, an account made, found, changed 
 - `record RenewalInfo(start: str, end: str, explanation: str)`: When the CA suggests renewing a certificate (RFC 9773).
 - `function renewal_id(certificate: [u8]) -> str?`, called `acme.renewal_id(certificate)`: The identifier RFC 9773 names a certificate by: its authority key identifier and its serial number's bytes, each in base 64 for URLs without padding, joined by a dot. Fails `invalid`.
 - `function fetch_renewal_info(client: Client, certificate: [u8]) -> RenewalInfo?`, called `acme.fetch_renewal_info(client, certificate)`: The renewal window of `certificate`, asked of the server. Fails `unsupported`.
+
+
+### x509/ocsp
+
+Layer 7, named `use <rebel>/x509/ocsp`, [its reference](https://heroes-lang.org/rebel/x509/ocsp/).
+
+OCSP (RFC 6960): whether a certificate is revoked, asked of the responder its issuer names and the answer checked.
+
+- `constant INVALID: str`, value `"invalid"`: A request or a response that is not what RFC 6960 says, or a signature, a signer, a nonce or a moment that does not hold, the message saying which.
+- `constant NOT_FOUND: str`, value `"not_found"`: A response that says nothing of the certificate asked about; a certificate that names no responder: `status_of`, `check`.
+- `constant FAILED: str`, value `"failed"`: A responder's error status, or an HTTP status other than 200: the message carries it.
+- `constant UNSUPPORTED: str`, value `"unsupported"`: A CertID's hash, a response's type or a signature's algorithm not read here.
+- `record CertId(hash: crypto.Algorithm, issuer_name_hash: [u8], issuer_key_hash: [u8], serial: big.Integer)`: How a request and a response name one certificate (RFC 6960 § 4.1.1).
+- `function id_of(certificate: x509.Certificate, issuer: x509.Certificate, hash: crypto.Algorithm) -> CertId?`, called `ocsp.id_of(certificate: certificate, issuer: issuer, hash)`: The CertID of `certificate`, issued by `issuer`, by `hash`. Fails `invalid`, `unsupported`.
+- `function is_issued_by(id: CertId, issuer: x509.Certificate) -> bool`, called `ocsp.is_issued_by(id, issuer)`: Whether `id` names a certificate `issuer` issued: its hashes are of the issuer's name and key, by the hash it names.
+- `record Request(ids: [CertId], nonce: [u8], signed: bool, der: [u8])`: A request read.
+- `function new_nonce() -> [u8]?`, called `ocsp.new_nonce()`: A nonce of 32 bytes, the most RFC 8954 § 2.1 allows, drawn from the system's source. Fails as `os.random_bytes` fails.
+- `function create_request(asked: [CertId], nonce: [u8]) -> [u8]?`, called `ocsp.create_request(asked, nonce)`: The DER of a request for `asked`, with `nonce` where it is not []. Fails `invalid`, `unsupported`.
+- `function decode_request(der: [u8]) -> Request?`, called `ocsp.decode_request(der)`: The request `der` holds. Fails `invalid`, `unsupported`.
+- `function get_url(base: str, request: [u8]) -> str`, called `ocsp.get_url(base, request)`: The URL of a GET of `request` from the responder at `base` (RFC 6960 appendix A.1): `base`, a `/` where it ends in none, and the request in base 64 with `+`, `/` and `=` escaped.
+- `variant ResponseStatus = .successful | .malformed_request | .internal_error | .try_later | .sig_required | .unauthorized`: How a responder answered (RFC 6960 § 4.2.1).
+- `variant Status = .good | .revoked(at: time.DateTime, reason: x509.Reason?) | .unknown`: What a response says of a certificate.
+- `record Single(id: CertId, status: Status, this_update: time.DateTime, next_update: time.DateTime?, extensions: [x509.Extension])`: What a response says of one certificate.
+- `variant ResponderId = .by_name(name: x509.Name) | .by_key(hash: [u8])`: How a response names its signer.
+- `record Basic(tbs: [u8], responder: ResponderId, produced_at: time.DateTime, responses: [Single], nonce: [u8], extensions: [x509.Extension], signature_algorithm: x509.Algorithm, signature: [u8], certificates: [x509.Certificate])`: A basic response (RFC 6960 § 4.2.1), what a `successful` one holds.
+- `record Response(status: ResponseStatus, basic: Basic?, der: [u8])`: A response read.
+- `function format_response_status(status: ResponseStatus) -> str`, called `ocsp.format_response_status(status)`: The name RFC 6960 gives `status`.
+- `function decode_response(der: [u8]) -> Response?`, called `ocsp.decode_response(der)`: The response `der` holds, as a responder sends it or a TLS server staples it. Fails `invalid`, `unsupported`, `not_found`.
+- `record Options(at: time.Instant, nonce: [u8], nonce_required: bool, skew: time.Duration, max_age: time.Duration)`: What a response is checked against.
+- `function default_options(at: time.Instant, nonce: [u8]) -> Options`, called `ocsp.default_options(at, nonce)`: The options of the moment `at` and the nonce `nonce`: five minutes of skew and an hour of age, a response without a nonce taken on its freshness.
+- `function signer_of(basic: Basic, issuer: x509.Certificate, at: time.Instant) -> x509.Certificate?`, called `ocsp.signer_of(basic, issuer, at)`: The certificate that signed `basic`, for the certificates `issuer` issued: the issuer itself, or a responder it delegated to, which `basic` carries, which `issuer` signed for `x509.OCSP_SIGNING`, whose key usage, where it is written, allows a signature, and which is valid at `at` (RFC 6960 § 4.2.2.2). Fails `invalid`, `unsupported`.
+- `function status_of(response: Response, certificate: x509.Certificate, issuer: x509.Certificate, options: Options) -> Single?`, called `ocsp.status_of(response, certificate: certificate, issuer: issuer, options)`: What `response` says of `certificate`, issued by `issuer`, once every check of this module's comment holds. Fails `failed`, `invalid`, `not_found`, `unsupported`.
+- `function check(certificate: x509.Certificate, issuer: x509.Certificate, client: http.Client) -> Single?`, called `ocsp.check(certificate: certificate, issuer: issuer, client)`: The status of `certificate`, issued by `issuer`, asked of the responders its `authorityInfoAccess` names, in their order until one answers: a request by SHA-1 with a fresh nonce sent by POST, the response checked at the moment it is read by `status_of` with `default_options`. Fails `not_found`, `failed`.
+- `record Answer(id: CertId, status: Status, this_update: time.DateTime, next_update: time.DateTime?)`: What a responder says of one certificate.
+- `record ResponseTemplate(answers: [Answer], produced_at: time.DateTime, nonce: [u8], by_key: bool, certificates: [x509.Certificate])`: What a response says, and how it names its signer.
+- `function create_response(template: ResponseTemplate, signer: x509.Certificate, key: keypairs.PrivateKey, scheme: keypairs.Scheme) -> [u8]?`, called `ocsp.create_response(template, signer, key, scheme)`: The DER of a successful response of `template`, signed by `signer`'s `key` by `scheme`: the issuer's own key, or a delegated responder's. Fails `invalid`, `unsupported`.
+- `function create_error_response(status: ResponseStatus) -> [u8]?`, called `ocsp.create_error_response(status)`: The DER of a response answering the error `status`, with no responseBytes. Fails `invalid`.
 
 
 ### llm/anthropic
