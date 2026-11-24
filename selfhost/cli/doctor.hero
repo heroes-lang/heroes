@@ -391,9 +391,9 @@ test "a version answer holding a byte that is not UTF-8 is read, never taken for
 # Defect 276: a hint naming no runtime is a failed row saying what it names.
 test "doctor's runtime row tells a HEROES_RUNTIME that names no runtime by what it names (defect 276)"
     got = checks(build_dir: "build", runtime_hint: ok("build/selftest-doctor-no-runtime-276"), aside: ok("build"))
-    assert got[4].name == "runtime"
-    assert !got[4].ok
-    assert got[4].detail == "`HEROES_RUNTIME` is set to `build/selftest-doctor-no-runtime-276`, and no Heroes runtime is there: no file at `build/selftest-doctor-no-runtime-276/heroes_runtime.h`; no file at `build/selftest-doctor-no-runtime-276/runtime.c`"
+    runtime = row_named(rows: got, name: "runtime").must()
+    assert !runtime.ok
+    assert runtime.detail == "`HEROES_RUNTIME` is set to `build/selftest-doctor-no-runtime-276`, and no Heroes runtime is there: no file at `build/selftest-doctor-no-runtime-276/heroes_runtime.h`; no file at `build/selftest-doctor-no-runtime-276/runtime.c`"
 
 # Defect 2259: a runtime this compiler is not built for is a failed row, its
 # refusal whole with what to do after a dash, where the row said `ok`.
@@ -404,9 +404,9 @@ test "doctor's runtime row tells a runtime of another release, and what to do (d
     assert !write_file(path: dir + "/heroes_runtime.h", text: "#define HERO_RUNTIME_ABI " + other + "\n").is_err()
     assert !write_file(path: dir + "/runtime.c", text: "/* its parts */\n").is_err()
     got = checks(build_dir: "build", runtime_hint: ok(dir), aside: ok("build"))
-    assert got[4].name == "runtime"
-    assert !got[4].ok
-    assert got[4].detail == "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + runtime_abi.NEEDED.to_str() + " — set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or build the compiler again from the sources this runtime came with"
+    runtime = row_named(rows: got, name: "runtime").must()
+    assert !runtime.ok
+    assert runtime.detail == "`HEROES_RUNTIME` is set to `" + dir + "`, and the Heroes runtime there is not the one this compiler is built for: its heroes_runtime.h states HERO_RUNTIME_ABI " + other + ", and this compiler needs " + runtime_abi.NEEDED.to_str() + " — set HEROES_RUNTIME to the runtime this compiler came with, or unset it to look in ./runtime and beside the compiler; or build the compiler again from the sources this runtime came with"
     assert on_one_row("one\n  two\nthree") == "one — two — three"
 
 function has_text(text: str, needle: str) -> bool
@@ -436,6 +436,18 @@ function has_text(text: str, needle: str) -> bool
 
     return false
 
+# The row named `name`, read by its name and never by its place: the rows a
+# machine gets differ, macOS adding the `swiftc` row after the linker's
+# (defect 2626), and the place of a row is no contract, its readers outside
+# this file reading it by name (`tests/harness/shell.hero`). The test above
+# pins the order and the count, platform by platform.
+function row_named(rows: [Check], name: str) -> Check?
+    for row in rows
+        if row.name == name
+            return ok(row)
+
+    return fail(code: "none", msg: "doctor gave no row named " + name)
+
 # Defect 2479: a cache that would stand in a placed package's tree is the
 # cache's row's failure, in the words a build is refused with there, and
 # the runtime's row still finds this compiler's runtime.
@@ -444,13 +456,12 @@ test "the build cache's row fails where the cache would stand in a placed packag
     build = root + "/app/heroes.packages/t@1.0.0-0123456789abcdef/build"
     assert !process.mkdir_all(root + "/aside").is_err()
     got = checks(build_dir: build, runtime_hint: ok(""), aside: ok(root + "/aside"))
-    assert got[4].name == "runtime"
-    assert got[4].ok
-    assert got[5].name == "archiver"
-    assert got[6].name == "build cache"
-    assert !got[6].ok
-    assert got[6].detail == placed_files.cache_refused(build)
-    assert got[6].detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
+    assert row_named(rows: got, name: "runtime").must().ok
+    assert !row_named(rows: got, name: "archiver").is_err()
+    cache = row_named(rows: got, name: "build cache").must()
+    assert !cache.ok
+    assert cache.detail == placed_files.cache_refused(build)
+    assert cache.detail == "the build's cache, `" + build + "/` of the folder this command runs in, names a place under `heroes.packages/`, in the placed packages' trees, which the build holds to the catalogue's `sum`, so a file written there refuses the program: run it from a folder outside them; nothing was written"
     assert placed_files.cache_refused("build") == ""
     assert !process.remove_tree(root).is_err()
 
